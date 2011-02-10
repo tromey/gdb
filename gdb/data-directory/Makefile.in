@@ -53,9 +53,11 @@ PYTHON_DIR = python
 PYTHON_INSTALL_DIR = $(DESTDIR)$(GDB_DATADIR)/$(PYTHON_DIR)
 PYTHON_FILES = \
 	gdb/__init__.py \
+	gdb/thread.py \
 	gdb/types.py \
 	gdb/printing.py \
 	gdb/command/__init__.py \
+	gdb/command/mutex.py \
 	gdb/command/pretty_printers.py
 
 FLAGS_TO_PASS = \
