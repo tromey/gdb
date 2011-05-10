@@ -1965,19 +1965,13 @@ allocate_gnat_aux_type (struct type *type)
   *(TYPE_GNAT_SPECIFIC (type)) = gnat_aux_default;
 }
 
-/* Helper function to initialize the standard scalar types.
+/* Helper for init_type and intern_type.  */
 
-   If NAME is non-NULL, then it is used to initialize the type name.
-   Note that NAME is not copied; it is required to have a lifetime at
-   least as long as OBJFILE.  */
-
-struct type *
-init_type (enum type_code code, int length, int flags,
-	   const char *name, struct objfile *objfile)
+static struct type *
+init_type_internal (struct type *type,
+		    enum type_code code, int length, int flags,
+		    char *name, struct objfile *objfile)
 {
-  struct type *type;
-
-  type = alloc_type (objfile);
   TYPE_CODE (type) = code;
   TYPE_LENGTH (type) = length;
 
@@ -2014,6 +2008,29 @@ init_type (enum type_code code, int length, int flags,
   if (name && strcmp (name, "char") == 0)
     TYPE_NOSIGN (type) = 1;
 
+  return type;
+}
+
+/* Helper function to initialize the standard scalar types.
+
+   If NAME is non-NULL, then we make a copy of the string pointed
+   to by name in the objfile_obstack for that objfile, and initialize
+   the type name to that copy.  There are places (mipsread.c in particular),
+   where init_type is called with a NULL value for NAME).  */
+
+struct type *
+init_type (enum type_code code, int length, int flags,
+	   char *name, struct objfile *objfile)
+{
+  struct type *type;
+
+  type = alloc_type (objfile);
+
+  if (name)
+    name = obsavestring (name, strlen (name), &objfile->objfile_obstack);
+
+  init_type_internal (type, code, length, flags, name, objfile);
+
   switch (code)
     {
       case TYPE_CODE_STRUCT:
@@ -2028,10 +2045,134 @@ init_type (enum type_code code, int length, int flags,
 	INIT_FUNC_SPECIFIC (type);
         break;
     }
+
   return type;
 }
 
 /* Queries on types.  */
+
+/* Hash function for a type.  */
+
+static hashval_t
+hash_type (const void *tp)
+{
+  const struct type *type = tp;
+  hashval_t result = 0;
+
+  result = iterative_hash (&type->instance_flags, sizeof (type->instance_flags),
+			   result);
+  result = iterative_hash (&type->length, sizeof (type->length),
+			   result);
+  result = iterative_hash (type->main_type,
+			   offsetof (struct main_type, name),
+			   result);
+  result ^= htab_hash_string (TYPE_NAME (type));
+  if (TYPE_TARGET_TYPE (type))
+    result ^= htab_hash_pointer (TYPE_TARGET_TYPE (type));
+
+  return result;
+}
+
+/* Equality function that compares two types.  */
+
+static int
+eq_type (const void *a, const void *b)
+{
+  const struct type *type_a = a;
+  const struct type *type_b = b;
+
+  if (TYPE_INSTANCE_FLAGS (type_a) != TYPE_INSTANCE_FLAGS (type_b))
+    return 0;
+  if (TYPE_LENGTH (type_a) != TYPE_LENGTH (type_b))
+    return 0;
+  if (memcmp (TYPE_MAIN_TYPE (type_a), TYPE_MAIN_TYPE (type_b),
+	      offsetof (struct main_type, name)) != 0)
+    return 0;
+  if (strcmp (TYPE_NAME (type_a), TYPE_NAME (type_b)) != 0)
+    return 0;
+
+  if (TYPE_TARGET_TYPE (type_a) != TYPE_TARGET_TYPE (type_b))
+    return 0;
+
+  return 1;
+}
+
+/* A callback that frees the type interning hash table when an objfile
+   is destroyed.  */
+
+static void
+free_hash_table (struct objfile *arg, void *data)
+{
+  htab_t tab = data;
+
+  htab_delete (tab);
+}
+
+/* The cookie for associating the type interning hash table with an
+   objfile.  */
+
+static const struct objfile_data *objfile_intern_data;
+
+/* Like init_type, but intern the result.  NAME is not reallocated, so
+   it must have a lifetime at least as long as OBJFILE.  If a type
+   matching the arguments already exists, it is returned; otherwise a
+   new type is created.  The returned type should be considered
+   immutable; except that new variants may be made.  This function
+   only handles certain types: primitive types, complex types, and
+   pointers to primitive types.  */
+
+struct type *
+intern_type (enum type_code code, int length, int flags,
+	     char *name, struct objfile *objfile, struct type *target_type)
+{
+  struct main_type mt;
+  struct type type;
+  void **slot;
+  htab_t table;
+
+  gdb_assert (code == TYPE_CODE_VOID
+	      || code == TYPE_CODE_BOOL
+	      || code == TYPE_CODE_COMPLEX
+	      || code == TYPE_CODE_DECFLOAT
+	      || code == TYPE_CODE_FLT
+	      || code == TYPE_CODE_INT
+	      || code == TYPE_CODE_CHAR
+	      || code == TYPE_CODE_PTR);
+  gdb_assert ((code == TYPE_CODE_PTR || code == TYPE_CODE_COMPLEX)
+	      ? (target_type != NULL) : (target_type == NULL));
+  gdb_assert (target_type == NULL
+	      || TYPE_CODE (target_type) == TYPE_CODE_VOID
+	      || TYPE_CODE (target_type) == TYPE_CODE_BOOL
+	      || TYPE_CODE (target_type) == TYPE_CODE_DECFLOAT
+	      || TYPE_CODE (target_type) == TYPE_CODE_FLT
+	      || TYPE_CODE (target_type) == TYPE_CODE_INT
+	      || TYPE_CODE (target_type) == TYPE_CODE_CHAR);
+
+  memset (&mt, 0, sizeof (mt));
+  memset (&type, 0, sizeof (type));
+  TYPE_MAIN_TYPE (&type) = &mt;
+  TYPE_OBJFILE_OWNED (&type) = 1;
+  TYPE_VPTR_FIELDNO (&type) = -1;
+  init_type_internal (&type, code, length, flags, name, objfile);
+
+  table = objfile_data (objfile, objfile_intern_data);
+  if (table == NULL)
+    {
+      table = htab_create_alloc (1, hash_type, eq_type, NULL, xcalloc, xfree);
+      set_objfile_data (objfile, objfile_intern_data, table);
+    }
+
+  slot = htab_find_slot (table, &type, INSERT);
+  if (!*slot)
+    {
+      struct type *type = alloc_type (objfile);
+
+      init_type_internal (type, code, length, flags, name, objfile);
+      *slot = type;
+    }
+
+  return *slot;
+}
 
 int
 can_dereference (struct type *t)
@@ -4119,6 +4260,8 @@ _initialize_gdbtypes (void)
 {
   gdbtypes_data = gdbarch_data_register_post_init (gdbtypes_post_init);
   objfile_type_data = register_objfile_data ();
+  objfile_intern_data
+    = register_objfile_data_with_cleanup (NULL, free_hash_table);
 
   add_setshow_zuinteger_cmd ("overload", no_class, &overload_debug,
 			     _("Set debugging of C++ overloading."),

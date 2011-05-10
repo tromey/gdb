@@ -1439,6 +1439,10 @@ extern struct type *get_target_type (struct type *type);
 extern struct type *init_type (enum type_code, int, int, const char *,
 			       struct objfile *);
 
+extern struct type *intern_type (enum type_code code, int length, int flags,
+				 char *name, struct objfile *objfile,
+				 struct type *target_type);
+
 /* Helper functions to construct architecture-owned types.  */
 extern struct type *arch_type (struct gdbarch *, enum type_code, int, char *);
 extern struct type *arch_integer_type (struct gdbarch *, int, int, char *);

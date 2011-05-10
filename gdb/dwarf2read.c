@@ -14193,7 +14193,7 @@ read_base_type (struct die_info *die, struct dwarf2_cu *cu)
 	/* Turn DW_ATE_address into a void * pointer.  */
 	code = TYPE_CODE_PTR;
 	type_flags |= TYPE_FLAG_UNSIGNED;
-	target_type = init_type (TYPE_CODE_VOID, 1, 0, NULL, objfile);
+	target_type = intern_type (TYPE_CODE_VOID, 1, 0, NULL, objfile, NULL);
 	break;
       case DW_ATE_boolean:
 	code = TYPE_CODE_BOOL;
@@ -14201,7 +14201,8 @@ read_base_type (struct die_info *die, struct dwarf2_cu *cu)
 	break;
       case DW_ATE_complex_float:
 	code = TYPE_CODE_COMPLEX;
-	target_type = init_type (TYPE_CODE_FLT, size / 2, 0, NULL, objfile);
+	target_type = intern_type (TYPE_CODE_FLT, size / 2, 0, NULL, objfile,
+				   NULL);
 	break;
       case DW_ATE_decimal_float:
 	code = TYPE_CODE_DECFLOAT;
@@ -14242,12 +14243,7 @@ read_base_type (struct die_info *die, struct dwarf2_cu *cu)
 	break;
     }
 
-  type = init_type (code, size, type_flags, NULL, objfile);
-  TYPE_NAME (type) = name;
-  TYPE_TARGET_TYPE (type) = target_type;
-
-  if (name && strcmp (name, "char") == 0)
-    TYPE_NOSIGN (type) = 1;
+  type = intern_type (code, size, type_flags, name, objfile, target_type);
 
   return set_die_type (die, type, cu);
 }
