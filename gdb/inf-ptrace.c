@@ -535,10 +535,15 @@ inf_ptrace_xfer_partial (struct target_ops *ops, enum target_object object,
 	    if (rounded_offset < offset
 		|| (offset + partial_len
 		    < rounded_offset + sizeof (PTRACE_TYPE_RET)))
-	      /* Need part of initial word -- fetch it.  */
-	      buffer.word = ptrace (PT_READ_I, pid,
-				    (PTRACE_TYPE_ARG3)(uintptr_t)
-				    rounded_offset, 0);
+	      {
+		errno = 0;
+		/* Need part of initial word -- fetch it.  */
+		buffer.word = ptrace (PT_READ_I, pid,
+				      (PTRACE_TYPE_ARG3)(uintptr_t)
+				      rounded_offset, 0);
+		if (errno)
+		  return 0;
+	      }
 
 	    /* Copy data to be written over corresponding part of
 	       buffer.  */
