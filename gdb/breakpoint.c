@@ -67,6 +67,7 @@
 #include "continuations.h"
 #include "stack.h"
 #include "skip.h"
+#include "gdb_regex.h"
 
 /* readline include files */
 #include "readline/readline.h"
@@ -6782,6 +6783,8 @@ struct exec_catchpoint
   /* The base class.  */
   struct breakpoint base;
 
+  regex_t *regexp;
+
   /* Filename of a program whose exec triggered this catchpoint.
      This field is only valid immediately after this catchpoint has
      triggered.  */
@@ -6795,6 +6798,12 @@ static void
 dtor_catch_exec (struct breakpoint *b)
 {
   struct exec_catchpoint *c = (struct exec_catchpoint *) b;
+
+  if (c->regexp)
+    {
+      regfree (c->regexp);
+      xfree (c->regexp);
+    }
 
   xfree (c->exec_pathname);
 
@@ -6886,6 +6895,17 @@ print_recreate_catch_exec (struct breakpoint *b, struct ui_file *fp)
 {
   fprintf_unfiltered (fp, "catch exec");
   print_recreate_thread (b, fp);
+}
+
+static void
+check_status_catch_exec (struct bpstats *bs)
+{
+  struct exec_catchpoint *c = (struct exec_catchpoint *) bs->breakpoint_at;
+
+  if (c->regexp == NULL || c->exec_pathname == NULL)
+    return;
+  if (regexec (c->regexp, c->exec_pathname, 0, NULL, 0) != 0)
+    bs->stop = 0;
 }
 
 static struct breakpoint_ops catch_exec_breakpoint_ops;
@@ -9856,6 +9876,9 @@ catch_exec_command_1 (char *arg, int from_tty,
   struct gdbarch *gdbarch = get_current_arch ();
   int tempflag;
   char *cond_string = NULL;
+  char *rx_end = NULL;
+  struct cleanup *cleanup = make_cleanup (null_cleanup, NULL);
+  regex_t *regexp = NULL;
 
   tempflag = get_cmd_context (command) == CATCH_TEMPORARY;
 
@@ -9864,21 +9887,54 @@ catch_exec_command_1 (char *arg, int from_tty,
   arg = skip_spaces (arg);
 
   /* The allowed syntax is:
-     catch exec
-     catch exec if <cond>
+     catch exec [REGEX] [if COND]  */
 
-     First, check if there's an if clause.  */
+  /* First check for a regex.  */
+  rx_end = skip_to_space (arg);
+  if ((rx_end - arg == 2 && strncmp (arg, "if", 2) == 0)
+      || rx_end == arg)
+    {
+      /* Either an 'if' or no argument; do nothing.  */
+    }
+  else
+    {
+      /* Got a regular expression.  */
+      char *rx_string = savestring (arg, rx_end - arg);
+      int errcode;
+
+      regexp = XCNEW (regex_t);
+      make_cleanup (xfree, regexp);
+
+      errcode = regcomp (regexp, rx_string, REG_NOSUB);
+      if (errcode != 0)
+	{
+	  char *err = get_regcomp_error (errcode, regexp);
+
+	  make_cleanup (xfree, err);
+	  make_cleanup (xfree, rx_string);
+
+	  error (_("Invalid regexp (%s): %s"), err, rx_string);
+	}
+
+      make_regfree_cleanup (regexp);
+      xfree (rx_string);
+      arg = skip_spaces (rx_end);
+    }
+
+  /* Now look for the 'if' clause.  */
   cond_string = ep_parse_optional_if_clause (&arg);
 
   if ((*arg != '\0') && !isspace (*arg))
     error (_("Junk at end of arguments."));
 
-  c = XNEW (struct exec_catchpoint);
+  c = XCNEW (struct exec_catchpoint);
   init_catchpoint (&c->base, gdbarch, tempflag, cond_string,
 		   &catch_exec_breakpoint_ops);
   c->exec_pathname = NULL;
+  c->regexp = regexp;
 
   install_breakpoint (0, &c->base, 1);
+  discard_cleanups (cleanup);
 }
 
 static enum print_stop_action
@@ -13639,6 +13695,7 @@ initialize_breakpoint_ops (void)
   ops->print_one = print_one_catch_exec;
   ops->print_mention = print_mention_catch_exec;
   ops->print_recreate = print_recreate_catch_exec;
+  ops->check_status = check_status_catch_exec;
 
   /* Syscall catchpoints.  */
   ops = &catch_syscall_breakpoint_ops;
@@ -13951,7 +14008,13 @@ With an argument, catch only exceptions with the given name."),
                      NULL,
 		     (void *) (uintptr_t) catch_vfork_permanent,
 		     (void *) (uintptr_t) catch_vfork_temporary);
-  add_catch_command ("exec", _("Catch calls to exec."),
+  add_catch_command ("exec", _("Catch calls to exec.\n\
+Usage: catch exec [REGEXP] [if CONDITION]\n\
+If REGEXP is given, only execs of programs whose name matches the\n\
+regular expression will cause a stop.\n\
+If CONDITION is given, it is an expression that is evaluated when\n\
+an exec occurs.  The catchpoint will only stop if the expression\n\
+is true."),
 		     catch_exec_command_1,
                      NULL,
 		     CATCH_PERMANENT,
