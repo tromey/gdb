@@ -78,6 +78,165 @@ struct language_defn;
 
    --chastain 2003-08-21  */
 
+/* Classification types for a minimal symbol.  These should be taken as
+   "advisory only", since if gdb can't easily figure out a
+   classification it simply selects mst_unknown.  It may also have to
+   guess when it can't figure out which is a better match between two
+   types (mst_data versus mst_bss) for example.  Since the minimal
+   symbol info is sometimes derived from the BFD library's view of a
+   file, we need to live with what information bfd supplies.  */
+
+enum minimal_symbol_type
+{
+  mst_unknown = 0,		/* Unknown type, the default */
+  mst_text,			/* Generally executable instructions */
+  mst_text_gnu_ifunc,		/* Executable code returning address
+				   of executable code */
+  mst_slot_got_plt,		/* GOT entries for .plt sections */
+  mst_data,			/* Generally initialized data */
+  mst_bss,			/* Generally uninitialized data */
+  mst_abs,			/* Generally absolute (nonrelocatable) */
+  /* GDB uses mst_solib_trampoline for the start address of a shared
+     library trampoline entry.  Breakpoints for shared library functions
+     are put there if the shared library is not yet loaded.
+     After the shared library is loaded, lookup_minimal_symbol will
+     prefer the minimal symbol from the shared library (usually
+     a mst_text symbol) over the mst_solib_trampoline symbol, and the
+     breakpoints will be moved to their true address in the shared
+     library via breakpoint_re_set.  */
+  mst_solib_trampoline,		/* Shared library trampoline code */
+  /* For the mst_file* types, the names are only guaranteed to be unique
+     within a given .o file.  */
+  mst_file_text,		/* Static version of mst_text */
+  mst_file_data,		/* Static version of mst_data */
+  mst_file_bss			/* Static version of mst_bss */
+};
+
+/* Different name domains for symbols.  Looking up a symbol specifies a
+   domain and ignores symbol definitions in other name domains.  */
+
+typedef enum domain_enum_tag
+{
+  /* UNDEF_DOMAIN is used when a domain has not been discovered or
+     none of the following apply.  This usually indicates an error either
+     in the symbol information or in gdb's handling of symbols.  */
+
+  UNDEF_DOMAIN,
+
+  /* VAR_DOMAIN is the usual domain.  In C, this contains variables,
+     function names, typedef names and enum type values.  */
+
+  VAR_DOMAIN,
+
+  /* STRUCT_DOMAIN is used in C to hold struct, union and enum type names.
+     Thus, if `struct foo' is used in a C program, it produces a symbol named
+     `foo' in the STRUCT_DOMAIN.  */
+
+  STRUCT_DOMAIN,
+
+  /* LABEL_DOMAIN may be used for names of labels (for gotos).  */
+
+  LABEL_DOMAIN
+} domain_enum;
+
+/* An address-class says where to find the value of a symbol.  */
+
+enum address_class
+{
+  /* Not used; catches errors.  */
+
+  LOC_UNDEF,
+
+  /* Value is constant int SYMBOL_VALUE, host byteorder.  */
+
+  LOC_CONST,
+
+  /* Value is at fixed address SYMBOL_VALUE_ADDRESS.  */
+
+  LOC_STATIC,
+
+  /* Value is in register.  SYMBOL_VALUE is the register number
+     in the original debug format.  SYMBOL_REGISTER_OPS holds a
+     function that can be called to transform this into the
+     actual register number this represents in a specific target
+     architecture (gdbarch).
+
+     For some symbol formats (stabs, for some compilers at least),
+     the compiler generates two symbols, an argument and a register.
+     In some cases we combine them to a single LOC_REGISTER in symbol
+     reading, but currently not for all cases (e.g. it's passed on the
+     stack and then loaded into a register).  */
+
+  LOC_REGISTER,
+
+  /* It's an argument; the value is at SYMBOL_VALUE offset in arglist.  */
+
+  LOC_ARG,
+
+  /* Value address is at SYMBOL_VALUE offset in arglist.  */
+
+  LOC_REF_ARG,
+
+  /* Value is in specified register.  Just like LOC_REGISTER except the
+     register holds the address of the argument instead of the argument
+     itself.  This is currently used for the passing of structs and unions
+     on sparc and hppa.  It is also used for call by reference where the
+     address is in a register, at least by mipsread.c.  */
+
+  LOC_REGPARM_ADDR,
+
+  /* Value is a local variable at SYMBOL_VALUE offset in stack frame.  */
+
+  LOC_LOCAL,
+
+  /* Value not used; definition in SYMBOL_TYPE.  Symbols in the domain
+     STRUCT_DOMAIN all have this class.  */
+
+  LOC_TYPEDEF,
+
+  /* Value is address SYMBOL_VALUE_ADDRESS in the code.  */
+
+  LOC_LABEL,
+
+  /* In a symbol table, value is SYMBOL_BLOCK_VALUE of a `struct block'.
+     In a partial symbol table, SYMBOL_VALUE_ADDRESS is the start address
+     of the block.  Function names have this class.  */
+
+  LOC_BLOCK,
+
+  /* Value is a constant byte-sequence pointed to by SYMBOL_VALUE_BYTES, in
+     target byte order.  */
+
+  LOC_CONST_BYTES,
+
+  /* Value is at fixed address, but the address of the variable has
+     to be determined from the minimal symbol table whenever the
+     variable is referenced.
+     This happens if debugging information for a global symbol is
+     emitted and the corresponding minimal symbol is defined
+     in another object file or runtime common storage.
+     The linker might even remove the minimal symbol if the global
+     symbol is never referenced, in which case the symbol remains
+     unresolved.
+     
+     GDB would normally find the symbol in the minimal symbol table if it will
+     not find it in the full symbol table.  But a reference to an external
+     symbol in a local block shadowing other definition requires full symbol
+     without possibly having its address available for LOC_STATIC.  Testcase
+     is provided as `gdb.dwarf2/dw2-unresolved.exp'.  */
+
+  LOC_UNRESOLVED,
+
+  /* The variable does not actually exist in the program.
+     The value is ignored.  */
+
+  LOC_OPTIMIZED_OUT,
+
+  /* The variable's address is computed by a set of location
+     functions (see "struct symbol_computed_ops" below).  */
+  LOC_COMPUTED,
+};
+
 /* Struct for storing C++ specific information.  Allocated when needed.  */
 
 struct cplus_specific
@@ -148,7 +307,30 @@ struct general_symbol_info
      This is used to select one of the fields from the language specific
      union above.  */
 
-  ENUM_BITFIELD(language) language : 8;
+  ENUM_BITFIELD(language) language : 4;
+
+  /* Domain code.  */
+  ENUM_BITFIELD(domain_enum_tag) domain : 2;
+  /* Classification type for this minimal symbol.  */
+  ENUM_BITFIELD(minimal_symbol_type) type : 4;
+
+  /* Address class */
+  /* NOTE: cagney/2003-11-02: The fields "aclass" and "ops" contain
+     overlapping information.  By creating a per-aclass ops vector, or
+     using the aclass as an index into an ops table, the aclass and
+     ops fields can be merged.  The latter, for instance, would shave
+     32-bits from each symbol (relative to a symbol lookup, any table
+     index overhead would be in the noise).  */
+
+  ENUM_BITFIELD(address_class) aclass : 4;
+
+  /* For minimal symbols, two flag bits provided for the use of the
+     target.
+     For full symbols, flag_1 is true if this is an argument; flag_2
+     is true if this is an inlined function (class LOC_BLOCK only).  */
+
+  unsigned flag_1 : 1;
+  unsigned flag_2 : 1;
 
   /* Which section is this symbol in?  This is an index into
      section_offsets for this objfile.  Negative means that the symbol
@@ -284,40 +466,6 @@ extern char *symbol_search_name (const struct general_symbol_info *);
 #define SYMBOL_MATCHES_SEARCH_NAME(symbol, name)			\
   (strcmp_iw (SYMBOL_SEARCH_NAME (symbol), (name)) == 0)
 
-/* Classification types for a minimal symbol.  These should be taken as
-   "advisory only", since if gdb can't easily figure out a
-   classification it simply selects mst_unknown.  It may also have to
-   guess when it can't figure out which is a better match between two
-   types (mst_data versus mst_bss) for example.  Since the minimal
-   symbol info is sometimes derived from the BFD library's view of a
-   file, we need to live with what information bfd supplies.  */
-
-enum minimal_symbol_type
-{
-  mst_unknown = 0,		/* Unknown type, the default */
-  mst_text,			/* Generally executable instructions */
-  mst_text_gnu_ifunc,		/* Executable code returning address
-				   of executable code */
-  mst_slot_got_plt,		/* GOT entries for .plt sections */
-  mst_data,			/* Generally initialized data */
-  mst_bss,			/* Generally uninitialized data */
-  mst_abs,			/* Generally absolute (nonrelocatable) */
-  /* GDB uses mst_solib_trampoline for the start address of a shared
-     library trampoline entry.  Breakpoints for shared library functions
-     are put there if the shared library is not yet loaded.
-     After the shared library is loaded, lookup_minimal_symbol will
-     prefer the minimal symbol from the shared library (usually
-     a mst_text symbol) over the mst_solib_trampoline symbol, and the
-     breakpoints will be moved to their true address in the shared
-     library via breakpoint_re_set.  */
-  mst_solib_trampoline,		/* Shared library trampoline code */
-  /* For the mst_file* types, the names are only guaranteed to be unique
-     within a given .o file.  */
-  mst_file_text,		/* Static version of mst_text */
-  mst_file_data,		/* Static version of mst_data */
-  mst_file_bss			/* Static version of mst_bss */
-};
-
 /* Define a simple structure used to hold some very basic information about
    all defined global symbols (text, data, bss, abs, etc).  The only required
    information is the general_symbol_info.
@@ -349,14 +497,6 @@ struct minimal_symbol
   /* Which source file is this symbol in?  Only relevant for mst_file_*.  */
   char *filename;
 
-  /* Classification type for this minimal symbol.  */
-
-  ENUM_BITFIELD(minimal_symbol_type) type : 8;
-
-  /* Two flag bits provided for the use of the target.  */
-  unsigned int target_flag_1 : 1;
-  unsigned int target_flag_2 : 1;
-
   /* Minimal symbols with the same hash key are kept on a linked
      list.  This is the link.  */
 
@@ -368,41 +508,14 @@ struct minimal_symbol
   struct minimal_symbol *demangled_hash_next;
 };
 
-#define MSYMBOL_TARGET_FLAG_1(msymbol)  (msymbol)->target_flag_1
-#define MSYMBOL_TARGET_FLAG_2(msymbol)  (msymbol)->target_flag_2
+#define MSYMBOL_TARGET_FLAG_1(msymbol)  (msymbol)->ginfo.flag_1
+#define MSYMBOL_TARGET_FLAG_2(msymbol)  (msymbol)->ginfo.flag_2
 #define MSYMBOL_SIZE(msymbol)		(msymbol)->size
-#define MSYMBOL_TYPE(msymbol)		(msymbol)->type
+#define MSYMBOL_TYPE(msymbol)		(msymbol)->ginfo.type
 
 
 
 /* Represent one symbol name; a variable, constant, function or typedef.  */
-
-/* Different name domains for symbols.  Looking up a symbol specifies a
-   domain and ignores symbol definitions in other name domains.  */
-
-typedef enum domain_enum_tag
-{
-  /* UNDEF_DOMAIN is used when a domain has not been discovered or
-     none of the following apply.  This usually indicates an error either
-     in the symbol information or in gdb's handling of symbols.  */
-
-  UNDEF_DOMAIN,
-
-  /* VAR_DOMAIN is the usual domain.  In C, this contains variables,
-     function names, typedef names and enum type values.  */
-
-  VAR_DOMAIN,
-
-  /* STRUCT_DOMAIN is used in C to hold struct, union and enum type names.
-     Thus, if `struct foo' is used in a C program, it produces a symbol named
-     `foo' in the STRUCT_DOMAIN.  */
-
-  STRUCT_DOMAIN,
-
-  /* LABEL_DOMAIN may be used for names of labels (for gotos).  */
-
-  LABEL_DOMAIN
-} domain_enum;
 
 /* Searching domains, used for `search_symbols'.  Element numbers are
    hardcoded in GDB, check all enum uses before changing it.  */
@@ -421,104 +534,6 @@ enum search_domain
 
   /* Any type.  */
   ALL_DOMAIN = 3
-};
-
-/* An address-class says where to find the value of a symbol.  */
-
-enum address_class
-{
-  /* Not used; catches errors.  */
-
-  LOC_UNDEF,
-
-  /* Value is constant int SYMBOL_VALUE, host byteorder.  */
-
-  LOC_CONST,
-
-  /* Value is at fixed address SYMBOL_VALUE_ADDRESS.  */
-
-  LOC_STATIC,
-
-  /* Value is in register.  SYMBOL_VALUE is the register number
-     in the original debug format.  SYMBOL_REGISTER_OPS holds a
-     function that can be called to transform this into the
-     actual register number this represents in a specific target
-     architecture (gdbarch).
-
-     For some symbol formats (stabs, for some compilers at least),
-     the compiler generates two symbols, an argument and a register.
-     In some cases we combine them to a single LOC_REGISTER in symbol
-     reading, but currently not for all cases (e.g. it's passed on the
-     stack and then loaded into a register).  */
-
-  LOC_REGISTER,
-
-  /* It's an argument; the value is at SYMBOL_VALUE offset in arglist.  */
-
-  LOC_ARG,
-
-  /* Value address is at SYMBOL_VALUE offset in arglist.  */
-
-  LOC_REF_ARG,
-
-  /* Value is in specified register.  Just like LOC_REGISTER except the
-     register holds the address of the argument instead of the argument
-     itself.  This is currently used for the passing of structs and unions
-     on sparc and hppa.  It is also used for call by reference where the
-     address is in a register, at least by mipsread.c.  */
-
-  LOC_REGPARM_ADDR,
-
-  /* Value is a local variable at SYMBOL_VALUE offset in stack frame.  */
-
-  LOC_LOCAL,
-
-  /* Value not used; definition in SYMBOL_TYPE.  Symbols in the domain
-     STRUCT_DOMAIN all have this class.  */
-
-  LOC_TYPEDEF,
-
-  /* Value is address SYMBOL_VALUE_ADDRESS in the code.  */
-
-  LOC_LABEL,
-
-  /* In a symbol table, value is SYMBOL_BLOCK_VALUE of a `struct block'.
-     In a partial symbol table, SYMBOL_VALUE_ADDRESS is the start address
-     of the block.  Function names have this class.  */
-
-  LOC_BLOCK,
-
-  /* Value is a constant byte-sequence pointed to by SYMBOL_VALUE_BYTES, in
-     target byte order.  */
-
-  LOC_CONST_BYTES,
-
-  /* Value is at fixed address, but the address of the variable has
-     to be determined from the minimal symbol table whenever the
-     variable is referenced.
-     This happens if debugging information for a global symbol is
-     emitted and the corresponding minimal symbol is defined
-     in another object file or runtime common storage.
-     The linker might even remove the minimal symbol if the global
-     symbol is never referenced, in which case the symbol remains
-     unresolved.
-     
-     GDB would normally find the symbol in the minimal symbol table if it will
-     not find it in the full symbol table.  But a reference to an external
-     symbol in a local block shadowing other definition requires full symbol
-     without possibly having its address available for LOC_STATIC.  Testcase
-     is provided as `gdb.dwarf2/dw2-unresolved.exp'.  */
-
-  LOC_UNRESOLVED,
-
-  /* The variable does not actually exist in the program.
-     The value is ignored.  */
-
-  LOC_OPTIMIZED_OUT,
-
-  /* The variable's address is computed by a set of location
-     functions (see "struct symbol_computed_ops" below).  */
-  LOC_COMPUTED,
 };
 
 /* The methods needed to implement LOC_COMPUTED.  These methods can
@@ -588,20 +603,6 @@ struct symbol
      never NULL during normal operation.  */
   struct symtab *symtab;
 
-  /* Domain code.  */
-
-  ENUM_BITFIELD(domain_enum_tag) domain : 6;
-
-  /* Address class */
-  /* NOTE: cagney/2003-11-02: The fields "aclass" and "ops" contain
-     overlapping information.  By creating a per-aclass ops vector, or
-     using the aclass as an index into an ops table, the aclass and
-     ops fields can be merged.  The latter, for instance, would shave
-     32-bits from each symbol (relative to a symbol lookup, any table
-     index overhead would be in the noise).  */
-
-  ENUM_BITFIELD(address_class) aclass : 6;
-
   /* Whether this is an argument.  */
 
   unsigned is_argument : 1;
@@ -656,8 +657,8 @@ struct symbol
 };
 
 
-#define SYMBOL_DOMAIN(symbol)	(symbol)->domain
-#define SYMBOL_CLASS(symbol)		(symbol)->aclass
+#define SYMBOL_DOMAIN(symbol)	(symbol)->ginfo.domain
+#define SYMBOL_CLASS(symbol)		(symbol)->ginfo.aclass
 #define SYMBOL_IS_ARGUMENT(symbol)	(symbol)->is_argument
 #define SYMBOL_INLINED(symbol)		(symbol)->is_inlined
 #define SYMBOL_IS_CPLUS_TEMPLATE_FUNCTION(symbol) \

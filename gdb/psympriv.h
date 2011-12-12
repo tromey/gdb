@@ -41,18 +41,10 @@ struct partial_symbol
 
   struct general_symbol_info ginfo;
 
-  /* Name space code.  */
-
-  ENUM_BITFIELD(domain_enum_tag) domain : 6;
-
-  /* Address class (for info_symbols).  */
-
-  ENUM_BITFIELD(address_class) aclass : 6;
-
 };
 
-#define PSYMBOL_DOMAIN(psymbol)	(psymbol)->domain
-#define PSYMBOL_CLASS(psymbol)		(psymbol)->aclass
+#define PSYMBOL_DOMAIN(psymbol)	(psymbol)->ginfo.domain
+#define PSYMBOL_CLASS(psymbol)		(psymbol)->ginfo.aclass
 
 /* Each source file that has not been fully read in is represented by
    a partial_symtab.  This contains the information on where in the
