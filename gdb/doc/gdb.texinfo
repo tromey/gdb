@@ -23924,7 +23924,8 @@ arguments.
 optional @var{block} argument restricts the search to symbols visible
 in that @var{block}.  The @var{block} argument must be a
 @code{gdb.Block} object.  If omitted, the block for the current frame
-is used.  The optional @var{domain} argument restricts
+is used; if there is no current frame, then file-scoped and global
+symbols are searched.  The optional @var{domain} argument restricts
 the search to the domain type.  The @var{domain} argument must be a
 domain constant defined in the @code{gdb} module and described later
 in this chapter.

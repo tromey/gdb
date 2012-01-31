@@ -1,3 +1,8 @@
+2012-01-31  Tom Tromey  <tromey@redhat.com>
+
+	* gdb.python/py-symbol.exp: Add test for frame-less
+	lookup_symbol.
+
 2012-02-07  Tom Tromey  <tromey@redhat.com>
 
 	* gdb.python/py-symbol.exp: Test Symbol.needs_frame and

@@ -55,6 +55,8 @@ gdb_test "python print gdb.lookup_symbol('qq')\[0\].value()" "72" \
 gdb_test "python print gdb.lookup_symbol('qq')\[0\].needs_frame" "False" \
     "print whether qq needs a frame"
 
+gdb_test "python print gdb.lookup_symbol('main')\[0\].is_function" "True" \
+    "Lookup main using lookup_symbol"
 
 if ![runto_main] then {
     fail "Can't run to main"

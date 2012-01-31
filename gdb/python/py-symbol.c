@@ -370,13 +370,11 @@ gdbpy_lookup_symbol (PyObject *self, PyObject *args, PyObject *kw)
     block = block_object_to_block (block_obj);
   else
     {
-      struct frame_info *selected_frame;
       volatile struct gdb_exception except;
 
       TRY_CATCH (except, RETURN_MASK_ALL)
 	{
-	  selected_frame = get_selected_frame (_("No frame selected."));
-	  block = get_frame_block (selected_frame, NULL);
+	  block = get_selected_block (NULL);
 	}
       GDB_PY_HANDLE_EXCEPTION (except);
     }
