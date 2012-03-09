@@ -22098,6 +22098,7 @@ dwarf_decode_macro_bytes (bfd *abfd,
 			   line, body);
 		break;
 	      }
+#if 0
 	    if ((line == 0 && !at_commandline)
 		|| (line != 0 && at_commandline))
 	      complaint (&symfile_complaints,
@@ -22105,6 +22106,7 @@ dwarf_decode_macro_bytes (bfd *abfd,
 			 at_commandline ? _("command-line") : _("in-file"),
 			 is_define ? _("definition") : _("undefinition"),
 			 line == 0 ? _("zero") : _("non-zero"), line, body);
+#endif
 
 	    if (is_define)
 	      parse_macro_definition (current_file, line, body);
