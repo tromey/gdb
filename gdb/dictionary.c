@@ -455,6 +455,32 @@ dict_create_linear (struct obstack *obstack,
   return retval;
 }
 
+/* FIXME */
+
+struct dictionary *
+dict_create_linear_from_expandable (struct obstack *obstack,
+				    struct dictionary *expandable)
+{
+  struct dictionary *retval;
+  int nsyms = 0, i, j;
+  struct symbol **syms;
+  const struct pending *list_counter;
+
+  gdb_assert (DICT_VECTOR (expandable) == &dict_linear_expandable_vector);
+
+  retval = obstack_alloc (obstack, sizeof (struct dictionary));
+  DICT_VECTOR (retval) = &dict_linear_vector;
+
+  DICT_LINEAR_NSYMS (retval) = DICT_LINEAR_NSYMS (expandable);
+  syms = obstack_alloc (obstack,
+			DICT_LINEAR_NSYMS (retval) * sizeof (struct symbol *));
+  memcpy (syms, DICT_LINEAR_SYMS (expandable),
+	  DICT_LINEAR_NSYMS (retval) * sizeof (struct symbol *));
+  DICT_LINEAR_SYMS (retval) = syms;
+
+  return retval;
+}
+
 /* Create a dictionary implemented via an array that grows as
    necessary.  The dictionary is initially empty; to add symbols to
    it, call dict_add_symbol().  Call dict_free() when you're done with

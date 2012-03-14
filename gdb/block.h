@@ -104,7 +104,14 @@ struct global_block
 
 #define BLOCK_START(bl)		(bl)->startaddr
 #define BLOCK_END(bl)		(bl)->endaddr
-#define BLOCK_FUNCTION(bl)	(bl)->function
+#define BLOCK_FUNCTION(bl)			\
+  (((bl)->function == NULL)			\
+   ? NULL					\
+   : (SYMBOL_BODILESS ((bl)->function)		\
+      ? fill_in_symbol_body ((bl)->function)	\
+      : ((bl)->function)))
+#define BLOCK_RAW_FUNCTION(bl)	(bl)->function
+#define SET_BLOCK_FUNCTION(bl, func) (((bl)->function) = (func))
 #define BLOCK_SUPERBLOCK(bl)	(bl)->superblock
 #define BLOCK_DICT(bl)		(bl)->dict
 #define BLOCK_NAMESPACE(bl)	(bl)->namespace_info
@@ -118,7 +125,7 @@ struct blockvector
      enough.  */
   struct addrmap *map;
   /* The blocks themselves.  */
-  struct block *block[1];
+  struct block **block;
 };
 
 #define BLOCKVECTOR_NBLOCKS(blocklist) (blocklist)->nblocks

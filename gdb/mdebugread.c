@@ -811,7 +811,7 @@ parse_symbol (SYMR *sh, union aux_ext *ax, char *ext_sh, int bigend,
       /* Create and enter a new lexical context.  */
       b = new_block (FUNCTION_BLOCK);
       SYMBOL_BLOCK_VALUE (s) = b;
-      BLOCK_FUNCTION (b) = s;
+      SET_BLOCK_FUNCTION (b, s);
       BLOCK_START (b) = BLOCK_END (b) = sh->value;
       BLOCK_SUPERBLOCK (b) = top_stack->cur_block;
       add_block (b, top_stack->cur_st);
@@ -4595,12 +4595,10 @@ add_block (struct block *b, struct symtab *s)
      symtab and blockvector here.  */
   struct blockvector *bv = (struct blockvector *) SYMTAB_BLOCKVECTOR (s);
 
-  bv = (struct blockvector *) xrealloc ((void *) bv,
-					(sizeof (struct blockvector)
-					 + BLOCKVECTOR_NBLOCKS (bv)
-					 * sizeof (bv->block)));
-  if (bv != SYMTAB_BLOCKVECTOR (s))
-    SYMTAB_BLOCKVECTOR (s) = bv;
+  bv->block
+    = xrealloc ((void *) bv->block,
+		(BLOCKVECTOR_NBLOCKS (bv) + 1)
+		* sizeof (struct block *));
 
   BLOCKVECTOR_BLOCK (bv, BLOCKVECTOR_NBLOCKS (bv)++) = b;
 }
@@ -4799,10 +4797,9 @@ static struct blockvector *
 new_bvect (int nblocks)
 {
   struct blockvector *bv;
-  int size;
 
-  size = sizeof (struct blockvector) + nblocks * sizeof (struct block *);
-  bv = (struct blockvector *) xzalloc (size);
+  bv = XCNEW (struct blockvector);
+  bv->block = XCALLOC (nblocks, struct block *);
 
   BLOCKVECTOR_NBLOCKS (bv) = nblocks;
 

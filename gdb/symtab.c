@@ -5403,6 +5403,24 @@ main_info_cleanup (struct program_space *pspace, void *data)
     xfree (info->name_of_main);
   xfree (info);
 }
+
+
+struct symbol *
+fill_in_symbol_body (struct symbol *function)
+{
+  if (!function || !SYMBOL_BODILESS (function))
+    return function;
+
+  if (SYMBOL_CLASS (function) == LOC_BLOCK
+      && SYMBOL_COMPUTED_OPS (function) != NULL
+      && SYMBOL_COMPUTED_OPS (function)->fill_in_symbol_body != NULL)
+    SYMBOL_COMPUTED_OPS (function)->fill_in_symbol_body (function);
+
+  SYMBOL_BODILESS (function) = 0;
+  return function;
+}
+
+
 
 static void
 set_main_name (const char *name, enum language lang)

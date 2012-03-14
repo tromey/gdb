@@ -64,6 +64,9 @@ extern struct dictionary *dict_create_linear (struct obstack *obstack,
 					      const struct pending
 					      *symbol_list);
 
+extern struct dictionary *dict_create_linear_from_expandable (struct obstack *obstack,
+							      struct dictionary *expandable);
+
 /* Create a dictionary implemented via an array that grows as
    necessary.  The dictionary is initially empty; to add symbols to
    it, call dict_add_symbol().  Call dict_free() when you're done with

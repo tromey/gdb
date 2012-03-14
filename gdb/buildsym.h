@@ -209,6 +209,10 @@ extern struct block *finish_block (struct symbol *symbol,
 				   CORE_ADDR start,
 				   CORE_ADDR end);
 
+extern void finish_block_for_symbol (struct symbol *symbol,
+				     struct pending **listhead,
+				     struct objfile *objfile);
+
 extern void record_block_range (struct block *,
                                 CORE_ADDR start, CORE_ADDR end_inclusive);
 

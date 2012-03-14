@@ -681,6 +681,7 @@ struct symbol_computed_ops
 			       unsigned char *registers_used,
 			       CORE_ADDR pc, const char *result_name);
 
+  void (*fill_in_symbol_body) (struct symbol *symbol);
 };
 
 /* The methods needed to implement LOC_BLOCK for inferior functions.
@@ -793,6 +794,9 @@ struct symbol
      In this case the symbol is really a "struct template_symbol".  */
   unsigned is_cplus_template_function : 1;
 
+  /* True if blah blah.  */
+  unsigned bodiless : 1;
+
   /* Line number of this symbol's definition, except for inlined
      functions.  For an inlined function (class LOC_BLOCK and
      SYMBOL_INLINED set) this is the line number of the function's call
@@ -860,6 +864,7 @@ extern const struct block_symbol null_block_symbol;
 #define SYMBOL_BLOCK_OPS(symbol)	(SYMBOL_IMPL (symbol).ops_block)
 #define SYMBOL_REGISTER_OPS(symbol)	(SYMBOL_IMPL (symbol).ops_register)
 #define SYMBOL_LOCATION_BATON(symbol)   (symbol)->aux_value
+#define SYMBOL_BODILESS(symbol)		(symbol)->bodiless
 
 extern int register_symbol_computed_impl (enum address_class,
 					  const struct symbol_computed_ops *);
@@ -1722,5 +1727,7 @@ struct symbol *allocate_symbol (struct objfile *);
 void initialize_objfile_symbol (struct symbol *);
 
 struct template_symbol *allocate_template_symbol (struct objfile *);
+
+struct symbol *fill_in_symbol_body (struct symbol *sym);
 
 #endif /* !defined(SYMTAB_H) */
