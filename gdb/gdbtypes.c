@@ -2100,6 +2100,10 @@ hash_type (const void *tp)
     result = iterative_hash (TYPE_FIELDS (type),
 			     TYPE_NFIELDS (type) * sizeof (struct field),
 			     result);
+  else if (TYPE_CODE (type) == TYPE_CODE_RANGE)
+    result = iterative_hash (TYPE_RANGE_DATA (type),
+			     sizeof (struct range_bounds),
+			     result);
 
   return result;
 }
@@ -2150,6 +2154,12 @@ eq_type (const void *a, const void *b)
 		  TYPE_NFIELDS (type_a) * sizeof (struct field)) != 0)
 	return 0;
     }
+  else if (TYPE_CODE (type_a) == TYPE_CODE_RANGE)
+    {
+      if (memcmp (TYPE_RANGE_DATA (type_a), TYPE_RANGE_DATA (type_b),
+		  sizeof (struct range_bounds)) != 0)
+	return 0;
+    }
 
   return 1;
 }
@@ -2182,12 +2192,15 @@ static struct type *
 intern_type_internal (enum type_code code, int length, int flags,
 		      char *name, struct objfile *objfile,
 		      struct type *target_type,
-		      int n_fields, struct field *fields)
+		      int n_fields, struct field *fields,
+		      struct range_bounds *bounds)
 {
   struct main_type mt;
   struct type type;
   void **slot;
   htab_t table;
+
+  gdb_assert (fields == NULL || bounds == NULL);
 
   memset (&mt, 0, sizeof (mt));
   memset (&type, 0, sizeof (type));
@@ -2195,8 +2208,13 @@ intern_type_internal (enum type_code code, int length, int flags,
   TYPE_OBJFILE_OWNED (&type) = 1;
   TYPE_VPTR_FIELDNO (&type) = -1;
   init_type_internal (&type, code, length, flags, name, objfile);
-  TYPE_NFIELDS (&type) = n_fields;
-  TYPE_FIELDS (&type) = fields;
+  if (n_fields)
+    {
+      TYPE_NFIELDS (&type) = n_fields;
+      TYPE_FIELDS (&type) = fields;
+    }
+  else if (bounds)
+    TYPE_RANGE_DATA (&type) = bounds;
 
   table = objfile_data (objfile, objfile_intern_data);
   if (table == NULL)
@@ -2220,6 +2238,13 @@ intern_type_internal (enum type_code code, int length, int flags,
 					   sizeof (struct field) * n_fields);
 	  memcpy (TYPE_FIELDS (type), fields,
 		  sizeof (struct field) * n_fields);
+	}
+      else if (bounds != NULL)
+	{
+	  TYPE_RANGE_DATA (type) = TYPE_ALLOC (type,
+					       sizeof (struct range_bounds));
+	  memcpy (TYPE_RANGE_DATA (type), bounds,
+		  sizeof (struct range_bounds));
 	}
 
       *slot = type;
@@ -2251,7 +2276,7 @@ intern_type (enum type_code code, int length, int flags,
 	      || TYPE_CODE (target_type) == TYPE_CODE_CHAR);
 
   return intern_type_internal (code, length, flags, name, objfile,
-			       target_type, 0, NULL);
+			       target_type, 0, NULL, NULL);
 }
 
 struct type *
@@ -2260,7 +2285,33 @@ intern_enum_type (int length, int flags, char *name,
 {
   gdb_assert (n_fields > 0 && fields != NULL);
   return intern_type_internal (TYPE_CODE_ENUM, length, flags, name, objfile,
-			       NULL, n_fields, fields);
+			       NULL, n_fields, fields, NULL);
+}
+
+struct type *
+intern_range_type (struct type *index_type,
+		   int low_undefined, LONGEST low_bound,
+		   int high_undefined, LONGEST high_bound,
+		   int length, char *name, struct objfile *objfile)
+{
+  struct range_bounds bounds;
+  int type_flags = 0;
+
+  memset (&bounds, 0, sizeof (bounds));
+  bounds.low_undefined = low_undefined;
+  bounds.low = low_bound;
+  bounds.high_undefined = high_undefined;
+  bounds.high = high_bound;
+
+  if (low_bound >= 0)
+    type_flags |= TYPE_FLAG_UNSIGNED;
+
+  if (length == -1)
+    length = TYPE_LENGTH (check_typedef (index_type));
+
+  return intern_type_internal (TYPE_CODE_RANGE, length,
+			       type_flags, name, objfile,
+			       index_type, 0, NULL, &bounds);
 }
 
 int

@@ -1448,6 +1448,12 @@ extern struct type *intern_enum_type (int length, int flags, char *name,
 				      struct objfile *objfile,
 				      int n_fields, struct field *fields);
 
+extern struct type *intern_range_type (struct type *index_type,
+				       int low_undefined, LONGEST low_bound,
+				       int high_undefined, LONGEST high_bound,
+				       int length, char *name,
+				       struct objfile *objfile);
+
 /* Helper functions to construct architecture-owned types.  */
 extern struct type *arch_type (struct gdbarch *, enum type_code, int, char *);
 extern struct type *arch_integer_type (struct gdbarch *, int, int, char *);

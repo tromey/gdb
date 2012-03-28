@@ -13313,7 +13313,8 @@ read_array_type (struct die_info *die, struct dwarf2_cu *cu)
   if (die->child == NULL)
     {
       index_type = objfile_type (objfile)->builtin_int;
-      range_type = create_range_type (NULL, index_type, 0, -1);
+      range_type = intern_range_type (index_type, 0, 0, 0, -1,
+				      -1, NULL, objfile);
       type = create_array_type (NULL, element_type, range_type);
       return set_die_type (die, type, cu);
     }
@@ -14017,7 +14018,8 @@ read_tag_string_type (struct die_info *die, struct dwarf2_cu *cu)
     }
 
   index_type = objfile_type (objfile)->builtin_int;
-  range_type = create_range_type (NULL, index_type, 1, length);
+  range_type = intern_range_type (index_type, 0, 1, 0, length,
+				  -1, NULL, objfile);
   char_type = language_string_char_type (cu->language_defn, gdbarch);
   type = create_string_type (NULL, char_type, range_type);
 
@@ -14342,6 +14344,7 @@ read_subrange_type (struct die_info *die, struct dwarf2_cu *cu)
   int low_default_is_valid;
   const char *name;
   LONGEST negative_mask;
+  int low_undefined = 0, high_undefined = 0, length;
 
   orig_base_type = die_type (die, cu);
   /* If ORIG_BASE_TYPE is a typedef, it will not be TYPE_UNSIGNED,
@@ -14478,25 +14481,27 @@ read_subrange_type (struct die_info *die, struct dwarf2_cu *cu)
   if (!TYPE_UNSIGNED (base_type) && (high & negative_mask))
     high |= negative_mask;
 
-  range_type = create_range_type (NULL, orig_base_type, low, high);
-
   /* Mark arrays with dynamic length at least as an array of unspecified
      length.  GDB could check the boundary but before it gets implemented at
      least allow accessing the array elements.  */
   if (attr && attr_form_is_block (attr))
-    TYPE_HIGH_BOUND_UNDEFINED (range_type) = 1;
+    high_undefined = 1;
 
   /* Ada expects an empty array on no boundary attributes.  */
   if (attr == NULL && cu->language != language_ada)
-    TYPE_HIGH_BOUND_UNDEFINED (range_type) = 1;
+    high_undefined = 1;
 
   name = dwarf2_name (die, cu);
-  if (name)
-    TYPE_NAME (range_type) = name;
 
   attr = dwarf2_attr (die, DW_AT_byte_size, cu);
   if (attr)
-    TYPE_LENGTH (range_type) = DW_UNSND (attr);
+    length = DW_UNSND (attr);
+  else
+    length = -1;
+
+  range_type = intern_range_type (orig_base_type, low_undefined, low,
+				  high_undefined, high,
+				  length, name, cu->objfile);
 
   set_die_type (die, range_type, cu);
 
