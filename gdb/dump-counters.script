@@ -1,0 +1,10 @@
+define dump_counters
+  set $i = 0
+  while $i <= TYPE_CODE_INTERNAL_FUNCTION
+    if type_counters[$i] != 0
+      output (enum type_code) $i
+      printf " = %d\n", type_counters[$i]
+    end
+    set $i = $i + 1
+  end
+end
