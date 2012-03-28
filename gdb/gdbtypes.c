@@ -2000,8 +2000,13 @@ init_type_internal (struct type *type,
     TYPE_FIXED_INSTANCE (type) = 1;
   if (flags & TYPE_FLAG_GNU_IFUNC)
     TYPE_GNU_IFUNC (type) = 1;
+  if (flags & TYPE_FLAG_FLAG_ENUM)
+    TYPE_FLAG_ENUM (type) = 1;
 
-  TYPE_NAME (type) = name;
+  if (code == TYPE_CODE_ENUM)
+    TYPE_TAG_NAME (type) = name;
+  else
+    TYPE_NAME (type) = name;
 
   /* C++ fancies.  */
 
@@ -2066,11 +2071,31 @@ hash_type (const void *tp)
   result = iterative_hash (type->main_type,
 			   offsetof (struct main_type, name),
 			   result);
-  result ^= htab_hash_string (TYPE_NAME (type));
+  if (TYPE_NAME (type) != NULL)
+    result ^= htab_hash_string (TYPE_NAME (type));
+  if (TYPE_TAG_NAME (type) != NULL)
+    result ^= htab_hash_string (TYPE_TAG_NAME (type));
   if (TYPE_TARGET_TYPE (type))
     result ^= htab_hash_pointer (TYPE_TARGET_TYPE (type));
 
+  if (TYPE_NFIELDS (type))
+    result = iterative_hash (TYPE_FIELDS (type),
+			     TYPE_NFIELDS (type) * sizeof (struct field),
+			     result);
+
   return result;
+}
+
+/* A helper for eq_type that compares two strings.  */
+
+static int
+eq_strings (const char *a, const char *b)
+{
+  if (a == b)
+    return 1;
+  if (a == NULL || b == NULL)
+    return 0;
+  return strcmp (a, b) == 0;
 }
 
 /* Equality function that compares two types.  */
@@ -2080,6 +2105,7 @@ eq_type (const void *a, const void *b)
 {
   const struct type *type_a = a;
   const struct type *type_b = b;
+  int r;
 
   if (TYPE_INSTANCE_FLAGS (type_a) != TYPE_INSTANCE_FLAGS (type_b))
     return 0;
@@ -2088,11 +2114,24 @@ eq_type (const void *a, const void *b)
   if (memcmp (TYPE_MAIN_TYPE (type_a), TYPE_MAIN_TYPE (type_b),
 	      offsetof (struct main_type, name)) != 0)
     return 0;
-  if (strcmp (TYPE_NAME (type_a), TYPE_NAME (type_b)) != 0)
-    return 0;
 
   if (TYPE_TARGET_TYPE (type_a) != TYPE_TARGET_TYPE (type_b))
     return 0;
+
+  if (!eq_strings (TYPE_NAME (type_a), TYPE_NAME (type_b)))
+    return 0;
+  if (!eq_strings (TYPE_TAG_NAME (type_a), TYPE_TAG_NAME (type_b)))
+    return 0;
+
+  if (TYPE_NFIELDS (type_a) != TYPE_NFIELDS (type_b))
+    return 0;
+  if (TYPE_NFIELDS (type_a))
+    {
+      /* This assumes that field names are interned.  */
+      if (memcmp (TYPE_FIELDS (type_a), TYPE_FIELDS (type_b),
+		  TYPE_NFIELDS (type_a) * sizeof (struct field)) != 0)
+	return 0;
+    }
 
   return 1;
 }
@@ -2121,15 +2160,59 @@ static const struct objfile_data *objfile_intern_data;
    only handles certain types: primitive types, complex types, and
    pointers to primitive types.  */
 
-struct type *
-intern_type (enum type_code code, int length, int flags,
-	     char *name, struct objfile *objfile, struct type *target_type)
+static struct type *
+intern_type_internal (enum type_code code, int length, int flags,
+		      char *name, struct objfile *objfile,
+		      struct type *target_type,
+		      int n_fields, struct field *fields)
 {
   struct main_type mt;
   struct type type;
   void **slot;
   htab_t table;
 
+  memset (&mt, 0, sizeof (mt));
+  memset (&type, 0, sizeof (type));
+  TYPE_MAIN_TYPE (&type) = &mt;
+  TYPE_OBJFILE_OWNED (&type) = 1;
+  TYPE_VPTR_FIELDNO (&type) = -1;
+  init_type_internal (&type, code, length, flags, name, objfile);
+  TYPE_NFIELDS (&type) = n_fields;
+  TYPE_FIELDS (&type) = fields;
+
+  table = objfile_data (objfile, objfile_intern_data);
+  if (table == NULL)
+    {
+      table = htab_create_alloc (1, hash_type, eq_type, NULL, xcalloc, xfree);
+      set_objfile_data (objfile, objfile_intern_data, table);
+    }
+
+  slot = htab_find_slot (table, &type, INSERT);
+  if (!*slot)
+    {
+      struct type *type = alloc_type (objfile);
+
+      init_type_internal (type, code, length, flags, name, objfile);
+
+      TYPE_NFIELDS (type) = n_fields;
+      if (fields != NULL)
+	{
+	  TYPE_FIELDS (type) = TYPE_ALLOC (type,
+					   sizeof (struct field) * n_fields);
+	  memcpy (TYPE_FIELDS (type), fields,
+		  sizeof (struct field) * n_fields);
+	}
+
+      *slot = type;
+    }
+
+  return *slot;
+}
+
+struct type *
+intern_type (enum type_code code, int length, int flags,
+	     char *name, struct objfile *objfile, struct type *target_type)
+{
   gdb_assert (code == TYPE_CODE_VOID
 	      || code == TYPE_CODE_BOOL
 	      || code == TYPE_CODE_COMPLEX
@@ -2148,30 +2231,17 @@ intern_type (enum type_code code, int length, int flags,
 	      || TYPE_CODE (target_type) == TYPE_CODE_INT
 	      || TYPE_CODE (target_type) == TYPE_CODE_CHAR);
 
-  memset (&mt, 0, sizeof (mt));
-  memset (&type, 0, sizeof (type));
-  TYPE_MAIN_TYPE (&type) = &mt;
-  TYPE_OBJFILE_OWNED (&type) = 1;
-  TYPE_VPTR_FIELDNO (&type) = -1;
-  init_type_internal (&type, code, length, flags, name, objfile);
+  return intern_type_internal (code, length, flags, name, objfile,
+			       target_type, 0, NULL);
+}
 
-  table = objfile_data (objfile, objfile_intern_data);
-  if (table == NULL)
-    {
-      table = htab_create_alloc (1, hash_type, eq_type, NULL, xcalloc, xfree);
-      set_objfile_data (objfile, objfile_intern_data, table);
-    }
-
-  slot = htab_find_slot (table, &type, INSERT);
-  if (!*slot)
-    {
-      struct type *type = alloc_type (objfile);
-
-      init_type_internal (type, code, length, flags, name, objfile);
-      *slot = type;
-    }
-
-  return *slot;
+struct type *
+intern_enum_type (int length, int flags, char *name,
+		  struct objfile *objfile, int n_fields, struct field *fields)
+{
+  gdb_assert (n_fields > 0 && fields != NULL);
+  return intern_type_internal (TYPE_CODE_ENUM, length, flags, name, objfile,
+			       NULL, n_fields, fields);
 }
 
 int

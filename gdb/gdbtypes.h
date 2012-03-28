@@ -181,6 +181,7 @@ enum type_flag_value
   TYPE_FLAG_FIXED_INSTANCE = (1 << 17),
   TYPE_FLAG_STUB_SUPPORTED = (1 << 18),
   TYPE_FLAG_GNU_IFUNC = (1 << 19),
+  TYPE_FLAG_FLAG_ENUM = (1 << 20),
 
   /* Used for error-checking.  */
   TYPE_FLAG_MIN = TYPE_FLAG_UNSIGNED
@@ -1442,6 +1443,10 @@ extern struct type *init_type (enum type_code, int, int, const char *,
 extern struct type *intern_type (enum type_code code, int length, int flags,
 				 char *name, struct objfile *objfile,
 				 struct type *target_type);
+
+extern struct type *intern_enum_type (int length, int flags, char *name,
+				      struct objfile *objfile,
+				      int n_fields, struct field *fields);
 
 /* Helper functions to construct architecture-owned types.  */
 extern struct type *arch_type (struct gdbarch *, enum type_code, int, char *);
