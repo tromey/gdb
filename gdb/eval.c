@@ -2823,6 +2823,173 @@ evaluate_subexp_standard (struct type *expect_type,
 	return cplus_typeid (result);
       }
 
+    case OP_NEW:
+      {
+	struct type *type;
+	int i, n_op_args, n_constr_args, flags;
+	struct value **argvec;
+	struct type *ptr_type, *new_type, *array_type;
+	LONGEST total_len;
+
+	*pos += 5;
+
+	type = check_typedef (exp->elts[pc + 1].type);
+	flags = exp->elts[pc + 2].longconst;
+	n_op_args = exp->elts[pc + 3].longconst;
+	n_constr_args = exp->elts[pc + 4].longconst;
+
+	argvec = alloca ((max (n_op_args, n_constr_args) + 3)
+			 * sizeof (struct value *));
+
+	argvec[0] = NULL;
+
+	/* Evaluate "placement" args.  */
+	for (i = 0; i < n_op_args; ++i)
+	  argvec[i + 2] = evaluate_subexp (NULL, exp, pos, noside);
+	argvec[i + 2] = NULL;
+
+	if ((flags & CXX_NEW_ARRAY) == 0)
+	  {	  
+	    /* Note that the type isn't precisely correct.  */
+	    argvec[1]
+	      = value_from_longest (builtin_type (exp->gdbarch)->builtin_int,
+				    TYPE_LENGTH (type));
+	    new_type = type;
+
+	    /* Allocate memory.  */
+	    ptr_type = lookup_pointer_type (type);
+
+	    if (noside == EVAL_NORMAL)
+	      argvec[0]
+		= value_cast (ptr_type,
+			      value_operator_new ((flags & CXX_NEW_GLOBAL) != 0,
+						  new_type, n_op_args + 2,
+						  argvec));
+
+	    /* Set up for the constructor call.  */
+	    for (i = 0; i < n_constr_args; ++i)
+	      argvec[i + 1] = evaluate_subexp (NULL, exp, pos, noside);
+	    argvec[i + 1] = NULL;
+
+	    if (noside == EVAL_SKIP)
+	      goto nosideret;
+	    if (noside == EVAL_AVOID_SIDE_EFFECTS)
+	      return allocate_value (ptr_type);
+
+	    value_construct (type, n_constr_args + 1, argvec);
+
+	    return argvec[0];
+	  }
+	else
+	  {
+	    LONGEST *array_sizes, iter, elt_size;
+	    CORE_ADDR result_addr;
+
+	    /* Compute the array type.  */
+	    array_type = type;
+	    total_len = 1;
+	    elt_size = TYPE_LENGTH (type);
+
+	    /* Compute each array size.  */
+	    array_sizes = alloca (n_constr_args * sizeof (LONGEST));
+	    for (i = n_constr_args - 1; i >= 0; --i)
+	      {
+		LONGEST len;
+		struct value *this_len = evaluate_subexp (NULL, exp,
+							  pos, noside);
+
+		len = value_as_long (this_len);
+		if (len < 0)
+		  error (_("cannot use 'new' with negative array dimension"));
+		total_len *= len;
+		array_sizes[i] = len;
+	      }
+
+	    if (noside == EVAL_SKIP)
+	      goto nosideret;
+	    
+	    /* FIXME-type-allocation.  */
+	    /* Now compute the array type.  */
+	    for (i = 0; i < n_constr_args; ++i)
+	      {
+		/* Note that array ranges are inclusive.  */
+		array_type = lookup_array_range_type (array_type, 0,
+						      array_sizes[i] - 1);
+	      }
+
+	    if (noside == EVAL_AVOID_SIDE_EFFECTS)
+	      {
+		array_type
+		  = lookup_pointer_type (TYPE_TARGET_TYPE (array_type));
+		return allocate_value (array_type);
+	      }
+
+	    argvec[1] = NULL;	/* Filled in by cp_call_array_new.  */
+	    new_type = array_type;
+
+	    /* Allocate memory.  */
+	    ptr_type = lookup_pointer_type (type);
+	    argvec[0]
+	      = value_cast (ptr_type,
+			    cp_call_array_new (elt_size, total_len,
+					       (flags & CXX_NEW_GLOBAL) != 0,
+					       new_type, n_op_args + 2,
+					       argvec));
+
+	    result_addr = value_as_address (argvec[0]);
+
+	    /* Invoke the zero-arg constructor on each element.  */
+	    for (iter = 0; iter < total_len; ++iter)
+	      {
+		value_construct (type, 1, argvec);
+		argvec[0] = value_ptradd (argvec[0], 1);
+	      }
+
+	    array_type = lookup_pointer_type (TYPE_TARGET_TYPE (array_type));
+	    return value_from_pointer (array_type, result_addr);
+	  }
+      }
+      break;
+
+    case OP_DELETE:
+      {
+	int flags;
+	struct value *arg, **argv;
+	struct type *type;
+
+	*pos += 2;
+	flags = exp->elts[pc + 1].longconst;
+
+	arg = evaluate_subexp (NULL, exp, pos, noside);
+
+	if (noside == EVAL_SKIP)
+	  goto nosideret;
+	if (noside == EVAL_AVOID_SIDE_EFFECTS)
+	  return allocate_value (builtin_type (exp->gdbarch)->builtin_void);
+
+	type = check_typedef (value_type (arg));
+	/* We allow int both as a gdb extension, and to support
+	   'delete 0'.  */
+	if (TYPE_CODE (type) != TYPE_CODE_PTR
+	    && TYPE_CODE (type) != TYPE_CODE_INT)
+	  error (_("argument to 'delete' not of pointer or integer type"));
+
+	if (value_as_address (arg) != 0)
+	  {
+	    struct value *new_vec;
+
+	    new_vec = value_destruct (arg, (flags & CXX_NEW_ARRAY) != 0);
+	    if (new_vec == NULL)
+	      new_vec = arg;
+	    value_operator_delete ((flags & CXX_NEW_GLOBAL) != 0,
+				   (flags & CXX_NEW_ARRAY) != 0,
+				   new_vec);
+	  }
+
+	return allocate_value (builtin_type (exp->gdbarch)->builtin_void);
+      }
+      break;
+
     default:
       /* Removing this case and compiling with gcc -Wall reveals that
          a lot of cases are hitting this case.  Some of these should

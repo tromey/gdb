@@ -319,3 +319,9 @@ OP (OP_DECLTYPE)
 
 /* The typeid operator.  This has one expression argument.  */
 OP (OP_TYPEID)
+
+/* The C++ 'new' and 'new[]' operations.  */
+OP (OP_NEW)
+
+/* The C++ 'delete' and 'delete[]' operations.  */
+OP (OP_DELETE)

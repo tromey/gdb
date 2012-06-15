@@ -561,6 +561,76 @@ print_subexp_standard (struct expression *exp, int *pos,
 	return;
       }
 
+    case OP_NEW:
+      {
+	struct type *type;
+	int n_op_args, n_constr_args, flags;
+
+    	(*pos) += 5;
+
+	type = exp->elts[pc + 1].type;
+	flags = exp->elts[pc + 2].longconst;
+	n_op_args = exp->elts[pc + 3].longconst;
+	n_constr_args = exp->elts[pc + 4].longconst;
+
+	if ((flags & CXX_NEW_GLOBAL) != 0)
+	  fputs_unfiltered ("::", stream);
+    	fputs_filtered ("new ", stream);
+
+	if (n_op_args > 0)
+	  {
+	    fputs_filtered (" (", stream);
+	    for (tem = 0; tem < n_op_args; ++tem)
+	      {
+		if (tem != 0)
+		  fputs_filtered (", ", stream);
+		print_subexp (exp, pos, stream, PREC_ABOVE_COMMA);
+	      }
+	    fputs_filtered (")", stream);
+	  }
+
+	fputs_filtered (" ", stream);
+	type_print (type, NULL, stream, 0);
+
+	if ((flags & CXX_NEW_ARRAY) == 0)
+	  {
+	    if (n_constr_args > 0)
+	      {
+		fputs_filtered (" (", stream);
+		for (tem = 0; tem < n_constr_args; ++tem)
+		  {
+		    if (tem != 0)
+		      fputs_filtered (", ", stream);
+		    print_subexp (exp, pos, stream, PREC_ABOVE_COMMA);
+		  }
+		fputs_filtered (")", stream);
+	      }
+	  }
+	else
+	  {
+	    for (tem = 0; tem < n_constr_args; ++tem)
+	      {
+		fputs_filtered ("[", stream);
+		print_subexp (exp, pos, stream, PREC_ABOVE_COMMA);
+		fputs_filtered ("]", stream);
+	      }
+	  }
+      }
+      break;
+
+    case OP_DELETE:
+      {
+	int is_array;
+
+	(*pos) += 2;
+
+	is_array = exp->elts[pc + 1].longconst;
+	fputs_filtered (is_array ? "delete[] " : "delete ", stream);
+
+	print_subexp (exp, pos, stream, PREC_ABOVE_COMMA);
+      }
+      break;
+
       /* Default ops */
 
     default:

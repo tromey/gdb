@@ -1338,6 +1338,132 @@ gnuv3_pass_by_reference (struct type *type)
   return 0;
 }
 
+/* A helper function that returns the amount of padding needed for
+   new[].  INCLUDE_SIZE is an out parameter which is set to non-zero
+   if the element size should also be put into the padding; this is
+   used by the ARM EABI.  */
+
+static struct value *
+gnuv3_array_padding (int *include_size)
+{
+  struct symbol *sym;
+  struct type *type;
+  int multiplier = 1;
+
+  sym = lookup_symbol ("std::size_t", NULL, VAR_DOMAIN, NULL);
+  if (sym == NULL)
+    sym = lookup_symbol ("size_t", NULL, VAR_DOMAIN, NULL);
+  if (sym == NULL)
+    error (_("couldn't find std::size_t or size_t"));
+
+  type = SYMBOL_TYPE (sym);
+
+  sym = lookup_symbol ("__aeabi_vec_ctor_cookie_nodtor",
+		       NULL, VAR_DOMAIN, NULL);
+  if (sym != NULL)
+    {
+      /* ARM EABI has an extra slot.  */
+      *include_size = 1;
+      multiplier = 2;
+    }
+  else
+    *include_size = 0;
+
+  return value_from_longest (type,
+			     multiplier * TYPE_LENGTH (check_typedef (type)));
+}
+
+/* Implement the call_array_new method.  */
+
+static struct value *
+gnuv3_call_array_new (LONGEST elt_size, LONGEST elt_count,
+		      int global_new, struct type *type,
+		      int argc, struct value **argv)
+{
+  struct value *padding, *memory;
+  int include_size, has_destructor = 0;
+  struct type *elt_type;
+
+
+  for (elt_type = type;
+       TYPE_CODE (elt_type) == TYPE_CODE_ARRAY;
+       elt_type = check_typedef (TYPE_TARGET_TYPE (elt_type)))
+    ;
+  if (TYPE_CODE (elt_type) == TYPE_CODE_STRUCT)
+    {
+      int i;
+
+      for (i = 0; !has_destructor && i < TYPE_NFN_FIELDS (type); ++i)
+	{
+	  struct fn_field *f = TYPE_FN_FIELDLIST1 (type, i);
+	  int j;
+
+	  for (j = 0; j < TYPE_FN_FIELDLIST_LENGTH (type, i); ++j)
+	    {
+	      if (TYPE_FN_FIELDLIST_NAME (type, i)[0] == '~'
+		  || is_destructor_name (TYPE_FN_FIELD_PHYSNAME (f, j)))
+		{
+		  has_destructor = 1;
+		  break;
+		}
+	    }
+	}
+    }
+
+  padding = gnuv3_array_padding (&include_size);
+  argv[1] = value_from_longest (value_type (padding), elt_size * elt_count);
+
+  if (has_destructor)
+    argv[1] = value_binop (argv[1], padding, BINOP_ADD);
+
+  memory = value_operator_new (global_new, type, argc, argv);
+
+  if (has_destructor)
+    {
+      memory = value_cast (lookup_pointer_type (value_type (padding)), memory);
+
+      /* This logic isn't quite right if we need a bit of extra
+	 padding to make the object alignment work out.  I don't think
+	 there is currently any way to find the required alignment for
+	 a type.  */
+
+      if (include_size)
+	{
+	  value_assign (value_ind (memory),
+			value_from_longest (value_type (padding), elt_size));
+	  memory = value_ptradd (memory, 1);
+	}
+
+      value_assign (value_ind (memory),
+		    value_from_longest (value_type (padding), elt_count));
+      memory = value_ptradd (memory, 1);
+    }
+
+  return memory;
+}
+
+/* Implement the get_vec_elts method.  */
+
+static struct value *
+gnuv3_get_vec_elts (struct value *vec, struct value **new_vec)
+{
+  struct value *padding, *memory, *result;
+  int include_size;
+  struct gdbarch *gdbarch;
+
+  padding = gnuv3_array_padding (&include_size);
+
+  memory = value_cast (lookup_pointer_type (value_type (padding)), vec);
+
+  result = value_ind (value_ptradd (memory, -1));
+
+  gdbarch = get_type_arch (value_type (padding));
+  memory = value_cast (builtin_type (gdbarch)->builtin_data_ptr, vec);
+  *new_vec = value_ptradd (memory, - value_as_long (padding));
+
+  return result;
+}
+
 static void
 init_gnuv3_ops (void)
 {
@@ -1370,6 +1496,8 @@ init_gnuv3_ops (void)
     = gnuv3_get_typename_from_type_info;
   gnu_v3_abi_ops.skip_trampoline = gnuv3_skip_trampoline;
   gnu_v3_abi_ops.pass_by_reference = gnuv3_pass_by_reference;
+  gnu_v3_abi_ops.call_array_new = gnuv3_call_array_new;
+  gnu_v3_abi_ops.get_vec_elts = gnuv3_get_vec_elts;
 }
 
 extern initialize_file_ftype _initialize_gnu_v3_abi; /* -Wmissing-prototypes */

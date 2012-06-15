@@ -375,5 +375,17 @@ extern int exp_uses_objfile (struct expression *exp, struct objfile *objfile);
 extern void mark_completion_tag (enum type_code, const char *ptr,
 				 int length);
 
+/* Flags used when evaluating C++ 'new' or 'delete' expressions.  */
+
+enum cxx_new_delete_flags
+{
+  /* Plain.  */
+  CXX_NEW_PLAIN = 0,
+  /* Set for array new or delete, clear otherwise.  */
+  CXX_NEW_ARRAY = 1,
+  /* Set for ::new or delete, clear otherwise.  */
+  CXX_NEW_GLOBAL = 2
+};
+
 #endif /* PARSER_DEFS_H */
 

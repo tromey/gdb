@@ -902,6 +902,12 @@ operator_length_standard (const struct expression *expr, int endpos,
       oplen = 5 + BYTES_TO_EXP_ELEM (oplen + 1);
       break;
 
+    case OP_NEW:
+      oplen = 6;
+      args = (longest_to_int (expr->elts[endpos - 2].longconst)
+	      + longest_to_int (expr->elts[endpos - 3].longconst));
+      break;
+
     case OP_LONG:
     case OP_DOUBLE:
     case OP_DECFLOAT:
@@ -954,6 +960,7 @@ operator_length_standard (const struct expression *expr, int endpos,
     case BINOP_VAL:
     case UNOP_CAST:
     case UNOP_MEMVAL:
+    case OP_DELETE:
       oplen = 3;
       args = 1;
       break;

@@ -177,6 +177,13 @@ static void c_print_token (FILE *file, int type, YYSTYPE value);
 %type <lval> rcurly
 %type <tval> type typebase
 %type <tvec> nonempty_typelist func_mod parameter_typelist
+%type <lval> new_init
+%type <lval> new_placement
+%type <tval> new_type
+%type <tval> new_type_id
+%type <lval> direct_new_declarator
+%type <lval> new_operator
+%type <lval> delete_operator
 /* %type <bval> block */
 
 /* Fancy type parsing.  */
@@ -794,6 +801,98 @@ exp	:	CONST_CAST '<' type_exp '>' '(' exp ')' %prec UNARY
 			{ /* We could do more error checking here, but
 			     it doesn't seem worthwhile.  */
 			  write_exp_elt_opcode (UNOP_CAST_TYPE); }
+	;
+
+exp	:	new_operator
+		new_placement
+		new_type
+		new_init
+			{
+			  write_exp_elt_opcode (OP_NEW);
+			  write_exp_elt_type ($3);
+			  write_exp_elt_longcst ($1);
+			  write_exp_elt_longcst ($2);
+			  write_exp_elt_longcst ($4);
+			  write_exp_elt_opcode (OP_NEW);
+			}
+	|	new_operator
+		new_placement
+		new_type
+		direct_new_declarator
+			{
+			  write_exp_elt_opcode (OP_NEW);
+			  write_exp_elt_type ($3);
+			  write_exp_elt_longcst ($1 | CXX_NEW_ARRAY);
+			  write_exp_elt_longcst ($2);
+			  write_exp_elt_longcst ($4);
+			  write_exp_elt_opcode (OP_NEW);
+			}
+	;
+
+new_operator:	NEW		{ $$ = CXX_NEW_PLAIN; }
+	|	COLONCOLON NEW	{ $$ = CXX_NEW_GLOBAL; }
+	;
+
+new_type:	'(' type ')'	{ $$ = $2; }
+	|	new_type_id	{ $$ = $1; }
+	;
+
+new_type_id:	typebase	{ $$ = $1; }
+	|	new_type_id '*'
+				{
+				  push_type (tp_pointer);
+				  $$ = follow_types ($1);
+				}
+	;
+
+new_placement:	'('
+			{
+			  start_arglist ();
+			}
+		arglist ')'
+			{
+			  $$ = end_arglist ();
+			}
+	|	{ $$ = 0; }
+	;
+
+new_init:	'('
+			{
+			  start_arglist ();
+			}
+		arglist ')'
+			{
+			  $$ = end_arglist ();
+			}
+	|	{ $$ = 0; }
+	;
+
+direct_new_declarator:
+		'[' exp ']'	{ $$ = 1; }
+	|	direct_new_declarator '[' exp ']'
+			{ $$ = $1 + 1; }
+	;
+
+exp	:	delete_operator exp
+			{
+			  write_exp_elt_opcode (OP_DELETE);
+			  write_exp_elt_longcst ($1);
+			  write_exp_elt_opcode (OP_DELETE);
+			}
+	;
+
+exp	:	delete_operator '[' ']' exp
+			{
+			  write_exp_elt_opcode (OP_DELETE);
+			  write_exp_elt_longcst ($1 | CXX_NEW_ARRAY);
+			  write_exp_elt_opcode (OP_DELETE);
+			}
+	;
+
+delete_operator:
+		DELETE	{ $$ = CXX_NEW_PLAIN; }
+	|	COLONCOLON DELETE
+			{ $$ = CXX_NEW_GLOBAL; }
 	;
 
 string_exp:

@@ -1,0 +1,163 @@
+# Copyright 2012 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+if { [skip_stl_tests] } { continue }
+
+set testfile "new"
+set srcfile ${testfile}.cc
+set binfile $objdir/$subdir/$testfile
+
+if {[prepare_for_testing $testfile.exp $testfile $srcfile {debug c++}]} {
+    return -1
+}
+
+if ![runto_main] then {
+    perror "couldn't run to main"
+    continue
+} 
+
+gdb_breakpoint [gdb_get_line_number "Stop here"]
+gdb_continue_to_breakpoint Stop
+
+set counter_count 0
+set counter_value 0
+
+proc check_counter {{value 1}} {
+    global counter_count counter_value
+
+    incr counter_count
+    incr counter_value $value
+    gdb_test "print counter" " = $counter_value" "check counter #$counter_count"
+}
+
+set other_count 0
+set other_count_value 0
+
+proc check_other_counter {{value 1}} {
+    global other_count other_count_value
+
+    incr other_count
+    incr other_count_value $value
+    gdb_test "print other_counter" " = $other_count_value" \
+	"check other_counter #$other_count"
+}
+
+gdb_test "print \$an_int = new int" " = .int .. $hex"
+check_counter
+gdb_test "print *new int(5)" " = 5"
+check_counter
+gdb_test "print *(\$an_int_array = new int\[7\]) @ 7" \
+    " = \\\{$decimal, $decimal, $decimal, $decimal, $decimal, $decimal, $decimal\\\}"
+check_counter
+
+gdb_test "print new int *" " = .int ... $hex"
+check_counter
+gdb_test "print *new int *\[2\] @ 2" " = \\\{$hex, $hex\\\}"
+check_counter
+
+gdb_test "print *(\$another_int_array = new int \[2\]\[3\]) @ 2" " = {\\\{$decimal, $decimal, $decimal}, \\\{$decimal, $decimal, $decimal}}"
+check_counter
+
+gdb_test "print *(\$simple = new Simple)" " = {x = 7}"
+check_counter
+gdb_test "print *(\$simple_array = new Simple\[7\]) @ 2" " = {{x = 7}, {x = 7}}"
+check_counter
+gdb_test "print *new Simple(23)" " = {x = 23}"
+check_counter
+gdb_test "print *new Simple \[2\]\[3\] @ 2" \
+    " = {{{x = 7}, {x = 7}, {x = 7}}, {{x = 7}, {x = 7}, {x = 7}}}"
+check_counter
+
+gdb_test "print *(\$derived = new Derived)" " = {<Simple> = {x = 7}, <No data fields>}"
+check_counter
+gdb_test "print *new Derived\[7\] @ 2" " = {{<Simple> = {x = 7}, <No data fields>}, {<Simple> = {x = 7}, <No data fields>}}"
+check_counter
+
+gdb_test "print *new WithConstructor<int>(5)" " = {x = 5}"
+check_counter
+
+gdb_test "print *new Name::InNameSpace<int>(27)" " = {x = 27}"
+check_counter
+
+gdb_test "print *(\$hasops = new HasOps)" " = {x = 7}"
+check_other_counter
+gdb_test "print *new HasOps(23)" " = {x = 23}"
+check_other_counter
+gdb_test "print *(\$hasops_array = new HasOps\[7\]) @ 2" " = {{x = 7}, {x = 7}}"
+check_other_counter
+
+gdb_test "print \$h = (HasOps *) HasOps::operator new (sizeof (HasOps))" \
+    " = .HasOps .. $hex"
+check_other_counter
+gdb_test "print *new(\$h) HasOps" " = {x = 7}"
+
+gdb_test "print *new (1, 88) HasOps(0)" " = {x = 0}"
+check_other_counter
+
+gdb_test "print new HasOps **" " = .HasOps .... $hex"
+# This should not use HasOps::operator new.
+check_counter
+
+gdb_test "print *(\$global_hasops = ::new HasOps)" " = {x = 7}"
+# This should not use HasOps::operator new.
+check_counter
+
+gdb_test "print delete 0" " = void"
+gdb_test "print delete (void *) 0" " = void"
+
+gdb_test "print delete \$an_int" " = void"
+check_counter -1
+
+gdb_test "print delete\[\] \$an_int_array" " = void"
+check_counter -1
+
+gdb_test "print delete\[\] \$another_int_array" " = void"
+check_counter -1
+
+gdb_test "print delete \$simple" " = void"
+check_counter -1
+
+gdb_test "print delete\[\] \$simple_array" " = void"
+check_counter -1
+
+gdb_test "print delete \$derived" " = void"
+check_counter -1
+
+gdb_test "print delete \$hasops" " = void"
+check_other_counter -1
+
+gdb_test "print ::delete \$global_hasops" " = void"
+check_counter -1
+
+gdb_test "print delete\[\] \$hasops_array" " = void"
+check_other_counter -1
+
+# Interoperability with the real C++ runtime.
+gdb_test "print delete ip" " = void"
+check_counter -1
+
+gdb_test "print delete\[\] y2" " = void"
+check_counter -1
+
+gdb_test "print delete s" " = void"
+check_counter -1
+
+gdb_test "print delete\[\] s2" " = void"
+check_counter -1
+
+gdb_test "print delete b" " = void"
+# Should have called DerivedFromBase::operator delete.
+gdb_test "print derived_count" " = 1"

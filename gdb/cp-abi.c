@@ -228,6 +228,29 @@ cp_pass_by_reference (struct type *type)
   return (*current_cp_abi.pass_by_reference) (type);
 }
 
+/* See cp-abi.h.  */
+
+struct value *
+cp_call_array_new (LONGEST elt_size, LONGEST elt_count,
+		   int global_new, struct type *type,
+		   int argc, struct value **argv)
+{
+  if ((current_cp_abi.call_array_new) == NULL)
+    error (_("GDB cannot call 'new[]' on this target"));
+  return (*current_cp_abi.call_array_new) (elt_size, elt_count, global_new,
+					   type, argc, argv);
+}
+
+/* See cp-abi.h.  */
+
+struct value *
+cp_get_vec_elts (struct value *vec, struct value **new_vec)
+{
+  if ((current_cp_abi.get_vec_elts) == NULL)
+    error (_("GDB cannot call 'delete[]' on this target"));
+  return (*current_cp_abi.get_vec_elts) (vec, new_vec);
+}
+
 /* Set the current C++ ABI to SHORT_NAME.  */
 
 static int

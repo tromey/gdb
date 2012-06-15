@@ -212,6 +212,28 @@ CORE_ADDR cplus_skip_trampoline (struct frame_info *frame,
    reference instead of value.  */
 extern int cp_pass_by_reference (struct type *type);
 
+/* Call new[].
+   
+   ELT_SIZE is the size of an element.
+   ELT_COUNT is the total number of elements.
+   GLOBAL_NEW, TYPE, ARGC, and ARGV are as specified by
+   value_operator_new.
+   
+   Returns the new array, or throw exception on error.  */
+
+extern struct value *cp_call_array_new (LONGEST elt_size, LONGEST elt_count,
+					int global_new, struct type *type,
+					int argc, struct value **argv);
+
+/* Given a value, VEC, returned by cp_call_array_new, return a new
+   value which holds the number of elements in VEC.  This can only be
+   called when the array's element type has a destructor.  *NEW_VEC is
+   set to the address actually allocated in the inferior; that is, VEC
+   minus whatever padding was needed.  */
+
+extern struct value *cp_get_vec_elts (struct value *VEC,
+				      struct value **NEW_VEC);
+
 struct cp_abi_ops
 {
   const char *shortname;
@@ -248,6 +270,10 @@ struct cp_abi_ops
   char *(*get_typename_from_type_info) (struct value *value);
   CORE_ADDR (*skip_trampoline) (struct frame_info *, CORE_ADDR);
   int (*pass_by_reference) (struct type *type);
+
+  struct value *(*call_array_new) (LONGEST, LONGEST, int, struct type *,
+				   int, struct value **);
+  struct value *(*get_vec_elts) (struct value *, struct value **);
 };
 
 
