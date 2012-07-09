@@ -124,6 +124,11 @@ struct general_symbol_info
 
     struct common_block *common_block;
 
+    /* Extra storage for LOC_COMPUTED symbols, or for LOC_BLOCK
+       symbols that use SYMBOL_COMPUTED_OPS.  */
+
+    void *aux_value;
+
     /* For opaque typedef struct chain.  */
 
     struct symbol *chain;
@@ -191,6 +196,7 @@ extern struct block **get_symbol_block_location (struct symbol *);
 #define SYMBOL_VALUE_COMMON_BLOCK(symbol) (symbol)->ginfo.value.common_block
 #define SYMBOL_BLOCK_VALUE(symbol)	(*get_symbol_block_location (symbol))
 #define SYMBOL_VALUE_CHAIN(symbol)	(symbol)->ginfo.value.chain
+#define SYMBOL_LOCATION_BATON(symbol)   (symbol)->ginfo.value.aux_value
 #define SYMBOL_LANGUAGE(symbol)		(symbol)->ginfo.language
 #define SYMBOL_SECTION(symbol)		(symbol)->ginfo.section
 #define SYMBOL_OBJ_SECTION(symbol)	(symbol)->ginfo.obj_section
@@ -537,8 +543,7 @@ enum address_class
   LOC_COMPUTED,
 };
 
-/* The methods needed to implement LOC_COMPUTED.  These methods can
-   use the symbol's .aux_value for additional per-symbol information.
+/* The methods needed to implement LOC_COMPUTED.
 
    At present this is only used to implement location expressions.  */
 
@@ -658,21 +663,6 @@ struct symbol
       const struct symbol_register_ops *ops_register;
     } ops;
 
-  /* An arbitrary data pointer, allowing symbol readers to record
-     additional information on a per-symbol basis.  Note that this data
-     must be allocated using the same obstack as the symbol itself.  */
-  /* So far it is only used by LOC_COMPUTED to
-     find the location information.  For a LOC_BLOCK symbol
-     for a function in a compilation unit compiled with DWARF 2
-     information, this is information used internally by the DWARF 2
-     code --- specifically, the location expression for the frame
-     base for this function.  */
-  /* FIXME drow/2003-02-21: For the LOC_BLOCK case, it might be better
-     to add a magic symbol to the block containing this information,
-     or to have a generic debug info annotation slot for symbols.  */
-
-  void *aux_value;
-
   struct symbol *hash_next;
 };
 
@@ -688,7 +678,6 @@ struct symbol
 #define SYMBOL_SYMTAB(symbol)		(symbol)->symtab
 #define SYMBOL_COMPUTED_OPS(symbol)     (symbol)->ops.ops_computed
 #define SYMBOL_REGISTER_OPS(symbol)     (symbol)->ops.ops_register
-#define SYMBOL_LOCATION_BATON(symbol)   (symbol)->aux_value
 
 /* An instance of this type is used to represent a function in the
    case where an extra aux */
