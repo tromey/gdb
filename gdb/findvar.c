@@ -373,11 +373,6 @@ symbol_read_needs_frame (struct symbol *sym)
       /* All cases listed explicitly so that gcc -Wall will detect it if
          we failed to consider one.  */
     case LOC_COMPUTED:
-      /* FIXME: cagney/2004-01-26: It should be possible to
-	 unconditionally call the SYMBOL_COMPUTED_OPS method when available.
-	 Unfortunately DWARF 2 stores the frame-base (instead of the
-	 function) location in a function's symbol.  Oops!  For the
-	 moment enable this when/where applicable.  */
       return SYMBOL_COMPUTED_OPS (sym)->read_needs_frame (sym);
 
     case LOC_REGISTER:
@@ -579,11 +574,6 @@ default_read_var_value (struct symbol *var, struct frame_info *frame)
       break;
 
     case LOC_COMPUTED:
-      /* FIXME: cagney/2004-01-26: It should be possible to
-	 unconditionally call the SYMBOL_COMPUTED_OPS method when available.
-	 Unfortunately DWARF 2 stores the frame-base (instead of the
-	 function) location in a function's symbol.  Oops!  For the
-	 moment enable this when/where applicable.  */
       return SYMBOL_COMPUTED_OPS (var)->read_variable (var, frame);
 
     case LOC_UNRESOLVED:
