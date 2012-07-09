@@ -175,6 +175,8 @@ extern const char *symbol_get_demangled_name
 
 extern CORE_ADDR symbol_overlayed_address (CORE_ADDR, struct obj_section *);
 
+extern struct block **get_symbol_block_location (struct symbol *);
+
 /* Note that all the following SYMBOL_* macros are used with the
    SYMBOL argument being either a partial symbol, a minimal symbol or
    a full symbol.  All three types have a ginfo field.  In particular
@@ -187,7 +189,7 @@ extern CORE_ADDR symbol_overlayed_address (CORE_ADDR, struct obj_section *);
 #define SYMBOL_VALUE_ADDRESS(symbol)	(symbol)->ginfo.value.address
 #define SYMBOL_VALUE_BYTES(symbol)	(symbol)->ginfo.value.bytes
 #define SYMBOL_VALUE_COMMON_BLOCK(symbol) (symbol)->ginfo.value.common_block
-#define SYMBOL_BLOCK_VALUE(symbol)	(symbol)->ginfo.value.block
+#define SYMBOL_BLOCK_VALUE(symbol)	(*get_symbol_block_location (symbol))
 #define SYMBOL_VALUE_CHAIN(symbol)	(symbol)->ginfo.value.chain
 #define SYMBOL_LANGUAGE(symbol)		(symbol)->ginfo.language
 #define SYMBOL_SECTION(symbol)		(symbol)->ginfo.section
@@ -575,6 +577,11 @@ struct symbol_computed_ops
 
   void (*tracepoint_var_ref) (struct symbol *symbol, struct gdbarch *gdbarch,
 			      struct agent_expr *ax, struct axs_value *value);
+
+  /* Return the location of the 'struct block *' used by this symbol.
+     The symbol must be a LOC_BLOCK symbol.  */
+
+  struct block **(*get_block_field) (struct symbol *symbol);
 };
 
 /* Functions used with LOC_REGISTER and LOC_REGPARM_ADDR.  */
@@ -682,6 +689,9 @@ struct symbol
 #define SYMBOL_COMPUTED_OPS(symbol)     (symbol)->ops.ops_computed
 #define SYMBOL_REGISTER_OPS(symbol)     (symbol)->ops.ops_register
 #define SYMBOL_LOCATION_BATON(symbol)   (symbol)->aux_value
+
+/* An instance of this type is used to represent a function in the
+   case where an extra aux */
 
 /* An instance of this type is used to represent a C++ template
    function.  It includes a "struct symbol" as a kind of base class;

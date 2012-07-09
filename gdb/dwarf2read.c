@@ -1527,7 +1527,8 @@ static void fill_in_loclist_baton (struct dwarf2_cu *cu,
 
 static void dwarf2_symbol_mark_computed (struct attribute *attr,
 					 struct symbol *sym,
-					 struct dwarf2_cu *cu);
+					 struct dwarf2_cu *cu,
+					 int need_block_field);
 
 static gdb_byte *skip_one_die (const struct die_reader_specs *reader,
 			       gdb_byte *info_ptr,
@@ -8744,16 +8745,7 @@ read_func_scope (struct die_info *die, struct dwarf2_cu *cu)
      it.  */
   attr = dwarf2_attr (die, DW_AT_frame_base, cu);
   if (attr)
-    /* FIXME: cagney/2004-01-26: The DW_AT_frame_base's location
-       expression is being recorded directly in the function's symbol
-       and not in a separate frame-base object.  I guess this hack is
-       to avoid adding some sort of frame-base adjunct/annex to the
-       function's symbol :-(.  The problem with doing this is that it
-       results in a function symbol with a location expression that
-       has nothing to do with the location of the function, ouch!  The
-       relationship should be: a function's symbol has-a frame base; a
-       frame-base has-a location expression.  */
-    dwarf2_symbol_mark_computed (attr, new->name, cu);
+    dwarf2_symbol_mark_computed (attr, new->name, cu, 1);
 
   cu->list_in_scope = &local_symbols;
 
@@ -14907,7 +14899,7 @@ var_decode_location (struct attribute *attr, struct symbol *sym,
      not be worthwhile.  I'm assuming that it isn't unless performance
      or memory numbers show me otherwise.  */
 
-  dwarf2_symbol_mark_computed (attr, sym, cu);
+  dwarf2_symbol_mark_computed (attr, sym, cu, 0);
   SYMBOL_CLASS (sym) = LOC_COMPUTED;
 
   if (SYMBOL_COMPUTED_OPS (sym) == &dwarf2_loclist_funcs)
@@ -18177,7 +18169,8 @@ fill_in_loclist_baton (struct dwarf2_cu *cu,
 
 static void
 dwarf2_symbol_mark_computed (struct attribute *attr, struct symbol *sym,
-			     struct dwarf2_cu *cu)
+			     struct dwarf2_cu *cu,
+			     int need_block_field)
 {
   struct objfile *objfile = dwarf2_per_objfile->objfile;
   struct dwarf2_section_info *section = cu_debug_loc_section (cu);
@@ -18191,7 +18184,9 @@ dwarf2_symbol_mark_computed (struct attribute *attr, struct symbol *sym,
       struct dwarf2_loclist_baton *baton;
 
       baton = obstack_alloc (&objfile->objfile_obstack,
-			     sizeof (struct dwarf2_loclist_baton));
+			     (need_block_field
+			      ? sizeof (struct dwarf2_loclist_block_baton)
+			      : sizeof (struct dwarf2_loclist_baton)));
 
       fill_in_loclist_baton (cu, baton, attr);
 
@@ -18200,7 +18195,9 @@ dwarf2_symbol_mark_computed (struct attribute *attr, struct symbol *sym,
 		   _("Location list used without "
 		     "specifying the CU base address."));
 
-      SYMBOL_COMPUTED_OPS (sym) = &dwarf2_loclist_funcs;
+      SYMBOL_COMPUTED_OPS (sym) = (need_block_field
+				   ? &dwarf2_loclist_block_funcs
+				   : &dwarf2_loclist_funcs);
       SYMBOL_LOCATION_BATON (sym) = baton;
     }
   else
@@ -18208,7 +18205,9 @@ dwarf2_symbol_mark_computed (struct attribute *attr, struct symbol *sym,
       struct dwarf2_locexpr_baton *baton;
 
       baton = obstack_alloc (&objfile->objfile_obstack,
-			     sizeof (struct dwarf2_locexpr_baton));
+			     (need_block_field
+			      ? sizeof (struct dwarf2_locexpr_block_baton)
+			      : sizeof (struct dwarf2_locexpr_baton)));
       baton->per_cu = cu->per_cu;
       gdb_assert (baton->per_cu);
 
@@ -18229,7 +18228,9 @@ dwarf2_symbol_mark_computed (struct attribute *attr, struct symbol *sym,
 	  baton->size = 0;
 	}
 
-      SYMBOL_COMPUTED_OPS (sym) = &dwarf2_locexpr_funcs;
+      SYMBOL_COMPUTED_OPS (sym) = (need_block_field
+				   ? &dwarf2_locexpr_block_funcs
+				   : &dwarf2_locexpr_funcs);
       SYMBOL_LOCATION_BATON (sym) = baton;
     }
 }

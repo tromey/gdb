@@ -352,16 +352,16 @@ static void
 dwarf_expr_frame_base_1 (struct symbol *framefunc, CORE_ADDR pc,
 			 const gdb_byte **start, size_t *length)
 {
-  if (SYMBOL_LOCATION_BATON (framefunc) == NULL)
-    *length = 0;
-  else if (SYMBOL_COMPUTED_OPS (framefunc) == &dwarf2_loclist_funcs)
+  if (SYMBOL_COMPUTED_OPS (framefunc) == &dwarf2_loclist_funcs
+      || SYMBOL_COMPUTED_OPS (framefunc) == &dwarf2_loclist_block_funcs)
     {
       struct dwarf2_loclist_baton *symbaton;
 
       symbaton = SYMBOL_LOCATION_BATON (framefunc);
       *start = dwarf2_find_location_expression (symbaton, length, pc);
     }
-  else
+  else if (SYMBOL_COMPUTED_OPS (framefunc) == &dwarf2_locexpr_funcs
+	   || SYMBOL_COMPUTED_OPS (framefunc) == &dwarf2_locexpr_block_funcs)
     {
       struct dwarf2_locexpr_baton *symbaton;
 
@@ -374,6 +374,8 @@ dwarf_expr_frame_base_1 (struct symbol *framefunc, CORE_ADDR pc,
       else
 	*length = 0;
     }
+  else
+    *length = 0;
 
   if (*length == 0)
     error (_("Could not find the frame base for \"%s\"."),
@@ -3969,6 +3971,25 @@ const struct symbol_computed_ops dwarf2_locexpr_funcs = {
   locexpr_tracepoint_var_ref
 };
 
+static struct block **
+locexpr_get_block_field (struct symbol *symbol)
+{
+  struct dwarf2_locexpr_block_baton *baton = SYMBOL_LOCATION_BATON (symbol);
+
+  return &baton->block;
+}
+
+/* The set of location functions used with the DWARF-2 expression
+   evaluator.  */
+const struct symbol_computed_ops dwarf2_locexpr_block_funcs = {
+  locexpr_read_variable,
+  locexpr_read_variable_at_entry,
+  locexpr_read_needs_frame,
+  locexpr_describe_location,
+  locexpr_tracepoint_var_ref,
+  locexpr_get_block_field
+};
+
 
 /* Wrapper functions for location lists.  These generally find
    the appropriate location expression and call something above.  */
@@ -4146,6 +4167,25 @@ const struct symbol_computed_ops dwarf2_loclist_funcs = {
   loclist_read_needs_frame,
   loclist_describe_location,
   loclist_tracepoint_var_ref
+};
+
+static struct block **
+loclist_get_block_field (struct symbol *symbol)
+{
+  struct dwarf2_loclist_block_baton *baton = SYMBOL_LOCATION_BATON (symbol);
+
+  return &baton->block;
+}
+
+/* The set of location functions used with the DWARF-2 expression
+   evaluator and location lists.  */
+const struct symbol_computed_ops dwarf2_loclist_block_funcs = {
+  loclist_read_variable,
+  loclist_read_variable_at_entry,
+  loclist_read_needs_frame,
+  loclist_describe_location,
+  loclist_tracepoint_var_ref,
+  loclist_get_block_field
 };
 
 /* Provide a prototype to silence -Wmissing-prototypes.  */

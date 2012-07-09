@@ -138,6 +138,19 @@ multiple_symbols_select_mode (void)
   return multiple_symbols_mode;
 }
 
+/* Return the location of the 'struct block *' for a LOC_BLOCK
+   symbol.  */
+
+struct block **
+get_symbol_block_location (struct symbol *symbol)
+{
+  gdb_assert (SYMBOL_CLASS (symbol) == LOC_BLOCK);
+  if (SYMBOL_COMPUTED_OPS (symbol)
+      && SYMBOL_COMPUTED_OPS (symbol)->get_block_field)
+    return SYMBOL_COMPUTED_OPS (symbol)->get_block_field (symbol);
+  return &(symbol)->ginfo.value.block;
+}
+
 /* Block in which the most recently searched-for symbol was found.
    Might be better to make this a parameter to lookup_symbol and
    value_of_this.  */

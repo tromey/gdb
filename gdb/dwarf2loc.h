@@ -104,6 +104,17 @@ struct dwarf2_locexpr_baton
   struct dwarf2_per_cu_data *per_cu;
 };
 
+/* A variant of dwarf2_locexpr_baton that holds a block as well.  */
+
+struct dwarf2_locexpr_block_baton
+{
+  /* The base class.  */
+  struct dwarf2_locexpr_baton base;
+
+  /* The block.  */
+  struct block *block;
+};
+
 struct dwarf2_loclist_baton
 {
   /* The initial base address for the location list, based on the compilation
@@ -125,8 +136,21 @@ struct dwarf2_loclist_baton
   unsigned char from_dwo;
 };
 
+/* A variant of dwarf2_loclist_baton that holds a block as well.  */
+
+struct dwarf2_loclist_block_baton
+{
+  /* The base class.  */
+  struct dwarf2_loclist_baton base;
+
+  /* The block.  */
+  struct block *block;
+};
+
 extern const struct symbol_computed_ops dwarf2_locexpr_funcs;
+extern const struct symbol_computed_ops dwarf2_locexpr_block_funcs;
 extern const struct symbol_computed_ops dwarf2_loclist_funcs;
+extern const struct symbol_computed_ops dwarf2_loclist_block_funcs;
 
 /* Compile a DWARF location expression to an agent expression.
    
