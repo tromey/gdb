@@ -671,6 +671,8 @@ extern void print_frame_info (struct frame_info *, int print_level,
 
 extern struct frame_info *block_innermost_frame (const struct block *);
 
+extern struct frame_info *block_innermost_frame_for_variable (const struct block *);
+
 extern int deprecated_pc_in_call_dummy (struct gdbarch *gdbarch, CORE_ADDR pc);
 
 /* FIXME: cagney/2003-02-02: Should be deprecated or replaced with a

@@ -102,6 +102,10 @@ struct dwarf2_locexpr_baton
   /* The compilation unit containing the symbol whose location
      we're computing.  */
   struct dwarf2_per_cu_data *per_cu;
+
+  /* If not NULL, the location expression from DW_AT_frame_base for
+     this function.  */
+  struct dwarf2_locexpr_baton *frame_base;
 };
 
 /* A variant of dwarf2_locexpr_baton that holds a block as well.  */
@@ -134,6 +138,10 @@ struct dwarf2_loclist_baton
   /* Non-zero if the location list lives in .debug_loc.dwo.
      The format of entries in this section are different.  */
   unsigned char from_dwo;
+
+  /* If not NULL, the location expression from DW_AT_frame_base for
+     this function.  */
+  struct dwarf2_locexpr_baton *frame_base;
 };
 
 /* A variant of dwarf2_loclist_baton that holds a block as well.  */
@@ -191,5 +199,8 @@ struct call_site_stuff;
 extern struct call_site_chain *call_site_find_chain (struct gdbarch *gdbarch,
 						     CORE_ADDR caller_pc,
 						     CORE_ADDR callee_pc);
+
+CORE_ADDR dwarf2_find_active_nestee_frame_base (struct dwarf2_locexpr_baton *,
+						struct frame_info *);
 
 #endif /* dwarf2loc.h */

@@ -1500,7 +1500,7 @@ value_of_variable (struct symbol *var, const struct block *b)
     frame = get_selected_frame (_("No frame selected."));
   else
     {
-      frame = block_innermost_frame (b);
+      frame = block_innermost_frame_for_variable (b);
       if (!frame)
 	{
 	  if (BLOCK_FUNCTION (b) && !block_inlined_p (b)

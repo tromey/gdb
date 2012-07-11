@@ -3979,6 +3979,14 @@ locexpr_get_block_field (struct symbol *symbol)
   return &baton->block;
 }
 
+static CORE_ADDR
+locexpr_get_nestee_frame_base (struct symbol *symbol, struct frame_info *frame)
+{
+  struct dwarf2_locexpr_baton *baton = SYMBOL_LOCATION_BATON (symbol);
+
+  return dwarf2_find_active_nestee_frame_base (baton->frame_base, frame);
+}
+
 /* The set of location functions used with the DWARF-2 expression
    evaluator.  */
 const struct symbol_computed_ops dwarf2_locexpr_block_funcs = {
@@ -3987,7 +3995,8 @@ const struct symbol_computed_ops dwarf2_locexpr_block_funcs = {
   locexpr_read_needs_frame,
   locexpr_describe_location,
   locexpr_tracepoint_var_ref,
-  locexpr_get_block_field
+  locexpr_get_block_field,
+  locexpr_get_nestee_frame_base
 };
 
 
@@ -4177,6 +4186,14 @@ loclist_get_block_field (struct symbol *symbol)
   return &baton->block;
 }
 
+static CORE_ADDR
+loclist_get_nestee_frame_base (struct symbol *symbol, struct frame_info *frame)
+{
+  struct dwarf2_loclist_baton *baton = SYMBOL_LOCATION_BATON (symbol);
+
+  return dwarf2_find_active_nestee_frame_base (baton->frame_base, frame);
+}
+
 /* The set of location functions used with the DWARF-2 expression
    evaluator and location lists.  */
 const struct symbol_computed_ops dwarf2_loclist_block_funcs = {
@@ -4185,8 +4202,27 @@ const struct symbol_computed_ops dwarf2_loclist_block_funcs = {
   loclist_read_needs_frame,
   loclist_describe_location,
   loclist_tracepoint_var_ref,
-  loclist_get_block_field
+  loclist_get_block_field,
+  loclist_get_nestee_frame_base
 };
+
+/* Given a location list that came from DW_AT_static_link and a frame,
+   return the frame base for the active frame for a nested function's
+   enclosing function.  */
+
+CORE_ADDR
+dwarf2_find_active_nestee_frame_base (struct dwarf2_locexpr_baton *baton,
+				      struct frame_info *frame)
+{
+  struct value *val;
+  CORE_ADDR addr;
+  struct gdbarch *arch = get_frame_arch (frame);
+
+  val = dwarf2_evaluate_loc_desc (builtin_type (arch)->builtin_func_ptr,
+				  frame, baton->data,
+				  baton->size, baton->per_cu);
+  return value_as_address (val);
+}
 
 /* Provide a prototype to silence -Wmissing-prototypes.  */
 extern initialize_file_ftype _initialize_dwarf2loc;

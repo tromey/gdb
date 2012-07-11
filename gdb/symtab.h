@@ -587,6 +587,13 @@ struct symbol_computed_ops
      The symbol must be a LOC_BLOCK symbol.  */
 
   struct block **(*get_block_field) (struct symbol *symbol);
+
+  /* This should be implemented iff this symbol is a nested function.
+     Given a symbol and a frame, return the frame base for the active
+     frame of this function's enclosing function.  */
+
+  CORE_ADDR (*get_nestee_frame_base) (struct symbol *symbol,
+				      struct frame_info *frame);
 };
 
 /* Functions used with LOC_REGISTER and LOC_REGPARM_ADDR.  */
@@ -635,6 +642,11 @@ struct symbol
   /* Whether this is an inlined function (class LOC_BLOCK only).  */
   unsigned is_inlined : 1;
 
+  /* Whether this is a nested function (class LOC_BLOCK only).  Nested
+     functions are required to supply the 'get_nestee_frame_base'
+     symbol_computed_ops method.  */
+  unsigned is_nested : 1;
+
   /* True if this is a C++ function symbol with template arguments.
      In this case the symbol is really a "struct template_symbol".  */
   unsigned is_cplus_template_function : 1;
@@ -671,6 +683,7 @@ struct symbol
 #define SYMBOL_CLASS(symbol)		(symbol)->aclass
 #define SYMBOL_IS_ARGUMENT(symbol)	(symbol)->is_argument
 #define SYMBOL_INLINED(symbol)		(symbol)->is_inlined
+#define SYMBOL_NESTED(symbol)		(symbol)->is_nested
 #define SYMBOL_IS_CPLUS_TEMPLATE_FUNCTION(symbol) \
   (symbol)->is_cplus_template_function
 #define SYMBOL_TYPE(symbol)		(symbol)->type

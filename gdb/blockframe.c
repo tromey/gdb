@@ -352,6 +352,56 @@ find_pc_partial_function (CORE_ADDR pc, const char **name, CORE_ADDR *address,
   return find_pc_partial_function_gnu_ifunc (pc, name, address, endaddr, NULL);
 }
 
+static struct frame_info *
+find_nestee_frame (const struct block *block,
+		   const struct block *frame_block,
+		   struct frame_info *frame)
+{
+  for (;
+       frame_block && block != frame_block;
+       frame_block = BLOCK_SUPERBLOCK (frame_block))
+    {
+      CORE_ADDR frame_base;
+      struct symbol *function;
+
+      if (!BLOCK_FUNCTION (frame_block))
+	continue;
+      function = BLOCK_FUNCTION (frame_block);
+
+      if (!SYMBOL_NESTED (function))
+	{
+	  /* Not a nested function, so we keep going.  */
+	  continue;
+	}
+
+      /* Find the frame base of the enclosing function.  */
+      frame_base
+	= SYMBOL_COMPUTED_OPS (function)->get_nestee_frame_base (function,
+								 frame);
+
+      /* Now find the frame corresponding to that instance of the
+	 outer function.  */
+      for (; frame != NULL; frame = get_prev_frame (frame))
+	{
+	  if (get_frame_base_address (frame) == frame_base)
+	    break;
+	}
+
+      if (frame == NULL)
+	error (_("FIXME"));
+
+      /* Keep going with the newly found frame's block -- we must keep
+	 looping because there may be multiple levels of nested
+	 function.  */
+      frame_block = get_frame_block (frame, NULL);
+    }
+
+  if (!frame_block)
+    error (_("FIXME2"));
+
+  return frame;
+}
+
 /* Return the innermost stack frame that is executing inside of BLOCK and is
    at least as old as the selected frame. Return NULL if there is no
    such frame.  If BLOCK is NULL, just return NULL.  */
@@ -379,6 +429,45 @@ block_innermost_frame (const struct block *block)
 	return frame;
 
       frame = get_prev_frame (frame);
+    }
+
+  return NULL;
+}
+
+/* Like block_innermost_frame, but assume that BLOCK is where a
+   variable was found.  The difference is that if BLOCK is inside a
+   nested function, we must find the correct outer frame in which to
+   evaluate the variable.  */
+
+struct frame_info *
+block_innermost_frame_for_variable (const struct block *block)
+{
+  struct frame_info *frame;
+  CORE_ADDR start;
+  CORE_ADDR end;
+
+  if (block == NULL)
+    return NULL;
+
+  start = BLOCK_START (block);
+  end = BLOCK_END (block);
+
+  frame = get_selected_frame_if_set ();
+  if (frame == NULL)
+    frame = get_current_frame ();
+  for (; frame != NULL; frame = get_prev_frame (frame))
+    {
+      struct block *frame_block = get_frame_block (frame, NULL);
+      if (frame_block == NULL)
+	continue;
+
+      if (!contained_in (frame_block, block))
+	continue;
+
+      /* We've found a frame whose block contains BLOCK.  Now see if
+	 we have to cross a nested function boundary between BLOCK and
+	 FRAME_BLOCK.  */
+      return find_nestee_frame (block, frame_block, frame);
     }
 
   return NULL;

@@ -1525,10 +1525,15 @@ static void fill_in_loclist_baton (struct dwarf2_cu *cu,
 				   struct dwarf2_loclist_baton *baton,
 				   struct attribute *attr);
 
+static void fill_in_locexpr_baton (struct dwarf2_cu *cu,
+				   struct dwarf2_locexpr_baton *baton,
+				   struct attribute *attr);
+
 static void dwarf2_symbol_mark_computed (struct attribute *attr,
 					 struct symbol *sym,
 					 struct dwarf2_cu *cu,
-					 int need_block_field);
+					 int need_block_field,
+					 struct dwarf2_locexpr_baton *);
 
 static gdb_byte *skip_one_die (const struct die_reader_specs *reader,
 			       gdb_byte *info_ptr,
@@ -8664,6 +8669,34 @@ inherit_abstract_dies (struct die_info *die, struct dwarf2_cu *cu)
   do_cleanups (cleanups);
 }
 
+static struct block **
+basic_get_block_field (struct symbol *symbol)
+{
+  struct dwarf2_locexpr_block_baton *baton = SYMBOL_LOCATION_BATON (symbol);
+
+  return &baton->block;
+}
+
+static CORE_ADDR
+basic_get_nestee_frame_base (struct symbol *symbol, struct frame_info *frame)
+{
+  /* In this case, the baton itself represents the frame base.  */
+  struct dwarf2_locexpr_block_baton *baton = SYMBOL_LOCATION_BATON (symbol);
+
+  return dwarf2_find_active_nestee_frame_base (&baton->base, frame);
+}
+
+static const struct symbol_computed_ops dwarf2_basic_block_funcs =
+{
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  basic_get_block_field,
+  basic_get_nestee_frame_base
+};
+
 static void
 read_func_scope (struct die_info *die, struct dwarf2_cu *cu)
 {
@@ -8672,7 +8705,7 @@ read_func_scope (struct die_info *die, struct dwarf2_cu *cu)
   CORE_ADDR lowpc;
   CORE_ADDR highpc;
   struct die_info *child_die;
-  struct attribute *attr, *call_line, *call_file;
+  struct attribute *attr, *static_link, *call_line, *call_file;
   char *name;
   CORE_ADDR baseaddr;
   struct block *block;
@@ -8744,8 +8777,34 @@ read_func_scope (struct die_info *die, struct dwarf2_cu *cu)
   /* If there is a location expression for DW_AT_frame_base, record
      it.  */
   attr = dwarf2_attr (die, DW_AT_frame_base, cu);
+  static_link = dwarf2_attr (die, DW_AT_static_link, cu);
   if (attr)
-    dwarf2_symbol_mark_computed (attr, new->name, cu, 1);
+    {
+      struct dwarf2_locexpr_baton *static_link_baton = NULL;
+
+      if (static_link)
+	{
+	  static_link_baton
+	    = obstack_alloc (&objfile->objfile_obstack,
+			     sizeof (struct dwarf2_locexpr_baton));
+	  fill_in_locexpr_baton (cu, static_link_baton, static_link);
+	}
+
+      dwarf2_symbol_mark_computed (attr, new->name, cu, 1, static_link_baton);
+    }
+  else if (static_link)
+    {
+      struct dwarf2_locexpr_block_baton *baton;
+
+      baton = obstack_alloc (&objfile->objfile_obstack,
+			     sizeof (struct dwarf2_locexpr_block_baton));
+
+      fill_in_locexpr_baton (cu, &baton->base, static_link);
+
+      SYMBOL_COMPUTED_OPS (new->name) = &dwarf2_basic_block_funcs;
+      SYMBOL_LOCATION_BATON (new->name) = baton;
+    }
+  SYMBOL_NESTED (new->name) = static_link != NULL;
 
   cu->list_in_scope = &local_symbols;
 
@@ -14899,7 +14958,7 @@ var_decode_location (struct attribute *attr, struct symbol *sym,
      not be worthwhile.  I'm assuming that it isn't unless performance
      or memory numbers show me otherwise.  */
 
-  dwarf2_symbol_mark_computed (attr, sym, cu, 0);
+  dwarf2_symbol_mark_computed (attr, sym, cu, 0, NULL);
   SYMBOL_CLASS (sym) = LOC_COMPUTED;
 
   if (SYMBOL_COMPUTED_OPS (sym) == &dwarf2_loclist_funcs)
@@ -18167,10 +18226,42 @@ fill_in_loclist_baton (struct dwarf2_cu *cu,
   baton->from_dwo = cu->dwo_unit != NULL;
 }
 
+/* A helper function that fills in a dwarf2_locexpr_baton.  */
+
+static void
+fill_in_locexpr_baton (struct dwarf2_cu *cu,
+		       struct dwarf2_locexpr_baton *baton,
+		       struct attribute *attr)
+{
+  struct dwarf2_section_info *section = cu_debug_loc_section (cu);
+
+  dwarf2_read_section (dwarf2_per_objfile->objfile, section);
+
+  baton->per_cu = cu->per_cu;
+  gdb_assert (baton->per_cu);
+  if (attr_form_is_block (attr))
+    {
+      /* Note that we're just copying the block's data pointer
+	 here, not the actual data.  We're still pointing into the
+	 info_buffer for SYM's objfile; right now we never release
+	 that buffer, but when we do clean up properly this may
+	 need to change.  */
+      baton->size = DW_BLOCK (attr)->size;
+      baton->data = DW_BLOCK (attr)->data;
+    }
+  else
+    {
+      dwarf2_invalid_attrib_class_complaint ("location description",
+					     "FIXME");
+      baton->size = 0;
+    }
+}
+
 static void
 dwarf2_symbol_mark_computed (struct attribute *attr, struct symbol *sym,
 			     struct dwarf2_cu *cu,
-			     int need_block_field)
+			     int need_block_field,
+			     struct dwarf2_locexpr_baton *link_baton)
 {
   struct objfile *objfile = dwarf2_per_objfile->objfile;
   struct dwarf2_section_info *section = cu_debug_loc_section (cu);
@@ -18189,6 +18280,7 @@ dwarf2_symbol_mark_computed (struct attribute *attr, struct symbol *sym,
 			      : sizeof (struct dwarf2_loclist_baton)));
 
       fill_in_loclist_baton (cu, baton, attr);
+      baton->frame_base = link_baton;
 
       if (cu->base_known == 0)
 	complaint (&symfile_complaints,
@@ -18208,25 +18300,9 @@ dwarf2_symbol_mark_computed (struct attribute *attr, struct symbol *sym,
 			     (need_block_field
 			      ? sizeof (struct dwarf2_locexpr_block_baton)
 			      : sizeof (struct dwarf2_locexpr_baton)));
-      baton->per_cu = cu->per_cu;
-      gdb_assert (baton->per_cu);
 
-      if (attr_form_is_block (attr))
-	{
-	  /* Note that we're just copying the block's data pointer
-	     here, not the actual data.  We're still pointing into the
-	     info_buffer for SYM's objfile; right now we never release
-	     that buffer, but when we do clean up properly this may
-	     need to change.  */
-	  baton->size = DW_BLOCK (attr)->size;
-	  baton->data = DW_BLOCK (attr)->data;
-	}
-      else
-	{
-	  dwarf2_invalid_attrib_class_complaint ("location description",
-						 SYMBOL_NATURAL_NAME (sym));
-	  baton->size = 0;
-	}
+      fill_in_locexpr_baton (cu, baton, attr);
+      baton->frame_base = link_baton;
 
       SYMBOL_COMPUTED_OPS (sym) = (need_block_field
 				   ? &dwarf2_locexpr_block_funcs
