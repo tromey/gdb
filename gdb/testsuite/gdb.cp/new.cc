@@ -113,6 +113,10 @@ struct Base
     free (ptr);
   }
 
+  Base()
+  {
+  }
+
   virtual ~Base()
   {
   }
@@ -133,11 +137,36 @@ struct DerivedFromBase : public Base
   }
 };
 
+struct VDerived : public virtual Base
+{
+  VDerived () : Base()
+  {
+  }
+
+  ~VDerived()
+  {
+  }
+};
+
+struct VDerived2 : public VDerived, public virtual Base
+{
+  VDerived2 () : VDerived (), Base ()
+  {
+  }
+
+  ~VDerived2()
+  {
+  }
+};
+
 int keep_stuff ()
 {
   delete new HasOps;
   delete[] new HasOps[5];
   delete new DerivedFromBase;
+  delete new Base;
+  delete new VDerived;
+  delete new VDerived2;
 }
 
 int main ()
