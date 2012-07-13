@@ -1,4 +1,4 @@
-# Copyright (C) 2011 Free Software Foundation, Inc.
+# Copyright (C) 2011, 2012 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@ class _MemoizeFunction(gdb.Function):
     By default, GDB will call malloc for each new string created in
     the inferior.  This function memoizes such strings, so that it is
     only allocated a single time.  Note that this means that writes to
-    the memoized string will be shared by all invocation."""
+    the memoized string will be shared by all invocations."""
 
     def __init__(self):
         super(_MemoizeFunction, self).__init__('_memoize')
@@ -46,6 +46,9 @@ class _MemoizeFunction(gdb.Function):
 
         strvalue = str(value)
         if strvalue not in _infmap[inferior]:
+            # Coerce to the inferior to make sure we allocate it a
+            # single time.
+            value = value.address.dereference()
             _infmap[strvalue] = value
 
         return _infmap[strvalue]
