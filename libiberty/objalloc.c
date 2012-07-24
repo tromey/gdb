@@ -1,5 +1,5 @@
 /* objalloc.c -- routines to allocate memory for objects
-   Copyright 1997-2012 Free Software Foundation, Inc.
+   Copyright 1997-2012, 2014 Free Software Foundation, Inc.
    Written by Ian Lance Taylor, Cygnus Solutions.
 
 This program is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ extern void free (PTR);
 #endif
 
 #endif
+
+#include <valgrind/memcheck.h>
 
 /* These routines allocate space for an object.  Freeing allocated
    space may or may not free all more recently allocated space.
@@ -92,6 +94,8 @@ objalloc_create (void)
   if (ret == NULL)
     return NULL;
 
+  VALGRIND_CREATE_MEMPOOL (ret, 0, 0);
+
   ret->chunks = (PTR) malloc (CHUNK_SIZE);
   if (ret->chunks == NULL)
     {
@@ -105,6 +109,7 @@ objalloc_create (void)
 
   ret->current_ptr = (char *) chunk + CHUNK_HEADER_SIZE;
   ret->current_space = CHUNK_SIZE - CHUNK_HEADER_SIZE;
+  VALGRIND_MAKE_MEM_NOACCESS (ret->current_ptr, ret->current_space);
 
   return ret;
 }
@@ -130,6 +135,7 @@ _objalloc_alloc (struct objalloc *o, unsigned long original_len)
 
   if (len <= o->current_space)
     {
+      VALGRIND_MEMPOOL_ALLOC (o, o->current_ptr, len);
       o->current_ptr += len;
       o->current_space -= len;
       return (PTR) (o->current_ptr - len);
@@ -150,6 +156,9 @@ _objalloc_alloc (struct objalloc *o, unsigned long original_len)
 
       o->chunks = (PTR) chunk;
 
+      VALGRIND_MAKE_MEM_NOACCESS (ret + CHUNK_HEADER_SIZE,
+				  CHUNK_SIZE - CHUNK_HEADER_SIZE);
+      VALGRIND_MEMPOOL_ALLOC (o, ret + CHUNK_HEADER_SIZE, len);
       return (PTR) (ret + CHUNK_HEADER_SIZE);
     }
   else
@@ -167,6 +176,8 @@ _objalloc_alloc (struct objalloc *o, unsigned long original_len)
 
       o->chunks = (PTR) chunk;
 
+      VALGRIND_MAKE_MEM_NOACCESS (o->current_ptr, o->current_space);
+
       return objalloc_alloc (o, len);
     }
 }
@@ -177,6 +188,8 @@ void
 objalloc_free (struct objalloc *o)
 {
   struct objalloc_chunk *l;
+
+  VALGRIND_DESTROY_MEMPOOL (o);
 
   l = (struct objalloc_chunk *) o->chunks;
   while (l != NULL)
@@ -190,6 +203,25 @@ objalloc_free (struct objalloc *o)
 
   free (o);
 }
+
+/* Free a chunk.  */
+
+static void
+free_chunk (struct objalloc *o, struct objalloc_chunk *chunk)
+{
+  if (chunk->current_ptr)
+    VALGRIND_MEMPOOL_FREE (o, ((char *) chunk) + CHUNK_HEADER_SIZE);
+  else
+    {
+      /* Small objects.  */
+      VALGRIND_MEMPOOL_TRIM (o, ((char *) chunk) + CHUNK_HEADER_SIZE, 0);
+    }
+
+  free (chunk);
+}
+
+#define PTR_IN_CHUNK(P, CHUNK) \
+  (((P) > ((char *) CHUNK)) && ((P) < ((char *) (CHUNK) + CHUNK_SIZE)))
 
 /* Free a block from an objalloc structure.  This also frees all more
    recently allocated blocks.  */
@@ -207,7 +239,7 @@ objalloc_free_block (struct objalloc *o, PTR block)
     {
       if (p->current_ptr == NULL)
 	{
-	  if (b > (char *) p && b < (char *) p + CHUNK_SIZE)
+	  if (PTR_IN_CHUNK (b, p))
 	    break;
 	  small = p;
 	}
@@ -245,10 +277,15 @@ objalloc_free_block (struct objalloc *o, PTR block)
 	    {
 	      if (small == q)
 		small = NULL;
-	      free (q);
+	      free_chunk (o, q);
 	    }
 	  else if (q->current_ptr > b)
-	    free (q);
+	    {
+	      /* It's not obvious */
+	      if (!PTR_IN_CHUNK (q->current_ptr, p))
+		abort();
+	      free_chunk (o, q);
+	    }
 	  else if (first == NULL)
 	    first = q;
 
@@ -262,6 +299,9 @@ objalloc_free_block (struct objalloc *o, PTR block)
       /* Now start allocating from this small block again.  */
       o->current_ptr = b;
       o->current_space = ((char *) p + CHUNK_SIZE) - b;
+
+      VALGRIND_MEMPOOL_TRIM (o, ((char *) p + CHUNK_SIZE),
+			     o->current_ptr - ((char *) p + CHUNK_SIZE));
     }
   else
     {
@@ -283,7 +323,7 @@ objalloc_free_block (struct objalloc *o, PTR block)
 	  struct objalloc_chunk *next;
 
 	  next = q->next;
-	  free (q);
+	  free_chunk (o, q);
 	  q = next;
 	}
 
@@ -294,5 +334,7 @@ objalloc_free_block (struct objalloc *o, PTR block)
 
       o->current_ptr = current_ptr;
       o->current_space = ((char *) p + CHUNK_SIZE) - current_ptr;
+      VALGRIND_MEMPOOL_TRIM (o, ((char *) p + CHUNK_SIZE),
+			     o->current_ptr - ((char *) p + CHUNK_SIZE));
     }
 }

@@ -1,5 +1,5 @@
 /* objalloc.h -- routines to allocate memory for objects
-   Copyright 1997-2012 Free Software Foundation, Inc.
+   Copyright 1997-2012, 2014 Free Software Foundation, Inc.
    Written by Ian Lance Taylor, Cygnus Solutions.
 
 This program is free software; you can redistribute it and/or modify it
@@ -75,7 +75,11 @@ extern void *_objalloc_alloc (struct objalloc *, unsigned long);
    gcc, because otherwise we would have to evaluate the arguments
    multiple times, or use a temporary field as obstack.h does.  */
 
-#if defined (__GNUC__) && defined (__STDC__) && __STDC__
+/* Disabled for valgrind awareness.
+   There's no "libiberty-config.h" so there's no really good way to
+   detect this right now.  */
+
+#if 0 &&  defined (__GNUC__) && defined (__STDC__) && __STDC__
 
 /* NextStep 2.0 cc is really gcc 1.93 but it defines __GNUC__ = 2 and
    does not implement __extension__.  But that compiler doesn't define
