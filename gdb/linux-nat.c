@@ -241,6 +241,11 @@ static int linux_supports_tracesysgood_flag = -1;
 
 static int linux_supports_tracevforkdone_flag = -1;
 
+/* This variable is a tri-state flag: -1 for unknown, 0 if
+   PTRACE_O_TRACEEXIT can not be used, 1 if it can.  */
+
+static int linux_supports_traceexit_flag = -1;
+
 /* Stores the current used ptrace() options.  */
 static int current_ptrace_options = 0;
 
@@ -562,6 +567,38 @@ linux_enable_tracesysgood (ptid_t ptid)
   ptrace (PTRACE_SETOPTIONS, pid, 0, current_ptrace_options);
 }
 
+/* Determine if PTRACE_O_TRACEEXIT can be used to follow syscalls.
+
+   We try to enable exit tracing on ORIGINAL_PID.  If this fails,
+   we know that the feature is not available.  This may change the tracing
+   options for ORIGINAL_PID, but we'll be setting them shortly anyway.  */
+
+static void
+linux_test_for_traceexit (int original_pid)
+{
+  int ret;
+  sigset_t prev_mask;
+
+  /* We don't want those ptrace calls to be interrupted.  */
+  block_child_signals (&prev_mask);
+
+  ret = ptrace (PTRACE_SETOPTIONS, original_pid, 0, PTRACE_O_TRACEEXIT);
+  linux_supports_traceexit_flag = (ret == 0);
+
+  restore_child_signals_mask (&prev_mask);
+}
+
+/* Determine wether we support PTRACE_O_TRACEEXIT option available.
+   This function also sets linux_supports_traceexit_flag.  */
+
+static int
+linux_supports_traceexit (int pid)
+{
+  if (linux_supports_traceexit_flag == -1)
+    linux_test_for_traceexit (pid);
+  return linux_supports_traceexit_flag;
+}
+
 
 void
 linux_enable_event_reporting (ptid_t ptid)
@@ -571,17 +608,19 @@ linux_enable_event_reporting (ptid_t ptid)
   if (pid == 0)
     pid = ptid_get_pid (ptid);
 
-  if (! linux_supports_tracefork (pid))
-    return;
+  current_ptrace_options = 0;
 
-  current_ptrace_options |= PTRACE_O_TRACEFORK | PTRACE_O_TRACEVFORK
-    | PTRACE_O_TRACEEXEC | PTRACE_O_TRACECLONE;
+  if (linux_supports_tracefork (pid))
+    {
+      current_ptrace_options |= (PTRACE_O_TRACEFORK | PTRACE_O_TRACEVFORK
+				 | PTRACE_O_TRACEEXEC | PTRACE_O_TRACECLONE);
 
-  if (linux_supports_tracevforkdone (pid))
-    current_ptrace_options |= PTRACE_O_TRACEVFORKDONE;
+      if (linux_supports_tracevforkdone (pid))
+	current_ptrace_options |= PTRACE_O_TRACEVFORKDONE;
+    }
 
-  /* Do not enable PTRACE_O_TRACEEXIT until GDB is more prepared to support
-     read-only process state.  */
+  if (linux_supports_traceexit (pid))
+    current_ptrace_options |= PTRACE_O_TRACEEXIT;
 
   ptrace (PTRACE_SETOPTIONS, pid, 0, current_ptrace_options);
 }
@@ -1007,6 +1046,18 @@ linux_child_set_syscall_catchpoint (int pid, int needed, int any_count,
 
      Also, we do not use the `table' information because we do not
      filter system calls here.  We let GDB do the logic for us.  */
+  return 0;
+}
+
+static int
+linux_child_insert_exit_catchpoint (int pid)
+{
+  return !linux_supports_traceexit (pid);
+}
+
+static int
+linux_child_remove_exit_catchpoint (int pid)
+{
   return 0;
 }
 
@@ -2490,6 +2541,22 @@ linux_handle_extended_wait (struct lwp_info *lp, int status,
 			    "from LWP %ld: resuming\n",
 			    GET_LWP (lp->ptid));
       ptrace (PTRACE_CONT, GET_LWP (lp->ptid), 0, 0);
+      return 1;
+    }
+
+  if (event == PTRACE_EVENT_EXIT)
+    {
+      unsigned long exit_status;
+
+      if (debug_linux_nat)
+	fprintf_unfiltered (gdb_stdlog,
+			    "LHEW: Got PTRACE_EVENT_EXIT "
+			    "from LWP %d: stopping\n",
+			    pid);
+
+      ptrace (PTRACE_GETEVENTMSG, pid, 0, &exit_status);
+      ourstatus->kind = TARGET_WAITKIND_EXITING;
+      ourstatus->value.integer = (int) exit_status;
       return 1;
     }
 
@@ -4728,6 +4795,8 @@ linux_target_install_ops (struct target_ops *t)
   t->to_insert_exec_catchpoint = linux_child_insert_exec_catchpoint;
   t->to_remove_exec_catchpoint = linux_child_remove_exec_catchpoint;
   t->to_set_syscall_catchpoint = linux_child_set_syscall_catchpoint;
+  t->to_insert_exit_catchpoint = linux_child_insert_exit_catchpoint;
+  t->to_remove_exit_catchpoint = linux_child_remove_exit_catchpoint;
   t->to_pid_to_exec_file = linux_child_pid_to_exec_file;
   t->to_post_startup_inferior = linux_child_post_startup_inferior;
   t->to_post_attach = linux_child_post_attach;

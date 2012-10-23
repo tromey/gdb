@@ -64,6 +64,9 @@ target_waitstatus_to_string (const struct target_waitstatus *ws)
       return xstrprintf ("%sentered syscall", kind_str);
     case TARGET_WAITKIND_SYSCALL_RETURN:
       return xstrprintf ("%sexited syscall", kind_str);
+    case TARGET_WAITKIND_EXITING:
+      return xstrprintf ("%sexiting, status = %d",
+			 kind_str, ws->value.integer);
     case TARGET_WAITKIND_SPURIOUS:
       return xstrprintf ("%sspurious", kind_str);
     case TARGET_WAITKIND_IGNORE:

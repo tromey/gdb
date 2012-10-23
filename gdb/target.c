@@ -381,6 +381,22 @@ target_has_execution_current (void)
   return target_has_execution_1 (inferior_ptid);
 }
 
+/* See target.h.  */
+
+int
+target_insert_exit_catchpoint (int pid)
+{
+  return current_target.to_insert_exit_catchpoint (pid);
+}
+
+/* See target.h.  */
+
+int
+target_remove_exit_catchpoint (int pid)
+{
+  return current_target.to_remove_exit_catchpoint (pid);
+}
+
 /* Complete initialization of T.  This ensures that various fields in
    T are set, if needed by the target implementation.  */
 
@@ -671,6 +687,8 @@ update_current_target (void)
       INHERIT (to_insert_exec_catchpoint, t);
       INHERIT (to_remove_exec_catchpoint, t);
       INHERIT (to_set_syscall_catchpoint, t);
+      INHERIT (to_insert_exit_catchpoint, t);
+      INHERIT (to_remove_exit_catchpoint, t);
       INHERIT (to_has_exited, t);
       /* Do not inherit to_mourn_inferior.  */
       INHERIT (to_can_run, t);
@@ -851,6 +869,12 @@ update_current_target (void)
 	    return_one);
   de_fault (to_set_syscall_catchpoint,
 	    (int (*) (int, int, int, int, int *))
+	    return_one);
+  de_fault (to_insert_exit_catchpoint,
+	    (int (*) (int))
+	    return_one);
+  de_fault (to_remove_exit_catchpoint,
+	    (int (*) (int))
 	    return_one);
   de_fault (to_has_exited,
 	    (int (*) (int, int, int *))
@@ -4820,6 +4844,32 @@ debug_to_remove_exec_catchpoint (int pid)
 }
 
 static int
+debug_to_insert_exit_catchpoint (int pid)
+{
+  int retval;
+
+  retval = debug_target.to_insert_exit_catchpoint (pid);
+
+  fprintf_unfiltered (gdb_stdlog, "target_insert_exit_catchpoint (%d) = %d\n",
+		      pid, retval);
+
+  return retval;
+}
+
+static int
+debug_to_remove_exit_catchpoint (int pid)
+{
+  int retval;
+
+  retval = debug_target.to_remove_exit_catchpoint (pid);
+
+  fprintf_unfiltered (gdb_stdlog, "target_remove_exit_catchpoint (%d) = %d\n",
+		      pid, retval);
+
+  return retval;
+}
+
+static int
 debug_to_has_exited (int pid, int wait_status, int *exit_status)
 {
   int has_exited;
@@ -4929,6 +4979,8 @@ setup_target_debug (void)
   current_target.to_remove_vfork_catchpoint = debug_to_remove_vfork_catchpoint;
   current_target.to_insert_exec_catchpoint = debug_to_insert_exec_catchpoint;
   current_target.to_remove_exec_catchpoint = debug_to_remove_exec_catchpoint;
+  current_target.to_insert_exit_catchpoint = debug_to_insert_exit_catchpoint;
+  current_target.to_remove_exit_catchpoint = debug_to_remove_exit_catchpoint;
   current_target.to_has_exited = debug_to_has_exited;
   current_target.to_can_run = debug_to_can_run;
   current_target.to_stop = debug_to_stop;

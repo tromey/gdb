@@ -89,6 +89,10 @@ enum target_waitkind
   TARGET_WAITKIND_SYSCALL_ENTRY,
   TARGET_WAITKIND_SYSCALL_RETURN,
 
+  /* The program is about to exit, but registers are still
+     available.  The exit status is in value.integer.  */
+  TARGET_WAITKIND_EXITING,
+
   /* Nothing happened, but we stopped anyway.  This perhaps should be handled
      within target_wait, but I'm not sure target_wait should be resuming the
      inferior.  */

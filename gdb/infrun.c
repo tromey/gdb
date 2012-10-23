@@ -3689,6 +3689,17 @@ handle_inferior_event (struct execution_control_state *ecs)
         return;
       goto process_event_stop_test;
 
+    case TARGET_WAITKIND_EXITING:
+      if (debug_infrun)
+        fprintf_unfiltered (gdb_stdlog, "infrun: TARGET_WAITKIND_EXITING\n");
+      ecs->event_thread->control.stop_bpstat
+	= bpstat_stop_status (get_regcache_aspace (get_current_regcache ()),
+			      stop_pc, ecs->ptid, &ecs->ws);
+      ecs->random_signal
+	= !bpstat_explains_signal (ecs->event_thread->control.stop_bpstat,
+				   GDB_SIGNAL_TRAP);
+      goto process_event_stop_test;
+
     case TARGET_WAITKIND_STOPPED:
       if (debug_infrun)
         fprintf_unfiltered (gdb_stdlog, "infrun: TARGET_WAITKIND_STOPPED\n");
