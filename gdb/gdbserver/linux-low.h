@@ -117,6 +117,10 @@ struct process_info_private
      LWP of this process but it has not stopped yet.  As soon as it
      does, we need to call the low target's arch_setup callback.  */
   int new_inferior;
+
+  /* This is a count of how many times an exit catchpoint has been
+     requested for this process.  */
+  unsigned int catchpoint_count;
 };
 
 struct lwp_info;

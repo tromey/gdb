@@ -4923,6 +4923,56 @@ linux_stopped_data_address (void)
   return lwp->stopped_data_address;
 }
 
+/* This variable is a tri-state flag: -1 for unknown, 0 if
+   PTRACE_O_TRACEEXIT can not be used, 1 if it can.  */
+
+static int linux_supports_traceexit_flag = -1;
+
+/* Determine if PTRACE_O_TRACEEXIT can be used to follow syscalls.
+
+   We try to enable exit tracing on ORIGINAL_PID.  If this fails,
+   we know that the feature is not available.  This may change the tracing
+   options for ORIGINAL_PID, but we'll be setting them shortly anyway.  */
+
+static void
+linux_test_for_traceexit (pid_t original_pid)
+{
+  int ret;
+
+  ret = ptrace (PTRACE_SETOPTIONS, original_pid, 0, PTRACE_O_TRACEEXIT);
+  linux_supports_traceexit_flag = (ret == 0);
+}
+
+/* Determine wether we support PTRACE_O_TRACEEXIT option available.
+   This function also sets linux_supports_traceexit_flag.  */
+
+static int
+linux_supports_traceexit (pid_t pid)
+{
+  if (linux_supports_traceexit_flag == -1)
+    linux_test_for_traceexit (pid);
+  return linux_supports_traceexit_flag;
+}
+
+
+static int
+linux_handle_exit_catchpoint (int insert)
+{
+  pid_t pid = lwpid_of (get_thread_lwp (current_inferior));
+  struct process_info_private *const priv = current_process ()->private;
+
+  if (linux_supports_traceexit_flag (pid) == 0)
+    return 0;
+
+  if (insert)
+    ++priv->catchpoint_count;
+  else
+    --priv->catchpoint_count;
+
+  /* fixme; */
+  return 0;
+}
+
 #if defined(__UCLIBC__) && defined(HAS_NOMMU)	      \
     && defined(PT_TEXT_ADDR) && defined(PT_DATA_ADDR) \
     && defined(PT_TEXT_END_ADDR)
@@ -6065,6 +6115,7 @@ static struct target_ops linux_target_ops = {
   NULL,
 #endif
   linux_supports_range_stepping,
+  linux_handle_exit_catchpoint
 };
 
 static void

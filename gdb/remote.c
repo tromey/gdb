@@ -1304,6 +1304,7 @@ enum {
   PACKET_Qbtrace_off,
   PACKET_Qbtrace_bts,
   PACKET_qXfer_btrace,
+  PACKET_QExiting,
   PACKET_MAX
 };
 
@@ -4037,7 +4038,8 @@ static struct protocol_feature remote_protocol_features[] = {
   { "Qbtrace:off", PACKET_DISABLE, remote_supported_packet, PACKET_Qbtrace_off },
   { "Qbtrace:bts", PACKET_DISABLE, remote_supported_packet, PACKET_Qbtrace_bts },
   { "qXfer:btrace:read", PACKET_DISABLE, remote_supported_packet,
-    PACKET_qXfer_btrace }
+    PACKET_qXfer_btrace },
+  { "QExiting", PACKET_DISABLE, remote_supported_packet, PACKET_QExiting }
 };
 
 static char *remote_support_xml;
@@ -7774,6 +7776,38 @@ getpkt_or_notif_sane (char **buf, long *sizeof_buf, int forever,
 {
   return getpkt_or_notif_sane_1 (buf, sizeof_buf, forever, 1,
 				 is_notif);
+}
+
+
+
+static int
+remote_handle_exit_catchpoint (int set)
+{
+  struct remote_state *rs;
+  char *reply;
+
+  if (remote_protocol_packets[PACKET_QExiting].support != PACKET_ENABLE)
+    return 1;
+  
+  rs = get_remote_state ();
+  xsnprintf (rs->buf, get_remote_packet_size (), "QExiting:%x", set);
+  putpkt (rs->buf);
+  reply = remote_get_noisy_reply (&target_buf, &target_buf_size);
+  if (*reply == '\0')
+    return 1;
+  return strcmp (reply, "OK") == 0 ? 1 : -1;
+}
+
+static int
+remote_insert_exit_catchpoint (int pid)
+{
+  return remote_handle_exit_catchpoint (1);
+}
+
+static int
+remote_remove_exit_catchpoint (int pid)
+{
+  return remote_handle_exit_catchpoint (0);
 }
 
 
@@ -11587,6 +11621,8 @@ Specify the serial device it is connected to\n\
   remote_ops.to_read_btrace = remote_read_btrace;
   remote_ops.to_augmented_libraries_svr4_read =
     remote_augmented_libraries_svr4_read;
+  remote_ops.to_insert_exit_catchpoint = remote_insert_exit_catchpoint;
+  remote_ops.to_remove_exit_catchpoint = remote_remove_exit_catchpoint;
 }
 
 /* Set up the extended remote vector by making a copy of the standard

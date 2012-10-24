@@ -362,6 +362,10 @@ struct target_ops
 
   /* Return true if target supports range stepping.  */
   int (*supports_range_stepping) (void);
+
+  /* Handle a request to set or clear an exit catchpoint.  Returns 0
+     on success, 1 on failure.  */
+  int (*handle_exit_catchpoint) (int);
 };
 
 extern struct target_ops *the_target;
