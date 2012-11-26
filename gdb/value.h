@@ -859,6 +859,16 @@ extern struct value *value_x_binop (struct value *arg1, struct value *arg2,
 extern struct value *value_x_unop (struct value *arg1, enum exp_opcode op,
 				   enum noside noside);
 
+extern struct value *value_operator_new (int global_new, struct type *type,
+					 int argc, struct value **argv);
+
+extern void value_construct (struct type *type, int argc, struct value **argv);
+
+extern void value_operator_delete (int global_del, int is_array,
+				   struct value *object);
+
+extern struct value *value_destruct (struct value *object, int is_array);
+
 extern struct value *value_fn_field (struct value **arg1p, struct fn_field *f,
 				     int j, struct type *type, int offset);
 

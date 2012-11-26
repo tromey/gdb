@@ -30,6 +30,7 @@
 #include <math.h>
 #include "infcall.h"
 #include "exceptions.h"
+#include "cp-abi.h"
 
 /* Define whether or not the C operator '/' truncates towards zero for
    differently signed operands (truncation direction is undefined in C).  */
@@ -600,6 +601,329 @@ value_x_unop (struct value *arg1, enum exp_opcode op, enum noside noside)
 
   return 0;			/* For lint -- never reached */
 }
+
+/* Call the appropriate 'operator new' to allocate memory.
+
+   GLOBAL_NEW is true if the global ::operator new should be used.
+
+   TYPE is the type being allocated.  If it is an array type,
+   'operator new[]' is used.
+
+   ARGV are the arguments to the operator.  The calling convention
+   here is a little funny in that ARGV[0] must be NULL -- it may be
+   filled in during overload searching.  ARGV[1] should be the size of
+   the allocation.
+
+   ARGC is the number of arguments in ARGV, including the initial
+   empty slot.
+
+   Returns a newly-allocated object; or throws an exception on error.  */
+
+struct value *
+value_operator_new (int global_new, struct type *type,
+		    int argc, struct value **argv)
+{
+  enum oload_search_type method = BOTH;
+  struct value *function = NULL;
+  struct symbol *sym = NULL;
+  const char *opname = "operator new";
+  int static_memfunp;
+
+  gdb_assert (argv[0] == NULL);
+
+  if (TYPE_CODE (type) == TYPE_CODE_ARRAY)
+    {
+      opname = "operator new[]";
+      while (TYPE_CODE (type) == TYPE_CODE_ARRAY)
+	type = check_typedef (TYPE_TARGET_TYPE (type));
+    }
+  if (!global_new && TYPE_CODE (type) == TYPE_CODE_STRUCT)
+    {
+      volatile struct gdb_exception except;
+      struct value *arg;
+
+      argv[0] = value_zero (type, lval_memory);
+      arg = argv[0];
+      TRY_CATCH (except, RETURN_MASK_ERROR)
+	{
+	  find_overload_match (argv, argc, opname, METHOD,
+			       0 /* strict match */, &arg, NULL,
+			       &function, &sym, &static_memfunp, 1);
+	}
+      if (except.reason < 0)
+	{
+	  sym = NULL;
+	  function = NULL;
+	}
+    }
+
+  if (sym == NULL && function == NULL)
+    find_overload_match (argv + 1, argc - 1, opname, NON_METHOD,
+			 0 /* strict match */, NULL, NULL,
+			 NULL, &sym, NULL, 1);
+
+  if (sym != NULL)
+    function = value_of_variable (sym, 0);
+
+  if (function == NULL)
+    throw_error (NOT_FOUND_ERROR,
+		 _("could not find appropriate '%s'"), opname);
+
+  return call_function_by_hand (function, argc - 1, argv + 1);
+}
+
+/* Call a constructor for a new object.
+
+   TYPE is the type whose constructor is to be called.
+   ARGC and ARGV are the arguments to pass to the constructor.  At
+   least one argument is required -- the object itself.
+
+   Ordinarily TYPE must refer to a type that can have a constructor,
+   like a class.  However, it can also refer to a scalar type if there
+   are one or two arguments.  In the one-argument case, nothing is
+   done.  In the two-argument case, the argument is treated as an
+   initializer.
+
+   This performs an inferior function call and throws an exception on
+   any error.  */
+
+void
+value_construct (struct type *type, int argc, struct value **argv)
+{
+  struct symbol *sym = NULL;
+  struct value *function = NULL;
+  int i;
+  const char *constr_name;
+
+  gdb_assert (argc >= 1);
+
+  if (TYPE_CODE (type) == TYPE_CODE_PTR
+      || TYPE_CODE (type) == TYPE_CODE_ENUM
+      || TYPE_CODE (type) == TYPE_CODE_INT
+      || TYPE_CODE (type) == TYPE_CODE_FLT
+      || TYPE_CODE (type) == TYPE_CODE_BOOL
+      || TYPE_CODE (type) == TYPE_CODE_DECFLOAT)
+    {
+      struct value *mem, *val;
+
+      if (argc == 1)
+	return;
+
+      if (argc != 2)
+	error (_("too many arguments to construct for '%s'"),
+	       TYPE_SAFE_NAME (type));
+
+      mem = value_ind (argv[0]);
+      val = value_cast (value_type (mem), argv[1]);
+      value_assign (mem, val);
+      return;
+    }
+
+  if (TYPE_CODE (type) != TYPE_CODE_STRUCT)
+    {
+      if (argc == 1)
+	return;
+      error (_("cannot pass arguments to 'new' of '%s'"),
+	     TYPE_SAFE_NAME (type));
+    }
+
+  /* Find the constructor name, if we can.  */
+  constr_name = NULL;
+  for (i = 0; constr_name == NULL && i < TYPE_NFN_FIELDS (type); ++i)
+    {
+      struct fn_field *f = TYPE_FN_FIELDLIST1 (type, i);
+      int j;
+
+      for (j = 0; j < TYPE_FN_FIELDLIST_LENGTH (type, i); ++j)
+	{
+	  if (TYPE_FN_FIELD_CONSTRUCTOR (f, j)
+	      || is_constructor_name (TYPE_FN_FIELD_PHYSNAME (f, j)))
+	    {
+	      constr_name = TYPE_FN_FIELDLIST_NAME (type, i);
+	      break;
+	    }
+	}
+    }
+
+  if (constr_name != NULL)
+    {
+      struct value *obj = value_ind (argv[0]);
+
+      find_overload_match (argv, argc, constr_name, METHOD, 0,
+			   &obj, NULL, &function, &sym, NULL, 1);
+    }
+
+  if (sym != NULL)
+    function = value_of_variable (sym, 0);
+
+  if (function == NULL)
+    {
+      /* No construct is fine for a POD.  */
+      if (argc == 1)
+	return;
+
+      throw_error (NOT_FOUND_ERROR,
+		   _("no matching constructor found for '%s'"),
+		   TYPE_SAFE_NAME (type));
+    }
+
+  call_function_by_hand (function, argc, argv);
+}
+
+/* Call the appropriate 'operator delete' to deallocate memory.
+
+   GLOBAL_DEL is true if the global ::operator delete should be
+   called.
+
+   IS_ARRAY is true if operator delete[] should be called.
+
+   OBJECT is the object to delete.
+
+   Throws an exception on error.  */
+
+void
+value_operator_delete (int global_del, int is_array, struct value *object)
+{
+  enum oload_search_type method = BOTH;
+  struct value *function = NULL;
+  struct symbol *sym = NULL;
+  const char *opname = "operator delete";
+  int static_memfunp;
+  struct type *type;
+  struct value *argv[2];
+  struct gdbarch *arch;
+
+  type = check_typedef (value_type (object));
+  gdb_assert (TYPE_CODE (type) == TYPE_CODE_PTR);
+  type = check_typedef (TYPE_TARGET_TYPE (type));
+  while (TYPE_CODE (type) == TYPE_CODE_ARRAY)
+    type = check_typedef (TYPE_TARGET_TYPE (type));
+
+  if (is_array)
+    opname = "operator delete[]";
+
+  arch = get_type_arch (type);
+  argv[1] = value_cast (lookup_pointer_type (builtin_type (arch)->builtin_void),
+			object);
+
+  if (!global_del && TYPE_CODE (type) == TYPE_CODE_STRUCT)
+    {
+      volatile struct gdb_exception except;
+      struct value *arg;
+
+      argv[0] = value_zero (type, lval_memory);
+      arg = argv[0];
+      TRY_CATCH (except, RETURN_MASK_ERROR)
+	{
+	  find_overload_match (argv, 2, opname, METHOD,
+			       0 /* strict match */, &arg, NULL,
+			       &function, &sym, &static_memfunp, 1);
+	}
+      if (except.reason < 0)
+	{
+	  sym = NULL;
+	  function = NULL;
+	}
+    }
+
+  if (sym == NULL && function == NULL)
+    find_overload_match (argv + 1, 1, opname, NON_METHOD,
+			 0 /* strict match */, NULL, NULL,
+			 NULL, &sym, NULL, 1);
+
+  if (sym != NULL)
+    function = value_of_variable (sym, 0);
+
+  if (function == NULL)
+    throw_error (NOT_FOUND_ERROR,
+		 _("could not find appropriate '%s'"), opname);
+
+  call_function_by_hand (function, 1, argv + 1);
+}
+
+/* Call a destructor for an object.
+
+   OBJECT is the object to destroy.
+
+   IS_ARRAY is true if this object represents an array.
+   
+   If IS_ARRAY is true and the base type of OBJECT has a destructor,
+   then this function will return a new value which is the memory that
+   was actually allocated by new[].  This will differ from OBJECT by
+   some padding.  In other cases, this function returns NULL.
+
+   This performs an inferior function call and throws an exception on
+   any error.  */
+
+struct value *
+value_destruct (struct value *object, int is_array)
+{
+  const char *destr_name;
+  struct type *type;
+  int i;
+  struct symbol *sym;
+  struct value *function;
+
+  type = check_typedef (value_type (object));
+  gdb_assert (TYPE_CODE (type) == TYPE_CODE_PTR);
+  type = check_typedef (TYPE_TARGET_TYPE (type));
+
+  while (TYPE_CODE (type) == TYPE_CODE_ARRAY)
+    type = check_typedef (TYPE_TARGET_TYPE (type));
+
+  if (TYPE_CODE (type) != TYPE_CODE_STRUCT)
+    return NULL;
+
+  /* Find the destructor name, if we can.  */
+  destr_name = NULL;
+  for (i = 0; destr_name == NULL && i < TYPE_NFN_FIELDS (type); ++i)
+    {
+      struct fn_field *f = TYPE_FN_FIELDLIST1 (type, i);
+      int j;
+
+      for (j = 0; j < TYPE_FN_FIELDLIST_LENGTH (type, i); ++j)
+	{
+	  if (TYPE_FN_FIELDLIST_NAME (type, i)[0] == '~'
+	      || is_destructor_name (TYPE_FN_FIELD_PHYSNAME (f, j)))
+	    {
+	      destr_name = TYPE_FN_FIELDLIST_NAME (type, i);
+	      break;
+	    }
+	}
+    }
+
+  /* No destructor is fine for a POD.  */
+  if (destr_name == NULL)
+    return NULL;
+
+  sym = lookup_symbol (destr_name, NULL, VAR_DOMAIN, NULL);
+  if (sym == NULL)
+    return NULL;
+
+  function = value_of_variable (sym, 0);
+
+  if (is_array)
+    {
+      struct value *new_vec;
+      struct value *elt_count_v = cp_get_vec_elts (object, &new_vec);
+      LONGEST iter, elt_count = value_as_long (elt_count_v);
+      struct value *ptr = value_cast (lookup_pointer_type (type), object);
+
+      for (iter = 0; iter < elt_count; ++iter)
+	{
+	  struct value *one_elt = ptr;
+
+	  call_function_by_hand (function, 1, &one_elt);
+	  ptr = value_ptradd (ptr, 1);
+	}
+
+      return new_vec;
+    }
+
+  call_function_by_hand (function, 1, &object);
+  return NULL;
+}
+
 
 
 /* Concatenate two values with the following conditions:
