@@ -1174,50 +1174,53 @@ symbol_file_add_with_addrs (bfd *abfd, const char *name,
   /* We either created a new mapped symbol table, mapped an existing
      symbol table file which has not had initial symbol reading
      performed, or need to read an unmapped symbol table.  */
-  if (should_print)
-    {
-      if (deprecated_pre_add_symbol_hook)
-	deprecated_pre_add_symbol_hook (name);
-      else
-	{
-	  printf_unfiltered (_("Reading symbols from %s..."), name);
-	  wrap_here ("");
-	  gdb_flush (gdb_stdout);
-	}
-    }
-  syms_from_objfile (objfile, addrs, add_flags);
+  {
+    std::string progress_text;
+
+    if (should_print)
+      {
+	if (deprecated_pre_add_symbol_hook)
+	  deprecated_pre_add_symbol_hook (name);
+
+	progress_text = std::string ("Reading symbols from ") + name;
+      }
+    else
+      progress_text = "";
+
+    ui_out::progress_meter meter (current_uiout, progress_text, should_print);
+    syms_from_objfile (objfile, addrs, add_flags);
+  }
 
   /* We now have at least a partial symbol table.  Check to see if the
      user requested that all symbols be read on initial access via either
      the gdb startup command line or on a per symbol file basis.  Expand
      all partial symbol tables for this objfile if so.  */
 
-  if ((flags & OBJF_READNOW))
-    {
-      if (should_print)
-	{
-	  printf_unfiltered (_("expanding to full symbols..."));
-	  wrap_here ("");
-	  gdb_flush (gdb_stdout);
-	}
+  {
+    if ((flags & OBJF_READNOW))
+      {
+	std::string progress_text;
 
-      if (objfile->sf)
-	objfile->sf->qf->expand_all_symtabs (objfile);
-    }
+	if (should_print)
+	  progress_text = std::string ("Expanding full symbols for ") + name;
+	else
+	  progress_text = "";
 
-  if (should_print && !objfile_has_symbols (objfile))
-    {
-      wrap_here ("");
-      printf_unfiltered (_("(no debugging symbols found)..."));
-      wrap_here ("");
-    }
+	ui_out::progress_meter meter (current_uiout, progress_text,
+				      should_print);
+
+	if (objfile->sf)
+	  objfile->sf->qf->expand_all_symtabs (objfile);
+      }
+  }
 
   if (should_print)
     {
+      if (!objfile_has_symbols (objfile))
+	printf_unfiltered (_(" (no debugging symbols found)\n"));
+
       if (deprecated_post_add_symbol_hook)
 	deprecated_post_add_symbol_hook ();
-      else
-	printf_unfiltered (_("done.\n"));
     }
 
   /* We print some messages regardless of whether 'from_tty ||
@@ -2499,10 +2502,6 @@ reread_symbols (void)
 	  struct cleanup *old_cleanups;
 	  struct section_offsets *offsets;
 	  int num_offsets;
-	  char *original_name;
-
-	  printf_unfiltered (_("`%s' has changed; re-reading symbols.\n"),
-			     objfile_name (objfile));
 
 	  /* There are various functions like symbol_file_add,
 	     symfile_bfd_open, syms_from_objfile, etc., which might
@@ -2517,6 +2516,11 @@ reread_symbols (void)
 	  old_cleanups = make_cleanup_free_objfile (objfile);
 	  /* We need to do this whenever any symbols go away.  */
 	  make_cleanup (clear_symtab_users_cleanup, 0 /*ignore*/);
+
+	  std::string text
+	    = (std::string (_("`%s' has changed; re-reading symbols.\n"))
+	       + objfile_name (objfile));
+	  ui_out::progress_meter meter (current_uiout, text, 1);
 
 	  if (exec_bfd != NULL
 	      && filename_cmp (bfd_get_filename (objfile->obfd),
@@ -2564,8 +2568,7 @@ reread_symbols (void)
 	      error (_("Can't open %s to read symbols."), obfd_filename);
 	  }
 
-	  original_name = xstrdup (objfile->original_name);
-	  make_cleanup (xfree, original_name);
+	  std::string original_name (objfile->original_name);
 
 	  /* bfd_openr sets cacheable to true, which is what we want.  */
 	  if (!bfd_check_format (objfile->obfd, bfd_object))
@@ -2614,8 +2617,9 @@ reread_symbols (void)
 	  set_objfile_per_bfd (objfile);
 
 	  objfile->original_name
-	    = (char *) obstack_copy0 (&objfile->objfile_obstack, original_name,
-				      strlen (original_name));
+	    = (char *) obstack_copy0 (&objfile->objfile_obstack,
+				      original_name.c_str (),
+				      original_name.length ());
 
 	  /* Reset the sym_fns pointer.  The ELF reader can change it
 	     based on whether .gdb_index is present, and we need it to

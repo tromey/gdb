@@ -236,6 +236,91 @@ cli_ui_out::do_redirect (ui_file *outstream)
     m_streams.pop_back ();
 }
 
+void
+cli_ui_out::do_progress_start (const std::string &name, int should_print)
+{
+  struct ui_file *stream = m_streams.back ();
+  cli_progress_info meter;
+
+  meter.last_value = 0;
+  meter.name = name;
+  if (!ui_file_isatty (stream))
+    {
+      fprintf_unfiltered (stream, "%s...", meter.name.c_str ());
+      gdb_flush (stream);
+      meter.printing = WORKING;
+    }
+  else
+    {
+      /* Don't actually emit anything until the first call notify us
+	 of progress.  This makes it so a second progress message can
+	 be started before the first one has been notified, without
+	 messy output.  */
+      meter.printing = should_print ? START : NO_PRINT;
+    }
+
+  m_meters.push_back (meter);
+}
+
+void
+cli_ui_out::do_progress_notify (double howmuch)
+{
+  struct ui_file *stream = m_streams.back ();
+  cli_progress_info &meter (m_meters.back ());
+
+  if (meter.printing == NO_PRINT)
+    return;
+
+  if (meter.printing == START)
+    {
+      fprintf_unfiltered (stream, "%s\n", meter.name.c_str ());
+      gdb_flush (stream);
+      meter.printing = WORKING;
+    }
+
+  if (ui_file_isatty (stream))
+    {
+      int i, max;
+      int width = get_chars_per_line () - 3;
+
+      max = width * howmuch;
+      fprintf_unfiltered (stream, "\r[");
+      for (i = 0; i < width; ++i)
+	fprintf_unfiltered (stream, i < max ? "#" : " ");
+      fprintf_unfiltered (stream, "]");
+      gdb_flush (stream);
+    }
+}
+
+void
+cli_ui_out::do_progress_end ()
+{
+  struct ui_file *stream = m_streams.back ();
+  cli_progress_info &meter = m_meters.back ();
+
+  if (meter.printing != NO_PRINT)
+    {
+      if (ui_file_isatty (stream))
+	{
+	  int i;
+	  int width = get_chars_per_line () - 3;
+
+	  fprintf_unfiltered (stream, "\r");
+	  for (i = 0; i < width + 2; ++i)
+	    fprintf_unfiltered (stream, " ");
+	  fprintf_unfiltered (stream, "\r");
+	  gdb_flush (stream);
+	}
+      else
+	{
+	  fprintf_unfiltered (stream, "done.\n");
+	  gdb_flush (stream);
+	}
+    }
+
+  m_meters.pop_back ();
+}
+
 /* local functions */
 
 /* Like cli_ui_out::do_field_fmt, but takes a variable number of args

@@ -155,6 +155,10 @@ extern void wrap_here (const char *);
 
 extern void reinitialize_more_filter (void);
 
+/* Return the number of characters in a line.  */
+
+extern int get_chars_per_line (void);
+
 extern int pagination_enabled;
 
 extern struct ui_file **current_ui_gdb_stdout_ptr (void);

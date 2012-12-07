@@ -1,3 +1,38 @@
+2016-07-03  Tom Tromey  <tom@tromey.com>
+
+	PR cli/19551:
+	* utils.h (get_chars_per_line): Declare.
+	* utils.c (get_chars_per_line): New function.
+	* ui-out.h (ui_out::progress_meter): New class.
+	(ui_out::progress, ui_out::do_progress_start)
+	(ui_out::do_progress_notify, ui_out::do_progress_end): New
+	methods.
+	* ui-out.c (do_progress_end)
+	(make_cleanup_ui_out_progress_begin_end, ui_out_progress): New
+	functions.
+	* symfile.c (symbol_file_add_with_addrs): Create a
+	progress_meter.
+	(symbol_file_add_with_addrs): Likewise.
+	* psymtab.c (require_partial_symbols): Create a progress_meter.
+	* mi/mi-out.h (mi_ui_out::do_progress_start)
+	(mi_ui_out::do_progress_notify, mi_ui_out::do_progress_end): New
+	methods.
+	* dwarf2read.c (create_cus_from_index_list): Call
+	ui_out::progress.  Add total_progress_steps argument.
+	(create_cus_from_index): Add total_progress_steps argument.
+	(create_signatured_type_table_from_index): Update.  Call
+	ui_out::progress.
+	(dwarf2_read_index): Update.
+	(dw2_expand_all_symtabs, dwarf2_build_psymtabs_hard): Call
+	ui_out::progress.
+	* cli-out.h (struct cli_ui_out) <do_progress_start,
+	do_progress_notify, do_progress_end>: New methods.
+	<enum meter_stat, struct cli_progress_info>: New.
+	<m_meters>: New member.
+	* cli-out.c (cli_ui_out::do_progress_start)
+	(cli_ui_out::do_progress_notify, cli_ui_out::do_progress_end): New
+	methods.
+
 2017-02-11  Tom Tromey  <tom@tromey.com>
 
 	PR cli/19551:

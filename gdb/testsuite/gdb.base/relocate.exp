@@ -38,7 +38,7 @@ foreach x {"-raednow" "readnow" "foo" "-readnow s"} {
 
 # Load the object file.
 gdb_test "add-symbol-file ${binfile} 0" \
-	"Reading symbols from .*${testfile}\\.o\\.\\.\\.done\\.(|\r\nUsing host libthread_db library .*libthread_db.so.*\\.)" \
+	"Reading symbols from .*${testfile}\\.o(|\r\nUsing host libthread_db library .*libthread_db.so.*\\.).*" \
 	"add-symbol-file ${testfile}.o 0" \
 	"add symbol table from file \".*${testfile}\\.o\" at\[ \t\r\n\]+\.text_addr = 0x0\[\r\n\]+\\(y or n\\) " \
 	"y"
@@ -87,7 +87,7 @@ gdb_test_no_output "set \$offset = 0x10000"
 
 # Load the object file.
 gdb_test "add-symbol-file ${binfile} \$offset" \
-	"Reading symbols from .*${testfile}\\.o\\.\\.\\.done\\.(|\r\nUsing host libthread_db library .*libthread_db.so.*\\.)" \
+	"Reading symbols from .*${testfile}\\.o(|\r\nUsing host libthread_db library .*libthread_db.so.*\\.).*" \
 	"add-symbol-file ${testfile}.o \$offset" \
 	"add symbol table from file \".*${testfile}\\.o\" at\[ \t\r\n\]+\.text_addr = 0x10000\[\r\n\]+\\(y or n\\) " \
 	"y"

@@ -72,6 +72,18 @@ protected:
   virtual bool do_is_mi_like_p () override
   { return true; }
 
+  virtual void do_progress_start (const std::string &, int) override
+  {
+  }
+
+  virtual void do_progress_notify (double) override
+  {
+  }
+
+  virtual void do_progress_end () override
+  {
+  }
+
 private:
 
   void field_separator ();

@@ -35,6 +35,7 @@
 #include "language.h"
 #include "cp-support.h"
 #include "gdbcmd.h"
+#include "common/gdb_optional.h"
 
 struct psymbol_bcache
 {
@@ -78,23 +79,22 @@ require_partial_symbols (struct objfile *objfile, int verbose)
 
       if (objfile->sf->sym_read_psymbols)
 	{
+	  gdb::optional<ui_out::progress_meter> meter;
+
 	  if (verbose)
 	    {
-	      printf_unfiltered (_("Reading symbols from %s..."),
-				 objfile_name (objfile));
-	      gdb_flush (gdb_stdout);
+	      std::string text = (std::string ("Reading symbols from ")
+				  + objfile_name (objfile));
+
+	      meter.emplace (current_uiout, text, verbose);
 	    }
+
 	  (*objfile->sf->sym_read_psymbols) (objfile);
+
 	  if (verbose)
 	    {
 	      if (!objfile_has_symbols (objfile))
-		{
-		  wrap_here ("");
-		  printf_unfiltered (_("(no debugging symbols found)..."));
-		  wrap_here ("");
-		}
-
-	      printf_unfiltered (_("done.\n"));
+		printf_unfiltered (_(" (no debugging symbols found)\n"));
 	    }
 	}
     }

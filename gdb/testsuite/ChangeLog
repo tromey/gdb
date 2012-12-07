@@ -1,3 +1,26 @@
+2016-07-03  Tom Tromey  <tom@tromey.com>
+
+	PR cli/19551:
+	* lib/mi-support.exp (mi_gdb_file_cmd): Update regexps.
+	* lib/gdb.exp (gdb_file_cmd): Update regexps.
+	* gdb.stabs/weird.exp: Update regexp.
+	* gdb.server/solib-list.exp: Update regexp.
+	* gdb.linespec/linespec.exp: Update regexp.
+	* gdb.dwarf2/dw2-stack-boundary.exp: Update regexp.
+	* gdb.dwarf2/dw2-objfile-overlap.exp: Update regexp.
+	* gdb.cp/cp-relocate.exp: Update regexp.
+	* gdb.base/sym-file.exp: Update regexps.
+	* gdb.base/sepdebug.exp: Update regexps.
+	* gdb.base/relocate.exp: Update regexps.
+	* gdb.base/print-symbol-loading.exp (test_load_core): Update regexp.
+	* gdb.base/kill-detach-inferiors-cmd.exp: Update regexp.
+	* gdb.base/dbx.exp (gdb_file_cmd): Update regexp.
+	* gdb.base/code_elim.exp: Update regexp.
+	* gdb.base/break-unload-file.exp (test_break): Update regexp.
+	* gdb.base/break-interp.exp (test_attach_gdb): Update regexp.
+	* gdb.base/break-idempotent.exp (force_breakpoint_re_set): Update regexp.
+	* gdb.base/attach.exp (do_attach_tests): Update regexp.
+
 2017-04-05  Sergio Durigan Junior  <sergiodj@redhat.com>
 
 	PR gdb/21352

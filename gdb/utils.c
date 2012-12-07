@@ -1847,6 +1847,14 @@ reinitialize_more_filter (void)
   chars_printed = 0;
 }
 
+/* See utils.h.  */
+
+int
+get_chars_per_line (void)
+{
+  return chars_per_line;
+}
+
 /* Indicate that if the next sequence of characters overflows the line,
    a newline should be inserted here rather than when it hits the end.
    If INDENT is non-null, it is a string to be printed to indent the

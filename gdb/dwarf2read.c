@@ -2940,7 +2940,8 @@ create_cus_from_index_list (struct objfile *objfile,
 			    const gdb_byte *cu_list, offset_type n_elements,
 			    struct dwarf2_section_info *section,
 			    int is_dwz,
-			    int base_offset)
+			    int base_offset,
+			    double total_progress_steps)
 {
   offset_type i;
 
@@ -2964,6 +2965,8 @@ create_cus_from_index_list (struct objfile *objfile,
 					struct dwarf2_per_cu_quick_data);
       the_cu->is_dwz = is_dwz;
       dwarf2_per_objfile->all_comp_units[base_offset + i / 2] = the_cu;
+
+      current_uiout->progress ((i + 2 * base_offset) / total_progress_steps);
     }
 }
 
@@ -2973,7 +2976,8 @@ create_cus_from_index_list (struct objfile *objfile,
 static void
 create_cus_from_index (struct objfile *objfile,
 		       const gdb_byte *cu_list, offset_type cu_list_elements,
-		       const gdb_byte *dwz_list, offset_type dwz_elements)
+		       const gdb_byte *dwz_list, offset_type dwz_elements,
+		       double total_progress_steps)
 {
   struct dwz_file *dwz;
 
@@ -2983,14 +2987,15 @@ create_cus_from_index (struct objfile *objfile,
 	       dwarf2_per_objfile->n_comp_units);
 
   create_cus_from_index_list (objfile, cu_list, cu_list_elements,
-			      &dwarf2_per_objfile->info, 0, 0);
+			      &dwarf2_per_objfile->info, 0, 0,
+			      total_progress_steps);
 
   if (dwz_elements == 0)
     return;
 
   dwz = dwarf2_get_dwz_file ();
   create_cus_from_index_list (objfile, dwz_list, dwz_elements, &dwz->info, 1,
-			      cu_list_elements / 2);
+			      cu_list_elements / 2, total_progress_steps);
 }
 
 /* Create the signatured type hash table from the index.  */
@@ -2999,7 +3004,9 @@ static void
 create_signatured_type_table_from_index (struct objfile *objfile,
 					 struct dwarf2_section_info *section,
 					 const gdb_byte *bytes,
-					 offset_type elements)
+					 offset_type elements,
+					 offset_type base_progress_step,
+					 double total_progress_steps)
 {
   offset_type i;
   htab_t sig_types_hash;
@@ -3044,6 +3051,8 @@ create_signatured_type_table_from_index (struct objfile *objfile,
       *slot = sig_type;
 
       dwarf2_per_objfile->all_type_units[i / 3] = sig_type;
+
+      current_uiout->progress ((base_progress_step + i) / total_progress_steps);
     }
 
   dwarf2_per_objfile->signatured_types = sig_types_hash;
@@ -3334,6 +3343,7 @@ dwarf2_read_index (struct objfile *objfile)
   const gdb_byte *cu_list, *types_list, *dwz_list = NULL;
   offset_type cu_list_elements, types_list_elements, dwz_list_elements = 0;
   struct dwz_file *dwz;
+  double total_progress_steps;
 
   if (!read_index_from_section (objfile, objfile_name (objfile),
 				use_deprecated_index_sections,
@@ -3368,8 +3378,11 @@ dwarf2_read_index (struct objfile *objfile)
 	}
     }
 
+  total_progress_steps = ((double) cu_list_elements + dwz_list_elements
+			  + types_list_elements);
+
   create_cus_from_index (objfile, cu_list, cu_list_elements, dwz_list,
-			 dwz_list_elements);
+			 dwz_list_elements, total_progress_steps);
 
   if (types_list_elements)
     {
@@ -3384,7 +3397,10 @@ dwarf2_read_index (struct objfile *objfile)
 			   dwarf2_per_objfile->types, 0);
 
       create_signatured_type_table_from_index (objfile, section, types_list,
-					       types_list_elements);
+					       types_list_elements,
+					       (cu_list_elements
+						+ dwz_list_elements),
+					       total_progress_steps);
     }
 
   create_addrmap_from_index (objfile, &local_map);
@@ -3939,16 +3955,17 @@ dw2_expand_symtabs_for_function (struct objfile *objfile,
 static void
 dw2_expand_all_symtabs (struct objfile *objfile)
 {
-  int i;
+  int i, count;
 
   dw2_setup (objfile);
 
-  for (i = 0; i < (dwarf2_per_objfile->n_comp_units
-		   + dwarf2_per_objfile->n_type_units); ++i)
+  count = dwarf2_per_objfile->n_comp_units + dwarf2_per_objfile->n_type_units;
+  for (i = 0; i < count; ++i)
     {
       struct dwarf2_per_cu_data *per_cu = dw2_get_cutu (i);
 
       dw2_instantiate_symtab (per_cu);
+      current_uiout->progress (i / (double) count);
     }
 }
 
@@ -6626,6 +6643,7 @@ dwarf2_build_psymtabs_hard (struct objfile *objfile)
   struct obstack temp_obstack;
   int i;
 
+  current_uiout->progress (0);
   if (dwarf_read_debug)
     {
       fprintf_unfiltered (gdb_stdlog, "Building psymtabs of objfile %s ...\n",
@@ -6656,6 +6674,7 @@ dwarf2_build_psymtabs_hard (struct objfile *objfile)
       struct dwarf2_per_cu_data *per_cu = dw2_get_cutu (i);
 
       process_psymtab_comp_unit (per_cu, 0, language_minimal);
+      current_uiout->progress (i / (double) dwarf2_per_objfile->n_comp_units);
     }
 
   /* This has to wait until we read the CUs, we need the list of DWOs.  */

@@ -135,6 +135,38 @@ class ui_out
   bool query_table_field (int colno, int *width, int *alignment,
 			  const char **col_name);
 
+  /* An object that starts and finishes a progress meter.  */
+  class progress_meter
+  {
+  public:
+    progress_meter (struct ui_out *uiout, const std::string &name,
+		    int should_print)
+      : m_uiout (uiout)
+    {
+      m_uiout->do_progress_start (name, should_print);
+    }
+
+    ~progress_meter ()
+    {
+      m_uiout->do_progress_notify (1.0);
+      m_uiout->do_progress_end ();
+    }
+
+    progress_meter (const progress_meter &) = delete;
+    progress_meter &operator= (const progress_meter &) = delete;
+
+  private:
+
+    struct ui_out *m_uiout;
+  };
+
+  /* Emit some progress corresponding to the most recently created
+     progress meter.  HOWMUCH may range from 0.0 to 1.0.  */
+  void progress (double howmuch)
+  {
+    do_progress_notify (howmuch);
+  }
+
  protected:
 
   virtual void do_table_begin (int nbrofcols, int nr_rows, const char *tblid)
@@ -164,6 +196,10 @@ class ui_out
   virtual void do_wrap_hint (const char *identstring) = 0;
   virtual void do_flush () = 0;
   virtual void do_redirect (struct ui_file *outstream) = 0;
+
+  virtual void do_progress_start (const std::string &, int) = 0;
+  virtual void do_progress_notify (double) = 0;
+  virtual void do_progress_end () = 0;
 
   /* Set as not MI-like by default.  It is overridden in subclasses if
      necessary.  */
