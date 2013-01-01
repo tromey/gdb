@@ -105,12 +105,14 @@
 #define elf_swap_dyn_out		NAME(bfd_elf,swap_dyn_out)
 #define elf_get_reloc_upper_bound	NAME(bfd_elf,get_reloc_upper_bound)
 #define elf_canonicalize_reloc		NAME(bfd_elf,canonicalize_reloc)
+#define elf_slurp_symbol_table_full	NAME(bfd_elf,slurp_symbol_table_full)
 #define elf_slurp_symbol_table		NAME(bfd_elf,slurp_symbol_table)
 #define elf_canonicalize_symtab		NAME(bfd_elf,canonicalize_symtab)
 #define elf_canonicalize_dynamic_symtab \
   NAME(bfd_elf,canonicalize_dynamic_symtab)
 #define elf_get_synthetic_symtab \
   NAME(bfd_elf,get_synthetic_symtab)
+#define elf_read_minisymbols		NAME(bfd_elf,read_minisymbols)
 #define elf_make_empty_symbol		NAME(bfd_elf,make_empty_symbol)
 #define elf_get_symbol_info		NAME(bfd_elf,get_symbol_info)
 #define elf_get_lineno			NAME(bfd_elf,get_lineno)
@@ -1126,13 +1128,14 @@ elf_checksum_contents (bfd *abfd,
 }
 
 long
-elf_slurp_symbol_table (bfd *abfd, asymbol **symptrs, bfd_boolean dynamic)
+elf_slurp_symbol_table_full (bfd *abfd, asymbol **symptrs, bfd_boolean dynamic,
+			     void **minisymp, unsigned int *sizep)
 {
   Elf_Internal_Shdr *hdr;
   Elf_Internal_Shdr *verhdr;
   unsigned long symcount;	/* Number of external ELF symbols */
   elf_symbol_type *sym;		/* Pointer to current bfd symbol */
-  elf_symbol_type *symbase;	/* Buffer for generated bfd symbols */
+  elf_symbol_type *symbase = NULL; /* Buffer for generated bfd symbols */
   Elf_Internal_Sym *isym;
   Elf_Internal_Sym *isymend;
   Elf_Internal_Sym *isymbuf = NULL;
@@ -1186,7 +1189,13 @@ elf_slurp_symbol_table (bfd *abfd, asymbol **symptrs, bfd_boolean dynamic)
 
       amt = symcount;
       amt *= sizeof (elf_symbol_type);
-      symbase = (elf_symbol_type *) bfd_zalloc (abfd, amt);
+      if (minisymp != NULL)
+	{
+	  symbase = (elf_symbol_type *) bfd_malloc (amt);
+	  memset (symbase, 0, amt);
+	}
+      else
+	symbase = (elf_symbol_type *) bfd_zalloc (abfd, amt);
       if (symbase == (elf_symbol_type *) NULL)
 	goto error_return;
 
@@ -1370,6 +1379,12 @@ elf_slurp_symbol_table (bfd *abfd, asymbol **symptrs, bfd_boolean dynamic)
       *symptrs = 0;		/* Final null pointer */
     }
 
+  if (minisymp != NULL)
+    {
+      *minisymp = symbase;
+      *sizep = sizeof (*symbase);
+    }
+
   if (xverbuf != NULL)
     free (xverbuf);
   if (isymbuf != NULL && hdr->contents != (unsigned char *) isymbuf)
@@ -1377,11 +1392,26 @@ elf_slurp_symbol_table (bfd *abfd, asymbol **symptrs, bfd_boolean dynamic)
   return symcount;
 
 error_return:
+  if (minisymp != NULL)
+    free (symbase);
   if (xverbuf != NULL)
     free (xverbuf);
   if (isymbuf != NULL && hdr->contents != (unsigned char *) isymbuf)
     free (isymbuf);
   return -1;
+}
+
+long
+elf_slurp_symbol_table (bfd *abfd, asymbol **symptrs, bfd_boolean dynamic)
+{
+  return elf_slurp_symbol_table_full (abfd, symptrs, dynamic, NULL, NULL);
+}
+
+long
+elf_read_minisymbols (bfd *abfd, bfd_boolean dynamic,
+		      void **minisymsp, unsigned int *sizep)
+{
+  return elf_slurp_symbol_table_full (abfd, NULL, dynamic, minisymsp, sizep);
 }
 
 /* Read relocations for ASECT from REL_HDR.  There are RELOC_COUNT of

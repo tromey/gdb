@@ -212,6 +212,70 @@ record_minimal_symbol (const char *name, int name_len, int copy_name,
 					  bfd_section, objfile);
 }
 
+/* The iterator accepted by elf_symtab_read.  The iterator will return
+   the I'th symbol.  ARG is an iterator-specific object that is passed
+   through elf_symtab_read.  */
+
+typedef asymbol *elf_symtab_read_iterator_fn (void *arg, long i);
+
+/* An iterator for elf_symtab_read that simply iterates over table of
+   symbol pointers.  */
+
+struct basic_bfd_iterator_object
+{
+  /* The symbols.  */
+
+  asymbol **symbols;
+};
+
+/* The iterator function corresponding to basic_bfd_iterator_object.  */
+
+static asymbol *
+basic_bfd_iterator (void *arg, long i)
+{
+  struct basic_bfd_iterator_object *iter = arg;
+
+  return iter->symbols[i];
+}
+
+/* An iterator for elf_symtab_read that uses BFD minisymbols.  */
+
+struct minisymbol_iterator_object
+{
+  /* The size of each minisymbol.  */
+
+  unsigned int size;
+
+  /* The symbols.  */
+
+  const char *minisymbols;
+
+  /* The symbol into which we extract the minisymbol.  */
+
+  asymbol *temp_symbol;
+
+  /* The BFD.  */
+
+  bfd *abfd;
+
+  /* Whether the symbol is from the dynamic table.  */
+
+  bfd_boolean dynamic;
+};
+
+/* The iterator function corresponding to minisymbol_iterator_object.  */
+
+static asymbol *
+minisymbol_iterator (void *arg, long i)
+{
+  struct minisymbol_iterator_object *iter = arg;
+
+  return bfd_minisymbol_to_symbol (iter->abfd,
+				   iter->dynamic,
+				   iter->minisymbols + i * iter->size,
+				   iter->temp_symbol);
+}
+
 /* Read the symbol table of an ELF file.
 
    Given an objfile, a symbol table, and a flag indicating whether the
@@ -230,7 +294,9 @@ record_minimal_symbol (const char *name, int name_len, int copy_name,
 
 static void
 elf_symtab_read (struct objfile *objfile, int type,
-		 long number_of_symbols, asymbol **symbol_table,
+		 long number_of_symbols,
+		 elf_symtab_read_iterator_fn *iterator,
+		 void *iterator_object,
 		 int copy_names)
 {
   struct gdbarch *gdbarch = get_objfile_arch (objfile);
@@ -253,7 +319,7 @@ elf_symtab_read (struct objfile *objfile, int type,
 
   for (i = 0; i < number_of_symbols; i++)
     {
-      sym = symbol_table[i];
+      sym = iterator (iterator_object, i);
       if (sym->name == NULL || *sym->name == '\0')
 	{
 	  /* Skip names that don't exist (shouldn't happen), or names
@@ -1282,16 +1348,31 @@ elf_symfile_read (struct objfile *objfile, int symfile_flags)
 
   if (storage_needed > 0)
     {
+      void *minisymbols;
+      unsigned int size;
+      int i;
+      struct minisymbol_iterator_object mini_iter;
+
       symbol_table = (asymbol **) xmalloc (storage_needed);
       make_cleanup (xfree, symbol_table);
-      symcount = bfd_canonicalize_symtab (objfile->obfd, symbol_table);
+
+      symcount = bfd_read_minisymbols (objfile->obfd, 0, &minisymbols, &size);
 
       if (symcount < 0)
 	error (_("Can't read symbols from %s: %s"),
 	       bfd_get_filename (objfile->obfd),
 	       bfd_errmsg (bfd_get_error ()));
 
-      elf_symtab_read (objfile, ST_REGULAR, symcount, symbol_table, 0);
+      make_cleanup (xfree, minisymbols);
+
+      mini_iter.size = size;
+      mini_iter.minisymbols = minisymbols;
+      /* FIXME */
+      mini_iter.temp_symbol = bfd_make_empty_symbol (objfile->obfd);
+      mini_iter.abfd = objfile->obfd;
+      mini_iter.dynamic = 0;
+
+      elf_symtab_read (objfile, ST_REGULAR, minisymbol_iterator, &mini_iter, 0);
     }
 
   /* Add the dynamic symbols.  */

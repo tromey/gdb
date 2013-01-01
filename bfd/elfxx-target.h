@@ -54,7 +54,7 @@
 #ifndef bfd_elfNN_find_inliner_info
 #define bfd_elfNN_find_inliner_info	_bfd_elf_find_inliner_info
 #endif
-#define bfd_elfNN_read_minisymbols	_bfd_elf_read_minisymbols
+#define bfd_elfNN_read_minisymbols	bfd_elfNN_read_minisymbols
 #define bfd_elfNN_minisymbol_to_symbol	_bfd_elf_minisymbol_to_symbol
 #define bfd_elfNN_get_dynamic_symtab_upper_bound \
   _bfd_elf_get_dynamic_symtab_upper_bound
