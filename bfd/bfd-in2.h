@@ -1693,7 +1693,7 @@ extern asection _bfd_std_section[4];
 
 #define BFD_FAKE_SECTION(SEC, FLAGS, SYM, NAME, IDX)                   \
   /* name, id,  index, next, prev, flags, user_set_vma,            */  \
-  { NAME,  IDX, 0,     NULL, NULL, FLAGS, 0,                           \
+  { NAME,  IDX, - IDX - 1,     NULL, NULL, FLAGS, 0,                   \
                                                                        \
   /* linker_mark, linker_has_input, gc_mark, decompress_status,    */  \
      0,           0,                1,       0,                        \
