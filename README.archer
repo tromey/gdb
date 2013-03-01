@@ -1,0 +1,9 @@
+This fixes PR 8300 -- variables in nested functions don't properly work.
+
+This needs a GCC bug fix in order to work properly.
+Also it needs some rewrites.  See the commit log for some details.
+
+In addition to those, it takes the wrong approach to handling
+SYMBOL_BLOCK_VALUE and aux_value.  It needs to be updated for the
+removals of symbol_ops instead -- this was written before I understood
+the intended symbol_ops/LOC_COMPUTED design.
