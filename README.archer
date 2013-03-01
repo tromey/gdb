@@ -1,0 +1,11 @@
+This branch adds support for "new" and "delete"; PR c++/10050.
+It is incomplete:
+* it doesn't ensure it is calling the in-charge constructor
+* it doesn't ensure it is calling the complete object destructor
+  (These required a GCC fix, see the PR.)
+* it doesn't call __cxa_vec_cctor, not sure if it should
+* must be audited for compliance with [class.dtor]
+* also [class.free]
+* No cookie is required if the new operator being used is ::operator
+  new[](size_t, void*).
+* 'new decltype(...)' should work
