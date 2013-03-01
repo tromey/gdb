@@ -1,0 +1,10 @@
+This branch has code to lazily read function bodies when expanding a
+DWARF CU.  It is incomplete.  The code to look up blocks by PC must
+expand function bodies, but currently does not.
+
+This is a performance improvement when expanding CUs; but simpler to
+implement than making CU expansion fully lazy.
+
+It could use more performance testing.  It would also be interesting
+to try to measure some lower bounds on CU scanning, say by writing
+various test programs using libdw.
