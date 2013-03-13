@@ -18,6 +18,3 @@ It is incomplete:
 * syntax for calling a destructor explicitly
   do we need to handle this specially?
   cannot be used with an implicit "this", must always be qualified
-* needs a test for the number of times a destructor is called for
-  arrays (don't need this for constructor since we can just print the
-  array and see)
