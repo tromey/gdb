@@ -1,4 +1,4 @@
-# Copyright 2012 Free Software Foundation, Inc.
+# Copyright 2012, 2013 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,132 +32,134 @@ if ![runto_main] then {
 gdb_breakpoint [gdb_get_line_number "Stop here"]
 gdb_continue_to_breakpoint Stop
 
-set counter_count 0
-set counter_value 0
+set op_count 0
 
-proc check_counter {{value 1}} {
-    global counter_count counter_value
+proc check_op {name value} {
+    global op_count
 
-    incr counter_count
-    incr counter_value $value
-    gdb_test "print counter" " = $counter_value" "check counter #$counter_count"
-}
+    gdb_test "print whatop == ($value)" " = true" "check settings - $name"
 
-set other_count 0
-set other_count_value 0
+    # For debugging.
+    gdb_test "print (enum what_operator) whatop" " = .*" \
+	"debug print whatop #$op_count"
 
-proc check_other_counter {{value 1}} {
-    global other_count other_count_value
+    # Mildly lame that this ends up in the test results.
+    gdb_test_no_output "set variable whatop = WHATOP_INVALID" \
+	"reset whatop #$op_count"
 
-    incr other_count
-    incr other_count_value $value
-    gdb_test "print other_counter" " = $other_count_value" \
-	"check other_counter #$other_count"
+    incr op_count
 }
 
 gdb_test "print \$an_int = new int" " = .int .. $hex"
-check_counter
+check_op int WHATOP_GLOBAL
 gdb_test "print *new int(5)" " = 5"
-check_counter
+check_op "int 2" WHATOP_GLOBAL
 gdb_test "print *(\$an_int_array = new int\[7\]) @ 7" \
     " = \\\{$decimal, $decimal, $decimal, $decimal, $decimal, $decimal, $decimal\\\}"
-check_counter
+check_op "int array" {WHATOP_GLOBAL | WHATOP_ARRAY}
 
 gdb_test "print new int *" " = .int ... $hex"
-check_counter
+check_op "int *" WHATOP_GLOBAL
+
 gdb_test "print *new int *\[2\] @ 2" " = \\\{$hex, $hex\\\}"
-check_counter
+check_op "int * array" {WHATOP_GLOBAL | WHATOP_ARRAY}
 
 gdb_test "print *(\$another_int_array = new int \[2\]\[3\]) @ 2" " = {\\\{$decimal, $decimal, $decimal}, \\\{$decimal, $decimal, $decimal}}"
-check_counter
+check_op "int array 2" {WHATOP_GLOBAL | WHATOP_ARRAY}
 
 gdb_test "print *(\$simple = new Simple)" " = {x = 7}"
-check_counter
+check_op "Simple" WHATOP_GLOBAL
 gdb_test "print *(\$simple_array = new Simple\[7\]) @ 2" " = {{x = 7}, {x = 7}}"
-check_counter
+check_op "Simple array" {WHATOP_GLOBAL | WHATOP_ARRAY}
 gdb_test "print *new Simple(23)" " = {x = 23}"
-check_counter
+check_op "Simple 2" WHATOP_GLOBAL
 gdb_test "print *new Simple \[2\]\[3\] @ 2" \
     " = {{{x = 7}, {x = 7}, {x = 7}}, {{x = 7}, {x = 7}, {x = 7}}}"
-check_counter
+check_op "Simple array 2" {WHATOP_GLOBAL | WHATOP_ARRAY}
 
 gdb_test "print *(\$derived = new Derived)" " = {<Simple> = {x = 7}, <No data fields>}"
-check_counter
+check_op "Derived" WHATOP_GLOBAL
 gdb_test "print *new Derived\[7\] @ 2" " = {{<Simple> = {x = 7}, <No data fields>}, {<Simple> = {x = 7}, <No data fields>}}"
-check_counter
+check_op "Derived array" {WHATOP_GLOBAL | WHATOP_ARRAY}
 
 gdb_test "print *new WithConstructor<int>(5)" " = {x = 5}"
-check_counter
+check_op "WithConstructor" WHATOP_GLOBAL
 
 gdb_test "print *new Name::InNameSpace<int>(27)" " = {x = 27}"
-check_counter
+check_op "InNameSpace" WHATOP_GLOBAL
 
 gdb_test "print *(\$hasops = new HasOps)" " = {x = 7}"
-check_other_counter
+check_op "HasOps" WHATOP_HASOPS
 gdb_test "print *new HasOps(23)" " = {x = 23}"
-check_other_counter
+check_op "HasOps 2" WHATOP_HASOPS
 gdb_test "print *(\$hasops_array = new HasOps\[7\]) @ 2" " = {{x = 7}, {x = 7}}"
-check_other_counter
+check_op "HasOps array" {WHATOP_HASOPS | WHATOP_ARRAY}
 
 gdb_test "print \$h = (HasOps *) HasOps::operator new (sizeof (HasOps))" \
     " = .HasOps .. $hex"
-check_other_counter
+check_op "HasOps allocation" {WHATOP_HASOPS}
 gdb_test "print *new(\$h) HasOps" " = {x = 7}"
+check_op "HasOps placement" {WHATOP_HASOPS | WHATOP_PLACEMENT}
 
 gdb_test "print *new (1, 88) HasOps(0)" " = {x = 0}"
-check_other_counter
+check_op "HasOps arguments" {WHATOP_HASOPS | WHATOP_ARGS}
 
 gdb_test "print new HasOps **" " = .HasOps .... $hex"
 # This should not use HasOps::operator new.
-check_counter
+check_op "HasOps **" WHATOP_GLOBAL
 
 gdb_test "print *(\$global_hasops = ::new HasOps)" " = {x = 7}"
 # This should not use HasOps::operator new.
-check_counter
+check_op "::new HasOps" WHATOP_GLOBAL
 
 gdb_test "print delete 0" " = void"
+check_op "delete 0" WHATOP_INVALID
+
 gdb_test "print delete (void *) 0" " = void"
+check_op "delete 0 again" WHATOP_INVALID
 
 gdb_test "print delete \$an_int" " = void"
-check_counter -1
+check_op "delete int" {WHATOP_GLOBAL | WHATOP_DELETE}
 
 gdb_test "print delete\[\] \$an_int_array" " = void"
-check_counter -1
+check_op "delete int array" {WHATOP_GLOBAL | WHATOP_DELETE | WHATOP_ARRAY}
 
 gdb_test "print delete\[\] \$another_int_array" " = void"
-check_counter -1
+check_op "delete int array 2" {WHATOP_GLOBAL | WHATOP_DELETE | WHATOP_ARRAY}
 
 gdb_test "print delete \$simple" " = void"
-check_counter -1
+check_op "delete Simple" {WHATOP_GLOBAL | WHATOP_DELETE}
 
 gdb_test "print delete\[\] \$simple_array" " = void"
-check_counter -1
+check_op "delete Simple array" {WHATOP_GLOBAL | WHATOP_DELETE | WHATOP_ARRAY}
 
 gdb_test "print delete \$derived" " = void"
-check_counter -1
+check_op "delete Derived" {WHATOP_GLOBAL | WHATOP_DELETE}
 
 gdb_test "print delete \$hasops" " = void"
-check_other_counter -1
+check_op "delete HasOps" {WHATOP_HASOPS | WHATOP_DELETE}
 
 gdb_test "print ::delete \$global_hasops" " = void"
-check_counter -1
+check_op "::delete HasOps" {WHATOP_GLOBAL | WHATOP_DELETE}
 
 gdb_test "print delete\[\] \$hasops_array" " = void"
-check_other_counter -1
+check_op "delete HasOps array" {WHATOP_HASOPS | WHATOP_DELETE | WHATOP_ARRAY}
 
 # Interoperability with the real C++ runtime.
 gdb_test "print delete ip" " = void"
-check_counter -1
+check_op "delete int from c++" {WHATOP_GLOBAL | WHATOP_DELETE}
 
 gdb_test "print delete\[\] y2" " = void"
-check_counter -1
+check_op "delete int * array from c++" \
+    {WHATOP_GLOBAL | WHATOP_DELETE | WHATOP_ARRAY}
 
 gdb_test "print delete s" " = void"
-check_counter -1
+check_op "delete Simple from c++" {WHATOP_GLOBAL | WHATOP_DELETE}
 
 gdb_test "print delete\[\] s2" " = void"
-check_counter -1
+check_op "delete Simple array from c++" \
+    {WHATOP_GLOBAL | WHATOP_DELETE | WHATOP_ARRAY}
 
 gdb_test "print delete b" " = void"
-# Should have called DerivedFromBase::operator delete.
-gdb_test "print derived_count" " = 1"
+check_op "delete Derived from c++ via base pointer" \
+    {WHATOP_DERIVED | WHATOP_DELETE}

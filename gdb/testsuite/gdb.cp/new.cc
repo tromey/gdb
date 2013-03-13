@@ -4,30 +4,43 @@
 // For convenience when debugging gdb.
 void *last_alloc;
 
-int counter;
+enum what_operator
+  {
+    WHATOP_INVALID = 0,
 
-// Our own global operator new which updates counter.
+    WHATOP_GLOBAL = 2,
+    WHATOP_HASOPS = 4,
+    WHATOP_DERIVED = 8,
+
+    WHATOP_ARRAY = 16,
+    WHATOP_DELETE = 32,
+    WHATOP_PLACEMENT = 64,
+    WHATOP_ARGS = 128
+  };
+
+int whatop = WHATOP_INVALID;
+
 void *operator new (std::size_t size)
 {
-  ++counter;
+  whatop = WHATOP_GLOBAL;
   return last_alloc = malloc (size);
 }
 
 void *operator new[] (std::size_t size)
 {
-  ++counter;
+  whatop = WHATOP_GLOBAL | WHATOP_ARRAY;
   return last_alloc = malloc (size);
 }
 
 void operator delete (void *ptr)
 {
-  --counter;
+  whatop = WHATOP_GLOBAL | WHATOP_DELETE;
   free (ptr);
 }
 
 void operator delete[] (void *ptr)
 {
-  --counter;
+  whatop = WHATOP_GLOBAL | WHATOP_ARRAY | WHATOP_DELETE;
   free (ptr);
 }
 
@@ -42,44 +55,43 @@ struct Derived : public Simple
 {
 };
 
-static int other_counter;
-
 struct HasOps
 {
   int x;
 
   void *operator new (std::size_t size)
   {
-    ++other_counter;
+    whatop = WHATOP_HASOPS;
     return last_alloc = malloc (size);
   }
 
   void *operator new (std::size_t size, void *ptr) throw()
   {
+    whatop = WHATOP_HASOPS | WHATOP_PLACEMENT;
     return ptr;
   }
 
   void *operator new (std::size_t size, int x, int y) throw()
   {
-    other_counter += x;
+    whatop = WHATOP_HASOPS | WHATOP_ARGS;
     return last_alloc = malloc (size);
   }
 
   void *operator new[] (std::size_t size)
   {
-    ++other_counter;
+    whatop = WHATOP_HASOPS | WHATOP_ARRAY;
     return last_alloc = malloc (size);
   }
 
   void operator delete (void *ptr)
   {
-    --other_counter;
+    whatop = WHATOP_HASOPS | WHATOP_DELETE;
     free (ptr);
   }
 
   void operator delete[] (void *ptr)
   {
-    --other_counter;
+    whatop = WHATOP_HASOPS | WHATOP_DELETE | WHATOP_ARRAY;
     free (ptr);
   }
 
@@ -122,13 +134,11 @@ struct Base
   }
 };
 
-int derived_count;
-
 struct DerivedFromBase : public Base
 {
   void operator delete (void *ptr)
   {
-    ++derived_count;
+    whatop = WHATOP_DERIVED | WHATOP_DELETE;
     free (ptr);
   }
 
@@ -163,7 +173,7 @@ int keep_stuff ()
 {
   delete new HasOps;
   delete[] new HasOps[5];
-  delete new DerivedFromBase;
+  delete (Base *) new DerivedFromBase;
   delete new Base;
   delete new VDerived;
   delete new VDerived2;
@@ -203,11 +213,6 @@ int main ()
   Name::InNameSpace<int> *ins = new Name::InNameSpace<int> (72);
 
   Base *b = new DerivedFromBase;
-
-  // Reset for the test suite.
-  counter = 0;
-  other_counter = 0;
-  derived_count = 0;
 
   return 0;			// Stop here
 }
