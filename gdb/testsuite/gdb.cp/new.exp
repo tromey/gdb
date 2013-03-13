@@ -32,22 +32,22 @@ if ![runto_main] then {
 gdb_breakpoint [gdb_get_line_number "Stop here"]
 gdb_continue_to_breakpoint Stop
 
-set op_count 0
+proc check_op {name value {dcount ""}} {
+    with_test_prefix $name {
+	gdb_test "print whatop == ($value)" " = true" "check settings"
 
-proc check_op {name value} {
-    global op_count
+	if {$dcount != ""} {
+	    gdb_test "print dcount" " = $dcount" "check destructor count"
+	}
 
-    gdb_test "print whatop == ($value)" " = true" "check settings - $name"
+	# For debugging.
+	# gdb_test "print (enum what_operator) whatop" " = .*" \
+	#     "debug print whatop"
 
-    # For debugging.
-    # gdb_test "print (enum what_operator) whatop" " = .*" \
-    # 	"debug print whatop #$op_count"
-
-    # Mildly lame that this ends up in the test results.
-    gdb_test_no_output "set variable whatop = WHATOP_INVALID" \
-	"reset whatop #$op_count"
-
-    incr op_count
+	# Mildly lame that these end up in the test results.
+	gdb_test_no_output "set variable whatop = WHATOP_INVALID" "reset whatop"
+	gdb_test_no_output "set variable dcount = 0" "reset dcount"
+    }
 }
 
 gdb_test "print \$an_int = new int" " = .int .. $hex"
@@ -138,7 +138,9 @@ gdb_test "print delete \$simple" " = void"
 check_op "delete Simple" {WHATOP_GLOBAL | WHATOP_DELETE}
 
 gdb_test "print delete\[\] \$simple_array" " = void"
-check_op "delete Simple array" {WHATOP_GLOBAL | WHATOP_DELETE | WHATOP_ARRAY}
+check_op "delete Simple array" \
+    {WHATOP_GLOBAL | WHATOP_DELETE | WHATOP_ARRAY} \
+    7
 
 gdb_test "print delete \$derived" " = void"
 check_op "delete Derived" {WHATOP_GLOBAL | WHATOP_DELETE}

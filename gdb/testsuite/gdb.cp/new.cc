@@ -21,6 +21,9 @@ enum what_operator
 
 int whatop = WHATOP_INVALID;
 
+// Number of times a destructor is invoked.
+int dcount;
+
 void *operator new (std::size_t size)
 {
   whatop = WHATOP_GLOBAL;
@@ -50,6 +53,7 @@ struct Simple
   int x;
   Simple() : x (7) { }
   Simple (int y) : x (y) { }
+  ~Simple() { ++dcount; }
 };
 
 struct Derived : public Simple
@@ -133,6 +137,7 @@ struct Base
 
   virtual ~Base()
   {
+    ++dcount;
   }
 };
 
@@ -146,6 +151,7 @@ struct DerivedFromBase : public Base
 
   ~DerivedFromBase()
   {
+    ++dcount;
   }
 };
 
@@ -157,6 +163,7 @@ struct VDerived : public virtual Base
 
   ~VDerived()
   {
+    ++dcount;
   }
 };
 
@@ -168,6 +175,7 @@ struct VDerived2 : public VDerived, public virtual Base
 
   ~VDerived2()
   {
+    ++dcount;
   }
 };
 
@@ -179,6 +187,7 @@ int keep_stuff ()
   delete new Base;
   delete new VDerived;
   delete new VDerived2;
+  delete new Simple;
 }
 
 int main ()
