@@ -566,12 +566,11 @@ print_subexp_standard (struct expression *exp, int *pos,
 	struct type *type;
 	int n_op_args, n_constr_args, flags;
 
-    	(*pos) += 5;
+    	(*pos) += 4;
 
-	type = exp->elts[pc + 1].type;
-	flags = exp->elts[pc + 2].longconst;
-	n_op_args = exp->elts[pc + 3].longconst;
-	n_constr_args = exp->elts[pc + 4].longconst;
+	flags = exp->elts[pc + 1].longconst;
+	n_op_args = exp->elts[pc + 2].longconst;
+	n_constr_args = exp->elts[pc + 3].longconst;
 
 	if ((flags & CXX_NEW_GLOBAL) != 0)
 	  fputs_unfiltered ("::", stream);
@@ -586,11 +585,11 @@ print_subexp_standard (struct expression *exp, int *pos,
 		  fputs_filtered (", ", stream);
 		print_subexp (exp, pos, stream, PREC_ABOVE_COMMA);
 	      }
-	    fputs_filtered (")", stream);
+	    fputs_filtered (") ", stream);
 	  }
 
-	fputs_filtered (" ", stream);
-	type_print (type, NULL, stream, 0);
+	/* Print the type.  */
+	print_subexp (exp, pos, stream, PREC_ABOVE_COMMA);
 
 	if ((flags & CXX_NEW_ARRAY) == 0)
 	  {

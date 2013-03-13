@@ -179,7 +179,7 @@ static void c_print_token (FILE *file, int type, YYSTYPE value);
 %type <tvec> nonempty_typelist func_mod parameter_typelist
 %type <lval> new_init
 %type <lval> new_placement
-%type <tval> new_type
+%type <void> new_type
 %type <tval> new_type_id
 %type <lval> direct_new_declarator
 %type <lval> new_operator
@@ -291,7 +291,11 @@ type_exp:	type
 			{ write_exp_elt_opcode(OP_TYPE);
 			  write_exp_elt_type($1);
 			  write_exp_elt_opcode(OP_TYPE);}
-	|	TYPEOF '(' exp ')'
+	|	decltype
+	;
+
+
+decltype:	TYPEOF '(' exp ')'
 			{
 			  write_exp_elt_opcode (OP_TYPEOF);
 			}
@@ -809,7 +813,6 @@ exp	:	new_operator
 		new_init
 			{
 			  write_exp_elt_opcode (OP_NEW);
-			  write_exp_elt_type ($3);
 			  write_exp_elt_longcst ($1);
 			  write_exp_elt_longcst ($2);
 			  write_exp_elt_longcst ($4);
@@ -821,7 +824,6 @@ exp	:	new_operator
 		direct_new_declarator
 			{
 			  write_exp_elt_opcode (OP_NEW);
-			  write_exp_elt_type ($3);
 			  write_exp_elt_longcst ($1 | CXX_NEW_ARRAY);
 			  write_exp_elt_longcst ($2);
 			  write_exp_elt_longcst ($4);
@@ -833,8 +835,19 @@ new_operator:	NEW		{ $$ = CXX_NEW_PLAIN; }
 	|	COLONCOLON NEW	{ $$ = CXX_NEW_GLOBAL; }
 	;
 
-new_type:	'(' type ')'	{ $$ = $2; }
-	|	new_type_id	{ $$ = $1; }
+new_type:	'(' type ')'	
+			{
+			  write_exp_elt_opcode (OP_TYPE);
+			  write_exp_elt_type ($2);
+			  write_exp_elt_opcode (OP_TYPE);
+			}
+	|	new_type_id
+			{
+			  write_exp_elt_opcode (OP_TYPE);
+			  write_exp_elt_type ($1);
+			  write_exp_elt_opcode (OP_TYPE);
+			}
+	|	decltype
 	;
 
 new_type_id:	typebase	{ $$ = $1; }

@@ -2831,12 +2831,11 @@ evaluate_subexp_standard (struct type *expect_type,
 	struct type *ptr_type, *new_type, *array_type;
 	LONGEST total_len;
 
-	*pos += 5;
+	*pos += 4;
 
-	type = check_typedef (exp->elts[pc + 1].type);
-	flags = exp->elts[pc + 2].longconst;
-	n_op_args = exp->elts[pc + 3].longconst;
-	n_constr_args = exp->elts[pc + 4].longconst;
+	flags = exp->elts[pc + 1].longconst;
+	n_op_args = exp->elts[pc + 2].longconst;
+	n_constr_args = exp->elts[pc + 3].longconst;
 
 	argvec = alloca ((max (n_op_args, n_constr_args) + 3)
 			 * sizeof (struct value *));
@@ -2847,6 +2846,11 @@ evaluate_subexp_standard (struct type *expect_type,
 	for (i = 0; i < n_op_args; ++i)
 	  argvec[i + 2] = evaluate_subexp (NULL, exp, pos, noside);
 	argvec[i + 2] = NULL;
+
+	/* Compute the type to use.  */
+	type = value_type (evaluate_subexp (NULL, exp, pos,
+					    EVAL_AVOID_SIDE_EFFECTS));
+	CHECK_TYPEDEF (type);
 
 	if ((flags & CXX_NEW_ARRAY) == 0)
 	  {	  

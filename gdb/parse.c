@@ -903,8 +903,9 @@ operator_length_standard (const struct expression *expr, int endpos,
       break;
 
     case OP_NEW:
-      oplen = 6;
-      args = (longest_to_int (expr->elts[endpos - 2].longconst)
+      oplen = 5;
+      args = (1 /* The type.  */
+	      + longest_to_int (expr->elts[endpos - 2].longconst)
 	      + longest_to_int (expr->elts[endpos - 3].longconst));
       break;
 
