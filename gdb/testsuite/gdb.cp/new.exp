@@ -116,6 +116,9 @@ check_op "::new HasOps" WHATOP_GLOBAL
 gdb_test "print *new VDerived2" " = .*"
 check_op "VDerived2" WHATOP_GLOBAL
 
+gdb_test "print new decltype(int)(5)" " = 5"
+check_op "new decltype" WHATOP_GLOBAL
+
 gdb_test "print delete 0" " = void"
 check_op "delete 0" WHATOP_INVALID
 
