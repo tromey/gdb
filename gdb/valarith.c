@@ -647,8 +647,7 @@ value_operator_new (int global_new, struct type *type,
       TRY_CATCH (except, RETURN_MASK_ERROR)
 	{
 	  find_overload_match (argv, argc, opname, METHOD,
-			       0 /* strict match */, &arg, NULL,
-			       &function, &sym, &static_memfunp, 1);
+			       &arg, NULL, &function, &sym, &static_memfunp, 1);
 	}
       if (except.reason < 0)
 	{
@@ -659,8 +658,7 @@ value_operator_new (int global_new, struct type *type,
 
   if (sym == NULL && function == NULL)
     find_overload_match (argv + 1, argc - 1, opname, NON_METHOD,
-			 0 /* strict match */, NULL, NULL,
-			 NULL, &sym, NULL, 1);
+			 NULL, NULL, NULL, &sym, NULL, 1);
 
   if (sym != NULL)
     function = value_of_variable (sym, 0);
@@ -749,7 +747,7 @@ value_construct (struct type *type, int argc, struct value **argv)
     {
       struct value *obj = value_ind (argv[0]);
 
-      find_overload_match (argv, argc, constr_name, METHOD, 0,
+      find_overload_match (argv, argc, constr_name, METHOD,
 			   &obj, NULL, &function, &sym, NULL, 1);
     }
 
@@ -816,8 +814,7 @@ value_operator_delete (int global_del, int is_array, struct value *object)
       TRY_CATCH (except, RETURN_MASK_ERROR)
 	{
 	  find_overload_match (argv, 2, opname, METHOD,
-			       0 /* strict match */, &arg, NULL,
-			       &function, &sym, &static_memfunp, 1);
+			       &arg, NULL, &function, &sym, &static_memfunp, 1);
 	}
       if (except.reason < 0)
 	{
@@ -828,8 +825,7 @@ value_operator_delete (int global_del, int is_array, struct value *object)
 
   if (sym == NULL && function == NULL)
     find_overload_match (argv + 1, 1, opname, NON_METHOD,
-			 0 /* strict match */, NULL, NULL,
-			 NULL, &sym, NULL, 1);
+			 NULL, NULL, NULL, &sym, NULL, 1);
 
   if (sym != NULL)
     function = value_of_variable (sym, 0);

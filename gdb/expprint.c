@@ -616,7 +616,7 @@ print_subexp_standard (struct expression *exp, int *pos,
 	      }
 	  }
       }
-      break;
+      return;
 
     case OP_DELETE:
       {
@@ -629,7 +629,7 @@ print_subexp_standard (struct expression *exp, int *pos,
 
 	print_subexp (exp, pos, stream, PREC_ABOVE_COMMA);
       }
-      break;
+      return;
 
       /* Default ops */
 
