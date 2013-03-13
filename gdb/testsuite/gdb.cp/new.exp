@@ -112,6 +112,9 @@ gdb_test "print *(\$global_hasops = ::new HasOps)" " = {x = 7}"
 # This should not use HasOps::operator new.
 check_op "::new HasOps" WHATOP_GLOBAL
 
+gdb_test "print *new VDerived2" " = .*"
+check_op "VDerived2" WHATOP_GLOBAL
+
 gdb_test "print delete 0" " = void"
 check_op "delete 0" WHATOP_INVALID
 
@@ -162,4 +165,4 @@ check_op "delete Simple array from c++" \
 
 gdb_test "print delete b" " = void"
 check_op "delete Derived from c++ via base pointer" \
-    {WHATOP_DERIVED | WHATOP_DELETE}
+    {WHATOP_BASE | WHATOP_DELETE}

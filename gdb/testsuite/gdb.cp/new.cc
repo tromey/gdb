@@ -11,11 +11,12 @@ enum what_operator
     WHATOP_GLOBAL = 2,
     WHATOP_HASOPS = 4,
     WHATOP_DERIVED = 8,
+    WHATOP_BASE = 16,
 
-    WHATOP_ARRAY = 16,
-    WHATOP_DELETE = 32,
-    WHATOP_PLACEMENT = 64,
-    WHATOP_ARGS = 128
+    WHATOP_ARRAY = 32,
+    WHATOP_DELETE = 64,
+    WHATOP_PLACEMENT = 128,
+    WHATOP_ARGS = 256
   };
 
 int whatop = WHATOP_INVALID;
@@ -122,6 +123,7 @@ struct Base
 {
   void operator delete (void *ptr)
   {
+    whatop = WHATOP_BASE | WHATOP_DELETE;
     free (ptr);
   }
 
