@@ -1,11 +1,23 @@
 This branch adds support for "new" and "delete"; PR c++/10050.
+
 It is incomplete:
+
 * it doesn't ensure it is calling the in-charge constructor
 * it doesn't ensure it is calling the complete object destructor
   (These required a GCC fix, see the PR.)
+       look for 'D0Ev' at the end
+       but not all objects have this??
+  what is the destructor argument used for?
 * it doesn't call __cxa_vec_cctor, not sure if it should
 * must be audited for compliance with [class.dtor]
+  see definition of trivial dtor at least
 * also [class.free]
+  when operator delete takes a second argument
 * No cookie is required if the new operator being used is ::operator
   new[](size_t, void*).
-* 'new decltype(...)' should work
+* syntax for calling a destructor explicitly
+  do we need to handle this specially?
+  cannot be used with an implicit "this", must always be qualified
+* needs a test for the number of times a destructor is called for
+  arrays (don't need this for constructor since we can just print the
+  array and see)
