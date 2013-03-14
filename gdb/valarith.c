@@ -855,10 +855,12 @@ struct value *
 value_destruct (struct value *object, int is_array)
 {
   const char *destr_name;
+  char *destr_qual_name;
   struct type *type;
   int i;
   struct symbol *sym;
   struct value *function;
+  struct cleanup *cleanup;
 
   type = check_typedef (value_type (object));
   gdb_assert (TYPE_CODE (type) == TYPE_CODE_PTR);
@@ -868,6 +870,9 @@ value_destruct (struct value *object, int is_array)
     type = check_typedef (TYPE_TARGET_TYPE (type));
 
   if (TYPE_CODE (type) != TYPE_CODE_STRUCT)
+    return NULL;
+
+  if (TYPE_NAME (type) == NULL)
     return NULL;
 
   /* Find the destructor name, if we can.  */
@@ -892,7 +897,13 @@ value_destruct (struct value *object, int is_array)
   if (destr_name == NULL)
     return NULL;
 
-  sym = lookup_symbol (destr_name, NULL, VAR_DOMAIN, NULL);
+  destr_qual_name = concat (TYPE_NAME (type), "::", destr_name,
+			    (char *) NULL);
+  cleanup = make_cleanup (xfree, destr_qual_name);
+
+  sym = lookup_symbol (destr_qual_name, NULL, VAR_DOMAIN, NULL);
+  do_cleanups (cleanup);
+
   if (sym == NULL)
     return NULL;
 
