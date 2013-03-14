@@ -756,7 +756,7 @@ value_construct (struct type *type, int argc, struct value **argv)
 
   if (function == NULL)
     {
-      /* No construct is fine for a POD.  */
+      /* No constructor is fine for a POD.  */
       if (argc == 1)
 	return;
 
