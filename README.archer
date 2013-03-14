@@ -13,8 +13,20 @@ It is incomplete:
   see definition of trivial dtor at least
 * also [class.free]
   when operator delete takes a second argument
+  when is this called?
 * No cookie is required if the new operator being used is ::operator
   new[](size_t, void*).
 * syntax for calling a destructor explicitly
   do we need to handle this specially?
   cannot be used with an implicit "this", must always be qualified
+  note this is ok:
+     typedef int I;
+     I *z;
+     z->I::~I();
+
+* the delete function is looked up at the point of definition of the
+  *dynamic* type's destructor
+  need a test for this
+  also a test for operator in namespace
+
+* operator delete with extra args
