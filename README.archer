@@ -1,0 +1,21 @@
+Fixes arising from http://gcc.gnu.org/bugzilla/show_bug.cgi?id=55608
+
+From the PR:
+
+And, on the GDB side we need some improvements too.
+Surprisingly, DW_OP_GNU_implicit_pointer referencing DW_TAG_dwarf_procedure
+with DW_AT_location of DW_OP_implicit_value works to some extent, but it would
+be nice if where GDB normally prints 0xaddress "string" it could print
+<synthetic pointer> "string".
+(gdb) p a
+$1 = <synthetic pointer>
+(gdb) p a[0]
+$2 = 111 'o'
+(gdb) x/1s a
+0x0: <Address 0x0 out of bounds>
+
+It would be nice if also x/? could print the implicitly pointed memory.
+
+p b works just fine, p c[0] doesn't, so apparently GDB doesn't handle if
+DW_OP_GNU_implicit_pointer points to a DIE with DW_AT_const_value attribute
+rather than DW_AT_location.
