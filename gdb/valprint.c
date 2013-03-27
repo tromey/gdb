@@ -300,6 +300,8 @@ int
 valprint_check_validity (struct ui_file *stream,
 			 struct type *type,
 			 int embedded_offset,
+			 int recurse,
+			 const struct value_print_options *options,
 			 const struct value *val)
 {
   CHECK_TYPEDEF (type);
@@ -318,7 +320,7 @@ valprint_check_validity (struct ui_file *stream,
       if (value_bits_synthetic_pointer (val, TARGET_CHAR_BIT * embedded_offset,
 					TARGET_CHAR_BIT * TYPE_LENGTH (type)))
 	{
-	  fputs_filtered (_("<synthetic pointer>"), stream);
+	  val_print_synthetic_pointer_field (val, -1, stream, recurse, options);
 	  return 0;
 	}
 
@@ -348,6 +350,30 @@ void
 val_print_invalid_address (struct ui_file *stream)
 {
   fprintf_filtered (stream, _("<invalid address>"));
+}
+
+void
+val_print_synthetic_pointer_field (const struct value *containing_val,
+				   int fieldno,
+				   struct ui_file *stream,
+				   int recurse,
+				   const struct value_print_options *options)
+{
+  struct value *field_val;
+
+  fputs_filtered (_("<synthetic pointer>"), stream);
+
+  if (options->summary)
+    return;
+
+  fputs_filtered (" ", stream);
+  /* Oops - have to cast away const.  */
+  if (fieldno == -1)
+    field_val = (struct value *) containing_val;
+  else
+    field_val = value_field ((struct value *) containing_val, fieldno);
+  common_val_print (value_ind (field_val), stream, recurse + 1,
+		    options, current_language);
 }
 
 /* A generic val_print that is suitable for use by language
@@ -753,7 +779,8 @@ val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
       return;
     }
 
-  if (!valprint_check_validity (stream, real_type, embedded_offset, val))
+  if (!valprint_check_validity (stream, real_type, embedded_offset,
+				recurse, options, val))
     return;
 
   if (!options->raw)

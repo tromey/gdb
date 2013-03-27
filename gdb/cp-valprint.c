@@ -292,7 +292,8 @@ cp_print_value_fields (struct type *type, struct type *real_type,
 						     TYPE_FIELD_BITSIZE (type,
 									 i)))
 		{
-		  fputs_filtered (_("<synthetic pointer>"), stream);
+		  val_print_synthetic_pointer_field (val, i, stream, recurse,
+						     options);
 		}
 	      else if (!value_bits_valid (val,
 					  TYPE_FIELD_BITPOS (type, i),
@@ -345,7 +346,8 @@ cp_print_value_fields (struct type *type, struct type *real_type,
 		  int i_offset = offset + TYPE_FIELD_BITPOS (type, i) / 8;
 		  struct type *i_type = TYPE_FIELD_TYPE (type, i);
 
-		  if (valprint_check_validity (stream, i_type, i_offset, val))
+		  if (valprint_check_validity (stream, i_type, i_offset,
+					       recurse, options, val))
 		    {
 		      CORE_ADDR addr;
 		      

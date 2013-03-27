@@ -624,7 +624,8 @@ pascal_object_print_value_fields (struct type *type, const gdb_byte *valaddr,
 						     TYPE_FIELD_BITSIZE (type,
 									 i)))
 		{
-		  fputs_filtered (_("<synthetic pointer>"), stream);
+		  val_print_synthetic_pointer_field (val, i, stream, recurse,
+						     options);
 		}
 	      else if (!value_bits_valid (val, TYPE_FIELD_BITPOS (type, i),
 					  TYPE_FIELD_BITSIZE (type, i)))

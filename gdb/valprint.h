@@ -133,6 +133,10 @@ extern void val_print_scalar_formatted (struct type *,
 					int,
 					struct ui_file *);
 
+extern void val_print_synthetic_pointer_field (const struct value *,
+					       int, struct ui_file *, int,
+					       const struct value_print_options *);
+
 extern void print_binary_chars (struct ui_file *, const gdb_byte *,
 				unsigned int, enum bfd_endian);
 

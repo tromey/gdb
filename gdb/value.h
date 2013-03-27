@@ -239,6 +239,8 @@ extern struct value *allocate_computed_value (struct type *type,
 
 extern int valprint_check_validity (struct ui_file *stream, struct type *type,
 				    int embedded_offset,
+				    int recurse,
+				    const struct value_print_options *options,
 				    const struct value *val);
 
 extern struct value *allocate_optimized_out_value (struct type *type);
