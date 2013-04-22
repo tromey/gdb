@@ -747,7 +747,7 @@ value_construct (struct type *type, int argc, struct value **argv)
     {
       struct value *obj = value_ind (argv[0]);
 
-      find_overload_match (argv, argc, constr_name, METHOD,
+      find_overload_match (argv, argc, constr_name, CONSTRUCTOR,
 			   &obj, NULL, &function, &sym, NULL, 1);
     }
 

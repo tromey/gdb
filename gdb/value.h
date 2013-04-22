@@ -664,7 +664,7 @@ extern struct value *value_aggregate_elt (struct type *curtype,
 
 extern struct value *value_static_field (struct type *type, int fieldno);
 
-enum oload_search_type { NON_METHOD, METHOD, BOTH };
+enum oload_search_type { NON_METHOD, METHOD, CONSTRUCTOR, BOTH };
 
 extern int find_overload_match (struct value **args, int nargs,
 				const char *name,

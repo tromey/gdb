@@ -1835,7 +1835,8 @@ do_search_struct_field (const char *name, struct value *arg1, int offset,
 			struct type *type, int looking_for_baseclass,
 			struct value **result_ptr,
 			int *last_boffset,
-			struct type *outermost_type)
+			struct type *outermost_type,
+			int can_recurse)
 {
   int i;
   int nbases;
@@ -1900,7 +1901,7 @@ do_search_struct_field (const char *name, struct value *arg1, int offset,
 					field_type,
 					looking_for_baseclass, &v,
 					last_boffset,
-					outermost_type);
+					outermost_type, can_recurse);
 		if (v)
 		  {
 		    *result_ptr = v;
@@ -1909,6 +1910,9 @@ do_search_struct_field (const char *name, struct value *arg1, int offset,
 	      }
 	  }
       }
+
+  if (!can_recurse)
+    return;
 
   for (i = 0; i < nbases; i++)
     {
@@ -1966,7 +1970,7 @@ do_search_struct_field (const char *name, struct value *arg1, int offset,
 				      TYPE_BASECLASS (type, i),
 				      looking_for_baseclass,
 				      result_ptr, last_boffset,
-				      outermost_type);
+				      outermost_type, can_recurse);
 	    }
 	}
       else if (found_baseclass)
@@ -1978,7 +1982,7 @@ do_search_struct_field (const char *name, struct value *arg1, int offset,
 								  i) / 8,
 				  basetype, looking_for_baseclass,
 				  result_ptr, last_boffset,
-				  outermost_type);
+				  outermost_type, can_recurse);
 	}
 
       update_search_result (result_ptr, v, last_boffset,
@@ -2002,7 +2006,23 @@ search_struct_field (const char *name, struct value *arg1, int offset,
   int boffset = 0;
 
   do_search_struct_field (name, arg1, offset, type, looking_for_baseclass,
-			  &result, &boffset, type);
+			  &result, &boffset, type, 1);
+  return result;
+}
+
+/* Like search_struct_field, but has an additional parameter to
+   control whether or not superclasses are searched.  */
+
+static struct value *
+search_struct_field_full (const char *name, struct value *arg1, int offset,
+			  struct type *type, int looking_for_baseclass,
+			  int can_search_superclass)
+{
+  struct value *result = NULL;
+  int boffset = 0;
+
+  do_search_struct_field (name, arg1, offset, type, looking_for_baseclass,
+			  &result, &boffset, type, can_search_superclass);
   return result;
 }
 
@@ -2410,6 +2430,7 @@ find_overload_match (struct value **args, int nargs,
   /* Index of best overloaded function.  */
   int func_oload_champ = -1;
   int method_oload_champ = -1;
+  int is_constructor;
 
   /* The measure for the current best match.  */
   struct badness_vector *method_badness = NULL;
@@ -2433,6 +2454,12 @@ find_overload_match (struct value **args, int nargs,
   enum oload_classification method_match_quality = INCOMPATIBLE;
   enum oload_classification func_match_quality = INCOMPATIBLE;
 
+  if (method == CONSTRUCTOR)
+    {
+      method = METHOD;
+      is_constructor = 1;
+    }
+
   /* Get the list of overloaded methods or functions.  */
   if (method == METHOD || method == BOTH)
     {
@@ -2448,8 +2475,9 @@ find_overload_match (struct value **args, int nargs,
 	 a function.  */
       if (TYPE_CODE (check_typedef (value_type (obj))) == TYPE_CODE_STRUCT)
 	{
-	  *valp = search_struct_field (name, obj, 0,
-				       check_typedef (value_type (obj)), 0);
+	  *valp = search_struct_field_full (name, obj, 0,
+					    check_typedef (value_type (obj)),
+					    0, !is_constructor);
 	  if (*valp)
 	    {
 	      *staticp = 1;
