@@ -16,7 +16,6 @@ It is incomplete:
   when is this called?
 * No cookie is required if the new operator being used is ::operator
   new[](size_t, void*).
-  but we don't currently make a cookie for new Simple[7]
 * syntax for calling a destructor explicitly
   do we need to handle this specially?
   cannot be used with an implicit "this", must always be qualified
@@ -31,3 +30,5 @@ It is incomplete:
   also a test for operator in namespace
 
 * operator delete with extra args
+
+* need tests for 'new' in gdb but delete from C++
