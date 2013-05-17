@@ -1384,7 +1384,6 @@ gnuv3_call_array_new (LONGEST elt_size, LONGEST elt_count,
   int include_size, has_destructor = 0;
   struct type *elt_type;
 
-
   for (elt_type = type;
        TYPE_CODE (elt_type) == TYPE_CODE_ARRAY;
        elt_type = check_typedef (TYPE_TARGET_TYPE (elt_type)))
@@ -1393,14 +1392,14 @@ gnuv3_call_array_new (LONGEST elt_size, LONGEST elt_count,
     {
       int i;
 
-      for (i = 0; !has_destructor && i < TYPE_NFN_FIELDS (type); ++i)
+      for (i = 0; !has_destructor && i < TYPE_NFN_FIELDS (elt_type); ++i)
 	{
-	  struct fn_field *f = TYPE_FN_FIELDLIST1 (type, i);
+	  struct fn_field *f = TYPE_FN_FIELDLIST1 (elt_type, i);
 	  int j;
 
-	  for (j = 0; j < TYPE_FN_FIELDLIST_LENGTH (type, i); ++j)
+	  for (j = 0; j < TYPE_FN_FIELDLIST_LENGTH (elt_type, i); ++j)
 	    {
-	      if (TYPE_FN_FIELDLIST_NAME (type, i)[0] == '~'
+	      if (TYPE_FN_FIELDLIST_NAME (elt_type, i)[0] == '~'
 		  || is_destructor_name (TYPE_FN_FIELD_PHYSNAME (f, j)))
 		{
 		  has_destructor = 1;
