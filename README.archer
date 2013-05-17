@@ -16,6 +16,7 @@ It is incomplete:
   when is this called?
 * No cookie is required if the new operator being used is ::operator
   new[](size_t, void*).
+  but we don't currently make a cookie for new Simple[7]
 * syntax for calling a destructor explicitly
   do we need to handle this specially?
   cannot be used with an implicit "this", must always be qualified
