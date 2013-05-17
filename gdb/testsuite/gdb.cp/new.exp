@@ -165,7 +165,7 @@ check_op "delete int * array from c++" \
 gdb_test "print delete s" " = void"
 check_op "delete Simple from c++" {WHATOP_GLOBAL | WHATOP_DELETE}
 
-gdb_test "print delete\[\] s2" " = void"
+gdb_test "print delete\[\] s3" " = void"
 check_op "delete Simple array from c++" \
     {WHATOP_GLOBAL | WHATOP_DELETE | WHATOP_ARRAY}
 
