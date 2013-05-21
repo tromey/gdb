@@ -102,7 +102,7 @@ static struct value *cast_into_complex (struct type *, struct value *);
 
 static struct fn_field *find_method_list (struct value **, const char *,
 					  int, struct type *, int *,
-					  struct type **, int *);
+					  struct type **, int *, int);
 
 void _initialize_valops (void);
 
@@ -2284,7 +2284,7 @@ value_struct_elt (struct value **argp, struct value **args,
 static struct fn_field *
 find_method_list (struct value **argp, const char *method,
 		  int offset, struct type *type, int *num_fns,
-		  struct type **basetype, int *boffset)
+		  struct type **basetype, int *boffset, int is_constructor)
 {
   int i;
   struct fn_field *f;
@@ -2314,6 +2314,9 @@ find_method_list (struct value **argp, const char *method,
 	}
     }
 
+  if (is_constructor)
+    return NULL;
+
   /* Not found in object, check in base subobjects.  */
   for (i = TYPE_N_BASECLASSES (type) - 1; i >= 0; i--)
     {
@@ -2333,7 +2336,7 @@ find_method_list (struct value **argp, const char *method,
 	}
       f = find_method_list (argp, method, base_offset + offset,
 			    TYPE_BASECLASS (type, i), num_fns, 
-			    basetype, boffset);
+			    basetype, boffset, is_constructor);
       if (f)
 	return f;
     }
@@ -2353,7 +2356,8 @@ find_method_list (struct value **argp, const char *method,
 static struct fn_field *
 value_find_oload_method_list (struct value **argp, const char *method,
 			      int offset, int *num_fns, 
-			      struct type **basetype, int *boffset)
+			      struct type **basetype, int *boffset,
+			      int is_constructor)
 {
   struct type *t;
 
@@ -2375,7 +2379,7 @@ value_find_oload_method_list (struct value **argp, const char *method,
 	     "value that is not a struct or union"));
 
   return find_method_list (argp, method, 0, t, num_fns, 
-			   basetype, boffset);
+			   basetype, boffset, is_constructor);
 }
 
 /* Given an array of arguments (ARGS) (which includes an
@@ -2489,7 +2493,8 @@ find_overload_match (struct value **args, int nargs,
       /* Retrieve the list of methods with the name NAME.  */
       fns_ptr = value_find_oload_method_list (&temp, name, 
 					      0, &num_fns, 
-					      &basetype, &boffset);
+					      &basetype, &boffset,
+					      is_constructor);
       /* If this is a method only search, and no methods were found
          the search has faild.  */
       if (method == METHOD && (!fns_ptr || !num_fns))
