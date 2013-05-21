@@ -34,6 +34,9 @@ gdb_continue_to_breakpoint Stop
 
 proc check_op {name value {dcount ""}} {
     with_test_prefix $name {
+	# Handy for debugging.
+	gdb_test "print/x whatop" " = 0x.*"
+
 	gdb_test "print whatop == ($value)" " = true" "check settings"
 
 	if {$dcount != ""} {
@@ -154,7 +157,8 @@ check_op "::delete HasOps" {WHATOP_GLOBAL | WHATOP_DELETE}
 gdb_test "print delete\[\] \$hasops_array" " = void"
 check_op "delete HasOps array" {WHATOP_HASOPS | WHATOP_DELETE | WHATOP_ARRAY}
 
-# Interoperability with the real C++ runtime.
+# Interoperability with the real C++ runtime: create an object in the
+# inferior delete it from gdb.
 gdb_test "print delete ip" " = void"
 check_op "delete int from c++" {WHATOP_GLOBAL | WHATOP_DELETE}
 
@@ -172,3 +176,31 @@ check_op "delete Simple array from c++" \
 gdb_test "print delete b" " = void"
 check_op "delete Derived from c++ via base pointer" \
     {WHATOP_BASE | WHATOP_DELETE}
+
+# Interoperability with the real C++ runtime: create an object in gdb
+# inferior delete it in the inferior.
+foreach {type what multiplier} {
+    int WHATOP_GLOBAL 0
+    HasOps WHATOP_HASOPS 0
+    DerivedFromBase WHATOP_DERIVED 2
+    Base WHATOP_BASE 1
+    VDerived WHATOP_BASE 2
+    VDerived2 WHATOP_BASE 3
+} {
+    set what "$what | WHATOP_DELETE"
+
+    set x_dcount [expr "$multiplier * 1"]
+    set x_dcountv [expr "$multiplier * 5"]
+
+    gdb_test "print call_delete<${type}>(new ${type})" " = void"
+    check_op "call_delete for new $type" $what $x_dcount
+
+    gdb_test "print call_deletev<${type}>(new ${type}\[5\])" " = void"
+    check_op "call_deletev for new $type\[5\]" "$what | WHATOP_ARRAY" $x_dcountv
+}
+
+# Type tests with "set print object on"
+
+gdb_test_no_output "set print object on"
+gdb_test "print new VDerived" " = \\(VDerived \\*\\) $hex"
+gdb_test "print new VDerived\[5\]" " = \\(VDerived \\*\\) $hex"

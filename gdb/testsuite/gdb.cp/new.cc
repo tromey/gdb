@@ -11,12 +11,12 @@ enum what_operator
     WHATOP_GLOBAL = 2,
     WHATOP_HASOPS = 4,
     WHATOP_DERIVED = 8,
-    WHATOP_BASE = 16,
+    WHATOP_BASE = 0x10,
 
-    WHATOP_ARRAY = 32,
-    WHATOP_DELETE = 64,
-    WHATOP_PLACEMENT = 128,
-    WHATOP_ARGS = 256
+    WHATOP_ARRAY = 0x20,
+    WHATOP_DELETE = 0x40,
+    WHATOP_PLACEMENT = 0x80,
+    WHATOP_ARGS = 0x100
   };
 
 int whatop = WHATOP_INVALID;
@@ -131,6 +131,12 @@ struct Base
     free (ptr);
   }
 
+  void operator delete[] (void *ptr)
+  {
+    whatop = WHATOP_BASE | WHATOP_DELETE | WHATOP_ARRAY;
+    free (ptr);
+  }
+
   Base()
   {
   }
@@ -146,6 +152,12 @@ struct DerivedFromBase : public Base
   void operator delete (void *ptr)
   {
     whatop = WHATOP_DERIVED | WHATOP_DELETE;
+    free (ptr);
+  }
+
+  void operator delete[] (void *ptr)
+  {
+    whatop = WHATOP_DERIVED | WHATOP_DELETE | WHATOP_ARRAY;
     free (ptr);
   }
 
@@ -179,15 +191,38 @@ struct VDerived2 : public VDerived, public virtual Base
   }
 };
 
+template<typename T>
+void call_delete (T *ptr)
+{
+  delete ptr;
+}
+
+template<typename T>
+void call_deletev (T *ptr)
+{
+  delete[] ptr;
+}
+
+template<typename T>
+void
+keep_stuff_helper ()
+{
+  call_delete (new T);
+  call_deletev (new T[5]);
+}
+
 int keep_stuff ()
 {
-  delete new HasOps;
-  delete[] new HasOps[5];
-  delete (Base *) new DerivedFromBase;
-  delete new Base;
-  delete new VDerived;
-  delete new VDerived2;
-  delete new Simple;
+  keep_stuff_helper<int> ();
+  keep_stuff_helper<HasOps> ();
+  keep_stuff_helper<Base> ();
+  keep_stuff_helper<VDerived> ();
+  keep_stuff_helper<VDerived2> ();
+  keep_stuff_helper<Simple> ();
+  keep_stuff_helper<DerivedFromBase> ();
+
+  call_delete ((Base *) new DerivedFromBase);
+  call_deletev ((Base *) new DerivedFromBase[5]);
 }
 
 int main ()
