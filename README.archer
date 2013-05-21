@@ -3,6 +3,7 @@ This branch adds support for "new" and "delete"; PR c++/10050.
 It is incomplete:
 
 * it doesn't ensure it is calling the in-charge constructor
+
 * it doesn't ensure it is calling the complete object destructor
   (These required a GCC fix, see the PR.)
        look for 'D0Ev' at the end
@@ -31,4 +32,12 @@ It is incomplete:
 
 * operator delete with extra args
 
-* need tests for 'new' in gdb but delete from C++
+* constructors can have in_charge and VTT artificial arguments
+  we need to supply these before overload resolution, so it
+  will do the right thing
+  however, the type of at least the VTT argument seems weird in DWARF
+  I saw a plain:
+
+   <1><24d>: Abbrev Number: 16 (DW_TAG_const_type)
+
+  ... with no children, using the F18 g++
