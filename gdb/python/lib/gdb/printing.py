@@ -261,3 +261,38 @@ class FlagEnumerationPrinter(PrettyPrinter):
             return _EnumInstance(self.enumerators, val)
         else:
             return None
+
+# A helper class for StructHackPrinter.
+class _StructHelper(object):
+    def __init__(self, val, struct_type, len_field_name):
+        self.val = val
+        self.struct_type = struct_type
+        self.len_field_name = len_field_name
+
+    def children(self):
+        result = []
+        fields = self.struct_type.fields()
+
+        # Find the last non-static field.
+
+        for i in range(0, len(fields)):
+            # Skip static fields.
+            if not hasattr(fields[i], 'bitpos'):
+                continue
+            
+            
+
+class StructHackPrinter(PrettyPrinter):
+    """A pretty-printer which can be used to print structures which use
+    the C "struct hack".  The printer takes the length of the array from
+    some other field in the struct, specified by name."""
+
+    def __init__(self, struct_type, len_field_name):
+        super(StructHackPrinter, self).__init__(struct_type)
+        self.struct_type = struct_type
+        self.len_field_name = len_field_name
+
+    def __call__(self, val):
+        if self.enabled:
+            return _StructHelper(val, self.struct_type, self.len_field_name)
+        return None
