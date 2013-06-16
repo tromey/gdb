@@ -28,6 +28,7 @@
 #include "cli/cli-decode.h"
 #include "completer.h"
 #include "language.h"
+#include "cli/cli-utils.h"
 
 /* Struct representing built-in completion types.  */
 struct cmdpy_completer
@@ -65,6 +66,9 @@ struct cmdpy_object
      for sub-commands of that prefix.  If this Command is not a prefix
      command, then this field is unused.  */
   struct cmd_list_element *sub_list;
+
+  /* Overrides.  */
+  struct cmd_list_element *old_command;
 };
 
 typedef struct cmdpy_object cmdpy_object;
@@ -86,6 +90,104 @@ cmdpy_dont_repeat (PyObject *self, PyObject *args)
   Py_RETURN_NONE;
 }
 
+static PyObject *
+cmdpy_super_invoke (PyObject *sa, PyObject *args)
+{
+  const char *arg;
+  int from_tty;
+  cmdpy_object *self = (cmdpy_object *) sa;
+  volatile struct gdb_exception except;
+
+  if (!PyArg_ParseTuple (args, "si", &arg, &from_tty))
+    return NULL;
+
+  if (self->old_command == NULL)
+    {
+      PyErr_SetString (PyExc_RuntimeError, _("no super command"));
+      return NULL;
+    }
+
+  TRY_CATCH (except, RETURN_MASK_ALL)
+    {
+      char *arg_copy = xstrdup (arg);
+      struct cleanup *cleanup = make_cleanup (xfree, arg_copy);
+
+      arg_copy = skip_spaces (arg_copy);
+      if (arg_copy[0] == '\0')
+	arg_copy = NULL;
+
+      cmd_func (self->old_command, arg_copy, from_tty);
+      do_cleanups (cleanup);
+    }
+  GDB_PY_HANDLE_EXCEPTION (except);
+
+  Py_RETURN_NONE;
+}
+
+static PyObject *
+cmdpy_super_complete (PyObject *sa, PyObject *args)
+{
+  const char *text, *word;
+  cmdpy_object *self = (cmdpy_object *) sa;
+  volatile struct gdb_exception except;
+  VEC (char_ptr) *completions;
+  PyObject *list = NULL, *result = NULL;
+  char *iter;
+  int ix;
+
+  if (!PyArg_ParseTuple (args, "ss", &text, &word))
+    return NULL;
+
+  if (self->old_command == NULL)
+    {
+      PyErr_SetString (PyExc_RuntimeError, _("no super command"));
+      return NULL;
+    }
+
+  if (self->old_command->completer == NULL)
+    {
+      PyErr_SetString (PyExc_RuntimeError, _("no completer for super command"));
+      return NULL;
+    }
+
+  TRY_CATCH (except, RETURN_MASK_ALL)
+    {
+      completions = self->old_command->completer (self->old_command,
+						  text, word);
+    }
+  GDB_PY_HANDLE_EXCEPTION (except);
+
+  list = PyList_New (0);
+  if (list == NULL)
+    goto done;
+
+  for (ix = 0; VEC_iterate (char_ptr, completions, ix, iter); ++ix)
+    {
+      PyObject *str = PyString_FromString (iter);
+
+      if (str == NULL)
+	goto done;
+
+      if (PyList_Append (list, str) < 0)
+	{
+	  Py_DECREF (str);
+	  goto done;
+	}
+    }
+
+  /* Success.  */
+  result = list;
+  list = NULL;
+
+ done:
+  free_char_ptr_vec (completions);
+
+  /* If we were successful, then LIST is NULL.  */
+  Py_XDECREF (list);
+
+  return result;
+}
+
 
 
 /* Called if the gdb cmd_list_element is destroyed.  */
@@ -98,16 +200,22 @@ cmdpy_destroyer (struct cmd_list_element *self, void *context)
 
   cleanup = ensure_python_env (get_current_arch (), current_language);
 
-  /* Release our hold on the command object.  */
   cmd = (cmdpy_object *) context;
-  cmd->command = NULL;
-  Py_DECREF (cmd);
 
   /* We allocated the name, doc string, and perhaps the prefix
      name.  */
-  xfree ((char *) self->name);
-  xfree (self->doc);
+  if (cmd->old_command == NULL)
+    xfree ((char *) self->name);
+  if (cmd->old_command && self->doc != cmd->old_command->doc)
+    xfree (self->doc);
   xfree (self->prefixname);
+
+  if (cmd->old_command != NULL)
+    free_cmd (cmd->old_command);
+
+  /* Release our hold on the command object.  */
+  cmd->command = NULL;
+  Py_DECREF (cmd);
 
   do_cleanups (cleanup);
 }
@@ -514,14 +622,13 @@ cmdpy_init (PyObject *self, PyObject *args, PyObject *kw)
 
       Py_XDECREF (ds_obj);
     }
-  if (! docstring)
-    docstring = xstrdup (_("This command is not documented."));
 
   Py_INCREF (self);
 
   TRY_CATCH (except, RETURN_MASK_ALL)
     {
       struct cmd_list_element *cmd;
+      struct cmd_list_element *old_cmd = NULL;
 
       if (pfx_name)
 	{
@@ -535,14 +642,18 @@ cmdpy_init (PyObject *self, PyObject *args, PyObject *kw)
 				pfx_name, allow_unknown, cmd_list);
 	}
       else
-	cmd = add_cmd (cmd_name, (enum command_class) cmdtype, NULL,
-		       docstring, cmd_list);
+	cmd = replace_cmd (cmd_name, (enum command_class) cmdtype, NULL,
+			   docstring, cmd_list, &old_cmd);
 
       /* There appears to be no API to set this.  */
       cmd->func = cmdpy_function;
       cmd->destroyer = cmdpy_destroyer;
 
+      if (cmd->doc == NULL)
+	cmd->doc = xstrdup (_("This command is not documented."));
+
       obj->command = cmd;
+      obj->old_command = old_cmd;
       set_cmd_context (cmd, self);
       set_cmd_completer (cmd, ((completetype == -1) ? cmdpy_completer
 			       : completers[completetype].completer));
@@ -621,7 +732,10 @@ static PyMethodDef cmdpy_object_methods[] =
 {
   { "dont_repeat", cmdpy_dont_repeat, METH_NOARGS,
     "Prevent command repetition when user enters empty line." },
-
+  { "invoke", cmdpy_super_invoke, METH_VARARGS,
+    "FIXME" },
+  { "complete", cmdpy_super_complete, METH_VARARGS,
+    "FIXME" },
   { 0 }
 };
 

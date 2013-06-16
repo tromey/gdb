@@ -144,6 +144,13 @@ extern struct cmd_list_element *add_abbrev_prefix_cmd (const char *,
 						       struct cmd_list_element
 						       **);
 
+extern struct cmd_list_element *replace_cmd (const char *, enum command_class,
+					     void (*fun) (char *, int), char *,
+					     struct cmd_list_element **,
+					     struct cmd_list_element **);
+
+extern void free_cmd (struct cmd_list_element *);
+
 /* Set the commands corresponding callback.  */
 
 typedef void cmd_cfunc_ftype (char *args, int from_tty);

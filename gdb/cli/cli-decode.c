@@ -232,6 +232,48 @@ add_cmd (const char *name, enum command_class class, void (*fun) (char *, int),
   return c;
 }
 
+/* Like add_cmd, but if the command already exists, then create a copy
+   of the existing command and store it in *OLD_COPY.  If the command
+   does not already exist, act exactly like add_cmd.  */
+
+struct cmd_list_element *
+replace_cmd (const char *name, enum command_class class,
+	     void (*fun) (char *, int),
+	     char *doc, struct cmd_list_element **list,
+	     struct cmd_list_element **old_copy)
+{
+  struct cmd_list_element *c;
+
+  for (c = *list; c; c = c->next)
+    {
+      if (strcmp (c->name, name) == 0)
+	{
+	  *old_copy = XDUP (struct cmd_list_element, c);
+
+	  /* Make sure the old copy doesn't think it is linked in
+	     anywhere.  */
+	  c->hook_pre = NULL;
+	  c->hook_post = NULL;
+	  c->hookee_pre = NULL;
+	  c->hookee_post = NULL;
+	  c->cmd_pointer = NULL;
+	  c->aliases = NULL;
+	  c->alias_chain = NULL;
+	  c->replacement = NULL;
+
+	  c->name = name;
+	  if (doc != NULL)
+	    c->doc = doc;
+	  set_cmd_cfunc (c, fun);
+	  set_cmd_context (c, NULL);
+
+	  return c;
+	}
+    }
+
+  return add_cmd (name, class, fun, doc, list);
+}
+
 /* Deprecates a command CMD.
    REPLACEMENT is the name of the command which should be used in
    place of this command, or NULL if no such command exists.
@@ -748,6 +790,18 @@ add_setshow_zuinteger_cmd (const char *name, enum command_class class,
 			NULL, NULL);
 }
 
+/* Free a command object.  */
+
+void
+free_cmd (struct cmd_list_element *cmd)
+{
+  if (cmd->destroyer)
+    cmd->destroyer (cmd, cmd->context);
+  if ((cmd->flags & DOC_ALLOCATED) != 0)
+    xfree (cmd->doc);
+  xfree (cmd);
+}
+
 /* Remove the command named NAME from the command list.  Return the
    list commands which were aliased to the deleted command.  If the
    command had no aliases, return NULL.  The various *HOOKs are set to
@@ -776,16 +830,12 @@ delete_cmd (const char *name, struct cmd_list_element **list,
     {
       if (strcmp (iter->name, name) == 0)
 	{
-	  if (iter->destroyer)
-	    iter->destroyer (iter, iter->context);
 	  if (iter->hookee_pre)
 	    iter->hookee_pre->hook_pre = 0;
 	  *prehook = iter->hook_pre;
 	  *prehookee = iter->hookee_pre;
 	  if (iter->hookee_post)
 	    iter->hookee_post->hook_post = 0;
-	  if (iter->doc && (iter->flags & DOC_ALLOCATED) != 0)
-	    xfree (iter->doc);
 	  *posthook = iter->hook_post;
 	  *posthookee = iter->hookee_post;
 
@@ -809,7 +859,7 @@ delete_cmd (const char *name, struct cmd_list_element **list,
 	      *prevp = iter->alias_chain;
 	    }
 
-	  xfree (iter);
+	  free_cmd (iter);
 
 	  /* We won't see another command with the same name.  */
 	  break;
