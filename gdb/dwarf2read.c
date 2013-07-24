@@ -11749,7 +11749,7 @@ quirk_gcc_member_function_pointer (struct type *type, struct objfile *objfile)
     return;
 
   domain_type = TYPE_TARGET_TYPE (TYPE_FIELD_TYPE (pfn_type, 0));
-  new_type = alloc_type (objfile);
+  new_type = alloc_type (objfile->per_bfd);
   smash_to_method_type (new_type, domain_type, TYPE_TARGET_TYPE (pfn_type),
 			TYPE_FIELDS (pfn_type), TYPE_NFIELDS (pfn_type),
 			TYPE_VARARGS (pfn_type));

@@ -1204,7 +1204,7 @@ save_objfile_types (struct objfile *objfile, void *datum)
 
       htab_empty (copied_types);
 
-      obj->type = copy_type_recursive (objfile, obj->type, copied_types);
+      obj->type = copy_type_recursive (objfile_bfd, obj->type, copied_types);
 
       obj->next = NULL;
       obj->prev = NULL;
@@ -1222,7 +1222,7 @@ set_type (type_object *obj, struct type *type)
 {
   obj->type = type;
   obj->prev = NULL;
-  if (type && TYPE_OBJFILE (type))
+  if (type && TYPE_PER_BFD (type))
     {
       struct objfile *objfile = TYPE_OBJFILE (type);
 

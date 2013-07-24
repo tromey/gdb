@@ -289,13 +289,13 @@ enum type_instance_flag_value
 
 #define TYPE_GNU_IFUNC(t)	(TYPE_MAIN_TYPE (t)->flag_gnu_ifunc)
 
-/* Type owner.  If TYPE_OBJFILE_OWNED is true, the type is owned by
-   the objfile retrieved as TYPE_OBJFILE.  Otherweise, the type is
-   owned by an architecture; TYPE_OBJFILE is NULL in this case.  */
+/* Type owner.  If TYPE_BFD_OWNED is true, the type is owned by
+   the per-BFD retrieved as TYPE_PER_BFD.  Otherwise, the type is
+   owned by an architecture; TYPE_PER_BFD is NULL in this case.  */
 
-#define TYPE_OBJFILE_OWNED(t) (TYPE_MAIN_TYPE (t)->flag_objfile_owned)
+#define TYPE_BFD_OWNED(t) (TYPE_MAIN_TYPE (t)->flag_per_bfd_owned)
 #define TYPE_OWNER(t) TYPE_MAIN_TYPE(t)->owner
-#define TYPE_OBJFILE(t) (TYPE_OBJFILE_OWNED(t)? TYPE_OWNER(t).objfile : NULL)
+#define TYPE_PER_BFD(t) (TYPE_BFD_OWNED(t)? TYPE_OWNER(t).per_bfd : NULL)
 
 /* True if this type was declared using the "class" keyword.  This is
    only valid for C++ structure types, and only used for displaying
@@ -421,7 +421,7 @@ struct main_type
   unsigned int flag_stub_supported : 1;
   unsigned int flag_gnu_ifunc : 1;
   unsigned int flag_fixed_instance : 1;
-  unsigned int flag_objfile_owned : 1;
+  unsigned int flag_per_bfd_owned : 1;
   /* True if this type was declared with "class" rather than
      "struct".  */
   unsigned int flag_declared_class : 1;
@@ -489,7 +489,7 @@ struct main_type
 
   union type_owner
     {
-      struct objfile *objfile;
+      struct objfile_per_bfd_storage *per_bfd;
       struct gdbarch *gdbarch;
     } owner;
 
@@ -1408,13 +1408,13 @@ extern const struct floatformat *floatformats_ibm_long_double[BFD_ENDIAN_UNKNOWN
    the same as for the type structure.  */
 
 #define TYPE_ALLOC(t,size)  \
-   (TYPE_OBJFILE_OWNED (t) \
-    ? obstack_alloc (&TYPE_OBJFILE (t) -> objfile_obstack, size) \
+   (TYPE_BFD_OWNED (t) \
+    ? obstack_alloc (&TYPE_PER_BFD (t) -> storage_obstack, size) \
     : xmalloc (size))
 
 #define TYPE_ZALLOC(t,size)  \
-   (TYPE_OBJFILE_OWNED (t) \
-    ? memset (obstack_alloc (&TYPE_OBJFILE (t)->objfile_obstack, size),  \
+   (TYPE_BFD_OWNED (t) \
+    ? memset (obstack_alloc (&TYPE_PER_BFD (t)->storage_obstack, size),  \
 	      0, size)  \
     : xzalloc (size))
 
@@ -1422,7 +1422,7 @@ extern const struct floatformat *floatformats_ibm_long_double[BFD_ENDIAN_UNKNOWN
    Use alloc_type_arch to allocate a type owned by an architecture.
    Use alloc_type_copy to allocate a type with the same owner as a
    pre-existing template type, no matter whether objfile or gdbarch.  */
-extern struct type *alloc_type (struct objfile *);
+extern struct type *alloc_type (struct objfile_per_bfd_storage *);
 extern struct type *alloc_type_arch (struct gdbarch *);
 extern struct type *alloc_type_copy (const struct type *);
 
@@ -1433,7 +1433,7 @@ extern struct gdbarch *get_type_arch (const struct type *);
 
 /* Helper function to construct objfile-owned types.  */
 extern struct type *init_type (enum type_code, int, int, const char *,
-			       struct objfile *);
+			       struct objfile_per_bfd_storage *);
 
 /* Helper functions to construct architecture-owned types.  */
 extern struct type *arch_type (struct gdbarch *, enum type_code, int, char *);
