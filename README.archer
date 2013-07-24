@@ -1,0 +1,5 @@
+A branch to remove the "objfile" back-link from types.
+
+fixme - should also convert objfile_type
+but this is sort of a pain
+hang off the bfd instead probably
