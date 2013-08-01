@@ -1,0 +1,12 @@
+This branch implements "catch exit".
+
+The rationale for this is in PR 15812.
+
+It needs:
+
+* Testing
+* Test cases
+* Documentation
+* gdbserver work (incomplete right now)
+* Docs for RSP extensions
+* Better merging of native and remote code
