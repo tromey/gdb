@@ -3423,15 +3423,7 @@ handle_inferior_event (struct execution_control_state *ecs)
 
       if (ecs->ws.kind == TARGET_WAITKIND_EXITED)
 	{
-	  /* Record the exit code in the convenience variable $_exitcode, so
-	     that the user can inspect this again later.  */
-	  set_internalvar_integer (lookup_internalvar ("_exitcode"),
-				   (LONGEST) ecs->ws.value.integer);
-
-	  /* Also record this in the inferior itself.  */
-	  current_inferior ()->has_exit_code = 1;
-	  current_inferior ()->exit_code = (LONGEST) ecs->ws.value.integer;
-
+	  set_inferior_exit_code (current_inferior (), ecs->ws.value.integer);
 	  print_exited_reason (ecs->ws.value.integer);
 	}
       else
@@ -3690,6 +3682,7 @@ handle_inferior_event (struct execution_control_state *ecs)
       goto process_event_stop_test;
 
     case TARGET_WAITKIND_EXITING:
+      set_inferior_exit_code (current_inferior (), ecs->ws.value.integer);
       if (debug_infrun)
         fprintf_unfiltered (gdb_stdlog, "infrun: TARGET_WAITKIND_EXITING\n");
       ecs->event_thread->control.stop_bpstat

@@ -237,6 +237,20 @@ delete_inferior_silent (int pid)
   delete_inferior_1 (inf, 1);
 }
 
+/* Set the inferior's exit code and $_exitcode as well.  Note that it
+  is ok to set it more than once.  For example we might see a "catch
+  exit" event and then a real exit.  */
+
+void
+set_inferior_exit_code (struct inferior *inf, LONGEST code)
+{
+  /* Record the exit code in the convenience variable $_exitcode, so
+     that the user can inspect this again later.  */
+  set_internalvar_integer (lookup_internalvar ("_exitcode"), code);
+
+  inf->has_exit_code = 1;
+  inf->exit_code = code;
+}
 
 /* If SILENT then be quiet -- don't announce a inferior exit, or the
    exit of its threads.  */
