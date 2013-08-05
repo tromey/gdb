@@ -93,6 +93,10 @@ enum target_waitkind
      available.  The exit status is in value.integer.  */
   TARGET_WAITKIND_EXITING,
 
+  /* Like TARGET_WAITKIND_EXITING, but the program is about to exit
+     due to a signal.  The signal is in value.sig.  */
+  TARGET_WAITKIND_EXITING_SIGNAL,
+
   /* Nothing happened, but we stopped anyway.  This perhaps should be handled
      within target_wait, but I'm not sure target_wait should be resuming the
      inferior.  */

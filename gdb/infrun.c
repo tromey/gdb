@@ -91,10 +91,6 @@ static void xdb_handle_command (char *args, int from_tty);
 
 static int prepare_to_proceed (int);
 
-static void print_exited_reason (int exitstatus);
-
-static void print_signal_exited_reason (enum gdb_signal siggnal);
-
 static void print_no_history_reason (void);
 
 static void print_signal_received_reason (enum gdb_signal siggnal);
@@ -3424,10 +3420,10 @@ handle_inferior_event (struct execution_control_state *ecs)
       if (ecs->ws.kind == TARGET_WAITKIND_EXITED)
 	{
 	  set_inferior_exit_code (current_inferior (), ecs->ws.value.integer);
-	  print_exited_reason (ecs->ws.value.integer);
+	  print_exited_reason (ecs->ws.value.integer, 0);
 	}
       else
-	print_signal_exited_reason (ecs->ws.value.sig);
+	print_signal_exited_reason (ecs->ws.value.sig, 0);
 
       gdb_flush (gdb_stdout);
       target_mourn_inferior ();
@@ -3682,16 +3678,29 @@ handle_inferior_event (struct execution_control_state *ecs)
       goto process_event_stop_test;
 
     case TARGET_WAITKIND_EXITING:
-      set_inferior_exit_code (current_inferior (), ecs->ws.value.integer);
+    case TARGET_WAITKIND_EXITING_SIGNAL:
+      /* FIXME: should set some user-visible thing for signals as
+	 well.  */
+      if (ecs->ws.kind == TARGET_WAITKIND_EXITED)
+	set_inferior_exit_code (current_inferior (), ecs->ws.value.integer);
+
       if (debug_infrun)
-        fprintf_unfiltered (gdb_stdlog, "infrun: TARGET_WAITKIND_EXITING\n");
-      ecs->event_thread->control.stop_bpstat
-	= bpstat_stop_status (get_regcache_aspace (get_current_regcache ()),
-			      stop_pc, ecs->ptid, &ecs->ws);
-      ecs->random_signal
-	= !bpstat_explains_signal (ecs->event_thread->control.stop_bpstat,
-				   GDB_SIGNAL_TRAP);
-      goto process_event_stop_test;
+	{
+	  if (ecs->ws.kind == TARGET_WAITKIND_EXITED)
+	    fprintf_unfiltered (gdb_stdlog,
+				"infrun: TARGET_WAITKIND_EXITING\n");
+	  else
+	    fprintf_unfiltered (gdb_stdlog,
+				"infrun: TARGET_WAITKIND_EXITING_SIGNAL\n");
+	  ecs->event_thread->control.stop_bpstat
+	    = bpstat_stop_status (get_regcache_aspace (get_current_regcache ()),
+				  stop_pc, ecs->ptid, &ecs->ws);
+	  ecs->random_signal
+	    = !bpstat_explains_signal (ecs->event_thread->control.stop_bpstat,
+				       /* FIXME??  */
+				       GDB_SIGNAL_TRAP);
+	  goto process_event_stop_test;
+	}
 
     case TARGET_WAITKIND_STOPPED:
       if (debug_infrun)
@@ -5817,8 +5826,8 @@ print_end_stepping_range_reason (void)
 
 /* The inferior was terminated by a signal, print why it stopped.  */
 
-static void
-print_signal_exited_reason (enum gdb_signal siggnal)
+void
+print_signal_exited_reason (enum gdb_signal siggnal, int has_exited)
 {
   struct ui_out *uiout = current_uiout;
 
@@ -5826,7 +5835,10 @@ print_signal_exited_reason (enum gdb_signal siggnal)
   if (ui_out_is_mi_like_p (uiout))
     ui_out_field_string
       (uiout, "reason", async_reason_lookup (EXEC_ASYNC_EXITED_SIGNALLED));
-  ui_out_text (uiout, "\nProgram terminated with signal ");
+  if (has_exited)
+    ui_out_text (uiout, "\nProgram terminated with signal ");
+  else
+    ui_out_text (uiout, "\nProgram terminating with signal ");
   annotate_signal_name ();
   ui_out_field_string (uiout, "signal-name",
 		       gdb_signal_to_name (siggnal));
@@ -5837,13 +5849,14 @@ print_signal_exited_reason (enum gdb_signal siggnal)
 		       gdb_signal_to_string (siggnal));
   annotate_signal_string_end ();
   ui_out_text (uiout, ".\n");
-  ui_out_text (uiout, "The program no longer exists.\n");
+  if (has_exited)
+    ui_out_text (uiout, "The program no longer exists.\n");
 }
 
 /* The inferior program is finished, print why it stopped.  */
 
-static void
-print_exited_reason (int exitstatus)
+void
+print_exited_reason (int exitstatus, int has_exited)
 {
   struct inferior *inf = current_inferior ();
   const char *pidstr = target_pid_to_str (pid_to_ptid (inf->pid));
@@ -5859,7 +5872,10 @@ print_exited_reason (int exitstatus)
       ui_out_text (uiout, plongest (inf->num));
       ui_out_text (uiout, " (");
       ui_out_text (uiout, pidstr);
-      ui_out_text (uiout, ") exited with code ");
+      if (has_exited)
+	ui_out_text (uiout, ") exited with code ");
+      else
+	ui_out_text (uiout, ") exiting with code ");
       ui_out_field_fmt (uiout, "exit-code", "0%o", (unsigned int) exitstatus);
       ui_out_text (uiout, "]\n");
     }
@@ -5872,7 +5888,10 @@ print_exited_reason (int exitstatus)
       ui_out_text (uiout, plongest (inf->num));
       ui_out_text (uiout, " (");
       ui_out_text (uiout, pidstr);
-      ui_out_text (uiout, ") exited normally]\n");
+      if (has_exited)
+	ui_out_text (uiout, ") exited normally]\n");
+      else
+	ui_out_text (uiout, ") exiting normally]\n");
     }
   /* Support the --return-child-result option.  */
   return_child_result_value = exitstatus;

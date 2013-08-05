@@ -453,6 +453,7 @@ startup_inferior (int ntraps)
 	  case TARGET_WAITKIND_SYSCALL_ENTRY:
 	  case TARGET_WAITKIND_SYSCALL_RETURN:
 	  case TARGET_WAITKIND_EXITING:
+	  case TARGET_WAITKIND_EXITING_SIGNAL:
 	    /* Ignore gracefully during startup of the inferior.  */
 	    switch_to_thread (event_ptid);
 	    break;

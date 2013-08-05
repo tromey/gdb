@@ -67,6 +67,9 @@ target_waitstatus_to_string (const struct target_waitstatus *ws)
     case TARGET_WAITKIND_EXITING:
       return xstrprintf ("%sexiting, status = %d",
 			 kind_str, ws->value.integer);
+    case TARGET_WAITKIND_EXITING_SIGNAL:
+      return xstrprintf ("%sexiting, signal = %s",
+			 kind_str, gdb_signal_to_name (ws->value.sig));
     case TARGET_WAITKIND_SPURIOUS:
       return xstrprintf ("%sspurious", kind_str);
     case TARGET_WAITKIND_IGNORE:

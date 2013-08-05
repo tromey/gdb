@@ -229,6 +229,11 @@ extern void follow_inferior_reset_breakpoints (void);
 
 void set_step_info (struct frame_info *frame, struct symtab_and_line sal);
 
+extern void print_signal_exited_reason (enum gdb_signal siggnal,
+					int has_exited);
+
+extern void print_exited_reason (int exitstatus, int has_exited);
+
 /* From infcmd.c */
 
 extern void post_create_inferior (struct target_ops *, int);

@@ -2555,8 +2555,13 @@ linux_handle_extended_wait (struct lwp_info *lp, int status,
 			    pid);
 
       ptrace (PTRACE_GETEVENTMSG, pid, 0, &exit_status);
-      ourstatus->kind = TARGET_WAITKIND_EXITING;
-      ourstatus->value.integer = (int) exit_status;
+
+      store_waitstatus (ourstatus, exit_status);
+      gdb_assert (ourstatus->kind == TARGET_WAITKIND_EXITED
+		  || ourstatus->kind == TARGET_WAITKIND_SIGNALLED);
+      ourstatus->kind = (ourstatus->kind == TARGET_WAITKIND_EXITED
+			 ? TARGET_WAITKIND_EXITING
+			 : TARGET_WAITKIND_EXITING_SIGNAL);
       return 1;
     }
 

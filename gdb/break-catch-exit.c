@@ -57,7 +57,8 @@ breakpoint_hit_catch_exit (const struct bp_location *bl,
 			   struct address_space *aspace, CORE_ADDR bp_addr,
 			   const struct target_waitstatus *ws)
 {
-  return ws->kind == TARGET_WAITKIND_EXITING;
+  return (ws->kind == TARGET_WAITKIND_EXITING
+	  || ws->kind == TARGET_WAITKIND_EXITING_SIGNAL);
 }
 
 /* Implement the "print_it" breakpoint_ops method for exit
@@ -68,24 +69,28 @@ print_it_catch_exit (bpstat bs)
 {
   struct ui_out *uiout = current_uiout;
   struct breakpoint *b = bs->breakpoint_at;
+  ptid_t ptid;
+  struct target_waitstatus last;
+
+  get_last_target_status (&ptid, &last);
 
   annotate_catchpoint (b->number);
   if (b->disposition == disp_del)
     ui_out_text (uiout, "\nTemporary catchpoint ");
   else
     ui_out_text (uiout, "\nCatchpoint ");
-  if (ui_out_is_mi_like_p (uiout))
-    {
-      /* FIXME */
-      /* ui_out_field_string (uiout, "reason", */
-      /* 			   async_reason_lookup (EXEC_ASYNC_EXIT)); */
-      ui_out_field_string (uiout, "disp", bpdisp_text (b->disposition));
-    }
+
   ui_out_field_int (uiout, "bkptno", b->number);
-  ui_out_text (uiout, " (exiting process ");
-  /* FIXME */
-  /* ui_out_field_int (uiout, "newpid", ptid_get_pid (c->forked_inferior_pid)); */
-  ui_out_text (uiout, "), ");
+  ui_out_text (uiout, "\n");
+
+  if (last.kind == TARGET_WAITKIND_EXITING_SIGNAL)
+    print_signal_exited_reason (last.value.sig, 1);
+  else
+    print_exited_reason (last.value.integer, 1);
+
+  if (ui_out_is_mi_like_p (uiout))
+    ui_out_field_string (uiout, "disp", bpdisp_text (b->disposition));
+
   return PRINT_SRC_AND_LOC;
 }
 
