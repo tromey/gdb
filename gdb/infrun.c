@@ -3420,10 +3420,10 @@ handle_inferior_event (struct execution_control_state *ecs)
       if (ecs->ws.kind == TARGET_WAITKIND_EXITED)
 	{
 	  set_inferior_exit_code (current_inferior (), ecs->ws.value.integer);
-	  print_exited_reason (ecs->ws.value.integer, 0);
+	  print_exited_reason (ecs->ws.value.integer, 1);
 	}
       else
-	print_signal_exited_reason (ecs->ws.value.sig, 0);
+	print_signal_exited_reason (ecs->ws.value.sig, 1);
 
       gdb_flush (gdb_stdout);
       target_mourn_inferior ();

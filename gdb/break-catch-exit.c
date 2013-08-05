@@ -84,9 +84,9 @@ print_it_catch_exit (bpstat bs)
   ui_out_text (uiout, "\n");
 
   if (last.kind == TARGET_WAITKIND_EXITING_SIGNAL)
-    print_signal_exited_reason (last.value.sig, 1);
+    print_signal_exited_reason (last.value.sig, 0);
   else
-    print_exited_reason (last.value.integer, 1);
+    print_exited_reason (last.value.integer, 0);
 
   if (ui_out_is_mi_like_p (uiout))
     ui_out_field_string (uiout, "disp", bpdisp_text (b->disposition));

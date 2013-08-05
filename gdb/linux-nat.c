@@ -1049,15 +1049,27 @@ linux_child_set_syscall_catchpoint (int pid, int needed, int any_count,
   return 0;
 }
 
+/* Number of "catch exit" catchpoints that have been installed.  This
+   is used to determine whether such events ought to be filtered.  */
+
+static int catch_exit_count;
+
 static int
 linux_child_insert_exit_catchpoint (int pid)
 {
-  return !linux_supports_traceexit (pid);
+  int support = linux_supports_traceexit (pid);
+
+  if (support)
+    ++catch_exit_count;
+
+  return !support;
 }
 
 static int
 linux_child_remove_exit_catchpoint (int pid)
 {
+  --catch_exit_count;
+  gdb_assert (catch_exit_count >= 0);
   return 0;
 }
 
@@ -2548,6 +2560,21 @@ linux_handle_extended_wait (struct lwp_info *lp, int status,
     {
       unsigned long exit_status;
 
+      if (catch_exit_count == 0)
+	{
+	  ourstatus->kind = TARGET_WAITKIND_IGNORE;
+
+	  if (debug_linux_nat)
+	    fprintf_unfiltered (gdb_stdlog,
+				"LHEW: Got PTRACE_EVENT_EXIT "
+				"from LWP %d: ignoring\n",
+				pid);
+
+	  ptrace (PTRACE_CONT, GET_LWP (lp->ptid), 0, 0);
+
+	  return 1;
+	}
+
       if (debug_linux_nat)
 	fprintf_unfiltered (gdb_stdlog,
 			    "LHEW: Got PTRACE_EVENT_EXIT "
@@ -2555,14 +2582,13 @@ linux_handle_extended_wait (struct lwp_info *lp, int status,
 			    pid);
 
       ptrace (PTRACE_GETEVENTMSG, pid, 0, &exit_status);
-
       store_waitstatus (ourstatus, exit_status);
       gdb_assert (ourstatus->kind == TARGET_WAITKIND_EXITED
 		  || ourstatus->kind == TARGET_WAITKIND_SIGNALLED);
       ourstatus->kind = (ourstatus->kind == TARGET_WAITKIND_EXITED
 			 ? TARGET_WAITKIND_EXITING
 			 : TARGET_WAITKIND_EXITING_SIGNAL);
-      return 1;
+      return 0;
     }
 
   internal_error (__FILE__, __LINE__,
