@@ -81,7 +81,7 @@ print_it_catch_exit (bpstat bs)
     ui_out_text (uiout, "\nCatchpoint ");
 
   ui_out_field_int (uiout, "bkptno", b->number);
-  ui_out_text (uiout, "\n");
+  ui_out_text (uiout, " (catch exit)\n");
 
   if (last.kind == TARGET_WAITKIND_EXITING_SIGNAL)
     print_signal_exited_reason (last.value.sig, 0);
