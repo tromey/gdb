@@ -299,6 +299,9 @@ allocate_objfile (bfd *abfd, int flags)
   objfile->per_bfd = get_objfile_bfd_data (objfile, abfd);
   objfile->pspace = current_program_space;
 
+  objfile->types.gdbarch = objfile->per_bfd->gdbarch;
+  objfile->types.obstack = &objfile->objfile_obstack;
+
   /* Initialize the section indexes for this objfile, so that we can
      later detect if they are used w/o being properly assigned to.  */
 

@@ -162,21 +162,21 @@ show_strict_type_checking (struct ui_file *file, int from_tty,
    on the objfile's objfile_obstack.  */
 
 struct type *
-alloc_type (struct objfile_per_bfd_storage *per_bfd)
+alloc_type (struct type_allocator *allocator)
 {
   struct type *type;
 
-  gdb_assert (per_bfd != NULL);
+  gdb_assert (allocator != NULL);
 
   /* Alloc the structure and start off with all fields zeroed.  */
-  type = OBSTACK_ZALLOC (&per_bfd->storage_obstack, struct type);
-  TYPE_MAIN_TYPE (type) = OBSTACK_ZALLOC (&per_bfd->storage_obstack,
+  type = OBSTACK_ZALLOC (allocator->obstack, struct type);
+  TYPE_MAIN_TYPE (type) = OBSTACK_ZALLOC (allocator->obstack,
 					  struct main_type);
   /* FIXME */
   /* OBJSTAT (objfile, n_types++); */
 
-  TYPE_BFD_OWNED (type) = 1;
-  TYPE_OWNER (type).per_bfd = per_bfd;
+  TYPE_OWNED (type) = 1;
+  TYPE_OWNER (type).allocator = allocator;
 
   /* Initialize the fields that might not be zero.  */
 
@@ -203,7 +203,7 @@ alloc_type_arch (struct gdbarch *gdbarch)
   type = XZALLOC (struct type);
   TYPE_MAIN_TYPE (type) = XZALLOC (struct main_type);
 
-  TYPE_BFD_OWNED (type) = 0;
+  TYPE_OWNED (type) = 0;
   TYPE_OWNER (type).gdbarch = gdbarch;
 
   /* Initialize the fields that might not be zero.  */
@@ -222,8 +222,8 @@ alloc_type_arch (struct gdbarch *gdbarch)
 struct type *
 alloc_type_copy (const struct type *type)
 {
-  if (TYPE_BFD_OWNED (type))
-    return alloc_type (TYPE_OWNER (type).per_bfd);
+  if (TYPE_OWNED (type))
+    return alloc_type (TYPE_OWNER (type).allocator);
   else
     return alloc_type_arch (TYPE_OWNER (type).gdbarch);
 }
@@ -234,8 +234,8 @@ alloc_type_copy (const struct type *type)
 struct gdbarch *
 get_type_arch (const struct type *type)
 {
-  if (TYPE_BFD_OWNED (type))
-    return TYPE_OWNER (type).per_bfd->gdbarch;
+  if (TYPE_OWNED (type))
+    return TYPE_OWNER (type).allocator->gdbarch;
   else
     return TYPE_OWNER (type).gdbarch;
 }
@@ -251,10 +251,10 @@ alloc_type_instance (struct type *oldtype)
 
   /* Allocate the structure.  */
 
-  if (! TYPE_BFD_OWNED (oldtype))
+  if (! TYPE_OWNED (oldtype))
     type = XZALLOC (struct type);
   else
-    type = OBSTACK_ZALLOC (&TYPE_PER_BFD (oldtype)->storage_obstack,
+    type = OBSTACK_ZALLOC (TYPE_ALLOCATOR (oldtype)->obstack,
 			   struct type);
 
   TYPE_MAIN_TYPE (type) = TYPE_MAIN_TYPE (oldtype);
@@ -270,13 +270,13 @@ alloc_type_instance (struct type *oldtype)
 static void
 smash_type (struct type *type)
 {
-  int bfd_owned = TYPE_BFD_OWNED (type);
+  int owned = TYPE_OWNED (type);
   union type_owner owner = TYPE_OWNER (type);
 
   memset (TYPE_MAIN_TYPE (type), 0, sizeof (struct main_type));
 
   /* Restore owner information.  */
-  TYPE_BFD_OWNED (type) = bfd_owned;
+  TYPE_OWNED (type) = owned;
   TYPE_OWNER (type) = owner;
 
   /* For now, delete the rings.  */
@@ -577,7 +577,7 @@ make_qualified_type (struct type *type, int new_flags,
 	 as TYPE.  Otherwise, we can't link it into TYPE's cv chain:
 	 if one objfile is freed and the other kept, we'd have
 	 dangling pointers.  */
-      gdb_assert (TYPE_PER_BFD (type) == TYPE_PER_BFD (storage));
+      gdb_assert (TYPE_ALLOCATOR (type) == TYPE_ALLOCATOR (storage));
 
       ntype = storage;
       TYPE_MAIN_TYPE (ntype) = TYPE_MAIN_TYPE (type);
@@ -666,7 +666,7 @@ make_cv_type (int cnst, int voltl,
 	 can't have inter-objfile pointers.  The only thing to do is
 	 to leave stub types as stub types, and look them up afresh by
 	 name each time you encounter them.  */
-      gdb_assert (TYPE_PER_BFD (*typeptr) == TYPE_PER_BFD (type));
+      gdb_assert (TYPE_ALLOCATOR (*typeptr) == TYPE_ALLOCATOR (type));
     }
   
   ntype = make_qualified_type (type, new_flags, 
@@ -708,7 +708,7 @@ replace_type (struct type *ntype, struct type *type)
      the assignment of one type's main type structure to the other
      will produce a type with references to objects (names; field
      lists; etc.) allocated on an objfile other than its own.  */
-  gdb_assert (TYPE_PER_BFD (ntype) == TYPE_PER_BFD (ntype));
+  gdb_assert (TYPE_ALLOCATOR (ntype) == TYPE_ALLOCATOR (ntype));
 
   *TYPE_MAIN_TYPE (ntype) = *TYPE_MAIN_TYPE (type);
 
@@ -1958,11 +1958,11 @@ allocate_gnat_aux_type (struct type *type)
 
 struct type *
 init_type (enum type_code code, int length, int flags,
-	   const char *name, struct objfile_per_bfd_storage *per_bfd)
+	   const char *name, struct type_allocator *allocator)
 {
   struct type *type;
 
-  type = alloc_type (per_bfd);
+  type = alloc_type (allocator);
   TYPE_CODE (type) = code;
   TYPE_LENGTH (type) = length;
 
@@ -3170,10 +3170,10 @@ recursive_dump_type (struct type *type, int spaces)
     }
   puts_filtered ("\n");
   printfi_filtered (spaces, "length %d\n", TYPE_LENGTH (type));
-  if (TYPE_BFD_OWNED (type))
+  if (TYPE_OWNED (type))
     {
-      printfi_filtered (spaces, "per_bfd ");
-      gdb_print_host_address (TYPE_OWNER (type).per_bfd, gdb_stdout);
+      printfi_filtered (spaces, "allocator ");
+      gdb_print_host_address (TYPE_OWNER (type).allocator, gdb_stdout);
     }
   else
     {
@@ -3431,12 +3431,12 @@ copy_type_recursive (struct objfile *objfile,
   void **slot;
   struct type *new_type;
 
-  if (! TYPE_BFD_OWNED (type))
+  if (! TYPE_OWNED (type))
     return type;
 
   /* This type shouldn't be pointing to any types in other objfiles;
      if it did, the type might disappear unexpectedly.  */
-  gdb_assert (TYPE_PER_BFD (type) == objfile->per_bfd);
+  gdb_assert (TYPE_ALLOCATOR (type) == &objfile->types);
 
   pair.old = type;
   slot = htab_find_slot (copied_types, &pair, INSERT);
@@ -3456,7 +3456,7 @@ copy_type_recursive (struct objfile *objfile,
   /* Copy the common fields of types.  For the main type, we simply
      copy the entire thing and then update specific fields as needed.  */
   *TYPE_MAIN_TYPE (new_type) = *TYPE_MAIN_TYPE (type);
-  TYPE_BFD_OWNED (new_type) = 0;
+  TYPE_OWNED (new_type) = 0;
   TYPE_OWNER (new_type).gdbarch = get_type_arch (type);
 
   if (TYPE_NAME (type))
@@ -3558,7 +3558,7 @@ copy_type (const struct type *type)
 {
   struct type *new_type;
 
-  gdb_assert (TYPE_OBJFILE_OWNED (type));
+  gdb_assert (TYPE_BFD_OWNED (type));
 
   new_type = alloc_type_copy (type);
   TYPE_INSTANCE_FLAGS (new_type) = TYPE_INSTANCE_FLAGS (type);
@@ -3967,107 +3967,107 @@ objfile_type (struct objfile *objfile)
   objfile_type->builtin_void
     = init_type (TYPE_CODE_VOID, 1,
 		 0,
-		 "void", objfile->per_bfd);
+		 "void", &objfile->types);
 
   objfile_type->builtin_char
     = init_type (TYPE_CODE_INT, TARGET_CHAR_BIT / TARGET_CHAR_BIT,
 		 (TYPE_FLAG_NOSIGN
 		  | (gdbarch_char_signed (gdbarch) ? 0 : TYPE_FLAG_UNSIGNED)),
-		 "char", objfile->per_bfd);
+		 "char", &objfile->types);
   objfile_type->builtin_signed_char
     = init_type (TYPE_CODE_INT, TARGET_CHAR_BIT / TARGET_CHAR_BIT,
 		 0,
-		 "signed char", objfile->per_bfd);
+		 "signed char", &objfile->types);
   objfile_type->builtin_unsigned_char
     = init_type (TYPE_CODE_INT, TARGET_CHAR_BIT / TARGET_CHAR_BIT,
 		 TYPE_FLAG_UNSIGNED,
-		 "unsigned char", objfile->per_bfd);
+		 "unsigned char", &objfile->types);
   objfile_type->builtin_short
     = init_type (TYPE_CODE_INT,
 		 gdbarch_short_bit (gdbarch) / TARGET_CHAR_BIT,
-		 0, "short", objfile->per_bfd);
+		 0, "short", &objfile->types);
   objfile_type->builtin_unsigned_short
     = init_type (TYPE_CODE_INT,
 		 gdbarch_short_bit (gdbarch) / TARGET_CHAR_BIT,
-		 TYPE_FLAG_UNSIGNED, "unsigned short", objfile->per_bfd);
+		 TYPE_FLAG_UNSIGNED, "unsigned short", &objfile->types);
   objfile_type->builtin_int
     = init_type (TYPE_CODE_INT,
 		 gdbarch_int_bit (gdbarch) / TARGET_CHAR_BIT,
-		 0, "int", objfile->per_bfd);
+		 0, "int", &objfile->types);
   objfile_type->builtin_unsigned_int
     = init_type (TYPE_CODE_INT,
 		 gdbarch_int_bit (gdbarch) / TARGET_CHAR_BIT,
-		 TYPE_FLAG_UNSIGNED, "unsigned int", objfile->per_bfd);
+		 TYPE_FLAG_UNSIGNED, "unsigned int", &objfile->types);
   objfile_type->builtin_long
     = init_type (TYPE_CODE_INT,
 		 gdbarch_long_bit (gdbarch) / TARGET_CHAR_BIT,
-		 0, "long", objfile->per_bfd);
+		 0, "long", &objfile->types);
   objfile_type->builtin_unsigned_long
     = init_type (TYPE_CODE_INT,
 		 gdbarch_long_bit (gdbarch) / TARGET_CHAR_BIT,
-		 TYPE_FLAG_UNSIGNED, "unsigned long", objfile->per_bfd);
+		 TYPE_FLAG_UNSIGNED, "unsigned long", &objfile->types);
   objfile_type->builtin_long_long
     = init_type (TYPE_CODE_INT,
 		 gdbarch_long_long_bit (gdbarch) / TARGET_CHAR_BIT,
-		 0, "long long", objfile->per_bfd);
+		 0, "long long", &objfile->types);
   objfile_type->builtin_unsigned_long_long
     = init_type (TYPE_CODE_INT,
 		 gdbarch_long_long_bit (gdbarch) / TARGET_CHAR_BIT,
-		 TYPE_FLAG_UNSIGNED, "unsigned long long", objfile->per_bfd);
+		 TYPE_FLAG_UNSIGNED, "unsigned long long", &objfile->types);
 
   objfile_type->builtin_float
     = init_type (TYPE_CODE_FLT,
 		 gdbarch_float_bit (gdbarch) / TARGET_CHAR_BIT,
-		 0, "float", objfile->per_bfd);
+		 0, "float", &objfile->types);
   TYPE_FLOATFORMAT (objfile_type->builtin_float)
     = gdbarch_float_format (gdbarch);
   objfile_type->builtin_double
     = init_type (TYPE_CODE_FLT,
 		 gdbarch_double_bit (gdbarch) / TARGET_CHAR_BIT,
-		 0, "double", objfile->per_bfd);
+		 0, "double", &objfile->types);
   TYPE_FLOATFORMAT (objfile_type->builtin_double)
     = gdbarch_double_format (gdbarch);
   objfile_type->builtin_long_double
     = init_type (TYPE_CODE_FLT,
 		 gdbarch_long_double_bit (gdbarch) / TARGET_CHAR_BIT,
-		 0, "long double", objfile->per_bfd);
+		 0, "long double", &objfile->types);
   TYPE_FLOATFORMAT (objfile_type->builtin_long_double)
     = gdbarch_long_double_format (gdbarch);
 
   /* This type represents a type that was unrecognized in symbol read-in.  */
   objfile_type->builtin_error
-    = init_type (TYPE_CODE_ERROR, 0, 0, "<unknown type>", objfile->per_bfd);
+    = init_type (TYPE_CODE_ERROR, 0, 0, "<unknown type>", &objfile->types);
 
   /* The following set of types is used for symbols with no
      debug information.  */
   objfile_type->nodebug_text_symbol
     = init_type (TYPE_CODE_FUNC, 1, 0,
-		 "<text variable, no debug info>", objfile->per_bfd);
+		 "<text variable, no debug info>", &objfile->types);
   TYPE_TARGET_TYPE (objfile_type->nodebug_text_symbol)
     = objfile_type->builtin_int;
   objfile_type->nodebug_text_gnu_ifunc_symbol
     = init_type (TYPE_CODE_FUNC, 1, TYPE_FLAG_GNU_IFUNC,
 		 "<text gnu-indirect-function variable, no debug info>",
-		 objfile->per_bfd);
+		 &objfile->types);
   TYPE_TARGET_TYPE (objfile_type->nodebug_text_gnu_ifunc_symbol)
     = objfile_type->nodebug_text_symbol;
   objfile_type->nodebug_got_plt_symbol
     = init_type (TYPE_CODE_PTR, gdbarch_addr_bit (gdbarch) / 8, 0,
 		 "<text from jump slot in .got.plt, no debug info>",
-		 objfile->per_bfd);
+		 &objfile->types);
   TYPE_TARGET_TYPE (objfile_type->nodebug_got_plt_symbol)
     = objfile_type->nodebug_text_symbol;
   objfile_type->nodebug_data_symbol
     = init_type (TYPE_CODE_INT,
 		 gdbarch_int_bit (gdbarch) / HOST_CHAR_BIT, 0,
-		 "<data variable, no debug info>", objfile->per_bfd);
+		 "<data variable, no debug info>", &objfile->types);
   objfile_type->nodebug_unknown_symbol
     = init_type (TYPE_CODE_INT, 1, 0,
-		 "<variable (not text or data), no debug info>", objfile->per_bfd);
+		 "<variable (not text or data), no debug info>", &objfile->types);
   objfile_type->nodebug_tls_symbol
     = init_type (TYPE_CODE_INT,
 		 gdbarch_int_bit (gdbarch) / HOST_CHAR_BIT, 0,
-		 "<thread local variable, no debug info>", objfile->per_bfd);
+		 "<thread local variable, no debug info>", &objfile->types);
 
   /* NOTE: on some targets, addresses and pointers are not necessarily
      the same --- for example, on the D10V, pointers are 16 bits long,
@@ -4099,7 +4099,7 @@ objfile_type (struct objfile *objfile)
   objfile_type->builtin_core_addr
     = init_type (TYPE_CODE_INT,
 		 gdbarch_addr_bit (gdbarch) / 8,
-		 TYPE_FLAG_UNSIGNED, "__CORE_ADDR", objfile->per_bfd);
+		 TYPE_FLAG_UNSIGNED, "__CORE_ADDR", &objfile->types);
 
   set_objfile_data (objfile, objfile_type_data, objfile_type);
   return objfile_type;

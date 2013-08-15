@@ -7283,7 +7283,7 @@ fixup_go_packaging (struct dwarf2_cu *cu)
 						      package_name,
 						      strlen (package_name));
       struct type *type = init_type (TYPE_CODE_MODULE, 0, 0,
-				     saved_package_name, objfile);
+				     saved_package_name, &objfile->types);
       struct symbol *sym;
 
       TYPE_TAG_NAME (type) = TYPE_NAME (type);
@@ -11536,7 +11536,7 @@ dwarf2_add_member_fn (struct field_info *fip, struct die_info *die,
       fnp->physname = physname ? physname : "";
     }
 
-  fnp->type = alloc_type (objfile);
+  fnp->type = alloc_type (&objfile->types);
   this_type = read_type_die (die, cu);
   if (this_type && TYPE_CODE (this_type) == TYPE_CODE_FUNC)
     {
@@ -11749,7 +11749,7 @@ quirk_gcc_member_function_pointer (struct type *type, struct objfile *objfile)
     return;
 
   domain_type = TYPE_TARGET_TYPE (TYPE_FIELD_TYPE (pfn_type, 0));
-  new_type = alloc_type (objfile->per_bfd);
+  new_type = alloc_type (&objfile->types);
   smash_to_method_type (new_type, domain_type, TYPE_TARGET_TYPE (pfn_type),
 			TYPE_FIELDS (pfn_type), TYPE_NFIELDS (pfn_type),
 			TYPE_VARARGS (pfn_type));
@@ -11806,7 +11806,7 @@ read_structure_type (struct die_info *die, struct dwarf2_cu *cu)
       return set_die_type (die, type, cu);
     }
 
-  type = alloc_type (objfile);
+  type = alloc_type (&objfile->types);
   INIT_CPLUS_SPECIFIC (type);
 
   name = dwarf2_name (die, cu);
@@ -12126,7 +12126,7 @@ read_enumeration_type (struct die_info *die, struct dwarf2_cu *cu)
       return set_die_type (die, type, cu);
     }
 
-  type = alloc_type (objfile);
+  type = alloc_type (&objfile->types);
 
   TYPE_CODE (type) = TYPE_CODE_ENUM;
   name = dwarf2_full_name (NULL, die, cu);
@@ -12639,7 +12639,7 @@ read_namespace_type (struct die_info *die, struct dwarf2_cu *cu)
 
   /* Create the type.  */
   type = init_type (TYPE_CODE_NAMESPACE, 0, 0, NULL,
-		    objfile);
+		    &objfile->types);
   TYPE_NAME (type) = name;
   TYPE_TAG_NAME (type) = TYPE_NAME (type);
 
@@ -12703,7 +12703,7 @@ read_module_type (struct die_info *die, struct dwarf2_cu *cu)
     complaint (&symfile_complaints,
 	       _("DW_TAG_module has no name, offset 0x%x"),
                die->offset.sect_off);
-  type = init_type (TYPE_CODE_MODULE, 0, 0, module_name, objfile);
+  type = init_type (TYPE_CODE_MODULE, 0, 0, module_name, &objfile->types);
 
   /* determine_prefix uses TYPE_TAG_NAME.  */
   TYPE_TAG_NAME (type) = TYPE_NAME (type);
@@ -12842,7 +12842,7 @@ read_tag_ptr_to_member_type (struct die_info *die, struct dwarf2_cu *cu)
     type = lookup_methodptr_type (to_type);
   else if (TYPE_CODE (check_typedef (to_type)) == TYPE_CODE_FUNC)
     {
-      struct type *new_type = alloc_type (cu->objfile);
+      struct type *new_type = alloc_type (&cu->objfile->types);
 
       smash_to_method_type (new_type, domain, TYPE_TARGET_TYPE (to_type),
 			    TYPE_FIELDS (to_type), TYPE_NFIELDS (to_type),
@@ -13193,7 +13193,7 @@ read_typedef (struct die_info *die, struct dwarf2_cu *cu)
 
   name = dwarf2_full_name (NULL, die, cu);
   this_type = init_type (TYPE_CODE_TYPEDEF, 0,
-			 TYPE_FLAG_TARGET_STUB, NULL, objfile);
+			 TYPE_FLAG_TARGET_STUB, NULL, &objfile->types);
   TYPE_NAME (this_type) = name;
   set_die_type (die, this_type, cu);
   target_type = die_type (die, cu);
@@ -13250,7 +13250,7 @@ read_base_type (struct die_info *die, struct dwarf2_cu *cu)
 	/* Turn DW_ATE_address into a void * pointer.  */
 	code = TYPE_CODE_PTR;
 	type_flags |= TYPE_FLAG_UNSIGNED;
-	target_type = init_type (TYPE_CODE_VOID, 1, 0, NULL, objfile);
+	target_type = init_type (TYPE_CODE_VOID, 1, 0, NULL, &objfile->types);
 	break;
       case DW_ATE_boolean:
 	code = TYPE_CODE_BOOL;
@@ -13258,7 +13258,7 @@ read_base_type (struct die_info *die, struct dwarf2_cu *cu)
 	break;
       case DW_ATE_complex_float:
 	code = TYPE_CODE_COMPLEX;
-	target_type = init_type (TYPE_CODE_FLT, size / 2, 0, NULL, objfile);
+	target_type = init_type (TYPE_CODE_FLT, size / 2, 0, NULL, &objfile->types);
 	break;
       case DW_ATE_decimal_float:
 	code = TYPE_CODE_DECFLOAT;
@@ -13299,7 +13299,7 @@ read_base_type (struct die_info *die, struct dwarf2_cu *cu)
 	break;
     }
 
-  type = init_type (code, size, type_flags, NULL, objfile);
+  type = init_type (code, size, type_flags, NULL, &objfile->types);
   TYPE_NAME (type) = name;
   TYPE_TARGET_TYPE (type) = target_type;
 
@@ -13492,7 +13492,7 @@ read_unspecified_type (struct die_info *die, struct dwarf2_cu *cu)
 
   /* For now, we only support the C meaning of an unspecified type: void.  */
 
-  type = init_type (TYPE_CODE_VOID, 0, 0, NULL, cu->objfile);
+  type = init_type (TYPE_CODE_VOID, 0, 0, NULL, &cu->objfile->types);
   TYPE_NAME (type) = dwarf2_name (die, cu);
 
   return set_die_type (die, type, cu);
@@ -17050,7 +17050,7 @@ build_error_marker_type (struct dwarf2_cu *cu, struct die_info *die)
 			 message, strlen (message));
   xfree (message);
 
-  return init_type (TYPE_CODE_ERROR, 0, 0, saved, objfile);
+  return init_type (TYPE_CODE_ERROR, 0, 0, saved, &objfile->types);
 }
 
 /* Look up the type of DIE in CU using its type attribute ATTR.

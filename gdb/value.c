@@ -2175,10 +2175,10 @@ void
 preserve_one_value (struct value *value, struct objfile *objfile,
 		    htab_t copied_types)
 {
-  if (TYPE_PER_BFD (value->type) == objfile->per_bfd)
+  if (TYPE_ALLOCATOR (value->type) == &objfile->types)
     value->type = copy_type_recursive (objfile, value->type, copied_types);
 
-  if (TYPE_PER_BFD (value->enclosing_type) == objfile->per_bfd)
+  if (TYPE_ALLOCATOR (value->enclosing_type) == &objfile->types)
     value->enclosing_type = copy_type_recursive (objfile, value->enclosing_type,
 						 copied_types);
 }
@@ -2193,7 +2193,7 @@ preserve_one_internalvar (struct internalvar *var, struct objfile *objfile,
     {
     case INTERNALVAR_INTEGER:
       if (var->u.integer.type
-	  && TYPE_PER_BFD (var->u.integer.type) == objfile->per_bfd)
+	  && TYPE_ALLOCATOR (var->u.integer.type) == &objfile->types)
 	var->u.integer.type
 	  = copy_type_recursive (objfile, var->u.integer.type, copied_types);
       break;

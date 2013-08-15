@@ -322,7 +322,7 @@ dbx_alloc_type (int typenums[2], struct objfile *objfile)
 
   if (typenums[0] == -1)
     {
-      return (alloc_type (objfile));
+      return (alloc_type (&objfile->types));
     }
 
   type_addr = dbx_lookup_type (typenums, objfile);
@@ -332,7 +332,7 @@ dbx_alloc_type (int typenums[2], struct objfile *objfile)
      We will fill it in later if we find out how.  */
   if (*type_addr == 0)
     {
-      *type_addr = alloc_type (objfile);
+      *type_addr = alloc_type (&objfile->types);
     }
 
   return (*type_addr);
@@ -2079,130 +2079,130 @@ rs6000_builtin_type (int typenum, struct objfile *objfile)
          is other than 32 bits, then it should use a new negative type
          number (or avoid negative type numbers for that case).
          See stabs.texinfo.  */
-      rettype = init_type (TYPE_CODE_INT, 4, 0, "int", objfile);
+      rettype = init_type (TYPE_CODE_INT, 4, 0, "int", &objfile->types);
       break;
     case 2:
-      rettype = init_type (TYPE_CODE_INT, 1, 0, "char", objfile);
+      rettype = init_type (TYPE_CODE_INT, 1, 0, "char", &objfile->types);
       break;
     case 3:
-      rettype = init_type (TYPE_CODE_INT, 2, 0, "short", objfile);
+      rettype = init_type (TYPE_CODE_INT, 2, 0, "short", &objfile->types);
       break;
     case 4:
-      rettype = init_type (TYPE_CODE_INT, 4, 0, "long", objfile);
+      rettype = init_type (TYPE_CODE_INT, 4, 0, "long", &objfile->types);
       break;
     case 5:
       rettype = init_type (TYPE_CODE_INT, 1, TYPE_FLAG_UNSIGNED,
-			   "unsigned char", objfile);
+			   "unsigned char", &objfile->types);
       break;
     case 6:
-      rettype = init_type (TYPE_CODE_INT, 1, 0, "signed char", objfile);
+      rettype = init_type (TYPE_CODE_INT, 1, 0, "signed char", &objfile->types);
       break;
     case 7:
       rettype = init_type (TYPE_CODE_INT, 2, TYPE_FLAG_UNSIGNED,
-			   "unsigned short", objfile);
+			   "unsigned short", &objfile->types);
       break;
     case 8:
       rettype = init_type (TYPE_CODE_INT, 4, TYPE_FLAG_UNSIGNED,
-			   "unsigned int", objfile);
+			   "unsigned int", &objfile->types);
       break;
     case 9:
       rettype = init_type (TYPE_CODE_INT, 4, TYPE_FLAG_UNSIGNED,
-			   "unsigned", objfile);
+			   "unsigned", &objfile->types);
       break;
     case 10:
       rettype = init_type (TYPE_CODE_INT, 4, TYPE_FLAG_UNSIGNED,
-			   "unsigned long", objfile);
+			   "unsigned long", &objfile->types);
       break;
     case 11:
-      rettype = init_type (TYPE_CODE_VOID, 1, 0, "void", objfile);
+      rettype = init_type (TYPE_CODE_VOID, 1, 0, "void", &objfile->types);
       break;
     case 12:
       /* IEEE single precision (32 bit).  */
-      rettype = init_type (TYPE_CODE_FLT, 4, 0, "float", objfile);
+      rettype = init_type (TYPE_CODE_FLT, 4, 0, "float", &objfile->types);
       break;
     case 13:
       /* IEEE double precision (64 bit).  */
-      rettype = init_type (TYPE_CODE_FLT, 8, 0, "double", objfile);
+      rettype = init_type (TYPE_CODE_FLT, 8, 0, "double", &objfile->types);
       break;
     case 14:
       /* This is an IEEE double on the RS/6000, and different machines with
          different sizes for "long double" should use different negative
          type numbers.  See stabs.texinfo.  */
-      rettype = init_type (TYPE_CODE_FLT, 8, 0, "long double", objfile);
+      rettype = init_type (TYPE_CODE_FLT, 8, 0, "long double", &objfile->types);
       break;
     case 15:
-      rettype = init_type (TYPE_CODE_INT, 4, 0, "integer", objfile);
+      rettype = init_type (TYPE_CODE_INT, 4, 0, "integer", &objfile->types);
       break;
     case 16:
       rettype = init_type (TYPE_CODE_BOOL, 4, TYPE_FLAG_UNSIGNED,
-			   "boolean", objfile);
+			   "boolean", &objfile->types);
       break;
     case 17:
-      rettype = init_type (TYPE_CODE_FLT, 4, 0, "short real", objfile);
+      rettype = init_type (TYPE_CODE_FLT, 4, 0, "short real", &objfile->types);
       break;
     case 18:
-      rettype = init_type (TYPE_CODE_FLT, 8, 0, "real", objfile);
+      rettype = init_type (TYPE_CODE_FLT, 8, 0, "real", &objfile->types);
       break;
     case 19:
-      rettype = init_type (TYPE_CODE_ERROR, 0, 0, "stringptr", objfile);
+      rettype = init_type (TYPE_CODE_ERROR, 0, 0, "stringptr", &objfile->types);
       break;
     case 20:
       rettype = init_type (TYPE_CODE_CHAR, 1, TYPE_FLAG_UNSIGNED,
-			   "character", objfile);
+			   "character", &objfile->types);
       break;
     case 21:
       rettype = init_type (TYPE_CODE_BOOL, 1, TYPE_FLAG_UNSIGNED,
-			   "logical*1", objfile);
+			   "logical*1", &objfile->types);
       break;
     case 22:
       rettype = init_type (TYPE_CODE_BOOL, 2, TYPE_FLAG_UNSIGNED,
-			   "logical*2", objfile);
+			   "logical*2", &objfile->types);
       break;
     case 23:
       rettype = init_type (TYPE_CODE_BOOL, 4, TYPE_FLAG_UNSIGNED,
-			   "logical*4", objfile);
+			   "logical*4", &objfile->types);
       break;
     case 24:
       rettype = init_type (TYPE_CODE_BOOL, 4, TYPE_FLAG_UNSIGNED,
-			   "logical", objfile);
+			   "logical", &objfile->types);
       break;
     case 25:
       /* Complex type consisting of two IEEE single precision values.  */
-      rettype = init_type (TYPE_CODE_COMPLEX, 8, 0, "complex", objfile);
+      rettype = init_type (TYPE_CODE_COMPLEX, 8, 0, "complex", &objfile->types);
       TYPE_TARGET_TYPE (rettype) = init_type (TYPE_CODE_FLT, 4, 0, "float",
-					      objfile);
+					      &objfile->types);
       break;
     case 26:
       /* Complex type consisting of two IEEE double precision values.  */
       rettype = init_type (TYPE_CODE_COMPLEX, 16, 0, "double complex", NULL);
       TYPE_TARGET_TYPE (rettype) = init_type (TYPE_CODE_FLT, 8, 0, "double",
-					      objfile);
+					      &objfile->types);
       break;
     case 27:
-      rettype = init_type (TYPE_CODE_INT, 1, 0, "integer*1", objfile);
+      rettype = init_type (TYPE_CODE_INT, 1, 0, "integer*1", &objfile->types);
       break;
     case 28:
-      rettype = init_type (TYPE_CODE_INT, 2, 0, "integer*2", objfile);
+      rettype = init_type (TYPE_CODE_INT, 2, 0, "integer*2", &objfile->types);
       break;
     case 29:
-      rettype = init_type (TYPE_CODE_INT, 4, 0, "integer*4", objfile);
+      rettype = init_type (TYPE_CODE_INT, 4, 0, "integer*4", &objfile->types);
       break;
     case 30:
-      rettype = init_type (TYPE_CODE_CHAR, 2, 0, "wchar", objfile);
+      rettype = init_type (TYPE_CODE_CHAR, 2, 0, "wchar", &objfile->types);
       break;
     case 31:
-      rettype = init_type (TYPE_CODE_INT, 8, 0, "long long", objfile);
+      rettype = init_type (TYPE_CODE_INT, 8, 0, "long long", &objfile->types);
       break;
     case 32:
       rettype = init_type (TYPE_CODE_INT, 8, TYPE_FLAG_UNSIGNED,
-			   "unsigned long long", objfile);
+			   "unsigned long long", &objfile->types);
       break;
     case 33:
       rettype = init_type (TYPE_CODE_INT, 8, TYPE_FLAG_UNSIGNED,
-			   "logical*8", objfile);
+			   "logical*8", &objfile->types);
       break;
     case 34:
-      rettype = init_type (TYPE_CODE_INT, 8, 0, "integer*8", objfile);
+      rettype = init_type (TYPE_CODE_INT, 8, 0, "integer*8", &objfile->types);
       break;
     }
   negative_types[-typenum] = rettype;
@@ -3799,12 +3799,12 @@ read_sun_builtin_type (char **pp, int typenums[2], struct objfile *objfile)
   if (type_bits == 0)
     return init_type (TYPE_CODE_VOID, 1,
 		      signed_type ? 0 : TYPE_FLAG_UNSIGNED, (char *) NULL,
-		      objfile);
+		      &objfile->types);
   else
     return init_type (code,
 		      type_bits / TARGET_CHAR_BIT,
 		      signed_type ? 0 : TYPE_FLAG_UNSIGNED, (char *) NULL,
-		      objfile);
+		      &objfile->types);
 }
 
 static struct type *
@@ -3829,13 +3829,13 @@ read_sun_floating_type (char **pp, int typenums[2], struct objfile *objfile)
   if (details == NF_COMPLEX || details == NF_COMPLEX16
       || details == NF_COMPLEX32)
     {
-      rettype = init_type (TYPE_CODE_COMPLEX, nbytes, 0, NULL, objfile);
+      rettype = init_type (TYPE_CODE_COMPLEX, nbytes, 0, NULL, &objfile->types);
       TYPE_TARGET_TYPE (rettype)
-	= init_type (TYPE_CODE_FLT, nbytes / 2, 0, NULL, objfile);
+	= init_type (TYPE_CODE_FLT, nbytes / 2, 0, NULL, &objfile->types);
       return rettype;
     }
 
-  return init_type (TYPE_CODE_FLT, nbytes, 0, NULL, objfile);
+  return init_type (TYPE_CODE_FLT, nbytes, 0, NULL, &objfile->types);
 }
 
 /* Read a number from the string pointed to by *PP.
@@ -4101,7 +4101,7 @@ read_range_type (char **pp, int typenums[2], int type_size,
 	{
 	  return init_type (TYPE_CODE_INT, nbits / TARGET_CHAR_BIT,
 			    got_unsigned ? TYPE_FLAG_UNSIGNED : 0, NULL,
-			    objfile);
+			    &objfile->types);
 	}
       else
 	return error_type (pp, objfile);
@@ -4109,7 +4109,7 @@ read_range_type (char **pp, int typenums[2], int type_size,
 
   /* A type defined as a subrange of itself, with bounds both 0, is void.  */
   if (self_subrange && n2 == 0 && n3 == 0)
-    return init_type (TYPE_CODE_VOID, 1, 0, NULL, objfile);
+    return init_type (TYPE_CODE_VOID, 1, 0, NULL, &objfile->types);
 
   /* If n3 is zero and n2 is positive, we want a floating type, and n2
      is the width in bytes.
@@ -4126,12 +4126,12 @@ read_range_type (char **pp, int typenums[2], int type_size,
   if (n3 == 0 && n2 > 0)
     {
       struct type *float_type
-	= init_type (TYPE_CODE_FLT, n2, 0, NULL, objfile);
+	= init_type (TYPE_CODE_FLT, n2, 0, NULL, &objfile->types);
 
       if (self_subrange)
 	{
 	  struct type *complex_type = 
-	    init_type (TYPE_CODE_COMPLEX, 2 * n2, 0, NULL, objfile);
+	    init_type (TYPE_CODE_COMPLEX, 2 * n2, 0, NULL, &objfile->types);
 
 	  TYPE_TARGET_TYPE (complex_type) = float_type;
 	  return complex_type;
@@ -4155,13 +4155,13 @@ read_range_type (char **pp, int typenums[2], int type_size,
 	}
 
       return init_type (TYPE_CODE_INT, bits / TARGET_CHAR_BIT,
-			TYPE_FLAG_UNSIGNED, NULL, objfile);
+			TYPE_FLAG_UNSIGNED, NULL, &objfile->types);
     }
 
   /* Special case: char is defined (Who knows why) as a subrange of
      itself with range 0-127.  */
   else if (self_subrange && n2 == 0 && n3 == 127)
-    return init_type (TYPE_CODE_INT, 1, TYPE_FLAG_NOSIGN, NULL, objfile);
+    return init_type (TYPE_CODE_INT, 1, TYPE_FLAG_NOSIGN, NULL, &objfile->types);
 
   /* We used to do this only for subrange of self or subrange of int.  */
   else if (n2 == 0)
@@ -4173,7 +4173,7 @@ read_range_type (char **pp, int typenums[2], int type_size,
       if (n3 < 0)
 	/* n3 actually gives the size.  */
 	return init_type (TYPE_CODE_INT, -n3, TYPE_FLAG_UNSIGNED,
-			  NULL, objfile);
+			  NULL, &objfile->types);
 
       /* Is n3 == 2**(8n)-1 for some integer n?  Then it's an
          unsigned n-byte integer.  But do require n to be a power of
@@ -4188,7 +4188,7 @@ read_range_type (char **pp, int typenums[2], int type_size,
 	if (bits == 0
 	    && ((bytes - 1) & bytes) == 0) /* "bytes is a power of two" */
 	  return init_type (TYPE_CODE_INT, bytes, TYPE_FLAG_UNSIGNED, NULL,
-			    objfile);
+			    &objfile->types);
       }
     }
   /* I think this is for Convex "long long".  Since I don't know whether
@@ -4198,15 +4198,15 @@ read_range_type (char **pp, int typenums[2], int type_size,
 	   && (self_subrange
 	       || n2 == -gdbarch_long_long_bit
 			  (gdbarch) / TARGET_CHAR_BIT))
-    return init_type (TYPE_CODE_INT, -n2, 0, NULL, objfile);
+    return init_type (TYPE_CODE_INT, -n2, 0, NULL, &objfile->types);
   else if (n2 == -n3 - 1)
     {
       if (n3 == 0x7f)
-	return init_type (TYPE_CODE_INT, 1, 0, NULL, objfile);
+	return init_type (TYPE_CODE_INT, 1, 0, NULL, &objfile->types);
       if (n3 == 0x7fff)
-	return init_type (TYPE_CODE_INT, 2, 0, NULL, objfile);
+	return init_type (TYPE_CODE_INT, 2, 0, NULL, &objfile->types);
       if (n3 == 0x7fffffff)
-	return init_type (TYPE_CODE_INT, 4, 0, NULL, objfile);
+	return init_type (TYPE_CODE_INT, 4, 0, NULL, &objfile->types);
     }
 
   /* We have a real range type on our hands.  Allocate space and

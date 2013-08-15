@@ -1222,7 +1222,7 @@ set_type (type_object *obj, struct type *type)
 {
   obj->type = type;
   obj->prev = NULL;
-  if (type && TYPE_PER_BFD (type))
+  if (type && TYPE_ALLOCATOR (type))
     {
       struct objfile *objfile = TYPE_OBJFILE (type);
 

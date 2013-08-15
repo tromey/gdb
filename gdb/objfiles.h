@@ -283,6 +283,8 @@ struct objfile
     struct psymbol_allocation_list global_psymbols;
     struct psymbol_allocation_list static_psymbols;
 
+    struct type_allocator types;
+
     /* Each file contains a pointer to an array of minimal symbols for all
        global symbols that are defined within the file.  The array is
        terminated by a "null symbol", one that has a NULL pointer for the

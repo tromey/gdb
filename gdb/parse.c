@@ -1781,13 +1781,13 @@ parser_fprintf (FILE *x, const char *y, ...)
 
 int
 operator_check_standard (struct expression *exp, int pos,
-			 int (*objfile_func) (struct objfile *objfile,
+			 int (*per_bfd_func) (struct objfile_per_bfd_storage *per_bfd,
 					      void *data),
 			 void *data)
 {
   const union exp_element *const elts = exp->elts;
   struct type *type = NULL;
-  struct objfile *objfile = NULL;
+  struct objfile_per_bfd_storage *per_bfd = NULL;
 
   /* Extended operators should have been already handled by exp_descriptor
      iterate method of its specific language.  */
@@ -1818,7 +1818,7 @@ operator_check_standard (struct expression *exp, int pos,
 	for (arg = 0; arg < nargs; arg++)
 	  {
 	    struct type *type = elts[pos + 2 + arg].type;
-	    struct objfile *objfile = TYPE_OBJFILE (type);
+	    struct objfile_per_bfd_storage *per_bfd = TYPE_OBJFILE (type);
 
 	    if (objfile && (*objfile_func) (objfile, data))
 	      return 1;
