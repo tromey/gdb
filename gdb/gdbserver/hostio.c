@@ -20,6 +20,7 @@
 
 #include "server.h"
 #include "gdb/fileio.h"
+#include "filestuff.h"
 
 #include <fcntl.h>
 #include <limits.h>
@@ -295,7 +296,7 @@ handle_open (char *own_buf)
 
   /* We do not need to convert MODE, since the fileio protocol
      uses the standard values.  */
-  fd = open (filename, flags, mode);
+  fd = gdb_open_cloexec (filename, flags, mode);
 
   if (fd == -1)
     {

@@ -21,6 +21,7 @@
 #include "server.h"
 #include "gdbthread.h"
 #include "nto-low.h"
+#include "filestuff.h"
 
 #include <limits.h>
 #include <fcntl.h>
@@ -178,7 +179,8 @@ do_attach (pid_t pid)
       init_nto_inferior (&nto_inferior);
     }
   xsnprintf (nto_inferior.nto_procfs_path, PATH_MAX - 1, "/proc/%d/as", pid);
-  nto_inferior.ctl_fd = open (nto_inferior.nto_procfs_path, O_RDWR);
+  nto_inferior.ctl_fd = gdb_open_cloexec (nto_inferior.nto_procfs_path,
+					  O_RDWR, 0);
   if (nto_inferior.ctl_fd == -1)
     {
       TRACE ("Failed to open %s\n", nto_inferior.nto_procfs_path);

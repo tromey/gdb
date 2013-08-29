@@ -239,7 +239,7 @@ spu_proc_xfer_spu (const char *annex, unsigned char *readbuf,
     return 0;
 
   sprintf (buf, "/proc/%ld/fd/%s", ptid_get_lwp (current_ptid), annex);
-  fd = open (buf, writebuf? O_WRONLY : O_RDONLY);
+  fd = gdb_open_cloexec (buf, writebuf? O_WRONLY : O_RDONLY, 0);
   if (fd <= 0)
     return -1;
 

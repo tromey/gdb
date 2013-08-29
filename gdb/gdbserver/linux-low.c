@@ -315,7 +315,7 @@ elf_64_file_p (const char *file, unsigned int *machine)
   Elf64_Ehdr header;
   int fd;
 
-  fd = open (file, O_RDONLY);
+  fd = gdb_open_cloexec (file, O_RDONLY, 0);
   if (fd < 0)
     return -1;
 
@@ -596,7 +596,7 @@ linux_create_inferior (char *program, char **allargs)
       if (remote_connection_is_stdio ())
 	{
 	  close (0);
-	  open ("/dev/null", O_RDONLY);
+	  gdb_open_cloexec ("/dev/null", O_RDONLY, 0);
 	  dup2 (2, 1);
 	  if (write (2, "stdin/stdout redirected\n",
 		     sizeof ("stdin/stdout redirected\n") - 1) < 0)
@@ -4426,7 +4426,7 @@ linux_read_memory (CORE_ADDR memaddr, unsigned char *myaddr, int len)
       /* We could keep this file open and cache it - possibly one per
 	 thread.  That requires some juggling, but is even faster.  */
       sprintf (filename, "/proc/%d/mem", pid);
-      fd = open (filename, O_RDONLY | O_LARGEFILE);
+      fd = gdb_open_cloexec (filename, O_RDONLY | O_LARGEFILE, 0);
       if (fd == -1)
 	goto no_proc;
 
@@ -4626,7 +4626,7 @@ linux_read_auxv (CORE_ADDR offset, unsigned char *myaddr, unsigned int len)
 
   xsnprintf (filename, sizeof filename, "/proc/%d/auxv", pid);
 
-  fd = open (filename, O_RDONLY);
+  fd = gdb_open_cloexec (filename, O_RDONLY, 0);
   if (fd < 0)
     return -1;
 
@@ -4859,7 +4859,7 @@ linux_async (int enable)
 
       if (enable)
 	{
-	  if (pipe (linux_event_pipe) == -1)
+	  if (gdb_pipe_cloexec (linux_event_pipe) == -1)
 	    fatal ("creating event pipe failed.");
 
 	  fcntl (linux_event_pipe[0], F_SETFL, O_NONBLOCK);
@@ -5000,7 +5000,7 @@ linux_qxfer_spu (const char *annex, unsigned char *readbuf,
     }
 
   sprintf (buf, "/proc/%ld/fd/%s", pid, annex);
-  fd = open (buf, writebuf? O_WRONLY : O_RDONLY);
+  fd = gdb_open_cloexec (buf, writebuf? O_WRONLY : O_RDONLY, 0);
   if (fd <= 0)
     return -1;
 
@@ -5224,7 +5224,7 @@ get_phdr_phnum_from_proc_auxv (const int pid, const int is_elf64,
 
   xsnprintf (filename, sizeof filename, "/proc/%d/auxv", pid);
 
-  fd = open (filename, O_RDONLY);
+  fd = gdb_open_cloexec (filename, O_RDONLY, 0);
   if (fd < 0)
     return 1;
 

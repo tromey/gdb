@@ -19,6 +19,7 @@
 #include "server.h"
 #include "gdbthread.h"
 #include "agent.h"
+#include "filestuff.h"
 
 #include <ctype.h>
 #include <fcntl.h>
@@ -147,6 +148,9 @@ trace_vdebug (const char *fmt, ...)
 # define ust_loaded gdb_agent_ust_loaded
 # define helper_thread_id gdb_agent_helper_thread_id
 # define cmd_buf gdb_agent_cmd_buf
+
+/* We don't want to use this one in IPA.  */
+# define gdb_socket_cloexec socket
 #endif
 
 #ifndef IN_PROCESS_AGENT
@@ -6787,7 +6791,7 @@ init_named_socket (const char *name)
   int result, fd;
   struct sockaddr_un addr;
 
-  result = fd = socket (PF_UNIX, SOCK_STREAM, 0);
+  result = fd = gdb_socket_cloexec (PF_UNIX, SOCK_STREAM, 0);
   if (result == -1)
     {
       warning ("socket creation failed: %s", strerror (errno));

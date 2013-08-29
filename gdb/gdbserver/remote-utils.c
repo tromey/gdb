@@ -68,6 +68,8 @@
 #include <sys/iomgr.h>
 #endif /* __QNX__ */
 
+#include "filestuff.h"
+
 #ifndef HAVE_SOCKLEN_T
 typedef int socklen_t;
 #endif
@@ -262,7 +264,7 @@ remote_prepare (char *name)
     }
 #endif
 
-  listen_desc = socket (PF_INET, SOCK_STREAM, IPPROTO_TCP);
+  listen_desc = gdb_socket_cloexec (PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if (listen_desc == -1)
     perror_with_name ("Can't open socket");
 
@@ -316,7 +318,7 @@ remote_open (char *name)
 
       if (stat (name, &statbuf) == 0
 	  && (S_ISCHR (statbuf.st_mode) || S_ISFIFO (statbuf.st_mode)))
-	remote_desc = open (name, O_RDWR);
+	remote_desc = gdb_open_cloexec (name, O_RDWR, 0);
       else
 	{
 	  errno = EINVAL;
