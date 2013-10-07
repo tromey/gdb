@@ -148,9 +148,6 @@ trace_vdebug (const char *fmt, ...)
 # define ust_loaded gdb_agent_ust_loaded
 # define helper_thread_id gdb_agent_helper_thread_id
 # define cmd_buf gdb_agent_cmd_buf
-
-/* We don't want to use this one in IPA.  */
-# define gdb_socket_cloexec socket
 #endif
 
 #ifndef IN_PROCESS_AGENT

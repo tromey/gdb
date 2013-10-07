@@ -21,6 +21,7 @@
 #include "server.h"
 #include <stdint.h>
 #include <sys/mman.h>
+#include "filestuff.h"
 
 /* GDB register numbers.  */
 
@@ -207,7 +208,7 @@ initialize_fast_tracepoint_trampoline_buffer (void)
   char buf[IPA_BUFSIZ];
   CORE_ADDR mmap_min_addr = buffer_end + 1;
   ULONGEST buffer_size;
-  FILE *f = fopen ("/proc/sys/vm/mmap_min_addr", "r");
+  FILE *f = gdb_fopen_cloexec ("/proc/sys/vm/mmap_min_addr", "r");
 
   if (!f)
     {    
