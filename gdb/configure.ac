@@ -1050,6 +1050,7 @@ else
   CONFIG_SRCS="$CONFIG_SRCS python/python.c python/py-value.c \
 	python/py-prettyprint.c python/py-auto-load.c"
 fi
+
 AC_SUBST(PYTHON_CFLAGS)
 AC_SUBST(PYTHON_CPPFLAGS)
 AC_SUBST(PYTHON_LIBS)

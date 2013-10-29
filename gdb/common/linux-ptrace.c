@@ -114,12 +114,14 @@ linux_ptrace_test_ret_to_nx (void)
 #if defined __i386__
 	  asm volatile ("pushl %0;"
 			".globl linux_ptrace_test_ret_to_nx_instr;"
+			".hidden linux_ptrace_test_ret_to_nx_instr;"
 			"linux_ptrace_test_ret_to_nx_instr:"
 			"ret"
 			: : "r" (return_address) : "%esp", "memory");
 #elif defined __x86_64__
 	  asm volatile ("pushq %0;"
 			".globl linux_ptrace_test_ret_to_nx_instr;"
+			".hidden linux_ptrace_test_ret_to_nx_instr;"
 			"linux_ptrace_test_ret_to_nx_instr:"
 			"ret"
 			: : "r" ((uint64_t) (uintptr_t) return_address)

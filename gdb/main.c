@@ -1058,6 +1058,9 @@ captured_main (void *data)
   /* Show time and/or space usage.  */
   do_cleanups (pre_stat_chain);
 
+  if (context->inhibit_main_loop)
+    return 0;
+
   /* NOTE: cagney/1999-11-07: There is probably no reason for not
      moving this loop and the code found in captured_command_loop()
      into the command_loop() proper.  The main thing holding back that

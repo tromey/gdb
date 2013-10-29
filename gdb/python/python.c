@@ -33,6 +33,7 @@
 #include "readline/tilde.h"
 #include "python.h"
 #include "cli/cli-utils.h"
+#include "main.h"
 
 #include <ctype.h>
 
@@ -1466,6 +1467,25 @@ user_show_python (char *args, int from_tty)
 
 #ifdef HAVE_PYTHON
 
+#pragma GCC visibility push(default)
+PyMODINIT_FUNC init_gdb (void);
+
+PyMODINIT_FUNC
+init_gdb (void)
+{
+  struct captured_main_args args;
+  char *argv[] = { "gdb", "-nx", "-silent", NULL };
+
+  memset (&args, 0, sizeof args);
+  args.argc = ARRAY_SIZE (argv) - 1;
+  args.argv = argv;
+  args.interpreter_p = INTERP_CONSOLE;
+  args.inhibit_main_loop = 1;
+  gdb_main (&args);
+}
+
+#pragma GCC visibility pop
+
 /* This is installed as a final cleanup and cleans up the
    interpreter.  This lets Python's 'atexit' work.  */
 
@@ -1498,6 +1518,7 @@ _initialize_python (void)
   char *oldloc;
   wchar_t *progname_copy;
 #endif
+  int is_import = Py_IsInitialized ();
 
   add_com ("python-interactive", class_obscure,
 	   python_interactive_command,
@@ -1611,8 +1632,11 @@ message == an error message without a stack will be printed."),
 #endif
 #endif
 
-  Py_Initialize ();
-  PyEval_InitThreads ();
+  if (!is_import)
+    {
+      Py_Initialize ();
+      PyEval_InitThreads ();
+    }
 
 #ifdef IS_PY3K
   gdb_module = PyModule_Create (&GdbModuleDef);
@@ -1712,8 +1736,11 @@ message == an error message without a stack will be printed."),
     goto fail;
 
   /* Release the GIL while gdb runs.  */
-  PyThreadState_Swap (NULL);
-  PyEval_ReleaseLock ();
+  if (!is_import)
+    {
+      PyThreadState_Swap (NULL);
+      PyEval_ReleaseLock ();
+    }
 
   make_final_cleanup (finalize_python, NULL);
 

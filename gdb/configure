@@ -8564,6 +8564,9 @@ else
 	python/py-prettyprint.c python/py-auto-load.c"
 fi
 
+PYTHON_LIBS=`echo $PYTHON_LIBS | sed -e 's/-Xlinker -export-dynamic//'`
+
+
 
 
 

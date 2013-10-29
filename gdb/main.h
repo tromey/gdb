@@ -25,6 +25,7 @@ struct captured_main_args
   int argc;
   char **argv;
   int use_windows;
+  int inhibit_main_loop;
   const char *interpreter_p;
 };
 

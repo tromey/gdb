@@ -1,5 +1,5 @@
 #   Copyright (C) 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000,
-#   2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012
+#   2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013
 #   Free Software Foundation, Inc.
 #
 # This file is free software; you can redistribute it and/or modify it
@@ -1230,6 +1230,9 @@ fi
 
 AC_PROG_CC
 AC_PROG_CXX
+
+CFLAGS="$CFLAGS -fPIE -fvisibility=hidden"
+CXXFLAGS="$CXXFLAGS -fPIE -fvisibility=hidden"
 
 # We must set the default linker to the linker used by gcc for the correct
 # operation of libtool.  If LD is not defined and we are using gcc, try to
