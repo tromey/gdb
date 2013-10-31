@@ -57,7 +57,7 @@ enum c_string_type
 
 /* Defined in c-exp.y.  */
 
-extern int c_parse (void);
+extern int c_parse_expression (void);
 
 extern void c_error (char *);
 

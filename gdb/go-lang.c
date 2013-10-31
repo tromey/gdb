@@ -567,7 +567,7 @@ static const struct language_defn go_language_defn =
   array_row_major,
   macro_expansion_no,
   &exp_descriptor_c,
-  go_parse,
+  go_parse_expression,
   go_error,
   null_post_parser,
   c_printchar,			/* Print a character constant.  */

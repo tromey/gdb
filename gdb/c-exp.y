@@ -1069,7 +1069,7 @@ ptr_operator_ts: ptr_operator
 			{
 			  $$ = get_type_stack ();
 			  /* This cleanup is eventually run by
-			     c_parse.  */
+			     c_parse_expression.  */
 			  make_cleanup (type_stack_cleanup, $$);
 			}
 	;
@@ -1609,7 +1609,8 @@ operator_stoken (const char *op)
   strcat (buf, op);
   st.ptr = buf;
 
-  /* The toplevel (c_parse) will free the memory allocated here.  */
+  /* The toplevel (c_parse_expression) will free the memory allocated
+     here.  */
   make_cleanup (free, buf);
   return st;
 };
@@ -3067,7 +3068,7 @@ yylex (void)
 }
 
 int
-c_parse (void)
+c_parse_expression (void)
 {
   int result;
   struct cleanup *back_to = make_cleanup (free_current_contents,

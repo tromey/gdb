@@ -1,3 +1,46 @@
+2013-10-31  Tom Tromey  <tromey@redhat.com>
+
+	* gdb-yacc.h: New file.
+	* Makefile.in (YYFILES, YYOBJ): Rename files.
+	(.SUFFIXES): Add .tab.c.
+	(.y.tab.c): New rule.
+	(.y.c): Remove.
+	(cp-name-parser.tab.c, p-exp.tab.c): New targets.
+	* ada-exp.y: Include gdb-yacc.h.
+	Don't redefine yacc-generated names.
+	(ada_parse_expression): Rename from ada_parse.
+	(write_ambiguous_var): Update.
+	* ada-lang.c (parse): Update.
+	* ada-lang.h (ada_parse_expression): Rename from ada_parse.
+	* c-exp.y: Include gdb-yacc.h.
+	Don't redefine yacc-generated names.
+	(ptr_operator_ts, operator_stoken): Update.
+	(c_parse_expression): Rename from c_parse.
+	* c-lang.c (c_language_defn, cplus_language_defn)
+	(asm_language_defn, minimal_language_defn): Update.
+	* c-lang.h (c_parse_expression): Rename from c_parse.
+	* cp-name-parser.y: Include gdb-yacc.h.
+	Don't redefine yacc-generated names.
+	* d-lang.c (d_language_defn): Update.
+	* f-exp.y: Include gdb-yacc.h.
+	Don't redefine yacc-generated names.
+	* go-exp.y: Include gdb-yacc.h.
+	Don't redefine yacc-generated names.
+	(go_parse_expression): Rename from go_parse.
+	* go-lang.c (go_language_defn): Update.
+	* go-lang.h (go_parse_expression): Rename from go_parse.
+	* jv-exp.y: Include gdb-yacc.h.
+	Don't redefine yacc-generated names.
+	* jv-lang.c (java_language_defn): Update.
+	* jv-lang.h (jv_parse): Rename from java_parse.
+	(jv_error): Rename from jv_error.
+	* m2-exp.y: Include gdb-yacc.h.
+	Don't redefine yacc-generated names.
+	* objc-lang.c (objc_language_defn): Update.
+	* opencl-langc. (opencl_language_defn): Update.
+	* p-exp.y: Include gdb-yacc.h.
+	Don't redefine yacc-generated names.
+
 2013-10-30  Andreas Arnez  <arnez@linux.vnet.ibm.com>
 
 	* s390-tdep.h: Rename to...

@@ -818,7 +818,7 @@ const struct language_defn c_language_defn =
   array_row_major,
   macro_expansion_c,
   &exp_descriptor_c,
-  c_parse,
+  c_parse_expression,
   c_error,
   null_post_parser,
   c_printchar,			/* Print a character constant */
@@ -942,7 +942,7 @@ const struct language_defn cplus_language_defn =
   array_row_major,
   macro_expansion_c,
   &exp_descriptor_c,
-  c_parse,
+  c_parse_expression,
   c_error,
   null_post_parser,
   c_printchar,			/* Print a character constant */
@@ -984,7 +984,7 @@ const struct language_defn asm_language_defn =
   array_row_major,
   macro_expansion_c,
   &exp_descriptor_c,
-  c_parse,
+  c_parse_expression,
   c_error,
   null_post_parser,
   c_printchar,			/* Print a character constant */
@@ -1031,7 +1031,7 @@ const struct language_defn minimal_language_defn =
   array_row_major,
   macro_expansion_c,
   &exp_descriptor_c,
-  c_parse,
+  c_parse_expression,
   c_error,
   null_post_parser,
   c_printchar,			/* Print a character constant */

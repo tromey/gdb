@@ -1169,8 +1169,8 @@ const struct language_defn java_language_defn =
   array_row_major,
   macro_expansion_no,
   &exp_descriptor_java,
-  java_parse,
-  java_error,
+  jv_parse,
+  jv_error,
   null_post_parser,
   java_printchar,		/* Print a character constant */
   java_printstr,		/* Function to print string constant */

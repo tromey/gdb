@@ -12751,7 +12751,7 @@ static int
 parse (void)
 {
   warnings_issued = 0;
-  return ada_parse ();
+  return ada_parse_expression ();
 }
 
 static const struct exp_descriptor ada_exp_descriptor = {

@@ -969,17 +969,17 @@ CLEANDIRS = $(SUBDIRS)
 REQUIRED_SUBDIRS = doc | testsuite | $(GNULIB_BUILDDIR) | data-directory
 
 # For now, shortcut the "configure GDB for fewer languages" stuff.
-YYFILES = c-exp.c \
+YYFILES = c-exp.tab.c \
 	cp-name-parser.c \
 	ada-lex.c \
-	ada-exp.c \
-	jv-exp.c \
-	f-exp.c go-exp.c m2-exp.c p-exp.c
-YYOBJ = c-exp.o \
+	ada-exp.tab.c \
+	jv-exp.tab.c \
+	f-exp.tab.c go-exp.tab.c m2-exp.tab.c p-exp.tab.c
+YYOBJ = c-exp.tab.o \
 	cp-name-parser.o \
-	ada-exp.o \
-	jv-exp.o \
-	f-exp.o go-exp.o m2-exp.o p-exp.o
+	ada-exp.tab.o \
+	jv-exp.tab.o \
+	f-exp.tab.o go-exp.tab.o m2-exp.tab.o p-exp.tab.o
 
 # Things which need to be built when making a distribution.
 
@@ -1682,26 +1682,19 @@ po/$(PACKAGE).pot: force
 #
 # YACC/LEX dependencies
 #
-# LANG-exp.c is generated in objdir from LANG-exp.y if it doesn't
-# exist in srcdir, then compiled in objdir to LANG-exp.o.  If we
-# said LANG-exp.c rather than ./c-exp.c some makes would
-# sometimes re-write it into $(srcdir)/c-exp.c.  Remove bogus
-# decls for malloc/realloc/free which conflict with everything else.
-# Strictly speaking c-exp.c should therefore depend on
-# Makefile.in, but that was a pretty big annoyance.
 
-c-exp_PREFIX = c
-ada-exp_PREFIX = ada
-f-exp_PREFIX = f
-go-exp_PREFIX = go
-jv-exp_PREFIX = jv
-m2-exp_PREFIX = m2
-p-exp_PREFIX = p
-cp-name-parser_PREFIX = cpname
+.SUFFIXES: .y .l .tab.c
+.y.tab.c:
+	name=`echo $* | sed 's/-exp//'`; \
+	$(YACC) $(YFLAGS) -b $* -p $${name}_ $<
 
-.SUFFIXES: .y .l
-.y.c:
-	$(YACC) $(YFLAGS) -b $* -p $($*_PREFIX)_ $< && mv $*.tab.c $@
+# Pascal needs a separate rule so we can pass a sensible -p option.
+p-exp.tab.c: p-exp.y
+	$(YACC) $(YFLAGS) -b p-exp -p pascal_ $<
+
+cp-name-parser.tab.c: cp-name-parser.y
+	$(YACC) $(YFLAGS) -b cp-name-parser -p cpname_ $<
+
 .l.c:
 	if [ "$(FLEX)" ] && $(FLEX) --version >/dev/null 2>&1; then \
 	    $(FLEX) -o$@ $< && \

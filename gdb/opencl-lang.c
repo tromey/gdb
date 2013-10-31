@@ -1109,7 +1109,7 @@ const struct language_defn opencl_language_defn =
   array_row_major,
   macro_expansion_c,
   &exp_descriptor_opencl,
-  c_parse,
+  c_parse_expression,
   c_error,
   null_post_parser,
   c_printchar,			/* Print a character constant */

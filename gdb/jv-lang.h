@@ -23,9 +23,9 @@
 struct value;
 struct type_print_options;
 
-extern int java_parse (void);		/* Defined in jv-exp.y */
+extern int jv_parse (void);		/* Defined in jv-exp.y */
 
-extern void java_error (char *);	/* Defined in jv-exp.y */
+extern void jv_error (char *);	/* Defined in jv-exp.y */
 
 struct builtin_java_type
 {
