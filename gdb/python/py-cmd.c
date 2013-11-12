@@ -130,7 +130,7 @@ cmdpy_super_complete (PyObject *sa, PyObject *args)
   const char *text, *word;
   cmdpy_object *self = (cmdpy_object *) sa;
   volatile struct gdb_exception except;
-  VEC (char_ptr) *completions;
+  VEC (char_ptr) *completions = NULL;
   PyObject *list = NULL, *result = NULL;
   char *iter;
   int ix;
