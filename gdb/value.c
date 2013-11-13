@@ -3507,7 +3507,9 @@ value_fetch_lazy (struct value *val)
 
       while (VALUE_LVAL (new_val) == lval_register && value_lazy (new_val))
 	{
-	  frame = frame_find_by_id (VALUE_FRAME_ID (new_val));
+	  struct frame_id last_frame_id = VALUE_FRAME_ID (new_val);
+
+	  frame = frame_find_by_id (last_frame_id);
 	  regnum = VALUE_REGNUM (new_val);
 
 	  gdb_assert (frame != NULL);
@@ -3521,6 +3523,12 @@ value_fetch_lazy (struct value *val)
 						   regnum, type));
 
 	  new_val = get_frame_register_value (frame, regnum);
+	  if (VALUE_LVAL (new_val) == lval_register
+	      && value_lazy (new_val)
+	      && regnum == VALUE_REGNUM (new_val)
+	      && frame_id_eq (VALUE_FRAME_ID (new_val), last_frame_id))
+	    error (_("infinite loop while fetching a register; "
+		     "probably bad debug info"));
 	}
 
       /* If it's still lazy (for instance, a saved register on the
