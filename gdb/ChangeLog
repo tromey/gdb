@@ -1,6 +1,12 @@
 2013-11-13  Tom Tromey  <tromey@redhat.com>
 
 	PR backtrace/16155:
+	* dwarf2-frame.c (dwarf2_frame_cache): Set undefined_retaddr if
+	the return address column is unspecified.
+
+2013-11-13  Tom Tromey  <tromey@redhat.com>
+
+	PR backtrace/16155:
 	* value.c (value_fetch_lazy): Throw exception if
 	get_frame_register_value returns the same register.
 
