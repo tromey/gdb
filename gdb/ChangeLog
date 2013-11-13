@@ -1,3 +1,10 @@
+2013-11-13  Tom Tromey  <tromey@redhat.com>
+
+	* dwarf2-frame.c (execute_cfa_program, dwarf2_compile_cfa_to_ax)
+	(dwarf2_frame_cache, dwarf2_frame_prev_register)
+	(encoding_for_size, read_encoded_value): Use error, not
+	internal_error.
+
 2013-11-18  Jose E. Marchesi  <jose.marchesi@oracle.com>
 
 	* sparc-tdep.c (sparc_is_annulled_branch_insn): New function.
