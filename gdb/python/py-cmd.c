@@ -101,11 +101,11 @@ cmdpy_super_invoke (PyObject *sa, PyObject *args)
   if (!PyArg_ParseTuple (args, "si", &arg, &from_tty))
     return NULL;
 
+  /* The super command is defined as a no-op.  We can't throw an
+     exception here as that will break Command subclasses that don't
+     define the method.  */
   if (self->old_command == NULL)
-    {
-      PyErr_SetString (PyExc_RuntimeError, _("no super command"));
-      return NULL;
-    }
+    Py_RETURN_NONE;
 
   TRY_CATCH (except, RETURN_MASK_ALL)
     {
@@ -138,11 +138,11 @@ cmdpy_super_complete (PyObject *sa, PyObject *args)
   if (!PyArg_ParseTuple (args, "ss", &text, &word))
     return NULL;
 
+  /* The super command is defined as a no-op.  We can't throw an
+     exception here as that will break Command subclasses that don't
+     define the method.  */
   if (self->old_command == NULL)
-    {
-      PyErr_SetString (PyExc_RuntimeError, _("no super command"));
-      return NULL;
-    }
+    Py_RETURN_NONE;
 
   if (self->old_command->completer == NULL)
     {
