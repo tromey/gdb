@@ -1441,17 +1441,17 @@ extern struct type *init_type (enum type_code, int, int, const char *,
 			       struct objfile *);
 
 extern struct type *intern_type (enum type_code code, int length, int flags,
-				 char *name, struct objfile *objfile,
+				 const char *name, struct objfile *objfile,
 				 struct type *target_type);
 
-extern struct type *intern_enum_type (int length, int flags, char *name,
+extern struct type *intern_enum_type (int length, int flags, const char *name,
 				      struct objfile *objfile,
 				      int n_fields, struct field *fields);
 
 extern struct type *intern_range_type (struct type *index_type,
 				       int low_undefined, LONGEST low_bound,
 				       int high_undefined, LONGEST high_bound,
-				       int length, char *name,
+				       int length, const char *name,
 				       struct objfile *objfile);
 
 /* Helper functions to construct architecture-owned types.  */

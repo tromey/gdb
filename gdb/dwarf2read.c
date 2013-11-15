@@ -13085,7 +13085,7 @@ read_enumeration_type (struct die_info *die, struct dwarf2_cu *cu)
       struct field *fields = NULL;
       int num_fields = 0;
       int unsigned_enum = 1;
-      char *name;
+      const char *name;
       int flag_enum = 1;
       ULONGEST mask = 0;
 

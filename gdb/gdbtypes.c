@@ -1986,7 +1986,7 @@ allocate_gnat_aux_type (struct type *type)
 static struct type *
 init_type_internal (struct type *type,
 		    enum type_code code, int length, int flags,
-		    char *name, struct objfile *objfile)
+		    const char *name, struct objfile *objfile)
 {
   TYPE_CODE (type) = code;
   TYPE_LENGTH (type) = length;
@@ -2041,14 +2041,19 @@ init_type_internal (struct type *type,
 
 struct type *
 init_type (enum type_code code, int length, int flags,
-	   char *name, struct objfile *objfile)
+	   const char *name, struct objfile *objfile)
 {
   struct type *type;
 
   type = alloc_type (objfile);
 
   if (name)
-    name = obsavestring (name, strlen (name), &objfile->objfile_obstack);
+    {
+      char *copy = obstack_copy0 (&objfile->objfile_obstack,
+				  name, strlen (name));
+
+      name = copy;
+    }
 
   init_type_internal (type, code, length, flags, name, objfile);
 
@@ -2190,7 +2195,7 @@ static const struct objfile_data *objfile_intern_data;
 
 static struct type *
 intern_type_internal (enum type_code code, int length, int flags,
-		      char *name, struct objfile *objfile,
+		      const char *name, struct objfile *objfile,
 		      struct type *target_type,
 		      int n_fields, struct field *fields,
 		      struct range_bounds *bounds)
@@ -2255,7 +2260,8 @@ intern_type_internal (enum type_code code, int length, int flags,
 
 struct type *
 intern_type (enum type_code code, int length, int flags,
-	     char *name, struct objfile *objfile, struct type *target_type)
+	     const char *name, struct objfile *objfile,
+	     struct type *target_type)
 {
   gdb_assert (code == TYPE_CODE_VOID
 	      || code == TYPE_CODE_BOOL
@@ -2280,7 +2286,7 @@ intern_type (enum type_code code, int length, int flags,
 }
 
 struct type *
-intern_enum_type (int length, int flags, char *name,
+intern_enum_type (int length, int flags, const char *name,
 		  struct objfile *objfile, int n_fields, struct field *fields)
 {
   gdb_assert (n_fields > 0 && fields != NULL);
@@ -2292,7 +2298,7 @@ struct type *
 intern_range_type (struct type *index_type,
 		   int low_undefined, LONGEST low_bound,
 		   int high_undefined, LONGEST high_bound,
-		   int length, char *name, struct objfile *objfile)
+		   int length, const char *name, struct objfile *objfile)
 {
   struct range_bounds bounds;
   int type_flags = 0;
