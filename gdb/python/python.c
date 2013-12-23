@@ -1467,6 +1467,38 @@ user_show_python (char *args, int from_tty)
 
 #ifdef HAVE_PYTHON
 
+static PyObject *
+gdbpy_event_loop (PyObject *unused, PyObject *unused2)
+{
+  start_event_loop ();
+  Py_RETURN_NONE;
+}
+
+static struct ui_out *
+gdbpy_ui_out (struct interp *self)
+{
+  /* Super hack.  */
+  return current_uiout;
+}
+
+static void
+gdbpy_command_loop (void *data)
+{
+  start_event_loop ();
+}
+
+static const struct interp_procs gdbpy_interp =
+{
+  NULL,				    /* init_proc */
+  NULL,				    /* resume_proc */
+  NULL,				    /* suspend_proc */
+  NULL,				    /* exec_proc */
+  NULL,				    /* prompt_proc_p */
+  gdbpy_ui_out,			    /* ui_out_proc */
+  NULL,				    /* set_logging_proc */
+  gdbpy_command_loop		    /* command_loop_proc */
+};
+
 #pragma GCC visibility push(default)
 PyMODINIT_FUNC init_gdb (void);
 
@@ -1474,7 +1506,11 @@ PyMODINIT_FUNC
 init_gdb (void)
 {
   struct captured_main_args args;
-  char *argv[] = { "gdb", "-nx", "-silent", NULL };
+  char *argv[] = { "gdb", "-nx", "-silent", "-i=python", NULL };
+  struct interp *pyint;
+
+  pyint = interp_new ("python", &gdbpy_interp);
+  interp_add (pyint);
 
   memset (&args, 0, sizeof args);
   args.argc = ARRAY_SIZE (argv) - 1;
@@ -1503,6 +1539,7 @@ finalize_python (void *ignore)
 
   Py_Finalize ();
 }
+
 #endif
 
 /* Provide a prototype to silence -Wmissing-prototypes.  */
@@ -1680,7 +1717,8 @@ message == an error message without a stack will be printed."),
 				 gdbpy_gdberror_exc) < 0)
     goto fail;
 
-  gdbpy_initialize_gdb_readline ();
+  if (!is_import)
+    gdbpy_initialize_gdb_readline ();
 
   if (gdbpy_initialize_auto_load () < 0
       || gdbpy_initialize_values () < 0
@@ -1948,6 +1986,9 @@ Return the selected inferior object." },
   { "inferiors", gdbpy_inferiors, METH_NOARGS,
     "inferiors () -> (gdb.Inferior, ...).\n\
 Return a tuple containing all inferiors." },
+  { "event_loop", gdbpy_event_loop, METH_NOARGS,
+    "event_loop () -> None\n\
+Start the gdb event loop." },
   {NULL, NULL, 0, NULL}
 };
 
