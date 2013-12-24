@@ -70,7 +70,7 @@ static int mi_redirect (struct ui_out *uiout, struct ui_file *outstream);
 /* FIXME: This can be initialized dynamically after default is set to
    handle initial output in main.c */
 
-struct ui_out_impl mi_ui_out_impl =
+static const struct ui_out_impl mi_ui_out_impl =
 {
   mi_table_begin,
   mi_table_body,

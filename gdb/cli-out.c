@@ -352,7 +352,7 @@ field_separator (void)
 /* FIXME: This can be initialized dynamically after default is set to
    handle initial output in main.c */
 
-struct ui_out_impl cli_ui_out_impl =
+const struct ui_out_impl cli_ui_out_impl =
 {
   cli_table_begin,
   cli_table_body,
