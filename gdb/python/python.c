@@ -1486,6 +1486,7 @@ gdbpy_interp_init (struct interp *self, int top_level)
   gdb_stdlog = outfile;
   gdb_stdtarg = outfile;
   gdb_stdtargerr = outfile;
+  current_uiout = out;
 
   return out;
 }
