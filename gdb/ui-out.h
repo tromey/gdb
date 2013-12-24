@@ -226,6 +226,10 @@ struct ui_out_impl
     int is_mi_like_p;
   };
 
+/* A do-nothing ui_out implementation.  */
+
+extern const struct ui_out_impl default_ui_out_impl;
+
 extern void *ui_out_data (struct ui_out *uiout);
 
 extern void uo_field_string (struct ui_out *uiout, int fldno, int width,
