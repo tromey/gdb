@@ -1534,6 +1534,8 @@ init_gdb (void)
   args.interpreter_p = INTERP_CONSOLE;
   args.inhibit_main_loop = 1;
   gdb_main (&args);
+
+  current_uiout = interp_ui_out (pyint);
 }
 
 #pragma GCC visibility pop
