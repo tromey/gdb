@@ -34,6 +34,7 @@
 #include "python.h"
 #include "cli/cli-utils.h"
 #include "main.h"
+#include "ui-file.h"
 
 #include <ctype.h>
 
@@ -1474,11 +1475,25 @@ gdbpy_event_loop (PyObject *unused, PyObject *unused2)
   Py_RETURN_NONE;
 }
 
+static void *
+gdbpy_interp_init (struct interp *self, int top_level)
+{
+  struct ui_file *outfile = ui_file_new ();
+  struct ui_out *out = ui_out_new (&default_ui_out_impl, NULL, 0);
+
+  gdb_stdout = outfile;
+  gdb_stderr = outfile;
+  gdb_stdlog = outfile;
+  gdb_stdtarg = outfile;
+  gdb_stdtargerr = outfile;
+
+  return out;
+}
+
 static struct ui_out *
 gdbpy_ui_out (struct interp *self)
 {
-  /* Super hack.  */
-  return current_uiout;
+  return interp_data (self);
 }
 
 static void
@@ -1489,7 +1504,7 @@ gdbpy_command_loop (void *data)
 
 static const struct interp_procs gdbpy_interp =
 {
-  NULL,				    /* init_proc */
+  gdbpy_interp_init,		    /* init_proc */
   NULL,				    /* resume_proc */
   NULL,				    /* suspend_proc */
   NULL,				    /* exec_proc */
@@ -1629,44 +1644,47 @@ message == an error message without a stack will be printed."),
 
 #ifdef HAVE_PYTHON
 #ifdef WITH_PYTHON_PATH
-  /* Work around problem where python gets confused about where it is,
-     and then can't find its libraries, etc.
-     NOTE: Python assumes the following layout:
-     /foo/bin/python
-     /foo/lib/pythonX.Y/...
-     This must be done before calling Py_Initialize.  */
-  progname = concat (ldirname (python_libdir), SLASH_STRING, "bin",
-		     SLASH_STRING, "python", NULL);
+  if (!is_import)
+    {
+      /* Work around problem where python gets confused about where it is,
+	 and then can't find its libraries, etc.
+	 NOTE: Python assumes the following layout:
+	 /foo/bin/python
+	 /foo/lib/pythonX.Y/...
+	 This must be done before calling Py_Initialize.  */
+      progname = concat (ldirname (python_libdir), SLASH_STRING, "bin",
+			 SLASH_STRING, "python", NULL);
 #ifdef IS_PY3K
-  oldloc = setlocale (LC_ALL, NULL);
-  setlocale (LC_ALL, "");
-  progsize = strlen (progname);
-  if (progsize == (size_t) -1)
-    {
-      fprintf (stderr, "Could not convert python path to string\n");
-      return;
-    }
-  progname_copy = PyMem_Malloc ((progsize + 1) * sizeof (wchar_t));
-  if (!progname_copy)
-    {
-      fprintf (stderr, "out of memory\n");
-      return;
-    }
-  count = mbstowcs (progname_copy, progname, progsize + 1);
-  if (count == (size_t) -1)
-    {
-      fprintf (stderr, "Could not convert python path to string\n");
-      return;
-    }
-  setlocale (LC_ALL, oldloc);
+      oldloc = setlocale (LC_ALL, NULL);
+      setlocale (LC_ALL, "");
+      progsize = strlen (progname);
+      if (progsize == (size_t) -1)
+	{
+	  fprintf (stderr, "Could not convert python path to string\n");
+	  return;
+	}
+      progname_copy = PyMem_Malloc ((progsize + 1) * sizeof (wchar_t));
+      if (!progname_copy)
+	{
+	  fprintf (stderr, "out of memory\n");
+	  return;
+	}
+      count = mbstowcs (progname_copy, progname, progsize + 1);
+      if (count == (size_t) -1)
+	{
+	  fprintf (stderr, "Could not convert python path to string\n");
+	  return;
+	}
+      setlocale (LC_ALL, oldloc);
 
-  /* Note that Py_SetProgramName expects the string it is passed to
-     remain alive for the duration of the program's execution, so
-     it is not freed after this call.  */
-  Py_SetProgramName (progname_copy);
+      /* Note that Py_SetProgramName expects the string it is passed to
+	 remain alive for the duration of the program's execution, so
+	 it is not freed after this call.  */
+      Py_SetProgramName (progname_copy);
 #else
-  Py_SetProgramName (progname);
+      Py_SetProgramName (progname);
 #endif
+    }
 #endif
 
   if (!is_import)
@@ -1698,6 +1716,14 @@ message == an error message without a stack will be printed."),
       || PyModule_AddIntConstant (gdb_module, "STDERR", 1) < 0
       || PyModule_AddIntConstant (gdb_module, "STDLOG", 2) < 0)
     goto fail;
+
+  {
+    PyObject *val = is_import ? Py_True : Py_False;
+
+    Py_INCREF (val);
+    if (PyModule_AddObject (gdb_module, "IMPORTED", val) < 0)
+      goto fail;
+  }
 
   gdbpy_gdb_error = PyErr_NewException ("gdb.error", PyExc_RuntimeError, NULL);
   if (gdbpy_gdb_error == NULL
