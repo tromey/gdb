@@ -374,6 +374,86 @@ infpy_get_was_attached (PyObject *self, void *closure)
   Py_RETURN_FALSE;
 }
 
+static void
+delete_inferior_cleanup (void *data)
+{
+  struct inferior *inf = data;
+
+  delete_inferior_1 (inf, 1);
+}
+
+static PyObject *
+infpy_new (PyTypeObject *subtype, PyObject *args, PyObject *keywords)
+{
+  inferior_object *inf_obj;
+  volatile struct gdb_exception except;
+  struct inferior *inf = NULL;
+  char *exec = NULL;
+
+  if (PyTuple_Size (args) == 1)
+    {
+      PyObject *exec_obj = PyTuple_GetItem (args, 0);
+
+      if (exec_obj == NULL)
+	return NULL;
+
+      exec = python_string_to_host_string (exec_obj);
+      if (exec == NULL)
+	return NULL;
+    }
+  else if (PyTuple_Size (args) != 0)
+    {
+      PyErr_SetString (PyExc_TypeError, _("Inferior object creation takes only "
+					  "0 or 1 argument"));
+      xfree (exec);
+      return NULL;
+    }
+
+  inf_obj = (inferior_object *) subtype->tp_alloc (subtype, 1);
+  if (inf_obj == NULL)
+    {
+      xfree (exec);
+      return NULL;		/* FIXME see py-value.c? */
+    }
+
+  TRY_CATCH (except, RETURN_MASK_ALL)
+    {
+      struct cleanup *cleanup;
+
+      inf = add_inferior_with_spaces ();
+      cleanup = make_cleanup (delete_inferior_cleanup, inf);
+
+      if (exec != NULL)
+	{
+	  struct cleanup *inner = save_current_space_and_thread ();
+
+	  set_current_program_space (inf->pspace);
+	  set_current_inferior (inf);
+	  switch_to_thread (null_ptid);
+
+	  exec_file_attach (exec, 0);
+	  symbol_file_add_main (exec, 0);
+
+	  do_cleanups (inner);
+	}
+
+      discard_cleanups (cleanup);
+    }
+  xfree (exec);
+  if (except.reason < 0)
+    {
+      subtype->tp_free (inf_obj);
+      GDB_PY_HANDLE_EXCEPTION (except);
+    }
+
+  inf_obj->inferior = inf;
+  inf_obj->threads = NULL;
+  inf_obj->nthreads = 0;
+  set_inferior_data (inf, infpy_inf_data_key, inf_obj);
+
+  return (PyObject *) inf_obj;
+}
+
 static int
 build_inferior_list (struct inferior *inf, void *arg)
 {
@@ -875,7 +955,8 @@ static PyTypeObject inferior_object_type =
   0,				  /* tp_descr_set */
   0,				  /* tp_dictoffset */
   0,				  /* tp_init */
-  0				  /* tp_alloc */
+  0,				  /* tp_alloc */
+  infpy_new			  /* tp_new */
 };
 
 #ifdef IS_PY3K
