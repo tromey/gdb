@@ -804,6 +804,51 @@ infpy_search_memory (PyObject *self, PyObject *args, PyObject *kw)
   return NULL;
 }
 
+static PyObject *
+infpy_kill (PyObject *self, PyObject *args)
+{
+  inferior_object *inf = (inferior_object *) self;
+  volatile struct gdb_exception except;
+
+  INFPY_REQUIRE_VALID (inf);
+
+  TRY_CATCH (except, RETURN_MASK_ALL)
+    {
+      struct cleanup *cleanup = save_current_space_and_thread ();
+      struct thread_info *tp = any_thread_of_process (inf->inferior->pid);
+
+      if (tp == NULL)
+	error (_("inferior has no threads"));
+
+      switch_to_thread (tp->ptid);
+      target_kill ();
+
+      do_cleanups (cleanup);
+    }
+  GDB_PY_HANDLE_EXCEPTION (except);
+
+  Py_RETURN_NONE;
+}
+
+static PyObject *
+infpy_select (PyObject *self, PyObject *args)
+{
+  inferior_object *inf = (inferior_object *) self;
+  volatile struct gdb_exception except;
+
+  INFPY_REQUIRE_VALID (inf);
+
+  TRY_CATCH (except, RETURN_MASK_ALL)
+    {
+      set_current_inferior (inf->inferior);
+      switch_to_thread (null_ptid);
+      set_current_program_space (inf->inferior->pspace);
+    }
+  GDB_PY_HANDLE_EXCEPTION (except);
+
+  Py_RETURN_NONE;
+}
+
 /* Implementation of gdb.Inferior.is_valid (self) -> Boolean.
    Returns True if this inferior object still exists in GDB.  */
 
@@ -914,6 +959,12 @@ static PyGetSetDef inferior_object_getset[] =
 
 static PyMethodDef inferior_object_methods[] =
 {
+  { "kill", infpy_kill, METH_NOARGS,
+    "kill () -> None.\n\
+Kill the inferior." },
+  { "select", infpy_select, METH_NOARGS,
+    "select () -> None.\n\
+Select this inferior." },
   { "is_valid", infpy_is_valid, METH_NOARGS,
     "is_valid () -> Boolean.\n\
 Return true if this inferior is valid, false if not." },
