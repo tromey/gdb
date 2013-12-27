@@ -26,9 +26,6 @@
 
 struct re_pattern_buffer;
 
-#if 0
-/* FIXME: cagney/2002-03-17: Once cmd_type() has been removed, ``enum
-   cmd_types'' can be moved from "command.h" to "cli-decode.h".  */
 /* Not a set/show command.  Note that some commands which begin with
    "set" or "show" might be in this category, if their syntax does
    not fall into one of the following categories.  */
@@ -39,7 +36,6 @@ typedef enum cmd_types
     show_cmd
   }
 cmd_types;
-#endif
 
 /* This structure records one command'd definition.  */
 
