@@ -832,6 +832,33 @@ infpy_stop (PyObject *self, PyObject *args)
 }
 
 static PyObject *
+infpy_continue (PyObject *self, PyObject *args)
+{
+  inferior_object *inf = (inferior_object *) self;
+  volatile struct gdb_exception except;
+
+  INFPY_REQUIRE_VALID (inf);
+
+  TRY_CATCH (except, RETURN_MASK_ALL)
+    {
+      struct cleanup *cleanup = save_current_space_and_thread ();
+
+      save_current_inferior ();
+
+      set_current_inferior (inf->inferior);
+      set_current_program_space (inf->inferior->pspace);
+
+      /* FIXME */
+      continue_1 (1);
+
+      do_cleanups (cleanup);
+    }
+  GDB_PY_HANDLE_EXCEPTION (except);
+
+  Py_RETURN_NONE;
+}
+
+static PyObject *
 infpy_kill (PyObject *self, PyObject *args)
 {
   inferior_object *inf = (inferior_object *) self;
@@ -992,6 +1019,9 @@ Kill the inferior." },
   { "stop", infpy_stop, METH_NOARGS,
     "stop () -> None.\n\
 Stop the inferior." },
+  { "continue", infpy_continue, METH_NOARGS,
+    "continue () -> None.\n\
+Continue the inferior." },
   { "select", infpy_select, METH_NOARGS,
     "select () -> None.\n\
 Select this inferior." },
