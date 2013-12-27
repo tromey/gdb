@@ -24,6 +24,7 @@
 #include "objfiles.h"
 #include "language.h"
 #include "arch-utils.h"
+#include "solib.h"
 
 typedef struct
 {
@@ -45,6 +46,17 @@ static PyTypeObject pspace_object_type
     CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF ("pspace_object");
 
 static const struct program_space_data *pspy_pspace_data_key;
+
+/* Require that PSPACE be a valid program space ID.  */
+#define PSPY_REQUIRE_VALID(Pspace)				\
+  do {								\
+    if (!Pspace->pspace)					\
+      {								\
+	PyErr_SetString (PyExc_RuntimeError,			\
+			 _("program space no longer exists."));	\
+	return NULL;						\
+      }								\
+  } while (0)
 
 
 
@@ -263,6 +275,34 @@ pspy_objfiles (PyObject *o, PyObject *args)
   return list;
 }
 
+/* Implementation of solib_name (Long) -> String.
+   Returns the name of the shared library holding a given address, or None.  */
+
+static PyObject *
+pspy_solib_name (PyObject *o, PyObject *args)
+{
+  char *soname;
+  PyObject *str_obj;
+  gdb_py_longest pc;
+  pspace_object *self = (pspace_object *) o;
+
+  PSPY_REQUIRE_VALID (self);
+
+  if (!PyArg_ParseTuple (args, GDB_PY_LL_ARG, &pc))
+    return NULL;
+
+  soname = solib_name_from_address (self->pspace, pc);
+  if (soname)
+    str_obj = PyString_Decode (soname, strlen (soname), host_charset (), NULL);
+  else
+    {
+      str_obj = Py_None;
+      Py_INCREF (Py_None);
+    }
+
+  return str_obj;
+}
+
 
 
 /* Clear the PSPACE pointer in a Pspace object and remove the reference.  */
@@ -358,6 +398,9 @@ static PyMethodDef pspace_object_methods[] =
 {
   { "objfiles", pspy_objfiles, METH_NOARGS,
     "Return a sequence of the program space's objfiles." },
+  { "solib_name", pspy_solib_name, METH_VARARGS,
+    "solib_name (Long) -> String.\n\
+Return the name of the shared library holding a given address, or None." },
   { NULL }
 };
 

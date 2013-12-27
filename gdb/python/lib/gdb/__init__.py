@@ -133,3 +133,6 @@ def current_progspace():
 def objfiles():
     "Return a sequence of the current program space's objfiles."
     return current_progspace().objfiles()
+
+def solib_name (addr):
+    return current_progspace().solib_name(addr)

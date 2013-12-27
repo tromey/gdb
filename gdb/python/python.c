@@ -64,7 +64,6 @@ static const char *gdbpy_should_print_stack = python_excp_message;
 #include "cli/cli-decode.h"
 #include "charset.h"
 #include "top.h"
-#include "solib.h"
 #include "python-internal.h"
 #include "linespec.h"
 #include "source.h"
@@ -579,31 +578,6 @@ execute_gdb_command (PyObject *self, PyObject *args, PyObject *kw)
       return r;
     }
   Py_RETURN_NONE;
-}
-
-/* Implementation of gdb.solib_name (Long) -> String.
-   Returns the name of the shared library holding a given address, or None.  */
-
-static PyObject *
-gdbpy_solib_name (PyObject *self, PyObject *args)
-{
-  char *soname;
-  PyObject *str_obj;
-  gdb_py_longest pc;
-
-  if (!PyArg_ParseTuple (args, GDB_PY_LL_ARG, &pc))
-    return NULL;
-
-  soname = solib_name_from_address (current_program_space, pc);
-  if (soname)
-    str_obj = PyString_Decode (soname, strlen (soname), host_charset (), NULL);
-  else
-    {
-      str_obj = Py_None;
-      Py_INCREF (Py_None);
-    }
-
-  return str_obj;
 }
 
 /* A Python function which is a wrapper for decode_line_1.  */
@@ -1927,9 +1901,6 @@ a boolean indicating if name is a field of the current implied argument\n\
 Return the symbol corresponding to the given name (or None)." },
   { "block_for_pc", gdbpy_block_for_pc, METH_VARARGS,
     "Return the block containing the given pc value, or None." },
-  { "solib_name", gdbpy_solib_name, METH_VARARGS,
-    "solib_name (Long) -> String.\n\
-Return the name of the shared library holding a given address, or None." },
   { "decode_line", gdbpy_decode_line, METH_VARARGS,
     "decode_line (String) -> Tuple.  Decode a string argument the way\n\
 that 'break' or 'edit' does.  Return a tuple containing two elements.\n\
