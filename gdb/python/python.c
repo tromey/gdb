@@ -1533,7 +1533,9 @@ _initialize_python (void)
   char *oldloc;
   wchar_t *progname_copy;
 #endif
+#ifdef HAVE_PYTHON
   int is_import = Py_IsInitialized ();
+#endif
 
   add_com ("python-interactive", class_obscure,
 	   python_interactive_command,
