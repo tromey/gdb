@@ -350,6 +350,41 @@ pspy_block_for_pc (PyObject *o, PyObject *args)
   Py_RETURN_NONE;
 }
 
+/* Implementation of the find_pc_line function.
+   Returns the gdb.Symtab_and_line object corresponding to a PC value.  */
+
+static PyObject *
+pspy_find_pc_line (PyObject *o, PyObject *args)
+{
+  gdb_py_ulongest pc_llu;
+  volatile struct gdb_exception except;
+  PyObject *result = NULL; /* init for gcc -Wall */
+  pspace_object *self = (pspace_object *) o;
+
+  PSPY_REQUIRE_VALID (self);
+
+  if (!PyArg_ParseTuple (args, GDB_PY_LLU_ARG, &pc_llu))
+    return NULL;
+
+  TRY_CATCH (except, RETURN_MASK_ALL)
+    {
+      struct symtab_and_line sal;
+      CORE_ADDR pc;
+      struct cleanup *cleanup = save_current_space_and_thread ();
+
+      set_current_program_space (self->pspace);
+
+      pc = (CORE_ADDR) pc_llu;
+      sal = find_pc_line (pc, 0);
+      result = symtab_and_line_to_sal_object (sal);
+
+      do_cleanups (cleanup);
+    }
+  GDB_PY_HANDLE_EXCEPTION (except);
+
+  return result;
+}
+
 
 
 /* Clear the PSPACE pointer in a Pspace object and remove the reference.  */
@@ -450,6 +485,9 @@ static PyMethodDef pspace_object_methods[] =
 Return the name of the shared library holding a given address, or None." },
   { "block_for_pc", pspy_block_for_pc, METH_VARARGS,
     "Return the block containing the given pc value, or None." },
+  { "find_pc_line", pspy_find_pc_line, METH_VARARGS,
+    "find_pc_line (pc) -> Symtab_and_line.\n\
+Return the gdb.Symtab_and_line object corresponding to the pc value." },
   { NULL }
 };
 

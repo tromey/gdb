@@ -139,3 +139,6 @@ def solib_name (addr):
 
 def block_for_pc(pc):
     return current_progspace().block_for_pc(pc)
+
+def find_pc_line(pc):
+    return current_progspace().find_pc_line(pc)
