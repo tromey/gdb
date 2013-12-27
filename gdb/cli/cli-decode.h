@@ -176,14 +176,14 @@ struct cmd_list_element
 
     /* Type of "set" or "show" command (or SET_NOT_SET if not "set"
        or "show").  */
-    cmd_types type;
+    ENUM_BITFIELD (cmd_types) type : 2;
 
     /* Pointer to variable affected by "set" and "show".  Doesn't
        matter if type is not_set.  */
     void *var;
 
     /* What kind of variable is *VAR?  */
-    var_types var_type;
+    ENUM_BITFIELD (var_types) var_type : 4;
 
     /* Pointer to NULL terminated list of enumerated values (like
        argv).  */
