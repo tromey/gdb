@@ -205,9 +205,6 @@ set_current_program_space (struct program_space *pspace)
   gdb_assert (pspace != NULL);
 
   current_program_space = pspace;
-
-  /* Different symbols change our view of the frame chain.  */
-  reinit_frame_cache ();
 }
 
 /* A cleanups callback, helper for save_current_program_space

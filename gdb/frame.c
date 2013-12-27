@@ -66,6 +66,10 @@ enum cached_copy_status
   CC_UNAVAILABLE
 };
 
+/* The per-address space key.  */
+
+static const struct address_space_data *frame_aspace_key;
+
 /* We keep a cache of stack frames, each of which is a "struct
    frame_info".  The innermost one gets allocated (in
    wait_for_inferior) each time the inferior stops; current_frame
@@ -147,12 +151,33 @@ struct frame_info
   enum unwind_stop_reason stop_reason;
 };
 
-/* A frame stash used to speed up frame lookups.  Create a hash table
-   to stash frames previously accessed from the frame cache for
-   quicker subsequent retrieval.  The hash table is emptied whenever
-   the frame cache is invalidated.  */
+/* This structure holds all the data for a single frame cache.  Each
+   such cache is stored on an address space.  */
 
-static htab_t frame_stash;
+struct frame_cache_instance
+{
+  /* Info about the innermost stack frame (contents of FP register).  */
+
+  struct frame_info *current_frame;
+
+  /* Cache for frame addresses already read by gdb.  Valid only while
+     inferior is stopped.  Control variables for the frame cache
+     should be local to this module.  */
+
+  struct obstack frame_cache_obstack;
+
+  /* A frame stash used to speed up frame lookups.  Create a hash
+     table to stash frames previously accessed from the frame cache
+     for quicker subsequent retrieval.  The hash table is emptied
+     whenever the frame cache is invalidated.  */
+
+  htab_t frame_stash;
+
+  /* The "selected" stack frame is used by default for local and arg
+     access.  May be zero, for no selected frame.  */
+
+  struct frame_info *selected_frame;
+};
 
 /* Internal function to calculate a hash from the frame_id addresses,
    using as many valid addresses as possible.  Frames below level 0
@@ -195,16 +220,28 @@ frame_addr_hash_eq (const void *a, const void *b)
 		      f_element->this_id.value);
 }
 
-/* Internal function to create the frame_stash hash table.  100 seems
-   to be a good compromise to start the hash table at.  */
-
-static void
-frame_stash_create (void)
+static struct frame_cache_instance *
+get_frame_instance (void)
 {
-  frame_stash = htab_create (100,
-			     frame_addr_hash,
-			     frame_addr_hash_eq,
-			     NULL);
+  struct frame_cache_instance *instance
+    = address_space_data (current_program_space->aspace, frame_aspace_key);
+
+  if (instance == NULL)
+    {
+      instance = XCNEW (struct frame_cache_instance);
+
+      obstack_init (&instance->frame_cache_obstack);
+  
+      instance->frame_stash = htab_create (100,
+					   frame_addr_hash,
+					   frame_addr_hash_eq,
+					   NULL);
+
+      set_address_space_data (current_program_space->aspace,
+			      frame_aspace_key, instance);
+    }
+
+  return instance;
 }
 
 /* Internal function to add a frame to the frame_stash hash table.
@@ -215,11 +252,12 @@ static int
 frame_stash_add (struct frame_info *frame)
 {
   struct frame_info **slot;
+  struct frame_cache_instance *instance = get_frame_instance ();
 
   /* Do not try to stash the sentinel frame.  */
   gdb_assert (frame->level >= 0);
 
-  slot = (struct frame_info **) htab_find_slot (frame_stash,
+  slot = (struct frame_info **) htab_find_slot (instance->frame_stash,
 						frame,
 						INSERT);
 
@@ -243,9 +281,10 @@ frame_stash_find (struct frame_id id)
 {
   struct frame_info dummy;
   struct frame_info *frame;
+  struct frame_cache_instance *instance = get_frame_instance ();
 
   dummy.this_id.value = id;
-  frame = htab_find (frame_stash, &dummy);
+  frame = htab_find (instance->frame_stash, &dummy);
   return frame;
 }
 
@@ -256,7 +295,9 @@ frame_stash_find (struct frame_id id)
 static void
 frame_stash_invalidate (void)
 {
-  htab_empty (frame_stash);
+  struct frame_cache_instance *instance = get_frame_instance ();
+
+  htab_empty (instance->frame_stash);
 }
 
 /* Flag to control debugging.  */
@@ -1416,20 +1457,12 @@ create_sentinel_frame (struct program_space *pspace, struct regcache *regcache)
   return frame;
 }
 
-/* Info about the innermost stack frame (contents of FP register).  */
-
-static struct frame_info *current_frame;
-
-/* Cache for frame addresses already read by gdb.  Valid only while
-   inferior is stopped.  Control variables for the frame cache should
-   be local to this module.  */
-
-static struct obstack frame_cache_obstack;
-
 void *
 frame_obstack_zalloc (unsigned long size)
 {
-  void *data = obstack_alloc (&frame_cache_obstack, size);
+  struct frame_cache_instance *instance
+    = address_space_data (current_program_space->aspace, frame_aspace_key);
+  void *data = obstack_alloc (&instance->frame_cache_obstack, size);
 
   memset (data, 0, size);
   return data;
@@ -1444,18 +1477,21 @@ static int
 unwind_to_current_frame (struct ui_out *ui_out, void *args)
 {
   struct frame_info *frame = get_prev_frame (args);
+  struct frame_cache_instance *instance = get_frame_instance ();
 
   /* A sentinel frame can fail to unwind, e.g., because its PC value
      lands in somewhere like start.  */
   if (frame == NULL)
     return 1;
-  current_frame = frame;
+  instance->current_frame = frame;
   return 0;
 }
 
 struct frame_info *
 get_current_frame (void)
 {
+  struct frame_cache_instance *instance = get_frame_instance ();
+
   /* First check, and report, the lack of registers.  Having GDB
      report "No stack!" or "No memory" when the target doesn't even
      have registers is very confusing.  Besides, "printcmd.exp"
@@ -1478,7 +1514,7 @@ get_current_frame (void)
 	error (_("Target is executing."));
     }
 
-  if (current_frame == NULL)
+  if (instance->current_frame == NULL)
     {
       struct frame_info *sentinel_frame =
 	create_sentinel_frame (current_program_space, get_current_regcache ());
@@ -1487,16 +1523,11 @@ get_current_frame (void)
 	{
 	  /* Oops! Fake a current frame?  Is this useful?  It has a PC
              of zero, for instance.  */
-	  current_frame = sentinel_frame;
+	  instance->current_frame = sentinel_frame;
 	}
     }
-  return current_frame;
+  return instance->current_frame;
 }
-
-/* The "selected" stack frame is used by default for local and arg
-   access.  May be zero, for no selected frame.  */
-
-static struct frame_info *selected_frame;
 
 int
 has_stack_frames (void)
@@ -1530,7 +1561,9 @@ has_stack_frames (void)
 struct frame_info *
 get_selected_frame (const char *message)
 {
-  if (selected_frame == NULL)
+  struct frame_cache_instance *instance = get_frame_instance ();
+
+  if (instance->selected_frame == NULL)
     {
       if (message != NULL && !has_stack_frames ())
 	error (("%s"), message);
@@ -1540,8 +1573,8 @@ get_selected_frame (const char *message)
       select_frame (get_current_frame ());
     }
   /* There is always a frame.  */
-  gdb_assert (selected_frame != NULL);
-  return selected_frame;
+  gdb_assert (instance->selected_frame != NULL);
+  return instance->selected_frame;
 }
 
 /* If there is a selected frame, return it.  Otherwise, return NULL.  */
@@ -1549,7 +1582,9 @@ get_selected_frame (const char *message)
 struct frame_info *
 get_selected_frame_if_set (void)
 {
-  return selected_frame;
+  struct frame_cache_instance *instance = get_frame_instance ();
+
+  return instance->selected_frame;
 }
 
 /* This is a variant of get_selected_frame() which can be called when
@@ -1569,7 +1604,9 @@ deprecated_safe_get_selected_frame (void)
 void
 select_frame (struct frame_info *fi)
 {
-  selected_frame = fi;
+  struct frame_cache_instance *instance = get_frame_instance ();
+
+  instance->selected_frame = fi;
   /* NOTE: cagney/2002-05-04: FI can be NULL.  This occurs when the
      frame is being invalidated.  */
   if (deprecated_selected_frame_level_changed_hook)
@@ -1681,13 +1718,13 @@ frame_observer_target_changed (struct target_ops *target)
 
 /* Flush the entire frame cache.  */
 
-void
-reinit_frame_cache (void)
+static void
+do_reinit_frame_cache (struct frame_cache_instance *instance, int delete)
 {
   struct frame_info *fi;
 
   /* Tear down all frame caches.  */
-  for (fi = current_frame; fi != NULL; fi = fi->prev)
+  for (fi = instance->current_frame; fi != NULL; fi = fi->prev)
     {
       if (fi->prologue_cache && fi->unwind->dealloc_cache)
 	fi->unwind->dealloc_cache (fi, fi->prologue_cache);
@@ -1696,17 +1733,37 @@ reinit_frame_cache (void)
     }
 
   /* Since we can't really be sure what the first object allocated was.  */
-  obstack_free (&frame_cache_obstack, 0);
-  obstack_init (&frame_cache_obstack);
+  obstack_free (&instance->frame_cache_obstack, 0);
+  if (!delete)
+    {
+      obstack_init (&instance->frame_cache_obstack);
 
-  if (current_frame != NULL)
-    annotate_frames_invalid ();
+      if (instance->current_frame != NULL)
+	annotate_frames_invalid ();
+    }
 
-  current_frame = NULL;		/* Invalidate cache */
-  select_frame (NULL);
-  frame_stash_invalidate ();
-  if (frame_debug)
-    fprintf_unfiltered (gdb_stdlog, "{ reinit_frame_cache () }\n");
+  instance->current_frame = NULL;		/* Invalidate cache */
+  if (!delete)
+    {
+      select_frame (NULL);
+      frame_stash_invalidate ();
+
+      if (frame_debug)
+	fprintf_unfiltered (gdb_stdlog, "{ reinit_frame_cache () }\n");
+    }
+  else
+    htab_delete (instance->frame_stash);
+}
+
+/* Flush the entire frame cache.  */
+
+void
+reinit_frame_cache (void)
+{
+  struct frame_info *fi;
+  struct frame_cache_instance *instance = get_frame_instance ();
+
+  do_reinit_frame_cache (instance, 0);
 }
 
 /* Find where a register is saved (in memory or another register).
@@ -2632,12 +2689,21 @@ show_backtrace_cmd (char *args, int from_tty)
   cmd_show_list (show_backtrace_cmdlist, from_tty, "");
 }
 
+static void
+frame_cache_instance_cleanup (struct address_space *aspace, void *arg)
+{
+  struct frame_cache_instance *instance = arg;
+
+  do_reinit_frame_cache (instance, 1);
+  xfree (instance);
+}
+
 void
 _initialize_frame (void)
 {
-  obstack_init (&frame_cache_obstack);
-
-  frame_stash_create ();
+  frame_aspace_key
+    = register_address_space_data_with_cleanup (NULL,
+						frame_cache_instance_cleanup);
 
   observer_attach_target_changed (frame_observer_target_changed);
 
