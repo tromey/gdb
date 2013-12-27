@@ -125,3 +125,11 @@ def GdbSetPythonDirectory(dir):
     # attributes
     reload(__import__(__name__))
     auto_load_packages()
+
+def current_progspace():
+    "Return the current Progspace."
+    return selected_inferior().progspace
+
+def objfiles():
+    "Return a sequence of the current program space's objfiles."
+    return current_progspace().objfiles()

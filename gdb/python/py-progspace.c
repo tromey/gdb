@@ -232,6 +232,37 @@ pspy_set_type_printers (PyObject *o, PyObject *value, void *ignore)
   return 0;
 }
 
+/* Return a sequence holding all the Objfiles.  */
+
+static PyObject *
+pspy_objfiles (PyObject *o, PyObject *args)
+{
+  PyObject *list;
+  pspace_object *self = (pspace_object *) o;
+
+  list = PyList_New (0);
+  if (!list)
+    return NULL;
+
+  if (self->pspace != NULL)
+    {
+      struct objfile *objf;
+
+      ALL_PSPACE_OBJFILES (self->pspace, objf)
+	{
+	  PyObject *item = objfile_to_objfile_object (objf);
+
+	  if (!item || PyList_Append (list, item) == -1)
+	    {
+	      Py_DECREF (list);
+	      return NULL;
+	    }
+	}
+    }
+
+  return list;
+}
+
 
 
 /* Clear the PSPACE pointer in a Pspace object and remove the reference.  */
@@ -323,6 +354,13 @@ static PyGetSetDef pspace_getset[] =
   { NULL }
 };
 
+static PyMethodDef pspace_object_methods[] =
+{
+  { "objfiles", pspy_objfiles, METH_NOARGS,
+    "Return a sequence of the program space's objfiles." },
+  { NULL }
+};
+
 static PyTypeObject pspace_object_type =
 {
   PyVarObject_HEAD_INIT (NULL, 0)
@@ -352,7 +390,7 @@ static PyTypeObject pspace_object_type =
   0,				  /* tp_weaklistoffset */
   0,				  /* tp_iter */
   0,				  /* tp_iternext */
-  0,				  /* tp_methods */
+  pspace_object_methods,	  /* tp_methods */
   0,				  /* tp_members */
   pspace_getset,		  /* tp_getset */
   0,				  /* tp_base */

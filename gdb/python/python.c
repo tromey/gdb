@@ -1116,20 +1116,6 @@ gdbpy_print_stack (void)
 
 
 
-/* Return the current Progspace.
-   There always is one.  */
-
-static PyObject *
-gdbpy_get_current_progspace (PyObject *unused1, PyObject *unused2)
-{
-  PyObject *result;
-
-  result = pspace_to_pspace_object (current_program_space);
-  if (result)
-    Py_INCREF (result);
-  return result;
-}
-
 /* Return a sequence holding all the Progspaces.  */
 
 static PyObject *
@@ -1199,32 +1185,6 @@ gdbpy_get_current_objfile (PyObject *unused1, PyObject *unused2)
   if (result)
     Py_INCREF (result);
   return result;
-}
-
-/* Return a sequence holding all the Objfiles.  */
-
-static PyObject *
-gdbpy_objfiles (PyObject *unused1, PyObject *unused2)
-{
-  struct objfile *objf;
-  PyObject *list;
-
-  list = PyList_New (0);
-  if (!list)
-    return NULL;
-
-  ALL_OBJFILES (objf)
-  {
-    PyObject *item = objfile_to_objfile_object (objf);
-
-    if (!item || PyList_Append (list, item) == -1)
-      {
-	Py_DECREF (list);
-	return NULL;
-      }
-  }
-
-  return list;
 }
 
 /* Compute the list of active type printers and return it.  The result
@@ -1933,15 +1893,11 @@ set to True." },
   { "default_visualizer", gdbpy_default_visualizer, METH_VARARGS,
     "Find the default visualizer for a Value." },
 
-  { "current_progspace", gdbpy_get_current_progspace, METH_NOARGS,
-    "Return the current Progspace." },
   { "progspaces", gdbpy_progspaces, METH_NOARGS,
     "Return a sequence of all progspaces." },
 
   { "current_objfile", gdbpy_get_current_objfile, METH_NOARGS,
     "Return the current Objfile being loaded, or None." },
-  { "objfiles", gdbpy_objfiles, METH_NOARGS,
-    "Return a sequence of all loaded objfiles." },
 
   { "newest_frame", gdbpy_newest_frame, METH_NOARGS,
     "newest_frame () -> gdb.Frame.\n\
