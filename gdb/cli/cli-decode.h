@@ -96,6 +96,13 @@ struct cmd_list_element
        otherwise wouldn't.  */
     unsigned int abbrev_flag : 1;
 
+    /* Type of "set" or "show" command (or SET_NOT_SET if not "set"
+       or "show").  */
+    ENUM_BITFIELD (cmd_types) type : 2;
+
+    /* What kind of variable is *VAR?  */
+    ENUM_BITFIELD (var_types) var_type : 4;
+
     /* Function definition of this command.  NULL for command class
        names and for help topics that are not really commands.  NOTE:
        cagney/2002-02-02: This function signature is evolving.  For
@@ -174,16 +181,9 @@ struct cmd_list_element
        used to finalize the CONTEXT field, if needed.  */
     void (*destroyer) (struct cmd_list_element *self, void *context);
 
-    /* Type of "set" or "show" command (or SET_NOT_SET if not "set"
-       or "show").  */
-    ENUM_BITFIELD (cmd_types) type : 2;
-
     /* Pointer to variable affected by "set" and "show".  Doesn't
        matter if type is not_set.  */
     void *var;
-
-    /* What kind of variable is *VAR?  */
-    ENUM_BITFIELD (var_types) var_type : 4;
 
     /* Pointer to NULL terminated list of enumerated values (like
        argv).  */
