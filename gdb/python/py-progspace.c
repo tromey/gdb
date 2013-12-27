@@ -385,6 +385,20 @@ pspy_find_pc_line (PyObject *o, PyObject *args)
   return result;
 }
 
+/* Implementation of is_valid (self) -> Boolean.
+   Returns True if this program space still exists in GDB.  */
+
+static PyObject *
+pspy_is_valid (PyObject *o, PyObject *args)
+{
+  pspace_object *self = (pspace_object *) o;
+
+  if (self->pspace == NULL)
+    Py_RETURN_FALSE;
+
+  Py_RETURN_TRUE;
+}
+
 
 
 /* Clear the PSPACE pointer in a Pspace object and remove the reference.  */
@@ -488,6 +502,9 @@ Return the name of the shared library holding a given address, or None." },
   { "find_pc_line", pspy_find_pc_line, METH_VARARGS,
     "find_pc_line (pc) -> Symtab_and_line.\n\
 Return the gdb.Symtab_and_line object corresponding to the pc value." },
+  { "is_valid", pspy_is_valid, METH_NOARGS,
+    "is_valid () -> Boolean.\n\
+Return true if this program space is valid, false if not." },
   { NULL }
 };
 
