@@ -25,6 +25,7 @@
 #include "language.h"
 #include "arch-utils.h"
 #include "solib.h"
+#include "block.h"
 
 typedef struct
 {
@@ -303,6 +304,52 @@ pspy_solib_name (PyObject *o, PyObject *args)
   return str_obj;
 }
 
+/* Return the innermost lexical block containing the specified pc value,
+   or 0 if there is none.  */
+static PyObject *
+pspy_block_for_pc (PyObject *o, PyObject *args)
+{
+  gdb_py_ulongest pc;
+  struct block *block = NULL;
+  struct obj_section *section = NULL;
+  struct symtab *symtab = NULL;
+  volatile struct gdb_exception except;
+  pspace_object *self = (pspace_object *) o;
+
+  PSPY_REQUIRE_VALID (self);
+
+  if (!PyArg_ParseTuple (args, GDB_PY_LLU_ARG, &pc))
+    return NULL;
+
+  TRY_CATCH (except, RETURN_MASK_ALL)
+    {
+      struct cleanup *cleanup = save_current_space_and_thread ();
+
+      set_current_program_space (self->pspace);
+
+      section = find_pc_mapped_section (pc);
+      symtab = find_pc_sect_symtab (pc, section);
+
+      if (symtab != NULL && symtab->objfile != NULL)
+	block = block_for_pc (pc);
+
+      do_cleanups (cleanup);
+    }
+  GDB_PY_HANDLE_EXCEPTION (except);
+
+  if (!symtab || symtab->objfile == NULL)
+    {
+      PyErr_SetString (PyExc_RuntimeError,
+		       _("Cannot locate object file for block."));
+      return NULL;
+    }
+
+  if (block)
+    return block_to_block_object (block, symtab->objfile);
+
+  Py_RETURN_NONE;
+}
+
 
 
 /* Clear the PSPACE pointer in a Pspace object and remove the reference.  */
@@ -401,6 +448,8 @@ static PyMethodDef pspace_object_methods[] =
   { "solib_name", pspy_solib_name, METH_VARARGS,
     "solib_name (Long) -> String.\n\
 Return the name of the shared library holding a given address, or None." },
+  { "block_for_pc", pspy_block_for_pc, METH_VARARGS,
+    "Return the block containing the given pc value, or None." },
   { NULL }
 };
 

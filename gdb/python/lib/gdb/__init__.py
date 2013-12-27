@@ -136,3 +136,6 @@ def objfiles():
 
 def solib_name (addr):
     return current_progspace().solib_name(addr)
+
+def block_for_pc(pc):
+    return current_progspace().block_for_pc(pc)

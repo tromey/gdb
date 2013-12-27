@@ -365,43 +365,6 @@ blpy_iter_is_valid (PyObject *self, PyObject *args)
   Py_RETURN_TRUE;
 }
 
-/* Return the innermost lexical block containing the specified pc value,
-   or 0 if there is none.  */
-PyObject *
-gdbpy_block_for_pc (PyObject *self, PyObject *args)
-{
-  gdb_py_ulongest pc;
-  struct block *block = NULL;
-  struct obj_section *section = NULL;
-  struct symtab *symtab = NULL;
-  volatile struct gdb_exception except;
-
-  if (!PyArg_ParseTuple (args, GDB_PY_LLU_ARG, &pc))
-    return NULL;
-
-  TRY_CATCH (except, RETURN_MASK_ALL)
-    {
-      section = find_pc_mapped_section (pc);
-      symtab = find_pc_sect_symtab (pc, section);
-
-      if (symtab != NULL && symtab->objfile != NULL)
-	block = block_for_pc (pc);
-    }
-  GDB_PY_HANDLE_EXCEPTION (except);
-
-  if (!symtab || symtab->objfile == NULL)
-    {
-      PyErr_SetString (PyExc_RuntimeError,
-		       _("Cannot locate object file for block."));
-      return NULL;
-    }
-
-  if (block)
-    return block_to_block_object (block, symtab->objfile);
-
-  Py_RETURN_NONE;
-}
-
 /* This function is called when an objfile is about to be freed.
    Invalidate the block as further actions on the block would result
    in bad data.  All access to obj->symbol should be gated by
