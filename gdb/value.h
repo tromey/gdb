@@ -380,8 +380,9 @@ extern void set_value_internalvar (struct value *, struct internalvar *);
 
 /* Frame register value is relative to.  This will be described in the
    lval enum above as "lval_register".  */
-extern struct frame_id *deprecated_value_frame_id_hack (struct value *);
-#define VALUE_FRAME_ID(val) (*deprecated_value_frame_id_hack (val))
+extern struct frame_id value_frame_id (const struct value *);
+
+extern void set_value_frame_id (struct value *, struct frame_id);
 
 /* Register number if the value is from a register.  */
 extern short value_regnum (const struct value *);

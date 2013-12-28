@@ -214,7 +214,7 @@ value_subscripted_rvalue (struct value *array, LONGEST index, int lowerbound)
 
   set_value_component_location (v, array);
   set_value_regnum (v, value_regnum (array));
-  VALUE_FRAME_ID (v) = VALUE_FRAME_ID (array);
+  set_value_frame_id (v, value_frame_id (array));
   set_value_offset (v, value_offset (array) + elt_offs);
   return v;
 }

@@ -828,7 +828,7 @@ allocate_value_lazy (struct type *type)
   val->enclosing_type = type;
   val->lval = not_lval;
   val->location.address = 0;
-  VALUE_FRAME_ID (val) = null_frame_id;
+  val->frame_id = null_frame_id;
   val->offset = 0;
   val->bitpos = 0;
   val->bitsize = 0;
@@ -1405,10 +1405,16 @@ set_value_internalvar (struct value *value, struct internalvar *ivar)
   value->location.internalvar = ivar;  
 }
 
-struct frame_id *
-deprecated_value_frame_id_hack (struct value *value)
+struct frame_id
+value_frame_id (const struct value *value)
 {
-  return &value->frame_id;
+  return value->frame_id;
+}
+
+void
+set_value_frame_id (struct value *value, struct frame_id id)
+{
+  value->frame_id = id;
 }
 
 /* Return the value's register number.  */
@@ -1618,7 +1624,7 @@ value_copy (struct value *arg)
   val->offset = arg->offset;
   val->bitpos = arg->bitpos;
   val->bitsize = arg->bitsize;
-  VALUE_FRAME_ID (val) = VALUE_FRAME_ID (arg);
+  val->frame_id = value_frame_id (arg);
   val->regnum = arg->regnum;
   val->lazy = arg->lazy;
   val->optimized_out = arg->optimized_out;
@@ -2961,7 +2967,7 @@ value_primitive_field (struct value *arg1, int offset,
     }
   set_value_component_location (v, arg1);
   set_value_regnum (v, value_regnum (arg1));
-  VALUE_FRAME_ID (v) = VALUE_FRAME_ID (arg1);
+  set_value_frame_id (v, value_frame_id (arg1));
   return v;
 }
 
@@ -3690,7 +3696,7 @@ value_fetch_lazy (struct value *val)
 
       while (value_lval (new_val) == lval_register && value_lazy (new_val))
 	{
-	  struct frame_id frame_id = VALUE_FRAME_ID (new_val);
+	  struct frame_id frame_id = value_frame_id (new_val);
 
 	  frame = frame_find_by_id (frame_id);
 	  regnum = value_regnum (new_val);
@@ -3719,7 +3725,7 @@ value_fetch_lazy (struct value *val)
 	     in this situation.  */
 	  if (value_lval (new_val) == lval_register
 	      && value_lazy (new_val)
-	      && frame_id_eq (VALUE_FRAME_ID (new_val), frame_id))
+	      && frame_id_eq (value_frame_id (new_val), frame_id))
 	    internal_error (__FILE__, __LINE__,
 			    _("infinite loop while fetching a register"));
 	}
@@ -3743,7 +3749,7 @@ value_fetch_lazy (struct value *val)
       if (frame_debug)
 	{
 	  struct gdbarch *gdbarch;
-	  frame = frame_find_by_id (VALUE_FRAME_ID (val));
+	  frame = frame_find_by_id (value_frame_id (val));
 	  regnum = value_regnum (val);
 	  gdbarch = get_frame_arch (frame);
 

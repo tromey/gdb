@@ -1612,7 +1612,7 @@ read_pieced_value (struct value *v)
   gdb_byte *contents;
   struct piece_closure *c
     = (struct piece_closure *) value_computed_closure (v);
-  struct frame_info *frame = frame_find_by_id (VALUE_FRAME_ID (v));
+  struct frame_info *frame = frame_find_by_id (value_frame_id (v));
   size_t type_len;
   size_t buffer_size = 0;
   gdb_byte *buffer = NULL;
@@ -1795,7 +1795,7 @@ write_pieced_value (struct value *to, struct value *from)
   const gdb_byte *contents;
   struct piece_closure *c
     = (struct piece_closure *) value_computed_closure (to);
-  struct frame_info *frame = frame_find_by_id (VALUE_FRAME_ID (to));
+  struct frame_info *frame = frame_find_by_id (value_frame_id (to));
   size_t type_len;
   size_t buffer_size = 0;
   gdb_byte *buffer = NULL;
@@ -2288,7 +2288,7 @@ dwarf2_evaluate_loc_desc_full (struct type *type, struct frame_info *frame,
 	 closure but before allocating the result.  */
       do_cleanups (value_chain);
       retval = allocate_computed_value (type, &pieced_value_funcs, c);
-      VALUE_FRAME_ID (retval) = frame_id;
+      set_value_frame_id (retval, frame_id);
       set_value_offset (retval, byte_offset);
     }
   else

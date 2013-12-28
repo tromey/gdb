@@ -1145,7 +1145,7 @@ value_assign (struct value *toval, struct value *fromval)
 	int value_reg;
 
 	/* Figure out which frame this is in currently.  */
-	frame = frame_find_by_id (VALUE_FRAME_ID (toval));
+	frame = frame_find_by_id (value_frame_id (toval));
 	value_reg = value_regnum (toval);
 
 	if (!frame)
@@ -1378,7 +1378,7 @@ address_of_variable (struct symbol *var, const struct block *b)
 	struct frame_info *frame;
 	const char *regname;
 
-	frame = frame_find_by_id (VALUE_FRAME_ID (val));
+	frame = frame_find_by_id (value_frame_id (val));
 	gdb_assert (frame);
 
 	regname = gdbarch_register_name (get_frame_arch (frame),
@@ -3592,7 +3592,7 @@ value_slice (struct value *array, int lowbound, int length)
 	}
 
       set_value_component_location (slice, array);
-      VALUE_FRAME_ID (slice) = VALUE_FRAME_ID (array);
+      set_value_frame_id (slice, value_frame_id (array));
       set_value_offset (slice, value_offset (array) + offset);
     }
   return slice;
