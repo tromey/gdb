@@ -1146,19 +1146,19 @@ value_assign (struct value *toval, struct value *fromval)
 
 	/* Figure out which frame this is in currently.  */
 	frame = frame_find_by_id (VALUE_FRAME_ID (toval));
-	value_reg = VALUE_REGNUM (toval);
+	value_reg = value_regnum (toval);
 
 	if (!frame)
 	  error (_("Value being assigned to is no longer active."));
 
 	gdbarch = get_frame_arch (frame);
-	if (gdbarch_convert_register_p (gdbarch, VALUE_REGNUM (toval), type))
+	if (gdbarch_convert_register_p (gdbarch, value_regnum (toval), type))
 	  {
 	    /* If TOVAL is a special machine register requiring
 	       conversion of program values to a special raw
 	       format.  */
 	    gdbarch_value_to_register (gdbarch, frame,
-				       VALUE_REGNUM (toval), type,
+				       value_regnum (toval), type,
 				       value_contents (fromval));
 	  }
 	else
@@ -1382,7 +1382,7 @@ address_of_variable (struct symbol *var, const struct block *b)
 	gdb_assert (frame);
 
 	regname = gdbarch_register_name (get_frame_arch (frame),
-					 VALUE_REGNUM (val));
+					 value_regnum (val));
 	gdb_assert (regname && *regname);
 
 	error (_("Address requested for identifier "

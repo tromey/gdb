@@ -1,5 +1,35 @@
 2014-01-09  Tom Tromey  <tromey@redhat.com>
 
+	* aarch64-tdep.c (aarch64_pseudo_read_value): Use
+	allocate_register_value.
+	* amd64-tdep.c (amd64_pseudo_register_read_value): Likewise.
+	* findvar.c (value_of_register_lazy, default_value_from_register):
+	Likewise.
+	(read_frame_register_value): Use value_regnum.
+	(value_from_register): Use allocate_register_value.
+	* frame-unwind.c (frame_unwind_got_optimized): Likewise.
+	* frame.c (frame_register_unwind): Use value_regnum.
+	(frame_unwind_register_value): Likewise.
+	(read_frame_register_unsigned): Likewise.
+	* i386-tdep.c (i386_pseudo_register_read_value): Use
+	allocate_register_value.
+	* regcache.c (regcache_cooked_read_value): Likewise.
+	* valarith.c (value_subscripted_rvalue): Use value_regnum.
+	* valops.c (value_assign): Likewise.
+	(address_of_variable): Likewise.
+	* value.c (allocate_value_lazy): Don't use VALUE_REGNUM.
+	(allocate_register_value, value_regnum, set_value_regnum): New
+	functions.
+	(deprecated_value_regnum_hack): Remove.
+	(value_copy): Don't use VALUE_REGNUM.
+	(value_primitive_field): Likewise.
+	(value_fetch_lazy): Use value_regnum.
+	* value.h (deprecated_value_regnum_hack, VALUE_REGNUM): Remove.
+	(value_regnum, set_value_regnum, allocate_register_value):
+	Declare.
+
+2014-01-09  Tom Tromey  <tromey@redhat.com>
+
 	* ada-lang.c (ada_value_assign, assign_aggregate): Update.
 	* breakpoint.c (can_use_hardware_watchpoint): Update.
 	* opencl-lang.c (evaluate_subexp_opencl): Update.

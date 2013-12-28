@@ -832,7 +832,7 @@ allocate_value_lazy (struct type *type)
   val->offset = 0;
   val->bitpos = 0;
   val->bitsize = 0;
-  VALUE_REGNUM (val) = -1;
+  val->regnum = -1;
   val->lazy = 1;
   val->optimized_out = 0;
   val->embedded_offset = 0;
@@ -905,6 +905,29 @@ allocate_optimized_out_value (struct type *type)
 
   set_value_optimized_out (retval, 1);
   set_value_lazy (retval, 0);
+  return retval;
+}
+
+/* Allocate an lval_register value, with type TYPE and frame id
+   FRAMEID.  REGNUM is the register number.  IS_LAZY determines
+   whether the newly allocated value is lazy.  */
+
+struct value *
+allocate_register_value (struct type *type, int is_lazy,
+			 struct frame_id frameid, int regnum)
+{
+  struct value *retval = allocate_value_lazy (type);
+
+  if (!is_lazy)
+    {
+      allocate_value_contents (retval);
+      retval->lazy = 0;
+    }
+
+  retval->frame_id = frameid;
+  retval->regnum = regnum;
+  retval->lval = lval_register;
+
   return retval;
 }
 
@@ -1378,10 +1401,20 @@ deprecated_value_frame_id_hack (struct value *value)
   return &value->frame_id;
 }
 
-short *
-deprecated_value_regnum_hack (struct value *value)
+/* Return the value's register number.  */
+
+short
+value_regnum (const struct value *value)
 {
-  return &value->regnum;
+  return value->regnum;
+}
+
+/* Set the value's register number.  */
+
+void
+set_value_regnum (struct value *value, short regnum)
+{
+  value->regnum = regnum;
 }
 
 int
@@ -1576,7 +1609,7 @@ value_copy (struct value *arg)
   val->bitpos = arg->bitpos;
   val->bitsize = arg->bitsize;
   VALUE_FRAME_ID (val) = VALUE_FRAME_ID (arg);
-  VALUE_REGNUM (val) = VALUE_REGNUM (arg);
+  val->regnum = arg->regnum;
   val->lazy = arg->lazy;
   val->optimized_out = arg->optimized_out;
   val->embedded_offset = value_embedded_offset (arg);
@@ -2917,7 +2950,7 @@ value_primitive_field (struct value *arg1, int offset,
 		   + value_embedded_offset (arg1));
     }
   set_value_component_location (v, arg1);
-  VALUE_REGNUM (v) = VALUE_REGNUM (arg1);
+  set_value_regnum (v, value_regnum (arg1));
   VALUE_FRAME_ID (v) = VALUE_FRAME_ID (arg1);
   return v;
 }
@@ -3650,7 +3683,7 @@ value_fetch_lazy (struct value *val)
 	  struct frame_id frame_id = VALUE_FRAME_ID (new_val);
 
 	  frame = frame_find_by_id (frame_id);
-	  regnum = VALUE_REGNUM (new_val);
+	  regnum = value_regnum (new_val);
 
 	  gdb_assert (frame != NULL);
 
@@ -3701,7 +3734,7 @@ value_fetch_lazy (struct value *val)
 	{
 	  struct gdbarch *gdbarch;
 	  frame = frame_find_by_id (VALUE_FRAME_ID (val));
-	  regnum = VALUE_REGNUM (val);
+	  regnum = value_regnum (val);
 	  gdbarch = get_frame_arch (frame);
 
 	  fprintf_unfiltered (gdb_stdlog,
@@ -3723,7 +3756,7 @@ value_fetch_lazy (struct value *val)
 
 	      if (value_lval (new_val) == lval_register)
 		fprintf_unfiltered (gdb_stdlog, " register=%d",
-				    VALUE_REGNUM (new_val));
+				    value_regnum (new_val));
 	      else if (value_lval (new_val) == lval_memory)
 		fprintf_unfiltered (gdb_stdlog, " address=%s",
 				    paddress (gdbarch,

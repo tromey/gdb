@@ -293,9 +293,8 @@ amd64_pseudo_register_read_value (struct gdbarch *gdbarch,
   struct value *result_value;
   gdb_byte *buf;
 
-  result_value = allocate_value (register_type (gdbarch, regnum));
-  set_value_lval (result_value, lval_register);
-  VALUE_REGNUM (result_value) = regnum;
+  result_value = allocate_register_value (register_type (gdbarch, regnum),
+					  0, null_frame_id, regnum);
   buf = value_contents_raw (result_value);
 
   if (i386_byte_regnum_p (gdbarch, regnum))

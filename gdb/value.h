@@ -384,8 +384,9 @@ extern struct frame_id *deprecated_value_frame_id_hack (struct value *);
 #define VALUE_FRAME_ID(val) (*deprecated_value_frame_id_hack (val))
 
 /* Register number if the value is from a register.  */
-extern short *deprecated_value_regnum_hack (struct value *);
-#define VALUE_REGNUM(val) (*deprecated_value_regnum_hack (val))
+extern short value_regnum (const struct value *);
+
+extern void set_value_regnum (struct value *, short);
 
 /* Return value after lval_funcs->coerce_ref (after check_typedef).  Return
    NULL if lval_funcs->coerce_ref is not applicable for whatever reason.  */
@@ -619,6 +620,11 @@ extern void value_contents_copy (struct value *dst, int dst_offset,
 extern void value_contents_copy_raw (struct value *dst, int dst_offset,
 				     struct value *src, int src_offset,
 				     int length);
+
+extern struct value *allocate_register_value (struct type *type,
+					      int is_lazy,
+					      struct frame_id frameid,
+					      int regnum);
 
 extern struct value *allocate_repeat_value (struct type *type, int count);
 

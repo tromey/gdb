@@ -999,7 +999,7 @@ frame_register_unwind (struct frame_info *frame, int regnum,
   *unavailablep = !value_entirely_available (value);
   *lvalp = value_lval (value);
   *addrp = value_address (value);
-  *realnump = VALUE_REGNUM (value);
+  *realnump = value_regnum (value);
 
   if (bufferp)
     {
@@ -1100,7 +1100,7 @@ frame_unwind_register_value (struct frame_info *frame, int regnum)
 	{
 	  if (value_lval (value) == lval_register)
 	    fprintf_unfiltered (gdb_stdlog, " register=%d",
-				VALUE_REGNUM (value));
+				value_regnum (value));
 	  else if (value_lval (value) == lval_memory)
 	    fprintf_unfiltered (gdb_stdlog, " address=%s",
 				paddress (gdbarch,
@@ -1182,7 +1182,7 @@ read_frame_register_unsigned (struct frame_info *frame, int regnum,
     {
       struct gdbarch *gdbarch = get_frame_arch (frame);
       enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
-      int size = register_size (gdbarch, VALUE_REGNUM (regval));
+      int size = register_size (gdbarch, value_regnum (regval));
 
       *val = extract_unsigned_integer (value_contents (regval), size, byte_order);
       return 1;

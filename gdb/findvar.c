@@ -291,10 +291,8 @@ value_of_register_lazy (struct frame_info *frame, int regnum)
   /* We should have a valid (i.e. non-sentinel) frame.  */
   gdb_assert (frame_id_p (get_frame_id (frame)));
 
-  reg_val = allocate_value_lazy (register_type (gdbarch, regnum));
-  set_value_lval (reg_val, lval_register);
-  VALUE_REGNUM (reg_val) = regnum;
-  VALUE_FRAME_ID (reg_val) = get_frame_id (frame);
+  reg_val = allocate_register_value (register_type (gdbarch, regnum), 1,
+				     get_frame_id (frame), regnum);
   return reg_val;
 }
 
@@ -624,11 +622,9 @@ default_value_from_register (struct type *type, int regnum,
 {
   struct gdbarch *gdbarch = get_frame_arch (frame);
   int len = TYPE_LENGTH (type);
-  struct value *value = allocate_value (type);
-
-  set_value_lval (value, lval_register);
-  VALUE_FRAME_ID (value) = get_frame_id (frame);
-  VALUE_REGNUM (value) = regnum;
+  struct value *value = allocate_register_value (type, 0,
+						 get_frame_id (frame),
+						 regnum);
 
   /* Any structure stored in more than one register will always be
      an integral number of registers.  Otherwise, you need to do
@@ -658,7 +654,7 @@ read_frame_register_value (struct value *value, struct frame_info *frame)
   struct gdbarch *gdbarch = get_frame_arch (frame);
   int offset = 0;
   int reg_offset = value_offset (value);
-  int regnum = VALUE_REGNUM (value);
+  int regnum = value_regnum (value);
   int len = TYPE_LENGTH (check_typedef (value_type (value)));
 
   gdb_assert (value_lval (value) == lval_register);
@@ -716,10 +712,7 @@ value_from_register (struct type *type, int regnum, struct frame_info *frame)
          the corresponding [integer] type (see Alpha).  The assumption
          is that gdbarch_register_to_value populates the entire value
          including the location.  */
-      v = allocate_value (type);
-      set_value_lval (v, lval_register);
-      VALUE_FRAME_ID (v) = get_frame_id (frame);
-      VALUE_REGNUM (v) = regnum;
+      v = allocate_register_value (type, 0, get_frame_id (frame), regnum);
       ok = gdbarch_register_to_value (gdbarch, frame, regnum, type1,
 				      value_contents_raw (v), &optim,
 				      &unavail);
