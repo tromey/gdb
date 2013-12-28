@@ -1389,10 +1389,20 @@ set_value_address (struct value *value, CORE_ADDR addr)
   value->location.address = addr;
 }
 
-struct internalvar **
-deprecated_value_internalvar_hack (struct value *value)
+struct internalvar *
+value_internalvar (struct value *value)
 {
-  return &value->location.internalvar;
+  gdb_assert (value->lval == lval_internalvar_component
+	      || value->lval == lval_internalvar);
+  return value->location.internalvar;
+}
+
+void
+set_value_internalvar (struct value *value, struct internalvar *ivar)
+{
+  gdb_assert (value->lval == lval_internalvar_component
+	      || value->lval == lval_internalvar);
+  value->location.internalvar = ivar;  
 }
 
 struct frame_id *
@@ -2111,7 +2121,7 @@ value_of_internalvar (struct gdbarch *gdbarch, struct internalvar *var)
       && val->lval != lval_computed)
     {
       set_value_lval (val, lval_internalvar);
-      VALUE_INTERNALVAR (val) = var;
+      set_value_internalvar (val, var);
     }
 
   return val;
@@ -2199,7 +2209,7 @@ set_internalvar (struct internalvar *var, struct value *val)
     case TYPE_CODE_INTERNAL_FUNCTION:
       gdb_assert (value_lval (val) == lval_internalvar);
       new_kind = INTERNALVAR_FUNCTION;
-      get_internalvar_function (VALUE_INTERNALVAR (val),
+      get_internalvar_function (value_internalvar (val),
 				&new_data.fn.function);
       /* Copies created here are never canonical.  */
       break;
@@ -2317,7 +2327,7 @@ value_internal_function_name (struct value *val)
   int result;
 
   gdb_assert (value_lval (val) == lval_internalvar);
-  result = get_internalvar_function (VALUE_INTERNALVAR (val), &ifn);
+  result = get_internalvar_function (value_internalvar (val), &ifn);
   gdb_assert (result);
 
   return ifn->name;
@@ -2332,7 +2342,7 @@ call_internal_function (struct gdbarch *gdbarch,
   int result;
 
   gdb_assert (value_lval (func) == lval_internalvar);
-  result = get_internalvar_function (VALUE_INTERNALVAR (func), &ifn);
+  result = get_internalvar_function (value_internalvar (func), &ifn);
   gdb_assert (result);
 
   return (*ifn->handler) (gdbarch, language, ifn->cookie, argc, argv);

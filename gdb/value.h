@@ -374,9 +374,9 @@ extern CORE_ADDR value_raw_address (struct value *);
 /* Set the address of a value.  */
 extern void set_value_address (struct value *, CORE_ADDR);
 
-/* Pointer to internal variable.  */
-extern struct internalvar **deprecated_value_internalvar_hack (struct value *);
-#define VALUE_INTERNALVAR(val) (*deprecated_value_internalvar_hack (val))
+extern struct internalvar *value_internalvar (struct value *);
+
+extern void set_value_internalvar (struct value *, struct internalvar *);
 
 /* Frame register value is relative to.  This will be described in the
    lval enum above as "lval_register".  */

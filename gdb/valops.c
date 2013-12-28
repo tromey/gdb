@@ -1063,9 +1063,9 @@ value_assign (struct value *toval, struct value *fromval)
   switch (value_lval (toval))
     {
     case lval_internalvar:
-      set_internalvar (VALUE_INTERNALVAR (toval), fromval);
+      set_internalvar (value_internalvar (toval), fromval);
       return value_of_internalvar (get_type_arch (type),
-				   VALUE_INTERNALVAR (toval));
+				   value_internalvar (toval));
 
     case lval_internalvar_component:
       {
@@ -1077,13 +1077,13 @@ value_assign (struct value *toval, struct value *fromval)
 	   non-NULL iff `value_bitsize (toval)' is non-zero.  */
 	if (value_bitsize (toval))
 	  {
-	    /* VALUE_INTERNALVAR below refers to the parent value, while
+	    /* value_internalvar below refers to the parent value, while
 	       the offset is relative to this parent value.  */
 	    gdb_assert (value_parent (value_parent (toval)) == NULL);
 	    offset += value_offset (value_parent (toval));
 	  }
 
-	set_internalvar_component (VALUE_INTERNALVAR (toval),
+	set_internalvar_component (value_internalvar (toval),
 				   offset,
 				   value_bitpos (toval),
 				   value_bitsize (toval),
