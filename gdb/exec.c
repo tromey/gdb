@@ -257,10 +257,6 @@ exec_file_attach (char *filename, int from_tty)
       add_target_sections (&exec_bfd, sections, sections_end);
       xfree (sections);
 
-      /* Tell display code (if any) about the changed file name.  */
-      if (deprecated_exec_file_display_hook)
-	(*deprecated_exec_file_display_hook) (filename);
-
       do_cleanups (cleanups);
     }
   bfd_cache_close_all ();

@@ -1,5 +1,14 @@
 2014-01-09  Tom Tromey  <tromey@redhat.com>
 
+	* corefile.c (hook_type, deprecated_exec_file_display_hook)
+	(exec_file_extra_hooks, exec_file_hook_count)
+	(call_extra_exec_file_hooks, specify_exec_file_hook): Remove.
+	* exec.c (exec_file_attach): Update.
+	* gdbcore.h (deprecated_exec_file_display_hook)
+	(specify_exec_file_hook): Remove.
+
+2014-01-09  Tom Tromey  <tromey@redhat.com>
+
 	* aarch64-tdep.c (aarch64_pseudo_read_value): Use
 	allocate_register_value.
 	* amd64-tdep.c (amd64_pseudo_register_read_value): Likewise.
