@@ -178,7 +178,8 @@ struct value
      different possible kinds of lval.  */
   enum lval_type lval;
 
-  /* Is it modifiable?  Only relevant if lval != not_lval.  */
+  /* Is it modifiable?  Only relevant if lval != not_lval.  This is
+     used to mark history values so that they cannot be mutated.  */
   unsigned int modifiable : 1;
 
   /* If zero, contents of this value are in the contents field.  If
@@ -1384,7 +1385,7 @@ deprecated_value_regnum_hack (struct value *value)
 }
 
 int
-deprecated_value_modifiable (struct value *value)
+value_modifiable (struct value *value)
 {
   return value->modifiable;
 }

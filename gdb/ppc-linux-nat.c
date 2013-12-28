@@ -1918,7 +1918,7 @@ num_memory_accesses (struct value *v)
   for (; v; v = value_next (v))
     {
       /* Constants and values from the history are fine.  */
-      if (VALUE_LVAL (v) == not_lval || deprecated_value_modifiable (v) == 0)
+      if (VALUE_LVAL (v) == not_lval || value_modifiable (v) == 0)
 	continue;
       else if (VALUE_LVAL (v) == lval_memory)
 	{

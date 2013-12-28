@@ -85,11 +85,13 @@ extern void set_value_parent (struct value *value, struct value *parent);
 extern int value_offset (const struct value *);
 extern void set_value_offset (struct value *, int offset);
 
-/* The comment from "struct value" reads: ``Is it modifiable?  Only
-   relevant if lval != not_lval.''.  Shouldn't the value instead be
-   not_lval and be done with it?  */
+/* Return true if the value is marked as modifiable, false otherwise.
+   This only checks an internal "modifiable" bit -- it does not check
+   the value's "lval" setting; callers must do this separately.  The
+   "modifiable" bit is separate so that values in the history can
+   preserve their "lval" setting while still not being mutable.  */
 
-extern int deprecated_value_modifiable (struct value *value);
+extern int value_modifiable (struct value *value);
 
 /* If a value represents a C++ object, then the `type' field gives the
    object's compile-time type.  If the object actually belongs to some

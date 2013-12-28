@@ -1037,7 +1037,7 @@ value_assign (struct value *toval, struct value *fromval)
   struct value *val;
   struct frame_id old_frame;
 
-  if (!deprecated_value_modifiable (toval))
+  if (!value_modifiable (toval))
     error (_("Left operand of assignment is not a modifiable lvalue."));
 
   toval = coerce_ref (toval);
