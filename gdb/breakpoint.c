@@ -1838,7 +1838,7 @@ update_watchpoint (struct watchpoint *b, int reparse)
 	     must watch it.  If the first value returned is
 	     still lazy, that means an error occurred reading it;
 	     watch it anyway in case it becomes readable.  */
-	  if (VALUE_LVAL (v) == lval_memory
+	  if (value_lval (v) == lval_memory
 	      && (v == val_chain || ! value_lazy (v)))
 	    {
 	      struct type *vtype = check_typedef (value_type (v));
@@ -11379,7 +11379,7 @@ can_use_hardware_watchpoint (struct value *v)
      can't be watched with hardware watchpoints.  FIXME.  */
   for (; v; v = value_next (v))
     {
-      if (VALUE_LVAL (v) == lval_memory)
+      if (value_lval (v) == lval_memory)
 	{
 	  if (v != head && value_lazy (v))
 	    /* A lazy memory lvalue in the chain is one that GDB never
@@ -11417,10 +11417,10 @@ can_use_hardware_watchpoint (struct value *v)
 		}
 	    }
 	}
-      else if (VALUE_LVAL (v) != not_lval
+      else if (value_lval (v) != not_lval
 	       && value_modifiable (v) == 0)
 	return 0;	/* These are values from the history (e.g., $1).  */
-      else if (VALUE_LVAL (v) == lval_register)
+      else if (value_lval (v) == lval_register)
 	return 0;	/* Cannot watch a register with a HW watchpoint.  */
     }
 

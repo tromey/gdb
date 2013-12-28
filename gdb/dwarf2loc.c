@@ -579,7 +579,7 @@ call_site_to_target_addr (struct gdbarch *call_site_gdbarch,
 					dwarf_block->per_cu);
 	/* DW_AT_GNU_call_site_target is a DWARF expression, not a DWARF
 	   location.  */
-	if (VALUE_LVAL (val) == lval_memory)
+	if (value_lval (val) == lval_memory)
 	  return value_address (val);
 	else
 	  return value_as_address (val);
@@ -1343,7 +1343,7 @@ value_of_dwarf_reg_entry (struct type *type, struct frame_info *frame,
 
   /* The target entry value has artificial address of the entry value
      reference.  */
-  VALUE_LVAL (target_val) = lval_memory;
+  set_value_lval (target_val, lval_memory);
   set_value_address (target_val, addr);
 
   release_value (target_val);

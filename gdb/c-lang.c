@@ -285,8 +285,8 @@ c_get_string (struct value *value, gdb_byte **buffer,
      then we just need to copy it to BUFFER.  Also, since such strings
      are arrays with known size, FETCHLIMIT will hold the size of the
      array.  */
-  if ((VALUE_LVAL (value) == not_lval
-       || VALUE_LVAL (value) == lval_internalvar)
+  if ((value_lval (value) == not_lval
+       || value_lval (value) == lval_internalvar)
       && fetchlimit != UINT_MAX)
     {
       int i;

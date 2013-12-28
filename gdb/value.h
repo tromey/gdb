@@ -351,16 +351,15 @@ extern void set_value_initialized (struct value *, int);
 extern void set_value_component_location (struct value *component,
                                           const struct value *whole);
 
-/* While the following fields are per- VALUE .CONTENT .PIECE (i.e., a
-   single value might have multiple LVALs), this hacked interface is
-   limited to just the first PIECE.  Expect further change.  */
 /* Type of value; either not an lval, or one of the various different
    possible kinds of lval.  */
-extern enum lval_type *deprecated_value_lval_hack (struct value *);
-#define VALUE_LVAL(val) (*deprecated_value_lval_hack (val))
 
-/* Like VALUE_LVAL, except the parameter can be const.  */
-extern enum lval_type value_lval_const (const struct value *value);
+extern enum lval_type value_lval (const struct value *);
+
+/* Set the "lval" setting of a value.  This is only meaningful in
+   cases where a new value has just been created.  */
+
+extern void set_value_lval (struct value *, enum lval_type);
 
 /* If lval == lval_memory, return the address in the inferior.  If
    lval == lval_register, return the byte offset into the registers

@@ -826,7 +826,7 @@ allocate_value_lazy (struct type *type)
   all_values = val;
   val->type = type;
   val->enclosing_type = type;
-  VALUE_LVAL (val) = not_lval;
+  val->lval = not_lval;
   val->location.address = 0;
   VALUE_FRAME_ID (val) = null_frame_id;
   val->offset = 0;
@@ -889,7 +889,7 @@ allocate_computed_value (struct type *type,
 {
   struct value *v = allocate_value_lazy (type);
 
-  VALUE_LVAL (v) = lval_computed;
+  set_value_lval (v, lval_computed);
   v->location.computed.funcs = funcs;
   v->location.computed.closure = closure;
 
@@ -1312,7 +1312,7 @@ set_value_pointed_to_offset (struct value *value, int val)
 const struct lval_funcs *
 value_computed_funcs (const struct value *v)
 {
-  gdb_assert (value_lval_const (v) == lval_computed);
+  gdb_assert (value_lval (v) == lval_computed);
 
   return v->location.computed.funcs;
 }
@@ -1325,16 +1325,16 @@ value_computed_closure (const struct value *v)
   return v->location.computed.closure;
 }
 
-enum lval_type *
-deprecated_value_lval_hack (struct value *value)
-{
-  return &value->lval;
-}
-
 enum lval_type
-value_lval_const (const struct value *value)
+value_lval (const struct value *value)
 {
   return value->lval;
+}
+
+void
+set_value_lval (struct value *value, enum lval_type t)
+{
+  value->lval = t;
 }
 
 CORE_ADDR
@@ -1427,7 +1427,7 @@ value_free (struct value *val)
       if (val->parent != NULL)
 	value_free (val->parent);
 
-      if (VALUE_LVAL (val) == lval_computed)
+      if (value_lval (val) == lval_computed)
 	{
 	  const struct lval_funcs *funcs = val->location.computed.funcs;
 
@@ -1570,7 +1570,7 @@ value_copy (struct value *arg)
   else
     val = allocate_value (encl_type);
   val->type = arg->type;
-  VALUE_LVAL (val) = VALUE_LVAL (arg);
+  val->lval = value_lval (arg);
   val->location = arg->location;
   val->offset = arg->offset;
   val->bitpos = arg->bitpos;
@@ -1590,7 +1590,7 @@ value_copy (struct value *arg)
     }
   val->unavailable = VEC_copy (range_s, arg->unavailable);
   set_value_parent (val, arg->parent);
-  if (VALUE_LVAL (val) == lval_computed)
+  if (value_lval (val) == lval_computed)
     {
       const struct lval_funcs *funcs = val->location.computed.funcs;
 
@@ -1605,7 +1605,7 @@ value_copy (struct value *arg)
 struct value *
 value_non_lval (struct value *arg)
 {
-  if (VALUE_LVAL (arg) != not_lval)
+  if (value_lval (arg) != not_lval)
     {
       struct type *enc_type = value_enclosing_type (arg);
       struct value *val = allocate_value (enc_type);
@@ -1625,9 +1625,9 @@ set_value_component_location (struct value *component,
 			      const struct value *whole)
 {
   if (whole->lval == lval_internalvar)
-    VALUE_LVAL (component) = lval_internalvar_component;
+    set_value_lval (component, lval_internalvar_component);
   else
-    VALUE_LVAL (component) = whole->lval;
+    set_value_lval (component, whole->lval);
 
   component->location = whole->location;
   if (whole->lval == lval_computed)
@@ -1658,7 +1658,7 @@ record_latest_value (struct value *val)
      a value on the value history never changes.  */
   if (value_lazy (val))
     value_fetch_lazy (val);
-  /* We preserve VALUE_LVAL so that the user can find out where it was fetched
+  /* We preserve value_lval so that the user can find out where it was fetched
      from.  This is a bit dubious, because then *&$1 does not just return $1
      but the current contents of that location.  c'est la vie...  */
   val->modifiable = 0;
@@ -2057,7 +2057,7 @@ value_of_internalvar (struct gdbarch *gdbarch, struct internalvar *var)
       internal_error (__FILE__, __LINE__, _("bad kind"));
     }
 
-  /* Change the VALUE_LVAL to lval_internalvar so that future operations
+  /* Change the value_lval to lval_internalvar so that future operations
      on this value go back to affect the original internal variable.
 
      Do not do this for INTERNALVAR_MAKE_VALUE variables, as those have
@@ -2077,7 +2077,7 @@ value_of_internalvar (struct gdbarch *gdbarch, struct internalvar *var)
   if (var->kind != INTERNALVAR_MAKE_VALUE
       && val->lval != lval_computed)
     {
-      VALUE_LVAL (val) = lval_internalvar;
+      set_value_lval (val, lval_internalvar);
       VALUE_INTERNALVAR (val) = var;
     }
 
@@ -2164,7 +2164,7 @@ set_internalvar (struct internalvar *var, struct value *val)
       break;
 
     case TYPE_CODE_INTERNAL_FUNCTION:
-      gdb_assert (VALUE_LVAL (val) == lval_internalvar);
+      gdb_assert (value_lval (val) == lval_internalvar);
       new_kind = INTERNALVAR_FUNCTION;
       get_internalvar_function (VALUE_INTERNALVAR (val),
 				&new_data.fn.function);
@@ -2283,7 +2283,7 @@ value_internal_function_name (struct value *val)
   struct internal_function *ifn;
   int result;
 
-  gdb_assert (VALUE_LVAL (val) == lval_internalvar);
+  gdb_assert (value_lval (val) == lval_internalvar);
   result = get_internalvar_function (VALUE_INTERNALVAR (val), &ifn);
   gdb_assert (result);
 
@@ -2298,7 +2298,7 @@ call_internal_function (struct gdbarch *gdbarch,
   struct internal_function *ifn;
   int result;
 
-  gdb_assert (VALUE_LVAL (func) == lval_internalvar);
+  gdb_assert (value_lval (func) == lval_internalvar);
   result = get_internalvar_function (VALUE_INTERNALVAR (func), &ifn);
   gdb_assert (result);
 
@@ -2855,7 +2855,7 @@ value_primitive_field (struct value *arg1, int offset,
       int boffset;
 
       /* Lazy register values with offsets are not supported.  */
-      if (VALUE_LVAL (arg1) == lval_register && value_lazy (arg1))
+      if (value_lval (arg1) == lval_register && value_lazy (arg1))
 	value_fetch_lazy (arg1);
 
       /* The optimized_out flag is only set correctly once a lazy value is
@@ -2896,7 +2896,7 @@ value_primitive_field (struct value *arg1, int offset,
       offset += TYPE_FIELD_BITPOS (arg_type, fieldno) / 8;
 
       /* Lazy register values with offsets are not supported.  */
-      if (VALUE_LVAL (arg1) == lval_register && value_lazy (arg1))
+      if (value_lval (arg1) == lval_register && value_lazy (arg1))
 	value_fetch_lazy (arg1);
 
       /* The optimized_out flag is only set correctly once a lazy value is
@@ -3345,7 +3345,7 @@ value_from_contents_and_address (struct type *type,
   else
     v = value_from_contents (type, valaddr);
   set_value_address (v, address);
-  VALUE_LVAL (v) = lval_memory;
+  set_value_lval (v, lval_memory);
   return v;
 }
 
@@ -3449,7 +3449,7 @@ coerce_ref_if_computed (const struct value *arg)
   if (TYPE_CODE (check_typedef (value_type (arg))) != TYPE_CODE_REF)
     return NULL;
 
-  if (value_lval_const (arg) != lval_computed)
+  if (value_lval (arg) != lval_computed)
     return NULL;
 
   funcs = value_computed_funcs (arg);
@@ -3624,7 +3624,7 @@ value_fetch_lazy (struct value *val)
 	store_signed_integer (value_contents_raw (val), TYPE_LENGTH (type),
 			      byte_order, num);
     }
-  else if (VALUE_LVAL (val) == lval_memory)
+  else if (value_lval (val) == lval_memory)
     {
       CORE_ADDR addr = value_address (val);
       struct type *type = check_typedef (value_enclosing_type (val));
@@ -3634,7 +3634,7 @@ value_fetch_lazy (struct value *val)
 			   addr, value_contents_all_raw (val),
 			   TYPE_LENGTH (type));
     }
-  else if (VALUE_LVAL (val) == lval_register)
+  else if (value_lval (val) == lval_register)
     {
       struct frame_info *frame;
       int regnum;
@@ -3645,7 +3645,7 @@ value_fetch_lazy (struct value *val)
 	 refer to the entire register.  */
       gdb_assert (value_offset (val) == 0);
 
-      while (VALUE_LVAL (new_val) == lval_register && value_lazy (new_val))
+      while (value_lval (new_val) == lval_register && value_lazy (new_val))
 	{
 	  struct frame_id frame_id = VALUE_FRAME_ID (new_val);
 
@@ -3674,7 +3674,7 @@ value_fetch_lazy (struct value *val)
 	     sniffer trying to unwind), bypassing its validations.  In
 	     any case, it should always be an internal error to end up
 	     in this situation.  */
-	  if (VALUE_LVAL (new_val) == lval_register
+	  if (value_lval (new_val) == lval_register
 	      && value_lazy (new_val)
 	      && frame_id_eq (VALUE_FRAME_ID (new_val), frame_id))
 	    internal_error (__FILE__, __LINE__,
@@ -3721,10 +3721,10 @@ value_fetch_lazy (struct value *val)
 	      int i;
 	      const gdb_byte *buf = value_contents (new_val);
 
-	      if (VALUE_LVAL (new_val) == lval_register)
+	      if (value_lval (new_val) == lval_register)
 		fprintf_unfiltered (gdb_stdlog, " register=%d",
 				    VALUE_REGNUM (new_val));
-	      else if (VALUE_LVAL (new_val) == lval_memory)
+	      else if (value_lval (new_val) == lval_memory)
 		fprintf_unfiltered (gdb_stdlog, " address=%s",
 				    paddress (gdbarch,
 					      value_address (new_val)));
@@ -3745,7 +3745,7 @@ value_fetch_lazy (struct value *val)
 	 watchpoints from trying to watch the saved frame pointer.  */
       value_free_to_mark (mark);
     }
-  else if (VALUE_LVAL (val) == lval_computed
+  else if (value_lval (val) == lval_computed
 	   && value_computed_funcs (val)->read != NULL)
     value_computed_funcs (val)->read (val);
   /* Don't call value_optimized_out on val, doing so would result in a

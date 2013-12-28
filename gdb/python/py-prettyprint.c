@@ -721,9 +721,9 @@ apply_val_pretty_printer (struct type *type, const gdb_byte *valaddr,
   set_value_component_location (value, val);
   /* set_value_component_location resets the address, so we may
      need to set it again.  */
-  if (VALUE_LVAL (value) != lval_internalvar
-      && VALUE_LVAL (value) != lval_internalvar_component
-      && VALUE_LVAL (value) != lval_computed)
+  if (value_lval (value) != lval_internalvar
+      && value_lval (value) != lval_internalvar_component
+      && value_lval (value) != lval_computed)
     set_value_address (value, address + embedded_offset);
 
   val_obj = value_to_value_object (value);

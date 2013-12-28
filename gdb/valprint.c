@@ -338,7 +338,7 @@ valprint_check_validity (struct ui_file *stream,
 void
 val_print_optimized_out (const struct value *val, struct ui_file *stream)
 {
-  if (val != NULL && value_lval_const (val) == lval_register)
+  if (val != NULL && value_lval (val) == lval_register)
     val_print_not_saved (stream);
   else
     fprintf_filtered (stream, _("<optimized out>"));

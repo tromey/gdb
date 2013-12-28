@@ -565,7 +565,7 @@ value_cast (struct type *type, struct value *arg2)
       set_value_pointed_to_offset (arg2, 0);	/* pai: chk_val */
       return arg2;
     }
-  else if (VALUE_LVAL (arg2) == lval_memory)
+  else if (value_lval (arg2) == lval_memory)
     return value_at_lazy (type, value_address (arg2));
   else
     {
@@ -843,7 +843,7 @@ value_zero (struct type *type, enum lval_type lv)
 {
   struct value *val = allocate_value (type);
 
-  VALUE_LVAL (val) = (lv == lval_computed ? not_lval : lv);
+  set_value_lval (val, lv == lval_computed ? not_lval : lv);
   return val;
 }
 
@@ -895,7 +895,7 @@ value_one (struct type *type)
     }
 
   /* value_one result is never used for assignments to.  */
-  gdb_assert (VALUE_LVAL (val) == not_lval);
+  gdb_assert (value_lval (val) == not_lval);
 
   return val;
 }
@@ -1043,7 +1043,7 @@ value_assign (struct value *toval, struct value *fromval)
   toval = coerce_ref (toval);
 
   type = value_type (toval);
-  if (VALUE_LVAL (toval) != lval_internalvar)
+  if (value_lval (toval) != lval_internalvar)
     fromval = value_cast (type, fromval);
   else
     {
@@ -1060,7 +1060,7 @@ value_assign (struct value *toval, struct value *fromval)
      and then restore the new frame afterwards.  */
   old_frame = get_frame_id (deprecated_safe_get_selected_frame ());
 
-  switch (VALUE_LVAL (toval))
+  switch (value_lval (toval))
     {
     case lval_internalvar:
       set_internalvar (VALUE_INTERNALVAR (toval), fromval);
@@ -1234,7 +1234,7 @@ value_assign (struct value *toval, struct value *fromval)
      cause the frame cache and regcache to be out of date.  Assigning to memory
      also can.  We just do this on all assignments to registers or
      memory, for simplicity's sake; I doubt the slowdown matters.  */
-  switch (VALUE_LVAL (toval))
+  switch (value_lval (toval))
     {
     case lval_memory:
     case lval_register:
@@ -1308,14 +1308,14 @@ value_repeat (struct value *arg1, int count)
 {
   struct value *val;
 
-  if (VALUE_LVAL (arg1) != lval_memory)
+  if (value_lval (arg1) != lval_memory)
     error (_("Only values in memory can be extended with '@'."));
   if (count < 1)
     error (_("Invalid number %d of repetitions."), count);
 
   val = allocate_repeat_value (value_enclosing_type (arg1), count);
 
-  VALUE_LVAL (val) = lval_memory;
+  set_value_lval (val, lval_memory);
   set_value_address (val, value_address (arg1));
 
   read_value_memory (val, 0, value_stack (val), value_address (val),
@@ -1362,7 +1362,7 @@ address_of_variable (struct symbol *var, const struct block *b)
 
   val = value_of_variable (var, b);
 
-  if ((VALUE_LVAL (val) == lval_memory && value_lazy (val))
+  if ((value_lval (val) == lval_memory && value_lazy (val))
       || TYPE_CODE (type) == TYPE_CODE_FUNC)
     {
       CORE_ADDR addr = value_address (val);
@@ -1371,7 +1371,7 @@ address_of_variable (struct symbol *var, const struct block *b)
     }
 
   /* Not a memory address; check what the problem was.  */
-  switch (VALUE_LVAL (val))
+  switch (value_lval (val))
     {
     case lval_register:
       {
@@ -1409,8 +1409,8 @@ value_must_coerce_to_target (struct value *val)
   struct type *valtype;
 
   /* The only lval kinds which do not live in target memory.  */
-  if (VALUE_LVAL (val) != not_lval
-      && VALUE_LVAL (val) != lval_internalvar)
+  if (value_lval (val) != not_lval
+      && value_lval (val) != lval_internalvar)
     return 0;
 
   valtype = check_typedef (value_type (val));
@@ -1478,7 +1478,7 @@ value_coerce_array (struct value *arg1)
      be a good time to do so.  */
   arg1 = value_coerce_to_target (arg1);
 
-  if (VALUE_LVAL (arg1) != lval_memory)
+  if (value_lval (arg1) != lval_memory)
     error (_("Attempt to take address of value not located in memory."));
 
   return value_from_pointer (lookup_pointer_type (TYPE_TARGET_TYPE (type)),
@@ -1493,7 +1493,7 @@ value_coerce_function (struct value *arg1)
 {
   struct value *retval;
 
-  if (VALUE_LVAL (arg1) != lval_memory)
+  if (value_lval (arg1) != lval_memory)
     error (_("Attempt to take address of value not located in memory."));
 
   retval = value_from_pointer (lookup_pointer_type (value_type (arg1)),
@@ -1527,7 +1527,7 @@ value_addr (struct value *arg1)
      then this would be a good time to force it to memory.  */
   arg1 = value_coerce_to_target (arg1);
 
-  if (VALUE_LVAL (arg1) != lval_memory)
+  if (value_lval (arg1) != lval_memory)
     error (_("Attempt to take address of value not located in memory."));
 
   /* Get target memory address.  */
@@ -1575,7 +1575,7 @@ value_ind (struct value *arg1)
 
   base_type = check_typedef (value_type (arg1));
 
-  if (VALUE_LVAL (arg1) == lval_computed)
+  if (value_lval (arg1) == lval_computed)
     {
       const struct lval_funcs *funcs = value_computed_funcs (arg1);
 
@@ -3475,7 +3475,7 @@ value_full_object (struct value *argp,
     }
 
   /* Check if object is in memory.  */
-  if (VALUE_LVAL (argp) != lval_memory)
+  if (value_lval (argp) != lval_memory)
     {
       warning (_("Couldn't retrieve complete object of RTTI "
 		 "type %s; object may be in register(s)."), 
@@ -3582,7 +3582,7 @@ value_slice (struct value *array, int lowbound, int length)
 				      slice_range_type);
       TYPE_CODE (slice_type) = TYPE_CODE (array_type);
 
-      if (VALUE_LVAL (array) == lval_memory && value_lazy (array))
+      if (value_lval (array) == lval_memory && value_lazy (array))
 	slice = allocate_value_lazy (slice_type);
       else
 	{

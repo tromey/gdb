@@ -2148,7 +2148,7 @@ evaluate_subexp_standard (struct type *expect_type,
 	    }
 
 	  if (noside == EVAL_AVOID_SIDE_EFFECTS)
-	    return value_zero (TYPE_TARGET_TYPE (type), VALUE_LVAL (arg1));
+	    return value_zero (TYPE_TARGET_TYPE (type), value_lval (arg1));
 	  else
 	    return value_subscript (arg1, value_as_long (arg2));
 	}
@@ -2190,7 +2190,7 @@ evaluate_subexp_standard (struct type *expect_type,
 	      type = TYPE_TARGET_TYPE (check_typedef (value_type (arg1)));
 	      if (type != NULL)
 		{
-		  arg1 = value_zero (type, VALUE_LVAL (arg1));
+		  arg1 = value_zero (type, value_lval (arg1));
 		  noside = EVAL_SKIP;
 		  continue;
 		}
@@ -2939,7 +2939,7 @@ evaluate_subexp_for_address (struct expression *exp, int *pos,
 	  if (TYPE_CODE (type) == TYPE_CODE_REF)
 	    return value_zero (lookup_pointer_type (TYPE_TARGET_TYPE (type)),
 			       not_lval);
-	  else if (VALUE_LVAL (x) == lval_memory || value_must_coerce_to_target (x))
+	  else if (value_lval (x) == lval_memory || value_must_coerce_to_target (x))
 	    return value_zero (lookup_pointer_type (value_type (x)),
 			       not_lval);
 	  else

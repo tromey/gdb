@@ -174,7 +174,7 @@ frame_unwind_got_optimized (struct frame_info *frame, int regnum)
   val = allocate_value_lazy (type);
   set_value_lazy (val, 0);
   set_value_optimized_out (val, 1);
-  VALUE_LVAL (val) = lval_register;
+  set_value_lval (val, lval_register);
   VALUE_REGNUM (val) = regnum;
   VALUE_FRAME_ID (val) = get_frame_id (frame);
   return val;

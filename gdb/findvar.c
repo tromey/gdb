@@ -292,7 +292,7 @@ value_of_register_lazy (struct frame_info *frame, int regnum)
   gdb_assert (frame_id_p (get_frame_id (frame)));
 
   reg_val = allocate_value_lazy (register_type (gdbarch, regnum));
-  VALUE_LVAL (reg_val) = lval_register;
+  set_value_lval (reg_val, lval_register);
   VALUE_REGNUM (reg_val) = regnum;
   VALUE_FRAME_ID (reg_val) = get_frame_id (frame);
   return reg_val;
@@ -446,7 +446,7 @@ default_read_var_value (struct symbol *var, struct frame_info *frame)
       store_signed_integer (value_contents_raw (v), TYPE_LENGTH (type),
 			    gdbarch_byte_order (get_type_arch (type)),
 			    (LONGEST) SYMBOL_VALUE (var));
-      VALUE_LVAL (v) = not_lval;
+      set_value_lval (v, not_lval);
       return v;
 
     case LOC_LABEL:
@@ -464,14 +464,14 @@ default_read_var_value (struct symbol *var, struct frame_info *frame)
       else
 	store_typed_address (value_contents_raw (v), type,
 			      SYMBOL_VALUE_ADDRESS (var));
-      VALUE_LVAL (v) = not_lval;
+      set_value_lval (v, not_lval);
       return v;
 
     case LOC_CONST_BYTES:
       v = allocate_value (type);
       memcpy (value_contents_raw (v), SYMBOL_VALUE_BYTES (var),
 	      TYPE_LENGTH (type));
-      VALUE_LVAL (v) = not_lval;
+      set_value_lval (v, not_lval);
       return v;
 
     case LOC_STATIC:
@@ -626,7 +626,7 @@ default_value_from_register (struct type *type, int regnum,
   int len = TYPE_LENGTH (type);
   struct value *value = allocate_value (type);
 
-  VALUE_LVAL (value) = lval_register;
+  set_value_lval (value, lval_register);
   VALUE_FRAME_ID (value) = get_frame_id (frame);
   VALUE_REGNUM (value) = regnum;
 
@@ -661,7 +661,7 @@ read_frame_register_value (struct value *value, struct frame_info *frame)
   int regnum = VALUE_REGNUM (value);
   int len = TYPE_LENGTH (check_typedef (value_type (value)));
 
-  gdb_assert (VALUE_LVAL (value) == lval_register);
+  gdb_assert (value_lval (value) == lval_register);
 
   /* Skip registers wholly inside of REG_OFFSET.  */
   while (reg_offset >= register_size (gdbarch, regnum))
@@ -717,7 +717,7 @@ value_from_register (struct type *type, int regnum, struct frame_info *frame)
          is that gdbarch_register_to_value populates the entire value
          including the location.  */
       v = allocate_value (type);
-      VALUE_LVAL (v) = lval_register;
+      set_value_lval (v, lval_register);
       VALUE_FRAME_ID (v) = get_frame_id (frame);
       VALUE_REGNUM (v) = regnum;
       ok = gdbarch_register_to_value (gdbarch, frame, regnum, type1,

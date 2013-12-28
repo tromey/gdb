@@ -407,7 +407,7 @@ create_value (struct gdbarch *gdbarch, struct value *val, enum noside noside,
       else
 	{
 	  /* Check whether to create a lvalue or not.  */
-	  if (VALUE_LVAL (val) != not_lval && !array_has_dups (indices, n))
+	  if (value_lval (val) != not_lval && !array_has_dups (indices, n))
 	    {
 	      struct lval_closure *c = allocate_lval_closure (indices, n, val);
 	      ret = allocate_computed_value (dst_type, &opencl_value_funcs, c);
@@ -804,7 +804,7 @@ evaluate_subexp_opencl (struct type *expect_type, struct expression *exp,
 	return arg1;
 
       if (value_modifiable (arg1)
-	  && VALUE_LVAL (arg1) != lval_internalvar)
+	  && value_lval (arg1) != lval_internalvar)
 	arg2 = opencl_value_cast (type1, arg2);
 
       return value_assign (arg1, arg2);

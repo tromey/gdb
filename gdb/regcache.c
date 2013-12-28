@@ -756,7 +756,7 @@ regcache_cooked_read_value (struct regcache *regcache, int regnum)
 
       result = allocate_value (register_type (regcache->descr->gdbarch,
 					      regnum));
-      VALUE_LVAL (result) = lval_register;
+      set_value_lval (result, lval_register);
       VALUE_REGNUM (result) = regnum;
 
       /* It is more efficient in general to do this delegation in this

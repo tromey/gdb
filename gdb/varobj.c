@@ -2696,7 +2696,7 @@ varobj_editable_p (struct varobj *var)
 {
   struct type *type;
 
-  if (!(var->root->is_valid && var->value && VALUE_LVAL (var->value)))
+  if (!(var->root->is_valid && var->value && value_lval (var->value)))
     return 0;
 
   type = varobj_get_value_type (var);

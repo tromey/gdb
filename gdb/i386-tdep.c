@@ -3110,7 +3110,7 @@ i386_pseudo_register_read_value (struct gdbarch *gdbarch,
   struct value *result;
 
   result = allocate_value (register_type (gdbarch, regnum));
-  VALUE_LVAL (result) = lval_register;
+  set_value_lval (result, lval_register);
   VALUE_REGNUM (result) = regnum;
 
   i386_pseudo_register_read_into_value (gdbarch, regcache, regnum, result);

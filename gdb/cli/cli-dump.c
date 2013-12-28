@@ -288,7 +288,7 @@ dump_value_to_file (char *cmd, char *mode, char *file_format)
     {
       CORE_ADDR vaddr;
 
-      if (VALUE_LVAL (val))
+      if (value_lval (val))
 	{
 	  vaddr = value_address (val);
 	}

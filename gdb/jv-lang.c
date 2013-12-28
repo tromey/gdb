@@ -962,7 +962,7 @@ evaluate_subexp_java (struct type *expect_type, struct expression *exp,
 	    el_type = lookup_pointer_type (el_type);
 
 	  if (noside == EVAL_AVOID_SIDE_EFFECTS)
-	    return value_zero (el_type, VALUE_LVAL (arg1));
+	    return value_zero (el_type, value_lval (arg1));
 	  address = value_as_address (arg1);
 	  address += get_java_object_header_size (exp->gdbarch);
 	  read_memory (address, buf4, 4);
@@ -977,7 +977,7 @@ evaluate_subexp_java (struct type *expect_type, struct expression *exp,
       else if (TYPE_CODE (type) == TYPE_CODE_ARRAY)
 	{
 	  if (noside == EVAL_AVOID_SIDE_EFFECTS)
-	    return value_zero (TYPE_TARGET_TYPE (type), VALUE_LVAL (arg1));
+	    return value_zero (TYPE_TARGET_TYPE (type), value_lval (arg1));
 	  else
 	    return value_subscript (arg1, value_as_long (arg2));
 	}

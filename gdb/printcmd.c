@@ -290,7 +290,7 @@ print_formatted (struct value *val, int size,
   struct type *type = check_typedef (value_type (val));
   int len = TYPE_LENGTH (type);
 
-  if (VALUE_LVAL (val) == lval_memory)
+  if (value_lval (val) == lval_memory)
     next_address = value_address (val) + len;
 
   if (size)
@@ -1451,7 +1451,7 @@ x_command (char *exp, int from_tty)
          pointers to functions.  This makes "x/i main" work.  */
       if (/* last_format == 'i'  && */ 
 	  TYPE_CODE (value_type (val)) == TYPE_CODE_FUNC
-	   && VALUE_LVAL (val) == lval_memory)
+	   && value_lval (val) == lval_memory)
 	next_address = value_address (val);
       else
 	next_address = value_as_address (val);
