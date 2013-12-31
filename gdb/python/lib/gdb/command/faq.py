@@ -1,4 +1,4 @@
-# Copyright (C) 2011 Free Software Foundation, Inc.
+# Copyright (C) 2011, 2013 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,13 @@
 import gdb
 import urllib
 
-faq_url = 'http://sourceware.org/gdb/wiki/FAQ?action=raw'
+ok = True
+try:
+    import text2html
+except ImportError as err:
+    ok = False
+
+faq_url = 'http://sourceware.org/gdb/wiki/FAQ?action=print'
 
 class _FaqCommand(gdb.Command):
     """Show the FAQ.
@@ -28,10 +34,19 @@ class _FaqCommand(gdb.Command):
 
     def invoke(self, arg, from_tty):
         global faq_url
+
+        try:
+            import html2text
+        except ImportError as err:
+            raise gdb.GdbError("Could not find Python html2text package -- try 'easy_install html2text'")
+
         f = urllib.urlopen(faq_url)
         try:
-            # FIXME should use MoinMoin to parse.
-            print f.read()
+            data = f.read().decode('utf-8')
+            h = html2text.HTML2Text(baseurl = faq_url)
+            h.ignore_images = True
+            h.ignore_links = True
+            print h.handle(data)
         finally:
             f.close()
 
