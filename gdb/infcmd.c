@@ -1,6 +1,6 @@
 /* Memory-access and commands for "inferior" process, for GDB.
 
-   Copyright (C) 1986-2013 Free Software Foundation, Inc.
+   Copyright (C) 1986-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -2511,6 +2511,18 @@ attach_command_continuation_free_args (void *args)
   xfree (a);
 }
 
+int
+attach_check_execution (void)
+{
+  if (gdbarch_has_global_solist (target_gdbarch ()))
+    {
+      /* Don't complain if all processes share the same symbol
+	 space.  */
+      return 0;
+    }
+  return target_has_execution;
+}
+
 void
 attach_command (char *args, int from_tty)
 {
@@ -2519,11 +2531,7 @@ attach_command (char *args, int from_tty)
 
   dont_repeat ();		/* Not for the faint of heart */
 
-  if (gdbarch_has_global_solist (target_gdbarch ()))
-    /* Don't complain if all processes share the same symbol
-       space.  */
-    ;
-  else if (target_has_execution)
+  if (attach_check_execution ())
     {
       if (query (_("A program is being debugged already.  Kill it? ")))
 	target_kill ();

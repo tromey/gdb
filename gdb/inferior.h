@@ -1,7 +1,7 @@
 /* Variables that describe the inferior process running under GDB:
    Where it is, why it stopped, and how to step it.
 
-   Copyright (C) 1986-2013 Free Software Foundation, Inc.
+   Copyright (C) 1986-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -233,6 +233,8 @@ extern void clear_exit_convenience_vars (void);
 /* From infcmd.c */
 
 extern void post_create_inferior (struct target_ops *, int);
+
+extern int attach_check_execution (void);
 
 extern void attach_command (char *, int);
 
