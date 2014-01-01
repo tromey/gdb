@@ -2469,27 +2469,15 @@ attach_check_execution (void)
 }
 
 void
-attach_command (char *args, int from_tty)
+attach (char *args, int from_tty, int async_exec)
 {
-  int async_exec = 0;
   struct target_ops *attach_target;
 
-  dont_repeat ();		/* Not for the faint of heart */
-
-  if (attach_check_execution ())
-    {
-      if (query (_("A program is being debugged already.  Kill it? ")))
-	target_kill ();
-      else
-	error (_("Not killed."));
-    }
+  gdb_assert (!attach_check_execution ());
 
   /* Clean up any leftovers from other runs.  Some other things from
      this function should probably be moved into target_pre_inferior.  */
   target_pre_inferior (from_tty);
-
-  if (args != NULL)
-    async_exec = strip_bg_char (&args);
 
   attach_target = find_attach_target ();
 
@@ -2558,6 +2546,27 @@ attach_command (char *args, int from_tty)
     }
 
   attach_command_post_wait (args, from_tty, async_exec);
+}
+
+void
+attach_command (char *args, int from_tty)
+{
+  int async_exec = 0;
+
+  dont_repeat ();		/* Not for the faint of heart */
+
+  if (attach_check_execution ())
+    {
+      if (query (_("A program is being debugged already.  Kill it? ")))
+	target_kill ();
+      else
+	error (_("Not killed."));
+    }
+
+  if (args)
+    async_exec = strip_bg_char (&args);
+
+  attach (args, from_tty, async_exec);
 }
 
 /* We had just found out that the target was already attached to an
