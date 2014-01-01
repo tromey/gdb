@@ -755,7 +755,7 @@ typy_lookup_typename (const char *type_name, const struct block *block)
       else if (!strncmp (type_name, "enum ", 5))
 	type = lookup_enum (type_name + 5, NULL);
       else
-	type = lookup_typename (python_language, python_gdbarch,
+	type = lookup_typename (python_language (), python_gdbarch (),
 				type_name, block, 0);
     }
   GDB_PY_HANDLE_EXCEPTION (except);

@@ -197,8 +197,8 @@ static const struct extension_language_ops python_extension_ops =
 
 /* Architecture and language to be used in callbacks from
    the Python interpreter.  */
-struct gdbarch *python_gdbarch;
-const struct language_defn *python_language;
+static struct gdbarch *internal_python_gdbarch;
+static const struct language_defn *internal_python_language;
 
 /* Restore global language and architecture and Python GIL state
    when leaving the Python interpreter.  */
@@ -228,8 +228,8 @@ restore_python_env (void *p)
   PyErr_Restore (env->error_type, env->error_value, env->error_traceback);
 
   PyGILState_Release (env->state);
-  python_gdbarch = env->gdbarch;
-  python_language = env->language;
+  internal_python_gdbarch = env->gdbarch;
+  internal_python_language = env->language;
 
   restore_active_ext_lang (env->previous_active);
 
@@ -255,16 +255,34 @@ ensure_python_env (struct gdbarch *gdbarch,
   env->previous_active = set_active_ext_lang (&extension_language_python);
 
   env->state = PyGILState_Ensure ();
-  env->gdbarch = python_gdbarch;
-  env->language = python_language;
+  env->gdbarch = internal_python_gdbarch;
+  env->language = internal_python_language;
 
-  python_gdbarch = gdbarch;
-  python_language = language;
+  internal_python_gdbarch = gdbarch;
+  internal_python_language = language;
 
   /* Save it and ensure ! PyErr_Occurred () afterwards.  */
   PyErr_Fetch (&env->error_type, &env->error_value, &env->error_traceback);
 
   return make_cleanup (restore_python_env, env);
+}
+
+struct gdbarch *
+python_gdbarch (void)
+{
+  if (internal_python_gdbarch != NULL)
+    return internal_python_gdbarch;
+  return get_current_arch ();
+}
+
+const struct language_defn *
+python_language (void)
+{
+  /* If one is set, both are set, and the "arch" has a sentinel
+     value.  */
+  if (internal_python_gdbarch != NULL)
+    return internal_python_language;
+  return current_language;
 }
 
 /* Clear the quit flag.  */
@@ -596,7 +614,7 @@ gdbpy_parameter (PyObject *self, PyObject *args)
 static PyObject *
 gdbpy_target_charset (PyObject *self, PyObject *args)
 {
-  const char *cset = target_charset (python_gdbarch);
+  const char *cset = target_charset (python_gdbarch ());
 
   return PyUnicode_Decode (cset, strlen (cset), host_charset (), NULL);
 }
@@ -606,7 +624,7 @@ gdbpy_target_charset (PyObject *self, PyObject *args)
 static PyObject *
 gdbpy_target_wide_charset (PyObject *self, PyObject *args)
 {
-  const char *cset = target_wide_charset (python_gdbarch);
+  const char *cset = target_wide_charset (python_gdbarch ());
 
   return PyUnicode_Decode (cset, strlen (cset), host_charset (), NULL);
 }
@@ -1547,8 +1565,8 @@ finalize_python (void *ignore)
   previous_active = set_active_ext_lang (&extension_language_python);
 
   (void) PyGILState_Ensure ();
-  python_gdbarch = target_gdbarch ();
-  python_language = current_language;
+  internal_python_gdbarch = target_gdbarch ();
+  internastpython_language = current_language;
 
   Py_Finalize ();
 
