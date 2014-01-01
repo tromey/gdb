@@ -1422,8 +1422,11 @@ static const struct interp_procs gdbpy_interp =
   gdbpy_command_loop		    /* command_loop_proc */
 };
 
-#pragma GCC visibility push(default)
-PyMODINIT_FUNC init_gdb (void);
+PyMODINIT_FUNC
+#if GCC_VERSION >= 4000
+  __attribute__ ((visibility ("default")));
+#endif
+ init_gdb (void);
 
 PyMODINIT_FUNC
 init_gdb (void)
@@ -1444,8 +1447,6 @@ init_gdb (void)
 
   current_uiout = interp_ui_out (pyint);
 }
-
-#pragma GCC visibility pop
 
 /* This is installed as a final cleanup and cleans up the
    interpreter.  This lets Python's 'atexit' work.  */
