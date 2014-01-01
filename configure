@@ -752,6 +752,7 @@ enable_libada
 enable_libssp
 enable_libstdcxx
 enable_static_libjava
+enable_gdb_pie
 enable_bootstrap
 with_mpc
 with_mpc_include
@@ -789,7 +790,6 @@ enable_maintainer_mode
 enable_stage1_checking
 enable_werror
 enable_host_shared
-enable_gdb_pie
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1471,6 +1471,7 @@ Optional Features:
   --disable-libstdcxx     do not build libstdc++-v3 directory
   --enable-static-libjava[=ARG]
                           build static libjava [default=no]
+  --enable-gdb-pie        build GDB as a position-independent executable
   --enable-bootstrap      enable bootstrapping [yes if native build]
   --disable-isl-version-check
                           disable check for ISL version
@@ -1494,7 +1495,6 @@ Optional Features:
                           compiler
   --enable-werror         enable -Werror in bootstrap stage2 and later
   --enable-host-shared    build host code as shared libraries
-  --enable-gdb-pie        build GDB as a position-independent executable
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -4941,6 +4941,19 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+
+# --enable-gdb-pie builds gdb as a PIE and installs it as a Python
+# module.
+set -x
+# Check whether --enable-gdb-pie was given.
+if test "${enable_gdb_pie+set}" = set; then :
+  enableval=$enable_gdb_pie; if test "$enable_gdb_pie" = yes; then
+   CFLAGS="$CFLAGS -fPIE -fvisibility=hidden"
+   CXXFLAGS="$CXXFLAGS -fPIE -fvisibility=hidden"
+ fi
+fi
+
+set +x
 
 # We must set the default linker to the linker used by gcc for the correct
 # operation of libtool.  If LD is not defined and we are using gcc, try to
@@ -14586,15 +14599,6 @@ else
   host_shared=no
 fi
 
-
-
-# --enable-gdb-pie builds gdb as a PIE and installs it as a Python
-# module.
-# Check whether --enable-gdb-pie was given.
-if test "${enable_gdb_pie+set}" = set; then :
-  enableval=$enable_gdb_pie; CFLAGS="$CFLAGS -fPIE -fvisibility=hidden"
- CXXFLAGS="$CXXFLAGS -fPIE -fvisibility=hidden"
-fi
 
 
 # Specify what files to not compare during bootstrap.

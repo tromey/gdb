@@ -1231,6 +1231,18 @@ fi
 AC_PROG_CC
 AC_PROG_CXX
 
+# --enable-gdb-pie builds gdb as a PIE and installs it as a Python
+# module.
+set -x
+AC_ARG_ENABLE(gdb-pie,
+[AS_HELP_STRING([--enable-gdb-pie],
+		[build GDB as a position-independent executable])],
+[if test "$enable_gdb_pie" = yes; then
+   CFLAGS="$CFLAGS -fPIE -fvisibility=hidden"
+   CXXFLAGS="$CXXFLAGS -fPIE -fvisibility=hidden"
+ fi])
+set +x
+
 # We must set the default linker to the linker used by gcc for the correct
 # operation of libtool.  If LD is not defined and we are using gcc, try to
 # set the LD default to the ld used by gcc.
@@ -3307,14 +3319,6 @@ AC_ARG_ENABLE(host-shared,
 		[build host code as shared libraries])],
 [host_shared=$enableval], [host_shared=no])
 AC_SUBST(host_shared)
-
-# --enable-gdb-pie builds gdb as a PIE and installs it as a Python
-# module.
-AC_ARG_ENABLE(gdb-pie,
-[AS_HELP_STRING([--enable-gdb-pie],
-		[build GDB as a position-independent executable])],
-[CFLAGS="$CFLAGS -fPIE -fvisibility=hidden"
- CXXFLAGS="$CXXFLAGS -fPIE -fvisibility=hidden"])
 
 # Specify what files to not compare during bootstrap.
 

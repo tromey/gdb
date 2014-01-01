@@ -5309,19 +5309,16 @@ esac
 
 # --enable-gdb-pie builds gdb as a PIE and installs it as a Python
 # module.
-# Check whether --enable-gdb-pie was given.
-if test "${enable_gdb_pie+set}" = set; then :
-  enableval=$enable_gdb_pie; gdb_pie=yes
-else
-  gdb_pie=no
-fi
-
 GDB_SO=
 PIE_FLAG=
-if test "$gdb_pie" = yes; then
-  GDB_SO=_gdb.so
-  PIE_FLAG=-pie
+# Check whether --enable-gdb-pie was given.
+if test "${enable_gdb_pie+set}" = set; then :
+  enableval=$enable_gdb_pie; if test "$enable_gdb_pie" = yes; then
+   GDB_SO=_gdb.so
+   PIE_FLAG=-pie
+ fi
 fi
+
 
 
 
