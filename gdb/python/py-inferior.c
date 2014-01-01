@@ -903,6 +903,39 @@ infpy_select (PyObject *self, PyObject *args)
   Py_RETURN_NONE;
 }
 
+static PyObject *
+infpy_attach (PyObject *self, PyObject *args, PyObject *kw)
+{
+  inferior_object *inf = (inferior_object *) self;
+  volatile struct gdb_exception except;
+  long pid;
+  static char *keywords[] = { "pid", "async", NULL };
+  PyObject *is_async = NULL;
+
+  INFPY_REQUIRE_VALID (inf);
+
+  if (!PyArg_ParseTupleAndKeywords (args, kw, "l|O", keywords, &pid, &is_async))
+    return NULL;
+
+  TRY_CATCH (except, RETURN_MASK_ALL)
+    {
+      char buffer[50];
+
+      set_current_inferior (inf->inferior);
+      switch_to_thread (null_ptid);
+      set_current_program_space (inf->inferior->pspace);
+
+      if (!attach_check_execution ())
+	error (_("cannot attach an already executing inferior"));
+
+      xsnprintf (buffer, sizeof (buffer), "%ld", pid);
+      attach (buffer, 0, is_async == Py_True);
+    }
+  GDB_PY_HANDLE_EXCEPTION (except);
+
+  Py_RETURN_NONE;
+}
+
 /* Implementation of gdb.Inferior.is_valid (self) -> Boolean.
    Returns True if this inferior object still exists in GDB.  */
 
@@ -1025,6 +1058,9 @@ Continue the inferior." },
   { "select", infpy_select, METH_NOARGS,
     "select () -> None.\n\
 Select this inferior." },
+  { "attach", (PyCFunction) infpy_attach, METH_VARARGS,
+    "attach (PID) -> None.\n\
+Attach to the specified process." },
   { "is_valid", infpy_is_valid, METH_NOARGS,
     "is_valid () -> Boolean.\n\
 Return true if this inferior is valid, false if not." },
