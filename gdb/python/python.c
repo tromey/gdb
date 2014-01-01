@@ -1424,7 +1424,7 @@ static const struct interp_procs gdbpy_interp =
 
 PyMODINIT_FUNC
 #if GCC_VERSION >= 4000
-  __attribute__ ((visibility ("default")));
+  __attribute__ ((visibility ("default")))
 #endif
  init_gdb (void);
 
