@@ -1,6 +1,6 @@
 /* Python interface to inferiors.
 
-   Copyright (C) 2009-2013 Free Software Foundation, Inc.
+   Copyright (C) 2009-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -246,7 +246,7 @@ add_thread_object (struct thread_info *tp)
   if (!gdb_python_initialized)
     return;
 
-  cleanup = ensure_python_env (python_gdbarch, python_language);
+  cleanup = ensure_python_env (python_gdbarch (), python_language ());
 
   thread_obj = create_thread_object (tp);
   if (!thread_obj)
@@ -278,7 +278,7 @@ delete_thread_object (struct thread_info *tp, int ignore)
   if (!gdb_python_initialized)
     return;
 
-  cleanup = ensure_python_env (python_gdbarch, python_language);
+  cleanup = ensure_python_env (python_gdbarch (), python_language ());
 
   inf_obj
     = (inferior_object *) find_inferior_object (ptid_get_pid (tp->ptid));
@@ -643,7 +643,7 @@ mbpy_str (PyObject *self)
 
   return PyString_FromFormat (_("Memory buffer for address %s, \
 which is %s bytes long."),
-			      paddress (python_gdbarch, membuf_obj->addr),
+			      paddress (python_gdbarch (), membuf_obj->addr),
 			      pulongest (membuf_obj->length));
 }
 
@@ -942,7 +942,7 @@ py_free_inferior (struct inferior *inf, void *datum)
   if (!gdb_python_initialized)
     return;
 
-  cleanup = ensure_python_env (python_gdbarch, python_language);
+  cleanup = ensure_python_env (python_gdbarch (), python_language ());
 
   inf_obj->inferior = NULL;
 

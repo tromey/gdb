@@ -1,6 +1,6 @@
 /* Python interface to values.
 
-   Copyright (C) 2008-2013 Free Software Foundation, Inc.
+   Copyright (C) 2008-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -39,23 +39,23 @@
    GDB (which uses target arithmetic).  */
 
 /* Python's integer type corresponds to C's long type.  */
-#define builtin_type_pyint builtin_type (python_gdbarch)->builtin_long
+#define builtin_type_pyint builtin_type (python_gdbarch ())->builtin_long
 
 /* Python's float type corresponds to C's double type.  */
-#define builtin_type_pyfloat builtin_type (python_gdbarch)->builtin_double
+#define builtin_type_pyfloat builtin_type (python_gdbarch ())->builtin_double
 
 /* Python's long type corresponds to C's long long type.  */
-#define builtin_type_pylong builtin_type (python_gdbarch)->builtin_long_long
+#define builtin_type_pylong builtin_type (python_gdbarch ())->builtin_long_long
 
 /* Python's long type corresponds to C's long long type.  Unsigned version.  */
 #define builtin_type_upylong builtin_type \
-  (python_gdbarch)->builtin_unsigned_long_long
+  (python_gdbarch ())->builtin_unsigned_long_long
 
 #define builtin_type_pybool \
-  language_bool_type (python_language, python_gdbarch)
+  language_bool_type (python_language (), python_gdbarch ())
 
 #define builtin_type_pychar \
-  language_string_char_type (python_language, python_gdbarch)
+  language_string_char_type (python_language (), python_gdbarch ())
 
 typedef struct value_object {
   PyObject_HEAD
@@ -651,7 +651,7 @@ valpy_str (PyObject *self)
       struct cleanup *old_chain = make_cleanup_ui_file_delete (stb);
 
       common_val_print (((value_object *) self)->value, stb, 0,
-			&opts, python_language);
+			&opts, python_language ());
       s = ui_file_xstrdup (stb, NULL);
 
       do_cleanups (old_chain);

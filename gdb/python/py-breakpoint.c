@@ -1,6 +1,6 @@
 /* Python interface to breakpoints
 
-   Copyright (C) 2008-2013 Free Software Foundation, Inc.
+   Copyright (C) 2008-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -654,7 +654,7 @@ bppy_init (PyObject *self, PyObject *args, PyObject *kwargs)
 	{
 	case bp_breakpoint:
 	  {
-	    create_breakpoint (python_gdbarch,
+	    create_breakpoint (python_gdbarch (),
 			       copy, NULL, -1, NULL,
 			       0,
 			       temporary_bp, bp_breakpoint,

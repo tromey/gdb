@@ -1,6 +1,6 @@
 /* Gdb/Python header for private use by Python module.
 
-   Copyright (C) 2008-2013 Free Software Foundation, Inc.
+   Copyright (C) 2008-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -407,8 +407,8 @@ struct cleanup *make_cleanup_py_xdecref (PyObject *py);
 struct cleanup *ensure_python_env (struct gdbarch *gdbarch,
 				   const struct language_defn *language);
 
-extern struct gdbarch *python_gdbarch;
-extern const struct language_defn *python_language;
+extern struct gdbarch *python_gdbarch (void);
+extern const struct language_defn *python_language (void);
 
 /* Use this after a TRY_EXCEPT to throw the appropriate Python
    exception.  */

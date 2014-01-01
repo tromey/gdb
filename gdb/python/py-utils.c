@@ -1,6 +1,6 @@
 /* General utility routines for GDB/Python.
 
-   Copyright (C) 2008-2013 Free Software Foundation, Inc.
+   Copyright (C) 2008-2014 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -149,7 +149,7 @@ char *
 unicode_to_target_string (PyObject *unicode_str)
 {
   return unicode_to_encoded_string (unicode_str,
-				    target_charset (python_gdbarch));
+				    target_charset (python_gdbarch ()));
 }
 
 /* Returns a PyObject with the contents of the given unicode string
@@ -160,7 +160,7 @@ static PyObject *
 unicode_to_target_python_string (PyObject *unicode_str)
 {
   return unicode_to_encoded_python_string (unicode_str,
-					   target_charset (python_gdbarch));
+					   target_charset (python_gdbarch ()));
 }
 
 /* Converts a python string (8-bit or unicode) to a target string in
