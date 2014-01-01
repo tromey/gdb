@@ -593,7 +593,8 @@ gdbpy_invoke_xmethod (const struct extension_language_defn *extlang,
     }
   else
     {
-      res = allocate_value (lookup_typename (python_language, python_gdbarch,
+      res = allocate_value (lookup_typename (python_language (),
+					     python_gdbarch (),
 					     "void", NULL, 0));
     }
 

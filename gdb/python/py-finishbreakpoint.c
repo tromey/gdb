@@ -292,7 +292,7 @@ bpfinishpy_init (PyObject *self, PyObject *args, PyObject *kwargs)
       xsnprintf (small_buf, sizeof (small_buf), "*%s", hex_string (finish_pc));
       addr_str = small_buf;
 
-      create_breakpoint (python_gdbarch,
+      create_breakpoint (python_gdbarch (),
                          addr_str, NULL, thread, NULL,
                          0,
                          1 /*temp_flag*/,

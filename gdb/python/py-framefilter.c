@@ -74,7 +74,7 @@ extract_sym (PyObject *obj, char **name, struct symbol **sym,
 	either overridden the symbol with a string, or supplied a
 	entirely synthetic symbol/value pairing.  In that case, use
 	python_language.  */
-      *language = python_language;
+      *language = python_language ();
       *sym = NULL;
     }
   else
