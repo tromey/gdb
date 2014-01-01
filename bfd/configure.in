@@ -35,15 +35,6 @@ dnl Default to a non shared library.  This may be overridden by the
 dnl configure option --enable-shared.
 AC_DISABLE_SHARED
 
-AC_ARG_ENABLE(host-shared,
-[AS_HELP_STRING([--enable-host-shared],
-		[build host code as shared libraries])],
-[host_shared=$enableval], [host_shared=no])
-if test "$host_shared" = yes; then
-  # Pretend.
-  enable_shared=yes
-fi
-
 AC_PROG_CC
 AC_GNU_SOURCE
 AC_USE_SYSTEM_EXTENSIONS
