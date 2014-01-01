@@ -2524,20 +2524,11 @@ attach_check_execution (void)
 }
 
 void
-attach_command (char *args, int from_tty)
+attach (char *args, int from_tty, int async_exec)
 {
-  int async_exec = 0;
   struct cleanup *back_to = make_cleanup (null_cleanup, NULL);
 
-  dont_repeat ();		/* Not for the faint of heart */
-
-  if (attach_check_execution ())
-    {
-      if (query (_("A program is being debugged already.  Kill it? ")))
-	target_kill ();
-      else
-	error (_("Not killed."));
-    }
+  gdb_assert (!attach_check_execution ());
 
   /* Clean up any leftovers from other runs.  Some other things from
      this function should probably be moved into target_pre_inferior.  */
@@ -2546,15 +2537,10 @@ attach_command (char *args, int from_tty)
   if (non_stop && !target_supports_non_stop ())
     error (_("Cannot attach to this target in non-stop mode"));
 
-  if (args)
-    {
-      async_exec = strip_bg_char (&args);
-
-      /* If we get a request for running in the bg but the target
-         doesn't support it, error out.  */
-      if (async_exec && !target_can_async_p ())
-	error (_("Asynchronous execution not supported on this target."));
-    }
+  /* If we get a request for running in the bg but the target doesn't
+     support it, error out.  */
+  if (async_exec && !target_can_async_p ())
+    error (_("Asynchronous execution not supported on this target."));
 
   /* If we don't get a request of running in the bg, then we need
      to simulate synchronous (fg) execution.  */
@@ -2624,6 +2610,27 @@ attach_command (char *args, int from_tty)
 
   attach_command_post_wait (args, from_tty, async_exec);
   discard_cleanups (back_to);
+}
+
+void
+attach_command (char *args, int from_tty)
+{
+  int async_exec = 0;
+
+  dont_repeat ();		/* Not for the faint of heart */
+
+  if (attach_check_execution ())
+    {
+      if (query (_("A program is being debugged already.  Kill it? ")))
+	target_kill ();
+      else
+	error (_("Not killed."));
+    }
+
+  if (args)
+    async_exec = strip_bg_char (&args);
+
+  attach (args, from_tty, async_exec);
 }
 
 /* We had just found out that the target was already attached to an
