@@ -141,6 +141,8 @@ extern char *construct_inferior_arguments (int, char **);
 
 extern void post_create_inferior (struct target_ops *, int);
 
+extern int attach_check_execution (void);
+
 extern void attach_command (char *, int);
 
 extern char *get_inferior_args (void);
