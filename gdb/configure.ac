@@ -366,6 +366,21 @@ case $host_os in
     enable_gdbtk=no ;;
 esac
 
+# --enable-gdb-pie builds gdb as a PIE and installs it as a Python
+# module.
+AC_ARG_ENABLE(gdb-pie,
+[AS_HELP_STRING([--enable-gdb-pie],
+		[build GDB as a position-independent executable])],
+[gdb_pie=yes], [gdb_pie=no])
+GDB_SO=
+PIE_FLAG=
+if test "$gdb_pie" = yes; then
+  GDB_SO=_gdb.so
+  PIE_FLAG=-pie
+fi
+AC_SUBST(GDB_SO)
+AC_SUBST(PIE_FLAG)
+
 # Libunwind support for ia64.
 
 AC_ARG_WITH(libunwind-ia64,

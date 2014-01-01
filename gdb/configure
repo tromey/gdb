@@ -686,6 +686,8 @@ AWK
 REPORT_BUGS_TEXI
 REPORT_BUGS_TO
 PKGVERSION
+PIE_FLAG
+GDB_SO
 HAVE_NATIVE_GCORE_TARGET
 TARGET_OBS
 subdirs
@@ -795,6 +797,7 @@ enable_gdbcli
 enable_gdbmi
 enable_tui
 enable_gdbtk
+enable_gdb_pie
 with_libunwind_ia64
 with_curses
 enable_profiling
@@ -1478,6 +1481,7 @@ Optional Features:
   --disable-gdbmi         disable machine-interface (MI)
   --enable-tui            enable full-screen terminal user interface (TUI)
   --enable-gdbtk          enable gdbtk graphical user interface (GUI)
+  --enable-gdb-pie        build GDB as a position-independent executable
   --enable-profiling      enable profiling of GDB
   --disable-rpath         do not hardcode runtime library paths
   --enable-libmcheck      Try linking with -lmcheck if available
@@ -5303,6 +5307,24 @@ $as_echo "$as_me: WARNING: gdbtk isn't supported on $host; disabling" >&2;}
     enable_gdbtk=no ;;
 esac
 
+# --enable-gdb-pie builds gdb as a PIE and installs it as a Python
+# module.
+# Check whether --enable-gdb-pie was given.
+if test "${enable_gdb_pie+set}" = set; then :
+  enableval=$enable_gdb_pie; gdb_pie=yes
+else
+  gdb_pie=no
+fi
+
+GDB_SO=
+PIE_FLAG=
+if test "$gdb_pie" = yes; then
+  GDB_SO=_gdb.so
+  PIE_FLAG=-pie
+fi
+
+
+
 # Libunwind support for ia64.
 
 
@@ -8563,8 +8585,6 @@ else
   CONFIG_SRCS="$CONFIG_SRCS python/python.c python/py-value.c \
 	python/py-prettyprint.c python/py-auto-load.c"
 fi
-
-PYTHON_LIBS=`echo $PYTHON_LIBS | sed -e 's/-Xlinker -export-dynamic//'`
 
 
 

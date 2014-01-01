@@ -26894,7 +26894,7 @@ configure-gdb:
 	test ! -f $(HOST_SUBDIR)/gdb/Makefile || exit 0; \
 	$(SHELL) $(srcdir)/mkinstalldirs $(HOST_SUBDIR)/gdb ; \
 	$(HOST_EXPORTS)  \
-	echo Configuring in $(HOST_SUBDIR)/gdb; \
+	echo Configuring in $(HOST_SUBDIR)/gdb: $$CFLAGS; \
 	cd "$(HOST_SUBDIR)/gdb" || exit 1; \
 	case $(srcdir) in \
 	  /* | [A-Za-z]:[\\/]*) topdir=$(srcdir) ;; \
