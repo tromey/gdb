@@ -743,8 +743,7 @@ captured_main (void *data)
       quiet = 1;
   }
 
-  /* Initialize all files.  Give the interpreter a chance to take
-     control of the console via the deprecated_init_ui_hook ().  */
+  /* Initialize all files.  */
   gdb_init (gdb_program_name);
 
   /* Now that gdb_init has created the initial inferior, we're in
