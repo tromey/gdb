@@ -44,8 +44,6 @@
 #include <ctype.h>
 #include <sys/stat.h>
 
-void (*deprecated_file_changed_hook) (char *);
-
 /* Prototypes for local functions */
 
 static void file_command (char *, int);
@@ -319,8 +317,6 @@ file_command (char *arg, int from_tty)
      the exec file, but that's rough.  */
   exec_file_command (arg, from_tty);
   symbol_file_command (arg, from_tty);
-  if (deprecated_file_changed_hook)
-    deprecated_file_changed_hook (arg);
 }
 
 

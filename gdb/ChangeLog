@@ -1,5 +1,11 @@
 2014-01-09  Tom Tromey  <tromey@redhat.com>
 
+	* exec.c (deprecated_file_changed_hook): Remove.
+	(file_command): Update.
+	* gdbcore.h (deprecated_file_changed_hook): Remove.
+
+2014-01-09  Tom Tromey  <tromey@redhat.com>
+
 	* defs.h: Remove old comment.
 	(deprecated_init_ui_hook): Remove.
 	* interps.c (clear_interpreter_hooks): Update.
