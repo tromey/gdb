@@ -186,8 +186,7 @@ struct cmd_list_element *
 add_cmd (const char *name, enum command_class class, void (*fun) (char *, int),
 	 char *doc, struct cmd_list_element **list)
 {
-  struct cmd_list_element *c
-    = (struct cmd_list_element *) xmalloc (sizeof (struct cmd_list_element));
+  struct cmd_list_element *c = XCNEW (struct cmd_list_element);
   struct cmd_list_element *p, *iter;
 
   /* Turn each alias of the old command into an alias of the new
@@ -226,24 +225,9 @@ add_cmd (const char *name, enum command_class class, void (*fun) (char *, int),
   set_cmd_cfunc (c, fun);
   set_cmd_context (c, NULL);
   c->doc = doc;
-  c->flags = 0;
-  c->replacement = NULL;
-  c->pre_show_hook = NULL;
-  c->hook_in = 0;
-  c->prefixlist = NULL;
-  c->prefixname = NULL;
-  c->allow_unknown = 0;
-  c->prefix = NULL;
-  c->abbrev_flag = 0;
   set_cmd_completer (c, make_symbol_completion_list_fn);
-  c->destroyer = NULL;
   c->type = not_set_cmd;
-  c->var = NULL;
   c->var_type = var_boolean;
-  c->enums = NULL;
-  c->user_commands = NULL;
-  c->cmd_pointer = NULL;
-  c->alias_chain = NULL;
 
   return c;
 }
