@@ -53,6 +53,8 @@ cmd_types;
 #define MALLOCED_REPLACEMENT      0x4
 #define DOC_ALLOCATED             0x8
 
+struct cmdpy_object;
+
 struct cmd_list_element
   {
     /* Points to next command in this list.  */
@@ -63,6 +65,9 @@ struct cmd_list_element
 
     /* Command class; class values are chosen by application program.  */
     enum command_class class;
+
+    /* The reference count.  */
+    unsigned short refc;
 
     /* Function definition of this command.  NULL for command class
        names and for help topics that are not really commands.  NOTE:
@@ -216,6 +221,12 @@ struct cmd_list_element
 
     /* Link pointer for aliases on an alias list.  */
     struct cmd_list_element *alias_chain;
+
+    /* If non-NULL, then this holds the associated Python object.
+       This is only non-NULL in the case where the gdb command is
+       installed.  If the command is uninstalled, then this field is
+       cleared.  */
+    struct cmdpy_object *pycmd;
   };
 
 extern void help_cmd_list (struct cmd_list_element *, enum command_class,
@@ -239,5 +250,9 @@ extern void not_just_help_class_command (char *arg, int from_tty);
 extern void print_doc_line (struct ui_file *, char *);
 
 extern const char * const auto_boolean_enums[];
+
+extern void incref_cmd_list_element (struct cmd_list_element *cmd);
+
+extern void decref_cmd_list_element (struct cmd_list_element *cmd);
 
 #endif /* !defined (CLI_DECODE_H) */

@@ -222,6 +222,7 @@ add_cmd (const char *name, enum command_class class, void (*fun) (char *, int),
 
   c->name = name;
   c->class = class;
+  c->refc = 1;
   set_cmd_cfunc (c, fun);
   set_cmd_context (c, NULL);
   c->doc = doc;
@@ -230,48 +231,6 @@ add_cmd (const char *name, enum command_class class, void (*fun) (char *, int),
   c->var_type = var_boolean;
 
   return c;
-}
-
-/* Like add_cmd, but if the command already exists, then create a copy
-   of the existing command and store it in *OLD_COPY.  If the command
-   does not already exist, act exactly like add_cmd.  */
-
-struct cmd_list_element *
-replace_cmd (const char *name, enum command_class class,
-	     void (*fun) (char *, int),
-	     char *doc, struct cmd_list_element **list,
-	     struct cmd_list_element **old_copy)
-{
-  struct cmd_list_element *c;
-
-  for (c = *list; c; c = c->next)
-    {
-      if (strcmp (c->name, name) == 0)
-	{
-	  *old_copy = XDUP (struct cmd_list_element, c);
-
-	  /* Make sure the old copy doesn't think it is linked in
-	     anywhere.  */
-	  c->hook_pre = NULL;
-	  c->hook_post = NULL;
-	  c->hookee_pre = NULL;
-	  c->hookee_post = NULL;
-	  c->cmd_pointer = NULL;
-	  c->aliases = NULL;
-	  c->alias_chain = NULL;
-	  c->replacement = NULL;
-
-	  c->name = name;
-	  if (doc != NULL)
-	    c->doc = doc;
-	  set_cmd_cfunc (c, fun);
-	  set_cmd_context (c, NULL);
-
-	  return c;
-	}
-    }
-
-  return add_cmd (name, class, fun, doc, list);
 }
 
 /* Deprecates a command CMD.
@@ -790,16 +749,33 @@ add_setshow_zuinteger_cmd (const char *name, enum command_class class,
 			NULL, NULL);
 }
 
-/* Free a command object.  */
+/* Acquire a reference to CMD.  */
 
 void
-free_cmd (struct cmd_list_element *cmd)
+incref_cmd_list_element (struct cmd_list_element *cmd)
 {
-  if (cmd->destroyer)
-    cmd->destroyer (cmd, cmd->context);
-  if ((cmd->flags & DOC_ALLOCATED) != 0)
-    xfree (cmd->doc);
-  xfree (cmd);
+  ++cmd->refc;
+  /* No wrapping.  */
+  gdb_assert (cmd->refc != 0);
+}
+
+/* Release a reference to CMD.  */
+
+void
+decref_cmd_list_element (struct cmd_list_element *cmd)
+{
+  gdb_assert (cmd->refc > 0);
+
+  --cmd->refc;
+  if (cmd->refc == 0)
+    {
+      if (cmd->destroyer)
+	cmd->destroyer (cmd, cmd->context);
+
+      if (cmd->doc && (cmd->flags & DOC_ALLOCATED) != 0)
+	xfree (cmd->doc);
+      xfree (cmd);
+    }
 }
 
 /* Remove the command named NAME from the command list.  Return the
@@ -859,7 +835,7 @@ delete_cmd (const char *name, struct cmd_list_element **list,
 	      *prevp = iter->alias_chain;
 	    }
 
-	  free_cmd (iter);
+	  decref_cmd_list_element (iter);
 
 	  /* We won't see another command with the same name.  */
 	  break;

@@ -57,8 +57,7 @@ struct cmdpy_object
 {
   PyObject_HEAD
 
-  /* The corresponding gdb command object, or NULL if the command is
-     no longer installed.  */
+  /* The corresponding gdb command object.  */
   struct cmd_list_element *command;
 
   /* A prefix command requires storage for a list of its sub-commands.
@@ -66,9 +65,6 @@ struct cmdpy_object
      for sub-commands of that prefix.  If this Command is not a prefix
      command, then this field is unused.  */
   struct cmd_list_element *sub_list;
-
-  /* Overrides.  */
-  struct cmd_list_element *old_command;
 };
 
 typedef struct cmdpy_object cmdpy_object;
@@ -90,22 +86,29 @@ cmdpy_dont_repeat (PyObject *self, PyObject *args)
   Py_RETURN_NONE;
 }
 
+/* Implementation of base class 'invoke' method.  */
+
 static PyObject *
-cmdpy_super_invoke (PyObject *sa, PyObject *args)
+cmdpy_invoke (PyObject *sa, PyObject *args)
 {
   const char *arg;
-  int from_tty;
+  PyObject *from_tty, *to_string;
   cmdpy_object *self = (cmdpy_object *) sa;
   volatile struct gdb_exception except;
 
-  if (!PyArg_ParseTuple (args, "si", &arg, &from_tty))
+  if (!PyArg_ParseTuple (args, "s|OO", &arg, &from_tty, &to_string))
     return NULL;
 
-  /* The super command is defined as a no-op.  We can't throw an
-     exception here as that will break Command subclasses that don't
-     define the method.  */
-  if (self->old_command == NULL)
-    Py_RETURN_NONE;
+  /* If the object is a subclass of Command, then it was instantiated
+     in Python and therefore this method should simply fail.  If the
+     type is exactly Command, then this object is a wrapper for the
+     gdb command, so we can execute it without recursion.  */
+  if (sa->ob_type != &cmdpy_object_type)
+    {
+      /* FIXME AttributeError */
+      return PyErr_Format (PyExc_AttributeError,
+			   "FIXME");
+    }
 
   TRY_CATCH (except, RETURN_MASK_ALL)
     {
@@ -116,7 +119,7 @@ cmdpy_super_invoke (PyObject *sa, PyObject *args)
       if (arg_copy[0] == '\0')
 	arg_copy = NULL;
 
-      cmd_func (self->old_command, arg_copy, from_tty);
+      cmd_func (self->command, arg_copy, from_tty);
       do_cleanups (cleanup);
     }
   GDB_PY_HANDLE_EXCEPTION (except);
@@ -124,8 +127,10 @@ cmdpy_super_invoke (PyObject *sa, PyObject *args)
   Py_RETURN_NONE;
 }
 
+/* Implementation of base class 'complete' method.  */
+
 static PyObject *
-cmdpy_super_complete (PyObject *sa, PyObject *args)
+cmdpy_complete (PyObject *sa, PyObject *args)
 {
   const char *text, *word;
   cmdpy_object *self = (cmdpy_object *) sa;
@@ -138,22 +143,20 @@ cmdpy_super_complete (PyObject *sa, PyObject *args)
   if (!PyArg_ParseTuple (args, "ss", &text, &word))
     return NULL;
 
-  /* The super command is defined as a no-op.  We can't throw an
-     exception here as that will break Command subclasses that don't
-     define the method.  */
-  if (self->old_command == NULL)
-    Py_RETURN_NONE;
-
-  if (self->old_command->completer == NULL)
+  /* If the object is a subclass of Command, then it was instantiated
+     in Python and therefore this method should simply fail.  If the
+     type is exactly Command, then this object is a wrapper for the
+     gdb command, so we can execute it without recursion.  */
+  if (sa->ob_type != &cmdpy_object_type)
     {
-      PyErr_SetString (PyExc_RuntimeError, _("no completer for super command"));
-      return NULL;
+      /* FIXME AttributeError */
+      return PyErr_Format (PyExc_AttributeError,
+			   "FIXME");
     }
 
   TRY_CATCH (except, RETURN_MASK_ALL)
     {
-      completions = self->old_command->completer (self->old_command,
-						  text, word);
+      completions = self->command->completer (self->command, text, word);
     }
   GDB_PY_HANDLE_EXCEPTION (except);
 
@@ -200,22 +203,13 @@ cmdpy_destroyer (struct cmd_list_element *self, void *context)
 
   cleanup = ensure_python_env (get_current_arch (), current_language);
 
-  cmd = (cmdpy_object *) context;
-
-  /* We allocated the name, doc string, and perhaps the prefix
-     name.  */
-  if (cmd->old_command == NULL)
-    xfree ((char *) self->name);
-  if (cmd->old_command && self->doc != cmd->old_command->doc)
-    xfree (self->doc);
+  /* We allocated the name, doc string, and perhaps the prefix name.
+     Note that there is no need to destroy CONTEXT, because the
+     lifetime of that object is synced to the gdb command; and so it
+     will be destroyed by other means.  */
+  xfree ((char *) self->name);
+  xfree (self->doc);
   xfree (self->prefixname);
-
-  if (cmd->old_command != NULL)
-    free_cmd (cmd->old_command);
-
-  /* Release our hold on the command object.  */
-  cmd->command = NULL;
-  Py_DECREF (cmd);
 
   do_cleanups (cleanup);
 }
@@ -499,6 +493,16 @@ gdbpy_parse_command_name (const char *name,
   return NULL;
 }
 
+/* Destructor.  */
+
+static void
+cmdpy_dealloc (PyObject *o)
+{
+  cmdpy_object *obj = (cmdpy_object *) o;
+
+  decref_cmd_list_element (obj->command);
+}
+
 /* Object initializer; sets up gdb-side structures for command.
 
    Use: __init__(NAME, COMMAND_CLASS [, COMPLETER_CLASS][, PREFIX]]).
@@ -628,7 +632,6 @@ cmdpy_init (PyObject *self, PyObject *args, PyObject *kw)
   TRY_CATCH (except, RETURN_MASK_ALL)
     {
       struct cmd_list_element *cmd;
-      struct cmd_list_element *old_cmd = NULL;
 
       if (pfx_name)
 	{
@@ -642,8 +645,8 @@ cmdpy_init (PyObject *self, PyObject *args, PyObject *kw)
 				pfx_name, allow_unknown, cmd_list);
 	}
       else
-	cmd = replace_cmd (cmd_name, (enum command_class) cmdtype, NULL,
-			   docstring, cmd_list, &old_cmd);
+	cmd = add_cmd (cmd_name, (enum command_class) cmdtype, NULL,
+		       docstring, cmd_list);
 
       /* There appears to be no API to set this.  */
       cmd->func = cmdpy_function;
@@ -652,8 +655,9 @@ cmdpy_init (PyObject *self, PyObject *args, PyObject *kw)
       if (cmd->doc == NULL)
 	cmd->doc = xstrdup (_("This command is not documented."));
 
+      incref_cmd_list_element (cmd);
       obj->command = cmd;
-      obj->old_command = old_cmd;
+      cmd->pycmd = obj;
       set_cmd_context (cmd, self);
       set_cmd_completer (cmd, ((completetype == -1) ? cmdpy_completer
 			       : completers[completetype].completer));
@@ -732,10 +736,12 @@ static PyMethodDef cmdpy_object_methods[] =
 {
   { "dont_repeat", cmdpy_dont_repeat, METH_NOARGS,
     "Prevent command repetition when user enters empty line." },
-  { "invoke", cmdpy_super_invoke, METH_VARARGS,
-    "FIXME" },
-  { "complete", cmdpy_super_complete, METH_VARARGS,
-    "FIXME" },
+  { "invoke", cmdpy_invoke, METH_VARARGS,
+    "invoke (arg [, from_tty] [, to_string])\n\
+Invoke the command." },
+  { "complete", cmdpy_complete, METH_VARARGS,
+    "complete (arg) -> list\n\
+Perform command-line completion on the command and return the result." },
   { 0 }
 };
 
@@ -745,7 +751,7 @@ static PyTypeObject cmdpy_object_type =
   "gdb.Command",		  /*tp_name*/
   sizeof (cmdpy_object),	  /*tp_basicsize*/
   0,				  /*tp_itemsize*/
-  0,				  /*tp_dealloc*/
+  cmdpy_dealloc,		  /*tp_dealloc*/
   0,				  /*tp_print*/
   0,				  /*tp_getattr*/
   0,				  /*tp_setattr*/

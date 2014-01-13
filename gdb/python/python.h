@@ -134,4 +134,7 @@ char *apply_type_printers (void *, struct type *type);
 
 void free_type_printers (void *arg);
 
+struct cmdpy_object;
+void gdbpy_release_cmd_list_element (struct cmdpy_object *);
+
 #endif /* GDB_PYTHON_H */
