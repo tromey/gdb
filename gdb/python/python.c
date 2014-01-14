@@ -1712,10 +1712,6 @@ message == an error message without a stack will be printed."),
   if (gdbpy_value_cst == NULL)
     goto fail;
 
-  /* Release the GIL while gdb runs.  */
-  PyThreadState_Swap (NULL);
-  PyEval_ReleaseLock ();
-
   make_final_cleanup (finalize_python, NULL);
 
   gdb_python_initialized = 1;
@@ -1731,6 +1727,15 @@ message == an error message without a stack will be printed."),
 
 #ifdef HAVE_PYTHON
 
+/* A cleanup function that releases the GIL.  */
+
+static void
+release_gil (void *ignore)
+{
+  PyThreadState_Swap (NULL);
+  PyEval_ReleaseLock ();
+}
+
 /* Perform the remaining python initializations.
    These must be done after GDB is at least mostly initialized.
    E.g., The "info pretty-printer" command needs the "info" prefix
@@ -1744,7 +1749,13 @@ finish_python_initialization (void)
   PyObject *sys_path;
   struct cleanup *cleanup;
 
-  cleanup = ensure_python_env (get_current_arch (), current_language);
+  /* If the first phase of initialization failed, don't bother doing
+     anything here.  */
+  if (!gdb_python_initialized)
+    return;
+
+  /* Release the GIL while gdb runs.  */
+  cleanup = make_cleanup (release_gil, NULL);
 
   /* Add the initial data-directory to sys.path.  */
 
@@ -1814,6 +1825,7 @@ finish_python_initialization (void)
   gdbpy_print_stack ();
   warning (_("internal error: Unhandled Python exception"));
   do_cleanups (cleanup);
+  gdb_python_initialized = 0;
 }
 
 #endif /* HAVE_PYTHON */

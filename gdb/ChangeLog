@@ -1,3 +1,13 @@
+2014-01-14  Tom Tromey  <tromey@redhat.com>
+
+	* python/py-finishbreakpoint.c (bpfinishpy_handle_stop): Check
+	gdb_python_initialized.
+	(bpfinishpy_handle_exit): Likewise.
+	* python/python.c (_initialize_python): Don't release the GIL.
+	(release_gil): New function.
+	(finish_python_initialization): Use release_gil.  Don't call
+	ensure_python_env.  Possibly clear gdb_python_initialized.
+
 2014-01-14  Yao Qi  <yao@codesourcery.com>
 
 	* gdbarch.sh (core_xfer_shared_libraries): Change its argument
