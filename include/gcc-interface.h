@@ -92,7 +92,7 @@ struct gcc_c_fe_interface
   gcc_type (*build_qualified_type) (struct gcc_context *self,
 				    gcc_type unqualified_type,
 				    int /* enum gcc_qualifiers */ qualifiers);
-}
+};
 
 /* The GCC object.  */
 

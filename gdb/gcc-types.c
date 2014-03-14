@@ -21,6 +21,7 @@
 #include "defs.h"
 #include "gdbtypes.h"
 #include "gcc-interface.h"
+#include "gdb_assert.h"
 
 struct gdb_gcc_instance
 {
@@ -33,13 +34,20 @@ struct gdb_gcc_instance
   htab_t type_map;
 };
 
+/* FIXME: these declarations and probably gdb_gcc_instance as well
+   should go into a header.  */
+extern gcc_type convert_type (struct gdb_gcc_instance *context,
+			      struct type *type);
+extern struct gdb_gcc_instance *new_gdb_gcc_instance (struct gcc_context *fe);
+extern void delete_gdb_gcc_instance (struct gdb_gcc_instance *context);
+
 
 
 struct type_map_instance
 {
   struct type *type;
   gcc_type gcc_type;
-}
+};
 
 static hashval_t
 hash_type_map_instance (const void *p)
@@ -55,7 +63,7 @@ eq_type_map_instance (const void *a, const void *b)
   const struct type_map_instance *insta = a;
   const struct type_map_instance *instb = b;
 
-  return a->type == b->type;
+  return insta->type == instb->type;
 }
 
 
@@ -67,9 +75,9 @@ insert_type (struct gdb_gcc_instance *context, struct type *type,
   struct type_map_instance inst, *add;
   void **slot;
 
-  inst->type = type;
-  inst->gcc_type = gcc_type;
-  slot = htab_find_slot (context->type_map, inst, INSERT);
+  inst.type = type;
+  inst.gcc_type = gcc_type;
+  slot = htab_find_slot (context->type_map, &inst, INSERT);
 
   add = *slot;
   /* The type might have already been inserted in order to handle
@@ -267,9 +275,6 @@ convert_type_basic (struct gdb_gcc_instance *context, struct type *type)
 
     case TYPE_CODE_BOOL:
       return convert_bool (context, type);
-
-    case TYPE_CODE_TYPEDEF:
-      return convert_typedef (context, type);
     }
 
   error (_("cannot convert gdb type to gcc type"));
