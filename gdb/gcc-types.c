@@ -215,14 +215,6 @@ convert_bool (struct gdb_gcc_instance *context, struct type *type)
 }
 
 static gcc_type
-convert_typedef (struct gdb_gcc_instance *context, struct type *type)
-{
-  gcc_type real = convert_type (context, check_typedef (type));
-
-  return context->fe->ops->build_typedef (context->fe, TYPE_NAME (type), real);
-}
-
-static gcc_type
 convert_qualified (struct gdb_gcc_instance *context, struct type *type)
 {
   struct type *unqual = make_unqualified_type (type);
@@ -245,13 +237,6 @@ convert_qualified (struct gdb_gcc_instance *context, struct type *type)
 static gcc_type
 convert_type_basic (struct gdb_gcc_instance *context, struct type *type)
 {
-  /* If we are converting a typedef, just let it go through even if it
-     is just a stub -- this will be handled during conversion.
-     Otherwise, resolve stubs now so that most of the code doesn't
-     need to use check_typedef.  */
-  if (TYPE_STUB (type) && TYPE_CODE (type) != TYPE_CODE_TYPEDEF)
-    type = check_typedef (type);
-
   /* If we are converting a qualified type, first convert the
      unqualified type and then apply the qualifiers.  */
   if ((TYPE_INSTANCE_FLAGS (type) & (TYPE_INSTANCE_FLAG_CONST
@@ -301,6 +286,10 @@ convert_type (struct gdb_gcc_instance *context, struct type *type)
 {
   struct type_map_instance inst, *found;
   gcc_type result;
+
+  /* We don't ever have to deal with typedefs in this code, because
+     those are only needed as symbols by the C compiler.  */
+  CHECK_TYPEDEF (type);
 
   inst.type = type;
   found = htab_find (context->type_map, &inst);

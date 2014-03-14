@@ -83,9 +83,6 @@ struct gcc_c_fe_interface
 
   gcc_type (*bool_type) (struct gcc_context *self);
 
-  gcc_type (*build_typedef) (struct gcc_context *self, const char *name,
-			     gcc_type underlying_type);
-
   gcc_type (*build_array_type) (struct gcc_context *self, int num_elements);
 
   gcc_type (*build_qualified_type) (struct gcc_context *self,
