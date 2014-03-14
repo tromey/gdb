@@ -162,26 +162,22 @@ convert_func (struct gdb_gcc_instance *context, struct type *type)
 {
   int i;
   gcc_type result, return_type;
+  gcc_type *argument_types;
 
-  /* First we create the resulting type and enter it into our hash
-     table.  This lets recursive types work -- probably can't happen
-     in C but it doesn't hurt to be defensive.  */
-  result = context->fe->ops->build_function_type (context->fe,
-						  TYPE_VARARGS (type));
-  insert_type (context, type, result);
-
+  /* This approach means we can't make self-referential function
+     types.  Those are impossible in C, though.  */
   return_type = convert_type (context, TYPE_TARGET_TYPE (type));
-  context->fe->ops->set_function_return_type (context->fe, result, return_type);
 
+  argument_types = XNEWVEC (gcc_type, TYPE_NFIELDS (type));
   for (i = 0; i < TYPE_NFIELDS (type); ++i)
-    {
-      gcc_type arg_type;
+    argument_types[i] = convert_type (context, TYPE_FIELD_TYPE (type, i));
 
-      arg_type = convert_type (context, TYPE_FIELD_TYPE (type, i));
-      context->fe->ops->build_add_function_argument (context->fe, result,
-						     TYPE_FIELD_NAME (type, i),
-						     arg_type);
-    }
+  result = context->fe->ops->build_function_type (context->fe,
+						  return_type,
+						  TYPE_NFIELDS (type),
+						  argument_types,
+						  TYPE_VARARGS (type));
+  xfree (argument_types);
 
   return result;
 }

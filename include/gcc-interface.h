@@ -59,16 +59,11 @@ struct gcc_c_fe_interface
 				   const char *name,
 				   unsigned long value);
 
-  gcc_type (*build_function_type) (struct gcc_context *self, int is_varargs);
-
-  void (*set_function_return_type) (struct gcc_context *self,
-				    gcc_type function_type,
-				    gcc_type return_type);
-
-  void (*build_add_function_argument) (struct gcc_context *self,
-				       gcc_context function_type,
-				       const char *arg_name,
-				       gcc_type arg_type);
+  gcc_type (*build_function_type) (struct gcc_context *self,
+				   gcc_type return_type,
+				   int nargs,
+				   gcc_type *argument_types,
+				   int is_varargs);
 
   gcc_type (*int_type) (struct gcc_context *self,
 			int is_unsigned, unsigned long size_in_bytes);
