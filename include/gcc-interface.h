@@ -80,7 +80,8 @@ struct gcc_c_fe_interface
 
   gcc_type (*bool_type) (struct gcc_context *self);
 
-  gcc_type (*build_array_type) (struct gcc_context *self, int num_elements);
+  gcc_type (*build_array_type) (struct gcc_context *self,
+				gcc_type element_type, int num_elements);
 
   gcc_type (*build_qualified_type) (struct gcc_context *self,
 				    gcc_type unqualified_type,

@@ -104,7 +104,8 @@ convert_array (struct gdb_gcc_instance *context, struct type *type)
     high_bound = -1;
 
   /* Doesn't handle VLA yet.  */
-  return context->fe->ops->build_array_type (context->fe, high_bound);
+  return context->fe->ops->build_array_type (context->fe,
+					     element_type, high_bound);
 }
 
 static gcc_type
