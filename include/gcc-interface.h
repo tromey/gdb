@@ -20,6 +20,9 @@
 #ifndef GDB_GCC_INTERFACE
 #define GDB_GCC_INTERFACE
 
+/* This header defines the interface to the GCC API.  It must be both
+   valid C and valid C++, because it is included by both programs.  */
+
 /* One bit of GCC internals leaks through here.  */
 
 union tree_node;
@@ -34,10 +37,8 @@ enum gcc_qualifiers
   GCC_QUALIFIER_RESTRICT = 4
 };
 
-/* The C front end exports a structure of this type, full of
-   callbacks.  This lets us limit the C front end interface to a
-   single function, and it lets us dlopen the compiler and fail
-   gracefully.  */
+/* The operations defined by the GCC API.  This is the vtable for the
+   real context structure which is passed around.  */
 
 struct gcc_c_fe_interface
 {
