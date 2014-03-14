@@ -42,6 +42,10 @@ enum gcc_qualifiers
 
 struct gcc_c_fe_interface
 {
+  /* The actual version implemented in this interface.  */
+
+  unsigned int version;
+
   gcc_type (*build_pointer_type) (struct gcc_context *self,
 				  gcc_type base_type);
 
@@ -98,5 +102,21 @@ struct gcc_context
 
   const struct gcc_c_fe_interface *ops;
 };
+
+/* Currently only a single version is defined.  */
+
+#define GCC_C_FE_VERSION 0
+
+/* The compiler exports a single initialization function.  This macro
+   holds its name as a symbol.  */
+
+#define GCC_C_FE_CONTEXT gcc_c_fe_context
+
+/* The type of the initialization function.  The caller passes in the
+   desired version.  If the request can be satisfied, a compatible
+   gcc_context object will be returned.  Otherwise, the function
+   returns NULL.  */
+
+typedef struct gcc_context *gcc_c_fe_context_function (unsigned int);
 
 #endif /* GDB_GCC_INTERFACE */
