@@ -20,7 +20,10 @@
 #ifndef GDB_GCC_INTERFACE
 #define GDB_GCC_INTERFACE
 
-typedef fixme gcc_type;
+/* One bit of GCC internals leaks through here.  */
+
+union tree_node;
+typedef union tree_node *gcc_type;
 
 struct gcc_context;
 
