@@ -41,11 +41,9 @@ struct gcc_c_fe_interface
   gcc_type (*build_pointer_type) (struct gcc_context *self,
 				  gcc_type base_type);
 
-  gcc_type (*build_record_type) (struct gcc_context *self,
-				 const char *tag_name);
+  gcc_type (*build_record_type) (struct gcc_context *self);
 
-  gcc_type (*build_union_type) (struct gcc_context *self,
-				const char *tag_name);
+  gcc_type (*build_union_type) (struct gcc_context *self);
 
   void (*build_add_field) (struct gcc_context *self,
 			   gcc_type record_or_union_type,
@@ -54,8 +52,7 @@ struct gcc_c_fe_interface
 			   unsigned long bitsize,
 			   unsigned long bitpos);
 
-  gcc_type (*build_enum_type) (struct gcc_context *self,
-			       const char *tag_name);
+  gcc_type (*build_enum_type) (struct gcc_context *self);
 
   void (*build_add_enum_constant) (struct gcc_context *self,
 				   gcc_type enum_type,
@@ -73,10 +70,10 @@ struct gcc_c_fe_interface
 				       const char *arg_name,
 				       gcc_type arg_type);
 
-  gcc_type (*int_type) (struct gcc_context *self, const char *name,
+  gcc_type (*int_type) (struct gcc_context *self,
 			int is_unsigned, unsigned long size_in_bytes);
 
-  gcc_type (*float_type) (struct gcc_context *self, const char *name,
+  gcc_type (*float_type) (struct gcc_context *self,
 			  unsigned long size_in_bytes);
 
   gcc_type (*void_type) (struct gcc_context *self);

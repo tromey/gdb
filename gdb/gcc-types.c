@@ -116,13 +116,11 @@ convert_struct_or_union (struct gdb_gcc_instance *context, struct type *type)
   /* First we create the resulting type and enter it into our hash
      table.  This lets recursive types work.  */
   if (TYPE_CODE (type) == TYPE_CODE_STRUCT)
-    result = context->fe->ops->build_record_type (context->fe,
-						  TYPE_TAG_NAME (type));
+    result = context->fe->ops->build_record_type (context->fe);
   else
     {
       gdb_assert (TYPE_CODE (type) == TYPE_CODE_UNION);
-      result = context->fe->ops->build_union_type (context->fe,
-						   TYPE_TAG_NAME (type));
+      result = context->fe->ops->build_union_type (context->fe);
     }
   insert_type (context, type, result);
 
@@ -146,8 +144,7 @@ convert_enum (struct gdb_gcc_instance *context, struct type *type)
   gcc_type result;
   int i;
 
-  result = context->fe->ops->build_enum_type (context->fe,
-					      TYPE_TAG_NAME (type));
+  result = context->fe->ops->build_enum_type (context->fe);
   for (i = 0; i < TYPE_NFIELDS (type); ++i)
     {
       context->fe->ops->build_add_enum_constant (context->fe,
@@ -191,15 +188,14 @@ convert_func (struct gdb_gcc_instance *context, struct type *type)
 static gcc_type
 convert_int (struct gdb_gcc_instance *context, struct type *type)
 {
-  return context->fe->ops->int_type (context->fe, TYPE_NAME (type),
+  return context->fe->ops->int_type (context->fe,
 				     TYPE_UNSIGNED (type), TYPE_LENGTH (type));
 }
 
 static gcc_type
 convert_float (struct gdb_gcc_instance *context, struct type *type)
 {
-  return context->fe->ops->float_type (context->fe,
-				       TYPE_NAME (type), TYPE_LENGTH (type));
+  return context->fe->ops->float_type (context->fe, TYPE_LENGTH (type));
 }
 
 static gcc_type
