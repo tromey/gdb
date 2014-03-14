@@ -136,6 +136,7 @@ convert_struct_or_union (struct gdb_gcc_instance *context, struct type *type)
 					 TYPE_FIELD_BITPOS (type, i));
     }
 
+  context->fe->ops->finish_record_or_union (context->fe, result);
   return result;
 }
 

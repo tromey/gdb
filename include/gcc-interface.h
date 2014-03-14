@@ -55,6 +55,9 @@ struct gcc_c_fe_interface
 			   unsigned long bitsize,
 			   unsigned long bitpos);
 
+  void (*finish_record_or_union) (struct gcc_context *self,
+				  gcc_type record_or_union_type);
+
   gcc_type (*build_enum_type) (struct gcc_context *self);
 
   void (*build_add_enum_constant) (struct gcc_context *self,
