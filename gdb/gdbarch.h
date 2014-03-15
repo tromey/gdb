@@ -1316,6 +1316,13 @@ typedef int (gdbarch_auxv_parse_ftype) (struct gdbarch *gdbarch, gdb_byte **read
 extern int gdbarch_auxv_parse (struct gdbarch *gdbarch, gdb_byte **readptr, gdb_byte *endptr, CORE_ADDR *typep, CORE_ADDR *valp);
 extern void set_gdbarch_auxv_parse (struct gdbarch *gdbarch, gdbarch_auxv_parse_ftype *auxv_parse);
 
+/* Allocate SIZE bytes of page aligned memory in inferior.
+   Throw an error if it is not possible.  Returned address is always valid. */
+
+typedef CORE_ADDR (gdbarch_infcall_mmap_ftype) (CORE_ADDR size);
+extern CORE_ADDR gdbarch_infcall_mmap (struct gdbarch *gdbarch, CORE_ADDR size);
+extern void set_gdbarch_infcall_mmap (struct gdbarch *gdbarch, gdbarch_infcall_mmap_ftype *infcall_mmap);
+
 /* Definition for an unknown syscall, used basically in error-cases.  */
 #define UNKNOWN_SYSCALL (-1)
 

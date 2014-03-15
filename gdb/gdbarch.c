@@ -319,6 +319,7 @@ struct gdbarch
   gdbarch_insn_is_ret_ftype *insn_is_ret;
   gdbarch_insn_is_jump_ftype *insn_is_jump;
   gdbarch_auxv_parse_ftype *auxv_parse;
+  gdbarch_infcall_mmap_ftype *infcall_mmap;
 };
 
 /* Create a new ``struct gdbarch'' based on information provided by
@@ -411,6 +412,7 @@ gdbarch_alloc (const struct gdbarch_info *info,
   gdbarch->insn_is_call = default_insn_is_call;
   gdbarch->insn_is_ret = default_insn_is_ret;
   gdbarch->insn_is_jump = default_insn_is_jump;
+  gdbarch->infcall_mmap = default_infcall_mmap;
   /* gdbarch_alloc() */
 
   return gdbarch;
@@ -630,6 +632,7 @@ verify_gdbarch (struct gdbarch *gdbarch)
   /* Skip verify of insn_is_ret, invalid_p == 0 */
   /* Skip verify of insn_is_jump, invalid_p == 0 */
   /* Skip verify of auxv_parse, has predicate.  */
+  /* Skip verify of infcall_mmap, invalid_p == 0 */
   buf = ui_file_xstrdup (log, &length);
   make_cleanup (xfree, buf);
   if (length > 0)
@@ -959,6 +962,9 @@ gdbarch_dump (struct gdbarch *gdbarch, struct ui_file *file)
   fprintf_unfiltered (file,
                       "gdbarch_dump: in_solib_return_trampoline = <%s>\n",
                       host_address_to_string (gdbarch->in_solib_return_trampoline));
+  fprintf_unfiltered (file,
+                      "gdbarch_dump: infcall_mmap = <%s>\n",
+                      host_address_to_string (gdbarch->infcall_mmap));
   fprintf_unfiltered (file,
                       "gdbarch_dump: gdbarch_info_proc_p() = %d\n",
                       gdbarch_info_proc_p (gdbarch));
@@ -4404,6 +4410,23 @@ set_gdbarch_auxv_parse (struct gdbarch *gdbarch,
                         gdbarch_auxv_parse_ftype auxv_parse)
 {
   gdbarch->auxv_parse = auxv_parse;
+}
+
+CORE_ADDR
+gdbarch_infcall_mmap (struct gdbarch *gdbarch, CORE_ADDR size)
+{
+  gdb_assert (gdbarch != NULL);
+  gdb_assert (gdbarch->infcall_mmap != NULL);
+  if (gdbarch_debug >= 2)
+    fprintf_unfiltered (gdb_stdlog, "gdbarch_infcall_mmap called\n");
+  return gdbarch->infcall_mmap (size);
+}
+
+void
+set_gdbarch_infcall_mmap (struct gdbarch *gdbarch,
+                          gdbarch_infcall_mmap_ftype infcall_mmap)
+{
+  gdbarch->infcall_mmap = infcall_mmap;
 }
 
 

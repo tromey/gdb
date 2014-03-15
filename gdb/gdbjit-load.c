@@ -17,7 +17,6 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-
 #include "defs.h"
 #include "gdbjit-load.h"
 #include "command.h"
@@ -27,44 +26,6 @@
 #include "gdbcore.h"
 #include "readline/tilde.h"
 #include "bfdlink.h"
-#include <sys/mman.h> /* FIXME */
-
-static CORE_ADDR
-get_pages (CORE_ADDR size)
-{
-  struct objfile *objf;
-  struct value *mmap_val = find_function_in_inferior ("mmap64", &objf);
-  struct value *addr_val;
-  struct gdbarch *gdbarch = get_objfile_arch (objf);
-  CORE_ADDR retval;
-  enum
-    {
-      ARG_ADDR, ARG_LENGTH, ARG_PROT, ARG_FLAGS, ARG_FD, ARG_OFFSET, ARG_MAX
-    };
-  struct value *arg[ARG_MAX];
-
-  arg[ARG_ADDR] = value_from_pointer (builtin_type (gdbarch)->builtin_data_ptr,
-				      0);
-  /* FIXME: Assuming sizeof (unsigned long) == sizeof (size_t).  */
-  arg[ARG_LENGTH] = value_from_ulongest
-		    (builtin_type (gdbarch)->builtin_unsigned_long, size);
-  /* FIXME: Move PROT_* to tdep.  */
-  /* FIXME: Separate r/o vs. r/w segments.  */
-  arg[ARG_PROT] = value_from_longest (builtin_type (gdbarch)->builtin_int,
-				      PROT_EXEC | PROT_READ | PROT_WRITE);
-  /* FIXME: Move MAP_* to tdep.  */
-  arg[ARG_FLAGS] = value_from_longest (builtin_type (gdbarch)->builtin_int,
-				       MAP_PRIVATE | MAP_ANONYMOUS);
-  arg[ARG_FD] = value_from_longest (builtin_type (gdbarch)->builtin_int, -1);
-  /* FIXME: Assuming sizeof (off_t) == sizeof (size_t).  */
-  arg[ARG_OFFSET] = value_from_longest (builtin_type (gdbarch)->builtin_int64,
-					0);
-  addr_val = call_function_by_hand (mmap_val, ARG_MAX, arg);
-  retval = value_as_address (addr_val);
-  if (retval == (CORE_ADDR) -1)
-    error (_("Failed inferior mmap call for %s bytes."), pulongest (size));
-  return retval;
-}
 
 struct setup_sections_data
 {
@@ -347,7 +308,7 @@ expression_load_command (char *args, int from_tty)
   setup_sections_data.max_alignment = 1;
   bfd_map_over_sections (abfd, setup_sections, &setup_sections_data);
 
-  addr = get_pages (setup_sections_data.vma);
+  addr = gdbarch_infcall_mmap (target_gdbarch(), setup_sections_data.vma);
   if ((addr & (setup_sections_data.max_alignment - 1)) != 0)
     error (_("Inferior JIT module address %s not aligned to BFD required %s."),
 	   paddress (target_gdbarch (), addr),

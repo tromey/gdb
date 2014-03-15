@@ -1029,6 +1029,10 @@ m:int:insn_is_jump:CORE_ADDR addr:addr::default_insn_is_jump::0
 # Return -1 if there is insufficient buffer for a whole entry.
 # Return 1 if an entry was read into *TYPEP and *VALP.
 M:int:auxv_parse:gdb_byte **readptr, gdb_byte *endptr, CORE_ADDR *typep, CORE_ADDR *valp:readptr, endptr, typep, valp
+
+# Allocate SIZE bytes of page aligned memory in inferior.
+# Throw an error if it is not possible.  Returned address is always valid.
+f:CORE_ADDR:infcall_mmap:CORE_ADDR size:size::default_infcall_mmap::0
 EOF
 }
 

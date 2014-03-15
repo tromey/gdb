@@ -32,6 +32,9 @@
 #include "cli/cli-utils.h"
 #include "arch-utils.h"
 #include "gdb_obstack.h"
+#include "objfiles.h"
+#include "infcall.h"
+#include <sys/mman.h>
 
 #include <ctype.h>
 
@@ -1766,6 +1769,44 @@ linux_gdb_signal_to_target (struct gdbarch *gdbarch,
   return -1;
 }
 
+/* See gdbarch.sh 'infcall_mmap'.  */
+
+static CORE_ADDR
+linux_infcall_mmap (CORE_ADDR size)
+{
+  struct objfile *objf;
+  /* Do there still exist any Linux systems without mmap64?  */
+  struct value *mmap_val = find_function_in_inferior ("mmap64", &objf);
+  struct value *addr_val;
+  struct gdbarch *gdbarch = get_objfile_arch (objf);
+  CORE_ADDR retval;
+  enum
+    {
+      ARG_ADDR, ARG_LENGTH, ARG_PROT, ARG_FLAGS, ARG_FD, ARG_OFFSET, ARG_MAX
+    };
+  struct value *arg[ARG_MAX];
+
+  arg[ARG_ADDR] = value_from_pointer (builtin_type (gdbarch)->builtin_data_ptr,
+				      0);
+  /* Assuming sizeof (unsigned long) == sizeof (size_t).  */
+  arg[ARG_LENGTH] = value_from_ulongest
+		    (builtin_type (gdbarch)->builtin_unsigned_long, size);
+  /* FIXME: Separate r/o vs. r/w segments.  */
+  arg[ARG_PROT] = value_from_longest (builtin_type (gdbarch)->builtin_int,
+				      PROT_EXEC | PROT_READ | PROT_WRITE);
+  arg[ARG_FLAGS] = value_from_longest (builtin_type (gdbarch)->builtin_int,
+				       MAP_PRIVATE | MAP_ANONYMOUS);
+  arg[ARG_FD] = value_from_longest (builtin_type (gdbarch)->builtin_int, -1);
+  /* Assuming sizeof (off_t) == 64 / 8 due to the "mmap64" symbol name.  */
+  arg[ARG_OFFSET] = value_from_longest (builtin_type (gdbarch)->builtin_int64,
+					0);
+  addr_val = call_function_by_hand (mmap_val, ARG_MAX, arg);
+  retval = value_as_address (addr_val);
+  if (retval == (CORE_ADDR) -1)
+    error (_("Failed inferior mmap call for %s bytes."), pulongest (size));
+  return retval;
+}
+
 /* To be called from the various GDB_OSABI_LINUX handlers for the
    various GNU/Linux architectures and machine types.  */
 
@@ -1783,6 +1824,7 @@ linux_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 				      linux_gdb_signal_from_target);
   set_gdbarch_gdb_signal_to_target (gdbarch,
 				    linux_gdb_signal_to_target);
+  set_gdbarch_infcall_mmap (gdbarch, linux_infcall_mmap);
 }
 
 /* Provide a prototype to silence -Wmissing-prototypes.  */
