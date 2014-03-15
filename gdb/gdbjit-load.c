@@ -203,9 +203,8 @@ expression_load_command (char *args, int from_tty)
     error (_("\"%s\": not in loadable format: %s"),
 	   filename, gdb_bfd_errmsg (bfd_get_error (), matching));
 
-  if ((bfd_get_file_flags (abfd) & EXEC_P) != 0)
-    error (_("\"%s\": not in object format: %s"),
-	   filename, gdb_bfd_errmsg (bfd_get_error (), matching));
+  if ((bfd_get_file_flags (abfd) & (EXEC_P | DYNAMIC)) != 0)
+    error (_("\"%s\": not in object format."), filename);
 
   setup_sections_data.vma = 0;
   setup_sections_data.max_alignment = 1;
