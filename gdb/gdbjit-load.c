@@ -189,7 +189,7 @@ link_hash_table_free (void *data)
 static void
 copy_sections (bfd *abfd, asection *sect, void *data)
 {
-  asymbol **symbol_table = data; 
+  asymbol **symbol_table = data;
   bfd_byte *sect_data, *sect_data_got;
   struct cleanup *cleanups;
   struct bfd_link_info link_info;
@@ -239,32 +239,6 @@ copy_sections (bfd *abfd, asection *sect, void *data)
   do_cleanups (cleanups);
 }
 
-static CORE_ADDR
-get_func_addr (bfd *abfd, asymbol **symbol_table, const char *name)
-{
-  long symi;
-
-  for (symi = 0;; symi++)
-    {
-      asymbol *sym = symbol_table[symi];
-
-      if (sym == NULL)
-	break;
-
-      if ((sym->flags & (BSF_GLOBAL | BSF_FUNCTION))
-	  != (BSF_GLOBAL | BSF_FUNCTION))
-	continue;
-      if (strcmp (bfd_asymbol_name (sym), name) != 0)
-	continue;
-
-      /* BFD symbols are section relative.  */
-      return sym->value + bfd_get_section_vma (abfd, sym->section);
-    }
-
-  error (_("Could not find symbol \"%s\" of JIT module \"%s\"."),
-	 name, bfd_get_filename (abfd));
-}
-
 static void
 call_func (CORE_ADDR func_addr)
 {
@@ -283,6 +257,9 @@ expression_load_command (char *args, int from_tty)
   bfd *abfd;
   struct setup_sections_data setup_sections_data;
   CORE_ADDR addr, func_addr;
+  const char func_name[] = "func";
+  struct objfile *objfile;
+  struct bound_minimal_symbol bmsym;
   long storage_needed;
   asymbol **symbol_table;
   long number_of_symbols;
@@ -290,7 +267,6 @@ expression_load_command (char *args, int from_tty)
   filename = tilde_expand (args);
   cleanups = make_cleanup (xfree, filename);
 
-  /* FIXME: Use struct objfile for module's unwinding, 'info sym' etc.  */
   abfd = gdb_bfd_open (filename, gnutarget, -1);
   if (abfd == NULL)
     error (_("\"%s\": could not open as JIT module: %s"),
@@ -316,23 +292,30 @@ expression_load_command (char *args, int from_tty)
 
   bfd_map_over_sections (abfd, add_to_vma, &addr);
 
+  /* SYMFILE_VERBOSE is not passed even if FROM_TTY, user is not interested in
+     "Reading symbols from ..." message for automatically generated file.  */
+  objfile = symbol_file_add_from_bfd (abfd, filename, 0, NULL, 0, NULL);
+
+  bmsym = lookup_minimal_symbol_text (func_name, objfile);
+  if (bmsym.minsym == NULL || MSYMBOL_TYPE (bmsym.minsym) == mst_file_text)
+    error (_("Could not find symbol \"%s\" of JIT module \"%s\"."),
+	   func_name, filename);
+
   storage_needed = bfd_get_symtab_upper_bound (abfd);
   if (storage_needed < 0)
     error (_("Cannot read symbols of JIT module \"%s\": %s"),
 	   bfd_get_filename (abfd), bfd_errmsg (bfd_get_error ()));
 
-  symbol_table = xmalloc (storage_needed);
-  make_cleanup (xfree, symbol_table);
+  /* ABFD of OBJFILE will continue reference the memory.  */
+  symbol_table = obstack_alloc (&objfile->objfile_obstack, storage_needed);
   number_of_symbols = bfd_canonicalize_symtab (abfd, symbol_table);
   if (number_of_symbols < 0)
     error (_("Cannot parse symbols of JIT module \"%s\": %s"),
 	   bfd_get_filename (abfd), bfd_errmsg (bfd_get_error ()));
 
-  func_addr = get_func_addr (abfd, symbol_table, "func");
-
   bfd_map_over_sections (abfd, copy_sections, symbol_table);
 
-  call_func (func_addr);
+  call_func (BMSYMBOL_VALUE_ADDRESS (bmsym));
 
   do_cleanups (cleanups);
 }
