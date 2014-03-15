@@ -799,7 +799,7 @@ SFILES = ada-exp.y ada-lang.c ada-typeprint.c ada-valprint.c ada-tasks.c \
 	gdbarch.c arch-utils.c gdb_bfd.c gdb_obstack.c \
 	gdbtypes.c gnu-v2-abi.c gnu-v3-abi.c \
 	go-exp.y go-lang.c go-typeprint.c go-valprint.c \
-	gcc-types.c \
+	gcc-types.c gdbjit-load.c \
 	inf-loop.c \
 	infcall.c \
 	infcmd.c inflow.c infrun.c \
@@ -996,7 +996,7 @@ COMMON_OBS = $(DEPFILES) $(CONFIG_OBS) $(YYOBJ) \
 	ui-out.o cli-out.o \
 	varobj.o vec.o \
 	go-lang.o go-valprint.o go-typeprint.o \
-	gcc-types.o \
+	gcc-types.o gdbjit-load.o \
 	jv-lang.o jv-valprint.o jv-typeprint.o jv-varobj.o \
 	m2-lang.o opencl-lang.o p-lang.o p-typeprint.o p-valprint.o \
 	sentinel-frame.o \
