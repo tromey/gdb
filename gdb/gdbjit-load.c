@@ -26,6 +26,7 @@
 #include "infcall.h"
 #include "gdbcore.h"
 #include "readline/tilde.h"
+#include "bfdlink.h"
 #include <sys/mman.h> /* FIXME */
 
 static CORE_ADDR
@@ -77,6 +78,10 @@ setup_sections (bfd *abfd, asection *sect, void *data_voidp)
   struct setup_sections_data *data = data_voidp;
   CORE_ADDR alignment;
 
+  /* It is required by later bfd_get_relocated_section_contents.  */
+  if (sect->output_section == NULL)
+    sect->output_section = sect;
+
   if ((bfd_get_section_flags (abfd, sect) & SEC_ALLOC) == 0)
     return;
 
@@ -103,11 +108,131 @@ add_to_vma (bfd *abfd, asection *sect, void *data)
   bfd_set_section_vma (abfd, sect, addr + bfd_get_section_vma (abfd, sect));
 }
 
-static void
-copy_sections (bfd *abfd, asection *sect, void *data_unused)
+static bfd_boolean
+link_callbacks_multiple_definition (struct bfd_link_info *link_info,
+				    struct bfd_link_hash_entry *h, bfd *nbfd,
+				    asection *nsec, bfd_vma nval)
 {
-  bfd_byte *sect_data;
+  bfd *abfd = link_info->input_bfds;
+
+  if (link_info->allow_multiple_definition)
+    return TRUE;
+  warning (_("JIT module \"%s\": multiple symbol definitions: %s\n"),
+	   bfd_get_filename (abfd), h->root.string);
+  return FALSE;
+}
+
+static bfd_boolean
+link_callbacks_warning (struct bfd_link_info *link_info, const char *xwarning,
+                        const char *symbol, bfd *abfd, asection *section,
+			bfd_vma address)
+{
+  warning (_("JIT module \"%s\" section \"%s\": warning: %s\n"),
+	   bfd_get_filename (abfd), bfd_get_section_name (abfd, section),
+	   xwarning);
+  /* Maybe permit running such a JIT module?  */
+  return FALSE;
+}
+
+static bfd_boolean
+link_callbacks_undefined_symbol (struct bfd_link_info *link_info,
+				 const char *name, bfd *abfd, asection *section,
+				 bfd_vma address, bfd_boolean is_fatal)
+{
+  warning (_("Cannot resolve relocation to \"%s\" "
+	     "from JIT module \"%s\" section \"%s\"."),
+	   name, bfd_get_filename (abfd), bfd_get_section_name (abfd, section));
+  return FALSE;
+}
+
+static bfd_boolean
+link_callbacks_reloc_overflow (struct bfd_link_info *link_info,
+			       struct bfd_link_hash_entry *entry,
+			       const char *name, const char *reloc_name,
+			       bfd_vma addend, bfd *abfd, asection *section,
+			       bfd_vma address)
+{
+  /* TRUE is required for intra-module relocations.  */
+  return TRUE;
+}
+
+static bfd_boolean
+link_callbacks_reloc_dangerous (struct bfd_link_info *link_info,
+				const char *message, bfd *abfd,
+				asection *section, bfd_vma address)
+{
+  warning (_("JIT module \"%s\" section \"%s\": dangerous relocation: %s\n"),
+	   bfd_get_filename (abfd), bfd_get_section_name (abfd, section),
+	   message);
+  return FALSE;
+}
+
+static bfd_boolean
+link_callbacks_unattached_reloc (struct bfd_link_info *link_info,
+				 const char *name, bfd *abfd, asection *section,
+				 bfd_vma address)
+{
+  warning (_("JIT module \"%s\" section \"%s\": unattached relocation: %s\n"),
+	   bfd_get_filename (abfd), bfd_get_section_name (abfd, section),
+	   name);
+  return FALSE;
+}
+
+static void
+link_callbacks_einfo (const char *fmt, ...)
+{
   struct cleanup *cleanups;
+  va_list ap;
+  char *str;
+
+  va_start (ap, fmt);
+  str = xstrvprintf (fmt, ap);
+  va_end (ap);
+  cleanups = make_cleanup (xfree, str);
+
+  warning (_("JIT module: warning: %s\n"), str);
+
+  do_cleanups (cleanups);
+}
+
+/* FIXME: These symbols are set by bfd_simple_get_relocated_section_contents
+   but bfd/ seems to use even the NULL ones without checking them first.  */
+static const struct bfd_link_callbacks link_callbacks =
+{
+  NULL, /* add_archive_element */
+  link_callbacks_multiple_definition, /* multiple_definition */
+  NULL, /* multiple_common */
+  NULL, /* add_to_set */
+  NULL, /* constructor */
+  link_callbacks_warning, /* warning */
+  link_callbacks_undefined_symbol, /* undefined_symbol */
+  link_callbacks_reloc_overflow, /* reloc_overflow */
+  link_callbacks_reloc_dangerous, /* reloc_dangerous */
+  link_callbacks_unattached_reloc, /* unattached_reloc */
+  NULL, /* notice */
+  link_callbacks_einfo, /* einfo */
+  NULL, /* info */
+  NULL, /* minfo */
+  NULL, /* override_segment_assignment */
+};
+
+static void
+link_hash_table_free (void *data)
+{
+  struct bfd_link_info *link_info = data;
+  bfd *abfd = link_info->input_bfds;
+
+  bfd_link_hash_table_free (abfd, link_info->hash);
+}
+
+static void
+copy_sections (bfd *abfd, asection *sect, void *data)
+{
+  asymbol **symbol_table = data; 
+  bfd_byte *sect_data, *sect_data_got;
+  struct cleanup *cleanups;
+  struct bfd_link_info link_info;
+  struct bfd_link_order link_order;
 
   if ((bfd_get_section_flags (abfd, sect) & (SEC_ALLOC | SEC_LOAD))
       != (SEC_ALLOC | SEC_LOAD))
@@ -116,14 +241,33 @@ copy_sections (bfd *abfd, asection *sect, void *data_unused)
   if (bfd_get_section_size (sect) == 0)
     return;
 
-  /* FIXME: It does not report relocations to undefined symbols.  */
-  sect_data = bfd_simple_get_relocated_section_contents (abfd, sect, NULL,
-							 NULL);
-  if (sect_data == NULL)
+  /* Mostly a copy of bfd_simple_get_relocated_section_contents which GDB
+     cannot use as it does not report relocations to undefined symbols.  */
+  memset (&link_info, 0, sizeof (link_info));
+  link_info.output_bfd = abfd;
+  link_info.input_bfds = abfd;
+  link_info.input_bfds_tail = &abfd->link_next;
+  link_info.hash = bfd_link_hash_table_create (abfd);
+  cleanups = make_cleanup (link_hash_table_free, &link_info);
+  link_info.callbacks = &link_callbacks;
+  memset (&link_order, 0, sizeof (link_order));
+  link_order.next = NULL;
+  link_order.type = bfd_indirect_link_order;
+  link_order.offset = 0;
+  link_order.size = bfd_get_section_size (sect);
+  link_order.u.indirect.section = sect;
+
+  sect_data = xmalloc (bfd_get_section_size (sect));
+  make_cleanup (xfree, sect_data);
+
+  sect_data_got = bfd_get_relocated_section_contents (abfd, &link_info,
+						      &link_order, sect_data,
+						      FALSE, symbol_table);
+  if (sect_data_got == NULL)
     error (_("Cannot map JIT module \"%s\" section \"%s\": %s"),
 	   bfd_get_filename (abfd), bfd_get_section_name (abfd, sect),
 	   bfd_errmsg (bfd_get_error ()));
-  cleanups = make_cleanup (xfree, sect_data);
+  gdb_assert (sect_data_got == sect_data);
 
   if (0 != target_write_memory (bfd_get_section_vma (abfd, sect), sect_data,
 				bfd_get_section_size (sect)))
@@ -135,26 +279,16 @@ copy_sections (bfd *abfd, asection *sect, void *data_unused)
 }
 
 static CORE_ADDR
-get_func_addr (bfd *abfd, const char *name)
+get_func_addr (bfd *abfd, asymbol **symbol_table, const char *name)
 {
-  long storage_needed;
-  asymbol **symbol_table;
-  long number_of_symbols, symi;
+  long symi;
 
-  storage_needed = bfd_get_symtab_upper_bound (abfd);
-  if (storage_needed < 0)
-    error (_("Cannot read symbols of JIT module \"%s\": %s"),
-	   bfd_get_filename (abfd), bfd_errmsg (bfd_get_error ()));
-
-  symbol_table = xmalloc (storage_needed);
-  number_of_symbols = bfd_canonicalize_symtab (abfd, symbol_table);
-  if (number_of_symbols < 0)
-    error (_("Cannot parse symbols of JIT module \"%s\": %s"),
-	   bfd_get_filename (abfd), bfd_errmsg (bfd_get_error ()));
-
-  for (symi = 0; symi < number_of_symbols; symi++)
+  for (symi = 0;; symi++)
     {
-      asymbol *sym= symbol_table[symi];
+      asymbol *sym = symbol_table[symi];
+
+      if (sym == NULL)
+	break;
 
       if ((sym->flags & (BSF_GLOBAL | BSF_FUNCTION))
 	  != (BSF_GLOBAL | BSF_FUNCTION))
@@ -188,6 +322,9 @@ expression_load_command (char *args, int from_tty)
   bfd *abfd;
   struct setup_sections_data setup_sections_data;
   CORE_ADDR addr, func_addr;
+  long storage_needed;
+  asymbol **symbol_table;
+  long number_of_symbols;
 
   filename = tilde_expand (args);
   cleanups = make_cleanup (xfree, filename);
@@ -218,9 +355,21 @@ expression_load_command (char *args, int from_tty)
 
   bfd_map_over_sections (abfd, add_to_vma, &addr);
 
-  func_addr = get_func_addr (abfd, "func");
+  storage_needed = bfd_get_symtab_upper_bound (abfd);
+  if (storage_needed < 0)
+    error (_("Cannot read symbols of JIT module \"%s\": %s"),
+	   bfd_get_filename (abfd), bfd_errmsg (bfd_get_error ()));
 
-  bfd_map_over_sections (abfd, copy_sections, NULL);
+  symbol_table = xmalloc (storage_needed);
+  make_cleanup (xfree, symbol_table);
+  number_of_symbols = bfd_canonicalize_symtab (abfd, symbol_table);
+  if (number_of_symbols < 0)
+    error (_("Cannot parse symbols of JIT module \"%s\": %s"),
+	   bfd_get_filename (abfd), bfd_errmsg (bfd_get_error ()));
+
+  func_addr = get_func_addr (abfd, symbol_table, "func");
+
+  bfd_map_over_sections (abfd, copy_sections, symbol_table);
 
   call_func (func_addr);
 
