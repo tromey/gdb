@@ -1775,8 +1775,8 @@ static CORE_ADDR
 linux_infcall_mmap (CORE_ADDR size)
 {
   struct objfile *objf;
-  /* FIXME: Use mmap().  */
-  /* Do there still exist any Linux systems without mmap64?  */
+  /* Do there still exist any Linux systems without "mmap64"?
+     "mmap" uses 64-bit off_t on x86_64 and 32-bit off_t on i386 and x32.  */
   struct value *mmap_val = find_function_in_inferior ("mmap64", &objf);
   struct value *addr_val;
   struct gdbarch *gdbarch = get_objfile_arch (objf);
@@ -1798,16 +1798,13 @@ linux_infcall_mmap (CORE_ADDR size)
   arg[ARG_FLAGS] = value_from_longest (builtin_type (gdbarch)->builtin_int,
 				       MAP_PRIVATE | MAP_ANONYMOUS);
   arg[ARG_FD] = value_from_longest (builtin_type (gdbarch)->builtin_int, -1);
-  /* Assuming sizeof (off_t) == 64 / 8 due to the "mmap64" symbol name.  */
   arg[ARG_OFFSET] = value_from_longest (builtin_type (gdbarch)->builtin_int64,
 					0);
   addr_val = call_function_by_hand (mmap_val, ARG_MAX, arg);
   retval = value_as_address (addr_val);
   if (retval == (CORE_ADDR) -1)
-    {
-      /* FIXME: Inferior errno is corrupted.  */
-      error (_("Failed inferior mmap call for %s bytes."), pulongest (size));
-    }
+    error (_("Failed inferior mmap call for %s bytes, errno is changed."),
+	   pulongest (size));
   return retval;
 }
 
