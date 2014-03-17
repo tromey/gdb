@@ -14,6 +14,10 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
+#ifndef GDB_GCCJIT_GCCJIT_H
+#define GDB_GCCJIT_GCCJIT_H
+
 extern void eval_gcc_jit_command (struct command_line *cmd);
 extern void _initialize_gcc_jit (void);
 
+#endif /* GDB_GCCJIT_GCCJIT_H */
