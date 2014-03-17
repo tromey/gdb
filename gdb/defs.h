@@ -411,6 +411,7 @@ enum command_control_type
     if_control,
     commands_control,
     python_control,
+    jit_control,
     guile_control,
     while_stepping_control,
     invalid_control

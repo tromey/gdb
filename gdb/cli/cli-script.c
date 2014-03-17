@@ -89,7 +89,7 @@ multi_line_command_p (enum command_control_type type)
     case if_control:
     case while_control:
     case while_stepping_control:
-    case commands_control:
+    case jit_control:
     case python_control:
     case guile_control:
       return 1;
@@ -266,6 +266,19 @@ print_command_lines (struct ui_out *uiout, struct command_line *cmd,
 	  ui_out_field_string (uiout, NULL, "python");
 	  ui_out_text (uiout, "\n");
 	  /* Don't indent python code at all.  */
+	  print_command_lines (uiout, *list->body_list, 0);
+	  if (depth)
+	    ui_out_spaces (uiout, 2 * depth);
+	  ui_out_field_string (uiout, NULL, "end");
+	  ui_out_text (uiout, "\n");
+	  list = list->next;
+	  continue;
+	}
+
+      if (list->control_type == jit_control)
+	{
+	  ui_out_field_string (uiout, NULL, "jit expression");
+	  ui_out_text (uiout, "\n");
 	  print_command_lines (uiout, *list->body_list, 0);
 	  if (depth)
 	    ui_out_spaces (uiout, 2 * depth);
@@ -601,6 +614,15 @@ execute_control_command (struct command_line *cmd)
 	ret = commands_from_control_command (new_line, cmd);
 	break;
       }
+
+    case jit_control:
+      /* TODO: We don't want to implement the scripting control palaver
+      (though I guess we might), so for now just error until the API
+      becomes available.  I think all we want is the C text anyway. */
+      error(_("This command does nothing (yet)"));
+      /* Putting this here for when the error goes away.  */
+      ret = simple_control;
+      break;
 
     case python_control:
     case guile_control:
@@ -1043,6 +1065,13 @@ process_next_line (char *p, struct command_line **command, int parse_commands,
 	     here.  */
 	  *command = build_command_line (python_control, "");
 	}
+      else if (p_end - p == 6 && !strncmp (p, "expression", 6))
+	{
+	  /* Note that we ignore the inline "expression command" form
+	     here.  */
+	  *command = build_command_line (jit_control, "");
+	}
+
       else if (p_end - p == 5 && !strncmp (p, "guile", 5))
 	{
 	  /* Note that we ignore the inline "guile command" form here.  */

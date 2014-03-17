@@ -51,6 +51,7 @@
 #include "cli/cli-utils.h"
 
 #include "extension.h"
+#include "interps.h"
 
 #ifdef TUI
 #include "tui/tui.h"	/* For tui_active et.al.  */
@@ -59,6 +60,8 @@
 #include <fcntl.h>
 
 /* Prototypes for local command functions */
+
+static void gcc_jit_command (char *arg, int from_tty);
 
 static void complete_command (char *, int);
 
@@ -238,6 +241,38 @@ help_command (char *command, int from_tty)
   help_cmd (command, gdb_stdout);
 }
 
+
+/* The "expression" command is used to evaluate an expression that may
+   contain calls to the GCC JIT interface.  TODO: Initially all we
+   expect in this command is straight up C code blocks.  */
+
+static void
+gcc_jit_command (char *arg, int from_tty)
+{
+  struct cleanup *cleanup;
+
+  /* When I was writing this skeleton I based it off the
+  python_command.  I noticed we do some pre-python environment
+  setting.  TODO: Perhaps we need ensure_gcc_cleanup.  */
+  cleanup = make_cleanup_restore_integer (&interpreter_async);
+  interpreter_async = 0;
+
+  arg = skip_spaces (arg);
+  if (arg && *arg)
+    {
+      error(_("This command does nothing (yet)"));
+    }
+  else
+    {
+      struct command_line *l = get_command_line (jit_control, "");
+
+      make_cleanup_free_command_lines (&l);
+      execute_control_command_untraced (l);
+    }
+
+  do_cleanups (cleanup);
+}
+
 /* The "complete" command is used by Emacs to implement completion.  */
 
 static void
@@ -1619,6 +1654,30 @@ _initialize_cli_cmds (void)
 
   /* Define the classes of commands.
      They will appear in the help list in alphabetical order.  */
+  add_com ("expression", class_obscure, gcc_jit_command,
+/* Right now we always have a jit.  TODO: Work out how to
+   tell if currently installed GCC supports a JIT interface.  */
+#define HAVE_GCC_JIT 1
+#ifdef HAVE_GCC_JIT
+	   _("\
+Evaluate a block of C code via GCC JIT.\n\
+\n\
+The code block can be given as an argument, for instance:\n\
+\n\
+    expression printf(\"Hello world\\n\");\n\
+\n\
+If no argument is given, the following lines are read and used\n\
+as C code.  Type a line containing \"end\" to indicate\n\
+the end of the C code block.")
+#else /* HAVE_GCC_JIT */
+	   _("\
+Evaluate a block of C code via GCC JIT.\n\
+\n\
+GCC JIT is not supported in this copy of GDB.\n\
+This command is only a placeholder.")
+#endif /* HAVE_PYTHON */
+	   );
+  add_com_alias ("expr", "expression", class_obscure, 1);
 
   add_cmd ("internals", class_maintenance, NULL, _("\
 Maintenance commands.\n\
