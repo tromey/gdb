@@ -317,6 +317,27 @@ if test x"$enable_gdbcli" = xyes; then
   fi
 fi
 
+# Enable GCC JIT.
+AC_ARG_ENABLE(gdbgccjit,
+AS_HELP_STRING([--disable-gdbgccjit], [disable gcc-jit interface (JIT)]),
+  [case $enableval in
+    yes)
+      ;;
+    no)
+      AC_MSG_ERROR([the GCC JIT interface cannot be disabled yet]) ;;
+    *)
+      AC_MSG_ERROR([bad value $enableval for --enable-gdbgccjit]) ;;
+  esac],
+  [enable_gdbgccjit=yes])
+if test x"$enable_gdbgccjit" = xyes; then
+  if test -d $srcdir/gccjit; then
+    CONFIG_OBS="$CONFIG_OBS \$(SUBDIR_GCC_JIT_OBS)"
+    CONFIG_DEPS="$CONFIG_DEPS \$(SUBDIR_GCC_JIT_DEPS)"
+    CONFIG_SRCS="$CONFIG_SRCS \$(SUBDIR_GCC_JIT_SRCS)"
+    ENABLE_CFLAGS="$ENABLE_CFLAGS \$(SUBDIR_GCC_JIT_CFLAGS)"
+  fi
+fi
+
 # Enable MI.
 AC_ARG_ENABLE(gdbmi,
 AS_HELP_STRING([--disable-gdbmi], [disable machine-interface (MI)]),

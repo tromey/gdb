@@ -34,6 +34,7 @@
 
 #include "extension.h"
 #include "interps.h"
+#include "gccjit/gccjit.h"
 
 /* Prototypes for local functions.  */
 
@@ -616,11 +617,8 @@ execute_control_command (struct command_line *cmd)
       }
 
     case jit_control:
-      /* TODO: We don't want to implement the scripting control palaver
-      (though I guess we might), so for now just error until the API
-      becomes available.  I think all we want is the C text anyway. */
+      eval_gcc_jit_command (cmd);
       error(_("This command does nothing (yet)"));
-      /* Putting this here for when the error goes away.  */
       ret = simple_control;
       break;
 

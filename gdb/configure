@@ -798,6 +798,7 @@ with_auto_load_safe_path
 enable_targets
 enable_64_bit_bfd
 enable_gdbcli
+enable_gdbgccjit
 enable_gdbmi
 enable_tui
 enable_gdbtk
@@ -1482,6 +1483,7 @@ Optional Features:
                           alternative target configurations
   --enable-64-bit-bfd     64-bit support (on hosts with narrower word sizes)
   --disable-gdbcli        disable command-line interface (CLI)
+  --disable-gdbgccjit     disable gcc-jit interface (JIT)
   --disable-gdbmi         disable machine-interface (MI)
   --enable-tui            enable full-screen terminal user interface (TUI)
   --enable-gdbtk          enable gdbtk graphical user interface (GUI)
@@ -5360,6 +5362,30 @@ if test x"$enable_gdbcli" = xyes; then
     CONFIG_DEPS="$CONFIG_DEPS \$(SUBDIR_CLI_DEPS)"
     CONFIG_SRCS="$CONFIG_SRCS \$(SUBDIR_CLI_SRCS)"
     ENABLE_CFLAGS="$ENABLE_CFLAGS \$(SUBDIR_CLI_CFLAGS)"
+  fi
+fi
+
+# Enable GCC JIT.
+# Check whether --enable-gdbgccjit was given.
+if test "${enable_gdbgccjit+set}" = set; then :
+  enableval=$enable_gdbgccjit; case $enableval in
+    yes)
+      ;;
+    no)
+      as_fn_error "the GCC JIT interface cannot be disabled yet" "$LINENO" 5 ;;
+    *)
+      as_fn_error "bad value $enableval for --enable-gdbgccjit" "$LINENO" 5 ;;
+  esac
+else
+  enable_gdbgccjit=yes
+fi
+
+if test x"$enable_gdbgccjit" = xyes; then
+  if test -d $srcdir/gccjit; then
+    CONFIG_OBS="$CONFIG_OBS \$(SUBDIR_GCC_JIT_OBS)"
+    CONFIG_DEPS="$CONFIG_DEPS \$(SUBDIR_GCC_JIT_DEPS)"
+    CONFIG_SRCS="$CONFIG_SRCS \$(SUBDIR_GCC_JIT_SRCS)"
+    ENABLE_CFLAGS="$ENABLE_CFLAGS \$(SUBDIR_GCC_JIT_CFLAGS)"
   fi
 fi
 
