@@ -18,7 +18,6 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbjit-load.h"
 #include "command.h"
 #include "value.h"
 #include "objfiles.h"

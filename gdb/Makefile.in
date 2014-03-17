@@ -284,11 +284,12 @@ SUBDIR_TUI_CFLAGS= \
 # GCC GIT sub directory definitions
 #
 SUBDIR_GCC_JIT_OBS = \
-	gccjit.o gcc-symbols.o gcc-types.o
+	gccjit.o gcc-symbols.o gcc-types.o gdbjit-load.o
 SUBDIR_GCC_JIT_SRCS = \
 	gccjit/gccjit.c \
 	gccjit/gcc-symbols.c \
-	gccjit/gcc-types.c
+	gccjit/gcc-types.c \
+	gccjit/gdbjit-load.c
 
 SUBDIR_GCC_JIT_DEPS =
 SUBDIR_GCC_JIT_LDFLAGS=
@@ -813,7 +814,6 @@ SFILES = ada-exp.y ada-lang.c ada-typeprint.c ada-valprint.c ada-tasks.c \
 	gdbarch.c arch-utils.c gdb_bfd.c gdb_obstack.c \
 	gdbtypes.c gnu-v2-abi.c gnu-v3-abi.c \
 	go-exp.y go-lang.c go-typeprint.c go-valprint.c \
-	gdbjit-load.c \
 	inf-loop.c \
 	infcall.c \
 	infcmd.c inflow.c infrun.c \
@@ -1010,7 +1010,6 @@ COMMON_OBS = $(DEPFILES) $(CONFIG_OBS) $(YYOBJ) \
 	ui-out.o cli-out.o \
 	varobj.o vec.o \
 	go-lang.o go-valprint.o go-typeprint.o \
-	gdbjit-load.o \
 	jv-lang.o jv-valprint.o jv-typeprint.o jv-varobj.o \
 	m2-lang.o opencl-lang.o p-lang.o p-typeprint.o p-valprint.o \
 	sentinel-frame.o \
@@ -1921,6 +1920,10 @@ gcc-types.o: $(srcdir)/gccjit/gcc-types.c
 
 gcc-symbols.o: $(srcdir)/gccjit/gcc-symbols.c
 	$(COMPILE) $(srcdir)/gccjit/gcc-symbols.c
+	$(POSTCOMPILE)
+
+gdbjit-load.o: $(srcdir)/gccjit/gdbjit-load.c
+	$(COMPILE) $(srcdir)/gccjit/gdbjit-load.c
 	$(POSTCOMPILE)
 
 
