@@ -20,28 +20,8 @@
 
 #include "defs.h"
 #include "gdbtypes.h"
-#include "gcc-interface.h"
+#include "gccjit-internal.h"
 #include "gdb_assert.h"
-
-struct gdb_gcc_instance
-{
-  /* The GCC front end.  */
-
-  struct gcc_context *fe;
-
-  /* Map from gdb types to gcc types.  */
-
-  htab_t type_map;
-};
-
-/* FIXME: these declarations and probably gdb_gcc_instance as well
-   should go into a header.  */
-extern gcc_type convert_type (struct gdb_gcc_instance *context,
-			      struct type *type);
-extern struct gdb_gcc_instance *new_gdb_gcc_instance (struct gcc_context *fe);
-extern void delete_gdb_gcc_instance (struct gdb_gcc_instance *context);
-
-
 
 struct type_map_instance
 {
