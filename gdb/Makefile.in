@@ -284,9 +284,10 @@ SUBDIR_TUI_CFLAGS= \
 # GCC GIT sub directory definitions
 #
 SUBDIR_GCC_JIT_OBS = \
-	gccjit.o gcc-types.o
+	gccjit.o gcc-symbols.o gcc-types.o
 SUBDIR_GCC_JIT_SRCS = \
 	gccjit/gccjit.c \
+	gccjit/gcc-symbols.c \
 	gccjit/gcc-types.c
 
 SUBDIR_GCC_JIT_DEPS =
@@ -1916,6 +1917,10 @@ gccjit.o: $(srcdir)/gccjit/gccjit.c
 
 gcc-types.o: $(srcdir)/gccjit/gcc-types.c
 	$(COMPILE) $(srcdir)/gccjit/gcc-types.c
+	$(POSTCOMPILE)
+
+gcc-symbols.o: $(srcdir)/gccjit/gcc-symbols.c
+	$(COMPILE) $(srcdir)/gccjit/gcc-symbols.c
 	$(POSTCOMPILE)
 
 

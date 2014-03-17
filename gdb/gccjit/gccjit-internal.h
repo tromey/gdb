@@ -20,6 +20,8 @@
 #include "hashtab.h"
 #include "gcc-interface.h"
 
+struct block;
+
 /* An object of this type holds state associated with a given
    compilation job.  */
 
@@ -28,6 +30,10 @@ struct gdb_gcc_instance
   /* The GCC front end.  */
 
   struct gcc_context *fe;
+
+  /* The block in which an expression is being parsed.  */
+
+  const struct block *block;
 
   /* Map from gdb types to gcc types.  */
 
@@ -39,6 +45,12 @@ struct gdb_gcc_instance
 
 extern gcc_type convert_type (struct gdb_gcc_instance *context,
 			      struct type *type);
+
+/* A callback suitable for use as the GCC C symbol oracle.  */
+
+extern void gcc_convert_symbol (void *datum, struct gcc_context *gcc_context,
+				enum gcc_c_oracle_request request,
+				const char *identifier);
 
 /* Instantiate a GDB object holding state for the GCC context FE.  THe
    new object is returned.  */

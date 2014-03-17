@@ -27,6 +27,7 @@
 
 union tree_node;
 typedef union tree_node *gcc_type;
+typedef union tree_node *gcc_decl;
 
 struct gcc_context;
 
@@ -37,6 +38,51 @@ enum gcc_qualifiers
   GCC_QUALIFIER_RESTRICT = 4
 };
 
+/* This enumerates the kinds of decls that GDB can create.  */
+
+enum gcc_c_symbol_kind
+{
+  /* A function.  */
+
+  GCC_C_SYMBOL_FUNCTION,
+
+  /* A variable.  */
+
+  GCC_C_SYMBOL_VARIABLE,
+
+  /* A typedef.  */
+
+  GCC_C_SYMBOL_TYPEDEF,
+
+  /* A label.  */
+
+  GCC_C_SYMBOL_LABEL
+};
+
+/* This enumerates the types of symbols that GCC might request from
+   GDB.  */
+
+enum gcc_c_oracle_request
+{
+  /* An ordinary symbol -- a variable, function, typedef, or enum
+     constant.  */
+
+  GCC_C_ORACLE_SYMBOL,
+
+  /* A struct, union, or enum tag.  */
+
+  GCC_C_ORACLE_TAG,
+
+  /* A label.  */
+
+  GCC_C_ORACLE_LABEL
+};
+
+typedef void (gcc_c_oracle_function) (void *datum,
+				      struct gcc_context *context,
+				      enum gcc_c_oracle_request request,
+				      const char *identifier);
+
 /* The operations defined by the GCC API.  This is the vtable for the
    real context structure which is passed around.  */
 
@@ -45,6 +91,23 @@ struct gcc_c_fe_interface
   /* The actual version implemented in this interface.  */
 
   unsigned int version;
+
+  void (*set_binding_oracle) (struct gcc_context *self,
+			      gcc_c_oracle_function *oracle,
+			      void *datum);
+
+  gcc_decl (*build_decl) (struct gcc_context *self,
+			  const char *name,
+			  enum gcc_c_symbol_kind sym_kind,
+			  gcc_type sym_type,
+			  const char *filename,
+			  unsigned int line_number);
+
+  void (*bind) (struct gcc_context *self, gcc_decl decl,
+		int /* bool */ is_global);
+
+  void (*tagbind) (struct gcc_context *self, const char *name,
+		   gcc_type tagged_type);
 
   gcc_type (*build_pointer_type) (struct gcc_context *self,
 				  gcc_type base_type);
