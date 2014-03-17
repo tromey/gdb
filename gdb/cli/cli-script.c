@@ -90,6 +90,7 @@ multi_line_command_p (enum command_control_type type)
     case if_control:
     case while_control:
     case while_stepping_control:
+    case commands_control:
     case jit_control:
     case python_control:
     case guile_control:
