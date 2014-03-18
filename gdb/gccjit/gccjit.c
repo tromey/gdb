@@ -79,15 +79,10 @@ load_libcc (void)
    struct gcc_context *(*func)(unsigned int);
    struct gcc_context *context;
 
+   /* gdb_dlopen and gdb_dlsym will call error () on an error, so no
+      need to check value.  */
    handle = gdb_dlopen (STRINGIFY (GCC_C_FE_LIBCC));
-   if (handle == NULL)
-     /* dlerror() is not exported in gdb-dlfcn.c|h, so this won't work
-	on mingw32.  TODO: remove or add to utility library.  */
-     error (_("dlopen reported: %s"),dlerror ());
    func = gdb_dlsym (handle, STRINGIFY (GCC_C_FE_CONTEXT));
-   if (func == NULL)
-     error (_("Cannot find GCC JIT context symbol.  dlsym reported: %s"),
-	    dlerror ());
    return (*func) (GCC_C_FE_VERSION);
 }
 
