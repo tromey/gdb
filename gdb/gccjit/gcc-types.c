@@ -285,7 +285,7 @@ convert_type (struct gdb_gcc_instance *context, struct type *type)
 struct gdb_gcc_instance *
 new_gdb_gcc_instance (struct gcc_context *fe)
 {
-  struct gdb_gcc_instance *result = XNEW (struct gdb_gcc_instance);
+  struct gdb_gcc_instance *result = XCNEW (struct gdb_gcc_instance);
 
   result->fe = fe;
   result->type_map = htab_create_alloc (10, hash_type_map_instance,
