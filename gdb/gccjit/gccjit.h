@@ -17,7 +17,7 @@
 #ifndef GDB_GCCJIT_GCCJIT_H
 #define GDB_GCCJIT_GCCJIT_H
 
-extern void eval_gcc_jit_command (struct command_line *cmd);
+extern void eval_gcc_jit_command (struct command_line *cmd, char *cmd_string);
 extern void _initialize_gcc_jit (void);
 
 #endif /* GDB_GCCJIT_GCCJIT_H */

@@ -618,8 +618,7 @@ execute_control_command (struct command_line *cmd)
       }
 
     case jit_control:
-      eval_gcc_jit_command (cmd);
-      error(_("This command does nothing (yet)"));
+      eval_gcc_jit_command (cmd, NULL);
       ret = simple_control;
       break;
 

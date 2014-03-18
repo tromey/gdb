@@ -28,8 +28,14 @@
 #include <ctype.h>
 #include "interps.h"
 #include "gccjit/gccjit.h"
+#include <dlfcn.h>
+#include "gccjit-internal.h"
 
 #define HAVE_GCC_JIT 1
+#define LIBCC "libcc1.so"
+#define GCC_CONTEXT_FUNC "gcc_c_fe_context"
+
+struct gcc_context *fe_context = NULL;
 
 /* The "expression" command is used to evaluate an expression that may
    contain calls to the GCC JIT interface.  TODO: Initially all we
@@ -49,7 +55,7 @@ gcc_jit_command (char *arg, int from_tty)
  arg = skip_spaces (arg);
  if (arg && *arg)
    {
-     error(_("This command does nothing (yet)"));
+     eval_gcc_jit_command (NULL, arg);
    }
  else
    {
@@ -62,13 +68,42 @@ gcc_jit_command (char *arg, int from_tty)
  do_cleanups (cleanup);
 }
 
+/* TODO: Putting this function here for now, and it will be run on
+   command invocation.  This is just for convenience at the moment, but
+   it should be moved elsewhere.  */
+static struct gcc_context *
+load_libcc (void)
+{
+   void *handle;
+   struct gcc_context *(*func)(unsigned int);
+   struct gcc_context *context;
+
+   handle = dlopen (LIBCC, RTLD_NOW);
+   if (handle == NULL)
+     error (_("dlopen reported: %s"),dlerror ());
+   func = dlsym (handle, GCC_CONTEXT_FUNC);
+   if (func == NULL)
+     error (_("Cannot find GCC JIT context symbol.  dlsym reported: %s"),
+	    dlerror ());
+   return (*func) (GCC_C_FE_VERSION);
+}
+
+struct gcc_context *
+get_gcc_jit_context (void)
+{
+  if (fe_context == NULL)
+    error (_("GCC JIT context is NULL"));
+  else
+    return fe_context;
+}
+
 void
-eval_gcc_jit_command (struct command_line *cmd)
+eval_gcc_jit_command (struct command_line *cmd, char *cmd_string)
 {
   /* TODO: We don't want to implement the scripting control palaver
      (though I guess we might), so for now just error until the API
      becomes available.  I think all we want is the C text anyway. */
-  error(_("This command does nothing (yet)"));
+  error (_("This command does nothing (yet)"));
 }
 
 void
@@ -100,4 +135,6 @@ This command is only a placeholder.")
 #endif /* HAVE_GCC_JIT */
 	   );
   add_com_alias ("expr", "expression", class_obscure, 1);
+
+  fe_context = load_libcc ();
 }

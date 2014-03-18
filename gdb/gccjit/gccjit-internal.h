@@ -61,4 +61,5 @@ extern struct gdb_gcc_instance *new_gdb_gcc_instance (struct gcc_context *fe);
 
 extern void delete_gdb_gcc_instance (struct gdb_gcc_instance *context);
 
+extern struct gcc_context* get_gcc_jit_context (void);
 #endif /* GDB_GCCJIT_GCCJIT_INTERNAL_H */
