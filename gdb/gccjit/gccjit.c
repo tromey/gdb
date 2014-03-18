@@ -28,12 +28,13 @@
 #include <ctype.h>
 #include "interps.h"
 #include "gccjit/gccjit.h"
-#include <dlfcn.h>
+#include "dlfcn.h"
+#include "gdb-dlfcn.h"
 #include "gccjit-internal.h"
 
 #define HAVE_GCC_JIT 1
-#define LIBCC "libcc1.so"
-#define GCC_CONTEXT_FUNC "gcc_c_fe_context"
+#define STR(x) #x
+#define STRINGIFY(x) STR(x)
 
 struct gcc_context *fe_context = NULL;
 
@@ -78,10 +79,12 @@ load_libcc (void)
    struct gcc_context *(*func)(unsigned int);
    struct gcc_context *context;
 
-   handle = dlopen (LIBCC, RTLD_NOW);
+   handle = gdb_dlopen (STRINGIFY (GCC_C_FE_LIBCC));
    if (handle == NULL)
+     /* dlerror() is not exported in gdb-dlfcn.c|h, so this won't work
+	on mingw32.  TODO: remove or add to utility library.  */
      error (_("dlopen reported: %s"),dlerror ());
-   func = dlsym (handle, GCC_CONTEXT_FUNC);
+   func = gdb_dlsym (handle, STRINGIFY (GCC_C_FE_CONTEXT));
    if (func == NULL)
      error (_("Cannot find GCC JIT context symbol.  dlsym reported: %s"),
 	    dlerror ());

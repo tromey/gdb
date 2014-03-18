@@ -170,6 +170,10 @@ struct gcc_context
 
 #define GCC_C_FE_VERSION 0
 
+/* The name of the .so that the compiler builds.  We dlopen this
+   later.  */
+#define GCC_C_FE_LIBCC libcc1.so
+
 /* The compiler exports a single initialization function.  This macro
    holds its name as a symbol.  */
 
