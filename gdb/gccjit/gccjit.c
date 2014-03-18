@@ -75,15 +75,14 @@ gcc_jit_command (char *arg, int from_tty)
 static struct gcc_context *
 load_libcc (void)
 {
-   void *handle;
-   struct gcc_context *(*func)(unsigned int);
-   struct gcc_context *context;
+  void *handle;
+  gcc_c_fe_context_function *func;
 
    /* gdb_dlopen and gdb_dlsym will call error () on an error, so no
       need to check value.  */
-   handle = gdb_dlopen (STRINGIFY (GCC_C_FE_LIBCC));
-   func = gdb_dlsym (handle, STRINGIFY (GCC_C_FE_CONTEXT));
-   return (*func) (GCC_C_FE_VERSION);
+  handle = gdb_dlopen (STRINGIFY (GCC_C_FE_LIBCC));
+  func = gdb_dlsym (handle, STRINGIFY (GCC_C_FE_CONTEXT));
+  return (*func) (GCC_C_FE_VERSION);
 }
 
 struct gcc_context *
