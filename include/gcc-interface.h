@@ -92,9 +92,19 @@ struct gcc_c_fe_interface
 
   unsigned int version;
 
+  void (*set_arguments) (struct gcc_context *self, int argc, char **argv);
+
+  void (*set_program_text) (struct gcc_context *self, const char *text);
+
   void (*set_binding_oracle) (struct gcc_context *self,
 			      gcc_c_oracle_function *oracle,
 			      void *datum);
+
+  /* Perform the compilation.  Return a filename if it was successful,
+     NULL otherwise.  The filename is malloc'd and ownership is
+     transferred to the caller.  */
+
+  char *(*compile) (struct gcc_context *self);
 
   gcc_decl (*build_decl) (struct gcc_context *self,
 			  const char *name,
