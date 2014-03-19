@@ -40,6 +40,20 @@ struct gdb_gcc_instance
   htab_t type_map;
 };
 
+/* Scope types enum.  List the types of scopes the compiler will
+   accept.  */
+enum gccjit_i_scope_types
+  {
+    /* A simple scope.  Just wrap an expression into an ordinary scope.  */
+    GCCJIT_I_SIMPLE_SCOPE = 1
+  };
+
+/* Define header and footers for different scopes.  Each HEADER and
+   FOOTER must be a complete string, including newlines and the
+   null-terminated byte.  */
+#define GCCJIT_I_SIMPLE_HEADER  "void _gdb_expr (void *_gdb_arg) {\n\0"
+#define GCCJIT_I_SIMPLE_FOOTER  "}\n\0"
+
 /* Convert a gdb type, TYPE, to a GCC type.  CONTEXT is used to do the
    actual conversion.  The new GCC type is returned.  */
 
