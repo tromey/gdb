@@ -234,9 +234,8 @@ copy_sections (bfd *abfd, asection *sect, void *data)
 
   if (0 != target_write_memory (bfd_get_section_vma (abfd, sect), sect_data,
 				bfd_get_section_size (sect)))
-    error (_("Cannot write JIT module \"%s\" section \"%s\": %s"),
-	   bfd_get_filename (abfd), bfd_get_section_name (abfd, sect),
-	   bfd_errmsg (bfd_get_error ()));
+    error (_("Cannot write JIT module \"%s\" section \"%s\"."),
+	   bfd_get_filename (abfd), bfd_get_section_name (abfd, sect));
 
   do_cleanups (cleanups);
 }
@@ -258,12 +257,14 @@ gdbjit_load (const char *object_file)
   char *filename, **matching;
   bfd *abfd;
   struct setup_sections_data setup_sections_data;
-  CORE_ADDR addr, func_addr;
+  CORE_ADDR addr, func_addr, got_start;
   struct objfile *objfile;
   struct bound_minimal_symbol bmsym;
   long storage_needed;
-  asymbol **symbol_table;
+  asymbol **symbol_table, **symp;
   long number_of_symbols;
+  struct type *dptr_type = builtin_type (target_gdbarch ())->builtin_data_ptr;
+  unsigned dptr_type_len = TYPE_LENGTH (dptr_type);
 
   filename = tilde_expand (object_file);
   cleanups = make_cleanup (xfree, filename);
@@ -285,13 +286,36 @@ gdbjit_load (const char *object_file)
   setup_sections_data.max_alignment = 1;
   bfd_map_over_sections (abfd, setup_sections, &setup_sections_data);
 
-  addr = gdbarch_infcall_mmap (target_gdbarch(), setup_sections_data.vma);
+  storage_needed = bfd_get_symtab_upper_bound (abfd);
+  if (storage_needed < 0)
+    error (_("Cannot read symbols of JIT module \"%s\": %s"),
+          bfd_get_filename (abfd), bfd_errmsg (bfd_get_error ()));
+
+  symbol_table = xmalloc (storage_needed);
+  make_cleanup (xfree, symbol_table);
+  number_of_symbols = bfd_canonicalize_symtab (abfd, symbol_table);
+  if (number_of_symbols < 0)
+    error (_("Cannot parse symbols of JIT module \"%s\": %s"),
+          bfd_get_filename (abfd), bfd_errmsg (bfd_get_error ()));
+
+  setup_sections_data.vma = ((setup_sections_data.vma + dptr_type_len - 1)
+			     & -(CORE_ADDR) dptr_type_len);
+  got_start = setup_sections_data.vma;
+  for (symp = symbol_table; symp < &symbol_table[number_of_symbols]; symp++)
+    {
+      asymbol *sym = *symp;
+      if (sym->flags == 0)
+	setup_sections_data.vma += dptr_type_len;
+    }
+
+  addr = gdbarch_infcall_mmap (target_gdbarch (), setup_sections_data.vma);
   if ((addr & (setup_sections_data.max_alignment - 1)) != 0)
     error (_("Inferior JIT module address %s not aligned to BFD required %s."),
 	   paddress (target_gdbarch (), addr),
 	   paddress (target_gdbarch (), setup_sections_data.max_alignment));
 
   bfd_map_over_sections (abfd, add_to_vma, &addr);
+  got_start += addr;
 
   /* SYMFILE_VERBOSE is not passed even if FROM_TTY, user is not interested in
      "Reading symbols from ..." message for automatically generated file.  */
@@ -301,22 +325,50 @@ gdbjit_load (const char *object_file)
   if (bmsym.minsym == NULL || MSYMBOL_TYPE (bmsym.minsym) == mst_file_text)
     error (_("Could not find symbol \"%s\" of JIT module \"%s\"."),
 	   GCCJIT_I_SIMPLE_FUNCNAME, filename);
+  func_addr = BMSYMBOL_VALUE_ADDRESS (bmsym);
 
-  storage_needed = bfd_get_symtab_upper_bound (abfd);
-  if (storage_needed < 0)
-    error (_("Cannot read symbols of JIT module \"%s\": %s"),
-	   bfd_get_filename (abfd), bfd_errmsg (bfd_get_error ()));
+  for (symp = symbol_table; symp < symbol_table + number_of_symbols; symp++)
+    {
+      asymbol *sym = *symp;
 
-  /* ABFD of OBJFILE will continue reference the memory.  */
-  symbol_table = obstack_alloc (&objfile->objfile_obstack, storage_needed);
-  number_of_symbols = bfd_canonicalize_symtab (abfd, symbol_table);
-  if (number_of_symbols < 0)
-    error (_("Cannot parse symbols of JIT module \"%s\": %s"),
-	   bfd_get_filename (abfd), bfd_errmsg (bfd_get_error ()));
+      if (sym->flags != 0)
+	continue;
+      sym->flags = BSF_GLOBAL;
+      sym->section = bfd_abs_section_ptr;
+      if (strcmp (sym->name, "_GLOBAL_OFFSET_TABLE_") ==0 )
+	sym->value=0;
+      else
+	{
+	  bmsym = lookup_minimal_symbol (sym->name, NULL, NULL);
+	  switch (bmsym.minsym == NULL
+		  ? mst_unknown : MSYMBOL_TYPE (bmsym.minsym))
+	    {
+	    case mst_text:
+	    case mst_data:
+	    case mst_bss:
+	    case mst_abs:
+	      {
+		gdb_byte buf[sizeof (LONGEST)];
+
+		sym->value = got_start;
+		store_typed_address (buf, dptr_type,
+				     BMSYMBOL_VALUE_ADDRESS (bmsym));
+		if (0 != target_write_memory (got_start, buf, dptr_type_len))
+		  error (_("Cannot store address to %s for JIT module \"%s\"."),
+			 paddress (target_gdbarch (), got_start), filename);
+		got_start += dptr_type_len;
+		break;
+	      }
+	    default:
+	      error (_("Could not find symbol \"%s\" for JIT module \"%s\"."),
+		     sym->name, filename);
+	    }
+	}
+    }
 
   bfd_map_over_sections (abfd, copy_sections, symbol_table);
 
-  call_func (BMSYMBOL_VALUE_ADDRESS (bmsym));
+  call_func (func_addr);
 
   do_cleanups (cleanups);
 }
