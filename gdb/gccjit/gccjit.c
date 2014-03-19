@@ -263,7 +263,6 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string)
   char *object_file = NULL;
   struct gdb_gcc_instance *compiler;
   struct cleanup *cleanup;
-  char *flags="-g";
 
   compiler = new_gdb_gcc_instance (get_gcc_jit_context ());
   cleanup = make_cleanup_delete_gdb_gcc_instance (compiler);
@@ -277,7 +276,7 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string)
   make_cleanup (xfree, code);
 
   /* TODO: Other compiler call backs go here.  */
-  compiler->fe->ops->set_arguments (compiler->fe, 1, &flags);
+  compiler->fe->ops->set_arguments (compiler->fe, 0, NULL);
   compiler->fe->ops->set_program_text (compiler->fe, code);
   object_file = compiler->fe->ops->compile (compiler->fe);
   fprintf_unfiltered (gdb_stdout, "object file produced: %s\n\n", object_file);
