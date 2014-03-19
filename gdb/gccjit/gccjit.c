@@ -31,6 +31,10 @@
 #include "gdb-dlfcn.h"
 #include "gccjit-internal.h"
 #include "gdbjit-load.h"
+#include "frame.h"
+#include "symfile.h"
+#include "source.h"
+#include "block.h"
 
 #define HAVE_GCC_JIT 1
 #define STR(x) #x
@@ -180,6 +184,25 @@ concat_expr_and_scope (struct command_line *cmd,
   return code;
 }
 
+/* Get the block and PC at which to evaluate an expression.  */
+
+static const struct block *
+get_expr_block_and_pc (CORE_ADDR *pc)
+{
+  const struct block *block = get_selected_block (pc);
+
+  if (block == NULL)
+    {
+      struct symtab_and_line cursal = get_current_source_symtab_and_line ();
+
+      if (cursal.symtab)
+	block = BLOCKVECTOR_BLOCK (BLOCKVECTOR (cursal.symtab), STATIC_BLOCK);
+      if (block != NULL)
+	*pc = BLOCK_START (block);
+    }
+
+  return block;
+}
 
 /* Public function that is called from jit_control case from the
    expression command.  GDB returns either a CMD, or a CMD_STRING, but
@@ -192,8 +215,12 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string)
   char *object_file = NULL;
   struct gdb_gcc_instance *compiler;
   struct cleanup *cleanup;
+  const struct block *expr_block;
+  CORE_ADDR expr_pc;
 
-  compiler = new_gdb_gcc_instance (get_gcc_jit_context ());
+  expr_block = get_expr_block_and_pc (&expr_pc);
+
+  compiler = new_gdb_gcc_instance (get_gcc_jit_context (), expr_block);
   cleanup = make_cleanup_delete_gdb_gcc_instance (compiler);
 
   if (cmd != NULL)

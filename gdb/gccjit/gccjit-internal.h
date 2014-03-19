@@ -66,9 +66,11 @@ extern void gcc_convert_symbol (void *datum, struct gcc_context *gcc_context,
 				const char *identifier);
 
 /* Instantiate a GDB object holding state for the GCC context FE.  The
-   new object is returned.  */
+   expression will be compiled as it appeared in the block B.  The new
+   object is returned.  */
 
-extern struct gdb_gcc_instance *new_gdb_gcc_instance (struct gcc_context *fe);
+extern struct gdb_gcc_instance *new_gdb_gcc_instance (struct gcc_context *fe,
+						      const struct block *b);
 
 /* Delete an object created by new_gdb_gcc_instance.  */
 

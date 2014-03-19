@@ -283,11 +283,12 @@ convert_type (struct gdb_gcc_instance *context, struct type *type)
 
 
 struct gdb_gcc_instance *
-new_gdb_gcc_instance (struct gcc_context *fe)
+new_gdb_gcc_instance (struct gcc_context *fe, const struct block *b)
 {
   struct gdb_gcc_instance *result = XCNEW (struct gdb_gcc_instance);
 
   result->fe = fe;
+  result->block = b;
   result->type_map = htab_create_alloc (10, hash_type_map_instance,
 					eq_type_map_instance,
 					xfree, xcalloc, xfree);
