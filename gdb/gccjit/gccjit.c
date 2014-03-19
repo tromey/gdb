@@ -273,6 +273,7 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string)
     code = concat_expr_and_scope (NULL, cmd_string, GCCJIT_I_SIMPLE_SCOPE);
   else
     error(_("Neither a simple expression, or a multi-line specified."));
+  make_cleanup (xfree, code);
 
   /* TODO: Other compiler call backs go here.  */
   compiler->fe->ops->set_arguments (compiler->fe, 0, NULL);
@@ -280,10 +281,11 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string)
   object_file = compiler->fe->ops->compile (compiler->fe);
   fprintf_unfiltered (gdb_stdout, "object file produced: %s\n\n", object_file);
   fprintf_unfiltered (gdb_stdout, "debug output:\n\n%s", code);
-  xfree (code);
 
   if (object_file)
     gdbjit_load (object_file);
+
+  do_cleanups (cleanup);
 }
 
 void
