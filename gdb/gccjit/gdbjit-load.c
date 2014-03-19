@@ -18,6 +18,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "gccjit-internal.h"
 #include "command.h"
 #include "value.h"
 #include "objfiles.h"
@@ -256,7 +257,6 @@ expression_load_command (char *args, int from_tty)
   bfd *abfd;
   struct setup_sections_data setup_sections_data;
   CORE_ADDR addr, func_addr;
-  const char func_name[] = "func";
   struct objfile *objfile;
   struct bound_minimal_symbol bmsym;
   long storage_needed;
@@ -295,10 +295,10 @@ expression_load_command (char *args, int from_tty)
      "Reading symbols from ..." message for automatically generated file.  */
   objfile = symbol_file_add_from_bfd (abfd, filename, 0, NULL, 0, NULL);
 
-  bmsym = lookup_minimal_symbol_text (func_name, objfile);
+  bmsym = lookup_minimal_symbol_text (GCCJIT_I_SIMPLE_FUNCNAME, objfile);
   if (bmsym.minsym == NULL || MSYMBOL_TYPE (bmsym.minsym) == mst_file_text)
     error (_("Could not find symbol \"%s\" of JIT module \"%s\"."),
-	   func_name, filename);
+	   GCCJIT_I_SIMPLE_FUNCNAME, filename);
 
   storage_needed = bfd_get_symtab_upper_bound (abfd);
   if (storage_needed < 0)

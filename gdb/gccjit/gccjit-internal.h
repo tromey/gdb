@@ -49,7 +49,9 @@ enum gccjit_i_scope_types
   };
 
 /* Define header and footers for different scopes.  */
-#define GCCJIT_I_SIMPLE_HEADER  "void _gdb_expr (void *_gdb_arg) {"
+#define GCCJIT_I_SIMPLE_FUNCNAME "_gdb_expr"
+#define GCCJIT_I_SIMPLE_HEADER  "void " GCCJIT_I_SIMPLE_FUNCNAME " " \
+				"(void *_gdb_arg) {"
 #define GCCJIT_I_SIMPLE_FOOTER  "}"
 
 /* Convert a gdb type, TYPE, to a GCC type.  CONTEXT is used to do the
