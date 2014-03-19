@@ -35,6 +35,8 @@
 #include "symfile.h"
 #include "source.h"
 #include "block.h"
+#include "macrotab.h"
+#include "macroscope.h"
 
 #define HAVE_GCC_JIT 1
 #define STR(x) #x
@@ -102,6 +104,58 @@ get_gcc_jit_context (void)
   return fe_context;
 }
 
+/* Write one macro definition.  */
+
+static void
+print_one_macro (const char *name, const struct macro_definition *macro,
+		 struct macro_source_file *source, int line,
+		 void *user_data)
+{
+  struct ui_file *file = user_data;
+
+  /* Don't print command-line defines.  They will be supplied another
+     way.  */
+  if (line == 0)
+    return;
+
+  fprintf_filtered (file, "#define %s", name);
+
+  if (macro->kind == macro_function_like)
+    {
+      int i;
+
+      fputs_filtered ("(", file);
+      for (i = 0; i < macro->argc; i++)
+	{
+	  fputs_filtered (macro->argv[i], file);
+	  if (i + 1 < macro->argc)
+	    fputs_filtered (", ", file);
+	}
+      fputs_filtered (")", file);
+    }
+
+  fprintf_filtered (file, " %s\n", macro->replacement);
+}
+
+/* Write macro definitions at PC to FILE.  */
+
+static void
+write_macro_definitions (const struct block *block, CORE_ADDR pc,
+			 struct ui_file *file)
+{
+  struct macro_scope *scope;
+
+  if (block != NULL)
+    scope = sal_macro_scope (find_pc_line (pc, 0));
+  else
+    scope = default_macro_scope ();
+  if (scope == NULL)
+    scope = user_macro_scope ();
+
+  if (scope != NULL && scope->file != NULL && scope->file->table != NULL)
+    macro_for_each_in_scope (scope->file, scope->line, print_one_macro, file);
+}
+
 /* Helper function to construct a header scope for a block of code.
    Takes a scope argument which selects the correct header to
    insert.  */
@@ -150,13 +204,17 @@ add_code_footer (enum gccjit_i_scope_types type, struct ui_file *buf)
 static char *
 concat_expr_and_scope (struct command_line *cmd,
 		       char *simple_string,
-		       enum gccjit_i_scope_types type)
+		       enum gccjit_i_scope_types type,
+		       const struct block *macro_block,
+		       CORE_ADDR macro_pc)
 {
   struct command_line *iter;
   struct ui_file *buf;
   char *code;
 
   buf = mem_fileopen ();
+
+  write_macro_definitions (macro_block, macro_pc, buf);
   add_code_header (type, buf);
 
   /* Annoyingly, GDB has two return modes for commands.  A multi line
@@ -224,9 +282,11 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string)
   cleanup = make_cleanup_delete_gdb_gcc_instance (compiler);
 
   if (cmd != NULL)
-    code = concat_expr_and_scope (cmd, NULL, GCCJIT_I_SIMPLE_SCOPE);
+    code = concat_expr_and_scope (cmd, NULL, GCCJIT_I_SIMPLE_SCOPE,
+				  expr_block, expr_pc);
   else if (cmd_string != NULL)
-    code = concat_expr_and_scope (NULL, cmd_string, GCCJIT_I_SIMPLE_SCOPE);
+    code = concat_expr_and_scope (NULL, cmd_string, GCCJIT_I_SIMPLE_SCOPE,
+				  expr_block, expr_pc);
   else
     error(_("Neither a simple expression, or a multi-line specified."));
   make_cleanup (xfree, code);
