@@ -110,6 +110,7 @@ struct gcc_c_fe_interface
 			  const char *name,
 			  enum gcc_c_symbol_kind sym_kind,
 			  gcc_type sym_type,
+			  unsigned long long address,
 			  const char *filename,
 			  unsigned int line_number);
 

@@ -46,6 +46,7 @@ convert_one_symbol (struct gdb_gcc_instance *context,
       unsigned short line = SYMBOL_LINE (sym);
       gcc_decl decl;
       enum gcc_c_symbol_kind kind;
+      CORE_ADDR addr = 0;
 
       switch (SYMBOL_CLASS (sym))
 	{
@@ -55,10 +56,12 @@ convert_one_symbol (struct gdb_gcc_instance *context,
 
 	case LOC_LABEL:
 	  kind = GCC_C_SYMBOL_LABEL;
+	  addr = SYMBOL_VALUE_ADDRESS (sym);
 	  break;
 
 	case LOC_BLOCK:
 	  kind = GCC_C_SYMBOL_FUNCTION;
+	  addr = BLOCK_START (SYMBOL_BLOCK_VALUE (sym));
 	  break;
 
 	case LOC_UNDEF:
@@ -72,12 +75,15 @@ convert_one_symbol (struct gdb_gcc_instance *context,
 
 	default:
 	  kind = GCC_C_SYMBOL_VARIABLE;
+	  /* FIXME: doesn't work for local and register variables
+	     yet.  */
+	  addr = SYMBOL_VALUE_ADDRESS (sym);
 	  break;
 	}
 
       decl = context->fe->ops->build_decl (context->fe,
 					   SYMBOL_NATURAL_NAME (sym), kind,
-					   sym_type, filename, line);
+					   sym_type, addr, filename, line);
 
       context->fe->ops->bind (context->fe, decl, is_global);
     }
