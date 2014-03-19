@@ -65,7 +65,7 @@ extern void gcc_convert_symbol (void *datum, struct gcc_context *gcc_context,
 				enum gcc_c_oracle_request request,
 				const char *identifier);
 
-/* Instantiate a GDB object holding state for the GCC context FE.  THe
+/* Instantiate a GDB object holding state for the GCC context FE.  The
    new object is returned.  */
 
 extern struct gdb_gcc_instance *new_gdb_gcc_instance (struct gcc_context *fe);
@@ -74,5 +74,6 @@ extern struct gdb_gcc_instance *new_gdb_gcc_instance (struct gcc_context *fe);
 
 extern void delete_gdb_gcc_instance (struct gdb_gcc_instance *context);
 
-extern struct gcc_context* get_gcc_jit_context (void);
+extern struct gcc_context *get_gcc_jit_context (void);
+
 #endif /* GDB_GCCJIT_GCCJIT_INTERNAL_H */
