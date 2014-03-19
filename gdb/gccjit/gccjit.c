@@ -35,8 +35,6 @@
 #define STR(x) #x
 #define STRINGIFY(x) STR(x)
 
-struct gcc_context *fe_context = NULL;
-
 /* Handle the input from the expression or expr command.  The
    "expression" command is used to evaluate an expression that may
    contain calls to the GCC JIT interface.  TODO: Initially all we
@@ -88,6 +86,8 @@ load_libcc (void)
 struct gcc_context *
 get_gcc_jit_context (void)
 {
+  struct gcc_context *fe_context = NULL;
+
   if (fe_context == NULL)
     {
       fe_context = load_libcc ();
@@ -260,9 +260,11 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string)
 {
   char *code;
   char *object_file = NULL;
+  struct gdb_gcc_instance *compiler;
+  struct cleanup *cleanup;
 
-  /* Load the context.  */
-  fe_context = get_gcc_jit_context ();
+  compiler = new_gdb_gcc_instance (get_gcc_jit_context ());
+  cleanup = make_cleanup_delete_gdb_gcc_instance (compiler);
 
   if (cmd != NULL)
     code = concat_expr_and_scope (cmd, NULL, GCCJIT_I_SIMPLE_SCOPE);
@@ -272,9 +274,9 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string)
     error(_("Neither a simple expression, or a multi-line specified."));
 
   /* TODO: Other compiler call backs go here.  */
-  fe_context->ops->set_arguments (fe_context, 0, NULL);
-  fe_context->ops->set_program_text (fe_context, code);
-  object_file = fe_context->ops->compile (fe_context);
+  compiler->fe->ops->set_arguments (compiler->fe, 0, NULL);
+  compiler->fe->ops->set_program_text (compiler->fe, code);
+  object_file = compiler->fe->ops->compile (compiler->fe);
   fprintf_unfiltered (gdb_stdout, "object file produced: %s\n\n", object_file);
   fprintf_unfiltered (gdb_stdout, "debug output:\n\n%s", code);
   xfree (code);

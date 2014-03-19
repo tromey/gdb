@@ -291,6 +291,9 @@ new_gdb_gcc_instance (struct gcc_context *fe)
   result->type_map = htab_create_alloc (10, hash_type_map_instance,
 					eq_type_map_instance,
 					xfree, xcalloc, xfree);
+
+  fe->ops->set_binding_oracle (fe, gcc_convert_symbol, result);
+
   return result;
 }
 
@@ -299,4 +302,16 @@ delete_gdb_gcc_instance (struct gdb_gcc_instance *context)
 {
   htab_delete (context->type_map);
   xfree (context);
+}
+
+static void
+do_delete_gdb_gcc_instance (void *p)
+{
+  delete_gdb_gcc_instance (p);
+}
+
+struct cleanup *
+make_cleanup_delete_gdb_gcc_instance (struct gdb_gcc_instance *context)
+{
+  return make_cleanup (do_delete_gdb_gcc_instance, context);
 }
