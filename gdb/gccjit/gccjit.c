@@ -105,12 +105,17 @@ static char *
 add_code_header (enum gccjit_i_scope_types type)
 {
   char *header;
+  int len;
 
   switch (type)
   {
   case GCCJIT_I_SIMPLE_SCOPE:
-    header = xmalloc (strlen (GCCJIT_I_SIMPLE_HEADER) + 1);
+    len = strlen (GCCJIT_I_SIMPLE_HEADER);
+
+    header = xmalloc (len + 2);
     strcpy (header, GCCJIT_I_SIMPLE_HEADER);
+    header[len++] = '\n';
+    header[len++] = '\0';
     return header;
   default:
     /* TODO: Error case, but do nothing for now.  */
@@ -126,12 +131,18 @@ static char *
 add_code_footer (enum gccjit_i_scope_types type)
 {
   char *footer;
+  int len;
 
   switch (type)
   {
   case GCCJIT_I_SIMPLE_SCOPE:
-    footer = xmalloc (strlen (GCCJIT_I_SIMPLE_FOOTER) + 1);
+    len = strlen (GCCJIT_I_SIMPLE_FOOTER);
+
+    footer = xmalloc (len + 2);
     strcpy (footer, GCCJIT_I_SIMPLE_FOOTER);
+    footer[len++] = '\n';
+    footer[len++] = '\0';
+
     return footer;
   default:
     /* TODO: Error case, but do nothing for now.  */
@@ -182,12 +193,12 @@ concat_expr_and_scope (struct command_line *cmd,
      line.  Cope with both.  */
   if (simple_string != NULL)
     {
-      /* Add space for \n  */
-      int len = strlen (simple_string) + 2;
+      int len = strlen (simple_string);
 
-      body = xmalloc (len);
-      strcat (body, simple_string);
-      strcat (body, "\n");
+      body = xmalloc (len + 2);
+      strcpy (body, simple_string);
+      body[len++] = '\n';
+      body[len++] = '\0';
     }
   else if (cmd != NULL)
     {
@@ -207,30 +218,34 @@ concat_expr_and_scope (struct command_line *cmd,
 	{
 	  int len = strlen (iter->line);
 
-	  strcat (body, iter->line);
+	  strcpy (&body[location], iter->line);
 	  location += len;
-	  strcat (body, "\n");
+	  body[location++] = '\n';
 	}
+      body[location++] = '\0';
     }
 
   /* Finally, assemble the whole scope.  */
   size += strlen (body);
-  size++;
-  code = xmalloc (size);
+  code = xmalloc (size + 1);
+  splice = 0;
 
   /* Insert the header.  */
-  strcat (code, header);
+  strcpy  (&code[splice], header);
   splice += strlen (header);
   xfree (header);
 
   /* Insert the body.  */
-  strcat (code, body);
+  strcpy  (&code[splice], body);
   splice += strlen (body);
   xfree (body);
 
   /* And footer.  */
-  strcat (code,footer);
+  strcpy  (&code[splice], footer);
+  splice += strlen (footer);
   xfree (footer);
+
+  code[splice++] = '\0';
 
   return code;
 }

@@ -48,11 +48,9 @@ enum gccjit_i_scope_types
     GCCJIT_I_SIMPLE_SCOPE = 1
   };
 
-/* Define header and footers for different scopes.  Each HEADER and
-   FOOTER must be a complete string, including newlines and the
-   null-terminated byte.  */
-#define GCCJIT_I_SIMPLE_HEADER  "void _gdb_expr (void *_gdb_arg) {\n\0"
-#define GCCJIT_I_SIMPLE_FOOTER  "}\n\0"
+/* Define header and footers for different scopes.  */
+#define GCCJIT_I_SIMPLE_HEADER  "void _gdb_expr (void *_gdb_arg) {"
+#define GCCJIT_I_SIMPLE_FOOTER  "}"
 
 /* Convert a gdb type, TYPE, to a GCC type.  CONTEXT is used to do the
    actual conversion.  The new GCC type is returned.  */
