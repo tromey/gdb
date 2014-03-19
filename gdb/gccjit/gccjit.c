@@ -30,6 +30,7 @@
 #include "gccjit/gccjit.h"
 #include "gdb-dlfcn.h"
 #include "gccjit-internal.h"
+#include "gdbjit-load.h"
 
 #define HAVE_GCC_JIT 1
 #define STR(x) #x
@@ -280,6 +281,9 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string)
   fprintf_unfiltered (gdb_stdout, "object file produced: %s\n\n", object_file);
   fprintf_unfiltered (gdb_stdout, "debug output:\n\n%s", code);
   xfree (code);
+
+  if (object_file)
+    gdbjit_load (object_file);
 }
 
 void

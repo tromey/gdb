@@ -18,6 +18,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+#include "gdbjit-load.h"
 #include "gccjit-internal.h"
 #include "command.h"
 #include "value.h"
@@ -26,6 +27,7 @@
 #include "gdbcore.h"
 #include "readline/tilde.h"
 #include "bfdlink.h"
+#include "gdbcmd.h"
 
 struct setup_sections_data
 {
@@ -249,8 +251,8 @@ call_func (CORE_ADDR func_addr)
   call_function_by_hand (func_val, 0, NULL);
 }
 
-static void
-expression_load_command (char *args, int from_tty)
+void
+gdbjit_load (const char *object_file)
 {
   struct cleanup *cleanups;
   char *filename, **matching;
@@ -263,7 +265,7 @@ expression_load_command (char *args, int from_tty)
   asymbol **symbol_table;
   long number_of_symbols;
 
-  filename = tilde_expand (args);
+  filename = tilde_expand (object_file);
   cleanups = make_cleanup (xfree, filename);
 
   abfd = gdb_bfd_open (filename, gnutarget, -1);
@@ -319,11 +321,20 @@ expression_load_command (char *args, int from_tty)
   do_cleanups (cleanups);
 }
 
+static void
+expression_load_command (char *args, int from_tty)
+{
+  if (args == NULL || *args == 0)
+    error (_("Argument required."));
+  gdbjit_load (args);
+}
+
 extern initialize_file_ftype _initialize_gdbjit_load; /* -Wmissing-prototypes */
 
 void
 _initialize_gdbjit_load (void)
 {
-  add_com ("expression-load", class_files, expression_load_command,
-	   _("Load shared object library symbols for files matching REGEXP."));
+  add_cmd ("expression-load", class_maintenance, expression_load_command,
+	   _("Load shared object library symbols for files matching REGEXP."),
+	   &maintenancelist);
 }

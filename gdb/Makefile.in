@@ -289,7 +289,8 @@ SUBDIR_GCC_JIT_SRCS = \
 	gccjit/gccjit.c \
 	gccjit/gcc-symbols.c \
 	gccjit/gcc-types.c \
-	gccjit/gdbjit-load.c
+	gccjit/gdbjit-load.c \
+	gccjit/gdbjit-load.h
 
 SUBDIR_GCC_JIT_DEPS =
 SUBDIR_GCC_JIT_LDFLAGS=
