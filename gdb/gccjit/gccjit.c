@@ -245,6 +245,7 @@ void
 eval_gcc_jit_command (struct command_line *cmd, char *cmd_string)
 {
   char *code;
+  char *object_file = NULL;
 
   /* Load the context.  */
   fe_context = get_gcc_jit_context ();
@@ -257,6 +258,10 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string)
     error(_("Neither a simple expression, or a multi-line specified."));
 
   /* TODO: Other compiler call backs go here.  */
+  fe_context->ops->set_arguments (fe_context, 0, NULL);
+  fe_context->ops->set_program_text (fe_context, code);
+  object_file = fe_context->ops->compile (fe_context);
+  fprintf_unfiltered (gdb_stdout, "object file produced: %s\n\n", object_file);
   fprintf_unfiltered (gdb_stdout, "debug output:\n\n%s", code);
   xfree (code);
 }
