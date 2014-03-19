@@ -102,25 +102,18 @@ get_gcc_jit_context (void)
    Takes a scope argument which selects the correct header to
    insert.  */
 
-static char *
-add_code_header (enum gccjit_i_scope_types type)
+static void
+add_code_header (enum gccjit_i_scope_types type, struct ui_file *buf)
 {
-  char *header;
-  int len;
-
   switch (type)
   {
   case GCCJIT_I_SIMPLE_SCOPE:
-    len = strlen (GCCJIT_I_SIMPLE_HEADER);
-
-    header = xmalloc (len + 2);
-    strcpy (header, GCCJIT_I_SIMPLE_HEADER);
-    header[len++] = '\n';
-    header[len++] = '\0';
-    return header;
+    fputs_unfiltered (GCCJIT_I_SIMPLE_HEADER, buf);
+    fputs_unfiltered ("\n", buf);
+    break;
   default:
+    break;
     /* TODO: Error case, but do nothing for now.  */
-    return NULL;
   }
 }
 
@@ -128,26 +121,18 @@ add_code_header (enum gccjit_i_scope_types type)
    Takes a scope argument which selects the correct footer to
    insert.  */
 
-static char *
-add_code_footer (enum gccjit_i_scope_types type)
+static void
+add_code_footer (enum gccjit_i_scope_types type, struct ui_file *buf)
 {
-  char *footer;
-  int len;
-
   switch (type)
   {
   case GCCJIT_I_SIMPLE_SCOPE:
-    len = strlen (GCCJIT_I_SIMPLE_FOOTER);
-
-    footer = xmalloc (len + 2);
-    strcpy (footer, GCCJIT_I_SIMPLE_FOOTER);
-    footer[len++] = '\n';
-    footer[len++] = '\0';
-
-    return footer;
+    fputs_unfiltered (GCCJIT_I_SIMPLE_FOOTER, buf);
+    fputs_unfiltered ("\n", buf);
+    break;
   default:
     /* TODO: Error case, but do nothing for now.  */
-    return NULL;
+    break;
   }
 }
 
@@ -164,29 +149,11 @@ concat_expr_and_scope (struct command_line *cmd,
 		       enum gccjit_i_scope_types type)
 {
   struct command_line *iter;
-  char *code = NULL;
-  char *body = NULL;
-  char *header;
-  char *footer;
-  int size = 0;
-  int splice = 0;
+  struct ui_file *buf;
+  char *code;
 
-  /* For development, build the string pedantically, mallocing each
-     section and joining them together. Add in \n, and \0 for the body
-     so strlen works.  The header and footer must already have \n\0
-     included in the declarations.  */
-  header = add_code_header (type);
-  if (header == NULL)
-    error(_("Incorrect header scope type defined."));
-
-  footer = add_code_footer (type);
-  if (footer == NULL)
-    {
-      xfree (header);
-      error(_("Incorrect footer scope type defined."));
-    }
-
-  size = strlen (header) + strlen (footer);
+  buf = mem_fileopen ();
+  add_code_header (type, buf);
 
   /* Annoyingly, GDB has two return modes for commands.  A multi line
      command returns a linked list of lines (a simplification, but
@@ -194,60 +161,22 @@ concat_expr_and_scope (struct command_line *cmd,
      line.  Cope with both.  */
   if (simple_string != NULL)
     {
-      int len = strlen (simple_string);
-
-      body = xmalloc (len + 2);
-      strcpy (body, simple_string);
-      body[len++] = '\n';
-      body[len++] = '\0';
+      fputs_unfiltered (simple_string, buf);
+      fputs_unfiltered ("\n", buf);
     }
   else if (cmd != NULL)
     {
-      int body_size = 0;
-      int location = 0;
-
-      /* To avoid re-mallocing. just iterate through the cmd list structure
-	 to get a final size for the body. Add in space for \n per
-	 line, and \0 at the end.  */
-      for (iter = cmd->body_list[0]; iter; iter = iter->next)
-	body_size += strlen (iter->line) + 1;
-
-      body = xmalloc (body_size + 1);
-
       /* Build Body. */
       for (iter = cmd->body_list[0]; iter; iter = iter->next)
 	{
-	  int len = strlen (iter->line);
-
-	  strcpy (&body[location], iter->line);
-	  location += len;
-	  body[location++] = '\n';
+	  fputs_unfiltered (iter->line, buf);
+	  fputs_unfiltered ("\n", buf);
 	}
-      body[location++] = '\0';
     }
 
-  /* Finally, assemble the whole scope.  */
-  size += strlen (body);
-  code = xmalloc (size + 1);
-  splice = 0;
-
-  /* Insert the header.  */
-  strcpy  (&code[splice], header);
-  splice += strlen (header);
-  xfree (header);
-
-  /* Insert the body.  */
-  strcpy  (&code[splice], body);
-  splice += strlen (body);
-  xfree (body);
-
-  /* And footer.  */
-  strcpy  (&code[splice], footer);
-  splice += strlen (footer);
-  xfree (footer);
-
-  code[splice++] = '\0';
-
+  add_code_footer (type, buf);
+  code = ui_file_xstrdup (buf, NULL);
+  ui_file_delete (buf);
   return code;
 }
 
