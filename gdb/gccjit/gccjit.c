@@ -109,7 +109,7 @@ add_code_header (enum gccjit_i_scope_types type)
   switch (type)
   {
   case GCCJIT_I_SIMPLE_SCOPE:
-    header = xmalloc (strlen (GCCJIT_I_SIMPLE_HEADER));
+    header = xmalloc (strlen (GCCJIT_I_SIMPLE_HEADER) + 1);
     strcpy (header, GCCJIT_I_SIMPLE_HEADER);
     return header;
   default:
@@ -130,7 +130,7 @@ add_code_footer (enum gccjit_i_scope_types type)
   switch (type)
   {
   case GCCJIT_I_SIMPLE_SCOPE:
-    footer = xmalloc (strlen (GCCJIT_I_SIMPLE_FOOTER));
+    footer = xmalloc (strlen (GCCJIT_I_SIMPLE_FOOTER) + 1);
     strcpy (footer, GCCJIT_I_SIMPLE_FOOTER);
     return footer;
   default:
@@ -182,13 +182,12 @@ concat_expr_and_scope (struct command_line *cmd,
      line.  Cope with both.  */
   if (simple_string != NULL)
     {
-      /* Add space for \n\0  */
+      /* Add space for \n  */
       int len = strlen (simple_string) + 2;
 
       body = xmalloc (len);
-      strcpy (body, simple_string);
-      body[len++] = '\n';
-      body[len++] = '\0';
+      strcat (body, simple_string);
+      strcat (body, "\n");
     }
   else if (cmd != NULL)
     {
@@ -208,29 +207,29 @@ concat_expr_and_scope (struct command_line *cmd,
 	{
 	  int len = strlen (iter->line);
 
-	  strcpy (&body[location], iter->line);
+	  strcat (body, iter->line);
 	  location += len;
-	  body[location++] = '\n';
+	  strcat (body, "\n");
 	}
-      body[location++] = '\0';
     }
 
   /* Finally, assemble the whole scope.  */
   size += strlen (body);
+  size++;
   code = xmalloc (size);
 
   /* Insert the header.  */
-  strcpy (code, header);
+  strcat (code, header);
   splice += strlen (header);
   xfree (header);
 
   /* Insert the body.  */
-  strcpy (&code[splice], body);
+  strcat (code, body);
   splice += strlen (body);
   xfree (body);
 
   /* And footer.  */
-  strcpy (&code[splice],footer);
+  strcat (code,footer);
   xfree (footer);
 
   return code;
