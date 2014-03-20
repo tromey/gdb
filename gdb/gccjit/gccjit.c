@@ -202,7 +202,7 @@ add_semicolon_if_needed (char *simple_string, struct ui_file *buf)
   int len = strlen (simple_string) - 1;
   if (simple_string[0] != '#' && simple_string[len] != '}'
       && simple_string[len] != ';')
-      fputs_unfiltered(";", buf);
+      fputs_unfiltered (";", buf);
 }
 
 /* Helper function to take an expression and wrap it in a scope for
@@ -306,7 +306,7 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string)
     code = concat_expr_and_scope (NULL, cmd_string, GCCJIT_I_SIMPLE_SCOPE,
 				  expr_block, expr_pc);
   else
-    error(_("Neither a simple expression, or a multi-line specified."));
+    error (_("Neither a simple expression, or a multi-line specified."));
   make_cleanup (xfree, code);
 
   /* Call the compiler and start the compilation process.  */
