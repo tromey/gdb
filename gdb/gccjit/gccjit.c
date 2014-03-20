@@ -192,6 +192,19 @@ add_code_footer (enum gccjit_i_scope_types type, struct ui_file *buf)
   }
 }
 
+/* Helper process for single line expressions that will add a
+   complimentary semi-colon at the end of the string if one has not
+   been already specified.  Computes a few simple rules for
+   dis-allowable scenarios.  */
+static void
+add_semicolon_if_needed (char *simple_string, struct ui_file *buf)
+{
+  int len = strlen (simple_string) - 1;
+  if (simple_string[0] != '#' && simple_string[len] != '}'
+      && simple_string[len] != ';')
+      fputs_unfiltered(";", buf);
+}
+
 /* Helper function to take an expression and wrap it in a scope for
    the compiler.  CMD is populated for a multi-line expression, while
    SIMPLE_STRING is populated if the expression is on one single line.
@@ -222,6 +235,7 @@ concat_expr_and_scope (struct command_line *cmd,
   if (simple_string != NULL)
     {
       fputs_unfiltered (simple_string, buf);
+      add_semicolon_if_needed (simple_string, buf);
       fputs_unfiltered ("\n", buf);
     }
   else if (cmd != NULL)
