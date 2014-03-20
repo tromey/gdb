@@ -73,6 +73,10 @@ extern void gcc_convert_symbol (void *datum, struct gcc_context *gcc_context,
 				enum gcc_c_oracle_request request,
 				const char *identifier);
 
+/* A callback suitable for use as the GCC C address oracle.  */
+
+extern gcc_c_symbol_address_function gcc_symbol_address;
+
 /* Instantiate a GDB object holding state for the GCC context FE.  The
    expression will be compiled as it appeared in the block B.  The new
    object is returned.  */

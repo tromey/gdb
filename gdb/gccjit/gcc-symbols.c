@@ -24,6 +24,7 @@
 #include "symtab.h"
 #include "parser-defs.h"
 #include "block.h"
+#include "objfiles.h"
 
 static void
 convert_one_symbol (struct gdb_gcc_instance *context,
@@ -149,4 +150,24 @@ gcc_convert_symbol (void *datum,
     }
 
   convert_one_symbol (context, sym, 0);
+}
+
+gcc_address
+gcc_symbol_address (void *datum, struct gcc_context *gcc_context,
+		    const char *identifier)
+{
+  struct gdb_gcc_instance *context = datum;
+  struct symbol *sym;
+  struct bound_minimal_symbol msym;
+
+  /* We only need global functions here.  */
+  sym = lookup_symbol (identifier, NULL, VAR_DOMAIN, NULL);
+  if (sym != NULL && SYMBOL_CLASS (sym) == LOC_BLOCK)
+    return BLOCK_START (SYMBOL_BLOCK_VALUE (sym));
+
+  msym = lookup_bound_minimal_symbol (identifier);
+  if (msym.minsym != NULL)
+    return BMSYMBOL_VALUE_ADDRESS (msym);
+
+  return 0;
 }

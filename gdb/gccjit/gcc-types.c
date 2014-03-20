@@ -293,7 +293,7 @@ new_gdb_gcc_instance (struct gcc_context *fe, const struct block *b)
 					eq_type_map_instance,
 					xfree, xcalloc, xfree);
 
-  fe->ops->set_binding_oracle (fe, gcc_convert_symbol, result);
+  fe->ops->set_callbacks (fe, gcc_convert_symbol, gcc_symbol_address, result);
 
   return result;
 }

@@ -29,6 +29,10 @@ union tree_node;
 typedef union tree_node *gcc_type;
 typedef union tree_node *gcc_decl;
 
+/* An address in the inferior.  */
+
+typedef unsigned long long gcc_address;
+
 struct gcc_context;
 
 enum gcc_qualifiers
@@ -89,6 +93,13 @@ typedef void (gcc_c_oracle_function) (void *datum,
 				      enum gcc_c_oracle_request request,
 				      const char *identifier);
 
+/* The type of the function called by GCC to ask GDB for a symbol's
+   address.  This should return 0 if the address is not known.  */
+
+typedef gcc_address gcc_c_symbol_address_function (void *datum,
+						   struct gcc_context *context,
+						   const char *identifier);
+
 /* The operations defined by the GCC API.  This is the vtable for the
    real context structure which is passed around.  */
 
@@ -112,16 +123,25 @@ struct gcc_c_fe_interface
 
   void (*set_program_text) (struct gcc_context *self, const char *text);
 
-  /* Set the binding oracle for this context.  The binding oracle is
-     called whenever the C parser needs to look up a symbol.  This
-     gives the caller a chance to lazily instantiate symbols using
-     other parts of the gcc_c_fe_interface API.  DATUM is an arbitrary
-     piece of data that is passed back verbatim to the oracle in
-     requests.  */
+  /* Set the callbacks for this context.
 
-  void (*set_binding_oracle) (struct gcc_context *self,
-			      gcc_c_oracle_function *oracle,
-			      void *datum);
+     The binding oracle is called whenever the C parser needs to look
+     up a symbol.  This gives the caller a chance to lazily
+     instantiate symbols using other parts of the gcc_c_fe_interface
+     API.
+
+     The address oracle is called whenever the C parser needs to look
+     up a symbol.  This is only called for symbols not provided by the
+     symbol oracle -- that is, just built-in functions where GCC
+     provides the declaration.
+
+     DATUM is an arbitrary piece of data that is passed back verbatim
+     to the callbakcs in requests.  */
+
+  void (*set_callbacks) (struct gcc_context *self,
+			 gcc_c_oracle_function *binding_oracle,
+			 gcc_c_symbol_address_function *address_oracle,
+			 void *datum);
 
   /* Perform the compilation.  Return a filename if it was successful,
      NULL otherwise.  The filename is malloc'd and ownership is
@@ -144,7 +164,7 @@ struct gcc_c_fe_interface
 			  const char *name,
 			  enum gcc_c_symbol_kind sym_kind,
 			  gcc_type sym_type,
-			  unsigned long long address,
+			  gcc_address address,
 			  const char *filename,
 			  unsigned int line_number);
 
