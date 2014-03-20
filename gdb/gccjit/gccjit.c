@@ -86,20 +86,15 @@ load_libcc (void)
   return (*func) (GCC_C_FE_VERSION);
 }
 
-/* Return the GCC FE context.  This function operates lazily, and the
-   actual dlopen and dlsym is only called once.  Other times we just
-   returned the previous context.  */
+/* Return the GCC FE context.  */
 
-struct gcc_context *
+static struct gcc_context *
 get_gcc_jit_context (void)
 {
-  struct gcc_context *fe_context = NULL;
+  struct gcc_context *fe_context;
 
-  if (fe_context == NULL)
-    {
-      fe_context = load_libcc ();
-      gdb_assert (fe_context != NULL);
-    }
+  fe_context = load_libcc ();
+  gdb_assert (fe_context != NULL);
 
   return fe_context;
 }
@@ -199,7 +194,9 @@ add_code_footer (enum gccjit_i_scope_types type, struct ui_file *buf)
    SIMPLE_STRING is populated if the expression is on one single line.
    TYPE denotes the scope type to use.  Either CMD must be NULL and
    SIMPLE_STRING populated (the two are mutually exclusive), or
-   vice-versa.  */
+   vice-versa.  MACRO_BLOCK denotes the block relevant contextually to
+   the inferior when the expression was created, and MACRO_PC
+   indicates the value of $PC.  */
 
 static char *
 concat_expr_and_scope (struct command_line *cmd,
@@ -217,10 +214,8 @@ concat_expr_and_scope (struct command_line *cmd,
   write_macro_definitions (macro_block, macro_pc, buf);
   add_code_header (type, buf);
 
-  /* Annoyingly, GDB has two return modes for commands.  A multi line
-     command returns a linked list of lines (a simplification, but
-     that is essentially what it is), or a char * string for a single
-     line.  Cope with both.  */
+  /* The expression was a single string, I.E. "expression z=i;".  Just
+     write this directly.  */
   if (simple_string != NULL)
     {
       fputs_unfiltered (simple_string, buf);
@@ -228,7 +223,8 @@ concat_expr_and_scope (struct command_line *cmd,
     }
   else if (cmd != NULL)
     {
-      /* Build Body. */
+      /* Iterate over each line of the multi-line command writing each
+	 line to the buffer unaltered. */
       for (iter = cmd->body_list[0]; iter; iter = iter->next)
 	{
 	  fputs_unfiltered (iter->line, buf);
@@ -258,11 +254,13 @@ get_expr_block_and_pc (CORE_ADDR *pc)
       if (block != NULL)
 	*pc = BLOCK_START (block);
     }
+  else
+    *pc = BLOCK_START (block);
 
   return block;
 }
 
-/* Public function that is called from jit_control case from the
+/* Public function that is called from jit_control case in the
    expression command.  GDB returns either a CMD, or a CMD_STRING, but
    never both.  */
 
@@ -274,13 +272,16 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string)
   struct gdb_gcc_instance *compiler;
   struct cleanup *cleanup;
   const struct block *expr_block;
-  CORE_ADDR expr_pc;
+  CORE_ADDR expr_pc = 0;
 
   expr_block = get_expr_block_and_pc (&expr_pc);
 
+  /* Set up instance and context for the compiler.  */
   compiler = new_gdb_gcc_instance (get_gcc_jit_context (), expr_block);
   cleanup = make_cleanup_delete_gdb_gcc_instance (compiler);
 
+  /* From the provided expression, build a scope to pass to the
+     compiler.  */
   if (cmd != NULL)
     code = concat_expr_and_scope (cmd, NULL, GCCJIT_I_SIMPLE_SCOPE,
 				  expr_block, expr_pc);
@@ -291,13 +292,14 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string)
     error(_("Neither a simple expression, or a multi-line specified."));
   make_cleanup (xfree, code);
 
-  /* TODO: Other compiler call backs go here.  */
+  /* Call the compiler and start the compilation process.  */
   compiler->fe->ops->set_arguments (compiler->fe, 0, NULL);
   compiler->fe->ops->set_program_text (compiler->fe, code);
   object_file = compiler->fe->ops->compile (compiler->fe);
   fprintf_unfiltered (gdb_stdout, "object file produced: %s\n\n", object_file);
   fprintf_unfiltered (gdb_stdout, "debug output:\n\n%s", code);
 
+  /* Execute object code returned from compiler.  */
   if (object_file)
     gdbjit_load (object_file);
 
