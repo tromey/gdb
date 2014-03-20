@@ -40,15 +40,23 @@ struct gdb_gcc_instance
   htab_t type_map;
 };
 
-/* Scope types enum.  List the types of scopes the compiler will
+/* Scope types enumerator.  List the types of scopes the compiler will
    accept.  */
+
 enum gccjit_i_scope_types
   {
-    /* A simple scope.  Just wrap an expression into an ordinary scope.  */
+    /* A simple scope.  Wrap an expression into a simple scope that
+       takes no arguments, returns no value, and uses the generic
+       function name "_gdb_expr". */
+
     GCCJIT_I_SIMPLE_SCOPE = 1
   };
 
 /* Define header and footers for different scopes.  */
+
+/* A simple scope just declares a function named "_gdb_expr", takes no
+   arguments and returns no value.  */
+
 #define GCCJIT_I_SIMPLE_FUNCNAME "_gdb_expr"
 #define GCCJIT_I_SIMPLE_HEADER  "void " GCCJIT_I_SIMPLE_FUNCNAME " (void) {"
 #define GCCJIT_I_SIMPLE_FOOTER  "}"
