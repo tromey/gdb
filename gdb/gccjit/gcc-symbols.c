@@ -32,7 +32,10 @@ convert_one_symbol (struct gdb_gcc_instance *context,
 {
   gcc_type sym_type;
 
-  sym_type = convert_type (context, SYMBOL_TYPE (sym));
+  if (SYMBOL_CLASS (sym) == LOC_LABEL)
+    sym_type = NULL;
+  else
+    sym_type = convert_type (context, SYMBOL_TYPE (sym));
 
   if (SYMBOL_DOMAIN (sym) == STRUCT_DOMAIN)
     {
