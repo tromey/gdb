@@ -38,6 +38,19 @@
 #include "macrotab.h"
 #include "macroscope.h"
 
+
+
+static int gccjit_debug;
+
+static void
+show_gccjit_debug (struct ui_file *file, int from_tty,
+		   struct cmd_list_element *c, const char *value)
+{
+  fprintf_filtered (file, _("GCC JIT debugging is %s.\n"), value);
+}
+
+
+
 #define HAVE_GCC_JIT 1
 #define STR(x) #x
 #define STRINGIFY(x) STR(x)
@@ -312,9 +325,14 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string)
   /* Call the compiler and start the compilation process.  */
   compiler->fe->ops->set_arguments (compiler->fe, 0, NULL);
   compiler->fe->ops->set_program_text (compiler->fe, code);
-  object_file = compiler->fe->ops->compile (compiler->fe);
-  fprintf_unfiltered (gdb_stdout, "object file produced: %s\n\n", object_file);
-  fprintf_unfiltered (gdb_stdout, "debug output:\n\n%s", code);
+  object_file = compiler->fe->ops->compile (compiler->fe, gccjit_debug);
+
+  if (gccjit_debug)
+    {
+      fprintf_unfiltered (gdb_stdout, "object file produced: %s\n\n",
+			  object_file);
+      fprintf_unfiltered (gdb_stdout, "debug output:\n\n%s", code);
+    }
 
   /* Execute object code returned from compiler.  */
   if (object_file)
@@ -352,4 +370,11 @@ This command is only a placeholder.")
 #endif /* HAVE_GCC_JIT */
 	   );
   add_com_alias ("expr", "expression", class_obscure, 1);
+
+  add_setshow_boolean_cmd ("gccjit", class_maintenance, &gccjit_debug, _("\
+Set GCC JIT debugging."), _("\
+Show GCC JIT debugging."), _("\
+When on, GCC JIT debugging is enabled."),
+			   NULL, show_gccjit_debug,
+			   &setdebuglist, &showdebuglist);
 }

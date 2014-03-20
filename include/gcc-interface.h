@@ -145,9 +145,10 @@ struct gcc_c_fe_interface
 
   /* Perform the compilation.  Return a filename if it was successful,
      NULL otherwise.  The filename is malloc'd and ownership is
-     transferred to the caller.  */
+     transferred to the caller.  VERBOSE can be set to cause GCC to
+     print some information as it works.  */
 
-  char *(*compile) (struct gcc_context *self);
+  char *(*compile) (struct gcc_context *self, int /* bool */ verbose);
 
   /* Create a new "decl" in GCC.  A decl is a declaration, basically a
      kind of symbol.
