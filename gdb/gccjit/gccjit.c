@@ -91,10 +91,13 @@ load_libcc (void)
 static struct gcc_context *
 get_gcc_jit_context (void)
 {
-  struct gcc_context *fe_context;
+  static struct gcc_context *fe_context;
 
-  fe_context = load_libcc ();
-  gdb_assert (fe_context != NULL);
+  if (fe_context == NULL)
+    {
+      fe_context = load_libcc ();
+      gdb_assert (fe_context != NULL);
+    }
 
   return fe_context;
 }
