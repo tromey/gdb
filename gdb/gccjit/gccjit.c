@@ -243,6 +243,8 @@ concat_expr_and_scope (struct command_line *cmd,
   write_macro_definitions (macro_block, macro_pc, buf);
   add_code_header (type, buf);
 
+  fputs_unfiltered ("#line 1 \"gdb expression\"\n", buf);
+
   /* The expression was a single string, I.E. "expression z=i;".  Just
      write this directly.  */
   if (simple_string != NULL)
