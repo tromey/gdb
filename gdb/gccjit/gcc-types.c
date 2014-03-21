@@ -203,7 +203,7 @@ convert_qualified (struct gdb_gcc_instance *context, struct type *type)
   gcc_type unqual_converted;
   int quals = 0;
 
-  unqual_converted = convert_qualified (context, unqual);
+  unqual_converted = convert_type (context, unqual);
 
   if (TYPE_CONST (type))
     quals |= GCC_QUALIFIER_CONST;
