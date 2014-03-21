@@ -338,6 +338,8 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string)
   if (object_file)
     gdbjit_load (object_file);
 
+  compiler->fe->ops->cleanup (compiler->fe);
+
   do_cleanups (cleanup);
 }
 
