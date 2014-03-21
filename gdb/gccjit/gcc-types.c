@@ -221,6 +221,14 @@ convert_qualified (struct gdb_gcc_instance *context, struct type *type)
 }
 
 static gcc_type
+convert_complex (struct gdb_gcc_instance *context, struct type *type)
+{
+  gcc_type base = convert_type (context, TYPE_TARGET_TYPE (type));
+
+  return context->fe->ops->build_complex_type (context->fe, base);
+}
+
+static gcc_type
 convert_type_basic (struct gdb_gcc_instance *context, struct type *type)
 {
   /* If we are converting a qualified type, first convert the
@@ -259,6 +267,9 @@ convert_type_basic (struct gdb_gcc_instance *context, struct type *type)
 
     case TYPE_CODE_BOOL:
       return convert_bool (context, type);
+
+    case TYPE_CODE_COMPLEX:
+      return convert_complex (context, type);
     }
 
   error (_("cannot convert gdb type to gcc type"));

@@ -280,6 +280,11 @@ struct gcc_c_fe_interface
   gcc_type (*build_qualified_type) (struct gcc_context *self,
 				    gcc_type unqualified_type,
 				    int /* enum gcc_qualifiers */ qualifiers);
+
+  /* Build a complex type given its element type.  */
+
+  gcc_type (*build_complex_type) (struct gcc_context *self,
+				  gcc_type element_type);
 };
 
 /* The GCC object.  */
