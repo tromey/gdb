@@ -215,7 +215,8 @@ struct gcc_c_fe_interface
      cleanups in GCC.  */
 
   void (*finish_record_or_union) (struct gcc_context *self,
-				  gcc_type record_or_union_type);
+				  gcc_type record_or_union_type,
+				  unsigned long size_in_bytes);
 
   /* Create a new 'enum' type.  The new type initially has no
      associated constants.  */

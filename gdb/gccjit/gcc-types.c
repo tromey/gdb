@@ -116,15 +116,19 @@ convert_struct_or_union (struct gdb_gcc_instance *context, struct type *type)
   for (i = 0; i < TYPE_NFIELDS (type); ++i)
     {
       gcc_type field_type;
+      unsigned long bitsize = TYPE_FIELD_BITSIZE (type, i);
 
       field_type = convert_type (context, TYPE_FIELD_TYPE (type, i));
+      if (bitsize == 0)
+	bitsize = 8 * TYPE_LENGTH (TYPE_FIELD_TYPE (type, i));
       context->fe->ops->build_add_field (context->fe, result,
 					 TYPE_FIELD_NAME (type, i), field_type,
-					 TYPE_FIELD_BITSIZE (type, i),
+					 bitsize,
 					 TYPE_FIELD_BITPOS (type, i));
     }
 
-  context->fe->ops->finish_record_or_union (context->fe, result);
+  context->fe->ops->finish_record_or_union (context->fe, result,
+					    TYPE_LENGTH (type));
   return result;
 }
 
