@@ -618,7 +618,7 @@ execute_control_command (struct command_line *cmd)
       }
 
     case jit_control:
-      eval_gcc_jit_command (cmd, NULL);
+      eval_gcc_jit_command (cmd, NULL, cmd->control_u.jit.scope);
       ret = simple_control;
       break;
 
@@ -1068,6 +1068,7 @@ process_next_line (char *p, struct command_line **command, int parse_commands,
 	  /* Note that we ignore the inline "expression command" form
 	     here.  */
 	  *command = build_command_line (jit_control, "");
+	  (*command)->control_u.jit.scope = GCCJIT_I_INVALID_SCOPE;
 	}
 
       else if (p_end - p == 5 && !strncmp (p, "guile", 5))

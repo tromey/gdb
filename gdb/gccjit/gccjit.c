@@ -67,11 +67,21 @@ static void
 gcc_jit_command (char *arg, int from_tty)
 {
   struct cleanup *cleanup;
+  enum gccjit_i_scope_types scope = GCCJIT_I_SIMPLE_SCOPE;
 
   cleanup = make_cleanup_restore_integer (&interpreter_async);
   interpreter_async = 0;
 
   arg = skip_spaces (arg);
+
+  if (arg != NULL
+      && (check_for_argument (&arg, "-raw", sizeof ("-raw") - 1)
+	  || check_for_argument (&arg, "-r", sizeof ("-r") - 1)))
+    {
+      scope = GCCJIT_I_RAW_SCOPE;
+      arg = skip_spaces (arg);
+    }
+
   if (arg && *arg)
     {
       char *buffer;
@@ -119,13 +129,14 @@ gcc_jit_command (char *arg, int from_tty)
       else
 	buffer = arg;
 
-      eval_gcc_jit_command (NULL, buffer);
+      eval_gcc_jit_command (NULL, buffer, scope);
     }
   else
     {
       struct command_line *l = get_command_line (jit_control, "");
 
       make_cleanup_free_command_lines (&l);
+      l->control_u.jit.scope = scope;
       execute_control_command_untraced (l);
     }
 
@@ -230,6 +241,8 @@ add_code_header (enum gccjit_i_scope_types type, struct ui_file *buf)
     fputs_unfiltered (GCCJIT_I_SIMPLE_HEADER, buf);
     fputs_unfiltered ("\n", buf);
     break;
+  case GCCJIT_I_RAW_SCOPE:
+    break;
   default:
     break;
     /* TODO: Error case, but do nothing for now.  */
@@ -248,6 +261,8 @@ add_code_footer (enum gccjit_i_scope_types type, struct ui_file *buf)
   case GCCJIT_I_SIMPLE_SCOPE:
     fputs_unfiltered (GCCJIT_I_SIMPLE_FOOTER, buf);
     fputs_unfiltered ("\n", buf);
+    break;
+  case GCCJIT_I_RAW_SCOPE:
     break;
   default:
     /* TODO: Error case, but do nothing for now.  */
@@ -357,7 +372,8 @@ compiler_cleanup (void *arg)
    never both.  */
 
 void
-eval_gcc_jit_command (struct command_line *cmd, char *cmd_string)
+eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
+		      enum gccjit_i_scope_types scope)
 {
   char *code;
   char *object_file = NULL;
@@ -375,11 +391,9 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string)
   /* From the provided expression, build a scope to pass to the
      compiler.  */
   if (cmd != NULL)
-    code = concat_expr_and_scope (cmd, NULL, GCCJIT_I_SIMPLE_SCOPE,
-				  expr_block, expr_pc);
+    code = concat_expr_and_scope (cmd, NULL, scope, expr_block, expr_pc);
   else if (cmd_string != NULL)
-    code = concat_expr_and_scope (NULL, cmd_string, GCCJIT_I_SIMPLE_SCOPE,
-				  expr_block, expr_pc);
+    code = concat_expr_and_scope (NULL, cmd_string, scope, expr_block, expr_pc);
   else
     error (_("Neither a simple expression, or a multi-line specified."));
   make_cleanup (xfree, code);
@@ -435,8 +449,9 @@ _initialize_gcc_jit (void)
 	   _("\
 Evaluate a block of C code with a compiler JIT.\n\
 \n\
-Usage: expression [-f FILE] [CODE]\n\
--f: Open the filename specified and pass the contents to\n\
+Usage: expression [-r|-raw] [-f|-file FILE] [CODE]\n\
+-r|-raw: Suppress automatic 'void _gdb_expr () { CODE }' wrapping.\n\
+-f|-file: Open the filename specified and pass the contents to\n\
 the compiler.\n\
 \n\
 As an alternative you can provide your source code directly\n\

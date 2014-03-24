@@ -45,11 +45,17 @@ struct gdb_gcc_instance
 
 enum gccjit_i_scope_types
   {
+    GCCJIT_I_INVALID_SCOPE,
+
     /* A simple scope.  Wrap an expression into a simple scope that
        takes no arguments, returns no value, and uses the generic
        function name "_gdb_expr". */
 
-    GCCJIT_I_SIMPLE_SCOPE = 1
+    GCCJIT_I_SIMPLE_SCOPE,
+
+    /* Do not wrap the expression,
+       it has to provide function "_gdb_expr" on its own.  */
+    GCCJIT_I_RAW_SCOPE,
   };
 
 /* Define header and footers for different scopes.  */
@@ -64,6 +70,7 @@ enum gccjit_i_scope_types
 /* Convert a gdb type, TYPE, to a GCC type.  CONTEXT is used to do the
    actual conversion.  The new GCC type is returned.  */
 
+struct type;
 extern gcc_type convert_type (struct gdb_gcc_instance *context,
 			      struct type *type);
 

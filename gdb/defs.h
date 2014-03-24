@@ -73,6 +73,9 @@
 
 #include "host-defs.h"
 
+/* For enum gccjit_i_scope_types.  */
+#include "gccjit/gccjit-internal.h"
+
 /* Just in case they're not defined in stdio.h.  */
 
 #ifndef SEEK_SET
@@ -425,6 +428,15 @@ struct command_line
     struct command_line *next;
     char *line;
     enum command_control_type control_type;
+    union
+      {
+	struct
+	  {
+	    enum gccjit_i_scope_types scope;
+	  }
+	jit;
+      }
+    control_u;
     /* * The number of elements in body_list.  */
     int body_count;
     /* * For composite commands, the nested lists of commands.  For
