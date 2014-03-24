@@ -335,6 +335,16 @@ get_expr_block_and_pc (CORE_ADDR *pc)
   return block;
 }
 
+/* Cleanup function that calls the compiler's cleanup method.  */
+
+static void
+compiler_cleanup (void *arg)
+{
+  struct gdb_gcc_instance *compiler = arg;
+
+  compiler->fe->ops->cleanup (compiler->fe);
+}
+
 /* Public function that is called from jit_control case in the
    expression command.  GDB returns either a CMD, or a CMD_STRING, but
    never both.  */
@@ -371,6 +381,7 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string)
   compiler->fe->ops->set_arguments (compiler->fe, 0, NULL);
   compiler->fe->ops->set_program_text (compiler->fe, code);
   object_file = compiler->fe->ops->compile (compiler->fe, gccjit_debug);
+  make_cleanup (compiler_cleanup, compiler);
 
   if (gccjit_debug)
     {
@@ -382,8 +393,6 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string)
   /* Execute object code returned from compiler.  */
   if (object_file)
     gdbjit_load (object_file);
-
-  compiler->fe->ops->cleanup (compiler->fe);
 
   do_cleanups (cleanup);
 }
