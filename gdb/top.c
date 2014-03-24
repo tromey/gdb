@@ -1055,15 +1055,6 @@ command_line_input (char *prompt_arg, int repeat, char *annotation_suffix)
   if (*linebuffer && input_from_terminal_p ())
     add_history (linebuffer);
 
-  /* Note: lines consisting solely of comments are added to the command
-     history.  This is useful when you type a command, and then
-     realize you don't want to execute it quite yet.  You can comment
-     out the command and then later fetch it from the value history
-     and remove the '#'.  The kill ring is probably better, but some
-     people are in the habit of commenting things out.  */
-  if (*p1 == '#')
-    *p1 = '\0';			/* Found a comment.  */
-
   /* Save into global buffer if appropriate.  */
   if (repeat)
     {

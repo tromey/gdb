@@ -1164,7 +1164,8 @@ recurse_read_control_structure (char * (*read_next_line_func) (void),
       next = NULL;
       val = process_next_line (read_next_line_func (), &next, 
 			       current_cmd->control_type != python_control
-			       && current_cmd->control_type != guile_control,
+			       && current_cmd->control_type != guile_control
+			       && current_cmd->control_type != jit_control,
 			       validator, closure);
 
       /* Just skip blanks and comments.  */
