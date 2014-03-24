@@ -76,38 +76,45 @@ gcc_jit_command (char *arg, int from_tty)
   arg = skip_spaces (arg);
   if (arg && *arg)
     {
-      if (check_for_argument (&arg, "-file", sizeof ("-file") - 1)
-	  || check_for_argument (&arg, "-f", sizeof ("-f") - 1))
+      /* Check for arguments.  Exit if an argument string is found but
+	 we don't recognize the argument. */
+      if (arg[0] == '-')
 	{
-	    FILE *input;
-	    int file_size;
+	  if (check_for_argument (&arg, "-file", sizeof ("-file") - 1)
+	      || check_for_argument (&arg, "-f", sizeof ("-f") - 1))
+	    {
+	      FILE *input;
+	      int file_size;
 
-	    /* "check_for_argument" still leaves a space at the
+	      /* "check_for_argument" still leaves a space at the
 	       beginning of the arg string.  Trim to the first
 	       non-space character.  */
-	    arg = skip_spaces (arg);
-	    arg = tilde_expand (arg);
+	      arg = skip_spaces (arg);
+	      arg = tilde_expand (arg);
 
-	    input = gdb_fopen_cloexec (arg, "r");
+	      input = gdb_fopen_cloexec (arg, "r");
 
-	    if (input == NULL)
-	      error (_("Cannot open \"%s\" for reading."), arg);
+	      if (input == NULL)
+		error (_("Cannot open \"%s\" for reading."), arg);
 
-	    fseek (input, 0L, SEEK_END);
-	    file_size = ftell (input);
-	    fseek (input, 0L, SEEK_SET);
-	    buffer = xmalloc (file_size + 1);
-	    make_cleanup (xfree, buffer);
+	      fseek (input, 0L, SEEK_END);
+	      file_size = ftell (input);
+	      fseek (input, 0L, SEEK_SET);
+	      buffer = xmalloc (file_size + 1);
+	      make_cleanup (xfree, buffer);
 
-	    if (fread (buffer, 1, file_size, input) != file_size)
-	      {
-		fclose (input);
-		error (_("Error reading %s"), arg);
-	      }
+	      if (fread (buffer, 1, file_size, input) != file_size)
+		{
+		  fclose (input);
+		  error (_("Error reading %s"), arg);
+		}
 
-	    fclose (input);
-	    buffer[file_size] = 0;
-	    file_chosen = 1;
+	      fclose (input);
+	      buffer[file_size] = 0;
+	      file_chosen = 1;
+	    }
+	  else
+	    error(_("Unknown argument passed to command."));
 	}
       else
 	buffer = arg;
@@ -401,26 +408,52 @@ void
 _initialize_gcc_jit (void)
 {
   /* Right now we always have a jit.  TODO: Work out how to
-     tell if currently installed GCC supports a JIT interface.  */
+     tell if currently installed GCC supports a JIT interface.
+
+     TODO: The reason that the expression command has no completer for
+     filenames is that filename_completer undergoes special treatment
+     in completer.c:653.  The completion hint is massaged before the
+     completion hint is passed to filename_completer, and also the
+     break characters are changed from language->word_break_chars to
+     gdb_completer_command_word_break_characters.  So in the case of
+
+     jit_completer (text, word)
+     {
+        if (check if the -file flag was passed in, if so)
+	   return filename_completer (text, word)
+	else if (we return NULL, we don't complete on source)
+	   return NULL
+     }
+
+     Won't work as the text and word strings are different than if
+     passed to filename_completer.  A possible solution would be to
+     add a case for jit_control: in completer.c.
+  */
 
   add_com ("expression", class_obscure, gcc_jit_command,
 #ifdef HAVE_GCC_JIT
 	   _("\
-Evaluate a block of C code via GCC JIT.\n\
+Evaluate a block of C code with a compiler JIT.\n\
 \n\
-The code block can be given as an argument, for instance:\n\
+Usage: expression [-f FILE] [CODE]\n\
+-f: Open the filename specified and pass the contents to\n\
+the compiler.\n\
+\n\
+As an alternative you can provide your source code directly\n\
+to the command.  For example,\n\
 \n\
     expression printf(\"Hello world\\n\");\n\
 \n\
-If no argument is given, the following lines are read and used\n\
-as C code.  Type a line containing \"end\" to indicate\n\
-the end of the C code block.")
+If no argument is given (I.E., \"expression\" is typed with\n\
+nothing after it),  an interactive prompt will be shown\n\
+allowing you to enter multiple lines of source code.  Type a\n\
+line containing \"end\" to indicate the end of the source code.")
 	   
 #else /* HAVE_GCC_JIT */
 	   _("\
-Evaluate a block of C code via GCC JIT.\n\
+Evaluate a block of C code with a JIT.\n\
 \n\
-GCC JIT is not supported in this copy of GDB.\n\
+This command is not supported in this copy of GDB.\n\
 This command is only a placeholder.")
 
 #endif /* HAVE_GCC_JIT */
