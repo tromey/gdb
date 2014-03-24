@@ -285,6 +285,13 @@ struct gcc_c_fe_interface
 
   gcc_type (*build_complex_type) (struct gcc_context *self,
 				  gcc_type element_type);
+
+  /* Build a vector type given its element type and number of
+     elements.  */
+
+  gcc_type (*build_vector_type) (struct gcc_context *self,
+				 gcc_type element_type,
+				 int num_elements);
 };
 
 /* The GCC object.  */

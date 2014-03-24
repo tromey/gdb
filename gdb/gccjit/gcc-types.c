@@ -92,6 +92,9 @@ convert_array (struct gdb_gcc_instance *context, struct type *type)
     high_bound = -1;
 
   /* Doesn't handle VLA yet.  */
+  if (TYPE_VECTOR (type))
+    return context->fe->ops->build_vector_type (context->fe, element_type,
+						high_bound);
   return context->fe->ops->build_array_type (context->fe,
 					     element_type, high_bound);
 }
