@@ -67,8 +67,6 @@ static void
 gcc_jit_command (char *arg, int from_tty)
 {
   struct cleanup *cleanup;
-  char *buffer;
-  int file_chosen = 0;
 
   cleanup = make_cleanup_restore_integer (&interpreter_async);
   interpreter_async = 0;
@@ -76,6 +74,8 @@ gcc_jit_command (char *arg, int from_tty)
   arg = skip_spaces (arg);
   if (arg && *arg)
     {
+      char *buffer;
+
       /* Check for arguments.  Exit if an argument string is found but
 	 we don't recognize the argument. */
       if (arg[0] == '-')
@@ -103,7 +103,8 @@ gcc_jit_command (char *arg, int from_tty)
 	      buffer = xmalloc (file_size + 1);
 	      make_cleanup (xfree, buffer);
 
-	      if (fread (buffer, 1, file_size, input) != file_size)
+	      if (fread (buffer, sizeof (char), file_size, input)
+		  != file_size)
 		{
 		  fclose (input);
 		  error (_("Error reading %s"), arg);
@@ -111,7 +112,6 @@ gcc_jit_command (char *arg, int from_tty)
 
 	      fclose (input);
 	      buffer[file_size] = 0;
-	      file_chosen = 1;
 	    }
 	  else
 	    error(_("Unknown argument passed to command."));
