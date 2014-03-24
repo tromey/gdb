@@ -37,6 +37,9 @@
 #include "block.h"
 #include "macrotab.h"
 #include "macroscope.h"
+#include "filestuff.h"
+#include "completer.h"
+#include "readline/tilde.h"
 
 
 
@@ -64,13 +67,53 @@ static void
 gcc_jit_command (char *arg, int from_tty)
 {
   struct cleanup *cleanup;
+  char *buffer;
+  int file_chosen = 0;
 
   cleanup = make_cleanup_restore_integer (&interpreter_async);
   interpreter_async = 0;
 
   arg = skip_spaces (arg);
   if (arg && *arg)
-    eval_gcc_jit_command (NULL, arg);
+    {
+      if (check_for_argument (&arg, "-file", sizeof ("-file") - 1)
+	  || check_for_argument (&arg, "-f", sizeof ("-f") - 1))
+	{
+	    FILE *input;
+	    int file_size;
+
+	    /* "check_for_argument" still leaves a space at the
+	       beginning of the arg string.  Trim to the first
+	       non-space character.  */
+	    arg = skip_spaces (arg);
+	    arg = tilde_expand (arg);
+
+	    input = gdb_fopen_cloexec (arg, "r");
+
+	    if (input == NULL)
+	      error (_("Cannot open \"%s\" for reading."), arg);
+
+	    fseek (input, 0L, SEEK_END);
+	    file_size = ftell (input);
+	    fseek (input, 0L, SEEK_SET);
+	    buffer = xmalloc (file_size + 1);
+	    make_cleanup (xfree, buffer);
+
+	    if (fread (buffer, 1, file_size, input) != file_size)
+	      {
+		fclose (input);
+		error (_("Error reading %s"), arg);
+	      }
+
+	    fclose (input);
+	    buffer[file_size] = 0;
+	    file_chosen = 1;
+	}
+      else
+	buffer = arg;
+
+      eval_gcc_jit_command (NULL, buffer);
+    }
   else
     {
       struct command_line *l = get_command_line (jit_control, "");
