@@ -367,6 +367,48 @@ compiler_cleanup (void *arg)
   compiler->fe->ops->cleanup (compiler->fe);
 }
 
+/* String for 'set gdbjit-args' and 'show gdbjit-args'.  */
+static char *gdbjit_args;
+
+/* Parsed form of GDBJIT_ARGS.  GDBJIT_ARGS_ARGV is NULL terminated.  */
+static int gdbjit_args_argc;
+static char **gdbjit_args_argv;
+
+/* Implement 'set gdbjit-args'.  */
+
+static void
+set_gdbjit_args (char *args, int from_tty, struct cmd_list_element *c)
+{
+  char **argvit;
+
+  if (gdbjit_args_argv != NULL)
+    {
+      for (argvit = gdbjit_args_argv; *argvit != NULL; argvit++)
+	xfree (*argvit);
+      xfree (gdbjit_args_argv);
+    }
+
+  gdbjit_args_argc = 0;
+  gdbjit_args_argv = gdb_buildargv (gdbjit_args);
+
+  if (gdbjit_args_argv != NULL)
+    {
+      for (argvit = gdbjit_args_argv; *argvit != NULL; argvit++);
+      gdbjit_args_argc = argvit - gdbjit_args_argv;
+    }
+}
+
+/* Implement 'show gdbjit-args'.  */
+
+static void
+show_gdbjit_args (struct ui_file *file, int from_tty,
+		  struct cmd_list_element *c, const char *value)
+{
+  fprintf_filtered (file, _("JIT expression GCC command-line arguments "
+			    "are \"%s\".\n"),
+		    value);
+}
+
 /* Public function that is called from jit_control case in the
    expression command.  GDB returns either a CMD, or a CMD_STRING, but
    never both.  */
@@ -399,7 +441,7 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
   make_cleanup (xfree, code);
 
   /* Call the compiler and start the compilation process.  */
-  compiler->fe->ops->set_arguments (compiler->fe, 0, NULL);
+  compiler->fe->ops->set_arguments (compiler->fe, gdbjit_args_argc, gdbjit_args_argv);
   compiler->fe->ops->set_program_text (compiler->fe, code);
   object_file = compiler->fe->ops->compile (compiler->fe, gccjit_debug);
   make_cleanup (compiler_cleanup, compiler);
@@ -481,4 +523,14 @@ Show GCC JIT debugging."), _("\
 When on, GCC JIT debugging is enabled."),
 			   NULL, show_gccjit_debug,
 			   &setdebuglist, &showdebuglist);
+
+  add_setshow_string_cmd ("gdbjit-args", class_support,
+			  &gdbjit_args,
+			  _("Set JIT expression GCC command-line arguments"),
+			  _("Show JIT expression GCC command-line arguments"),
+			  _("\
+Use options like -I (include file directory) or ABI settings.\n\
+String quoting is parsed like in shell, for example:\n\
+  -mno-align-double \"-I/dir with a space/include\""),
+			  set_gdbjit_args, show_gdbjit_args, &setlist, &showlist);
 }
