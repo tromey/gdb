@@ -367,6 +367,51 @@ compiler_cleanup (void *arg)
   compiler->fe->ops->cleanup (compiler->fe);
 }
 
+/* Call gdb_buildargv, set its result for S into *ARGVP but calculate also the
+   number of parsed arguments into *ARGCP.  If gdb_buildargv has returned NULL
+   then *ARGCP is set to zero.  */
+
+static void
+build_argc_argv (const char *s, int *argcp, char ***argvp)
+{
+  char **argvit;
+
+  *argcp = 0;
+  *argvp = gdb_buildargv (s);
+
+  if (*argvp == NULL)
+    return;
+
+  for (argvit = *argvp; *argvit != NULL; argvit++);
+  *argcp = argvit - *argvp;
+}
+
+/* Free the NULL-terminated array of char * pointers ARGV.  If ARGV is NULL
+   then this function does nothing. */
+
+static void
+free_argv (char **argv)
+{
+  char **argvit;
+
+  if (argv == NULL)
+    return;
+
+  for (argvit = argv; *argvit != NULL; argvit++)
+    xfree (*argvit);
+  xfree (argv);
+}
+
+/* Call free_argv as a callback for make_cleanup.  */
+
+static void
+free_argv_cleanup (void *arg)
+{
+  char **argv = arg;
+
+  free_argv (argv);
+}
+
 /* String for 'set gdbjit-args' and 'show gdbjit-args'.  */
 static char *gdbjit_args;
 
@@ -379,23 +424,8 @@ static char **gdbjit_args_argv;
 static void
 set_gdbjit_args (char *args, int from_tty, struct cmd_list_element *c)
 {
-  char **argvit;
-
-  if (gdbjit_args_argv != NULL)
-    {
-      for (argvit = gdbjit_args_argv; *argvit != NULL; argvit++)
-	xfree (*argvit);
-      xfree (gdbjit_args_argv);
-    }
-
-  gdbjit_args_argc = 0;
-  gdbjit_args_argv = gdb_buildargv (gdbjit_args);
-
-  if (gdbjit_args_argv != NULL)
-    {
-      for (argvit = gdbjit_args_argv; *argvit != NULL; argvit++);
-      gdbjit_args_argc = argvit - gdbjit_args_argv;
-    }
+  free_argv (gdbjit_args_argv);
+  build_argc_argv (gdbjit_args, &gdbjit_args_argc, &gdbjit_args_argv);
 }
 
 /* Implement 'show gdbjit-args'.  */
@@ -407,6 +437,49 @@ show_gdbjit_args (struct ui_file *file, int from_tty,
   fprintf_filtered (file, _("JIT expression GCC command-line arguments "
 			    "are \"%s\".\n"),
 		    value);
+}
+
+/* Append current 'set gdbjit-args' content parsed by build_argc_argv to *ARGCP
+   and *ARGVP.  *ARGVP may be NULL and also 'set gdbjit-args' may be empty.  */
+
+static void
+append_gdbjit_args (int *argcp, char ***argvp)
+{
+  int argi;
+
+  *argvp = xrealloc (*argvp, (*argcp + gdbjit_args_argc) * sizeof (**argvp));
+
+  for (argi = 0; argi < gdbjit_args_argc; argi++)
+    (*argvp)[(*argcp)++] = xstrdup (gdbjit_args_argv[argi]);
+}
+
+/* Return DW_AT_producer parsed for get_selected_frame () (if any) and store it
+   parsed into *ARGCP and *ARGVP.  *ARGVP may be returned NULL.
+
+   GCC already filters its command-line arguments only for the suitable ones to
+   put into DW_AT_producer - see GCC function gen_producer_string.  */
+
+static void
+get_selected_pc_producer_args (int *argcp, char ***argvp)
+{
+  CORE_ADDR pc = get_frame_pc (get_selected_frame (NULL));
+  struct symtab *symtab = find_pc_symtab (pc);
+  const char *cs;
+
+  *argcp = 0;
+  *argvp = NULL;
+
+  if (symtab == NULL || symtab->producer == NULL
+      || strncmp (symtab->producer, "GNU ", strlen ("GNU ")) != 0)
+    return;
+
+  cs = symtab->producer;
+  while (*cs != 0 && *cs != '-')
+    cs = skip_spaces_const (skip_to_space_const (cs));
+  if (*cs != '-')
+    return;
+
+  build_argc_argv (cs, argcp, argvp);
 }
 
 /* Public function that is called from jit_control case in the
@@ -423,6 +496,8 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
   struct cleanup *cleanup;
   const struct block *expr_block;
   CORE_ADDR expr_pc = 0;
+  int argc;
+  char **argv;
 
   expr_block = get_expr_block_and_pc (&expr_pc);
 
@@ -440,8 +515,23 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
     error (_("Neither a simple expression, or a multi-line specified."));
   make_cleanup (xfree, code);
 
+  /* Set compiler command-line arguments.  */
+  get_selected_pc_producer_args (&argc, &argv);
+  append_gdbjit_args (&argc, &argv);
+  make_cleanup (free_argv_cleanup, argv);
+  compiler->fe->ops->set_arguments (compiler->fe, argc, argv);
+
+  if (gccjit_debug)
+    {
+      int argi;
+
+      fprintf_unfiltered (gdb_stdout, "Passing %d compiler options:\n", argc);
+      for (argi = 0; argi < argc; argi++)
+	fprintf_unfiltered (gdb_stdout, "Compiler option %d: <%s>\n",
+			    argi, argv[argi]);
+    }
+
   /* Call the compiler and start the compilation process.  */
-  compiler->fe->ops->set_arguments (compiler->fe, gdbjit_args_argc, gdbjit_args_argv);
   compiler->fe->ops->set_program_text (compiler->fe, code);
   object_file = compiler->fe->ops->compile (compiler->fe, gccjit_debug);
   make_cleanup (compiler_cleanup, compiler);
@@ -533,4 +623,9 @@ Use options like -I (include file directory) or ABI settings.\n\
 String quoting is parsed like in shell, for example:\n\
   -mno-align-double \"-I/dir with a space/include\""),
 			  set_gdbjit_args, show_gdbjit_args, &setlist, &showlist);
+
+  /* Override flags possibly coming from DW_AT_producer.
+     FIXME: Use -std=gnu++11 when C++ JIT gets supported.  */
+  gdbjit_args = xstrdup ("-O0 -gdwarf-4 -std=gnu11");
+  set_gdbjit_args (gdbjit_args, 0, NULL);
 }
