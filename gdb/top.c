@@ -558,11 +558,14 @@ command_loop (void)
 
       make_command_stats_cleanup (1);
 
-      execute_command (command, instream == stdin);
+      /* Do not execute commented lines.  */
+      if (command[0] != '#')
+	{
+	  execute_command (command, instream == stdin);
 
-      /* Do any commands attached to breakpoint we are stopped at.  */
-      bpstat_do_actions ();
-
+	  /* Do any commands attached to breakpoint we are stopped at.  */
+	  bpstat_do_actions ();
+	}
       do_cleanups (old_chain);
     }
 }
