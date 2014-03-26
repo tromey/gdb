@@ -374,42 +374,18 @@ compiler_cleanup (void *arg)
 static void
 build_argc_argv (const char *s, int *argcp, char ***argvp)
 {
-  char **argvit;
-
-  *argcp = 0;
   *argvp = gdb_buildargv (s);
-
-  if (*argvp == NULL)
-    return;
-
-  for (argvit = *argvp; *argvit != NULL; argvit++);
-  *argcp = argvit - *argvp;
+  *argcp = countargv (*argvp);
 }
 
-/* Free the NULL-terminated array of char * pointers ARGV.  If ARGV is NULL
-   then this function does nothing. */
+/* Call freeargv as a callback for make_cleanup.  */
 
 static void
-free_argv (char **argv)
-{
-  char **argvit;
-
-  if (argv == NULL)
-    return;
-
-  for (argvit = argv; *argvit != NULL; argvit++)
-    xfree (*argvit);
-  xfree (argv);
-}
-
-/* Call free_argv as a callback for make_cleanup.  */
-
-static void
-free_argv_cleanup (void *arg)
+freeargv_cleanup (void *arg)
 {
   char **argv = arg;
 
-  free_argv (argv);
+  freeargv (argv);
 }
 
 /* String for 'set gdbjit-args' and 'show gdbjit-args'.  */
@@ -424,7 +400,7 @@ static char **gdbjit_args_argv;
 static void
 set_gdbjit_args (char *args, int from_tty, struct cmd_list_element *c)
 {
-  free_argv (gdbjit_args_argv);
+  freeargv (gdbjit_args_argv);
   build_argc_argv (gdbjit_args, &gdbjit_args_argc, &gdbjit_args_argv);
 }
 
@@ -518,7 +494,7 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
   /* Set compiler command-line arguments.  */
   get_selected_pc_producer_args (&argc, &argv);
   append_gdbjit_args (&argc, &argv);
-  make_cleanup (free_argv_cleanup, argv);
+  make_cleanup (freeargv_cleanup, argv);
   compiler->fe->ops->set_arguments (compiler->fe, argc, argv);
 
   if (gccjit_debug)
