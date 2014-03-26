@@ -237,6 +237,11 @@ struct gcc_c_fe_interface
 				   const char *name,
 				   unsigned long value);
 
+  /* After all the constants have been added to an enum, the type must
+     be "finished".  This does some final cleanups in GCC.  */
+
+  void (*finish_enum_type) (struct gcc_context *self, gcc_type enum_type);
+
   /* Create a new function type.  RETURN_TYPE is the type returned by
      the function, and ARGUMENT_TYPES is a vector, of length NARGS, of
      the argument types.  IS_VARARGS is true if the function is

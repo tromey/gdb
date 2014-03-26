@@ -154,6 +154,8 @@ convert_enum (struct gdb_gcc_instance *context, struct type *type)
 						 TYPE_FIELD_ENUMVAL (type, i));
     }
 
+  context->fe->ops->finish_enum_type (context->fe, result);
+
   return result;
 }
 
