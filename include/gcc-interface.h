@@ -110,11 +110,10 @@ struct gcc_c_fe_interface
   unsigned int version;
 
   /* Set the compiler's command-line options for the next compliation.
-     The arguments are copied by GCC; the caller determines the
-     lifetime of ARGV.  ARGV need not be NULL-terminated.  The
-     arguments must be set separately for each compilation; that is,
-     after a compile is requested, the previously-set arguments cannot
-     be reused.  */
+     The arguments are copied by GCC.  ARGV need not be
+     NULL-terminated.  The arguments must be set separately for each
+     compilation; that is, after a compile is requested, the
+     previously-set arguments cannot be reused.  */
 
   void (*set_arguments) (struct gcc_context *self, int argc, char **argv);
 
