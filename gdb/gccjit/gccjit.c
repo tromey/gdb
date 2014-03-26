@@ -423,10 +423,12 @@ append_gdbjit_args (int *argcp, char ***argvp)
 {
   int argi;
 
-  *argvp = xrealloc (*argvp, (*argcp + gdbjit_args_argc) * sizeof (**argvp));
+  *argvp = xrealloc (*argvp,
+		     (*argcp + gdbjit_args_argc + 1) * sizeof (**argvp));
 
   for (argi = 0; argi < gdbjit_args_argc; argi++)
     (*argvp)[(*argcp)++] = xstrdup (gdbjit_args_argv[argi]);
+  (*argvp)[(*argcp)] = NULL;
 }
 
 /* Return DW_AT_producer parsed for get_selected_frame () (if any) and store it
