@@ -592,7 +592,8 @@ String quoting is parsed like in shell, for example:\n\
 			  set_gdbjit_args, show_gdbjit_args, &setlist, &showlist);
 
   /* Override flags possibly coming from DW_AT_producer.
+     -fno-stack-protector is there to override CU's -fstack-protector-strong.
      FIXME: Use -std=gnu++11 when C++ JIT gets supported.  */
-  gdbjit_args = xstrdup ("-O0 -gdwarf-4 -std=gnu11");
+  gdbjit_args = xstrdup ("-O0 -gdwarf-4 -std=gnu11 -fno-stack-protector");
   set_gdbjit_args (gdbjit_args, 0, NULL);
 }
