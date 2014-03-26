@@ -138,10 +138,14 @@ convert_struct_or_union (struct gdb_gcc_instance *context, struct type *type)
 static gcc_type
 convert_enum (struct gdb_gcc_instance *context, struct type *type)
 {
-  gcc_type result;
+  gcc_type int_type, result;
   int i;
 
-  result = context->fe->ops->build_enum_type (context->fe);
+  int_type = context->fe->ops->int_type (context->fe,
+					 TYPE_UNSIGNED (type),
+					 TYPE_LENGTH (type));
+
+  result = context->fe->ops->build_enum_type (context->fe, int_type);
   for (i = 0; i < TYPE_NFIELDS (type); ++i)
     {
       context->fe->ops->build_add_enum_constant (context->fe,

@@ -225,7 +225,8 @@ struct gcc_c_fe_interface
   /* Create a new 'enum' type.  The new type initially has no
      associated constants.  */
 
-  gcc_type (*build_enum_type) (struct gcc_context *self);
+  gcc_type (*build_enum_type) (struct gcc_context *self,
+			       gcc_type underlying_int_type);
 
   /* Add a new constant to an enum type.  NAME is the constant's
      name and VALUE is its value.  */
