@@ -1271,7 +1271,7 @@ test-cp-name-parser$(EXEEXT): test-cp-name-parser.o $(LIBIBERTY)
 # duplicates.  Files in the gdb/ directory can end up appearing in
 # COMMON_OBS (as a .o file) and CONFIG_SRCS (as a .c file).
 
-INIT_FILES = $(COMMON_OBS) $(TSOBS) $(CONFIG_SRCS)
+INIT_FILES = $(COMMON_OBS) $(TSOBS) $(CONFIG_SRCS) $(SUBDIR_GCC_JIT_SRCS)
 init.c: $(INIT_FILES)
 	@echo Making init.c
 	@rm -f init.c-tmp init.l-tmp
