@@ -54,7 +54,6 @@ show_gccjit_debug (struct ui_file *file, int from_tty,
 
 
 
-#define HAVE_GCC_JIT 1
 #define STR(x) #x
 #define STRINGIFY(x) STR(x)
 
@@ -544,7 +543,6 @@ _initialize_gcc_jit (void)
   */
 
   add_com ("expression", class_obscure, gcc_jit_command,
-#ifdef HAVE_GCC_JIT
 	   _("\
 Evaluate a block of C code with a compiler JIT.\n\
 \n\
@@ -561,17 +559,7 @@ to the command.  For example,\n\
 If no argument is given (I.E., \"expression\" is typed with\n\
 nothing after it),  an interactive prompt will be shown\n\
 allowing you to enter multiple lines of source code.  Type a\n\
-line containing \"end\" to indicate the end of the source code.")
-	   
-#else /* HAVE_GCC_JIT */
-	   _("\
-Evaluate a block of C code with a JIT.\n\
-\n\
-This command is not supported in this copy of GDB.\n\
-This command is only a placeholder.")
-
-#endif /* HAVE_GCC_JIT */
-	   );
+line containing \"end\" to indicate the end of the source code."));
   add_com_alias ("expr", "expression", class_obscure, 1);
 
   add_setshow_boolean_cmd ("gccjit", class_maintenance, &gccjit_debug, _("\

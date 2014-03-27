@@ -292,10 +292,6 @@ SUBDIR_GCC_JIT_SRCS = \
 	gccjit/gdbjit-load.c \
 	gccjit/gdbjit-load.h
 
-SUBDIR_GCC_JIT_DEPS =
-SUBDIR_GCC_JIT_LDFLAGS=
-SUBDIR_GCC_JIT_CFLAGS=
-
 # Guile sub directory definitons for guile support.
 
 SUBDIR_GUILE_OBS = \
@@ -856,7 +852,8 @@ SFILES = ada-exp.y ada-lang.c ada-typeprint.c ada-valprint.c ada-tasks.c \
 	common/gdb_vecs.c common/common-utils.c common/xml-utils.c \
 	common/ptid.c common/buffer.c gdb-dlfcn.c common/agent.c \
 	common/format.c common/filestuff.c btrace.c record-btrace.c ctf.c \
-	target/waitstatus.c common/print-utils.c common/rsp-low.c
+	target/waitstatus.c common/print-utils.c common/rsp-low.c \
+	$(SUBDIR_GCC_JIT_SRCS)
 
 LINTFILES = $(SFILES) $(YYFILES) $(CONFIG_SRCS) init.c
 
@@ -1038,7 +1035,8 @@ COMMON_OBS = $(DEPFILES) $(CONFIG_OBS) $(YYOBJ) \
 	gdb_vecs.o jit.o progspace.o skip.o probe.o \
 	common-utils.o buffer.o ptid.o gdb-dlfcn.o common-agent.o \
 	format.o registry.o btrace.o record-btrace.o waitstatus.o \
-	print-utils.o rsp-low.o
+	print-utils.o rsp-low.o \
+	$(SUBDIR_GCC_JIT_OBS)
 
 TSOBS = inflow.o
 
