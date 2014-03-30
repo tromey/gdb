@@ -63,3 +63,6 @@ if ![runto_main] {
 
 gdb_test_no_output "expression shlib_func ();" "call shared library function"
 gdb_test "p globalvar" " = 1" "expect 1"
+
+gdb_test_no_output "expression shlibvar += 5;" "modify shared library variable"
+gdb_test "p shlibvar" " = 15" "expect 15"

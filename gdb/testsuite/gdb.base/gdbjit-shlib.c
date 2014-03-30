@@ -17,6 +17,8 @@
 
 extern int globalvar;
 
+int shlibvar = 10;
+
 void
 shlib_func (void)
 {
