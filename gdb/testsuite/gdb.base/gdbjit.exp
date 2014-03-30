@@ -1,0 +1,65 @@
+# Copyright 2014 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+standard_testfile .c gdbjit-shlib.c
+if { [prepare_for_testing ${testfile}.exp ${testfile} ${srcfile}] } {
+    return -1
+}
+
+if ![runto_main] {
+    return -1
+}
+
+gdb_test_no_output "expression globalvar = 42;" "set variable"
+gdb_test "p globalvar" " = 42" "expect 42"
+
+gdb_test_no_output "expression globalvar *= 2;" "modify variable"
+gdb_test "p globalvar" " = 84" "expect 84"
+
+gdb_test_multiple "expression" "expression multiline 1" { -re "\r\n>$" {} }
+gdb_test_multiple "globalvar = 10;" "expression multiline 2" { -re "\r\n>$" {} }
+gdb_test_multiple "globalvar *= 2;" "expression multiline 3" { -re "\r\n>$" {} }
+gdb_test_no_output "end" "expression multiline 4"
+gdb_test "p globalvar" " = 20" "expect 20"
+
+gdb_test_no_output "expression -r -f ${srcdir}/${subdir}/${testfile}.mod" "use external source file"
+gdb_test "p globalvar" " = 7" "expect 7"
+
+gdb_test_no_output "expression func_static (2);" "call static function"
+gdb_test "p globalvar" " = 9" "expect 9"
+gdb_test_no_output "expression func_global (1);" "call global function"
+gdb_test "p globalvar" " = 8" "expect 8"
+
+gdb_test_no_output "expression static int staticvar = 5; intptr = &staticvar" "keep jit in memory"
+gdb_test "p *intptr" " = 5" "expect 5"
+
+if {[skip_shlib_tests]} {
+    untested "skipping shlib tests"
+    return;
+}
+
+set libbin [standard_output_file ${testfile}-shlib.so]
+if { [gdb_compile_shlib ${srcdir}/${subdir}/${srcfile2} $libbin {debug}] != ""
+     || [build_executable $testfile ${testfile}-shlib $srcfile [list debug ldflags=$libbin]] == -1 } {
+    return -1
+}
+
+clean_restart ${testfile}-shlib
+if ![runto_main] {
+    return -1
+}
+
+gdb_test_no_output "expression shlib_func ();" "call shared library function"
+gdb_test "p globalvar" " = 1" "expect 1"
