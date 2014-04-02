@@ -40,32 +40,15 @@ struct gdb_gcc_instance
   htab_t type_map;
 };
 
-/* Scope types enumerator.  List the types of scopes the compiler will
-   accept.  */
-
-enum gccjit_i_scope_types
-  {
-    GCCJIT_I_INVALID_SCOPE,
-
-    /* A simple scope.  Wrap an expression into a simple scope that
-       takes no arguments, returns no value, and uses the generic
-       function name "_gdb_expr". */
-
-    GCCJIT_I_SIMPLE_SCOPE,
-
-    /* Do not wrap the expression,
-       it has to provide function "_gdb_expr" on its own.  */
-    GCCJIT_I_RAW_SCOPE,
-  };
-
 /* Define header and footers for different scopes.  */
 
 /* A simple scope just declares a function named "_gdb_expr", takes no
    arguments and returns no value.  */
 
 #define GCCJIT_I_SIMPLE_FUNCNAME "_gdb_expr"
-#define GCCJIT_I_SIMPLE_HEADER  "void " GCCJIT_I_SIMPLE_FUNCNAME " (void) {"
-#define GCCJIT_I_SIMPLE_FOOTER  "}"
+#define GCCJIT_I_SIMPLE_REGISTER_STRUCT_TAG "__gdb_regs"
+#define GCCJIT_I_SIMPLE_REGISTER_ARG_NAME "__regs"
+#define GCCJIT_I_SIMPLE_REGISTER_FORMAT "reg%d"
 
 /* Convert a gdb type, TYPE, to a GCC type.  CONTEXT is used to do the
    actual conversion.  The new GCC type is returned.  */
@@ -99,5 +82,11 @@ extern void delete_gdb_gcc_instance (struct gdb_gcc_instance *context);
 
 extern struct cleanup *make_cleanup_delete_gdb_gcc_instance
      (struct gdb_gcc_instance *context);
+
+extern unsigned char *generate_c_for_variable_locations
+     (struct ui_file *stream,
+      struct gdbarch *gdbarch,
+      const struct block *block,
+      CORE_ADDR pc);
 
 #endif /* GDB_GCCJIT_GCCJIT_INTERNAL_H */

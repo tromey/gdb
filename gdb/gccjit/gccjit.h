@@ -21,4 +21,18 @@ extern void eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
 				  enum gccjit_i_scope_types scope);
 extern void _initialize_gcc_jit (void);
 
+struct ui_file;
+struct gdbarch;
+struct dwarf2_per_cu_data;
+extern void compile_dwarf_expr_to_c (struct ui_file *stream,
+				     const char *result_name,
+				     const void *scope,
+				     CORE_ADDR pc,
+				     struct gdbarch *arch,
+				     unsigned char *registers_used,
+				     unsigned int addr_size,
+				     const gdb_byte *op_ptr,
+				     const gdb_byte *op_end,
+				     struct dwarf2_per_cu_data *per_cu);
+
 #endif /* GDB_GCCJIT_GCCJIT_H */

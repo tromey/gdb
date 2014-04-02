@@ -41,11 +41,9 @@
 
 #include <string.h>
 #include "gdb_assert.h"
+#include "gccjit/gccjit.h"
 
 extern int dwarf2_always_disassemble;
-
-static void dwarf_expr_frame_base_1 (struct symbol *framefunc, CORE_ADDR pc,
-				     const gdb_byte **start, size_t *length);
 
 static const struct dwarf_expr_context_funcs dwarf_expr_ctx_funcs;
 
@@ -418,7 +416,7 @@ const struct symbol_block_ops dwarf2_block_frame_base_loclist_funcs =
   loclist_find_frame_base_location
 };
 
-static void
+void
 dwarf_expr_frame_base_1 (struct symbol *framefunc, CORE_ADDR pc,
 			 const gdb_byte **start, size_t *length)
 {
@@ -3194,8 +3192,34 @@ dwarf2_compile_expr_to_ax (struct agent_expr *expr, struct axs_value *loc,
 	  break;
 
 	case DW_OP_call_frame_cfa:
-	  dwarf2_compile_cfa_to_ax (expr, loc, arch, expr->scope, per_cu);
-	  loc->kind = axs_lvalue_memory;
+	  {
+	    int regnum;
+	    CORE_ADDR text_offset;
+	    LONGEST off;
+	    const gdb_byte *cfa_start, *cfa_end;
+
+	    if (dwarf2_fetch_cfa_info (arch, expr->scope, per_cu,
+				       &regnum, &off,
+				       &text_offset, &cfa_start, &cfa_end))
+	      {
+		/* Register.  */
+		ax_reg (expr, regnum);
+		if (off != 0)
+		  {
+		    ax_const_l (expr, off);
+		    ax_simple (expr, aop_add);
+		  }
+	      }
+	    else
+	      {
+		/* Another expression.  */
+		ax_const_l (expr, text_offset);
+		dwarf2_compile_expr_to_ax (expr, loc, arch, addr_size,
+					   cfa_start, cfa_end, per_cu);
+	      }
+
+	    loc->kind = axs_lvalue_memory;
+	  }
 	  break;
 
 	case DW_OP_GNU_push_tls_address:
@@ -4063,6 +4087,21 @@ locexpr_tracepoint_var_ref (struct symbol *symbol, struct gdbarch *gdbarch,
 			       dlbaton->per_cu);
 }
 
+static void
+locexpr_generate_c_location (struct symbol *sym, struct ui_file *stream,
+			     struct gdbarch *gdbarch,
+			     unsigned char *registers_used,
+			     CORE_ADDR pc, const char *result_name)
+{
+  struct dwarf2_locexpr_baton *dlbaton = SYMBOL_LOCATION_BATON (sym);
+  unsigned int addr_size = dwarf2_per_cu_addr_size (dlbaton->per_cu);
+
+  compile_dwarf_expr_to_c (stream, result_name, sym,
+			   pc, gdbarch, registers_used, addr_size,
+			   dlbaton->data, dlbaton->data + dlbaton->size,
+			   dlbaton->per_cu);
+}
+
 /* The set of location functions used with the DWARF-2 expression
    evaluator.  */
 const struct symbol_computed_ops dwarf2_locexpr_funcs = {
@@ -4071,7 +4110,8 @@ const struct symbol_computed_ops dwarf2_locexpr_funcs = {
   locexpr_read_needs_frame,
   locexpr_describe_location,
   0,	/* location_has_loclist */
-  locexpr_tracepoint_var_ref
+  locexpr_tracepoint_var_ref,
+  locexpr_generate_c_location
 };
 
 
@@ -4242,6 +4282,27 @@ loclist_tracepoint_var_ref (struct symbol *symbol, struct gdbarch *gdbarch,
 			       dlbaton->per_cu);
 }
 
+static void
+loclist_generate_c_location (struct symbol *sym, struct ui_file *stream,
+			     struct gdbarch *gdbarch,
+			     unsigned char *registers_used,
+			     CORE_ADDR pc, const char *result_name)
+{
+  struct dwarf2_loclist_baton *dlbaton = SYMBOL_LOCATION_BATON (sym);
+  unsigned int addr_size = dwarf2_per_cu_addr_size (dlbaton->per_cu);
+  const gdb_byte *data;
+  size_t size;
+
+  data = dwarf2_find_location_expression (dlbaton, &size, pc);
+  if (size == 0)
+    return;
+
+  compile_dwarf_expr_to_c (stream, result_name, sym,
+			   pc, gdbarch, registers_used, addr_size,
+			   data, data + size,
+			   dlbaton->per_cu);
+}
+
 /* The set of location functions used with the DWARF-2 expression
    evaluator and location lists.  */
 const struct symbol_computed_ops dwarf2_loclist_funcs = {
@@ -4250,7 +4311,8 @@ const struct symbol_computed_ops dwarf2_loclist_funcs = {
   loclist_read_needs_frame,
   loclist_describe_location,
   1,	/* location_has_loclist */
-  loclist_tracepoint_var_ref
+  loclist_tracepoint_var_ref,
+  loclist_generate_c_location
 };
 
 /* Provide a prototype to silence -Wmissing-prototypes.  */

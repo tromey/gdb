@@ -641,6 +641,14 @@ struct symbol_computed_ops
 
   void (*tracepoint_var_ref) (struct symbol *symbol, struct gdbarch *gdbarch,
 			      struct agent_expr *ax, struct axs_value *value);
+
+  /* Generate C code to compute the location of blah.  */
+
+  void (*generate_c_location) (struct symbol *symbol, struct ui_file *stream,
+			       struct gdbarch *gdbarch,
+			       unsigned char *registers_used,
+			       CORE_ADDR pc, const char *result_name);
+
 };
 
 /* The methods needed to implement LOC_BLOCK for inferior functions.

@@ -80,6 +80,9 @@ extern const gdb_byte *dwarf2_fetch_constant_bytes (sect_offset,
 struct type *dwarf2_get_die_type (cu_offset die_offset,
 				  struct dwarf2_per_cu_data *per_cu);
 
+extern void dwarf_expr_frame_base_1 (struct symbol *framefunc, CORE_ADDR pc,
+				     const gdb_byte **start, size_t *length);
+
 /* Evaluate a location description, starting at DATA and with length
    SIZE, to find the current location of variable of TYPE in the context
    of FRAME.  */

@@ -160,15 +160,19 @@ struct gcc_c_fe_interface
      NAME is the name of the new symbol.  SYM_KIND is the kind of
      symbol being requested.  SYM_TYPE is the new symbol's C type;
      except for labels, where this is not meaningful and should be
-     NULL.  For symbols having an address (e.g., functions), ADDRESS
-     is the address.  FILENAME and LINE_NUMBER refer to the symbol's
-     source location.  If this is not known, FILENAME can be NULL and
-     LINE_NUMBER can be 0.  This function returns the new decl.  */
+     NULL.  If SUBSTITUTION_NAME is not NULL, then a reference to this
+     decl in the source will later be substituted with a dereference
+     of a variable of the given name.  Otherwise, for symbols having
+     an address (e.g., functions), ADDRESS is the address.  FILENAME
+     and LINE_NUMBER refer to the symbol's source location.  If this
+     is not known, FILENAME can be NULL and LINE_NUMBER can be 0.
+     This function returns the new decl.  */
 
   gcc_decl (*build_decl) (struct gcc_context *self,
 			  const char *name,
 			  enum gcc_c_symbol_kind sym_kind,
 			  gcc_type sym_type,
+			  const char *substitution_name,
 			  gcc_address address,
 			  const char *filename,
 			  unsigned int line_number);

@@ -40,6 +40,9 @@
 #include "filestuff.h"
 #include "completer.h"
 #include "readline/tilde.h"
+#include "arch-utils.h"
+#include "regcache.h"
+#include "value.h"
 
 
 
@@ -243,8 +246,14 @@ add_code_header (enum gccjit_i_scope_types type, struct ui_file *buf)
   switch (type)
   {
   case GCCJIT_I_SIMPLE_SCOPE:
-    fputs_unfiltered (GCCJIT_I_SIMPLE_HEADER, buf);
-    fputs_unfiltered ("\n", buf);
+    fputs_unfiltered ("void "
+		      GCCJIT_I_SIMPLE_FUNCNAME
+		      " (struct "
+		      GCCJIT_I_SIMPLE_REGISTER_STRUCT_TAG
+		      " *"
+		      GCCJIT_I_SIMPLE_REGISTER_ARG_NAME
+		      ") {\n",
+		      buf);
     break;
   case GCCJIT_I_RAW_SCOPE:
     break;
@@ -264,8 +273,7 @@ add_code_footer (enum gccjit_i_scope_types type, struct ui_file *buf)
   switch (type)
   {
   case GCCJIT_I_SIMPLE_SCOPE:
-    fputs_unfiltered (GCCJIT_I_SIMPLE_FOOTER, buf);
-    fputs_unfiltered ("\n", buf);
+    fputs_unfiltered ("}\n", buf);
     break;
   case GCCJIT_I_RAW_SCOPE:
     break;
@@ -288,30 +296,98 @@ add_semicolon_if_needed (char *simple_string, struct ui_file *buf)
       fputs_unfiltered (";", buf);
 }
 
+/* Generate a structure holding all the registers used by the function
+   we're generating.  */
+
+static void
+generate_register_struct (struct ui_file *stream, struct gdbarch *gdbarch,
+			  unsigned char *registers_used)
+{
+  int i;
+  int seen = 0;
+
+  fputs_unfiltered ("struct " GCCJIT_I_SIMPLE_REGISTER_STRUCT_TAG " {\n",
+		    stream);
+
+  if (registers_used != NULL)
+    for (i = 0; i < gdbarch_num_regs (gdbarch); ++i)
+      {
+	if (registers_used[i])
+	  {
+	    struct type *regtype = register_type (gdbarch, i);
+	    char regname[50];
+
+	    seen = 1;
+
+	    xsnprintf (regname, sizeof (regname),
+		       GCCJIT_I_SIMPLE_REGISTER_FORMAT, i);
+
+	    fputs_unfiltered ("  ", stream);
+	    type_print (regtype, regname, stream, -1); /* FIXME? */
+	    fputs_unfiltered (";\n", stream);
+	  }
+      }
+
+  if (!seen)
+    fputs_unfiltered ("  char _dummy;\n", stream);
+
+  fputs_unfiltered ("};\n\n", stream);
+}
+
 /* Helper function to take an expression and wrap it in a scope for
    the compiler.  CMD is populated for a multi-line expression, while
    SIMPLE_STRING is populated if the expression is on one single line.
    TYPE denotes the scope type to use.  Either CMD must be NULL and
    SIMPLE_STRING populated (the two are mutually exclusive), or
-   vice-versa.  MACRO_BLOCK denotes the block relevant contextually to
-   the inferior when the expression was created, and MACRO_PC
+   vice-versa.  EXPR_BLOCK denotes the block relevant contextually to
+   the inferior when the expression was created, and EXPR_PC
    indicates the value of $PC.  */
 
 static char *
 concat_expr_and_scope (struct command_line *cmd,
 		       char *simple_string,
 		       enum gccjit_i_scope_types type,
-		       const struct block *macro_block,
-		       CORE_ADDR macro_pc)
+		       struct gdbarch *gdbarch,
+		       const struct block *expr_block,
+		       CORE_ADDR expr_pc)
 {
   struct command_line *iter;
-  struct ui_file *buf;
-  char *code;
+  struct ui_file *buf, *var_stream;
+  char *code, *reg_code;
+  unsigned char *registers_used;
+  struct cleanup *cleanup;
 
   buf = mem_fileopen ();
+  cleanup = make_cleanup_ui_file_delete (buf);
 
-  write_macro_definitions (macro_block, macro_pc, buf);
+  write_macro_definitions (expr_block, expr_pc, buf);
+
+  /* Generate the code to compute variable locations, but do it before
+     generating the function header, so we can define the register
+     struct before the function body.  This requires a temporary
+     stream.  */
+  var_stream = mem_fileopen ();
+  make_cleanup_ui_file_delete (var_stream);
+  registers_used = generate_c_for_variable_locations (var_stream, gdbarch,
+						      expr_block, expr_pc);
+  make_cleanup (xfree, registers_used);
+
+  generate_register_struct (buf, gdbarch, registers_used);
+
+  fputs_unfiltered ("typedef unsigned int"
+		    " __attribute__ ((__mode__(__pointer__)))"
+		    " __gdb_uintptr;\n",
+		    buf);
+  fputs_unfiltered ("typedef int"
+		    " __attribute__ ((__mode__(__pointer__)))"
+		    " __gdb_intptr;\n",
+		    buf);
+
   add_code_header (type, buf);
+
+  reg_code = ui_file_xstrdup (var_stream, NULL);
+  make_cleanup (xfree, reg_code);
+  fputs_unfiltered (reg_code, buf);
 
   fputs_unfiltered ("#line 1 \"gdb expression\"\n", buf);
 
@@ -336,7 +412,7 @@ concat_expr_and_scope (struct command_line *cmd,
 
   add_code_footer (type, buf);
   code = ui_file_xstrdup (buf, NULL);
-  ui_file_delete (buf);
+  do_cleanups (cleanup);
   return code;
 }
 
@@ -481,9 +557,11 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
   /* From the provided expression, build a scope to pass to the
      compiler.  */
   if (cmd != NULL)
-    code = concat_expr_and_scope (cmd, NULL, scope, expr_block, expr_pc);
+    code = concat_expr_and_scope (cmd, NULL, scope, get_current_arch (),
+				  expr_block, expr_pc);
   else if (cmd_string != NULL)
-    code = concat_expr_and_scope (NULL, cmd_string, scope, expr_block, expr_pc);
+    code = concat_expr_and_scope (NULL, cmd_string, scope, get_current_arch (),
+				  expr_block, expr_pc);
   else
     error (_("Neither a simple expression, or a multi-line specified."));
   make_cleanup (xfree, code);

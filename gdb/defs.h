@@ -73,8 +73,24 @@
 
 #include "host-defs.h"
 
-/* For enum gccjit_i_scope_types.  */
-#include "gccjit/gccjit-internal.h"
+/* Scope types enumerator.  List the types of scopes the compiler will
+   accept.  */
+/* FIXME this really should not be here.  */
+
+enum gccjit_i_scope_types
+  {
+    GCCJIT_I_INVALID_SCOPE,
+
+    /* A simple scope.  Wrap an expression into a simple scope that
+       takes no arguments, returns no value, and uses the generic
+       function name "_gdb_expr". */
+
+    GCCJIT_I_SIMPLE_SCOPE,
+
+    /* Do not wrap the expression,
+       it has to provide function "_gdb_expr" on its own.  */
+    GCCJIT_I_RAW_SCOPE,
+  };
 
 /* Just in case they're not defined in stdio.h.  */
 

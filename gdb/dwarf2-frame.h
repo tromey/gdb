@@ -120,15 +120,11 @@ extern const struct frame_base *
 
 CORE_ADDR dwarf2_frame_cfa (struct frame_info *this_frame);
 
-/* Update the agent expression EXPR with code to compute the CFA for a
-   frame at PC.  GDBARCH is the architecture of the function at PC.
-   This function may call dwarf2_compile_expr_to_ax; DATA is passed
-   through to that function if needed.  */
-
-extern void dwarf2_compile_cfa_to_ax (struct agent_expr *expr,
-				      struct axs_value *loc,
-				      struct gdbarch *gdbarch,
-				      CORE_ADDR pc,
-				      struct dwarf2_per_cu_data *data);
+extern int dwarf2_fetch_cfa_info (struct gdbarch *gdbarch, CORE_ADDR pc,
+				  struct dwarf2_per_cu_data *data,
+				  int *regnum_out, LONGEST *offset_out,
+				  CORE_ADDR *text_offset_out,
+				  const gdb_byte **cfa_start_out,
+				  const gdb_byte **cfa_end_out);
 
 #endif /* dwarf2-frame.h */
