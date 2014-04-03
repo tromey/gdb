@@ -389,6 +389,7 @@ concat_expr_and_scope (struct command_line *cmd,
   make_cleanup (xfree, reg_code);
   fputs_unfiltered (reg_code, buf);
 
+  fputs_unfiltered ("#pragma GCC user_expression\n", buf);
   fputs_unfiltered ("#line 1 \"gdb expression\"\n", buf);
 
   /* The expression was a single string, I.E. "expression z=i;".  Just
