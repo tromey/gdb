@@ -663,9 +663,19 @@ String quoting is parsed like in shell, for example:\n\
   -mno-align-double \"-I/dir with a space/include\""),
 			  set_gdbjit_args, show_gdbjit_args, &setlist, &showlist);
 
-  /* Override flags possibly coming from DW_AT_producer.
-     -fno-stack-protector is there to override CU's -fstack-protector-strong.
-     FIXME: Use -std=gnu++11 when C++ JIT gets supported.  */
-  gdbjit_args = xstrdup ("-O0 -gdwarf-4 -std=gnu11 -fno-stack-protector");
+  // Override flags possibly coming from DW_AT_producer.
+  gdbjit_args = xstrdup ("-O0 -gdwarf-4"
+  // We use -fPIC to ensure that we can reference properly.  Otherwise
+  // on x86-64 a string constant's address might be truncated when gdb
+  // loads the object; another approach would be -mcmodel=large, but
+  // -fPIC seems more portable across back ends.
+			 " -fPIC"
+  // We don't want warnings.
+			 " -w"
+  // override CU's possible -fstack-protector-strong.
+			 " -fno-stack-protector"
+  // FIXME: Use -std=gnu++11 when C++ JIT gets supported.
+		         " -std=gnu11"
+  );
   set_gdbjit_args (gdbjit_args, 0, NULL);
 }
