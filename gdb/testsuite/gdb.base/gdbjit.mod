@@ -15,7 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-void _gdb_expr (void)
+void
+_gdb_expr (void)
 {
   globalvar = 3;
   globalvar += 4;
