@@ -250,10 +250,12 @@ call_func (CORE_ADDR func_addr)
   call_function_by_hand (func_val, 0, NULL);
 }
 
+static const struct objfile_data *gdbjit_objfile_data_key;
+
 void
 gdbjit_load (const char *object_file)
 {
-  struct cleanup *cleanups;
+  struct cleanup *cleanups, *cleanups_symbol_table;
   char *filename, **matching;
   bfd *abfd;
   struct setup_sections_data setup_sections_data;
@@ -291,8 +293,11 @@ gdbjit_load (const char *object_file)
     error (_("Cannot read symbols of JIT module \"%s\": %s"),
           bfd_get_filename (abfd), bfd_errmsg (bfd_get_error ()));
 
+  /* The memory may be later needed
+     by bfd_generic_get_relocated_section_contents
+     called from default_symfile_relocate.  */
   symbol_table = xmalloc (storage_needed);
-  make_cleanup (xfree, symbol_table);
+  cleanups_symbol_table = make_cleanup (xfree, symbol_table);
   number_of_symbols = bfd_canonicalize_symtab (abfd, symbol_table);
   if (number_of_symbols < 0)
     error (_("Cannot parse symbols of JIT module \"%s\": %s"),
@@ -320,6 +325,9 @@ gdbjit_load (const char *object_file)
   /* SYMFILE_VERBOSE is not passed even if FROM_TTY, user is not interested in
      "Reading symbols from ..." message for automatically generated file.  */
   objfile = symbol_file_add_from_bfd (abfd, filename, 0, NULL, 0, NULL);
+
+  set_objfile_data (objfile, gdbjit_objfile_data_key, symbol_table);
+  discard_cleanups (cleanups_symbol_table);
 
   bmsym = lookup_minimal_symbol_text (GCCJIT_I_SIMPLE_FUNCNAME, objfile);
   if (bmsym.minsym == NULL || MSYMBOL_TYPE (bmsym.minsym) == mst_file_text)
@@ -381,11 +389,22 @@ expression_load_command (char *args, int from_tty)
   gdbjit_load (args);
 }
 
+static void
+gdbjit_per_objfile_free (struct objfile *objfile, void *d)
+{
+  asymbol **symbol_table = d;
+
+  xfree (symbol_table);
+}
+
 extern initialize_file_ftype _initialize_gdbjit_load; /* -Wmissing-prototypes */
 
 void
 _initialize_gdbjit_load (void)
 {
+  gdbjit_objfile_data_key = register_objfile_data_with_cleanup (NULL,
+						       gdbjit_per_objfile_free);
+
   add_cmd ("expression-load", class_maintenance, expression_load_command,
 	   _("Load shared object library symbols for files matching REGEXP."),
 	   &maintenancelist);
