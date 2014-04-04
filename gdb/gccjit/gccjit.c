@@ -315,7 +315,8 @@ generate_register_struct (struct ui_file *stream, struct gdbarch *gdbarch,
 	if (registers_used[i])
 	  {
 	    struct type *regtype = check_typedef (register_type (gdbarch, i));
-	    const char *regname = gdbarch_register_name (gdbarch, i);
+	    char *regname = gdbjit_register_name_mangled (gdbarch, i);
+	    struct cleanup *cleanups = make_cleanup (xfree, regname);
 
 	    seen = 1;
 
@@ -380,6 +381,8 @@ generate_register_struct (struct ui_file *stream, struct gdbarch *gdbarch,
 				    TYPE_LENGTH (regtype));
 	      }
 	    fputs_unfiltered (";\n", stream);
+
+	    do_cleanups (cleanups);
 	  }
       }
 
@@ -654,6 +657,14 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
     gdbjit_load (object_file);
 
   do_cleanups (cleanup);
+}
+
+char *
+gdbjit_register_name_mangled (struct gdbarch *gdbarch, int regnum)
+{
+  const char *regname = gdbarch_register_name (gdbarch, regnum);
+
+  return xstrprintf ("__%s", regname);
 }
 
 void

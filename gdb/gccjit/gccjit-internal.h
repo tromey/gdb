@@ -50,6 +50,13 @@ struct gdb_gcc_instance
 #define GCCJIT_I_SIMPLE_REGISTER_ARG_NAME "__regs"
 #define GCCJIT_I_SIMPLE_REGISTER_DUMMY "_dummy"
 
+/* Call gdbarch_register_name (GDBARCH, REGNUM) and convert its result to
+   a form suitable for the JIT source.  The register names should not clash
+   with inferior defined macros.  Returned pointer is never NULL.
+   Returned pointer needs to be deallocated by xfree.  */
+
+extern char *gdbjit_register_name_mangled (struct gdbarch *gdbarch, int regnum);
+
 /* Convert a gdb type, TYPE, to a GCC type.  CONTEXT is used to do the
    actual conversion.  The new GCC type is returned.  */
 

@@ -437,9 +437,13 @@ pushf_register_address (int indent, struct ui_file *stream,
 			unsigned char *registers_used,
 			struct gdbarch *gdbarch, int regnum)
 {
+  char *regname = gdbjit_register_name_mangled (gdbarch, regnum);
+  struct cleanup *cleanups = make_cleanup (xfree, regname);
+
   registers_used[regnum] = 1;
-  pushf (indent, stream, "&" GCCJIT_I_SIMPLE_REGISTER_ARG_NAME "->%s",
-	 gdbarch_register_name (gdbarch, regnum));
+  pushf (indent, stream, "&" GCCJIT_I_SIMPLE_REGISTER_ARG_NAME "->%s", regname);
+
+  do_cleanups (cleanups);
 }
 
 static void
@@ -447,13 +451,17 @@ pushf_register (int indent, struct ui_file *stream,
 		unsigned char *registers_used,
 		struct gdbarch *gdbarch, int regnum, uint64_t offset)
 {
+  char *regname = gdbjit_register_name_mangled (gdbarch, regnum);
+  struct cleanup *cleanups = make_cleanup (xfree, regname);
+
   registers_used[regnum] = 1;
   if (offset == 0)
-    pushf (indent, stream, GCCJIT_I_SIMPLE_REGISTER_ARG_NAME "->%s",
-	   gdbarch_register_name (gdbarch, regnum));
+    pushf (indent, stream, GCCJIT_I_SIMPLE_REGISTER_ARG_NAME "->%s", regname);
   else
     pushf (indent, stream, GCCJIT_I_SIMPLE_REGISTER_ARG_NAME "->%s + %s",
-	   gdbarch_register_name (gdbarch, regnum), hex_string (offset));
+	   regname, hex_string (offset));
+
+  do_cleanups (cleanups);
 }
 
 static void
