@@ -95,35 +95,16 @@ gcc_jit_command (char *arg, int from_tty)
 	  if (check_for_argument (&arg, "-file", sizeof ("-file") - 1)
 	      || check_for_argument (&arg, "-f", sizeof ("-f") - 1))
 	    {
-	      FILE *input;
-	      int file_size;
-
 	      /* "check_for_argument" still leaves a space at the
 	       beginning of the arg string.  Trim to the first
 	       non-space character.  */
 	      arg = skip_spaces (arg);
-	      arg = tilde_expand (arg);
 
-	      input = gdb_fopen_cloexec (arg, "r");
+	      arg = gdb_abspath (arg);
+	      make_cleanup (xfree, arg);
 
-	      if (input == NULL)
-		error (_("Cannot open \"%s\" for reading."), arg);
-
-	      fseek (input, 0L, SEEK_END);
-	      file_size = ftell (input);
-	      fseek (input, 0L, SEEK_SET);
-	      buffer = xmalloc (file_size + 1);
+	      buffer = xstrprintf ("#include \"%s\"\n", arg);
 	      make_cleanup (xfree, buffer);
-
-	      if (fread (buffer, sizeof (char), file_size, input)
-		  != file_size)
-		{
-		  fclose (input);
-		  error (_("Error reading %s"), arg);
-		}
-
-	      fclose (input);
-	      buffer[file_size] = 0;
 	    }
 	  else
 	    error(_("Unknown argument passed to command."));
