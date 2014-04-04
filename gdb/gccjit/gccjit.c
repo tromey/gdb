@@ -329,7 +329,7 @@ generate_register_struct (struct ui_file *stream, struct gdbarch *gdbarch,
       }
 
   if (!seen)
-    fputs_unfiltered ("  char _dummy;\n", stream);
+    fputs_unfiltered ("  char " GCCJIT_I_SIMPLE_REGISTER_DUMMY ";\n", stream);
 
   fputs_unfiltered ("};\n\n", stream);
 }
