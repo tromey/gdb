@@ -314,13 +314,71 @@ generate_register_struct (struct ui_file *stream, struct gdbarch *gdbarch,
       {
 	if (registers_used[i])
 	  {
-	    struct type *regtype = register_type (gdbarch, i);
+	    struct type *regtype = check_typedef (register_type (gdbarch, i));
+	    const char *regname = gdbarch_register_name (gdbarch, i);
 
 	    seen = 1;
 
+	    /* You might think we could use type_print here.  However,
+	       target descriptions often use types with names like
+	       "int64_t", which may not be defined in the inferior
+	       (and in any case would not be looked up due to the
+	       #pragma business).  So, we take a much simpler
+	       approach: for pointer- or integer-typed registers, emit
+	       the field in the most direct way; and for other
+	       register types (typically flags or vectors), emit a
+	       maximally-aligned array of the correct size.  */
+
 	    fputs_unfiltered ("  ", stream);
-	    type_print (regtype, gdbarch_register_name (gdbarch, i), stream,
-			-1); /* FIXME? */
+	    switch (TYPE_CODE (regtype))
+	      {
+	      case TYPE_CODE_PTR:
+		fprintf_filtered (stream, "void *%s", regname);
+		break;
+
+	      case TYPE_CODE_INT:
+		{
+		  const char *mode = NULL;
+
+		  switch (TYPE_LENGTH (regtype))
+		    {
+		    case 1:
+		      mode = "QI";
+		      break;
+		    case 2:
+		      mode = "HI";
+		      break;
+		    case 4:
+		      mode = "SI";
+		      break;
+		    case 8:
+		      mode = "DI";
+		      break;
+		    }
+
+		  if (mode != NULL)
+		    {
+		      if (TYPE_UNSIGNED (regtype))
+			fputs_unfiltered ("unsigned ", stream);
+		      fprintf_unfiltered (stream,
+					  "int %s"
+					  " __attribute__ ((__mode__(__%s__)))",
+					  regname,
+					  mode);
+		      break;
+		    }
+		}
+
+		/* Fall through.  */
+
+	      default:
+		fprintf_unfiltered (stream,
+				    "  unsigned char %s[%d]"
+				    " __attribute__((__aligned__("
+				    "__BIGGEST_ALIGNMENT__)))",
+				    regname,
+				    TYPE_LENGTH (regtype));
+	      }
 	    fputs_unfiltered (";\n", stream);
 	  }
       }
