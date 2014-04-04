@@ -435,28 +435,25 @@ print_label (struct ui_file *stream, const void *scope, int target)
 static void
 pushf_register_address (int indent, struct ui_file *stream,
 			unsigned char *registers_used,
-			int regnum)
+			struct gdbarch *gdbarch, int regnum)
 {
   registers_used[regnum] = 1;
-  pushf (indent, stream, "&" GCCJIT_I_SIMPLE_REGISTER_ARG_NAME "->"
-	 GCCJIT_I_SIMPLE_REGISTER_FORMAT,
-	 regnum);
+  pushf (indent, stream, "&" GCCJIT_I_SIMPLE_REGISTER_ARG_NAME "->%s",
+	 gdbarch_register_name (gdbarch, regnum));
 }
 
 static void
 pushf_register (int indent, struct ui_file *stream,
 		unsigned char *registers_used,
-		int regnum, uint64_t offset)
+		struct gdbarch *gdbarch, int regnum, uint64_t offset)
 {
   registers_used[regnum] = 1;
   if (offset == 0)
-    pushf (indent, stream, GCCJIT_I_SIMPLE_REGISTER_ARG_NAME "->"
-	   GCCJIT_I_SIMPLE_REGISTER_FORMAT,
-	   regnum);
+    pushf (indent, stream, GCCJIT_I_SIMPLE_REGISTER_ARG_NAME "->%s",
+	   gdbarch_register_name (gdbarch, regnum));
   else
-    pushf (indent, stream, GCCJIT_I_SIMPLE_REGISTER_ARG_NAME "->"
-	   GCCJIT_I_SIMPLE_REGISTER_FORMAT " + %s",
-	   regnum, hex_string (offset));
+    pushf (indent, stream, GCCJIT_I_SIMPLE_REGISTER_ARG_NAME "->%s + %s",
+	   gdbarch_register_name (gdbarch, regnum), hex_string (offset));
 }
 
 static void
@@ -633,14 +630,14 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 	case DW_OP_reg30:
 	case DW_OP_reg31:
 	  dwarf_expr_require_composition (op_ptr, op_end, "DW_OP_regx");
-	  pushf_register_address (indent, stream, registers_used,
+	  pushf_register_address (indent, stream, registers_used, arch,
 				  translate_register (arch, op - DW_OP_reg0));
 	  break;
 
 	case DW_OP_regx:
 	  op_ptr = safe_read_uleb128 (op_ptr, op_end, &reg);
 	  dwarf_expr_require_composition (op_ptr, op_end, "DW_OP_regx");
-	  pushf_register_address (indent, stream, registers_used,
+	  pushf_register_address (indent, stream, registers_used, arch,
 				  translate_register (arch, reg));
 	  break;
 
@@ -678,7 +675,7 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 	case DW_OP_breg31:
 	  op_ptr = safe_read_sleb128 (op_ptr, op_end, &offset);
 	  pushf_register (indent, stream, registers_used,
-			  translate_register (arch, op - DW_OP_breg0),
+			  arch, translate_register (arch, op - DW_OP_breg0),
 			  offset);
 	  break;
 	case DW_OP_bregx:
@@ -686,7 +683,7 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 	    op_ptr = safe_read_uleb128 (op_ptr, op_end, &reg);
 	    op_ptr = safe_read_sleb128 (op_ptr, op_end, &offset);
 	    pushf_register (indent, stream, registers_used,
-			    translate_register (arch, reg),
+			    arch, translate_register (arch, reg),
 			    offset);
 	  }
 	  break;
@@ -857,7 +854,8 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 				       &text_offset, &cfa_start, &cfa_end))
 	      {
 		/* Register.  */
-		pushf_register (indent, stream, registers_used, regnum, off);
+		pushf_register (indent, stream, registers_used, arch, regnum,
+				off);
 	      }
 	    else
 	      {

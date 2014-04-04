@@ -315,15 +315,12 @@ generate_register_struct (struct ui_file *stream, struct gdbarch *gdbarch,
 	if (registers_used[i])
 	  {
 	    struct type *regtype = register_type (gdbarch, i);
-	    char regname[50];
 
 	    seen = 1;
 
-	    xsnprintf (regname, sizeof (regname),
-		       GCCJIT_I_SIMPLE_REGISTER_FORMAT, i);
-
 	    fputs_unfiltered ("  ", stream);
-	    type_print (regtype, regname, stream, -1); /* FIXME? */
+	    type_print (regtype, gdbarch_register_name (gdbarch, i), stream,
+			-1); /* FIXME? */
 	    fputs_unfiltered (";\n", stream);
 	  }
       }
