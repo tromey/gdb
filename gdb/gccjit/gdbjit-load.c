@@ -329,10 +329,10 @@ gdbjit_load (const char *object_file)
   set_objfile_data (objfile, gdbjit_objfile_data_key, symbol_table);
   discard_cleanups (cleanups_symbol_table);
 
-  bmsym = lookup_minimal_symbol_text (GCCJIT_I_SIMPLE_FUNCNAME, objfile);
+  bmsym = lookup_minimal_symbol_text (GCC_C_FE_WRAPPER_FUNCTION, objfile);
   if (bmsym.minsym == NULL || MSYMBOL_TYPE (bmsym.minsym) == mst_file_text)
     error (_("Could not find symbol \"%s\" of JIT module \"%s\"."),
-	   GCCJIT_I_SIMPLE_FUNCNAME, filename);
+	   GCC_C_FE_WRAPPER_FUNCTION, filename);
   func_addr = BMSYMBOL_VALUE_ADDRESS (bmsym);
 
   for (symp = symbol_table; symp < symbol_table + number_of_symbols; symp++)

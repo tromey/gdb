@@ -228,7 +228,7 @@ add_code_header (enum gccjit_i_scope_types type, struct ui_file *buf)
   {
   case GCCJIT_I_SIMPLE_SCOPE:
     fputs_unfiltered ("void "
-		      GCCJIT_I_SIMPLE_FUNCNAME
+		      GCC_C_FE_WRAPPER_FUNCTION
 		      " (struct "
 		      GCCJIT_I_SIMPLE_REGISTER_STRUCT_TAG
 		      " *"

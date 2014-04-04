@@ -45,7 +45,6 @@ struct gdb_gcc_instance
 /* A simple scope just declares a function named "_gdb_expr", takes no
    arguments and returns no value.  */
 
-#define GCCJIT_I_SIMPLE_FUNCNAME "_gdb_expr"
 #define GCCJIT_I_SIMPLE_REGISTER_STRUCT_TAG "__gdb_regs"
 #define GCCJIT_I_SIMPLE_REGISTER_ARG_NAME "__regs"
 #define GCCJIT_I_SIMPLE_REGISTER_DUMMY "_dummy"
