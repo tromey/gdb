@@ -1,4 +1,4 @@
-/* Header file for GDB GCC JIT.
+/* Header file to load module for 'expression' command.
    Copyright (C) 2014 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
@@ -17,6 +17,23 @@
 #ifndef GDB_GCCJIT_GDBJIT_LOAD_H
 #define GDB_GCCJIT_GDBJIT_LOAD_H
 
-extern void gdbjit_load (const char *object_file);
+struct gdbjit_module
+{
+  /* objfile for the compiled JIT module.  */
+  struct objfile *objfile;
+
+  /* Inferior function address.  */
+  CORE_ADDR func_addr;
+  
+  /* Inferior registers address or NULL if the inferior function does not
+     require any.  */
+  CORE_ADDR regs_addr;
+
+  /* This variable is NULL-initialized by gdbjit_load.
+     It is required by gdbjit_run.  */
+  struct gdb_gcc_instance *compiler;
+};
+
+extern struct gdbjit_module gdbjit_load (const char *object_file);
 
 #endif /* GDB_GCCJIT_GDBJIT_LOAD_H */

@@ -56,6 +56,13 @@ struct gdb_gcc_instance
 
 extern char *gdbjit_register_name_mangled (struct gdbarch *gdbarch, int regnum);
 
+/* Convert JIT source register name to register number of GDBARCH.
+   Returned value is always >= 0, function throws an error for non-matching
+   REG_NAME.  */
+
+extern int gdbjit_register_name_demangle (struct gdbarch *gdbarch,
+					  const char *reg_name);
+
 /* Convert a gdb type, TYPE, to a GCC type.  CONTEXT is used to do the
    actual conversion.  The new GCC type is returned.  */
 

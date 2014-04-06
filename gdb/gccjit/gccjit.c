@@ -43,6 +43,7 @@
 #include "arch-utils.h"
 #include "regcache.h"
 #include "value.h"
+#include "gdbjit-run.h"
 
 
 
@@ -388,7 +389,7 @@ concat_expr_and_scope (struct command_line *cmd,
 		       enum gccjit_i_scope_types type,
 		       struct gdbarch *gdbarch,
 		       const struct block *expr_block,
-		       CORE_ADDR expr_pc)
+		       CORE_ADDR expr_pc, enum gccjit_i_scope_types scope)
 {
   struct command_line *iter;
   struct ui_file *buf, *var_stream;
@@ -426,7 +427,8 @@ concat_expr_and_scope (struct command_line *cmd,
 
   reg_code = ui_file_xstrdup (var_stream, NULL);
   make_cleanup (xfree, reg_code);
-  fputs_unfiltered (reg_code, buf);
+  if (scope == GCCJIT_I_SIMPLE_SCOPE)
+    fputs_unfiltered (reg_code, buf);
 
   fputs_unfiltered ("#pragma GCC user_expression\n", buf);
   fputs_unfiltered ("#line 1 \"gdb command line\"\n", buf);
@@ -582,13 +584,15 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
   char *code;
   char *object_file = NULL;
   struct gdb_gcc_instance *compiler;
-  struct cleanup *cleanup;
+  struct cleanup *cleanup, *cleanup_code;
   const struct block *expr_block;
-  CORE_ADDR expr_pc = 0;
+  CORE_ADDR trash_pc, expr_pc;
   int argc;
   char **argv;
+  struct gdbjit_module gdbjit_module;
 
-  expr_block = get_expr_block_and_pc (&expr_pc);
+  expr_block = get_expr_block_and_pc (&trash_pc);
+  expr_pc = get_frame_address_in_block (get_selected_frame (NULL));
 
   /* Set up instance and context for the compiler.  */
   compiler = new_gdb_gcc_instance (get_gcc_jit_context (), expr_block);
@@ -598,13 +602,15 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
      compiler.  */
   if (cmd != NULL)
     code = concat_expr_and_scope (cmd, NULL, scope, get_current_arch (),
-				  expr_block, expr_pc);
+				  expr_block, expr_pc, scope);
   else if (cmd_string != NULL)
     code = concat_expr_and_scope (NULL, cmd_string, scope, get_current_arch (),
-				  expr_block, expr_pc);
+				  expr_block, expr_pc, scope);
   else
     error (_("Neither a simple expression, or a multi-line specified."));
-  make_cleanup (xfree, code);
+  cleanup_code = make_cleanup (xfree, code);
+  if (gccjit_debug)
+    fprintf_unfiltered (gdb_stdout, "debug output:\n\n%s", code);
 
   /* Set compiler command-line arguments.  */
   get_selected_pc_producer_args (&argc, &argv);
@@ -623,22 +629,28 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
 
   /* Call the compiler and start the compilation process.  */
   compiler->fe->ops->set_program_text (compiler->fe, code);
+  do_cleanups (cleanup_code);
+
   object_file = compiler->fe->ops->compile (compiler->fe, gccjit_debug);
   make_cleanup (compiler_cleanup, compiler);
-
   if (gccjit_debug)
-    {
-      fprintf_unfiltered (gdb_stdout, "object file produced: %s\n\n",
-			  object_file);
-      fprintf_unfiltered (gdb_stdout, "debug output:\n\n%s", code);
-    }
+    fprintf_unfiltered (gdb_stdout, "object file produced: %s\n\n",
+			object_file);
 
   /* Execute object code returned from compiler.  */
-  if (object_file)
-    gdbjit_load (object_file);
+  if (object_file == NULL)
+    {
+      do_cleanups (cleanup);
+      return;
+    }
 
-  do_cleanups (cleanup);
+  gdbjit_module = gdbjit_load (object_file);
+  discard_cleanups (cleanup);
+  gdbjit_module.compiler = compiler;
+  gdbjit_run (&gdbjit_module);
 }
+
+/* See gccjit/gccjit-internal.h.  */
 
 char *
 gdbjit_register_name_mangled (struct gdbarch *gdbarch, int regnum)
@@ -646,6 +658,24 @@ gdbjit_register_name_mangled (struct gdbarch *gdbarch, int regnum)
   const char *regname = gdbarch_register_name (gdbarch, regnum);
 
   return xstrprintf ("__%s", regname);
+}
+
+/* See gccjit/gccjit-internal.h.  */
+
+int
+gdbjit_register_name_demangle (struct gdbarch *gdbarch, const char *regname)
+{
+  int regnum;
+
+  if (regname[0] != '_' || regname[1] != '_')
+    error (_("Invalid register name \"%s\"."), regname);
+  regname += 2;
+
+  for (regnum = 0; regnum < gdbarch_num_regs (gdbarch); regnum++)
+    if (strcmp (regname, gdbarch_register_name (gdbarch, regnum)) == 0)
+      return regnum;
+
+  error (_("Cannot find gdbarch register \"%s\"."), regname);
 }
 
 void

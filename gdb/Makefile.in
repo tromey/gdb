@@ -284,13 +284,15 @@ SUBDIR_TUI_CFLAGS= \
 # GCC GIT sub directory definitions
 #
 SUBDIR_GCC_JIT_OBS = \
-	gccjit.o gcc-symbols.o gcc-types.o gdbjit-load.o loc2c.o
+	gccjit.o gcc-symbols.o gcc-types.o gdbjit-load.o gdbjit-run.o loc2c.o
 SUBDIR_GCC_JIT_SRCS = \
 	gccjit/gccjit.c \
 	gccjit/gcc-symbols.c \
 	gccjit/gcc-types.c \
 	gccjit/gdbjit-load.c \
 	gccjit/gdbjit-load.h \
+	gccjit/gdbjit-run.c \
+	gccjit/gdbjit-run.h \
 	gccjit/loc2c.c
 
 # Guile sub directory definitons for guile support.
@@ -1924,6 +1926,10 @@ gcc-symbols.o: $(srcdir)/gccjit/gcc-symbols.c
 
 gdbjit-load.o: $(srcdir)/gccjit/gdbjit-load.c
 	$(COMPILE) $(srcdir)/gccjit/gdbjit-load.c
+	$(POSTCOMPILE)
+
+gdbjit-run.o: $(srcdir)/gccjit/gdbjit-run.c
+	$(COMPILE) $(srcdir)/gccjit/gdbjit-run.c
 	$(POSTCOMPILE)
 
 loc2c.o: $(srcdir)/gccjit/loc2c.c

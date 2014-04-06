@@ -728,7 +728,7 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 					datastart, datastart + datalen,
 					NULL, per_cu);
 
-	    pushf (indent, stream, fb_name);
+	    pushf (indent, stream, "%s + %s", fb_name, hex_string (offset));
 	  }
 	  break;
 

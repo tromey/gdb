@@ -1,6 +1,5 @@
-/* This testcase is part of GDB, the GNU debugger.
-
-   Copyright 2014 Free Software Foundation, Inc.
+/* Header file to call module for 'expression' command.
+   Copyright (C) 2014 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -15,27 +14,11 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-int globalvar = 10;
+#ifndef GDB_GCCJIT_GDBJIT_RUN_H
+#define GDB_GCCJIT_GDBJIT_RUN_H
 
-static void
-func_static (int addend)
-{
-  globalvar += addend;
-}
+#include "gdbjit-load.h"
 
-void
-func_global (int subtrahend)
-{
-  globalvar -= subtrahend;
-}
+extern void gdbjit_run (const struct gdbjit_module *module);
 
-int *intptr;
-
-int
-main (void)
-{
-  int localvar = 50;
-
-  func_static (0); /* break-here */
-  return 0;
-}
+#endif /* GDB_GCCJIT_GDBJIT_RUN_H */

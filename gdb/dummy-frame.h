@@ -59,4 +59,17 @@ extern void dummy_frame_discard (struct frame_id dummy_id);
 
 extern const struct frame_unwind dummy_frame_unwind;
 
+/* Call DTOR with DTOR_DATA when DUMMY_ID frame gets discarded.
+   Dummy frame with DUMMY_ID must exist.  There must be no other call of
+   register_dummy_frame_dtor for that dummy frame.  */
+typedef void (dummy_frame_dtor_ftype) (void *data);
+extern void register_dummy_frame_dtor (struct frame_id dummy_id,
+				       dummy_frame_dtor_ftype *dtor,
+				       void *dtor_data);
+
+/* Return 1 if there exists dummy frame with registered DTOR and DTOR_DATA.
+   Return 0 otherwise.  */
+extern int find_dummy_frame_dtor (dummy_frame_dtor_ftype *dtor,
+				  void *dtor_data);
+
 #endif /* !defined (DUMMY_FRAME_H)  */
