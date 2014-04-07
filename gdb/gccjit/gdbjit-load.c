@@ -529,16 +529,6 @@ gdbjit_load (const char *object_file)
   return retval;
 }
 
-/* Implement command "expression-load".  */
-
-static void
-expression_load_command (char *args, int from_tty)
-{
-  if (args == NULL || *args == 0)
-    error (_("Argument required."));
-  gdbjit_load (args);
-}
-
 /* Destructor for gdbjit_objfile_data_key.  */
 
 static void
@@ -556,8 +546,4 @@ _initialize_gdbjit_load (void)
 {
   gdbjit_objfile_data_key = register_objfile_data_with_cleanup (NULL,
 						       gdbjit_per_objfile_free);
-
-  add_cmd ("expression-load", class_maintenance, expression_load_command,
-	   _("Load shared object library symbols for files matching REGEXP."),
-	   &maintenancelist);
 }
