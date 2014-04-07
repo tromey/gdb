@@ -354,6 +354,28 @@ struct language_defn
     /* Various operations on varobj.  */
     const struct lang_varobj_ops *la_varobj_ops;
 
+    /* If this language allows compilation from the gdb command line,
+       this method should be non-NULL.  When called it should return
+       an instance of struct gcc_context appropriate to the language.
+       When defined this method must never return NULL; instead it
+       should throw an exception on failure.  FIXME: the lifetime
+       assumptions are weird here.  */
+
+    struct gcc_context *(*la_get_gcc_context) (void);
+
+    /* This method must be defined if 'la_get_gcc_context' is defined.
+       If 'la_get_gcc_context' is not defined, then this method is
+       ignored.
+       
+       This takes the user-supplied text and returns a newly malloc'd
+       bit of code to compile.  FIXME - more comment  */
+
+    char *(*la_compute_program) (const char *input,
+				 enum gccjit_i_scope_types type,
+				 struct gdbarch *gdbarch,
+				 const struct block *expr_block,
+				 CORE_ADDR expr_pc);
+
     /* Add fields above this point, so the magic number is always last.  */
     /* Magic number for compat checking.  */
 
