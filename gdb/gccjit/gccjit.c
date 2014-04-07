@@ -166,6 +166,54 @@ get_gcc_jit_context (void)
   return fe_context;
 }
 
+/* A cleanup function to remove a directory and all its contents.  */
+
+static void
+do_rmdir (void *arg)
+{
+  char *zap = concat ("rm -rf ", arg, (char *) NULL);
+
+  system (zap);
+}
+
+/* Return the name of the temporary directory to use for .o files, and
+   arrange for the directory to be removed at shutdown.  */
+
+static const char *
+get_object_file_tempdir (void)
+{
+  static char *tempdir_name;
+
+#define TEMPLATE "/tmp/gdbobj-XXXXXX"
+  char tname[sizeof (TEMPLATE)];
+
+  if (tempdir_name != NULL)
+    return tempdir_name;
+
+  strcpy (tname, TEMPLATE);
+#undef TEMPLATE
+  tempdir_name = mkdtemp (tname);
+  if (tempdir_name == NULL)
+    perror_with_name (_("could not make temporary directory"));
+
+  tempdir_name = xstrdup (tempdir_name);
+  make_final_cleanup (do_rmdir, tempdir_name);
+  return tempdir_name;
+}
+
+/* Return the name of an object file.  The name is allocated by malloc
+   and should be freed by the caller.  */
+
+static char *
+get_new_object_name (void)
+{
+  static int seq;
+  const char *dir = get_object_file_tempdir ();
+
+  ++seq;
+  return xstrprintf ("%s%sout%d.o", dir, SLASH_STRING, seq);
+}
+
 /* Write one macro definition.  */
 
 static void
@@ -584,12 +632,13 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
   char *code;
   char *object_file = NULL;
   struct gdb_gcc_instance *compiler;
-  struct cleanup *cleanup, *cleanup_code;
+  struct cleanup *cleanup;
   const struct block *expr_block;
   CORE_ADDR trash_pc, expr_pc;
   int argc;
   char **argv;
   struct gdbjit_module gdbjit_module;
+  int ok;
 
   expr_block = get_expr_block_and_pc (&trash_pc);
   expr_pc = get_frame_address_in_block (get_selected_frame (NULL));
@@ -608,7 +657,7 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
 				  expr_block, expr_pc, scope);
   else
     error (_("Neither a simple expression, or a multi-line specified."));
-  cleanup_code = make_cleanup (xfree, code);
+  make_cleanup (xfree, code);
   if (gccjit_debug)
     fprintf_unfiltered (gdb_stdout, "debug output:\n\n%s", code);
 
@@ -629,25 +678,23 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
 
   /* Call the compiler and start the compilation process.  */
   compiler->fe->ops->set_program_text (compiler->fe, code);
-  do_cleanups (cleanup_code);
 
-  object_file = compiler->fe->ops->compile (compiler->fe, gccjit_debug);
+  object_file = get_new_object_name ();
+  make_cleanup (xfree, object_file);
+  ok = compiler->fe->ops->compile (compiler->fe, object_file, gccjit_debug);
   make_cleanup (compiler_cleanup, compiler);
   if (gccjit_debug)
     fprintf_unfiltered (gdb_stdout, "object file produced: %s\n\n",
 			object_file);
 
   /* Execute object code returned from compiler.  */
-  if (object_file == NULL)
+  if (ok)
     {
-      do_cleanups (cleanup);
-      return;
+      gdbjit_module = gdbjit_load (object_file);
+      gdbjit_run (&gdbjit_module);
     }
 
-  gdbjit_module = gdbjit_load (object_file);
-  discard_cleanups (cleanup);
-  gdbjit_module.compiler = compiler;
-  gdbjit_run (&gdbjit_module);
+  do_cleanups (cleanup);
 }
 
 /* See gccjit/gccjit-internal.h.  */

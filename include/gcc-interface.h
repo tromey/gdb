@@ -142,12 +142,14 @@ struct gcc_c_fe_interface
 			 gcc_c_symbol_address_function *address_oracle,
 			 void *datum);
 
-  /* Perform the compilation.  Return a filename if it was successful,
-     NULL otherwise.  The filename is malloc'd and ownership is
-     transferred to the caller.  VERBOSE can be set to cause GCC to
-     print some information as it works.  */
+  /* Perform the compilation.  FILENAME is the name of the resulting
+     object file.  VERBOSE can be set to cause GCC to print some
+     information as it works.  Returns true on success, false on
+     error.  */
 
-  char *(*compile) (struct gcc_context *self, int /* bool */ verbose);
+  int /* bool */ (*compile) (struct gcc_context *self,
+			     const char *filename,
+			     int /* bool */ verbose);
 
   /* Clean up after compilation.  This will remove any intermediate
      files that were created.  */

@@ -28,10 +28,6 @@ struct gdbjit_module
   /* Inferior registers address or NULL if the inferior function does not
      require any.  */
   CORE_ADDR regs_addr;
-
-  /* This variable is NULL-initialized by gdbjit_load.
-     It is required by gdbjit_run.  */
-  struct gdb_gcc_instance *compiler;
 };
 
 extern struct gdbjit_module gdbjit_load (const char *object_file);

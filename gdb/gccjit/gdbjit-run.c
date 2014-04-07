@@ -25,31 +25,19 @@
 #include "gccjit-internal.h"
 #include "dummy-frame.h"
 
-/* Helper for do_module_cleanup.  */
-
-struct module_cleanup
-{
-  char *objfile_name_string;
-  struct gdb_gcc_instance *compiler;
-};
-
-/* Cleanup everything after the inferior function dummy frame gets discarded.
-   The 'compiler' field cannot be cleaned up later as its 'cleanup' function
-   will delete the JIT module object file while GDB needs to have the file
-   available for symbols demand as long as its struct objfile remains
-   registered in GDB.  */
+/* Cleanup everything after the inferior function dummy frame gets
+   discarded.  */
 
 static dummy_frame_dtor_ftype do_module_cleanup;
 static void
 do_module_cleanup (void *arg)
 {
-  struct module_cleanup *module_cleanup = arg;
+  char *objfile_name_string = arg;
   struct objfile *objfile;
 
   ALL_OBJFILES (objfile)
     if ((objfile->flags & OBJF_USERLOADED) == 0
-        && (strcmp (objfile_name (objfile), module_cleanup->objfile_name_string)
-	    == 0))
+        && (strcmp (objfile_name (objfile), objfile_name_string) == 0))
       {
 	free_objfile (objfile);
 
@@ -60,10 +48,8 @@ do_module_cleanup (void *arg)
       }
 
   /* Delete the .o file.  */
-  module_cleanup->compiler->fe->ops->cleanup (module_cleanup->compiler->fe);
-
-  delete_gdb_gcc_instance (module_cleanup->compiler);
-  xfree (module_cleanup);
+  unlink (objfile_name_string);
+  xfree (objfile_name_string);
 }
 
 /* Perform inferior call of MODULE.  This function may throw an error.
@@ -79,13 +65,10 @@ gdbjit_run (const struct gdbjit_module *module)
   struct value *func_val;
   struct frame_id dummy_id;
   struct cleanup *cleanups;
-  struct module_cleanup *module_cleanup;
+  char *objfile_name_string;
   volatile struct gdb_exception ex;
 
-  module_cleanup = xmalloc (sizeof (*module_cleanup));
-  module_cleanup->objfile_name_string
-    = xstrdup (objfile_name (module->objfile));
-  module_cleanup->compiler = module->compiler;
+  objfile_name_string = xstrdup (objfile_name (module->objfile));
 
   TRY_CATCH (ex, RETURN_MASK_ERROR)
     {
@@ -95,7 +78,7 @@ gdbjit_run (const struct gdbjit_module *module)
 
       if (module->regs_addr == 0)
 	call_function_by_hand_dummy (func_val, 0, NULL,
-				     do_module_cleanup, module_cleanup);
+				     do_module_cleanup, objfile_name_string);
       else
 	{
 	  struct value *arg_val;
@@ -104,13 +87,13 @@ gdbjit_run (const struct gdbjit_module *module)
 		    (builtin_type (target_gdbarch ())->builtin_func_ptr,
 		     module->regs_addr);
 	  call_function_by_hand_dummy (func_val, 1, &arg_val,
-				       do_module_cleanup, module_cleanup);
+				       do_module_cleanup, objfile_name_string);
 	}
     }
   if (ex.reason < 0)
     {
-      if (!find_dummy_frame_dtor (do_module_cleanup, module_cleanup))
-	do_module_cleanup (module_cleanup);
+      if (!find_dummy_frame_dtor (do_module_cleanup, objfile_name_string))
+	do_module_cleanup (objfile_name_string);
       throw_exception (ex);
     }
 }
