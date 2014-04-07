@@ -434,10 +434,10 @@ generate_register_struct (struct ui_file *stream, struct gdbarch *gdbarch,
 static char *
 concat_expr_and_scope (struct command_line *cmd,
 		       char *simple_string,
-		       enum gccjit_i_scope_types type,
+		       enum gccjit_i_scope_types scope,
 		       struct gdbarch *gdbarch,
 		       const struct block *expr_block,
-		       CORE_ADDR expr_pc, enum gccjit_i_scope_types scope)
+		       CORE_ADDR expr_pc)
 {
   struct command_line *iter;
   struct ui_file *buf, *var_stream;
@@ -471,7 +471,7 @@ concat_expr_and_scope (struct command_line *cmd,
 		    " __gdb_intptr;\n",
 		    buf);
 
-  add_code_header (type, buf);
+  add_code_header (scope, buf);
 
   reg_code = ui_file_xstrdup (var_stream, NULL);
   make_cleanup (xfree, reg_code);
@@ -500,7 +500,7 @@ concat_expr_and_scope (struct command_line *cmd,
 	}
     }
 
-  add_code_footer (type, buf);
+  add_code_footer (scope, buf);
   code = ui_file_xstrdup (buf, NULL);
   do_cleanups (cleanup);
   return code;
@@ -651,10 +651,10 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
      compiler.  */
   if (cmd != NULL)
     code = concat_expr_and_scope (cmd, NULL, scope, get_current_arch (),
-				  expr_block, expr_pc, scope);
+				  expr_block, expr_pc);
   else if (cmd_string != NULL)
     code = concat_expr_and_scope (NULL, cmd_string, scope, get_current_arch (),
-				  expr_block, expr_pc, scope);
+				  expr_block, expr_pc);
   else
     error (_("Neither a simple expression, or a multi-line specified."));
   make_cleanup (xfree, code);
