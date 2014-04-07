@@ -728,10 +728,7 @@ gdbjit_register_name_demangle (struct gdbarch *gdbarch, const char *regname)
 void
 _initialize_gcc_jit (void)
 {
-  /* Right now we always have a jit.  TODO: Work out how to
-     tell if currently installed GCC supports a JIT interface.
-
-     TODO: The reason that the expression command has no completer for
+  /* TODO: The reason that the expression command has no completer for
      filenames is that filename_completer undergoes special treatment
      in completer.c:653.  The completion hint is massaged before the
      completion hint is passed to filename_completer, and also the
