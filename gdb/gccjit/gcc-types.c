@@ -86,7 +86,7 @@ convert_array (struct gdb_gcc_instance *context, struct type *type)
   gcc_type element_type;
   LONGEST low_bound, high_bound;
 
-  element_type = convert_array (context, TYPE_TARGET_TYPE (type));
+  element_type = convert_type (context, TYPE_TARGET_TYPE (type));
 
   if (get_array_bounds (type, &low_bound, &high_bound) == 0)
     high_bound = -1;
