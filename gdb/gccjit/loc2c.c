@@ -426,10 +426,10 @@ translate_register (struct gdbarch *arch, int dwarf_reg)
 }
 
 static void
-print_label (struct ui_file *stream, const void *scope, int target)
+print_label (struct ui_file *stream, unsigned int scope, int target)
 {
-  fprintf_filtered (stream, "__label_%s_%s",
-		    host_address_to_string (scope), pulongest (target));
+  fprintf_filtered (stream, "__label_%ud_%s",
+		    scope, pulongest (target));
 }
 
 static void
@@ -467,7 +467,6 @@ pushf_register (int indent, struct ui_file *stream,
 static void
 do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 			    const char *result_name,
-			    const void *scope,
 			    CORE_ADDR pc,
 			    struct gdbarch *arch,
 			    unsigned char *registers_used,
@@ -476,9 +475,15 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 			    CORE_ADDR *initial,
 			    struct dwarf2_per_cu_data *per_cu)
 {
+  /* We keep a counter so that labels and other objects we create have
+     unique names.  */
+  static unsigned int scope;
+
   enum bfd_endian byte_order = gdbarch_byte_order (arch);
   const gdb_byte * const base = op_ptr;
   int need_tempvar = 0;
+
+  ++scope;
 
   fprintfi_filtered (indent, stream, "void *%s;\n", result_name);
   fprintfi_filtered (indent, stream, "{\n");
@@ -723,7 +728,7 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 		       (long) (op_ptr - base));
 
 	    do_compile_dwarf_expr_to_c (indent, stream,
-					fb_name, framefunc,
+					fb_name,
 					pc, arch, registers_used, addr_size,
 					datastart, datastart + datalen,
 					NULL, per_cu);
@@ -876,7 +881,7 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 			   "__cfa_%ld", (long) (op_ptr - base));
 
 		do_compile_dwarf_expr_to_c (indent, stream,
-					    cfa_name, cfa_start,
+					    cfa_name,
 					    pc, arch, registers_used,
 					    addr_size,
 					    cfa_start, cfa_end,
@@ -920,14 +925,13 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 
 void
 compile_dwarf_expr_to_c (struct ui_file *stream, const char *result_name,
-			 const void *scope,
 			 CORE_ADDR pc,
 			 struct gdbarch *arch, unsigned char *registers_used,
 			 unsigned int addr_size,
 			 const gdb_byte *op_ptr, const gdb_byte *op_end,
 			 struct dwarf2_per_cu_data *per_cu)
 {
-  do_compile_dwarf_expr_to_c (2, stream, result_name, scope, pc,
+  do_compile_dwarf_expr_to_c (2, stream, result_name, pc,
 			      arch, registers_used, addr_size, op_ptr, op_end,
 			      NULL, per_cu);
 }

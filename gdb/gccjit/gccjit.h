@@ -26,7 +26,6 @@ struct gdbarch;
 struct dwarf2_per_cu_data;
 extern void compile_dwarf_expr_to_c (struct ui_file *stream,
 				     const char *result_name,
-				     const void *scope,
 				     CORE_ADDR pc,
 				     struct gdbarch *arch,
 				     unsigned char *registers_used,
