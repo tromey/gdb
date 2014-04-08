@@ -40,8 +40,8 @@
 #include "arch-utils.h"
 #include "value.h"
 #include "gdbjit-run.h"
-#include "wait.h"
-#include "poll.h"
+#include "gdb_wait.h"
+#include "filestuff.h"
 
 
 
@@ -418,7 +418,7 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
   struct gdbjit_module gdbjit_module;
   struct cleanup *cleanups;
 
-  if (pipe (pfd) == -1)
+  if (gdb_pipe_cloexec (pfd) == -1)
     error (_("Cannot create pipe for compiler process."));
 
   cleanups = make_cleanup_close (pfd[0]);
