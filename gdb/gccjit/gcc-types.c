@@ -281,7 +281,8 @@ convert_type_basic (struct gdb_gcc_instance *context, struct type *type)
       return convert_complex (context, type);
     }
 
-  error (_("cannot convert gdb type to gcc type"));
+  return context->fe->ops->error (context->fe,
+				  _("cannot convert gdb type to gcc type"));
 }
 
 gcc_type

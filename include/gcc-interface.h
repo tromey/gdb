@@ -303,6 +303,11 @@ struct gcc_c_fe_interface
   gcc_type (*build_vector_type) (struct gcc_context *self,
 				 gcc_type element_type,
 				 int num_elements);
+
+  /* Emit an error and return an error type object.  */
+
+  gcc_type (*error) (struct gcc_context *self,
+		     const char *message);
 };
 
 /* The GCC object.  */
