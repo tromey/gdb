@@ -84,19 +84,25 @@ static gcc_type
 convert_array (struct gdb_gcc_instance *context, struct type *type)
 {
   gcc_type element_type;
-  LONGEST low_bound, high_bound;
+  LONGEST low_bound, high_bound, count;
 
   element_type = convert_type (context, TYPE_TARGET_TYPE (type));
 
   if (get_array_bounds (type, &low_bound, &high_bound) == 0)
-    high_bound = -1;
+    count = -1;
+  else if (low_bound != 0)
+    return context->fe->ops->error (context->fe,
+				    _("cannot convert array type with "
+				      "non-zero lower bound to C"));
+  else
+    count = high_bound + 1;
 
   /* Doesn't handle VLA yet.  */
   if (TYPE_VECTOR (type))
     return context->fe->ops->build_vector_type (context->fe, element_type,
-						high_bound);
+						count);
   return context->fe->ops->build_array_type (context->fe,
-					     element_type, high_bound);
+					     element_type, count);
 }
 
 static gcc_type
