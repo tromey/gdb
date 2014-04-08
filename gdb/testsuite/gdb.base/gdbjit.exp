@@ -14,7 +14,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 standard_testfile .c gdbjit-shlib.c
-if { [prepare_for_testing ${testfile}.exp ${testfile} ${srcfile}] } {
+
+get_compiler_info
+set options {debug}
+if [test_compiler_info gcc*] {
+    lappend options additional_flags=-g3
+}
+
+if { [prepare_for_testing ${testfile}.exp ${testfile} ${srcfile} $options] } {
     return -1
 }
 
@@ -23,6 +30,14 @@ if ![runto_main] {
 }
 
 gdb_test "p globalvar" " = 10" "expect 10"
+
+gdb_test_no_output "expression globalvar = SOME_MACRO;" \
+    "set variable from macro"
+gdb_test "p globalvar" " = 23" "expect 23"
+
+gdb_test_no_output "expression globalvar = ARG_MACRO(0, 0);" \
+    "set variable from function-like macro"
+gdb_test "p globalvar" " = -1" "expect -1"
 
 gdb_test_no_output "expression globalvar = 42;" "set variable"
 gdb_test "p globalvar" " = 42" "expect 42"
@@ -74,6 +89,86 @@ gdb_test "p localvar" " = 12" "expect 12"
 
 gdb_test_no_output "expression localvar *= 2;" "modify localvar"
 gdb_test "p localvar" " = 24" "expect 24"
+
+gdb_test_no_output "expression localvar = shadowed" \
+    "test shadowing"
+gdb_test "p localvar" " = 52" "expect 52"
+
+#
+# Test setting fields and also many different types.
+#
+
+gdb_test_no_output "expression struct_object.selffield = &struct_object"
+gdb_test "print struct_object.selffield == &struct_object" " = 1"
+
+gdb_test_no_output "expression struct_object.charfield = 1"
+gdb_test "print struct_object.charfield" " = 1 '\\\\001'"
+gdb_test_no_output "expression struct_object.ucharfield = 1"
+gdb_test "print struct_object.ucharfield" " = 1 '\\\\001'"
+
+foreach {field value} {
+    shortfield -5
+    ushortfield 5
+    intfield -7
+    uintfield 7
+    longfield -9
+    ulongfield 9
+    enumfield ONE
+    floatfield 1
+    doublefield 2
+} {
+    gdb_test_no_output "expression struct_object.$field = $value"
+    gdb_test "print struct_object.$field" " = $value"
+}
+
+gdb_test_no_output "expression struct_object.arrayfield\[2\] = 7"
+gdb_test "print struct_object.arrayfield" \
+    " = \\{0, 0, 7, 0, 0\\}"
+
+gdb_test_no_output "expression struct_object.complexfield = 7 + 5i"
+gdb_test "print struct_object.complexfield" " = 7 \\+ 5 \\* I"
+
+gdb_test_no_output "expression struct_object.boolfield = 1"
+gdb_test "print struct_object.boolfield" " = true"
+
+gdb_test_no_output "expression struct_object.vectorfield\[2\] = 7"
+gdb_test "print struct_object.vectorfield" \
+    " = \\{0, 0, 7, 0\\}"
+
+gdb_test_no_output "expression union_object.typedeffield = 7"
+gdb_test "print union_object.typedeffield" " = 7"
+gdb_test "print union_object.intfield" " = 7"
+
+
+#
+# Test the case where the registers structure would not normally have
+# any fields.
+#
+
+gdb_breakpoint [gdb_get_line_number "no_args_or_locals breakpoint"]
+gdb_continue_to_breakpoint "no_args_or_locals"
+
+gdb_test_no_output "expression globalvar = 77;" "set variable to 77"
+gdb_test "p globalvar" " = 77" "expect 77"
+
+
+#
+# Some simple coverage tests.
+#
+
+gdb_test "show debug gccjit" "GCC JIT debugging is .*"
+gdb_test "show gdbjit-args" \
+    "JIT expression GCC command-line arguments are .*"
+gdb_test "expression -z" "Unknown argument.*"
+
+gdb_test "set lang java" \
+    "Warning: the current language does not match this frame."
+gdb_test "expression globalvar" "no compiler support for this language"
+gdb_test_no_output "set lang auto"
+
+gdb_test_no_output "expression union union_type newdecl_u"
+gdb_test_no_output "expression struct struct_type newdecl_s"
+gdb_test_no_output "expression inttypedef newdecl_i"
 
 
 if {[skip_shlib_tests]} {

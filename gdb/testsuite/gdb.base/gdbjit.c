@@ -15,6 +15,52 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
+#define SOME_MACRO 23
+#define ARG_MACRO(X, Y) ((X) + (Y) - 1)
+
+
+enum enum_type {
+  ONE = 1,
+  TWO = 2
+};
+
+typedef int v4 __attribute__ ((vector_size (16)));
+
+union union_type;
+
+struct struct_type {
+  char charfield;
+  unsigned char ucharfield;
+  short shortfield;
+  unsigned short ushortfield;
+  int intfield;
+  unsigned int uintfield;
+  long longfield;
+  unsigned long ulongfield;
+  enum enum_type enumfield;
+  float floatfield;
+  double doublefield;
+  const union union_type *ptrfield;
+  struct struct_type *selffield;
+  int arrayfield[5];
+  _Complex double complexfield;
+  _Bool boolfield;
+  v4 vectorfield;
+};
+
+typedef int inttypedef;
+
+union union_type {
+  int intfield;
+  inttypedef typedeffield;
+};
+
+/* volatile provides some coverage of the conversion code.  */
+volatile struct struct_type struct_object;
+
+union union_type union_object;
+
+
 int globalvar = 10;
 
 static void
@@ -29,13 +75,27 @@ func_global (int subtrahend)
   globalvar -= subtrahend;
 }
 
+void
+no_args_or_locals (void)
+{
+  /* no_args_or_locals breakpoint */
+}
+
 int *intptr;
 
 int
 main (void)
 {
   int localvar = 50;
+  int shadowed = 51;
 
-  func_static (0); /* break-here */
-  return 0;
+  {
+    int another_local = 7;
+    int shadowed = 52;
+
+    func_static (0); /* break-here */
+    no_args_or_locals ();
+  }
+
+ return 0;
 }
