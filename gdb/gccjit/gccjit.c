@@ -416,9 +416,13 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
   char *object_file = NULL;
   volatile struct gdb_exception except;
   struct gdbjit_module gdbjit_module;
+  struct cleanup *cleanups;
 
   if (pipe (pfd) == -1)
     error (_("Cannot create pipe for compiler process."));
+
+  cleanups = make_cleanup_close (pfd[0]);
+  make_cleanup_close (pfd[1]);
 
   child = fork ();
 
@@ -441,15 +445,16 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
 	 filename.  */
       bytes_read = read (pfd[0], &size, sizeof (size));
       if (bytes_read > 0)
-	object_file = xmalloc (size + 1);
+	{
+	  object_file = xmalloc (size + 1);
+	  make_cleanup (xfree, object_file);
+	}
       else
 	goto error;
 
       bytes_read = read (pfd[0], object_file, size);
-
       if (bytes_read != size)
 	goto error;
-
       object_file[size] = '\0';
 
       /* We have the filename, so execute it.  We need to signal
@@ -467,8 +472,7 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
 	      /* Something has gone wrong in the execution.
 		 Signal the GDB with the compiler to go ahead and
 		 exit and then process errors.  */
-	      close (pfd[0]);
-	      close (pfd[1]);
+	      do_cleanups (cleanups);
 	      kill (child, SIGINT);
 	      waitpid (child, &childExitStatus, 0);
 	      throw_exception (except);
@@ -479,17 +483,14 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
 	 and returned.  We now signal the GDB process that
 	 compiled the expression to go ahead and exit, close the
 	 pipes and reap the child process.  */
-      close (pfd[0]);
-      close (pfd[1]);
+      do_cleanups (cleanups);
       kill (child, SIGINT);
       waitpid (child, &childExitStatus, 0);
       return;
     }
 
  error:
-  xfree (object_file);
-  close (pfd[0]);
-  close (pfd[1]);
+  do_cleanups (cleanups);
   if (child != -1)
     waitpid (child, &childExitStatus, 0);
   error (_("Unexpected error when calling compiler process"));
