@@ -40,6 +40,8 @@
 #include "arch-utils.h"
 #include "value.h"
 #include "gdbjit-run.h"
+#include "wait.h"
+#include "poll.h"
 
 
 
@@ -283,13 +285,15 @@ get_selected_pc_producer_args (int *argcp, char ***argvp)
   build_argc_argv (cs, argcp, argvp);
 }
 
-/* Public function that is called from jit_control case in the
-   expression command.  GDB returns either a CMD, or a CMD_STRING, but
-   never both.  */
+/* Private function that is called from a child process (originating
+   from a fork).  The child process call originates from the function
+   eval_gcc_jit_command below.  If GCC generates a fatal signal, then
+   only this child will die.  */
 
-void
-eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
-		      enum gccjit_i_scope_types scope)
+static void
+compile_jit_expression (struct command_line *cmd, char *cmd_string,
+			enum gccjit_i_scope_types scope,
+		        int write_pipe)
 {
   char *code;
   char *object_file = NULL;
@@ -370,14 +374,125 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
     fprintf_unfiltered (gdb_stdout, "object file produced: %s\n\n",
 			object_file);
 
-  /* Execute object code returned from compiler.  */
-  if (ok)
-    {
-      gdbjit_module = gdbjit_load (object_file);
-      gdbjit_run (&gdbjit_module);
+
+  /* If GCC generated an object file, write the name of it to the
+     parent process via pipe.  */
+   if (ok)
+     {
+       ssize_t write_status ;
+       int size = strlen (object_file);
+
+       write_status = write (write_pipe, &size, sizeof (size));
+       if (!write_status)
+	 exit (-1);
+
+       write_status = write (write_pipe, object_file, size);
+
+       if (!write_status)
+	 exit (-1);
     }
+  /* If it did not, just exit.  */
+  else
+    exit (-1);
+
+  pause ();
 
   do_cleanups (cleanup);
+  exit (1);
+}
+
+
+/* Public function that is called from jit_control case in the
+   expression command.  GDB returns either a CMD, or a CMD_STRING, but
+   never both.  */
+
+void
+eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
+		      enum gccjit_i_scope_types scope)
+{
+  pid_t child;
+  int childExitStatus;
+  int pfd[2];
+  char *object_file = NULL;
+  volatile struct gdb_exception except;
+  struct gdbjit_module gdbjit_module;
+
+  if (pipe (pfd) == -1)
+    error (_("Cannot create pipe for compiler process."));
+
+  child = fork ();
+
+  /* Child.  */
+  if (child == 0)
+    compile_jit_expression (cmd, cmd_string, scope, pfd[1]);
+  /* Fail.  */
+  else if (child == -1)
+    goto error;
+  /* Parent.  */
+  else
+    {
+      ssize_t bytes_read;
+      int size;
+
+      close (pfd[1]);
+
+      /* For simplicity we will do two reads.  One read of an integer
+	 to determine the size of the second read, which is the
+	 filename.  */
+      bytes_read = read (pfd[0], &size, sizeof (size));
+      if (bytes_read > 0)
+	object_file = xmalloc (size + 1);
+      else
+	goto error;
+
+      bytes_read = read (pfd[0], object_file, size);
+
+      if (bytes_read != size)
+	goto error;
+
+      object_file[size] = '\0';
+
+      /* We have the filename, so execute it.  We need to signal
+	 the child to exit when completed as it is sleeping on a
+	 pause () system call.  */
+      if (object_file != NULL)
+	{
+	  TRY_CATCH (except, RETURN_MASK_ALL)
+	    {
+	      gdbjit_module = gdbjit_load (object_file);
+	      gdbjit_run (&gdbjit_module);
+	    }
+	  if (except.reason < 0)
+	    {
+	      /* Something has gone wrong in the execution.
+		 Signal the GDB with the compiler to go ahead and
+		 exit and then process errors.  */
+	      close (pfd[0]);
+	      close (pfd[1]);
+	      kill (child, SIGINT);
+	      waitpid (child, &childExitStatus, 0);
+	      throw_exception (except);
+	    }
+	}
+
+      /* Normal shutdown.  The expression has compiled, executed
+	 and returned.  We now signal the GDB process that
+	 compiled the expression to go ahead and exit, close the
+	 pipes and reap the child process.  */
+      close (pfd[0]);
+      close (pfd[1]);
+      kill (child, SIGINT);
+      waitpid (child, &childExitStatus, 0);
+      return;
+    }
+
+ error:
+  xfree (object_file);
+  close (pfd[0]);
+  close (pfd[1]);
+  if (child != -1)
+    waitpid (child, &childExitStatus, 0);
+  error (_("Unexpected error when calling compiler process"));
 }
 
 /* See gccjit/gccjit-internal.h.  */
