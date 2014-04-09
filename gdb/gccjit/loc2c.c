@@ -31,9 +31,26 @@
 
 
 
+/* Information about a given instruction.  */
+
+struct insn_info
+{
+  /* Stack depth at entry.  */
+
+  unsigned int depth;
+
+  /* Whether this instruction has been visited.  */
+
+  unsigned int visited : 1;
+
+  /* Whether this instruction needs a label.  */
+
+  unsigned int label : 1;
+};
+
 static void
 compute_stack_depth_worker (int start, int *need_tempvar,
-			    unsigned int *stack_depths, unsigned char *set,
+			    struct insn_info *info,
 			    VEC (int) **to_do,
 			    enum bfd_endian byte_order, unsigned int addr_size,
 			    const gdb_byte *op_ptr, const gdb_byte *op_end)
@@ -42,8 +59,8 @@ compute_stack_depth_worker (int start, int *need_tempvar,
   int stack_depth;
 
   op_ptr += start;
-  gdb_assert (set[start]);
-  stack_depth = stack_depths[start];
+  gdb_assert (info[start].visited);
+  stack_depth = info[start].depth;
 
   while (op_ptr < op_end)
     {
@@ -53,16 +70,16 @@ compute_stack_depth_worker (int start, int *need_tempvar,
       int ndx = op_ptr - base;
 
 #define SET_CHECK_DEPTH(WHERE)				\
-      if (set[WHERE])					\
+      if (info[WHERE].visited)				\
 	{						\
-	  if (stack_depths[WHERE] != stack_depth)	\
+	  if (info[WHERE].depth != stack_depth)		\
 	    error (_("inconsistent stack depths"));	\
 	}						\
       else						\
 	{						\
 	  /* Stack depth not set, so set it.  */	\
-	  set[WHERE] = 1;				\
-	  stack_depths[WHERE] = stack_depth;		\
+	  info[WHERE].visited = 1;			\
+	  info[WHERE].depth = stack_depth;		\
 	}
 
       SET_CHECK_DEPTH (ndx);
@@ -285,9 +302,10 @@ compute_stack_depth_worker (int start, int *need_tempvar,
 	  offset = op_ptr + offset - base;
 	  /* If the destination has not been seen yet, add it to the
 	     to-do list.  */
-	  if (!set[offset])
+	  if (!info[offset].visited)
 	    VEC_safe_push (int, *to_do, offset);
 	  SET_CHECK_DEPTH (offset);
+	  info[offset].label = 1;
 	  /* We're done with this line of code.  */
 	  return;
 
@@ -298,9 +316,10 @@ compute_stack_depth_worker (int start, int *need_tempvar,
 	  --stack_depth;
 	  /* If the destination has not been seen yet, add it to the
 	     to-do list.  */
-	  if (!set[offset])
+	  if (!info[offset].visited)
 	    VEC_safe_push (int, *to_do, offset);
 	  SET_CHECK_DEPTH (offset);
+	  info[offset].label = 1;
 	  break;
 
 	case DW_OP_nop:
@@ -312,7 +331,6 @@ compute_stack_depth_worker (int start, int *need_tempvar,
     }
 
   gdb_assert (op_ptr == op_end);
-  SET_CHECK_DEPTH (op_end - base);
 
 #undef SET_CHECK_DEPTH
 }
@@ -321,39 +339,39 @@ static int
 compute_stack_depth (enum bfd_endian byte_order, unsigned int addr_size,
 		     int *need_tempvar,
 		     const gdb_byte *op_ptr, const gdb_byte *op_end,
-		     int initial_depth)
+		     int initial_depth,
+		     struct insn_info **info)
 {
-  unsigned int *stack_depths;
   unsigned char *set;
-  struct cleanup *cleanup;
+  struct cleanup *outer_cleanup, *cleanup;
   VEC (int) *to_do = NULL;
-  int stack_depth;
+  int stack_depth, i;
 
-  stack_depths = XCNEWVEC (unsigned int, op_end - op_ptr + 1);
-  cleanup = make_cleanup (xfree, stack_depths);
-  set = XCNEWVEC (unsigned char, op_end - op_ptr + 1);
-  make_cleanup (xfree, set);
+  *info = XCNEWVEC (struct insn_info, op_end - op_ptr);
+  outer_cleanup = make_cleanup (xfree, *info);
 
-  make_cleanup (VEC_cleanup (int), &to_do);
+  cleanup = make_cleanup (VEC_cleanup (int), &to_do);
 
   VEC_safe_push (int, to_do, 0);
-  stack_depths[0] = initial_depth;
-  set[0] = 1;
+  (*info)[0].depth = initial_depth;
+  (*info)[0].visited = 1;
 
   while (!VEC_empty (int, to_do))
     {
       int ndx = VEC_pop (int, to_do);
 
-      compute_stack_depth_worker (ndx, need_tempvar, stack_depths, set, &to_do,
+      compute_stack_depth_worker (ndx, need_tempvar, *info, &to_do,
 				  byte_order, addr_size,
 				  op_ptr, op_end);
     }
 
-  if (!set[op_end - op_ptr])
-    error (_("could not compute stack depth"));
-  stack_depth = stack_depths[op_end - op_ptr];
+  stack_depth = 0;
+  for (i = 0; i < op_end - op_ptr; ++i)
+    if ((*info)[i].depth > stack_depth)
+      stack_depth = (*info)[i].depth;
 
   do_cleanups (cleanup);
+  discard_cleanups (outer_cleanup);
   return stack_depth;
 }
 
@@ -428,7 +446,7 @@ translate_register (struct gdbarch *arch, int dwarf_reg)
 static void
 print_label (struct ui_file *stream, unsigned int scope, int target)
 {
-  fprintf_filtered (stream, "__label_%ud_%s",
+  fprintf_filtered (stream, "__label_%u_%s",
 		    scope, pulongest (target));
 }
 
@@ -482,6 +500,8 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
   enum bfd_endian byte_order = gdbarch_byte_order (arch);
   const gdb_byte * const base = op_ptr;
   int need_tempvar = 0;
+  struct cleanup *cleanup;
+  struct insn_info *info;
 
   ++scope;
 
@@ -491,10 +511,13 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 
   fprintfi_filtered (indent, stream, GCC_UINTPTR " __gdb_stack[%d];\n",
 		     compute_stack_depth (byte_order, addr_size, &need_tempvar,
-					  op_ptr, op_end, initial != NULL));
+					  op_ptr, op_end, initial != NULL,
+					  &info));
+  cleanup = make_cleanup (xfree, info);
+
   if (need_tempvar)
     fprintfi_filtered (indent, stream, GCC_UINTPTR " __gdb_tmp;\n");
-  fprintfi_filtered (indent, stream, "int __gdb_tos = 0;\n");
+  fprintfi_filtered (indent, stream, "int __gdb_tos = -1;\n");
 
   if (initial != NULL)
     pushf (indent, stream, core_addr_to_string (*initial));
@@ -505,11 +528,18 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
       uint64_t uoffset, reg;
       int64_t offset;
 
-      /* It's simplest to just emit a label before each opcode, just
-	 in case.  */
       print_spaces (indent - 2, stream);
-      print_label (stream, scope, op_ptr - base);
-      fprintf_filtered (stream, ":;\n");
+      if (info[op_ptr - base].label)
+	{
+	  print_label (stream, scope, op_ptr - base);
+	  fprintf_filtered (stream, ":;");
+	}
+      fprintf_filtered (stream, "/* %s */\n", get_DW_OP_name (op));
+
+      /* This is handy for debugging the generated code:
+      fprintf_filtered (stream, "if (__gdb_tos != %d) abort ();\n",
+			(int) info[op_ptr - base].depth - 1);
+      */
 
       ++op_ptr;
 
@@ -779,7 +809,7 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 
 	case DW_OP_abs:
 	  unary (indent, stream,
-		 "__gdb_stack[__gdb_tos] < 0 ? "
+		 "((" GCC_INTPTR ") __gdb_stack[__gdb_tos]) < 0 ? "
 		 "-__gdb_stack[__gdb_tos] : __gdb_stack[__gdb_tos]");
 	  break;
 
@@ -810,8 +840,8 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 	  break;
 
 #define BINARY(OP)							\
-	  binary (indent, stream, ("__gdb_stack[__gdb_tos] " #OP	\
-				   " __gdb_stack[__gdb_tos-1]"));	\
+	  binary (indent, stream, ("__gdb_stack[__gdb_tos-1] " #OP	\
+				   " __gdb_stack[__gdb_tos]"));	\
 	  break
 
 	case DW_OP_and:
@@ -836,9 +866,9 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 
 #define COMPARE(OP)							\
 	  binary (indent, stream,					\
-		  "((" GCC_INTPTR ") __gdb_stack[__gdb_tos-1]) " #OP	\
+		  "(((" GCC_INTPTR ") __gdb_stack[__gdb_tos-1]) " #OP	\
 		  " ((" GCC_INTPTR					\
-		  ") __gdb_stack[__gdb_tos]) ? 1 : 0");			\
+		  ") __gdb_stack[__gdb_tos]))");			\
 	  break
 
 	case DW_OP_le:
@@ -921,6 +951,8 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
   fprintfi_filtered (indent, stream, "%s = (void *) __gdb_stack[__gdb_tos];\n",
 		     result_name);
   fprintfi_filtered (indent - 2, stream, "}\n");
+
+  do_cleanups (cleanup);
 }
 
 void
