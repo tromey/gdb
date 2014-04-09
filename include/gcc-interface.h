@@ -151,11 +151,6 @@ struct gcc_c_fe_interface
 			     const char *filename,
 			     int /* bool */ verbose);
 
-  /* Clean up after compilation.  This will remove any intermediate
-     files that were created.  */
-
-  void (*cleanup) (struct gcc_context *self);
-
   /* Create a new "decl" in GCC.  A decl is a declaration, basically a
      kind of symbol.
 

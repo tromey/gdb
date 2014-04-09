@@ -56,6 +56,17 @@ show_gccjit_debug (struct ui_file *file, int from_tty,
 
 
 
+static int gccjit_fork = 1;
+
+static void
+show_gccjit_fork (struct ui_file *file, int from_tty,
+		   struct cmd_list_element *c, const char *value)
+{
+  fprintf_filtered (file, _("GCC JIT fork is %s.\n"), value);
+}
+
+
+
 /* Handle the input from the expression or expr command.  The
    "expression" command is used to evaluate an expression that may
    contain calls to the GCC JIT interface.  TODO: Initially all we
@@ -192,16 +203,6 @@ get_expr_block_and_pc (CORE_ADDR *pc)
   return block;
 }
 
-/* Cleanup function that calls the compiler's cleanup method.  */
-
-static void
-compiler_cleanup (void *arg)
-{
-  struct gdb_gcc_instance *compiler = arg;
-
-  compiler->fe->ops->cleanup (compiler->fe);
-}
-
 /* Call gdb_buildargv, set its result for S into *ARGVP but calculate also the
    number of parsed arguments into *ARGCP.  If gdb_buildargv has returned NULL
    then *ARGCP is set to zero.  */
@@ -289,14 +290,46 @@ get_selected_pc_producer_args (int *argcp, char ***argvp)
 static void
 do_compile (struct gdb_gcc_instance *compiler, char *object_file)
 {
-  int status = compiler->fe->ops->compile (compiler->fe, object_file,
+  pid_t child;
+  int status;
+
+  /* Fork to do the actual compilation.  */
+  if (gccjit_fork)
+    child = fork ();
+  else
+    child = 0;
+
+  /* Child.  Do the compile.  */
+  if (child == 0)
+    {
+      status = compiler->fe->ops->compile (compiler->fe, object_file,
 					   gccjit_debug);
 
-  if (gccjit_debug)
-    fprintf_unfiltered (gdb_stdout, "object file produced: %s\n\n",
-			object_file);
+      if (gccjit_fork)
+	_exit (status ? 0 : 1);
+    }
+  /* Fail.  */
+  else if (child == -1)
+    error (_("Could not fork child compilation."));
+  /* Parent.  */
+  else
+    {
+      /* Just wait on the child.  TODO: I really think we should not do
+  	 a blocking wait here, though there are some concerns with the
+  	 robustness of WNOHANG.  The user may want to interrupt the
+  	 compilation process.  Right now that interruption is ignored
+  	 and GDB is blocked.  We might have to poll () for the filename
+  	 and check that the child is still alive with waitpid (WNOHANG)
+  	 and WIFEXITED so that we can listen for GDB interruptions
+  	 too.  */
+      int exit_status;
 
-  _exit (status ? 0 : 1);
+      waitpid (child, &exit_status, 0);
+      status = exit_status == 0;
+    }
+
+  if (status == 0)
+    error (_("Compilation failed."));
 }
 
 /* Process the compilation request.  This process sets up the context,
@@ -311,7 +344,7 @@ compile_jit_expression (struct command_line *cmd, char *cmd_string,
   char *code;
   char *object_file = NULL;
   struct gdb_gcc_instance *compiler;
-  struct cleanup *cleanup;
+  struct cleanup *cleanup, *inner_cleanup;
   const struct block *expr_block;
   CORE_ADDR trash_pc, expr_pc;
   int argc;
@@ -319,8 +352,6 @@ compile_jit_expression (struct command_line *cmd, char *cmd_string,
   struct gdbjit_module gdbjit_module;
   int ok;
   struct gcc_context *context;
-  pid_t child;
-  int childExitStatus;
 
   expr_block = get_expr_block_and_pc (&trash_pc);
   expr_pc = get_frame_address_in_block (get_selected_frame (NULL));
@@ -382,37 +413,9 @@ compile_jit_expression (struct command_line *cmd, char *cmd_string,
   compiler->fe->ops->set_program_text (compiler->fe, code);
 
   object_file = get_new_object_name ();
-
-  /* Fork to do the actual compilation.  */
-  child = fork ();
-
-  /* Child.  Do the compile.  */
-  if (child == 0)
-    do_compile (compiler, object_file);
-  /* Fail.  */
-  else if (child == -1)
-    error (_("Could not fork child compilation."));
-  /* Parent.  */
-  else
-    /* Just wait on the child.  TODO: I really think we should not do
-       a blocking wait here, though there are some concerns with the
-       robustness of WNOHANG.  The user may want to interrupt the
-       compilation process.  Right now that interruption is ignored
-       and GDB is blocked.  We might have to poll () for the filename
-       and check that the child is still alive with waitpid (WNOHANG)
-       and WIFEXITED so that we can listen for GDB interruptions
-       too.  */
-    waitpid (child, &childExitStatus, 0);
-
-  make_cleanup (compiler_cleanup, compiler);
-
-  if (childExitStatus != 0)
-    {
-      xfree (object_file);
-      object_file = NULL;
-      error (_("Compiler exited abnormally with exit code %d"),
-	     WEXITSTATUS (childExitStatus));
-    }
+  inner_cleanup = make_cleanup (xfree, object_file);
+  do_compile (compiler, object_file);
+  discard_cleanups (inner_cleanup);
 
   if (gccjit_debug)
     fprintf_unfiltered (gdb_stdout, "object file produced: %s\n\n",
@@ -439,21 +442,12 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
 
   if (object_file != NULL)
     {
-      TRY_CATCH (except, RETURN_MASK_ALL)
-	{
-	  gdbjit_module = gdbjit_load (object_file);
-	  gdbjit_run (&gdbjit_module);
-	}
-      if (except.reason < 0)
-	{
-	  /* Something has gone wrong in the execution.  */
-	  xfree (object_file);
-	  throw_exception (except);
-	}
-      xfree (object_file);
-    }
+      struct cleanup *cleanup = make_cleanup (xfree, object_file);
 
-  return;
+      gdbjit_module = gdbjit_load (object_file);
+      gdbjit_run (&gdbjit_module);
+      do_cleanups (cleanup);
+    }
 }
 
 /* See gccjit/gccjit-internal.h.  */
@@ -533,6 +527,14 @@ Show GCC JIT debugging."), _("\
 When on, GCC JIT debugging is enabled."),
 			   NULL, show_gccjit_debug,
 			   &setdebuglist, &showdebuglist);
+
+  add_setshow_boolean_cmd ("gccjit-fork", class_maintenance, &gccjit_fork, _("\
+Set whether the GCC JIT runs in a child process."), _("\
+Show whether the GCC JIT runs in a child process."), _("\
+When on, the GCC JIT runs in a child process."),
+			   NULL, show_gccjit_fork,
+			   &maintenance_set_cmdlist, &maintenance_show_cmdlist);
+
 
   add_setshow_string_cmd ("gdbjit-args", class_support,
 			  &gdbjit_args,
