@@ -266,6 +266,11 @@ compute_stack_depth_worker (int start, int *need_tempvar,
 	case DW_OP_abs:
 	case DW_OP_neg:
 	case DW_OP_not:
+	case DW_OP_deref:
+	  break;
+
+	case DW_OP_deref_size:
+	  ++op_ptr;
 	  break;
 
 	case DW_OP_plus_uconst:
@@ -372,7 +377,7 @@ compute_stack_depth (enum bfd_endian byte_order, unsigned int addr_size,
 
   do_cleanups (cleanup);
   discard_cleanups (outer_cleanup);
-  return stack_depth;
+  return stack_depth + 1;
 }
 
 
@@ -805,6 +810,33 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 			     "__gdb_stack[__gdb_tos -2];\n");
 	  fprintfi_filtered (indent, stream, "__gdb_stack[__gdb_tos - 2] = "
 			     "__gdb_tmp;\n");
+	  break;
+
+	case DW_OP_deref:
+	case DW_OP_deref_size:
+	  {
+	    int size;
+	    const char *mode;
+
+	    if (op == DW_OP_deref_size)
+	      size = *op_ptr++;
+	    else
+	      size = addr_size;
+
+	    mode = c_get_mode_for_size (size);
+	    if (mode == NULL)
+	      error (_("Unsupported size %d in %s"),
+		     size, get_DW_OP_name (op));
+
+	    /* Cast to a pointer of the desired type, then
+	       dereference.  */
+	    fprintfi_filtered (indent, stream,
+			       "__gdb_stack[__gdb_tos] = "
+			       "*((unsigned int __attribute__"
+			       "((__mode__(__%s__))) *) "
+			       "__gdb_stack[__gdb_tos]);\n",
+			       mode);
+	  }
 	  break;
 
 	case DW_OP_abs:

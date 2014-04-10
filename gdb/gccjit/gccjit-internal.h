@@ -102,4 +102,8 @@ extern unsigned char *generate_c_for_variable_locations
       const struct block *block,
       CORE_ADDR pc);
 
+/* Get the GCC mode attribute value for a given type size.  */
+
+extern const char *c_get_mode_for_size (int size);
+
 #endif /* GDB_GCCJIT_GCCJIT_INTERNAL_H */

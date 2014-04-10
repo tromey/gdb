@@ -26,6 +26,34 @@
 #include "macroscope.h"
 #include "regcache.h"
 
+/* A silly little helper to get the gcc mode name for a size.  */
+
+const char *
+c_get_mode_for_size (int size)
+{
+  const char *mode = NULL;
+
+  switch (size)
+    {
+    case 1:
+      mode = "QI";
+      break;
+    case 2:
+      mode = "HI";
+      break;
+    case 4:
+      mode = "SI";
+      break;
+    case 8:
+      mode = "DI";
+      break;
+    }
+
+  return mode;
+}
+
+
+
 #define STR(x) #x
 #define STRINGIFY(x) STR(x)
 
@@ -227,23 +255,8 @@ generate_register_struct (struct ui_file *stream, struct gdbarch *gdbarch,
 
 	      case TYPE_CODE_INT:
 		{
-		  const char *mode = NULL;
-
-		  switch (TYPE_LENGTH (regtype))
-		    {
-		    case 1:
-		      mode = "QI";
-		      break;
-		    case 2:
-		      mode = "HI";
-		      break;
-		    case 4:
-		      mode = "SI";
-		      break;
-		    case 8:
-		      mode = "DI";
-		      break;
-		    }
+		  const char *mode
+		    = c_get_mode_for_size (TYPE_LENGTH (regtype));
 
 		  if (mode != NULL)
 		    {
