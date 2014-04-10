@@ -61,6 +61,19 @@ volatile struct struct_type struct_object;
 union union_type union_object;
 
 
+enum ulonger_enum_type {
+  REALLY_MINUS_1 = -1UL,
+};
+
+enum ulonger_enum_type ulonger;
+
+enum longer_enum_type {
+  MINUS_1 = -1,
+  FORCE_TO_LONG = 1L << ((8 * sizeof (long)) - 2)
+};
+
+enum longer_enum_type longer;
+
 int globalvar = 10;
 
 static void

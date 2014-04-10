@@ -59,6 +59,16 @@ gdb_test "p globalvar" " = 9" "expect 9"
 gdb_test_no_output "expression func_global (1);" "call global function"
 gdb_test "p globalvar" " = 8" "expect 8"
 
+gdb_test_no_output \
+    "expression globalvar = (sizeof (ulonger) == sizeof (long))" \
+    "compute size of ulonger"
+gdb_test "p globalvar" " = 1" "check size of ulonger"
+gdb_test_no_output "expression globalvar = (sizeof (longer) == sizeof (long))" \
+    "compute size of longer"
+gdb_test "p globalvar" " = 1" "check size of longer"
+gdb_test_no_output "expression globalvar = MINUS_1"
+gdb_test "p globalvar" " = -1" "check MINUS_1"
+
 gdb_test_no_output "expression static int staticvar = 5; intptr = &staticvar" "keep jit in memory"
 gdb_test "p *intptr" " = 5" "expect 5"
 

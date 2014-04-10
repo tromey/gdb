@@ -229,7 +229,6 @@ struct gcc_c_fe_interface
 
   /* Add a new constant to an enum type.  NAME is the constant's
      name and VALUE is its value.  */
-  /* FIXME: negative values */
 
   void (*build_add_enum_constant) (struct gcc_context *self,
 				   gcc_type enum_type,
