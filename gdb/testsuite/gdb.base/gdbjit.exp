@@ -109,6 +109,14 @@ gdb_test_no_output "expression localvar = shadowed" \
     "test shadowing"
 gdb_test "p localvar" " = 52" "expect 52"
 
+# FIXME: these don't work yet.  We need the upstream VLA patches
+# first, then we need to adapt the translator to cope.
+# gdb_test_no_output "expression vla\[2\] = 7"
+# gdb_test "p vla\[2\]" " = 7"
+# gdb_test_no_output \
+#     "expression localvar = (sizeof (vla) == bound * sizeof (vla\[0\]))"
+# gdb_test "p localvar" " = 1"
+
 #
 # Test setting fields and also many different types.
 #

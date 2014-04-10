@@ -101,10 +101,13 @@ main (void)
 {
   int localvar = 50;
   int shadowed = 51;
+  int bound = 3;
 
   {
     int another_local = 7;
     int shadowed = 52;
+
+    int vla[bound];
 
     func_static (0); /* break-here */
     no_args_or_locals ();
