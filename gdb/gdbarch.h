@@ -1323,6 +1323,13 @@ typedef CORE_ADDR (gdbarch_infcall_mmap_ftype) (CORE_ADDR size);
 extern CORE_ADDR gdbarch_infcall_mmap (struct gdbarch *gdbarch, CORE_ADDR size);
 extern void set_gdbarch_infcall_mmap (struct gdbarch *gdbarch, gdbarch_infcall_mmap_ftype *infcall_mmap);
 
+/* Return string (caller has to use xfree for it) with options for GCC
+   to produce code for this target, typically "-m64", "-m32" or "-m31". */
+
+typedef char * (gdbarch_gcc_target_options_ftype) (struct gdbarch *gdbarch);
+extern char * gdbarch_gcc_target_options (struct gdbarch *gdbarch);
+extern void set_gdbarch_gcc_target_options (struct gdbarch *gdbarch, gdbarch_gcc_target_options_ftype *gcc_target_options);
+
 /* Definition for an unknown syscall, used basically in error-cases.  */
 #define UNKNOWN_SYSCALL (-1)
 

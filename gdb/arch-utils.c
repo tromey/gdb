@@ -825,6 +825,12 @@ default_infcall_mmap (CORE_ADDR size)
   error (_("This target does not support inferior memory allocation by mmap."));
 }
 
+char *
+default_gcc_target_options (struct gdbarch *gdbarch)
+{
+  return xstrprintf ("-m%d", gdbarch_ptr_bit (gdbarch));
+}
+
 /* */
 
 /* -Wmissing-prototypes */

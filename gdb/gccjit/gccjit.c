@@ -286,6 +286,24 @@ get_selected_pc_producer_args (int *argcp, char ***argvp)
   build_argc_argv (cs, argcp, argvp);
 }
 
+/* Produce final vector of GCC compilation options.  First element is target
+   size ("-m64", "-m32" etc.), optionally followed by DW_AT_producer options
+   and then gdbjit-args string GDB variable.  */
+
+static void
+get_args (int *argcp, char ***argvp)
+{
+  int argc_producer;
+  char **argv_producer;
+
+  get_selected_pc_producer_args (&argc_producer, &argv_producer);
+  *argcp = 1 + argc_producer;
+  *argvp = xrealloc (argv_producer, sizeof (*argv_producer) * ((*argcp) + 1));
+  memmove ((*argvp) + 1, (*argvp), sizeof (**argvp) * argc_producer);
+  (*argvp)[1 + argc_producer] = NULL;
+  (*argvp)[0] = gdbarch_gcc_target_options (target_gdbarch ());
+  append_gdbjit_args (argcp, argvp);
+}
 
 static void
 do_compile (struct gdb_gcc_instance *compiler, char *object_file)
@@ -395,8 +413,7 @@ compile_jit_expression (struct command_line *cmd, char *cmd_string,
     fprintf_unfiltered (gdb_stdout, "debug output:\n\n%s", code);
 
   /* Set compiler command-line arguments.  */
-  get_selected_pc_producer_args (&argc, &argv);
-  append_gdbjit_args (&argc, &argv);
+  get_args (&argc, &argv);
   compiler->fe->ops->set_arguments (compiler->fe, argc, argv);
   if (gccjit_debug)
     {
