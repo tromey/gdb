@@ -195,12 +195,10 @@ struct gcc_c_fe_interface
 				  gcc_type base_type);
 
   /* Create a new 'struct' type.  Initially it has no fields.  */
-  /* FIXME: probably need to specify the type size */
 
   gcc_type (*build_record_type) (struct gcc_context *self);
 
   /* Create a new 'union' type.  Initially it has no fields.  */
-  /* FIXME: probably need to specify the type size */
 
   gcc_type (*build_union_type) (struct gcc_context *self);
 
