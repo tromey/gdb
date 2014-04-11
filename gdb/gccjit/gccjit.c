@@ -46,6 +46,7 @@
 
 
 static int gccjit_debug;
+struct cmd_list_element *compile_command_list;
 
 static void
 show_gccjit_debug (struct ui_file *file, int from_tty,
@@ -67,13 +68,64 @@ show_gccjit_fork (struct ui_file *file, int from_tty,
 
 
 
-/* Handle the input from the expression or expr command.  The
-   "expression" command is used to evaluate an expression that may
-   contain calls to the GCC JIT interface.  TODO: Initially all we
+static int
+check_raw_argument (char **arg)
+{
+  *arg = skip_spaces (*arg);
+
+  if (arg != NULL
+      && (check_for_argument (arg, "-raw", sizeof ("-raw") - 1)
+	  || check_for_argument (arg, "-r", sizeof ("-r") - 1)))
+      return 1;
+  return 0;
+}
+
+/* Handle the input from the 'compile file' command.  The "compile
+   file" command is used to evaluate an expression contained in a file
+   that may contain calls to the GCC compiler.  */
+
+static void
+compile_file_command (char *arg, int from_tty)
+{
+  enum gccjit_i_scope_types scope = GCCJIT_I_SIMPLE_SCOPE;
+  char *buffer;
+  struct cleanup *cleanup;
+
+  cleanup = make_cleanup_restore_integer (&interpreter_async);
+  interpreter_async = 0;
+
+  /* Check the user did not just <enter> after command.  */
+  if (arg == NULL)
+    error (_("You must provide a filename for this command."));
+
+  /* Check if a raw (-r|-raw) argument is provided.  */
+  if (arg != NULL && check_raw_argument (&arg))
+    {
+      scope = GCCJIT_I_RAW_SCOPE;
+      arg = skip_spaces (arg);
+    }
+
+  /* After processing arguments, check there is a filename at the end
+     of the command.  */
+  if (arg[0] == '\0')
+    error (_("You must provide a filename with the raw option set."));
+
+  arg = skip_spaces (arg);
+  arg = gdb_abspath (arg);
+  make_cleanup (xfree, arg);
+  buffer = xstrprintf ("#include \"%s\"\n", arg);
+  make_cleanup (xfree, buffer);
+  eval_gcc_jit_command (NULL, buffer, scope);
+  do_cleanups (cleanup);
+}
+
+/* Handle the input from the 'compile code' command.  The
+   "compile code" command is used to evaluate an expression that may
+   contain calls to the GCC compiler.  TODO: Initially all we
    expect in this command is straight up C code blocks.  */
 
 static void
-gcc_jit_command (char *arg, int from_tty)
+compile_code_command (char *arg, int from_tty)
 {
   struct cleanup *cleanup;
   enum gccjit_i_scope_types scope = GCCJIT_I_SIMPLE_SCOPE;
@@ -81,46 +133,16 @@ gcc_jit_command (char *arg, int from_tty)
   cleanup = make_cleanup_restore_integer (&interpreter_async);
   interpreter_async = 0;
 
-  arg = skip_spaces (arg);
-
-  if (arg != NULL
-      && (check_for_argument (&arg, "-raw", sizeof ("-raw") - 1)
-	  || check_for_argument (&arg, "-r", sizeof ("-r") - 1)))
+  if (arg != NULL && check_raw_argument (&arg))
     {
       scope = GCCJIT_I_RAW_SCOPE;
       arg = skip_spaces (arg);
     }
 
+  arg = skip_spaces (arg);
+
   if (arg && *arg)
-    {
-      char *buffer;
-
-      /* Check for arguments.  Exit if an argument string is found but
-	 we don't recognize the argument. */
-      if (arg[0] == '-')
-	{
-	  if (check_for_argument (&arg, "-file", sizeof ("-file") - 1)
-	      || check_for_argument (&arg, "-f", sizeof ("-f") - 1))
-	    {
-	      /* "check_for_argument" still leaves a space at the
-	       beginning of the arg string.  Trim to the first
-	       non-space character.  */
-	      arg = skip_spaces (arg);
-
-	      arg = gdb_abspath (arg);
-	      make_cleanup (xfree, arg);
-
-	      buffer = xstrprintf ("#include \"%s\"\n", arg);
-	      make_cleanup (xfree, buffer);
-	    }
-	  else
-	    error(_("Unknown argument passed to command."));
-	}
-      else
-	buffer = arg;
-
-      eval_gcc_jit_command (NULL, buffer, scope);
-    }
+      eval_gcc_jit_command (NULL, arg, scope);
   else
     {
       struct command_line *l = get_command_line (jit_control, "");
@@ -443,6 +465,14 @@ compile_jit_expression (struct command_line *cmd, char *cmd_string,
 }
 
 
+static void
+compile_command (char *args, int from_tty)
+{
+  printf_unfiltered (_("\"compile\" must be followed by "
+		       "the name of a compile command.\n"));
+  help_list (compile_command_list, "compile ", -1, gdb_stdout);
+}
+
 /* Public function that is called from jit_control case in the
    expression command.  GDB returns either a CMD, or a CMD_STRING, but
    never both.  */
@@ -498,45 +528,42 @@ gdbjit_register_name_demangle (struct gdbarch *gdbarch, const char *regname)
 void
 _initialize_gcc_jit (void)
 {
-  /* TODO: The reason that the expression command has no completer for
-     filenames is that filename_completer undergoes special treatment
-     in completer.c:653.  The completion hint is massaged before the
-     completion hint is passed to filename_completer, and also the
-     break characters are changed from language->word_break_chars to
-     gdb_completer_command_word_break_characters.  So in the case of
+  struct cmd_list_element *c = NULL;
 
-     jit_completer (text, word)
-     {
-        if (check if the -file flag was passed in, if so)
-	   return filename_completer (text, word)
-	else if (we return NULL, we don't complete on source)
-	   return NULL
-     }
+  add_prefix_cmd ("compile", class_obscure, compile_command,
+		  _("\
+Command to compile ad-hoc code and inject it into the inferior."),
+		  &compile_command_list, "compile ", 1, &cmdlist);
+  add_com_alias ("expression", "compile", class_obscure, 0);
 
-     Won't work as the text and word strings are different than if
-     passed to filename_completer.  A possible solution would be to
-     add a case for jit_control: in completer.c.
-  */
-
-  add_com ("expression", class_obscure, gcc_jit_command,
+  add_cmd ("code", class_obscure, compile_code_command,
 	   _("\
-Evaluate a block of C code with a compiler JIT.\n\
+Evaluate a block of C code.\n\
 \n\
-Usage: expression [-r|-raw] [-f|-file FILE] [CODE]\n\
+Usage: code [-r|-raw] [CODE]\n\
 -r|-raw: Suppress automatic 'void _gdb_expr () { CODE }' wrapping.\n\
--f|-file: Open the filename specified and pass the contents to\n\
 the compiler.\n\
 \n\
 As an alternative you can provide your source code directly\n\
 to the command.  For example,\n\
 \n\
-    expression printf(\"Hello world\\n\");\n\
+    compile code printf(\"Hello world\\n\");\n\
 \n\
-If no argument is given (I.E., \"expression\" is typed with\n\
+If no argument is given (I.E., \"code\" is typed with\n\
 nothing after it),  an interactive prompt will be shown\n\
 allowing you to enter multiple lines of source code.  Type a\n\
-line containing \"end\" to indicate the end of the source code."));
-  add_com_alias ("expr", "expression", class_obscure, 1);
+line containing \"end\" to indicate the end of the source code."),
+	   &compile_command_list);
+
+  c = add_cmd ("file", class_obscure, compile_file_command,
+	       _("\
+Evaluate a file containing C code.\n\
+\n\
+Usage: file [-r|-raw] [filename]\n\
+-r|-raw: Suppress automatic 'void _gdb_expr () { CODE }' wrapping.\n\
+the compiler."),
+	       &compile_command_list);
+  set_cmd_completer (c, filename_completer);
 
   add_setshow_boolean_cmd ("gccjit", class_maintenance, &gccjit_debug, _("\
 Set GCC JIT debugging."), _("\
