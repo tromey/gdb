@@ -41,7 +41,7 @@
 
 #include <string.h>
 #include "gdb_assert.h"
-#include "gccjit/gccjit.h"
+#include "compile/gccjit.h"
 
 extern int dwarf2_always_disassemble;
 

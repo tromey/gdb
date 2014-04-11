@@ -34,7 +34,7 @@
 
 #include "extension.h"
 #include "interps.h"
-#include "gccjit/gccjit.h"
+#include "compile/gccjit.h"
 
 /* Prototypes for local functions.  */
 

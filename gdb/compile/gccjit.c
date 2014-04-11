@@ -27,7 +27,7 @@
 #include "cli/cli-utils.h"
 #include <ctype.h>
 #include "interps.h"
-#include "gccjit/gccjit.h"
+#include "compile/gccjit.h"
 #include "gccjit-internal.h"
 #include "gdbjit-load.h"
 #include "frame.h"

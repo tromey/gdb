@@ -287,15 +287,15 @@ SUBDIR_GCC_JIT_OBS = \
 	gccjit.o gcc-symbols.o gcc-types.o gdbjit-load.o gdbjit-run.o \
 	loc2c.o c-support.o
 SUBDIR_GCC_JIT_SRCS = \
-	gccjit/gccjit.c \
-	gccjit/gcc-symbols.c \
-	gccjit/gcc-types.c \
-	gccjit/gdbjit-load.c \
-	gccjit/gdbjit-load.h \
-	gccjit/gdbjit-run.c \
-	gccjit/gdbjit-run.h \
-	gccjit/loc2c.c \
-	gccjit/c-support.c
+	compile/gccjit.c \
+	compile/gcc-symbols.c \
+	compile/gcc-types.c \
+	compile/gdbjit-load.c \
+	compile/gdbjit-load.h \
+	compile/gdbjit-run.c \
+	compile/gdbjit-run.h \
+	compile/loc2c.c \
+	compile/c-support.c
 
 # Guile sub directory definitons for guile support.
 
@@ -879,7 +879,7 @@ ia64-tdep.h ada-lang.h varobj.h frv-tdep.h nto-tdep.h serial.h \
 c-lang.h d-lang.h go-lang.h frame.h event-loop.h block.h cli/cli-setshow.h \
 cli/cli-decode.h cli/cli-cmds.h cli/cli-utils.h \
 cli/cli-script.h macrotab.h symtab.h common/version.h \
-gccjit/gccjit.h gnulib/import/string.in.h gnulib/import/str-two-way.h \
+compile/gccjit.h gnulib/import/string.in.h gnulib/import/str-two-way.h \
 gnulib/import/stdint.in.h remote.h remote-notif.h gdb.h sparc-nat.h \
 gdbthread.h dwarf2-frame.h dwarf2-frame-tailcall.h nbsd-nat.h dcache.h \
 amd64-nat.h s390-linux-tdep.h arm-linux-tdep.h exceptions.h macroscope.h \
@@ -1914,32 +1914,32 @@ cli-utils.o: $(srcdir)/cli/cli-utils.c
 # Need to explicitly specify the compile rule as make will do nothing
 # or try to compile the object file into the sub-directory.
 
-gccjit.o: $(srcdir)/gccjit/gccjit.c
-	$(COMPILE) $(srcdir)/gccjit/gccjit.c
+gccjit.o: $(srcdir)/compile/gccjit.c
+	$(COMPILE) $(srcdir)/compile/gccjit.c
 	$(POSTCOMPILE)
 
-gcc-types.o: $(srcdir)/gccjit/gcc-types.c
-	$(COMPILE) $(srcdir)/gccjit/gcc-types.c
+gcc-types.o: $(srcdir)/compile/gcc-types.c
+	$(COMPILE) $(srcdir)/compile/gcc-types.c
 	$(POSTCOMPILE)
 
-gcc-symbols.o: $(srcdir)/gccjit/gcc-symbols.c
-	$(COMPILE) $(srcdir)/gccjit/gcc-symbols.c
+gcc-symbols.o: $(srcdir)/compile/gcc-symbols.c
+	$(COMPILE) $(srcdir)/compile/gcc-symbols.c
 	$(POSTCOMPILE)
 
-gdbjit-load.o: $(srcdir)/gccjit/gdbjit-load.c
-	$(COMPILE) $(srcdir)/gccjit/gdbjit-load.c
+gdbjit-load.o: $(srcdir)/compile/gdbjit-load.c
+	$(COMPILE) $(srcdir)/compile/gdbjit-load.c
 	$(POSTCOMPILE)
 
-gdbjit-run.o: $(srcdir)/gccjit/gdbjit-run.c
-	$(COMPILE) $(srcdir)/gccjit/gdbjit-run.c
+gdbjit-run.o: $(srcdir)/compile/gdbjit-run.c
+	$(COMPILE) $(srcdir)/compile/gdbjit-run.c
 	$(POSTCOMPILE)
 
-loc2c.o: $(srcdir)/gccjit/loc2c.c
-	$(COMPILE) $(srcdir)/gccjit/loc2c.c
+loc2c.o: $(srcdir)/compile/loc2c.c
+	$(COMPILE) $(srcdir)/compile/loc2c.c
 	$(POSTCOMPILE)
 
-c-support.o: $(srcdir)/gccjit/c-support.c
-	$(COMPILE) $(srcdir)/gccjit/c-support.c
+c-support.o: $(srcdir)/compile/c-support.c
+	$(COMPILE) $(srcdir)/compile/c-support.c
 	$(POSTCOMPILE)
 
 
