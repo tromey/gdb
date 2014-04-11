@@ -1,4 +1,4 @@
-/* Header file for GDB GCC JIT.
+/* Header file for GDB compile command and supporting functions.
    Copyright (C) 2014 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify

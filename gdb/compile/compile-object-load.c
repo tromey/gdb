@@ -107,7 +107,7 @@ link_callbacks_warning (struct bfd_link_info *link_info, const char *xwarning,
   warning (_("Compiled module \"%s\" section \"%s\": warning: %s\n"),
 	   bfd_get_filename (abfd), bfd_get_section_name (abfd, section),
 	   xwarning);
-  /* Maybe permit running such a JIT module?  */
+  /* Maybe permit running as a module?  */
   return FALSE;
 }
 

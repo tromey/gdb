@@ -57,7 +57,7 @@ c_get_mode_for_size (int size)
 #define STR(x) #x
 #define STRINGIFY(x) STR(x)
 
-/* Helper function for get_gcc_jit_context.  dlopen the GCC front-end,
+/* Helper function for get_compile_context.  dlopen the GCC front-end,
    extract the symbol that will provide a vtable and call that
    function.  Return the gcc_context that was returned.  */
 
@@ -83,7 +83,7 @@ load_libcc (void)
 /* Return the GCC FE context.  */
 
 struct gcc_context *
-c_get_gcc_jit_context (void)
+c_get_compile_context (void)
 {
   static struct gcc_context *fe_context;
 

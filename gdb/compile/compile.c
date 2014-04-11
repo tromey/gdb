@@ -602,7 +602,7 @@ String quoting is parsed like in shell, for example:\n\
 			 " -w"
   // override CU's possible -fstack-protector-strong.
 			 " -fno-stack-protector"
-  // FIXME: Use -std=gnu++11 when C++ JIT gets supported.
+  // FIXME: Use -std=gnu++11 when C++ compilation is supported.
 		         " -std=gnu11"
   );
   set_compile_args (compile_args, 0, NULL);

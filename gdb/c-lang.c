@@ -868,7 +868,7 @@ const struct language_defn c_language_defn =
   NULL,				/* la_get_symbol_name_cmp */
   iterate_over_symbols,
   &c_varobj_ops,
-  c_get_gcc_jit_context,
+  c_get_compile_context,
   c_compute_program,
   LANG_MAGIC
 };

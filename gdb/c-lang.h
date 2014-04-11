@@ -140,7 +140,7 @@ extern int cp_is_vtbl_member (struct type *);
 
 extern int c_textual_element_type (struct type *, char);
 
-extern struct gcc_context *c_get_gcc_jit_context (void);
+extern struct gcc_context *c_get_compile_context (void);
 
 extern char *c_compute_program (const char *input,
 				enum compile_i_scope_types scope,
