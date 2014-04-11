@@ -18,7 +18,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
-#include "gdbjit-run.h"
+#include "compile-object-run.h"
 #include "value.h"
 #include "infcall.h"
 #include "objfiles.h"

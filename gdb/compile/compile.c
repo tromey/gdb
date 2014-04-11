@@ -29,7 +29,7 @@
 #include "interps.h"
 #include "compile.h"
 #include "compile-internal.h"
-#include "gdbjit-load.h"
+#include "compile-object-load.h"
 #include "frame.h"
 #include "symfile.h"
 #include "source.h"
@@ -39,7 +39,7 @@
 #include "readline/tilde.h"
 #include "arch-utils.h"
 #include "value.h"
-#include "gdbjit-run.h"
+#include "compile-object-run.h"
 #include "gdb_wait.h"
 #include "filestuff.h"
 

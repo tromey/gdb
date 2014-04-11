@@ -284,18 +284,18 @@ SUBDIR_TUI_CFLAGS= \
 # GCC GIT sub directory definitions
 #
 SUBDIR_GCC_JIT_OBS = \
-	compile.o gcc-symbols.o gcc-types.o gdbjit-load.o gdbjit-run.o \
-	loc2c.o c-support.o
+	compile.o compile-c-symbols.o gcc-types.o compile-object-load.o \
+	compile-object-run.o compile-loc2c.o compile-c-support.o
 SUBDIR_GCC_JIT_SRCS = \
 	compile/compile.c \
-	compile/gcc-symbols.c \
+	compile/compile-c-symbols.c \
 	compile/gcc-types.c \
-	compile/gdbjit-load.c \
-	compile/gdbjit-load.h \
-	compile/gdbjit-run.c \
-	compile/gdbjit-run.h \
-	compile/loc2c.c \
-	compile/c-support.c
+	compile/compile-object-load.c \
+	compile/compile-object-load.h \
+	compile/compile-object-run.c \
+	compile/compile-object-run.h \
+	compile/compile-loc2c.c \
+	compile/compile-c-support.c
 
 # Guile sub directory definitons for guile support.
 
@@ -1922,24 +1922,24 @@ gcc-types.o: $(srcdir)/compile/gcc-types.c
 	$(COMPILE) $(srcdir)/compile/gcc-types.c
 	$(POSTCOMPILE)
 
-gcc-symbols.o: $(srcdir)/compile/gcc-symbols.c
-	$(COMPILE) $(srcdir)/compile/gcc-symbols.c
+compile-c-symbols.o: $(srcdir)/compile/compile-c-symbols.c
+	$(COMPILE) $(srcdir)/compile/compile-c-symbols.c
 	$(POSTCOMPILE)
 
-gdbjit-load.o: $(srcdir)/compile/gdbjit-load.c
-	$(COMPILE) $(srcdir)/compile/gdbjit-load.c
+compile-object-load.o: $(srcdir)/compile/compile-object-load.c
+	$(COMPILE) $(srcdir)/compile/compile-object-load.c
 	$(POSTCOMPILE)
 
-gdbjit-run.o: $(srcdir)/compile/gdbjit-run.c
-	$(COMPILE) $(srcdir)/compile/gdbjit-run.c
+compile-object-run.o: $(srcdir)/compile/compile-object-run.c
+	$(COMPILE) $(srcdir)/compile/compile-object-run.c
 	$(POSTCOMPILE)
 
-loc2c.o: $(srcdir)/compile/loc2c.c
-	$(COMPILE) $(srcdir)/compile/loc2c.c
+compile-loc2c.o: $(srcdir)/compile/compile-loc2c.c
+	$(COMPILE) $(srcdir)/compile/compile-loc2c.c
 	$(POSTCOMPILE)
 
-c-support.o: $(srcdir)/compile/c-support.c
-	$(COMPILE) $(srcdir)/compile/c-support.c
+compile-c-support.o: $(srcdir)/compile/compile-c-support.c
+	$(COMPILE) $(srcdir)/compile/compile-c-support.c
 	$(POSTCOMPILE)
 
 

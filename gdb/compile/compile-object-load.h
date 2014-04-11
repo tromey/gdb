@@ -14,8 +14,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef GDB_GCCJIT_GDBJIT_LOAD_H
-#define GDB_GCCJIT_GDBJIT_LOAD_H
+#ifndef GDB_COMPILE_OBJECT_LOAD_H
+#define GDB_COMPILE_OBJECT_LOAD_H
 
 struct gdbjit_module
 {
@@ -32,4 +32,4 @@ struct gdbjit_module
 
 extern struct gdbjit_module gdbjit_load (const char *object_file);
 
-#endif /* GDB_GCCJIT_GDBJIT_LOAD_H */
+#endif /* GDB_COMPILE_OBJECT_LOAD_H */

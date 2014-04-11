@@ -14,11 +14,11 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef GDB_GCCJIT_GDBJIT_RUN_H
-#define GDB_GCCJIT_GDBJIT_RUN_H
+#ifndef GDB_COMPILE_OBJECT_RUN_H
+#define GDB_COMPILE_OBJECT_RUN_H
 
-#include "gdbjit-load.h"
+#include "compile-object-load.h"
 
 extern void gdbjit_run (const struct gdbjit_module *module);
 
-#endif /* GDB_GCCJIT_GDBJIT_RUN_H */
+#endif /* GDB_COMPILE_OBJECT_RUN_H */
