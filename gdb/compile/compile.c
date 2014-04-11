@@ -110,6 +110,9 @@ compile_file_command (char *arg, int from_tty)
   if (arg[0] == '\0')
     error (_("You must provide a filename with the raw option set."));
 
+  if (arg[0] == '-')
+    error (_("Unknown argument specified."));
+
   arg = skip_spaces (arg);
   arg = gdb_abspath (arg);
   make_cleanup (xfree, arg);
@@ -140,6 +143,9 @@ compile_code_command (char *arg, int from_tty)
     }
 
   arg = skip_spaces (arg);
+
+  if (arg != NULL && arg[0] == '-')
+    error (_("Unknown argument specified."));
 
   if (arg && *arg)
       eval_compile_command (NULL, arg, scope);
