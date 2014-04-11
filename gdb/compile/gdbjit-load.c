@@ -19,7 +19,7 @@
 
 #include "defs.h"
 #include "gdbjit-load.h"
-#include "gccjit-internal.h"
+#include "compile-internal.h"
 #include "command.h"
 #include "objfiles.h"
 #include "gdbcore.h"

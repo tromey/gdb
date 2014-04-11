@@ -22,7 +22,7 @@
 #include "value.h"
 #include "infcall.h"
 #include "objfiles.h"
-#include "gccjit-internal.h"
+#include "compile-internal.h"
 #include "dummy-frame.h"
 
 /* Cleanup everything after the inferior function dummy frame gets

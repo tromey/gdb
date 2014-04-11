@@ -19,7 +19,7 @@
 
 
 #include "defs.h"
-#include "gccjit-internal.h"
+#include "compile-internal.h"
 #include "gdb_assert.h"
 #include "symtab.h"
 #include "parser-defs.h"

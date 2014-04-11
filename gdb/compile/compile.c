@@ -27,8 +27,8 @@
 #include "cli/cli-utils.h"
 #include <ctype.h>
 #include "interps.h"
-#include "compile/gccjit.h"
-#include "gccjit-internal.h"
+#include "compile.h"
+#include "compile-internal.h"
 #include "gdbjit-load.h"
 #include "frame.h"
 #include "symfile.h"
@@ -497,7 +497,7 @@ eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
     }
 }
 
-/* See gccjit/gccjit-internal.h.  */
+/* See gccjit/compile-internal.h.  */
 
 char *
 gdbjit_register_name_mangled (struct gdbarch *gdbarch, int regnum)
@@ -507,7 +507,7 @@ gdbjit_register_name_mangled (struct gdbarch *gdbarch, int regnum)
   return xstrprintf ("__%s", regname);
 }
 
-/* See gccjit/gccjit-internal.h.  */
+/* See gccjit/compile-internal.h.  */
 
 int
 gdbjit_register_name_demangle (struct gdbarch *gdbarch, const char *regname)

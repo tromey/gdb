@@ -20,7 +20,7 @@
 
 #include "defs.h"
 #include "gdbtypes.h"
-#include "gccjit-internal.h"
+#include "compile-internal.h"
 #include "gdb_assert.h"
 
 struct type_map_instance

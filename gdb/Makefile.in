@@ -284,10 +284,10 @@ SUBDIR_TUI_CFLAGS= \
 # GCC GIT sub directory definitions
 #
 SUBDIR_GCC_JIT_OBS = \
-	gccjit.o gcc-symbols.o gcc-types.o gdbjit-load.o gdbjit-run.o \
+	compile.o gcc-symbols.o gcc-types.o gdbjit-load.o gdbjit-run.o \
 	loc2c.o c-support.o
 SUBDIR_GCC_JIT_SRCS = \
-	compile/gccjit.c \
+	compile/compile.c \
 	compile/gcc-symbols.c \
 	compile/gcc-types.c \
 	compile/gdbjit-load.c \
@@ -879,7 +879,7 @@ ia64-tdep.h ada-lang.h varobj.h frv-tdep.h nto-tdep.h serial.h \
 c-lang.h d-lang.h go-lang.h frame.h event-loop.h block.h cli/cli-setshow.h \
 cli/cli-decode.h cli/cli-cmds.h cli/cli-utils.h \
 cli/cli-script.h macrotab.h symtab.h common/version.h \
-compile/gccjit.h gnulib/import/string.in.h gnulib/import/str-two-way.h \
+compile/compile.h gnulib/import/string.in.h gnulib/import/str-two-way.h \
 gnulib/import/stdint.in.h remote.h remote-notif.h gdb.h sparc-nat.h \
 gdbthread.h dwarf2-frame.h dwarf2-frame-tailcall.h nbsd-nat.h dcache.h \
 amd64-nat.h s390-linux-tdep.h arm-linux-tdep.h exceptions.h macroscope.h \
@@ -1914,8 +1914,8 @@ cli-utils.o: $(srcdir)/cli/cli-utils.c
 # Need to explicitly specify the compile rule as make will do nothing
 # or try to compile the object file into the sub-directory.
 
-gccjit.o: $(srcdir)/compile/gccjit.c
-	$(COMPILE) $(srcdir)/compile/gccjit.c
+compile.o: $(srcdir)/compile/compile.c
+	$(COMPILE) $(srcdir)/compile/compile.c
 	$(POSTCOMPILE)
 
 gcc-types.o: $(srcdir)/compile/gcc-types.c

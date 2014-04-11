@@ -14,8 +14,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef GDB_GCCJIT_GCCJIT_H
-#define GDB_GCCJIT_GCCJIT_H
+#ifndef GDB_COMPILE_H
+#define GDB_COMPILE_H
 
 extern void eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
 				  enum gccjit_i_scope_types scope);
@@ -34,4 +34,4 @@ extern void compile_dwarf_expr_to_c (struct ui_file *stream,
 				     const gdb_byte *op_end,
 				     struct dwarf2_per_cu_data *per_cu);
 
-#endif /* GDB_GCCJIT_GCCJIT_H */
+#endif /* GDB_COMPILE_H */
