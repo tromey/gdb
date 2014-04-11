@@ -77,19 +77,19 @@
    accept.  */
 /* FIXME this really should not be here.  */
 
-enum gccjit_i_scope_types
+enum compile_i_scope_types
   {
-    GCCJIT_I_INVALID_SCOPE,
+    COMPILE_I_INVALID_SCOPE,
 
     /* A simple scope.  Wrap an expression into a simple scope that
        takes no arguments, returns no value, and uses the generic
        function name "_gdb_expr". */
 
-    GCCJIT_I_SIMPLE_SCOPE,
+    COMPILE_I_SIMPLE_SCOPE,
 
     /* Do not wrap the expression,
        it has to provide function "_gdb_expr" on its own.  */
-    GCCJIT_I_RAW_SCOPE,
+    COMPILE_I_RAW_SCOPE,
   };
 
 /* Just in case they're not defined in stdio.h.  */
@@ -430,7 +430,7 @@ enum command_control_type
     if_control,
     commands_control,
     python_control,
-    jit_control,
+    compile_control,
     guile_control,
     while_stepping_control,
     invalid_control
@@ -448,9 +448,9 @@ struct command_line
       {
 	struct
 	  {
-	    enum gccjit_i_scope_types scope;
+	    enum compile_i_scope_types scope;
 	  }
-	jit;
+	compile;
       }
     control_u;
     /* * The number of elements in body_list.  */

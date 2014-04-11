@@ -1,4 +1,4 @@
-/* Load module for 'expression' command.
+/* Load module for 'compile' command.
 
    Copyright (C) 2014 Free Software Foundation, Inc.
 
@@ -92,7 +92,7 @@ link_callbacks_multiple_definition (struct bfd_link_info *link_info,
 
   if (link_info->allow_multiple_definition)
     return TRUE;
-  warning (_("JIT module \"%s\": multiple symbol definitions: %s\n"),
+  warning (_("Compiled module \"%s\": multiple symbol definitions: %s\n"),
 	   bfd_get_filename (abfd), h->root.string);
   return FALSE;
 }
@@ -104,7 +104,7 @@ link_callbacks_warning (struct bfd_link_info *link_info, const char *xwarning,
                         const char *symbol, bfd *abfd, asection *section,
 			bfd_vma address)
 {
-  warning (_("JIT module \"%s\" section \"%s\": warning: %s\n"),
+  warning (_("Compiled module \"%s\" section \"%s\": warning: %s\n"),
 	   bfd_get_filename (abfd), bfd_get_section_name (abfd, section),
 	   xwarning);
   /* Maybe permit running such a JIT module?  */
@@ -119,7 +119,7 @@ link_callbacks_undefined_symbol (struct bfd_link_info *link_info,
 				 bfd_vma address, bfd_boolean is_fatal)
 {
   warning (_("Cannot resolve relocation to \"%s\" "
-	     "from JIT module \"%s\" section \"%s\"."),
+	     "from compiled module \"%s\" section \"%s\"."),
 	   name, bfd_get_filename (abfd), bfd_get_section_name (abfd, section));
   return FALSE;
 }
@@ -144,7 +144,8 @@ link_callbacks_reloc_dangerous (struct bfd_link_info *link_info,
 				const char *message, bfd *abfd,
 				asection *section, bfd_vma address)
 {
-  warning (_("JIT module \"%s\" section \"%s\": dangerous relocation: %s\n"),
+  warning (_("Compiled module \"%s\" section \"%s\": dangerous "
+	     "relocation: %s\n"),
 	   bfd_get_filename (abfd), bfd_get_section_name (abfd, section),
 	   message);
   return FALSE;
@@ -157,7 +158,8 @@ link_callbacks_unattached_reloc (struct bfd_link_info *link_info,
 				 const char *name, bfd *abfd, asection *section,
 				 bfd_vma address)
 {
-  warning (_("JIT module \"%s\" section \"%s\": unattached relocation: %s\n"),
+  warning (_("Compiled module \"%s\" section \"%s\": unattached "
+	     "relocation: %s\n"),
 	   bfd_get_filename (abfd), bfd_get_section_name (abfd, section),
 	   name);
   return FALSE;
@@ -177,7 +179,7 @@ link_callbacks_einfo (const char *fmt, ...)
   va_end (ap);
   cleanups = make_cleanup (xfree, str);
 
-  warning (_("JIT module: warning: %s\n"), str);
+  warning (_("Compile module: warning: %s\n"), str);
 
   do_cleanups (cleanups);
 }
@@ -258,7 +260,7 @@ copy_sections (bfd *abfd, asection *sect, void *data)
 						      &link_order, sect_data,
 						      FALSE, symbol_table);
   if (sect_data_got == NULL)
-    error (_("Cannot map JIT module \"%s\" section \"%s\": %s"),
+    error (_("Cannot map compiled module \"%s\" section \"%s\": %s"),
 	   bfd_get_filename (abfd), bfd_get_section_name (abfd, sect),
 	   bfd_errmsg (bfd_get_error ()));
   gdb_assert (sect_data_got == sect_data);
@@ -266,7 +268,7 @@ copy_sections (bfd *abfd, asection *sect, void *data)
   inferior_addr = bfd_get_section_vma (abfd, sect);
   if (0 != target_write_memory (inferior_addr, sect_data,
 				bfd_get_section_size (sect)))
-    error (_("Cannot write JIT module \"%s\" section \"%s\" "
+    error (_("Cannot write compiled module \"%s\" section \"%s\" "
 	     "to inferior memory range %s-%s."),
 	   bfd_get_filename (abfd), bfd_get_section_name (abfd, sect),
 	   paddress (target_gdbarch (), inferior_addr),
@@ -290,12 +292,13 @@ get_regs_type (struct objfile *objfile)
 						GCC_C_FE_WRAPPER_FUNCTION,
 						VAR_DOMAIN);
   if (func_sym == NULL)
-    error (_("Cannot find function \"%s\" in JIT module \"%s\"."),
+    error (_("Cannot find function \"%s\" in compiled module \"%s\"."),
 	   GCC_C_FE_WRAPPER_FUNCTION, objfile_name (objfile));
 
   func_type = SYMBOL_TYPE (func_sym);
   if (TYPE_CODE (func_type) != TYPE_CODE_FUNC)
-    error (_("Invalid type code %d of function \"%s\" in JIT module \"%s\"."),
+    error (_("Invalid type code %d of function \"%s\" in compiled "
+	     "module \"%s\"."),
 	   TYPE_CODE (func_type), GCC_C_FE_WRAPPER_FUNCTION,
 	   objfile_name (objfile));
 
@@ -304,21 +307,22 @@ get_regs_type (struct objfile *objfile)
     return NULL;
 
   if (TYPE_NFIELDS (func_type) != 1)
-    error (_("Invalid %d parameters of function \"%s\" in JIT module \"%s\"."),
+    error (_("Invalid %d parameters of function \"%s\" in compiled "
+	     "module \"%s\"."),
 	   TYPE_NFIELDS (func_type), GCC_C_FE_WRAPPER_FUNCTION,
 	   objfile_name (objfile));
 
   regsp_type = check_typedef (TYPE_FIELD_TYPE (func_type, 0));
   if (TYPE_CODE (regsp_type) != TYPE_CODE_PTR)
     error (_("Invalid type code %d of first parameter of function \"%s\" "
-	     "in JIT module \"%s\"."),
+	     "in compiled module \"%s\"."),
 	   TYPE_CODE (regsp_type), GCC_C_FE_WRAPPER_FUNCTION,
 	   objfile_name (objfile));
 
   regs_type = check_typedef (TYPE_TARGET_TYPE (regsp_type));
   if (TYPE_CODE (regs_type) != TYPE_CODE_STRUCT)
     error (_("Invalid type code %d of dereferenced first parameter "
-	     "of function \"%s\" in JIT module \"%s\"."),
+	     "of function \"%s\" in compiled module \"%s\"."),
 	   TYPE_CODE (regs_type), GCC_C_FE_WRAPPER_FUNCTION,
 	   objfile_name (objfile));
 
@@ -348,7 +352,7 @@ store_regs (struct type *regs_type, CORE_ADDR regs_base)
       struct value *regval;
       CORE_ADDR inferior_addr;
 
-      if (strcmp (reg_name, GCCJIT_I_SIMPLE_REGISTER_DUMMY) == 0)
+      if (strcmp (reg_name, COMPILE_I_SIMPLE_REGISTER_DUMMY) == 0)
 	continue;
 
       if ((reg_bitpos % 8) != 0 || reg_bitsize != 0)
@@ -361,7 +365,7 @@ store_regs (struct type *regs_type, CORE_ADDR regs_base)
 	error (_("Invalid register \"%s\" type code %d"), reg_name,
 	       TYPE_CODE (reg_type));
 
-      regnum = gdbjit_register_name_demangle (gdbarch, reg_name);
+      regnum = compile_register_name_demangle (gdbarch, reg_name);
 
       regval = value_from_register (reg_type, regnum, get_current_frame ());
       if (value_optimized_out (regval))
@@ -377,14 +381,14 @@ store_regs (struct type *regs_type, CORE_ADDR regs_base)
     }
 }
 
-/* Helper to track resources by JIT module's struct objfile.  */
-static const struct objfile_data *gdbjit_objfile_data_key;
+/* Helper to track resources by Compile  module's struct objfile.  */
+static const struct objfile_data *compile_objfile_data_key;
 
 /* Load OBJECT_FILE into inferior memory.  Throw an error otherwise.
-   Caller must fully dispose the return value by calling gdbjit_run.  */
+   Caller must fully dispose the return value by calling compile_object_run.  */
 
-struct gdbjit_module
-gdbjit_load (const char *object_file)
+struct compile_module
+compile_object_load (const char *object_file)
 {
   struct cleanup *cleanups, *cleanups_symbol_table, *cleanups_free_objfile;
   bfd *abfd;
@@ -396,7 +400,7 @@ gdbjit_load (const char *object_file)
   long number_of_symbols;
   struct type *dptr_type = builtin_type (target_gdbarch ())->builtin_data_ptr;
   unsigned dptr_type_len = TYPE_LENGTH (dptr_type);
-  struct gdbjit_module retval;
+  struct compile_module retval;
   struct type *regs_type;
   char *filename, **matching;
 
@@ -407,7 +411,7 @@ gdbjit_load (const char *object_file)
 
   abfd = gdb_bfd_open (filename, gnutarget, -1);
   if (abfd == NULL)
-    error (_("\"%s\": could not open as JIT module: %s"),
+    error (_("\"%s\": could not open as compiled module: %s"),
           filename, bfd_errmsg (bfd_get_error ()));
   make_cleanup_bfd_unref (abfd);
 
@@ -424,7 +428,7 @@ gdbjit_load (const char *object_file)
 
   storage_needed = bfd_get_symtab_upper_bound (abfd);
   if (storage_needed < 0)
-    error (_("Cannot read symbols of JIT module \"%s\": %s"),
+    error (_("Cannot read symbols of compiled module \"%s\": %s"),
           filename, bfd_errmsg (bfd_get_error ()));
 
   /* The memory may be later needed
@@ -434,7 +438,7 @@ gdbjit_load (const char *object_file)
   cleanups_symbol_table = make_cleanup (xfree, symbol_table);
   number_of_symbols = bfd_canonicalize_symtab (abfd, symbol_table);
   if (number_of_symbols < 0)
-    error (_("Cannot parse symbols of JIT module \"%s\": %s"),
+    error (_("Cannot parse symbols of compiled module \"%s\": %s"),
           filename, bfd_errmsg (bfd_get_error ()));
 
   setup_sections_data.vma = ((setup_sections_data.vma + dptr_type_len - 1)
@@ -449,7 +453,7 @@ gdbjit_load (const char *object_file)
 
   addr = gdbarch_infcall_mmap (target_gdbarch (), setup_sections_data.vma);
   if ((addr & (setup_sections_data.max_alignment - 1)) != 0)
-    error (_("Inferior JIT module address %s not aligned to BFD required %s."),
+    error (_("Inferior compiled module address %s not aligned to BFD required %s."),
 	   paddress (target_gdbarch (), addr),
 	   paddress (target_gdbarch (), setup_sections_data.max_alignment));
 
@@ -459,14 +463,14 @@ gdbjit_load (const char *object_file)
   /* SYMFILE_VERBOSE is not passed even if FROM_TTY, user is not interested in
      "Reading symbols from ..." message for automatically generated file.  */
   retval.objfile = symbol_file_add_from_bfd (abfd, filename, 0, NULL, 0, NULL);
-  set_objfile_data (retval.objfile, gdbjit_objfile_data_key, symbol_table);
+  set_objfile_data (retval.objfile, compile_objfile_data_key, symbol_table);
   discard_cleanups (cleanups_symbol_table);
   cleanups_free_objfile = make_cleanup_free_objfile (retval.objfile);
 
   bmsym = lookup_minimal_symbol_text (GCC_C_FE_WRAPPER_FUNCTION,
 				      retval.objfile);
   if (bmsym.minsym == NULL || MSYMBOL_TYPE (bmsym.minsym) == mst_file_text)
-    error (_("Could not find symbol \"%s\" of JIT module \"%s\"."),
+    error (_("Could not find symbol \"%s\" of compiled module \"%s\"."),
 	   GCC_C_FE_WRAPPER_FUNCTION, filename);
   retval.func_addr = BMSYMBOL_VALUE_ADDRESS (bmsym);
 
@@ -497,14 +501,14 @@ gdbjit_load (const char *object_file)
 		store_typed_address (buf, dptr_type,
 				     BMSYMBOL_VALUE_ADDRESS (bmsym));
 		if (0 != target_write_memory (got_start, buf, dptr_type_len))
-		  error (_("Cannot store address to %s for JIT module \"%s\"."),
+		  error (_("Cannot store address to %s for compiled module \"%s\"."),
 			 paddress (target_gdbarch (), got_start),
 			 filename);
 		got_start += dptr_type_len;
 		break;
 	      }
 	    default:
-	      error (_("Could not find symbol \"%s\" for JIT module \"%s\"."),
+	      error (_("Could not find symbol \"%s\" for compiled module \"%s\"."),
 		     sym->name, filename);
 	    }
 	}
@@ -529,21 +533,21 @@ gdbjit_load (const char *object_file)
   return retval;
 }
 
-/* Destructor for gdbjit_objfile_data_key.  */
+/* Destructor for compile_objfile_data_key.  */
 
 static void
-gdbjit_per_objfile_free (struct objfile *objfile, void *d)
+compile_per_objfile_free (struct objfile *objfile, void *d)
 {
   asymbol **symbol_table = d;
 
   xfree (symbol_table);
 }
 
-extern initialize_file_ftype _initialize_gdbjit_load; /* -Wmissing-prototypes */
+extern initialize_file_ftype _initialize_compile_object_load; /* -Wmissing-prototypes */
 
 void
-_initialize_gdbjit_load (void)
+_initialize_compile_object_load (void)
 {
-  gdbjit_objfile_data_key = register_objfile_data_with_cleanup (NULL,
-						       gdbjit_per_objfile_free);
+  compile_objfile_data_key = register_objfile_data_with_cleanup (NULL,
+								 compile_per_objfile_free);
 }

@@ -1,4 +1,4 @@
-/* Header file to call module for 'expression' command.
+/* Header file to call module for 'compile' command.
    Copyright (C) 2014 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
@@ -19,6 +19,6 @@
 
 #include "compile-object-load.h"
 
-extern void gdbjit_run (const struct gdbjit_module *module);
+extern void compile_object_run (const struct compile_module *module);
 
 #endif /* GDB_COMPILE_OBJECT_RUN_H */

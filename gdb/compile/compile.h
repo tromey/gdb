@@ -1,4 +1,5 @@
-/* Header file for GDB GCC JIT.
+/* Header file for Compile and inject module.
+
    Copyright (C) 2014 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
@@ -17,9 +18,9 @@
 #ifndef GDB_COMPILE_H
 #define GDB_COMPILE_H
 
-extern void eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
-				  enum gccjit_i_scope_types scope);
-extern void _initialize_gcc_jit (void);
+extern void eval_compile_command (struct command_line *cmd, char *cmd_string,
+				  enum compile_i_scope_types scope);
+extern void _initialize_compile (void);
 
 struct ui_file;
 struct gdbarch;

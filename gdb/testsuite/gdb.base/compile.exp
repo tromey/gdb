@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-standard_testfile .c gdbjit-shlib.c
+standard_testfile .c compile-shlib.c
 
 get_compiler_info
 set options {debug}
@@ -31,51 +31,51 @@ if ![runto_main] {
 
 gdb_test "p globalvar" " = 10" "expect 10"
 
-gdb_test_no_output "expression globalvar = SOME_MACRO;" \
+gdb_test_no_output "compile code globalvar = SOME_MACRO;" \
     "set variable from macro"
 gdb_test "p globalvar" " = 23" "expect 23"
 
-gdb_test_no_output "expression globalvar = ARG_MACRO(0, 0);" \
+gdb_test_no_output "compile code globalvar = ARG_MACRO(0, 0);" \
     "set variable from function-like macro"
 gdb_test "p globalvar" " = -1" "expect -1"
 
-gdb_test_no_output "expression globalvar = 42;" "set variable"
+gdb_test_no_output "compile code globalvar = 42;" "set variable"
 gdb_test "p globalvar" " = 42" "expect 42"
 
-gdb_test_no_output "expression globalvar *= 2;" "modify variable"
+gdb_test_no_output "compile code globalvar *= 2;" "modify variable"
 gdb_test "p globalvar" " = 84" "expect 84"
 
-gdb_test_multiple "expression" "expression multiline 1" { -re "\r\n>$" {} }
-gdb_test_multiple "globalvar = 10;" "expression multiline 2" { -re "\r\n>$" {} }
-gdb_test_multiple "globalvar *= 2;" "expression multiline 3" { -re "\r\n>$" {} }
-gdb_test_no_output "end" "expression multiline 4"
+gdb_test_multiple "compile code" "compile code multiline 1" { -re "\r\n>$" {} }
+gdb_test_multiple "globalvar = 10;" "compile code multiline 2" { -re "\r\n>$" {} }
+gdb_test_multiple "globalvar *= 2;" "compile code multiline 3" { -re "\r\n>$" {} }
+gdb_test_no_output "end" "compile code multiline 4"
 gdb_test "p globalvar" " = 20" "expect 20"
 
-gdb_test_no_output "expression -r -f ${srcdir}/${subdir}/${testfile}.mod" \
+gdb_test_no_output "compile file -r ${srcdir}/${subdir}/${testfile}.mod" \
     "use external source file"
 gdb_test "p globalvar" " = 7" "expect 7"
 
-gdb_test_no_output "expression func_static (2);" "call static function"
+gdb_test_no_output "compile code func_static (2);" "call static function"
 gdb_test "p globalvar" " = 9" "expect 9"
-gdb_test_no_output "expression func_global (1);" "call global function"
+gdb_test_no_output "compile code func_global (1);" "call global function"
 gdb_test "p globalvar" " = 8" "expect 8"
 
 gdb_test_no_output \
-    "expression globalvar = (sizeof (ulonger) == sizeof (long))" \
+    "compile code globalvar = (sizeof (ulonger) == sizeof (long))" \
     "compute size of ulonger"
 gdb_test "p globalvar" " = 1" "check size of ulonger"
 gdb_test_no_output \
-    "expression globalvar = (sizeof (longer) == sizeof (long))" \
+    "compile code globalvar = (sizeof (longer) == sizeof (long))" \
     "compute size of longer"
 gdb_test "p globalvar" " = 1" "check size of longer"
-gdb_test_no_output "expression globalvar = MINUS_1"
+gdb_test_no_output "compile code globalvar = MINUS_1"
 gdb_test "p globalvar" " = -1" "check MINUS_1"
 
-gdb_test_no_output "expression static int staticvar = 5; intptr = &staticvar" \
+gdb_test_no_output "compile code static int staticvar = 5; intptr = &staticvar" \
     "keep jit in memory"
 gdb_test "p *intptr" " = 5" "expect 5"
 
-gdb_test "expression *(volatile int *) 0 = 0;" \
+gdb_test "compile code *(volatile int *) 0 = 0;" \
     "The program being debugged was signaled while in a function called.*"
 gdb_test "bt" \
     "\r\n#0  \[^\r\n\]* in _gdb_expr \[^\r\n\]*\r\n#1  <function called from gdb>\r\n.*"
@@ -99,34 +99,34 @@ gdb_continue_to_breakpoint "break-here" ".* break-here .*"
 
 gdb_test "p localvar" " = 50" "expect localvar 50"
 
-gdb_test_no_output "expression localvar = 12;" "set localvar"
+gdb_test_no_output "compile code localvar = 12;" "set localvar"
 gdb_test "p localvar" " = 12" "expect 12"
 
-gdb_test_no_output "expression localvar *= 2;" "modify localvar"
+gdb_test_no_output "compile code localvar *= 2;" "modify localvar"
 gdb_test "p localvar" " = 24" "expect 24"
 
-gdb_test_no_output "expression localvar = shadowed" \
+gdb_test_no_output "compile code localvar = shadowed" \
     "test shadowing"
 gdb_test "p localvar" " = 52" "expect 52"
 
 # FIXME: these don't work yet.  We need the upstream VLA patches
 # first, then we need to adapt the translator to cope.
-# gdb_test_no_output "expression vla\[2\] = 7"
+# gdb_test_no_output "compile code vla\[2\] = 7"
 # gdb_test "p vla\[2\]" " = 7"
 # gdb_test_no_output \
-#     "expression localvar = (sizeof (vla) == bound * sizeof (vla\[0\]))"
+#     "compile code localvar = (sizeof (vla) == bound * sizeof (vla\[0\]))"
 # gdb_test "p localvar" " = 1"
 
 #
 # Test setting fields and also many different types.
 #
 
-gdb_test_no_output "expression struct_object.selffield = &struct_object"
+gdb_test_no_output "compile code struct_object.selffield = &struct_object"
 gdb_test "print struct_object.selffield == &struct_object" " = 1"
 
-gdb_test_no_output "expression struct_object.charfield = 1"
+gdb_test_no_output "compile code struct_object.charfield = 1"
 gdb_test "print struct_object.charfield" " = 1 '\\\\001'"
-gdb_test_no_output "expression struct_object.ucharfield = 1"
+gdb_test_no_output "compile code struct_object.ucharfield = 1"
 gdb_test "print struct_object.ucharfield" " = 1 '\\\\001'"
 
 foreach {field value} {
@@ -140,25 +140,25 @@ foreach {field value} {
     floatfield 1
     doublefield 2
 } {
-    gdb_test_no_output "expression struct_object.$field = $value"
+    gdb_test_no_output "compile code struct_object.$field = $value"
     gdb_test "print struct_object.$field" " = $value"
 }
 
-gdb_test_no_output "expression struct_object.arrayfield\[2\] = 7"
+gdb_test_no_output "compile code struct_object.arrayfield\[2\] = 7"
 gdb_test "print struct_object.arrayfield" \
     " = \\{0, 0, 7, 0, 0\\}"
 
-gdb_test_no_output "expression struct_object.complexfield = 7 + 5i"
+gdb_test_no_output "compile code struct_object.complexfield = 7 + 5i"
 gdb_test "print struct_object.complexfield" " = 7 \\+ 5 \\* I"
 
-gdb_test_no_output "expression struct_object.boolfield = 1"
+gdb_test_no_output "compile code struct_object.boolfield = 1"
 gdb_test "print struct_object.boolfield" " = true"
 
-gdb_test_no_output "expression struct_object.vectorfield\[2\] = 7"
+gdb_test_no_output "compile code struct_object.vectorfield\[2\] = 7"
 gdb_test "print struct_object.vectorfield" \
     " = \\{0, 0, 7, 0\\}"
 
-gdb_test_no_output "expression union_object.typedeffield = 7"
+gdb_test_no_output "compile code union_object.typedeffield = 7"
 gdb_test "print union_object.typedeffield" " = 7"
 gdb_test "print union_object.intfield" " = 7"
 
@@ -171,7 +171,7 @@ gdb_test "print union_object.intfield" " = 7"
 gdb_breakpoint [gdb_get_line_number "no_args_or_locals breakpoint"]
 gdb_continue_to_breakpoint "no_args_or_locals"
 
-gdb_test_no_output "expression globalvar = 77;" "set variable to 77"
+gdb_test_no_output "compile code globalvar = 77;" "set variable to 77"
 gdb_test "p globalvar" " = 77" "expect 77"
 
 
@@ -179,19 +179,19 @@ gdb_test "p globalvar" " = 77" "expect 77"
 # Some simple coverage tests.
 #
 
-gdb_test "show debug gccjit" "GCC JIT debugging is .*"
-gdb_test "show gdbjit-args" \
-    "JIT expression GCC command-line arguments are .*"
-gdb_test "expression -z" "Unknown argument.*"
+gdb_test "show debug compile" "Compile debugging is .*"
+gdb_test "show compile-args" \
+    "Compile command command-line arguments are .*"
+gdb_test "compile code -z" "Unknown argument.*"
 
 gdb_test "set lang java" \
     "Warning: the current language does not match this frame."
-gdb_test "expression globalvar" "no compiler support for this language"
+gdb_test "compile code globalvar" "no compiler support for this language"
 gdb_test_no_output "set lang auto"
 
-gdb_test_no_output "expression union union_type newdecl_u"
-gdb_test_no_output "expression struct struct_type newdecl_s"
-gdb_test_no_output "expression inttypedef newdecl_i"
+gdb_test_no_output "compile code union union_type newdecl_u"
+gdb_test_no_output "compile code struct struct_type newdecl_s"
+gdb_test_no_output "compile code inttypedef newdecl_i"
 
 
 if {[skip_shlib_tests]} {
@@ -211,8 +211,8 @@ if ![runto_main] {
     return -1
 }
 
-gdb_test_no_output "expression shlib_func ();" "call shared library function"
+gdb_test_no_output "compile code shlib_func ();" "call shared library function"
 gdb_test "p globalvar" " = 1" "expect 1"
 
-gdb_test_no_output "expression shlibvar += 5;" "modify shared library variable"
+gdb_test_no_output "compile code shlibvar += 5;" "modify shared library variable"
 gdb_test "p shlibvar" " = 15" "expect 15"

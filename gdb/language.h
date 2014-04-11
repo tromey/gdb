@@ -1,3 +1,4 @@
+
 /* Source-language-related definitions for GDB.
 
    Copyright (C) 1991-2014 Free Software Foundation, Inc.
@@ -371,7 +372,7 @@ struct language_defn
        bit of code to compile.  FIXME - more comment  */
 
     char *(*la_compute_program) (const char *input,
-				 enum gccjit_i_scope_types type,
+				 enum compile_i_scope_types type,
 				 struct gdbarch *gdbarch,
 				 const struct block *expr_block,
 				 CORE_ADDR expr_pc);

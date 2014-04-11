@@ -91,7 +91,7 @@ multi_line_command_p (enum command_control_type type)
     case while_control:
     case while_stepping_control:
     case commands_control:
-    case jit_control:
+    case compile_control:
     case python_control:
     case guile_control:
       return 1;
@@ -277,9 +277,9 @@ print_command_lines (struct ui_out *uiout, struct command_line *cmd,
 	  continue;
 	}
 
-      if (list->control_type == jit_control)
+      if (list->control_type == compile_control)
 	{
-	  ui_out_field_string (uiout, NULL, "jit expression");
+	  ui_out_field_string (uiout, NULL, "compile expression");
 	  ui_out_text (uiout, "\n");
 	  print_command_lines (uiout, *list->body_list, 0);
 	  if (depth)
@@ -617,8 +617,8 @@ execute_control_command (struct command_line *cmd)
 	break;
       }
 
-    case jit_control:
-      eval_gcc_jit_command (cmd, NULL, cmd->control_u.jit.scope);
+    case compile_control:
+      eval_compile_command (cmd, NULL, cmd->control_u.compile.scope);
       ret = simple_control;
       break;
 
@@ -1067,8 +1067,8 @@ process_next_line (char *p, struct command_line **command, int parse_commands,
 	{
 	  /* Note that we ignore the inline "expression command" form
 	     here.  */
-	  *command = build_command_line (jit_control, "");
-	  (*command)->control_u.jit.scope = GCCJIT_I_INVALID_SCOPE;
+	  *command = build_command_line (compile_control, "");
+	  (*command)->control_u.compile.scope = COMPILE_I_INVALID_SCOPE;
 	}
 
       else if (p_end - p == 5 && !strncmp (p, "guile", 5))
@@ -1165,7 +1165,7 @@ recurse_read_control_structure (char * (*read_next_line_func) (void),
       val = process_next_line (read_next_line_func (), &next, 
 			       current_cmd->control_type != python_control
 			       && current_cmd->control_type != guile_control
-			       && current_cmd->control_type != jit_control,
+			       && current_cmd->control_type != compile_control,
 			       validator, closure);
 
       /* Just skip blanks and comments.  */

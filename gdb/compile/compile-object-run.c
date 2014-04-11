@@ -1,4 +1,4 @@
-/* Call module for 'expression' command.
+/* Call module for 'compile' command.
 
    Copyright (C) 2014 Free Software Foundation, Inc.
 
@@ -60,7 +60,7 @@ do_module_cleanup (void *arg)
    Caller must not deallocate the resources MODULE points to.  */
 
 void
-gdbjit_run (const struct gdbjit_module *module)
+compile_object_run (const struct compile_module *module)
 {
   struct value *func_val;
   struct frame_id dummy_id;

@@ -1,4 +1,4 @@
-/* Header file to load module for 'expression' command.
+/* Header file to load module for 'compile' command.
    Copyright (C) 2014 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
@@ -17,9 +17,9 @@
 #ifndef GDB_COMPILE_OBJECT_LOAD_H
 #define GDB_COMPILE_OBJECT_LOAD_H
 
-struct gdbjit_module
+struct compile_module
 {
-  /* objfile for the compiled JIT module.  */
+  /* objfile for the compiled module.  */
   struct objfile *objfile;
 
   /* Inferior function address.  */
@@ -30,6 +30,6 @@ struct gdbjit_module
   CORE_ADDR regs_addr;
 };
 
-extern struct gdbjit_module gdbjit_load (const char *object_file);
+extern struct compile_module compile_object_load (const char *object_file);
 
 #endif /* GDB_COMPILE_OBJECT_LOAD_H */

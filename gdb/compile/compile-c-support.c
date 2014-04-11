@@ -155,21 +155,21 @@ write_macro_definitions (const struct block *block, CORE_ADDR pc,
    insert.  */
 
 static void
-add_code_header (enum gccjit_i_scope_types type, struct ui_file *buf)
+add_code_header (enum compile_i_scope_types type, struct ui_file *buf)
 {
   switch (type)
   {
-  case GCCJIT_I_SIMPLE_SCOPE:
+  case COMPILE_I_SIMPLE_SCOPE:
     fputs_unfiltered ("void "
 		      GCC_C_FE_WRAPPER_FUNCTION
 		      " (struct "
-		      GCCJIT_I_SIMPLE_REGISTER_STRUCT_TAG
+		      COMPILE_I_SIMPLE_REGISTER_STRUCT_TAG
 		      " *"
-		      GCCJIT_I_SIMPLE_REGISTER_ARG_NAME
+		      COMPILE_I_SIMPLE_REGISTER_ARG_NAME
 		      ") {\n",
 		      buf);
     break;
-  case GCCJIT_I_RAW_SCOPE:
+  case COMPILE_I_RAW_SCOPE:
     break;
   default:
     break;
@@ -182,14 +182,14 @@ add_code_header (enum gccjit_i_scope_types type, struct ui_file *buf)
    insert.  */
 
 static void
-add_code_footer (enum gccjit_i_scope_types type, struct ui_file *buf)
+add_code_footer (enum compile_i_scope_types type, struct ui_file *buf)
 {
   switch (type)
   {
-  case GCCJIT_I_SIMPLE_SCOPE:
+  case COMPILE_I_SIMPLE_SCOPE:
     fputs_unfiltered ("}\n", buf);
     break;
-  case GCCJIT_I_RAW_SCOPE:
+  case COMPILE_I_RAW_SCOPE:
     break;
   default:
     /* TODO: Error case, but do nothing for now.  */
@@ -222,7 +222,7 @@ generate_register_struct (struct ui_file *stream, struct gdbarch *gdbarch,
   int i;
   int seen = 0;
 
-  fputs_unfiltered ("struct " GCCJIT_I_SIMPLE_REGISTER_STRUCT_TAG " {\n",
+  fputs_unfiltered ("struct " COMPILE_I_SIMPLE_REGISTER_STRUCT_TAG " {\n",
 		    stream);
 
   if (registers_used != NULL)
@@ -231,7 +231,7 @@ generate_register_struct (struct ui_file *stream, struct gdbarch *gdbarch,
 	if (registers_used[i])
 	  {
 	    struct type *regtype = check_typedef (register_type (gdbarch, i));
-	    char *regname = gdbjit_register_name_mangled (gdbarch, i);
+	    char *regname = compile_register_name_mangled (gdbarch, i);
 	    struct cleanup *cleanups = make_cleanup (xfree, regname);
 
 	    seen = 1;
@@ -288,7 +288,8 @@ generate_register_struct (struct ui_file *stream, struct gdbarch *gdbarch,
       }
 
   if (!seen)
-    fputs_unfiltered ("  char " GCCJIT_I_SIMPLE_REGISTER_DUMMY ";\n", stream);
+    fputs_unfiltered ("  char " COMPILE_I_SIMPLE_REGISTER_DUMMY ";\n",
+		      stream);
 
   fputs_unfiltered ("};\n\n", stream);
 }
@@ -304,7 +305,7 @@ generate_register_struct (struct ui_file *stream, struct gdbarch *gdbarch,
 
 char *
 c_compute_program (const char *input,
-		   enum gccjit_i_scope_types scope,
+		   enum compile_i_scope_types scope,
 		   struct gdbarch *gdbarch,
 		   const struct block *expr_block,
 		   CORE_ADDR expr_pc)
@@ -344,7 +345,7 @@ c_compute_program (const char *input,
 
   reg_code = ui_file_xstrdup (var_stream, NULL);
   make_cleanup (xfree, reg_code);
-  if (scope == GCCJIT_I_SIMPLE_SCOPE)
+  if (scope == COMPILE_I_SIMPLE_SCOPE)
     fputs_unfiltered (reg_code, buf);
 
   fputs_unfiltered ("#pragma GCC user_expression\n", buf);

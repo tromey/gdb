@@ -405,4 +405,4 @@ if ![runto func] {
 }
 
 # If we have a bug, this will hang.
-gdb_test_no_output "expression param"
+gdb_test_no_output "compile code param"

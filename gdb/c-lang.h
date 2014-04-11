@@ -143,7 +143,7 @@ extern int c_textual_element_type (struct type *, char);
 extern struct gcc_context *c_get_gcc_jit_context (void);
 
 extern char *c_compute_program (const char *input,
-				enum gccjit_i_scope_types scope,
+				enum compile_i_scope_types scope,
 				struct gdbarch *gdbarch,
 				const struct block *expr_block,
 				CORE_ADDR expr_pc);

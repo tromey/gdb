@@ -1,4 +1,4 @@
-/* General GCC JIT GDB code
+/* General Compile and inject code
 
    Copyright (C) 2014 Free Software Foundation, Inc.
 
@@ -45,25 +45,25 @@
 
 
 
-static int gccjit_debug;
+static int compile_debug;
 struct cmd_list_element *compile_command_list;
 
 static void
-show_gccjit_debug (struct ui_file *file, int from_tty,
-		   struct cmd_list_element *c, const char *value)
+show_compile_debug (struct ui_file *file, int from_tty,
+		    struct cmd_list_element *c, const char *value)
 {
-  fprintf_filtered (file, _("GCC JIT debugging is %s.\n"), value);
+  fprintf_filtered (file, _("Compile debugging is %s.\n"), value);
 }
 
 
 
-static int gccjit_fork = 1;
+static int compile_fork = 1;
 
 static void
-show_gccjit_fork (struct ui_file *file, int from_tty,
+show_compile_fork (struct ui_file *file, int from_tty,
 		   struct cmd_list_element *c, const char *value)
 {
-  fprintf_filtered (file, _("GCC JIT fork is %s.\n"), value);
+  fprintf_filtered (file, _("Compile fork is %s.\n"), value);
 }
 
 
@@ -87,7 +87,7 @@ check_raw_argument (char **arg)
 static void
 compile_file_command (char *arg, int from_tty)
 {
-  enum gccjit_i_scope_types scope = GCCJIT_I_SIMPLE_SCOPE;
+  enum compile_i_scope_types scope = COMPILE_I_SIMPLE_SCOPE;
   char *buffer;
   struct cleanup *cleanup;
 
@@ -101,7 +101,7 @@ compile_file_command (char *arg, int from_tty)
   /* Check if a raw (-r|-raw) argument is provided.  */
   if (arg != NULL && check_raw_argument (&arg))
     {
-      scope = GCCJIT_I_RAW_SCOPE;
+      scope = COMPILE_I_RAW_SCOPE;
       arg = skip_spaces (arg);
     }
 
@@ -115,7 +115,7 @@ compile_file_command (char *arg, int from_tty)
   make_cleanup (xfree, arg);
   buffer = xstrprintf ("#include \"%s\"\n", arg);
   make_cleanup (xfree, buffer);
-  eval_gcc_jit_command (NULL, buffer, scope);
+  eval_compile_command (NULL, buffer, scope);
   do_cleanups (cleanup);
 }
 
@@ -128,27 +128,27 @@ static void
 compile_code_command (char *arg, int from_tty)
 {
   struct cleanup *cleanup;
-  enum gccjit_i_scope_types scope = GCCJIT_I_SIMPLE_SCOPE;
+  enum compile_i_scope_types scope = COMPILE_I_SIMPLE_SCOPE;
 
   cleanup = make_cleanup_restore_integer (&interpreter_async);
   interpreter_async = 0;
 
   if (arg != NULL && check_raw_argument (&arg))
     {
-      scope = GCCJIT_I_RAW_SCOPE;
+      scope = COMPILE_I_RAW_SCOPE;
       arg = skip_spaces (arg);
     }
 
   arg = skip_spaces (arg);
 
   if (arg && *arg)
-      eval_gcc_jit_command (NULL, arg, scope);
+      eval_compile_command (NULL, arg, scope);
   else
     {
-      struct command_line *l = get_command_line (jit_control, "");
+      struct command_line *l = get_command_line (compile_control, "");
 
       make_cleanup_free_command_lines (&l);
-      l->control_u.jit.scope = scope;
+      l->control_u.compile.scope = scope;
       execute_control_command_untraced (l);
     }
 
@@ -236,46 +236,46 @@ build_argc_argv (const char *s, int *argcp, char ***argvp)
   *argcp = countargv (*argvp);
 }
 
-/* String for 'set gdbjit-args' and 'show gdbjit-args'.  */
-static char *gdbjit_args;
+/* String for 'set compile-args' and 'show compile-args'.  */
+static char *compile_args;
 
-/* Parsed form of GDBJIT_ARGS.  GDBJIT_ARGS_ARGV is NULL terminated.  */
-static int gdbjit_args_argc;
-static char **gdbjit_args_argv;
+/* Parsed form of COMPILE_ARGS.  COMPILE_ARGS_ARGV is NULL terminated.  */
+static int compile_args_argc;
+static char **compile_args_argv;
 
-/* Implement 'set gdbjit-args'.  */
+/* Implement 'set compile-args'.  */
 
 static void
-set_gdbjit_args (char *args, int from_tty, struct cmd_list_element *c)
+set_compile_args (char *args, int from_tty, struct cmd_list_element *c)
 {
-  freeargv (gdbjit_args_argv);
-  build_argc_argv (gdbjit_args, &gdbjit_args_argc, &gdbjit_args_argv);
+  freeargv (compile_args_argv);
+  build_argc_argv (compile_args, &compile_args_argc, &compile_args_argv);
 }
 
-/* Implement 'show gdbjit-args'.  */
+/* Implement 'show compile-args'.  */
 
 static void
-show_gdbjit_args (struct ui_file *file, int from_tty,
-		  struct cmd_list_element *c, const char *value)
+show_compile_args (struct ui_file *file, int from_tty,
+		   struct cmd_list_element *c, const char *value)
 {
-  fprintf_filtered (file, _("JIT expression GCC command-line arguments "
+  fprintf_filtered (file, _("Compile command command-line arguments "
 			    "are \"%s\".\n"),
 		    value);
 }
 
-/* Append current 'set gdbjit-args' content parsed by build_argc_argv to *ARGCP
-   and *ARGVP.  *ARGVP may be NULL and also 'set gdbjit-args' may be empty.  */
+/* Append current 'set compile-args' content parsed by build_argc_argv to *ARGCP
+   and *ARGVP.  *ARGVP may be NULL and also 'set compile-args' may be empty.  */
 
 static void
-append_gdbjit_args (int *argcp, char ***argvp)
+append_compile_args (int *argcp, char ***argvp)
 {
   int argi;
 
   *argvp = xrealloc (*argvp,
-		     (*argcp + gdbjit_args_argc + 1) * sizeof (**argvp));
+		     (*argcp + compile_args_argc + 1) * sizeof (**argvp));
 
-  for (argi = 0; argi < gdbjit_args_argc; argi++)
-    (*argvp)[(*argcp)++] = xstrdup (gdbjit_args_argv[argi]);
+  for (argi = 0; argi < compile_args_argc; argi++)
+    (*argvp)[(*argcp)++] = xstrdup (compile_args_argv[argi]);
   (*argvp)[(*argcp)] = NULL;
 }
 
@@ -310,7 +310,7 @@ get_selected_pc_producer_args (int *argcp, char ***argvp)
 
 /* Produce final vector of GCC compilation options.  First element is target
    size ("-m64", "-m32" etc.), optionally followed by DW_AT_producer options
-   and then gdbjit-args string GDB variable.  */
+   and then compile-args string GDB variable.  */
 
 static void
 get_args (int *argcp, char ***argvp)
@@ -324,17 +324,17 @@ get_args (int *argcp, char ***argvp)
   memmove ((*argvp) + 1, (*argvp), sizeof (**argvp) * argc_producer);
   (*argvp)[1 + argc_producer] = NULL;
   (*argvp)[0] = gdbarch_gcc_target_options (target_gdbarch ());
-  append_gdbjit_args (argcp, argvp);
+  append_compile_args (argcp, argvp);
 }
 
 static void
-do_compile (struct gdb_gcc_instance *compiler, char *object_file)
+do_compile (struct compile_instance *compiler, char *object_file)
 {
   pid_t child;
   int status;
 
   /* Fork to do the actual compilation.  */
-  if (gccjit_fork)
+  if (compile_fork)
     child = fork ();
   else
     child = 0;
@@ -343,9 +343,9 @@ do_compile (struct gdb_gcc_instance *compiler, char *object_file)
   if (child == 0)
     {
       status = compiler->fe->ops->compile (compiler->fe, object_file,
-					   gccjit_debug);
+					   compile_debug);
 
-      if (gccjit_fork)
+      if (compile_fork)
 	_exit (status ? 0 : 1);
     }
   /* Fail.  */
@@ -378,18 +378,18 @@ do_compile (struct gdb_gcc_instance *compiler, char *object_file)
    called.  The caller is responsible for freeing this string.  */
 
 static char *
-compile_jit_expression (struct command_line *cmd, char *cmd_string,
-			enum gccjit_i_scope_types scope)
+compile_expression (struct command_line *cmd, char *cmd_string,
+		    enum compile_i_scope_types scope)
 {
   char *code;
   char *object_file = NULL;
-  struct gdb_gcc_instance *compiler;
+  struct compile_instance *compiler;
   struct cleanup *cleanup, *inner_cleanup;
   const struct block *expr_block;
   CORE_ADDR trash_pc, expr_pc;
   int argc;
   char **argv;
-  struct gdbjit_module gdbjit_module;
+  struct compile_module *compile_module;
   int ok;
   struct gcc_context *context;
 
@@ -402,8 +402,8 @@ compile_jit_expression (struct command_line *cmd, char *cmd_string,
   context = current_language->la_get_gcc_context ();
 
   /* FIXME this seems questionable in the multi-language scheme.  */
-  compiler = new_gdb_gcc_instance (context, expr_block);
-  cleanup = make_cleanup_delete_gdb_gcc_instance (compiler);
+  compiler = new_compile_instance (context, expr_block);
+  cleanup = make_cleanup_delete_compile_instance (compiler);
 
   /* From the provided expression, build a scope to pass to the
      compiler.  */
@@ -431,13 +431,13 @@ compile_jit_expression (struct command_line *cmd, char *cmd_string,
 					       get_current_arch (),
 					       expr_block, expr_pc);
   make_cleanup (xfree, code);
-  if (gccjit_debug)
+  if (compile_debug)
     fprintf_unfiltered (gdb_stdout, "debug output:\n\n%s", code);
 
   /* Set compiler command-line arguments.  */
   get_args (&argc, &argv);
   compiler->fe->ops->set_arguments (compiler->fe, argc, argv);
-  if (gccjit_debug)
+  if (compile_debug)
     {
       int argi;
 
@@ -456,7 +456,7 @@ compile_jit_expression (struct command_line *cmd, char *cmd_string,
   do_compile (compiler, object_file);
   discard_cleanups (inner_cleanup);
 
-  if (gccjit_debug)
+  if (compile_debug)
     fprintf_unfiltered (gdb_stdout, "object file produced: %s\n\n",
 			object_file);
 
@@ -473,44 +473,45 @@ compile_command (char *args, int from_tty)
   help_list (compile_command_list, "compile ", -1, gdb_stdout);
 }
 
-/* Public function that is called from jit_control case in the
+/* Public function that is called from compile_control case in the
    expression command.  GDB returns either a CMD, or a CMD_STRING, but
    never both.  */
 
 void
-eval_gcc_jit_command (struct command_line *cmd, char *cmd_string,
-		      enum gccjit_i_scope_types scope)
+eval_compile_command (struct command_line *cmd, char *cmd_string,
+		      enum compile_i_scope_types scope)
 {
   volatile struct gdb_exception except;
-  struct gdbjit_module gdbjit_module;
+  struct compile_module compile_module;
   char *object_file;
 
-  object_file = compile_jit_expression (cmd, cmd_string, scope);
+  object_file = compile_expression (cmd, cmd_string, scope);
 
   if (object_file != NULL)
     {
       struct cleanup *cleanup = make_cleanup (xfree, object_file);
 
-      gdbjit_module = gdbjit_load (object_file);
-      gdbjit_run (&gdbjit_module);
+      compile_module = compile_object_load (object_file);
+      compile_object_run (&compile_module);
       do_cleanups (cleanup);
     }
 }
 
-/* See gccjit/compile-internal.h.  */
+/* See compile/compile-internal.h.  */
 
 char *
-gdbjit_register_name_mangled (struct gdbarch *gdbarch, int regnum)
+compile_register_name_mangled (struct gdbarch *gdbarch, int regnum)
 {
   const char *regname = gdbarch_register_name (gdbarch, regnum);
 
   return xstrprintf ("__%s", regname);
 }
 
-/* See gccjit/compile-internal.h.  */
+/* See compile/compile-internal.h.  */
 
 int
-gdbjit_register_name_demangle (struct gdbarch *gdbarch, const char *regname)
+compile_register_name_demangle (struct gdbarch *gdbarch,
+				 const char *regname)
 {
   int regnum;
 
@@ -526,7 +527,7 @@ gdbjit_register_name_demangle (struct gdbarch *gdbarch, const char *regname)
 }
 
 void
-_initialize_gcc_jit (void)
+_initialize_compile (void)
 {
   struct cmd_list_element *c = NULL;
 
@@ -565,33 +566,33 @@ the compiler."),
 	       &compile_command_list);
   set_cmd_completer (c, filename_completer);
 
-  add_setshow_boolean_cmd ("gccjit", class_maintenance, &gccjit_debug, _("\
-Set GCC JIT debugging."), _("\
-Show GCC JIT debugging."), _("\
-When on, GCC JIT debugging is enabled."),
-			   NULL, show_gccjit_debug,
+  add_setshow_boolean_cmd ("compile", class_maintenance, &compile_debug, _("\
+Set compile command  debugging."), _("\
+Show compile command  debugging."), _("\
+When on, compile command debugging is enabled."),
+			   NULL, show_compile_debug,
 			   &setdebuglist, &showdebuglist);
 
-  add_setshow_boolean_cmd ("gccjit-fork", class_maintenance, &gccjit_fork, _("\
-Set whether the GCC JIT runs in a child process."), _("\
-Show whether the GCC JIT runs in a child process."), _("\
-When on, the GCC JIT runs in a child process."),
-			   NULL, show_gccjit_fork,
+  add_setshow_boolean_cmd ("compile-fork", class_maintenance, &compile_fork, _("\
+Set whether the compile command runs in a child process."), _("\
+Show whether the compile command runs in a child process."), _("\
+When on, the compile command runs in a child process."),
+			   NULL, show_compile_fork,
 			   &maintenance_set_cmdlist, &maintenance_show_cmdlist);
 
 
-  add_setshow_string_cmd ("gdbjit-args", class_support,
-			  &gdbjit_args,
-			  _("Set JIT expression GCC command-line arguments"),
-			  _("Show JIT expression GCC command-line arguments"),
+  add_setshow_string_cmd ("compile-args", class_support,
+			  &compile_args,
+			  _("Set compile command GCC command-line arguments"),
+			  _("Show compile command GCC command-line arguments"),
 			  _("\
 Use options like -I (include file directory) or ABI settings.\n\
 String quoting is parsed like in shell, for example:\n\
   -mno-align-double \"-I/dir with a space/include\""),
-			  set_gdbjit_args, show_gdbjit_args, &setlist, &showlist);
+			  set_compile_args, show_compile_args, &setlist, &showlist);
 
   // Override flags possibly coming from DW_AT_producer.
-  gdbjit_args = xstrdup ("-O0 -gdwarf-4"
+  compile_args = xstrdup ("-O0 -gdwarf-4"
   // We use -fPIC to ensure that we can reference properly.  Otherwise
   // on x86-64 a string constant's address might be truncated when gdb
   // loads the object; another approach would be -mcmodel=large, but
@@ -604,5 +605,5 @@ String quoting is parsed like in shell, for example:\n\
   // FIXME: Use -std=gnu++11 when C++ JIT gets supported.
 		         " -std=gnu11"
   );
-  set_gdbjit_args (gdbjit_args, 0, NULL);
+  set_compile_args (compile_args, 0, NULL);
 }

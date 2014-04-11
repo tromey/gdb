@@ -36,7 +36,7 @@ symbol_substitution_name (struct symbol *sym)
 }
 
 static void
-convert_one_symbol (struct gdb_gcc_instance *context,
+convert_one_symbol (struct compile_instance *context,
 		    struct symbol *sym,
 		    int is_global)
 {
@@ -127,7 +127,7 @@ gcc_convert_symbol (void *datum,
 		    enum gcc_c_oracle_request request,
 		    const char *identifier)
 {
-  struct gdb_gcc_instance *context = datum;
+  struct compile_instance *context = datum;
   struct symbol *sym, *global_sym;
   domain_enum domain;
   const struct block *static_block, *found_block;
@@ -184,7 +184,7 @@ gcc_address
 gcc_symbol_address (void *datum, struct gcc_context *gcc_context,
 		    const char *identifier)
 {
-  struct gdb_gcc_instance *context = datum;
+  struct compile_instance *context = datum;
   struct symbol *sym;
   struct bound_minimal_symbol msym;
 

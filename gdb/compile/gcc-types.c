@@ -49,7 +49,7 @@ eq_type_map_instance (const void *a, const void *b)
 
 
 static void
-insert_type (struct gdb_gcc_instance *context, struct type *type,
+insert_type (struct compile_instance *context, struct type *type,
 	     gcc_type gcc_type)
 {
   struct type_map_instance inst, *add;
@@ -73,7 +73,7 @@ insert_type (struct gdb_gcc_instance *context, struct type *type,
 }
 
 static gcc_type
-convert_pointer (struct gdb_gcc_instance *context, struct type *type)
+convert_pointer (struct compile_instance *context, struct type *type)
 {
   gcc_type target = convert_type (context, TYPE_TARGET_TYPE (type));
 
@@ -81,7 +81,7 @@ convert_pointer (struct gdb_gcc_instance *context, struct type *type)
 }
 
 static gcc_type
-convert_array (struct gdb_gcc_instance *context, struct type *type)
+convert_array (struct compile_instance *context, struct type *type)
 {
   gcc_type element_type;
   LONGEST low_bound, high_bound, count;
@@ -106,7 +106,7 @@ convert_array (struct gdb_gcc_instance *context, struct type *type)
 }
 
 static gcc_type
-convert_struct_or_union (struct gdb_gcc_instance *context, struct type *type)
+convert_struct_or_union (struct compile_instance *context, struct type *type)
 {
   int i;
   gcc_type result;
@@ -142,7 +142,7 @@ convert_struct_or_union (struct gdb_gcc_instance *context, struct type *type)
 }
 
 static gcc_type
-convert_enum (struct gdb_gcc_instance *context, struct type *type)
+convert_enum (struct compile_instance *context, struct type *type)
 {
   gcc_type int_type, result;
   int i;
@@ -166,7 +166,7 @@ convert_enum (struct gdb_gcc_instance *context, struct type *type)
 }
 
 static gcc_type
-convert_func (struct gdb_gcc_instance *context, struct type *type)
+convert_func (struct compile_instance *context, struct type *type)
 {
   int i;
   gcc_type result, return_type;
@@ -191,32 +191,32 @@ convert_func (struct gdb_gcc_instance *context, struct type *type)
 }
 
 static gcc_type
-convert_int (struct gdb_gcc_instance *context, struct type *type)
+convert_int (struct compile_instance *context, struct type *type)
 {
   return context->fe->ops->int_type (context->fe,
 				     TYPE_UNSIGNED (type), TYPE_LENGTH (type));
 }
 
 static gcc_type
-convert_float (struct gdb_gcc_instance *context, struct type *type)
+convert_float (struct compile_instance *context, struct type *type)
 {
   return context->fe->ops->float_type (context->fe, TYPE_LENGTH (type));
 }
 
 static gcc_type
-convert_void (struct gdb_gcc_instance *context, struct type *type)
+convert_void (struct compile_instance *context, struct type *type)
 {
   return context->fe->ops->void_type (context->fe);
 }
 
 static gcc_type
-convert_bool (struct gdb_gcc_instance *context, struct type *type)
+convert_bool (struct compile_instance *context, struct type *type)
 {
   return context->fe->ops->bool_type (context->fe);
 }
 
 static gcc_type
-convert_qualified (struct gdb_gcc_instance *context, struct type *type)
+convert_qualified (struct compile_instance *context, struct type *type)
 {
   struct type *unqual = make_unqualified_type (type);
   gcc_type unqual_converted;
@@ -236,7 +236,7 @@ convert_qualified (struct gdb_gcc_instance *context, struct type *type)
 }
 
 static gcc_type
-convert_complex (struct gdb_gcc_instance *context, struct type *type)
+convert_complex (struct compile_instance *context, struct type *type)
 {
   gcc_type base = convert_type (context, TYPE_TARGET_TYPE (type));
 
@@ -244,7 +244,7 @@ convert_complex (struct gdb_gcc_instance *context, struct type *type)
 }
 
 static gcc_type
-convert_type_basic (struct gdb_gcc_instance *context, struct type *type)
+convert_type_basic (struct compile_instance *context, struct type *type)
 {
   /* If we are converting a qualified type, first convert the
      unqualified type and then apply the qualifiers.  */
@@ -292,7 +292,7 @@ convert_type_basic (struct gdb_gcc_instance *context, struct type *type)
 }
 
 gcc_type
-convert_type (struct gdb_gcc_instance *context, struct type *type)
+convert_type (struct compile_instance *context, struct type *type)
 {
   struct type_map_instance inst, *found;
   gcc_type result;
@@ -313,10 +313,10 @@ convert_type (struct gdb_gcc_instance *context, struct type *type)
 
 
 
-struct gdb_gcc_instance *
-new_gdb_gcc_instance (struct gcc_context *fe, const struct block *b)
+struct compile_instance *
+new_compile_instance (struct gcc_context *fe, const struct block *b)
 {
-  struct gdb_gcc_instance *result = XCNEW (struct gdb_gcc_instance);
+  struct compile_instance *result = XCNEW (struct compile_instance);
 
   result->fe = fe;
   result->block = b;
@@ -330,20 +330,20 @@ new_gdb_gcc_instance (struct gcc_context *fe, const struct block *b)
 }
 
 void
-delete_gdb_gcc_instance (struct gdb_gcc_instance *context)
+delete_compile_instance (struct compile_instance *context)
 {
   htab_delete (context->type_map);
   xfree (context);
 }
 
 static void
-do_delete_gdb_gcc_instance (void *p)
+do_delete_compile_instance (void *p)
 {
-  delete_gdb_gcc_instance (p);
+  delete_compile_instance (p);
 }
 
 struct cleanup *
-make_cleanup_delete_gdb_gcc_instance (struct gdb_gcc_instance *context)
+make_cleanup_delete_compile_instance (struct compile_instance *context)
 {
-  return make_cleanup (do_delete_gdb_gcc_instance, context);
+  return make_cleanup (do_delete_compile_instance, context);
 }
