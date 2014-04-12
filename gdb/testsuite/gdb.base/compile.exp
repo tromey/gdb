@@ -76,7 +76,8 @@ gdb_test_no_output "compile code static int staticvar = 5; intptr = &staticvar" 
 gdb_test "p *intptr" " = 5" "expect 5"
 
 gdb_test "compile code *(volatile int *) 0 = 0;" \
-    "The program being debugged was signaled while in a function called.*"
+    "The program being debugged was signaled while in a function called from GDB\\.\r\nGDB remains in the frame where the signal was received\\.\r\n.*" \
+    "compile code segfault first"
 gdb_test "bt" \
     "\r\n#0  \[^\r\n\]* in _gdb_expr \[^\r\n\]*\r\n#1  <function called from gdb>\r\n.*"
 
@@ -93,6 +94,11 @@ gdb_test "info sym $infcall_pc" "\r\n_gdb_expr .*" "info sym found"
 gdb_test "return" "\r\n#0  main .*" "return" \
 	 "Make _gdb_expr return now\\? \\(y or n\\) " "y"
 gdb_test "info sym $infcall_pc" "\r\nNo symbol matches .*" "info sym not found"
+
+gdb_test_no_output "set unwindonsignal on"
+gdb_test "compile code *(volatile int *) 0 = 0;" \
+    "The program being debugged was signaled while in a function called from GDB\\.\r\nGDB has restored the context to what it was before the call\\.\r\n.*" \
+    "compile code segfault second"
 
 gdb_breakpoint [gdb_get_line_number "break-here"]
 gdb_continue_to_breakpoint "break-here" ".* break-here .*"

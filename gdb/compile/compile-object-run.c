@@ -25,6 +25,18 @@
 #include "compile-internal.h"
 #include "dummy-frame.h"
 
+/* Helper for do_module_cleanup.  */
+
+struct do_module_cleanup
+{
+  /* Boolean to set true upon a call of do_module_cleanup.
+     The pointer may be NULL.  */
+  int *executedp;
+
+  /* objfile_name of our objfile.  */
+  char objfile_name_string[1];
+};
+
 /* Cleanup everything after the inferior function dummy frame gets
    discarded.  */
 
@@ -32,12 +44,15 @@ static dummy_frame_dtor_ftype do_module_cleanup;
 static void
 do_module_cleanup (void *arg)
 {
-  char *objfile_name_string = arg;
+  struct do_module_cleanup *data = arg;
   struct objfile *objfile;
+
+  if (data->executedp != NULL)
+    *data->executedp = 1;
 
   ALL_OBJFILES (objfile)
     if ((objfile->flags & OBJF_USERLOADED) == 0
-        && (strcmp (objfile_name (objfile), objfile_name_string) == 0))
+        && (strcmp (objfile_name (objfile), data->objfile_name_string) == 0))
       {
 	free_objfile (objfile);
 
@@ -48,8 +63,8 @@ do_module_cleanup (void *arg)
       }
 
   /* Delete the .o file.  */
-  unlink (objfile_name_string);
-  xfree (objfile_name_string);
+  unlink (data->objfile_name_string);
+  xfree (data);
 }
 
 /* Perform inferior call of MODULE.  This function may throw an error.
@@ -65,10 +80,14 @@ compile_object_run (const struct compile_module *module)
   struct value *func_val;
   struct frame_id dummy_id;
   struct cleanup *cleanups;
-  char *objfile_name_string;
+  struct do_module_cleanup *data;
   volatile struct gdb_exception ex;
-
-  objfile_name_string = xstrdup (objfile_name (module->objfile));
+  const char *objfile_name_s = objfile_name (module->objfile);
+  int dtor_found, executed = 0;
+  
+  data = xmalloc (sizeof (*data) + strlen (objfile_name_s));
+  data->executedp = &executed;
+  strcpy (data->objfile_name_string, objfile_name_s);
 
   TRY_CATCH (ex, RETURN_MASK_ERROR)
     {
@@ -78,7 +97,7 @@ compile_object_run (const struct compile_module *module)
 
       if (module->regs_addr == 0)
 	call_function_by_hand_dummy (func_val, 0, NULL,
-				     do_module_cleanup, objfile_name_string);
+				     do_module_cleanup, data);
       else
 	{
 	  struct value *arg_val;
@@ -87,13 +106,21 @@ compile_object_run (const struct compile_module *module)
 		    (builtin_type (target_gdbarch ())->builtin_func_ptr,
 		     module->regs_addr);
 	  call_function_by_hand_dummy (func_val, 1, &arg_val,
-				       do_module_cleanup, objfile_name_string);
+				       do_module_cleanup, data);
 	}
     }
-  if (ex.reason < 0)
+  dtor_found = find_dummy_frame_dtor (do_module_cleanup, data);
+  if (!executed)
+    data->executedp = NULL;
+  if (ex.reason >= 0)
+    gdb_assert (!dtor_found && executed);
+  else
     {
-      if (!find_dummy_frame_dtor (do_module_cleanup, objfile_name_string))
-	do_module_cleanup (objfile_name_string);
+      /* In the case od DTOR_FOUND or in the case of EXECUTED nothing
+	 needs to be done.  */
+      gdb_assert (!(dtor_found && executed));
+      if (!dtor_found && !executed)
+	do_module_cleanup (data);
       throw_exception (ex);
     }
 }
