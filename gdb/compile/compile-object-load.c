@@ -381,23 +381,20 @@ store_regs (struct type *regs_type, CORE_ADDR regs_base)
     }
 }
 
-/* Helper to track resources by Compile  module's struct objfile.  */
-static const struct objfile_data *compile_objfile_data_key;
-
 /* Load OBJECT_FILE into inferior memory.  Throw an error otherwise.
    Caller must fully dispose the return value by calling compile_object_run.  */
 
 struct compile_module
 compile_object_load (const char *object_file)
 {
-  struct cleanup *cleanups, *cleanups_symbol_table, *cleanups_free_objfile;
+  struct cleanup *cleanups, *cleanups_free_objfile;
   bfd *abfd;
   struct setup_sections_data setup_sections_data;
-  CORE_ADDR addr, got_start;
+  CORE_ADDR addr;
   struct bound_minimal_symbol bmsym;
   long storage_needed;
   asymbol **symbol_table, **symp;
-  long number_of_symbols;
+  long number_of_symbols, missing_symbols;
   struct type *dptr_type = builtin_type (target_gdbarch ())->builtin_data_ptr;
   unsigned dptr_type_len = TYPE_LENGTH (dptr_type);
   struct compile_module retval;
@@ -431,26 +428,6 @@ compile_object_load (const char *object_file)
     error (_("Cannot read symbols of compiled module \"%s\": %s"),
           filename, bfd_errmsg (bfd_get_error ()));
 
-  /* The memory may be later needed
-     by bfd_generic_get_relocated_section_contents
-     called from default_symfile_relocate.  */
-  symbol_table = xmalloc (storage_needed);
-  cleanups_symbol_table = make_cleanup (xfree, symbol_table);
-  number_of_symbols = bfd_canonicalize_symtab (abfd, symbol_table);
-  if (number_of_symbols < 0)
-    error (_("Cannot parse symbols of compiled module \"%s\": %s"),
-          filename, bfd_errmsg (bfd_get_error ()));
-
-  setup_sections_data.vma = ((setup_sections_data.vma + dptr_type_len - 1)
-			     & -(CORE_ADDR) dptr_type_len);
-  got_start = setup_sections_data.vma;
-  for (symp = symbol_table; symp < &symbol_table[number_of_symbols]; symp++)
-    {
-      asymbol *sym = *symp;
-      if (sym->flags == 0)
-	setup_sections_data.vma += dptr_type_len;
-    }
-
   addr = gdbarch_infcall_mmap (target_gdbarch (), setup_sections_data.vma);
   if ((addr & (setup_sections_data.max_alignment - 1)) != 0)
     error (_("Inferior compiled module address %s not aligned to BFD required %s."),
@@ -458,13 +435,10 @@ compile_object_load (const char *object_file)
 	   paddress (target_gdbarch (), setup_sections_data.max_alignment));
 
   bfd_map_over_sections (abfd, add_to_vma, &addr);
-  got_start += addr;
 
   /* SYMFILE_VERBOSE is not passed even if FROM_TTY, user is not interested in
      "Reading symbols from ..." message for automatically generated file.  */
   retval.objfile = symbol_file_add_from_bfd (abfd, filename, 0, NULL, 0, NULL);
-  set_objfile_data (retval.objfile, compile_objfile_data_key, symbol_table);
-  discard_cleanups (cleanups_symbol_table);
   cleanups_free_objfile = make_cleanup_free_objfile (retval.objfile);
 
   bmsym = lookup_minimal_symbol_text (GCC_C_FE_WRAPPER_FUNCTION,
@@ -474,45 +448,29 @@ compile_object_load (const char *object_file)
 	   GCC_C_FE_WRAPPER_FUNCTION, filename);
   retval.func_addr = BMSYMBOL_VALUE_ADDRESS (bmsym);
 
+  /* The memory may be later needed
+     by bfd_generic_get_relocated_section_contents
+     called from default_symfile_relocate.  */
+  symbol_table = obstack_alloc (&retval.objfile->objfile_obstack,
+				storage_needed);
+  number_of_symbols = bfd_canonicalize_symtab (abfd, symbol_table);
+  if (number_of_symbols < 0)
+    error (_("Cannot parse symbols of compiled module \"%s\": %s"),
+          filename, bfd_errmsg (bfd_get_error ()));
+
+  missing_symbols = 0;
   for (symp = symbol_table; symp < symbol_table + number_of_symbols; symp++)
     {
       asymbol *sym = *symp;
 
       if (sym->flags != 0)
 	continue;
-      sym->flags = BSF_GLOBAL;
-      sym->section = bfd_abs_section_ptr;
-      if (strcmp (sym->name, "_GLOBAL_OFFSET_TABLE_") ==0 )
-	sym->value=0;
-      else
-	{
-	  bmsym = lookup_minimal_symbol (sym->name, NULL, NULL);
-	  switch (bmsym.minsym == NULL
-		  ? mst_unknown : MSYMBOL_TYPE (bmsym.minsym))
-	    {
-	    case mst_text:
-	    case mst_data:
-	    case mst_bss:
-	    case mst_abs:
-	      {
-		gdb_byte buf[sizeof (LONGEST)];
-
-		sym->value = got_start;
-		store_typed_address (buf, dptr_type,
-				     BMSYMBOL_VALUE_ADDRESS (bmsym));
-		if (0 != target_write_memory (got_start, buf, dptr_type_len))
-		  error (_("Cannot store address to %s for compiled module \"%s\"."),
-			 paddress (target_gdbarch (), got_start),
-			 filename);
-		got_start += dptr_type_len;
-		break;
-	      }
-	    default:
-	      error (_("Could not find symbol \"%s\" for compiled module \"%s\"."),
-		     sym->name, filename);
-	    }
-	}
+      warning (_("Could not find symbol \"%s\" for compiled module \"%s\"."),
+	       sym->name, filename);
+      missing_symbols++;
     }
+  if (missing_symbols)
+    error (_("%ld symbols were missing, cannot continue."), missing_symbols);
 
   bfd_map_over_sections (abfd, copy_sections, symbol_table);
 
@@ -531,23 +489,4 @@ compile_object_load (const char *object_file)
   do_cleanups (cleanups);
 
   return retval;
-}
-
-/* Destructor for compile_objfile_data_key.  */
-
-static void
-compile_per_objfile_free (struct objfile *objfile, void *d)
-{
-  asymbol **symbol_table = d;
-
-  xfree (symbol_table);
-}
-
-extern initialize_file_ftype _initialize_compile_object_load; /* -Wmissing-prototypes */
-
-void
-_initialize_compile_object_load (void)
-{
-  compile_objfile_data_key = register_objfile_data_with_cleanup (NULL,
-								 compile_per_objfile_free);
 }

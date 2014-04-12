@@ -75,6 +75,8 @@ gdb_test_no_output "compile code static int staticvar = 5; intptr = &staticvar" 
     "keep jit in memory"
 gdb_test "p *intptr" " = 5" "expect 5"
 
+gdb_test "compile code func_doesnotexist ();" "warning: Could not find symbol \"func_doesnotexist\" for .*"
+
 gdb_test "compile code *(volatile int *) 0 = 0;" \
     "The program being debugged was signaled while in a function called from GDB\\.\r\nGDB remains in the frame where the signal was received\\.\r\n.*" \
     "compile code segfault first"
