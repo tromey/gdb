@@ -185,7 +185,7 @@ link_callbacks_einfo (const char *fmt, ...)
 }
 
 /* Helper for bfd_get_relocated_section_contents.
-   FIXME: These symbols are set by bfd_simple_get_relocated_section_contents
+   Only these symbols are set by bfd_simple_get_relocated_section_contents
    but bfd/ seems to use even the NULL ones without checking them first.  */
 
 static const struct bfd_link_callbacks link_callbacks =
