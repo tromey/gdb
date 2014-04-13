@@ -384,8 +384,8 @@ do_compile (struct compile_instance *compiler, char *object_file)
    called.  The caller is responsible for freeing this string.  */
 
 static char *
-compile_expression (struct command_line *cmd, char *cmd_string,
-		    enum compile_i_scope_types scope)
+compile_to_object (struct command_line *cmd, char *cmd_string,
+		   enum compile_i_scope_types scope)
 {
   char *code;
   char *object_file = NULL;
@@ -491,7 +491,7 @@ eval_compile_command (struct command_line *cmd, char *cmd_string,
   struct compile_module compile_module;
   char *object_file;
 
-  object_file = compile_expression (cmd, cmd_string, scope);
+  object_file = compile_to_object (cmd, cmd_string, scope);
 
   if (object_file != NULL)
     {

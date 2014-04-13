@@ -1063,9 +1063,9 @@ process_next_line (char *p, struct command_line **command, int parse_commands,
 	     here.  */
 	  *command = build_command_line (python_control, "");
 	}
-      else if (p_end - p == 6 && !strncmp (p, "expression", 6))
+      else if (p_end - p == 6 && !strncmp (p, "compile", 7))
 	{
-	  /* Note that we ignore the inline "expression command" form
+	  /* Note that we ignore the inline "compile command" form
 	     here.  */
 	  *command = build_command_line (compile_control, "");
 	  (*command)->control_u.compile.scope = COMPILE_I_INVALID_SCOPE;
