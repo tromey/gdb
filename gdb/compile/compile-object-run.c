@@ -84,7 +84,7 @@ compile_object_run (const struct compile_module *module)
   volatile struct gdb_exception ex;
   const char *objfile_name_s = objfile_name (module->objfile);
   int dtor_found, executed = 0;
-  
+
   data = xmalloc (sizeof (*data) + strlen (objfile_name_s));
   data->executedp = &executed;
   strcpy (data->objfile_name_string, objfile_name_s);

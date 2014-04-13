@@ -287,7 +287,7 @@ get_regs_type (struct objfile *objfile)
 {
   struct symbol *func_sym;
   struct type *func_type, *regsp_type, *regs_type;
-  
+
   func_sym = lookup_global_symbol_from_objfile (objfile,
 						GCC_C_FE_WRAPPER_FUNCTION,
 						VAR_DOMAIN);

@@ -360,14 +360,14 @@ do_compile (struct compile_instance *compiler, char *object_file)
   /* Parent.  */
   else
     {
-      /* Just wait on the child.  TODO: I really think we should not do
-  	 a blocking wait here, though there are some concerns with the
-  	 robustness of WNOHANG.  The user may want to interrupt the
-  	 compilation process.  Right now that interruption is ignored
-  	 and GDB is blocked.  We might have to poll () for the filename
-  	 and check that the child is still alive with waitpid (WNOHANG)
-  	 and WIFEXITED so that we can listen for GDB interruptions
-  	 too.  */
+      /* Just wait on the child.  TODO: I really think we should not
+	 do a blocking wait here, though there are some concerns with
+	 the robustness of WNOHANG.  The user may want to interrupt
+	 the compilation process.  Right now that interruption is
+	 ignored and GDB is blocked.  We might have to poll () for the
+	 filename and check that the child is still alive with waitpid
+	 (WNOHANG) and WIFEXITED so that we can listen for GDB
+	 interruptions too.  */
       int exit_status;
 
       waitpid (child, &exit_status, 0);

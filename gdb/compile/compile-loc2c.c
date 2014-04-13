@@ -464,7 +464,7 @@ pushf_register_address (int indent, struct ui_file *stream,
   struct cleanup *cleanups = make_cleanup (xfree, regname);
 
   registers_used[regnum] = 1;
-  pushf (indent, stream, "&" COMPILE_I_SIMPLE_REGISTER_ARG_NAME	 "->%s", 
+  pushf (indent, stream, "&" COMPILE_I_SIMPLE_REGISTER_ARG_NAME	 "->%s",
 	 regname);
 
   do_cleanups (cleanups);

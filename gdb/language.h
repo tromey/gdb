@@ -367,7 +367,7 @@ struct language_defn
     /* This method must be defined if 'la_get_gcc_context' is defined.
        If 'la_get_gcc_context' is not defined, then this method is
        ignored.
-       
+
        This takes the user-supplied text and returns a newly malloc'd
        bit of code to compile.  FIXME - more comment  */
 

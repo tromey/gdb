@@ -24,7 +24,7 @@ struct compile_module
 
   /* Inferior function address.  */
   CORE_ADDR func_addr;
-  
+
   /* Inferior registers address or NULL if the inferior function does not
      require any.  */
   CORE_ADDR regs_addr;

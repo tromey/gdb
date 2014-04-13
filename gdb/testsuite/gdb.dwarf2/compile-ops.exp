@@ -364,7 +364,7 @@ Dwarf::assemble $asm_file {
 	declare_labels int_label
 	extern func_start func_end ptr
 
- 	compile_unit {
+	compile_unit {
 	    {name file1.txt}
 	    {language @DW_LANG_C}
 	    {low_pc func_start addr}
