@@ -175,7 +175,7 @@ do_rmdir (void *arg)
    arrange for the directory to be removed at shutdown.  */
 
 static const char *
-get_object_file_tempdir (void)
+get_compile_file_tempdir (void)
 {
   static char *tempdir_name;
 
@@ -196,17 +196,18 @@ get_object_file_tempdir (void)
   return tempdir_name;
 }
 
-/* Return the name of an object file.  The name is allocated by malloc
-   and should be freed by the caller.  */
+/* Compute the names of source and object files to use.  The names are
+   allocated by malloc and should be freed by the caller.  */
 
-static char *
-get_new_object_name (void)
+static void
+get_new_file_names (char **source_file, char **object_file)
 {
   static int seq;
-  const char *dir = get_object_file_tempdir ();
+  const char *dir = get_compile_file_tempdir ();
 
   ++seq;
-  return xstrprintf ("%s%sout%d.o", dir, SLASH_STRING, seq);
+  *source_file = xstrprintf ("%s%sout%d.c", dir, SLASH_STRING, seq);
+  *object_file = xstrprintf ("%s%sout%d.o", dir, SLASH_STRING, seq);
 }
 
 /* Get the block and PC at which to evaluate an expression.  */
@@ -378,6 +379,16 @@ do_compile (struct compile_instance *compiler, char *object_file)
     error (_("Compilation failed."));
 }
 
+/* A cleanup function to destroy a gdb_gcc_instance.  */
+
+static void
+cleanup_compile_instance (void *arg)
+{
+  struct compile_instance *inst = arg;
+
+  inst->destroy (inst);
+}
+
 /* Process the compilation request.  This process sets up the context,
    args, text and calls fork to compile the result.  Returns the
    object file name on success.  On an error condition, error () is
@@ -388,7 +399,7 @@ compile_to_object (struct command_line *cmd, char *cmd_string,
 		   enum compile_i_scope_types scope)
 {
   char *code;
-  char *object_file = NULL;
+  char *source_file, *object_file;
   struct compile_instance *compiler;
   struct cleanup *cleanup, *inner_cleanup;
   const struct block *expr_block;
@@ -397,19 +408,18 @@ compile_to_object (struct command_line *cmd, char *cmd_string,
   char **argv;
   struct compile_module *compile_module;
   int ok;
-  struct gcc_context *context;
+  FILE *src;
 
   expr_block = get_expr_block_and_pc (&trash_pc);
   expr_pc = get_frame_address_in_block (get_selected_frame (NULL));
 
   /* Set up instance and context for the compiler.  */
-  if (current_language->la_get_gcc_context == NULL)
+  if (current_language->la_get_compile_instance == NULL)
     error (_("no compiler support for this language"));
-  context = current_language->la_get_gcc_context ();
+  compiler = current_language->la_get_compile_instance ();
+  cleanup = make_cleanup (cleanup_compile_instance, compiler);
 
-  /* FIXME this seems questionable in the multi-language scheme.  */
-  compiler = new_compile_instance (context, expr_block);
-  cleanup = make_cleanup_delete_compile_instance (compiler);
+  compiler->block = expr_block;
 
   /* From the provided expression, build a scope to pass to the
      compiler.  */
@@ -454,11 +464,22 @@ compile_to_object (struct command_line *cmd, char *cmd_string,
     }
   freeargv (argv);
 
-  /* Call the compiler and start the compilation process.  */
-  compiler->fe->ops->set_program_text (compiler->fe, code);
+  get_new_file_names (&source_file, &object_file);
+  inner_cleanup = make_cleanup (xfree, source_file);
+  make_cleanup (xfree, object_file);
 
-  object_file = get_new_object_name ();
-  inner_cleanup = make_cleanup (xfree, object_file);
+  src = gdb_fopen_cloexec (source_file, "w");
+  if (src == NULL)
+    perror_with_name ("could not open source file for writing");
+  if (fputs (code, src) == EOF)
+    perror_with_name ("could not write source file");
+  fclose (src);
+
+  /* Call the compiler and start the compilation process.  */
+  compiler->fe->ops->set_source_file (compiler->fe, source_file);
+
+  /* FIXME we should arrange to delete the source file somewhere,
+     probably whenever we delete the object file.  */
   do_compile (compiler, object_file);
   discard_cleanups (inner_cleanup);
 

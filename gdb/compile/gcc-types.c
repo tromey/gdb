@@ -49,7 +49,7 @@ eq_type_map_instance (const void *a, const void *b)
 
 
 static void
-insert_type (struct compile_instance *context, struct type *type,
+insert_type (struct compile_c_instance *context, struct type *type,
 	     gcc_type gcc_type)
 {
   struct type_map_instance inst, *add;
@@ -73,15 +73,16 @@ insert_type (struct compile_instance *context, struct type *type,
 }
 
 static gcc_type
-convert_pointer (struct compile_instance *context, struct type *type)
+convert_pointer (struct compile_c_instance *context, struct type *type)
 {
   gcc_type target = convert_type (context, TYPE_TARGET_TYPE (type));
 
-  return context->fe->ops->build_pointer_type (context->fe, target);
+  return C_CTX (context)->c_ops->build_pointer_type (C_CTX (context),
+						     target);
 }
 
 static gcc_type
-convert_array (struct compile_instance *context, struct type *type)
+convert_array (struct compile_c_instance *context, struct type *type)
 {
   gcc_type element_type;
   LONGEST low_bound, high_bound, count;
@@ -91,22 +92,23 @@ convert_array (struct compile_instance *context, struct type *type)
   if (get_array_bounds (type, &low_bound, &high_bound) == 0)
     count = -1;
   else if (low_bound != 0)
-    return context->fe->ops->error (context->fe,
-				    _("cannot convert array type with "
-				      "non-zero lower bound to C"));
+    return C_CTX (context)->c_ops->error (C_CTX (context),
+					  _("cannot convert array type with "
+					    "non-zero lower bound to C"));
   else
     count = high_bound + 1;
 
   /* Doesn't handle VLA yet.  */
   if (TYPE_VECTOR (type))
-    return context->fe->ops->build_vector_type (context->fe, element_type,
-						count);
-  return context->fe->ops->build_array_type (context->fe,
-					     element_type, count);
+    return C_CTX (context)->c_ops->build_vector_type (C_CTX (context),
+						      element_type,
+						      count);
+  return C_CTX (context)->c_ops->build_array_type (C_CTX (context),
+						   element_type, count);
 }
 
 static gcc_type
-convert_struct_or_union (struct compile_instance *context, struct type *type)
+convert_struct_or_union (struct compile_c_instance *context, struct type *type)
 {
   int i;
   gcc_type result;
@@ -114,11 +116,11 @@ convert_struct_or_union (struct compile_instance *context, struct type *type)
   /* First we create the resulting type and enter it into our hash
      table.  This lets recursive types work.  */
   if (TYPE_CODE (type) == TYPE_CODE_STRUCT)
-    result = context->fe->ops->build_record_type (context->fe);
+    result = C_CTX (context)->c_ops->build_record_type (C_CTX (context));
   else
     {
       gdb_assert (TYPE_CODE (type) == TYPE_CODE_UNION);
-      result = context->fe->ops->build_union_type (context->fe);
+      result = C_CTX (context)->c_ops->build_union_type (C_CTX (context));
     }
   insert_type (context, type, result);
 
@@ -130,43 +132,45 @@ convert_struct_or_union (struct compile_instance *context, struct type *type)
       field_type = convert_type (context, TYPE_FIELD_TYPE (type, i));
       if (bitsize == 0)
 	bitsize = 8 * TYPE_LENGTH (TYPE_FIELD_TYPE (type, i));
-      context->fe->ops->build_add_field (context->fe, result,
-					 TYPE_FIELD_NAME (type, i), field_type,
-					 bitsize,
-					 TYPE_FIELD_BITPOS (type, i));
+      C_CTX (context)->c_ops->build_add_field (C_CTX (context), result,
+					       TYPE_FIELD_NAME (type, i),
+					       field_type,
+					       bitsize,
+					       TYPE_FIELD_BITPOS (type, i));
     }
 
-  context->fe->ops->finish_record_or_union (context->fe, result,
-					    TYPE_LENGTH (type));
+  C_CTX (context)->c_ops->finish_record_or_union (C_CTX (context), result,
+						  TYPE_LENGTH (type));
   return result;
 }
 
 static gcc_type
-convert_enum (struct compile_instance *context, struct type *type)
+convert_enum (struct compile_c_instance *context, struct type *type)
 {
   gcc_type int_type, result;
   int i;
+  struct gcc_c_context *ctx = C_CTX (context);
 
-  int_type = context->fe->ops->int_type (context->fe,
-					 TYPE_UNSIGNED (type),
-					 TYPE_LENGTH (type));
+  int_type = ctx->c_ops->int_type (ctx,
+				   TYPE_UNSIGNED (type),
+				   TYPE_LENGTH (type));
 
-  result = context->fe->ops->build_enum_type (context->fe, int_type);
+  result = ctx->c_ops->build_enum_type (ctx, int_type);
   for (i = 0; i < TYPE_NFIELDS (type); ++i)
     {
-      context->fe->ops->build_add_enum_constant (context->fe,
-						 result,
-						 TYPE_FIELD_NAME (type, i),
-						 TYPE_FIELD_ENUMVAL (type, i));
+      ctx->c_ops->build_add_enum_constant (ctx,
+					   result,
+					   TYPE_FIELD_NAME (type, i),
+					   TYPE_FIELD_ENUMVAL (type, i));
     }
 
-  context->fe->ops->finish_enum_type (context->fe, result);
+  ctx->c_ops->finish_enum_type (ctx, result);
 
   return result;
 }
 
 static gcc_type
-convert_func (struct compile_instance *context, struct type *type)
+convert_func (struct compile_c_instance *context, struct type *type)
 {
   int i;
   gcc_type result, return_type;
@@ -180,43 +184,45 @@ convert_func (struct compile_instance *context, struct type *type)
   for (i = 0; i < TYPE_NFIELDS (type); ++i)
     argument_types[i] = convert_type (context, TYPE_FIELD_TYPE (type, i));
 
-  result = context->fe->ops->build_function_type (context->fe,
-						  return_type,
-						  TYPE_NFIELDS (type),
-						  argument_types,
-						  TYPE_VARARGS (type));
+  result = C_CTX (context)->c_ops->build_function_type (C_CTX (context),
+							return_type,
+							TYPE_NFIELDS (type),
+							argument_types,
+							TYPE_VARARGS (type));
   xfree (argument_types);
 
   return result;
 }
 
 static gcc_type
-convert_int (struct compile_instance *context, struct type *type)
+convert_int (struct compile_c_instance *context, struct type *type)
 {
-  return context->fe->ops->int_type (context->fe,
-				     TYPE_UNSIGNED (type), TYPE_LENGTH (type));
+  return C_CTX (context)->c_ops->int_type (C_CTX (context),
+					   TYPE_UNSIGNED (type),
+					   TYPE_LENGTH (type));
 }
 
 static gcc_type
-convert_float (struct compile_instance *context, struct type *type)
+convert_float (struct compile_c_instance *context, struct type *type)
 {
-  return context->fe->ops->float_type (context->fe, TYPE_LENGTH (type));
+  return C_CTX (context)->c_ops->float_type (C_CTX (context),
+					     TYPE_LENGTH (type));
 }
 
 static gcc_type
-convert_void (struct compile_instance *context, struct type *type)
+convert_void (struct compile_c_instance *context, struct type *type)
 {
-  return context->fe->ops->void_type (context->fe);
+  return C_CTX (context)->c_ops->void_type (C_CTX (context));
 }
 
 static gcc_type
-convert_bool (struct compile_instance *context, struct type *type)
+convert_bool (struct compile_c_instance *context, struct type *type)
 {
-  return context->fe->ops->bool_type (context->fe);
+  return C_CTX (context)->c_ops->bool_type (C_CTX (context));
 }
 
 static gcc_type
-convert_qualified (struct compile_instance *context, struct type *type)
+convert_qualified (struct compile_c_instance *context, struct type *type)
 {
   struct type *unqual = make_unqualified_type (type);
   gcc_type unqual_converted;
@@ -231,20 +237,21 @@ convert_qualified (struct compile_instance *context, struct type *type)
   if (TYPE_RESTRICT (type))
     quals |= GCC_QUALIFIER_RESTRICT;
 
-  return context->fe->ops->build_qualified_type (context->fe, unqual_converted,
-						 quals);
+  return C_CTX (context)->c_ops->build_qualified_type (C_CTX (context),
+						       unqual_converted,
+						       quals);
 }
 
 static gcc_type
-convert_complex (struct compile_instance *context, struct type *type)
+convert_complex (struct compile_c_instance *context, struct type *type)
 {
   gcc_type base = convert_type (context, TYPE_TARGET_TYPE (type));
 
-  return context->fe->ops->build_complex_type (context->fe, base);
+  return C_CTX (context)->c_ops->build_complex_type (C_CTX (context), base);
 }
 
 static gcc_type
-convert_type_basic (struct compile_instance *context, struct type *type)
+convert_type_basic (struct compile_c_instance *context, struct type *type)
 {
   /* If we are converting a qualified type, first convert the
      unqualified type and then apply the qualifiers.  */
@@ -287,12 +294,13 @@ convert_type_basic (struct compile_instance *context, struct type *type)
       return convert_complex (context, type);
     }
 
-  return context->fe->ops->error (context->fe,
-				  _("cannot convert gdb type to gcc type"));
+  return C_CTX (context)->c_ops->error (C_CTX (context),
+					_("cannot convert gdb type "
+					  "to gcc type"));
 }
 
 gcc_type
-convert_type (struct compile_instance *context, struct type *type)
+convert_type (struct compile_c_instance *context, struct type *type)
 {
   struct type_map_instance inst, *found;
   gcc_type result;
@@ -313,37 +321,30 @@ convert_type (struct compile_instance *context, struct type *type)
 
 
 
-struct compile_instance *
-new_compile_instance (struct gcc_context *fe, const struct block *b)
+static void
+delete_instance (struct compile_instance *c)
 {
-  struct compile_instance *result = XCNEW (struct compile_instance);
+  struct compile_c_instance *context = (struct compile_c_instance *) c;
 
-  result->fe = fe;
-  result->block = b;
-  result->type_map = htab_create_alloc (10, hash_type_map_instance,
-					eq_type_map_instance,
-					xfree, xcalloc, xfree);
-
-  fe->ops->set_callbacks (fe, gcc_convert_symbol, gcc_symbol_address, result);
-
-  return result;
-}
-
-void
-delete_compile_instance (struct compile_instance *context)
-{
+  context->base.fe->ops->destroy (context->base.fe);
   htab_delete (context->type_map);
   xfree (context);
 }
 
-static void
-do_delete_compile_instance (void *p)
+struct compile_instance *
+new_compile_instance (struct gcc_c_context *fe)
 {
-  delete_compile_instance (p);
-}
+  struct compile_c_instance *result = XCNEW (struct compile_c_instance);
 
-struct cleanup *
-make_cleanup_delete_compile_instance (struct compile_instance *context)
-{
-  return make_cleanup (do_delete_compile_instance, context);
+  result->base.fe = &fe->base;
+  result->base.destroy = delete_instance;
+
+  result->type_map = htab_create_alloc (10, hash_type_map_instance,
+					eq_type_map_instance,
+					xfree, xcalloc, xfree);
+
+  fe->c_ops->set_callbacks (fe, gcc_convert_symbol,
+			    gcc_symbol_address, result);
+
+  return &result->base;
 }

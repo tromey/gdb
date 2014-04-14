@@ -61,7 +61,7 @@ c_get_mode_for_size (int size)
    extract the symbol that will provide a vtable and call that
    function.  Return the gcc_context that was returned.  */
 
-static struct gcc_context *
+static gcc_c_fe_context_function *
 load_libcc (void)
 {
   void *handle;
@@ -71,29 +71,31 @@ load_libcc (void)
    /* gdb_dlopen and gdb_dlsym will call error () on an error, so no
       need to check value.  */
   handle = gdb_dlopen (STRINGIFY (GCC_C_FE_LIBCC));
-  func = gdb_dlsym (handle, STRINGIFY (GCC_C_FE_CONTEXT));
-  result = (*func) (GCC_C_FE_VERSION);
-  if (result == NULL)
-    error (_("the loaded version of GCC does not support version "
-	     "%d of the API"),
-	   GCC_C_FE_VERSION);
-  return result;
+  return gdb_dlsym (handle, STRINGIFY (GCC_C_FE_CONTEXT));
 }
 
 /* Return the GCC FE context.  */
 
-struct gcc_context *
+struct compile_instance *
 c_get_compile_context (void)
 {
-  static struct gcc_context *fe_context;
+  static gcc_c_fe_context_function *func;
 
-  if (fe_context == NULL)
+  struct gcc_c_context *context;
+
+  if (func == NULL)
     {
-      fe_context = load_libcc ();
-      gdb_assert (fe_context != NULL);
+      func = load_libcc ();
+      gdb_assert (func != NULL);
     }
 
-  return fe_context;
+  context = (*func) (GCC_C_FE_VERSION);
+  if (context == NULL)
+    error (_("the loaded version of GCC does not support version "
+	     "%d of the API"),
+	   GCC_C_FE_VERSION);
+
+  return new_compile_instance (context);
 }
 
 

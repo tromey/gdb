@@ -35,6 +35,7 @@ struct ui_file;
 struct value_print_options;
 struct type_print_options;
 struct lang_varobj_ops;
+struct compile_instance;
 
 #define MAX_FORTRAN_DIMS  7	/* Maximum number of F77 array dims.  */
 
@@ -362,7 +363,7 @@ struct language_defn
        should throw an exception on failure.  FIXME: the lifetime
        assumptions are weird here.  */
 
-    struct gcc_context *(*la_get_gcc_context) (void);
+    struct compile_instance *(*la_get_compile_instance) (void);
 
     /* This method must be defined if 'la_get_gcc_context' is defined.
        If 'la_get_gcc_context' is not defined, then this method is

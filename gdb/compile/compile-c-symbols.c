@@ -36,7 +36,7 @@ symbol_substitution_name (struct symbol *sym)
 }
 
 static void
-convert_one_symbol (struct compile_instance *context,
+convert_one_symbol (struct compile_c_instance *context,
 		    struct symbol *sym,
 		    int is_global)
 {
@@ -50,8 +50,9 @@ convert_one_symbol (struct compile_instance *context,
   if (SYMBOL_DOMAIN (sym) == STRUCT_DOMAIN)
     {
       /* Binding a tag, so we don't need to build a decl.  */
-      context->fe->ops->tagbind (context->fe,
-				 SYMBOL_NATURAL_NAME (sym), sym_type);
+      C_CTX (context)->c_ops->tagbind (C_CTX (context),
+				       SYMBOL_NATURAL_NAME (sym),
+				       sym_type);
     }
   else
     {
@@ -109,13 +110,14 @@ convert_one_symbol (struct compile_instance *context,
 
 	}
 
-      decl = context->fe->ops->build_decl (context->fe,
-					   SYMBOL_NATURAL_NAME (sym), kind,
-					   sym_type,
-					   symbol_name, addr,
-					   filename, line);
+      decl = C_CTX (context)->c_ops->build_decl (C_CTX (context),
+						 SYMBOL_NATURAL_NAME (sym),
+						 kind,
+						 sym_type,
+						 symbol_name, addr,
+						 filename, line);
 
-      context->fe->ops->bind (context->fe, decl, is_global);
+      C_CTX (context)->c_ops->bind (C_CTX (context), decl, is_global);
 
       xfree (symbol_name);
     }
@@ -123,11 +125,11 @@ convert_one_symbol (struct compile_instance *context,
 
 void
 gcc_convert_symbol (void *datum,
-		    struct gcc_context *gcc_context,
+		    struct gcc_c_context *gcc_context,
 		    enum gcc_c_oracle_request request,
 		    const char *identifier)
 {
-  struct compile_instance *context = datum;
+  struct compile_c_instance *context = datum;
   struct symbol *sym, *global_sym;
   domain_enum domain;
   const struct block *static_block, *found_block;
@@ -147,7 +149,7 @@ gcc_convert_symbol (void *datum,
       gdb_assert_not_reached ("unrecognized oracle request");
     }
 
-  sym = lookup_symbol (identifier, context->block, domain, NULL);
+  sym = lookup_symbol (identifier, context->base.block, domain, NULL);
   if (sym == NULL)
     return;
   found_block = block_found;
@@ -181,7 +183,7 @@ gcc_convert_symbol (void *datum,
 }
 
 gcc_address
-gcc_symbol_address (void *datum, struct gcc_context *gcc_context,
+gcc_symbol_address (void *datum, struct gcc_c_context *gcc_context,
 		    const char *identifier)
 {
   struct compile_instance *context = datum;

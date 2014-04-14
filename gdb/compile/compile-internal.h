@@ -29,16 +29,32 @@ struct compile_instance
 {
   /* The GCC front end.  */
 
-  struct gcc_context *fe;
+  struct gcc_base_context *fe;
 
   /* The block in which an expression is being parsed.  */
 
   const struct block *block;
 
+  /* How to destroy this object.  */
+
+  void (*destroy) (struct compile_instance *);
+};
+
+/* A subclass of compile_instance that is specific to the C front
+   end.  */
+struct compile_c_instance
+{
+  /* Base class.  Note that the base class vtable actually points to a
+     gcc_c_fe_vtable.  */
+
+  struct compile_instance base;
+
   /* Map from gdb types to gcc types.  */
 
   htab_t type_map;
 };
+
+#define C_CTX(I) ((struct gcc_c_context *) ((I)->base.fe))
 
 /* Define header and footers for different scopes.  */
 
@@ -68,34 +84,21 @@ extern int compile_register_name_demangle (struct gdbarch *gdbarch,
    actual conversion.  The new GCC type is returned.  */
 
 struct type;
-extern gcc_type convert_type (struct compile_instance *context,
+extern gcc_type convert_type (struct compile_c_instance *context,
 			      struct type *type);
 
 /* A callback suitable for use as the GCC C symbol oracle.  */
 
-extern void gcc_convert_symbol (void *datum, struct gcc_context *gcc_context,
-				enum gcc_c_oracle_request request,
-				const char *identifier);
+extern gcc_c_oracle_function gcc_convert_symbol;
 
 /* A callback suitable for use as the GCC C address oracle.  */
 
 extern gcc_c_symbol_address_function gcc_symbol_address;
 
 /* Instantiate a GDB object holding state for the GCC context FE.  The
-   expression will be compiled as it appeared in the block B.  The new
-   object is returned.  */
+   new object is returned.  */
 
-extern struct compile_instance *new_compile_instance (struct gcc_context *fe,
-						      const struct block *b);
-
-/* Delete an object created by new_gdb_gcc_instance.  */
-
-extern void delete_compile_instance (struct compile_instance *context);
-
-/* Make a cleanup that calls delete_gdb_gcc_instance.  */
-
-extern struct cleanup *make_cleanup_delete_compile_instance
-     (struct compile_instance *context);
+extern struct compile_instance *new_compile_instance (struct gcc_c_context *fe);
 
 extern unsigned char *generate_c_for_variable_locations
      (struct ui_file *stream,
