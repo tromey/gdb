@@ -171,19 +171,6 @@ gdb_test "print union_object.typedeffield" " = 7"
 gdb_test "print union_object.intfield" " = 7"
 
 
-# Test shadowing with global and static variables.
-
-gdb_test_no_output "compile code globalshadow += 1;"
-gdb_test "print globalshadow" " = 101"
-gdb_test_no_output "compile code extern int globalshadow; globalshadow += 5;"
-setup_kfail "FIXME in gcc_convert_symbol" *-*-*
-gdb_test "print 'compile.c'::globalshadow" " = 15"
-setup_kfail "FIXME in gcc_convert_symbol" *-*-*
-gdb_test "print globalshadow" " = 101" "print globalshadow second time"
-gdb_test_no_output "compile code staticshadow += 2;"
-gdb_test "print staticshadow" " = 202"
-# "extern int staticshadow;" cannot access static variable.
-
 #
 # Test the case where the registers structure would not normally have
 # any fields.

@@ -95,8 +95,6 @@ no_args_or_locals (void)
 }
 
 int *intptr;
-int globalshadow = 10;
-static int staticshadow = 20;
 
 int
 main (void)
@@ -104,8 +102,6 @@ main (void)
   int localvar = 50;
   int shadowed = 51;
   int bound = 3;
-  int globalshadow = 100;
-  int staticshadow = 200;
 
   {
     int another_local = 7;
