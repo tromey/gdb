@@ -338,6 +338,7 @@ new_compile_instance (struct gcc_c_context *fe)
 
   result->base.fe = &fe->base;
   result->base.destroy = delete_instance;
+  result->base.gcc_target_option = "-std=gnu11";
 
   result->type_map = htab_create_alloc (10, hash_type_map_instance,
 					eq_type_map_instance,

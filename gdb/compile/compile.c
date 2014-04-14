@@ -320,17 +320,18 @@ get_selected_pc_producer_args (int *argcp, char ***argvp)
    and then compile-args string GDB variable.  */
 
 static void
-get_args (int *argcp, char ***argvp)
+get_args (const struct compile_instance *compiler, int *argcp, char ***argvp)
 {
   int argc_producer;
   char **argv_producer;
 
   get_selected_pc_producer_args (&argc_producer, &argv_producer);
-  *argcp = 1 + argc_producer;
+  *argcp = 1 + argc_producer + 1;
   *argvp = xrealloc (argv_producer, sizeof (*argv_producer) * ((*argcp) + 1));
   memmove ((*argvp) + 1, (*argvp), sizeof (**argvp) * argc_producer);
-  (*argvp)[1 + argc_producer] = NULL;
-  (*argvp)[0] = gdbarch_gcc_target_options (target_gdbarch ());
+  (*argvp)[0] = gdbarch_gcc_target_option (target_gdbarch ());
+  (*argvp)[1 + argc_producer] = xstrdup (compiler->gcc_target_option);
+  (*argvp)[1 + argc_producer + 1] = NULL;
   append_compile_args (argcp, argvp);
 }
 
@@ -451,7 +452,7 @@ compile_to_object (struct command_line *cmd, char *cmd_string,
     fprintf_unfiltered (gdb_stdout, "debug output:\n\n%s", code);
 
   /* Set compiler command-line arguments.  */
-  get_args (&argc, &argv);
+  get_args (compiler, &argc, &argv);
   compiler->fe->ops->set_arguments (compiler->fe, argc, argv);
   if (compile_debug)
     {
@@ -629,8 +630,6 @@ String quoting is parsed like in shell, for example:\n\
 			 " -w"
   // override CU's possible -fstack-protector-strong.
 			 " -fno-stack-protector"
-  // FIXME: Use -std=gnu++11 when C++ compilation is supported.
-		         " -std=gnu11"
   );
   set_compile_args (compile_args, 0, NULL);
 }
