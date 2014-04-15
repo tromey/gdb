@@ -199,21 +199,6 @@ add_code_footer (enum compile_i_scope_types type, struct ui_file *buf)
   }
 }
 
-/* Helper process for single line expressions that will add a
-   complimentary semi-colon at the end of the string if one has not
-   been already specified.  Computes a few simple rules for
-   dis-allowable scenarios.  */
-static void
-add_semicolon_if_needed (const char *simple_string, struct ui_file *buf)
-{
-  int len = strlen (simple_string) - 1;
-
-  /* FIXME this is wrong in the multi-line case.  */
-  if (simple_string[0] != '#' && simple_string[len] != '}'
-      && simple_string[len] != ';')
-    fputs_unfiltered (";", buf);
-}
-
 /* Generate a structure holding all the registers used by the function
    we're generating.  */
 
@@ -351,10 +336,13 @@ c_compute_program (const char *input,
     fputs_unfiltered (reg_code, buf);
 
   fputs_unfiltered ("#pragma GCC user_expression\n", buf);
-  fputs_unfiltered ("#line 1 \"gdb command line\"\n", buf);
 
+  /* For larger user expressions the automatic semicolons may be confusing.  */
+  if (strchr (input, '\n') == NULL)
+    fputs_unfiltered ("#pragma GCC trailing_semicolon\n", buf);
+
+  fputs_unfiltered ("#line 1 \"gdb command line\"\n", buf);
   fputs_unfiltered (input, buf);
-  add_semicolon_if_needed (input, buf);
   fputs_unfiltered ("\n", buf);
 
   add_code_footer (scope, buf);
