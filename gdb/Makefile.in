@@ -284,12 +284,13 @@ SUBDIR_TUI_CFLAGS= \
 # GCC GIT sub directory definitions
 #
 SUBDIR_GCC_JIT_OBS = \
-	compile.o compile-c-symbols.o gcc-types.o compile-object-load.o \
-	compile-object-run.o compile-loc2c.o compile-c-support.o
+	compile.o compile-c-symbols.o compile-c-types.o \
+	compile-object-load.o compile-object-run.o \
+	compile-loc2c.o compile-c-support.o
 SUBDIR_GCC_JIT_SRCS = \
 	compile/compile.c \
 	compile/compile-c-symbols.c \
-	compile/gcc-types.c \
+	compile/compile-c-types.c \
 	compile/compile-object-load.c \
 	compile/compile-object-load.h \
 	compile/compile-object-run.c \
@@ -1918,8 +1919,8 @@ compile.o: $(srcdir)/compile/compile.c
 	$(COMPILE) $(srcdir)/compile/compile.c
 	$(POSTCOMPILE)
 
-gcc-types.o: $(srcdir)/compile/gcc-types.c
-	$(COMPILE) $(srcdir)/compile/gcc-types.c
+compile-c-types.o: $(srcdir)/compile/compile-c-types.c
+	$(COMPILE) $(srcdir)/compile/compile-c-types.c
 	$(POSTCOMPILE)
 
 compile-c-symbols.o: $(srcdir)/compile/compile-c-symbols.c
