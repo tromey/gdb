@@ -22,6 +22,9 @@ struct compile_module
   /* objfile for the compiled module.  */
   struct objfile *objfile;
 
+  /* .c file OBJFILE was built from.  It needs to be xfree-d.  */
+  char *source_file;
+
   /* Inferior function address.  */
   CORE_ADDR func_addr;
 
@@ -30,6 +33,7 @@ struct compile_module
   CORE_ADDR regs_addr;
 };
 
-extern struct compile_module compile_object_load (const char *object_file);
+extern struct compile_module *compile_object_load (const char *object_file,
+						   const char *source_file);
 
 #endif /* GDB_COMPILE_OBJECT_LOAD_H */

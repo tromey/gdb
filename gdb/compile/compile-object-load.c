@@ -382,26 +382,28 @@ store_regs (struct type *regs_type, CORE_ADDR regs_base)
 }
 
 /* Load OBJECT_FILE into inferior memory.  Throw an error otherwise.
-   Caller must fully dispose the return value by calling compile_object_run.  */
+   Caller must fully dispose the return value by calling compile_object_run.
+   SOURCE_FILE's copy is stored into the returned object.
+   Caller should free both OBJECT_FILE and SOURCE_FILE immediatelly after this
+   function returns.  */
 
-struct compile_module
-compile_object_load (const char *object_file)
+struct compile_module *
+compile_object_load (const char *object_file, const char *source_file)
 {
   struct cleanup *cleanups, *cleanups_free_objfile;
   bfd *abfd;
   struct setup_sections_data setup_sections_data;
-  CORE_ADDR addr;
+  CORE_ADDR addr, func_addr, regs_addr;
   struct bound_minimal_symbol bmsym;
   long storage_needed;
   asymbol **symbol_table, **symp;
   long number_of_symbols, missing_symbols;
   struct type *dptr_type = builtin_type (target_gdbarch ())->builtin_data_ptr;
   unsigned dptr_type_len = TYPE_LENGTH (dptr_type);
-  struct compile_module retval;
+  struct compile_module *retval;
   struct type *regs_type;
   char *filename, **matching;
-
-  memset (&retval, 0, sizeof (retval));
+  struct objfile *objfile;
 
   filename = tilde_expand (object_file);
   cleanups = make_cleanup (xfree, filename);
@@ -438,21 +440,19 @@ compile_object_load (const char *object_file)
 
   /* SYMFILE_VERBOSE is not passed even if FROM_TTY, user is not interested in
      "Reading symbols from ..." message for automatically generated file.  */
-  retval.objfile = symbol_file_add_from_bfd (abfd, filename, 0, NULL, 0, NULL);
-  cleanups_free_objfile = make_cleanup_free_objfile (retval.objfile);
+  objfile = symbol_file_add_from_bfd (abfd, filename, 0, NULL, 0, NULL);
+  cleanups_free_objfile = make_cleanup_free_objfile (objfile);
 
-  bmsym = lookup_minimal_symbol_text (GCC_C_FE_WRAPPER_FUNCTION,
-				      retval.objfile);
+  bmsym = lookup_minimal_symbol_text (GCC_C_FE_WRAPPER_FUNCTION, objfile);
   if (bmsym.minsym == NULL || MSYMBOL_TYPE (bmsym.minsym) == mst_file_text)
     error (_("Could not find symbol \"%s\" of compiled module \"%s\"."),
 	   GCC_C_FE_WRAPPER_FUNCTION, filename);
-  retval.func_addr = BMSYMBOL_VALUE_ADDRESS (bmsym);
+  func_addr = BMSYMBOL_VALUE_ADDRESS (bmsym);
 
   /* The memory may be later needed
      by bfd_generic_get_relocated_section_contents
      called from default_symfile_relocate.  */
-  symbol_table = obstack_alloc (&retval.objfile->objfile_obstack,
-				storage_needed);
+  symbol_table = obstack_alloc (&objfile->objfile_obstack, storage_needed);
   number_of_symbols = bfd_canonicalize_symtab (abfd, symbol_table);
   if (number_of_symbols < 0)
     error (_("Cannot parse symbols of compiled module \"%s\": %s"),
@@ -474,19 +474,24 @@ compile_object_load (const char *object_file)
 
   bfd_map_over_sections (abfd, copy_sections, symbol_table);
 
-  regs_type = get_regs_type (retval.objfile);
+  regs_type = get_regs_type (objfile);
   if (regs_type == NULL)
-    retval.regs_addr = 0;
+    regs_addr = 0;
   else
     {
-      retval.regs_addr = gdbarch_infcall_mmap (target_gdbarch (),
-					       TYPE_LENGTH (regs_type));
-      gdb_assert (retval.regs_addr != 0);
-      store_regs (regs_type, retval.regs_addr);
+      regs_addr = gdbarch_infcall_mmap (target_gdbarch (),
+					TYPE_LENGTH (regs_type));
+      gdb_assert (regs_addr != 0);
+      store_regs (regs_type, regs_addr);
     }
 
   discard_cleanups (cleanups_free_objfile);
   do_cleanups (cleanups);
 
+  retval = xmalloc (sizeof (*retval));
+  retval->objfile = objfile;
+  retval->source_file = xstrdup (source_file);
+  retval->func_addr = func_addr;
+  retval->regs_addr = regs_addr;
   return retval;
 }

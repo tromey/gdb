@@ -390,14 +390,26 @@ cleanup_compile_instance (void *arg)
   inst->destroy (inst);
 }
 
+/* A cleanup function to unlink a file.  */
+
+static void
+cleanup_unlink_file (void *arg)
+{
+  const char *filename = arg;
+
+  unlink (filename);
+}
+
 /* Process the compilation request.  This process sets up the context,
-   args, text and calls fork to compile the result.  Returns the
-   object file name on success.  On an error condition, error () is
-   called.  The caller is responsible for freeing this string.  */
+   args, text and calls fork to compile the result.  On success it
+   returns the object file name and *SOURCE_FILEP is set to source file
+   name.  On an error condition, error () is called.  The caller is
+   responsible for freeing both strings.  */
 
 static char *
 compile_to_object (struct command_line *cmd, char *cmd_string,
-		   enum compile_i_scope_types scope)
+		   enum compile_i_scope_types scope,
+		   char **source_filep)
 {
   char *code;
   char *source_file, *object_file;
@@ -472,23 +484,27 @@ compile_to_object (struct command_line *cmd, char *cmd_string,
   src = gdb_fopen_cloexec (source_file, "w");
   if (src == NULL)
     perror_with_name ("could not open source file for writing");
+  make_cleanup (cleanup_unlink_file, source_file);
   if (fputs (code, src) == EOF)
     perror_with_name ("could not write source file");
   fclose (src);
 
+  if (compile_debug)
+    fprintf_unfiltered (gdb_stdout, "source file produced: %s\n\n",
+			source_file);
+
   /* Call the compiler and start the compilation process.  */
   compiler->fe->ops->set_source_file (compiler->fe, source_file);
 
-  /* FIXME we should arrange to delete the source file somewhere,
-     probably whenever we delete the object file.  */
   do_compile (compiler, object_file);
-  discard_cleanups (inner_cleanup);
 
   if (compile_debug)
     fprintf_unfiltered (gdb_stdout, "object file produced: %s\n\n",
 			object_file);
 
+  discard_cleanups (inner_cleanup);
   do_cleanups (cleanup);
+  *source_filep = source_file;
   return object_file;
 }
 
@@ -509,19 +525,22 @@ void
 eval_compile_command (struct command_line *cmd, char *cmd_string,
 		      enum compile_i_scope_types scope)
 {
-  volatile struct gdb_exception except;
-  struct compile_module compile_module;
-  char *object_file;
+  char *object_file, *source_file;
 
-  object_file = compile_to_object (cmd, cmd_string, scope);
-
+  object_file = compile_to_object (cmd, cmd_string, scope, &source_file);
   if (object_file != NULL)
     {
-      struct cleanup *cleanup = make_cleanup (xfree, object_file);
-
-      compile_module = compile_object_load (object_file);
-      compile_object_run (&compile_module);
-      do_cleanups (cleanup);
+      struct cleanup *cleanup_xfree, *cleanup_unlink;
+      struct compile_module *compile_module;
+      
+      cleanup_xfree = make_cleanup (xfree, object_file);
+      make_cleanup (xfree, source_file);
+      cleanup_unlink = make_cleanup (cleanup_unlink_file, object_file);
+      make_cleanup (cleanup_unlink_file, source_file);
+      compile_module = compile_object_load (object_file, source_file);
+      discard_cleanups (cleanup_unlink);
+      do_cleanups (cleanup_xfree);
+      compile_object_run (compile_module);
     }
 }
 

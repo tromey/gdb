@@ -33,6 +33,9 @@ struct do_module_cleanup
      The pointer may be NULL.  */
   int *executedp;
 
+  /* .c file OBJFILE was built from.  It needs to be xfree-d.  */
+  char *source_file;
+
   /* objfile_name of our objfile.  */
   char objfile_name_string[1];
 };
@@ -62,20 +65,23 @@ do_module_cleanup (void *arg)
 	break;
       }
 
+  /* Delete the .c file.  */
+  unlink (data->source_file);
+  xfree (data->source_file);
+
   /* Delete the .o file.  */
   unlink (data->objfile_name_string);
   xfree (data);
 }
 
 /* Perform inferior call of MODULE.  This function may throw an error.
-   This function may leave resources of MODULE allocated until the inferior
-   call dummy frame is discarded.  This function may throw errors.
-   Thrown errors and left MODULE resources allocation are unrelated events.
-   Caller has to free the memory of MODULE after calling this function.
-   Caller must not deallocate the resources MODULE points to.  */
+   This function may leave files referenced by MODULE on disk until
+   the inferior call dummy frame is discarded.  This function may throw errors.
+   Thrown errors and left MODULE files are unrelated events.  Caller must no
+   longer touch MODULE's memory after this function has been called.  */
 
 void
-compile_object_run (const struct compile_module *module)
+compile_object_run (struct compile_module *module)
 {
   struct value *func_val;
   struct frame_id dummy_id;
@@ -84,18 +90,24 @@ compile_object_run (const struct compile_module *module)
   volatile struct gdb_exception ex;
   const char *objfile_name_s = objfile_name (module->objfile);
   int dtor_found, executed = 0;
+  CORE_ADDR func_addr = module->func_addr;
+  CORE_ADDR regs_addr = module->regs_addr;
 
   data = xmalloc (sizeof (*data) + strlen (objfile_name_s));
   data->executedp = &executed;
+  data->source_file = xstrdup (module->source_file);
   strcpy (data->objfile_name_string, objfile_name_s);
+
+  xfree (module->source_file);
+  xfree (module);
 
   TRY_CATCH (ex, RETURN_MASK_ERROR)
     {
       func_val = value_from_pointer
 		 (builtin_type (target_gdbarch ())->builtin_func_ptr,
-		  module->func_addr);
+		  func_addr);
 
-      if (module->regs_addr == 0)
+      if (regs_addr == 0)
 	call_function_by_hand_dummy (func_val, 0, NULL,
 				     do_module_cleanup, data);
       else
@@ -104,7 +116,7 @@ compile_object_run (const struct compile_module *module)
 
 	  arg_val = value_from_pointer
 		    (builtin_type (target_gdbarch ())->builtin_func_ptr,
-		     module->regs_addr);
+		     regs_addr);
 	  call_function_by_hand_dummy (func_val, 1, &arg_val,
 				       do_module_cleanup, data);
 	}
