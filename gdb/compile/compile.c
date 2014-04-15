@@ -496,9 +496,9 @@ compile_to_object (struct command_line *cmd, char *cmd_string,
 static void
 compile_command (char *args, int from_tty)
 {
-  printf_unfiltered (_("\"compile\" must be followed by "
-		       "the name of a compile command.\n"));
-  help_list (compile_command_list, "compile ", -1, gdb_stdout);
+  /* If a sub-command is not specified to the compile prefix command,
+     assume it is a direct code compilation.  */
+  compile_code_command (args, from_tty);
 }
 
 /* Public function that is called from compile_control case in the
