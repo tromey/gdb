@@ -174,22 +174,22 @@ convert_func (struct compile_c_instance *context, struct type *type)
 {
   int i;
   gcc_type result, return_type;
-  gcc_type *argument_types;
+  struct gcc_type_array array;
 
   /* This approach means we can't make self-referential function
      types.  Those are impossible in C, though.  */
   return_type = convert_type (context, TYPE_TARGET_TYPE (type));
 
-  argument_types = XNEWVEC (gcc_type, TYPE_NFIELDS (type));
+  array.n_elements = TYPE_NFIELDS (type);
+  array.elements = XNEWVEC (gcc_type, TYPE_NFIELDS (type));
   for (i = 0; i < TYPE_NFIELDS (type); ++i)
-    argument_types[i] = convert_type (context, TYPE_FIELD_TYPE (type, i));
+    array.elements[i] = convert_type (context, TYPE_FIELD_TYPE (type, i));
 
   result = C_CTX (context)->c_ops->build_function_type (C_CTX (context),
 							return_type,
-							TYPE_NFIELDS (type),
-							argument_types,
+							&array,
 							TYPE_VARARGS (type));
-  xfree (argument_types);
+  xfree (array.elements);
 
   return result;
 }

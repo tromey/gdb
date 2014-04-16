@@ -43,7 +43,7 @@ convert_one_symbol (struct compile_c_instance *context,
   gcc_type sym_type;
 
   if (SYMBOL_CLASS (sym) == LOC_LABEL)
-    sym_type = NULL;
+    sym_type = 0;
   else
     sym_type = convert_type (context, SYMBOL_TYPE (sym));
 

@@ -1,0 +1,171 @@
+/* Interface between GCC C FE and GDB
+
+   Copyright (C) 2014 Free Software Foundation, Inc.
+
+   This file is part of GDB.
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+
+
+
+/* Create a new "decl" in GCC.  A decl is a declaration, basically a
+   kind of symbol.
+
+   NAME is the name of the new symbol.  SYM_KIND is the kind of
+   symbol being requested.  SYM_TYPE is the new symbol's C type;
+   except for labels, where this is not meaningful and should be
+   zero.  If SUBSTITUTION_NAME is not NULL, then a reference to this
+   decl in the source will later be substituted with a dereference
+   of a variable of the given name.  Otherwise, for symbols having
+   an address (e.g., functions), ADDRESS is the address.  FILENAME
+   and LINE_NUMBER refer to the symbol's source location.  If this
+   is not known, FILENAME can be NULL and LINE_NUMBER can be 0.
+   This function returns the new decl.  */
+
+GCC_METHOD7 (gcc_decl, build_decl,
+	     const char */* name */,
+	     int /* enum gcc_c_symbol_kind */ /* sym_kind */,
+	     gcc_type /* sym_type */,
+	     const char */* substitution_name */,
+	     gcc_address /* address */,
+	     const char */* filename */,
+	     unsigned int /* line_number */)
+
+/* Insert a GCC decl into the symbol table.  DECL is the decl to
+   insert.  IS_GLOBAL is true if this is an outermost binding, and
+   false if it is a possibly-shadowing binding.  */
+
+GCC_METHOD2 (int /* bool */, bind, gcc_decl /* decl */,
+	     int /* bool */ /* is_global */)
+
+/* Insert a tagged type into the symbol table.  NAME is the tag name
+   of the type and TAGGED_TYPE is the type itself.  TAGGED_TYPE must
+   be either a struct, union, or enum type, as these are the only
+   types that have tags.  */
+
+GCC_METHOD2 (int /* bool */, tagbind,
+	     const char */* name */,
+	     gcc_type /* tagged_type */)
+
+/* Return the type of a pointer to a given base type.  */
+
+GCC_METHOD1 (gcc_type, build_pointer_type,
+	     gcc_type /* base_type */)
+
+/* Create a new 'struct' type.  Initially it has no fields.  */
+
+GCC_METHOD0 (gcc_type, build_record_type)
+
+/* Create a new 'union' type.  Initially it has no fields.  */
+
+GCC_METHOD0 (gcc_type, build_union_type)
+
+/* Add a field to a struct or union type.  FIELD_NAME is the field's
+   name.  FIELD_TYPE is the type of the field.  BITSIZE and BITPOS
+   indicate where in the struct the field occurs.  */
+
+GCC_METHOD5 (int /* bool */, build_add_field,
+	     gcc_type /* record_or_union_type */,
+	     const char */* field_name */,
+	     gcc_type /* field_type */,
+	     unsigned long /* bitsize */,
+	     unsigned long /* bitpos */)
+
+/* After all the fields have been added to a struct or union, the
+   struct or union type must be "finished".  This does some final
+   cleanups in GCC.  */
+
+GCC_METHOD2 (int /* bool */, finish_record_or_union,
+	     gcc_type /* record_or_union_type */,
+	     unsigned long /* size_in_bytes */)
+
+/* Create a new 'enum' type.  The new type initially has no
+   associated constants.  */
+
+GCC_METHOD1 (gcc_type, build_enum_type,
+	     gcc_type /* underlying_int_type */)
+
+/* Add a new constant to an enum type.  NAME is the constant's
+   name and VALUE is its value.  */
+
+GCC_METHOD3 (int /* bool */, build_add_enum_constant,
+	     gcc_type /* enum_type */,
+	     const char */* name */,
+	     unsigned long /* value */)
+
+/* After all the constants have been added to an enum, the type must
+   be "finished".  This does some final cleanups in GCC.  */
+
+GCC_METHOD1 (int /* bool */, finish_enum_type, gcc_type /* enum_type */)
+
+/* Create a new function type.  RETURN_TYPE is the type returned by
+   the function, and ARGUMENT_TYPES is a vector, of length NARGS, of
+   the argument types.  IS_VARARGS is true if the function is
+   varargs.  */
+
+GCC_METHOD3 (gcc_type, build_function_type,
+	     gcc_type /* return_type */,
+	     const struct gcc_type_array * /* argument_types */,
+	     int /* bool */ /* is_varargs */)
+
+/* Return an integer type with the given properties.  */
+
+GCC_METHOD2 (gcc_type, int_type,
+	     int /* bool */ /* is_unsigned */,
+	     unsigned long /* size_in_bytes */)
+
+/* Return a floating point type with the given properties.  */
+
+GCC_METHOD1 (gcc_type, float_type,
+	     unsigned long /* size_in_bytes */)
+
+/* Return the 'void' type.  */
+
+GCC_METHOD0 (gcc_type, void_type)
+
+/* Return the 'bool' type.  */
+
+GCC_METHOD0 (gcc_type, bool_type)
+
+/* Create a new array type.  If NUM_ELEMENTS is -1, then the array
+   is assumed to have an unknown length.  */
+
+GCC_METHOD2 (gcc_type, build_array_type,
+	     gcc_type /* element_type */,
+	     int /* num_elements */)
+
+/* Return a qualified variant of a given base type.  QUALIFIERS says
+   which qualifiers to use; it is composed of or'd together
+   constants from 'enum gcc_qualifiers'.  */
+
+GCC_METHOD2 (gcc_type, build_qualified_type,
+	     gcc_type /* unqualified_type */,
+	     int /* enum gcc_qualifiers */ /* qualifiers */)
+
+/* Build a complex type given its element type.  */
+
+GCC_METHOD1 (gcc_type, build_complex_type,
+	     gcc_type /* element_type */)
+
+/* Build a vector type given its element type and number of
+   elements.  */
+
+GCC_METHOD2 (gcc_type, build_vector_type,
+	     gcc_type /* element_type */,
+	     int /* num_elements */)
+
+/* Emit an error and return an error type object.  */
+
+GCC_METHOD1 (gcc_type, error,
+	     const char */* message */)

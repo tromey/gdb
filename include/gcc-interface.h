@@ -20,14 +20,15 @@
 #ifndef GDB_GCC_INTERFACE
 #define GDB_GCC_INTERFACE
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* This header defines the interface to the GCC API.  It must be both
    valid C and valid C++, because it is included by both programs.  */
 
-/* One bit of GCC internals leaks through here.  */
-
-union tree_node;
-typedef union tree_node *gcc_type;
-typedef union tree_node *gcc_decl;
+typedef unsigned long long gcc_type;
+typedef unsigned long long gcc_decl;
 
 /* An address in the inferior.  */
 
@@ -168,6 +169,19 @@ typedef gcc_address gcc_c_symbol_address_function (void *datum,
 						   struct gcc_c_context *ctxt,
 						   const char *identifier);
 
+/* An array of types used for creating a function type.  */
+
+struct gcc_type_array
+{
+  /* Number of elements.  */
+
+  int n_elements;
+
+  /* The elements.  */
+
+  gcc_type *elements;
+};
+
 /* The vtable used by the C front end.  */
 
 struct gcc_c_fe_vtable
@@ -192,155 +206,31 @@ struct gcc_c_fe_vtable
 			 gcc_c_symbol_address_function *address_oracle,
 			 void *datum);
 
-  /* Create a new "decl" in GCC.  A decl is a declaration, basically a
-     kind of symbol.
+#define GCC_METHOD0(R, N) \
+  R (*N) (struct gcc_c_context *);
+#define GCC_METHOD1(R, N, A) \
+  R (*N) (struct gcc_c_context *, A);
+#define GCC_METHOD2(R, N, A, B) \
+  R (*N) (struct gcc_c_context *, A, B);
+#define GCC_METHOD3(R, N, A, B, C) \
+  R (*N) (struct gcc_c_context *, A, B, C);
+#define GCC_METHOD4(R, N, A, B, C, D) \
+  R (*N) (struct gcc_c_context *, A, B, C, D);
+#define GCC_METHOD5(R, N, A, B, C, D, E) \
+  R (*N) (struct gcc_c_context *, A, B, C, D, E);
+#define GCC_METHOD7(R, N, A, B, C, D, E, F, G) \
+  R (*N) (struct gcc_c_context *, A, B, C, D, E, F, G);
 
-     NAME is the name of the new symbol.  SYM_KIND is the kind of
-     symbol being requested.  SYM_TYPE is the new symbol's C type;
-     except for labels, where this is not meaningful and should be
-     NULL.  If SUBSTITUTION_NAME is not NULL, then a reference to this
-     decl in the source will later be substituted with a dereference
-     of a variable of the given name.  Otherwise, for symbols having
-     an address (e.g., functions), ADDRESS is the address.  FILENAME
-     and LINE_NUMBER refer to the symbol's source location.  If this
-     is not known, FILENAME can be NULL and LINE_NUMBER can be 0.
-     This function returns the new decl.  */
+#include "gcc-c-fe.def"
 
-  gcc_decl (*build_decl) (struct gcc_c_context *self,
-			  const char *name,
-			  enum gcc_c_symbol_kind sym_kind,
-			  gcc_type sym_type,
-			  const char *substitution_name,
-			  gcc_address address,
-			  const char *filename,
-			  unsigned int line_number);
+#undef GCC_METHOD0
+#undef GCC_METHOD1
+#undef GCC_METHOD2
+#undef GCC_METHOD3
+#undef GCC_METHOD4
+#undef GCC_METHOD5
+#undef GCC_METHOD7
 
-  /* Insert a GCC decl into the symbol table.  DECL is the decl to
-     insert.  IS_GLOBAL is true if this is an outermost binding, and
-     false if it is a possibly-shadowing binding.  */
-
-  void (*bind) (struct gcc_c_context *self, gcc_decl decl,
-		int /* bool */ is_global);
-
-  /* Insert a tagged type into the symbol table.  NAME is the tag name
-     of the type and TAGGED_TYPE is the type itself.  TAGGED_TYPE must
-     be either a struct, union, or enum type, as these are the only
-     types that have tags.  */
-
-  void (*tagbind) (struct gcc_c_context *self, const char *name,
-		   gcc_type tagged_type);
-
-  /* Return the type of a pointer to a given base type.  */
-
-  gcc_type (*build_pointer_type) (struct gcc_c_context *self,
-				  gcc_type base_type);
-
-  /* Create a new 'struct' type.  Initially it has no fields.  */
-
-  gcc_type (*build_record_type) (struct gcc_c_context *self);
-
-  /* Create a new 'union' type.  Initially it has no fields.  */
-
-  gcc_type (*build_union_type) (struct gcc_c_context *self);
-
-  /* Add a field to a struct or union type.  FIELD_NAME is the field's
-     name.  FIELD_TYPE is the type of the field.  BITSIZE and BITPOS
-     indicate where in the struct the field occurs.  */
-
-  void (*build_add_field) (struct gcc_c_context *self,
-			   gcc_type record_or_union_type,
-			   const char *field_name,
-			   gcc_type field_type,
-			   unsigned long bitsize,
-			   unsigned long bitpos);
-
-  /* After all the fields have been added to a struct or union, the
-     struct or union type must be "finished".  This does some final
-     cleanups in GCC.  */
-
-  void (*finish_record_or_union) (struct gcc_c_context *self,
-				  gcc_type record_or_union_type,
-				  unsigned long size_in_bytes);
-
-  /* Create a new 'enum' type.  The new type initially has no
-     associated constants.  */
-
-  gcc_type (*build_enum_type) (struct gcc_c_context *self,
-			       gcc_type underlying_int_type);
-
-  /* Add a new constant to an enum type.  NAME is the constant's
-     name and VALUE is its value.  */
-
-  void (*build_add_enum_constant) (struct gcc_c_context *self,
-				   gcc_type enum_type,
-				   const char *name,
-				   unsigned long value);
-
-  /* After all the constants have been added to an enum, the type must
-     be "finished".  This does some final cleanups in GCC.  */
-
-  void (*finish_enum_type) (struct gcc_c_context *self, gcc_type enum_type);
-
-  /* Create a new function type.  RETURN_TYPE is the type returned by
-     the function, and ARGUMENT_TYPES is a vector, of length NARGS, of
-     the argument types.  IS_VARARGS is true if the function is
-     varargs.  */
-
-  gcc_type (*build_function_type) (struct gcc_c_context *self,
-				   gcc_type return_type,
-				   int nargs,
-				   gcc_type *argument_types,
-				   int /* bool */ is_varargs);
-
-  /* Return an integer type with the given properties.  */
-
-  gcc_type (*int_type) (struct gcc_c_context *self,
-			int /* bool */ is_unsigned,
-			unsigned long size_in_bytes);
-
-  /* Return a floating point type with the given properties.  */
-
-  gcc_type (*float_type) (struct gcc_c_context *self,
-			  unsigned long size_in_bytes);
-
-  /* Return the 'void' type.  */
-
-  gcc_type (*void_type) (struct gcc_c_context *self);
-
-  /* Return the 'bool' type.  */
-
-  gcc_type (*bool_type) (struct gcc_c_context *self);
-
-  /* Create a new array type.  If NUM_ELEMENTS is -1, then the array
-     is assumed to have an unknown length.  */
-
-  gcc_type (*build_array_type) (struct gcc_c_context *self,
-				gcc_type element_type, int num_elements);
-
-  /* Return a qualified variant of a given base type.  QUALIFIERS says
-     which qualifiers to use; it is composed of or'd together
-     constants from 'enum gcc_qualifiers'.  */
-
-  gcc_type (*build_qualified_type) (struct gcc_c_context *self,
-				    gcc_type unqualified_type,
-				    int /* enum gcc_qualifiers */ qualifiers);
-
-  /* Build a complex type given its element type.  */
-
-  gcc_type (*build_complex_type) (struct gcc_c_context *self,
-				  gcc_type element_type);
-
-  /* Build a vector type given its element type and number of
-     elements.  */
-
-  gcc_type (*build_vector_type) (struct gcc_c_context *self,
-				 gcc_type element_type,
-				 int num_elements);
-
-  /* Emit an error and return an error type object.  */
-
-  gcc_type (*error) (struct gcc_c_context *self,
-		     const char *message);
 };
 
 /* The C front end object.  */
@@ -381,5 +271,9 @@ typedef struct gcc_c_context *gcc_c_fe_context_function (unsigned int);
 /* The name of the dummy wrapper function generated by gdb.  */
 
 #define GCC_C_FE_WRAPPER_FUNCTION "_gdb_expr"
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GDB_GCC_INTERFACE */
