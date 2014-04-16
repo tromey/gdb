@@ -270,49 +270,44 @@ show_compile_args (struct ui_file *file, int from_tty,
 		    value);
 }
 
-/* Append current 'set compile-args' content parsed by build_argc_argv to *ARGCP
-   and *ARGVP.  *ARGVP may be NULL and also 'set compile-args' may be empty.  */
+/* Append ARGC and ARGV (as parsed by build_argc_argv) to *ARGCP and *ARGVP.
+   ARGCP+ARGVP can be zero+NULL and also ARGC+ARGV can be zero+NULL.  */
 
 static void
-append_compile_args (int *argcp, char ***argvp)
+append_args (int *argcp, char ***argvp, int argc, char **argv)
 {
   int argi;
 
-  *argvp = xrealloc (*argvp,
-		     (*argcp + compile_args_argc + 1) * sizeof (**argvp));
+  *argvp = xrealloc (*argvp, (*argcp + argc + 1) * sizeof (**argvp));
 
-  for (argi = 0; argi < compile_args_argc; argi++)
-    (*argvp)[(*argcp)++] = xstrdup (compile_args_argv[argi]);
+  for (argi = 0; argi < argc; argi++)
+    (*argvp)[(*argcp)++] = xstrdup (argv[argi]);
   (*argvp)[(*argcp)] = NULL;
 }
 
-/* Return DW_AT_producer parsed for get_selected_frame () (if any) and store it
-   parsed into *ARGCP and *ARGVP.  *ARGVP may be returned NULL.
+/* Return DW_AT_producer parsed for get_selected_frame () (if any).
+   Return NULL otherwise.
 
    GCC already filters its command-line arguments only for the suitable ones to
    put into DW_AT_producer - see GCC function gen_producer_string.  */
 
-static void
-get_selected_pc_producer_args (int *argcp, char ***argvp)
+static const char *
+get_selected_pc_producer_options (void)
 {
   CORE_ADDR pc = get_frame_pc (get_selected_frame (NULL));
   struct symtab *symtab = find_pc_symtab (pc);
   const char *cs;
 
-  *argcp = 0;
-  *argvp = NULL;
-
   if (symtab == NULL || symtab->producer == NULL
       || strncmp (symtab->producer, "GNU ", strlen ("GNU ")) != 0)
-    return;
+    return NULL;
 
   cs = symtab->producer;
   while (*cs != 0 && *cs != '-')
     cs = skip_spaces_const (skip_to_space_const (cs));
   if (*cs != '-')
-    return;
-
-  build_argc_argv (cs, argcp, argvp);
+    return NULL;
+  return cs;
 }
 
 /* Produce final vector of GCC compilation options.  First element is target
@@ -322,17 +317,30 @@ get_selected_pc_producer_args (int *argcp, char ***argvp)
 static void
 get_args (const struct compile_instance *compiler, int *argcp, char ***argvp)
 {
-  int argc_producer;
-  char **argv_producer;
+  const char *cs_producer_options;
+  int argc_compiler;
+  char **argv_compiler;
 
-  get_selected_pc_producer_args (&argc_producer, &argv_producer);
-  *argcp = 1 + argc_producer + 1;
-  *argvp = xrealloc (argv_producer, sizeof (*argv_producer) * ((*argcp) + 1));
-  memmove ((*argvp) + 1, (*argvp), sizeof (**argvp) * argc_producer);
-  (*argvp)[0] = gdbarch_gcc_target_option (target_gdbarch ());
-  (*argvp)[1 + argc_producer] = xstrdup (compiler->gcc_target_option);
-  (*argvp)[1 + argc_producer + 1] = NULL;
-  append_compile_args (argcp, argvp);
+  build_argc_argv (gdbarch_gcc_target_options (target_gdbarch ()),
+		   argcp, argvp);
+
+  cs_producer_options = get_selected_pc_producer_options ();
+  if (cs_producer_options != NULL)
+    {
+      int argc_producer;
+      char **argv_producer;
+
+      build_argc_argv (cs_producer_options, &argc_producer, &argv_producer);
+      append_args (argcp, argvp, argc_producer, argv_producer);
+      freeargv (argv_producer);
+    }
+
+  build_argc_argv (compiler->gcc_target_options,
+		   &argc_compiler, &argv_compiler);
+  append_args (argcp, argvp, argc_compiler, argv_compiler);
+  freeargv (argv_compiler);
+
+  append_args (argcp, argvp, compile_args_argc, compile_args_argv);
 }
 
 static void
@@ -649,7 +657,6 @@ String quoting is parsed like in shell, for example:\n\
 			 " -w"
   // override CU's possible -fstack-protector-strong.
 			 " -fno-stack-protector"
-  /* FIXME */ " -fno-exceptions"
   );
   set_compile_args (compile_args, 0, NULL);
 }

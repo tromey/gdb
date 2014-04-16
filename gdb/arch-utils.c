@@ -826,7 +826,7 @@ default_infcall_mmap (CORE_ADDR size)
 }
 
 char *
-default_gcc_target_option (struct gdbarch *gdbarch)
+default_gcc_target_options (struct gdbarch *gdbarch)
 {
   return xstrprintf ("-m%d", gdbarch_ptr_bit (gdbarch));
 }

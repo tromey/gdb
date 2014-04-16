@@ -176,6 +176,6 @@ extern int default_insn_is_ret (struct gdbarch *, CORE_ADDR);
 extern int default_insn_is_jump (struct gdbarch *, CORE_ADDR);
 
 extern CORE_ADDR default_infcall_mmap (CORE_ADDR size);
-extern char *default_gcc_target_option (struct gdbarch *gdbarch);
+extern char *default_gcc_target_options (struct gdbarch *gdbarch);
 
 #endif

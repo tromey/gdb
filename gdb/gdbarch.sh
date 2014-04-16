@@ -1034,11 +1034,11 @@ M:int:auxv_parse:gdb_byte **readptr, gdb_byte *endptr, CORE_ADDR *typep, CORE_AD
 # Throw an error if it is not possible.  Returned address is always valid.
 f:CORE_ADDR:infcall_mmap:CORE_ADDR size:size::default_infcall_mmap::0
 
-# Return string (caller has to use xfree for it) with one option for GCC
+# Return string (caller has to use xfree for it) with options for GCC
 # to produce code for this target, typically "-m64", "-m32" or "-m31".
-# This option is put before CU's DW_AT_producer compilation options so that
-# they can override it.
-m:char *:gcc_target_option:void:::default_gcc_target_option::0
+# These options are put before CU's DW_AT_producer compilation options so that
+# they can override it.  Method may also return NULL.
+m:char *:gcc_target_options:void:::default_gcc_target_options::0
 EOF
 }
 

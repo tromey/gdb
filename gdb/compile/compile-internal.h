@@ -35,9 +35,9 @@ struct compile_instance
 
   const struct block *block;
 
-  /* Specify "-std=gnu11", "-std=gnu++11" or similar.  This option is put after
-     CU's DW_AT_producer compilation options to possibly override them.  */
-  const char *gcc_target_option;
+  /* Specify "-std=gnu11", "-std=gnu++11" or similar.  These options are put
+     after CU's DW_AT_producer compilation options to override them.  */
+  const char *gcc_target_options;
 
   /* How to destroy this object.  */
 
