@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-standard_testfile .c compile-shlib.c
+standard_testfile .c compile-shlib.c compile-constvar.S
 
 get_compiler_info
 set options {debug}
@@ -21,7 +21,16 @@ if [test_compiler_info gcc*] {
     lappend options additional_flags=-g3
 }
 
-if { [prepare_for_testing ${testfile}.exp ${testfile} ${srcfile} $options] } {
+if { ![istarget x86_64-*-* ] || ![is_lp64_target] } {
+    verbose "Skipping x86_64 LOC_CONST test."
+    set srcfile3 ""
+}   
+
+set srcfiles ${srcfile}
+if { $srcfile3 != "" } {
+    lappend srcfiles $srcfile3
+}
+if { [prepare_for_testing ${testfile}.exp ${testfile} ${srcfiles} $options] } {
     return -1
 }
 
@@ -201,6 +210,20 @@ gdb_test_no_output "compile code union union_type newdecl_u"
 gdb_test_no_output "compile code struct struct_type newdecl_s"
 gdb_test_no_output "compile code inttypedef newdecl_i"
 
+
+# LOC_CONST tests.
+
+if { $srcfile3 != "" } {
+    gdb_test "p constvar" " = 3"
+    gdb_test "info addr constvar" {Symbol "constvar" is constant\.}
+
+    gdb_test "compile code globalvar = constvar;"
+    gdb_test "print globalvar" " = 3" "print constvar value"
+} else {
+    untested "print constvar value"
+}
+
+# Shared library tests.
 
 if {[skip_shlib_tests]} {
     untested "skipping shlib tests"

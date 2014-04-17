@@ -79,7 +79,17 @@ convert_one_symbol (struct compile_c_instance *context,
 	  addr = BLOCK_START (SYMBOL_BLOCK_VALUE (sym));
 	  break;
 
-	case LOC_CONST:		/* FIXME */
+	case LOC_CONST:
+	  if (TYPE_CODE (SYMBOL_TYPE (sym)) == TYPE_CODE_ENUM)
+	    {
+	      /* Already handled by convert_enum.  */
+	      return;
+	    }
+	  C_CTX (context)->c_ops->build_constant (C_CTX (context), sym_type,
+						  SYMBOL_NATURAL_NAME (sym),
+						  SYMBOL_VALUE (sym));
+	  return;
+
 	case LOC_CONST_BYTES:	/* FIXME */
 
 	case LOC_UNDEF:

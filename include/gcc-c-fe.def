@@ -165,6 +165,13 @@ GCC_METHOD2 (gcc_type, build_vector_type,
 	     gcc_type /* element_type */,
 	     int /* num_elements */)
 
+/* Build a constant.  NAME is the constant's name and VALUE is its value.  */
+
+GCC_METHOD3 (int /* bool */, build_constant,
+	     gcc_type /* type */,
+	     const char */* name */,
+	     unsigned long /* value */)
+
 /* Emit an error and return an error type object.  */
 
 GCC_METHOD1 (gcc_type, error,

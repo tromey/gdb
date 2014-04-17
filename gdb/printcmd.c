@@ -1249,6 +1249,10 @@ address_info (char *exp, int from_tty)
       return;
     }
 
+  // https://sourceware.org/bugzilla/show_bug.cgi?id=16842
+  if (SYMBOL_SYMTAB (sym) == NULL)
+    error (_("Symbol \"%s\" has no symbol table."), SYMBOL_PRINT_NAME (sym));
+
   printf_filtered ("Symbol \"");
   fprintf_symbol_filtered (gdb_stdout, SYMBOL_PRINT_NAME (sym),
 			   current_language->la_language, DMGL_ANSI);
