@@ -57,17 +57,6 @@ show_compile_debug (struct ui_file *file, int from_tty,
 
 
 
-static int compile_fork = 1;
-
-static void
-show_compile_fork (struct ui_file *file, int from_tty,
-		   struct cmd_list_element *c, const char *value)
-{
-  fprintf_filtered (file, _("Compile fork is %s.\n"), value);
-}
-
-
-
 static int
 check_raw_argument (char **arg)
 {
@@ -343,51 +332,6 @@ get_args (const struct compile_instance *compiler, int *argcp, char ***argvp)
   append_args (argcp, argvp, compile_args_argc, compile_args_argv);
 }
 
-static void
-do_compile (struct compile_instance *compiler, char *object_file)
-{
-  pid_t child;
-  int status;
-
-  /* Fork to do the actual compilation.  */
-  if (compile_fork)
-    child = fork ();
-  else
-    child = 0;
-
-  /* Child.  Do the compile.  */
-  if (child == 0)
-    {
-      status = compiler->fe->ops->compile (compiler->fe, object_file,
-					   compile_debug);
-
-      if (compile_fork)
-	_exit (status ? 0 : 1);
-    }
-  /* Fail.  */
-  else if (child == -1)
-    error (_("Could not fork child compilation."));
-  /* Parent.  */
-  else
-    {
-      /* Just wait on the child.  TODO: I really think we should not
-	 do a blocking wait here, though there are some concerns with
-	 the robustness of WNOHANG.  The user may want to interrupt
-	 the compilation process.  Right now that interruption is
-	 ignored and GDB is blocked.  We might have to poll () for the
-	 filename and check that the child is still alive with waitpid
-	 (WNOHANG) and WIFEXITED so that we can listen for GDB
-	 interruptions too.  */
-      int exit_status;
-
-      waitpid (child, &exit_status, 0);
-      status = exit_status == 0;
-    }
-
-  if (status == 0)
-    error (_("Compilation failed."));
-}
-
 /* A cleanup function to destroy a gdb_gcc_instance.  */
 
 static void
@@ -406,6 +350,12 @@ cleanup_unlink_file (void *arg)
   const char *filename = arg;
 
   unlink (filename);
+}
+
+static void
+print_callback (void *ignore, const char *message)
+{
+  fprintf_filtered (gdb_stderr, "%s", message);
 }
 
 /* Process the compilation request.  This process sets up the context,
@@ -427,7 +377,6 @@ compile_to_object (struct command_line *cmd, char *cmd_string,
   CORE_ADDR trash_pc, expr_pc;
   int argc;
   char **argv;
-  struct compile_module *compile_module;
   int ok;
   FILE *src;
 
@@ -439,6 +388,8 @@ compile_to_object (struct command_line *cmd, char *cmd_string,
     error (_("no compiler support for this language"));
   compiler = current_language->la_get_compile_instance ();
   cleanup = make_cleanup (cleanup_compile_instance, compiler);
+
+  compiler->fe->ops->set_print_callback (compiler->fe, print_callback, NULL);
 
   compiler->block = expr_block;
 
@@ -504,7 +455,9 @@ compile_to_object (struct command_line *cmd, char *cmd_string,
   /* Call the compiler and start the compilation process.  */
   compiler->fe->ops->set_source_file (compiler->fe, source_file);
 
-  do_compile (compiler, object_file);
+  if (!compiler->fe->ops->compile (compiler->fe, object_file,
+				   compile_debug))
+    error (_("Compilation failed."));
 
   if (compile_debug)
     fprintf_unfiltered (gdb_stdout, "object file produced: %s\n\n",
@@ -627,14 +580,6 @@ Show compile command  debugging."), _("\
 When on, compile command debugging is enabled."),
 			   NULL, show_compile_debug,
 			   &setdebuglist, &showdebuglist);
-
-  add_setshow_boolean_cmd ("compile-fork", class_maintenance, &compile_fork, _("\
-Set whether the compile command runs in a child process."), _("\
-Show whether the compile command runs in a child process."), _("\
-When on, the compile command runs in a child process."),
-			   NULL, show_compile_fork,
-			   &maintenance_set_cmdlist, &maintenance_show_cmdlist);
-
 
   add_setshow_string_cmd ("compile-args", class_support,
 			  &compile_args,
