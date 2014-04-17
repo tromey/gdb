@@ -151,6 +151,7 @@ foreach {field value} {
     ushortfield 5
     intfield -7
     uintfield 7
+    bitfield 2
     longfield -9
     ulongfield 9
     enumfield ONE

@@ -35,6 +35,7 @@ struct struct_type {
   unsigned short ushortfield;
   int intfield;
   unsigned int uintfield;
+  unsigned int bitfield : 3;
   long longfield;
   unsigned long ulongfield;
   enum enum_type enumfield;
