@@ -465,6 +465,13 @@ compile_object_load (const char *object_file, const char *source_file)
 
       if (sym->flags != 0)
 	continue;
+      if (strcmp (sym->name, "_GLOBAL_OFFSET_TABLE_") == 0)
+	{
+	  sym->flags = BSF_GLOBAL;
+	  sym->section = bfd_abs_section_ptr;
+	  sym->value = 0;
+	  continue;
+	}
       warning (_("Could not find symbol \"%s\" for compiled module \"%s\"."),
 	       sym->name, filename);
       missing_symbols++;
