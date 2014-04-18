@@ -828,7 +828,8 @@ default_infcall_mmap (CORE_ADDR size)
 char *
 default_gcc_target_options (struct gdbarch *gdbarch)
 {
-  return xstrprintf ("-m%d", gdbarch_ptr_bit (gdbarch));
+  return xstrprintf ("-m%d%s", gdbarch_ptr_bit (gdbarch),
+		     gdbarch_ptr_bit (gdbarch) == 64 ? " -mcmodel=large" : "");
 }
 
 /* */

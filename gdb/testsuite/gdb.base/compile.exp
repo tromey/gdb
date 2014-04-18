@@ -134,6 +134,10 @@ gdb_test "p localvar" " = 52" "expect 52"
 #     "compile code localvar = (sizeof (vla) == bound * sizeof (vla\[0\]))"
 # gdb_test "p localvar" " = 1"
 
+gdb_test_no_output "compile code alarm (43); globalvar = alarm (0);" \
+    "test ELF symbol resolution"
+gdb_test "p globalvar" " = 43" "expect 43"
+
 #
 # Test setting fields and also many different types.
 #
