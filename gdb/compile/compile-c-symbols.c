@@ -25,6 +25,7 @@
 #include "parser-defs.h"
 #include "block.h"
 #include "objfiles.h"
+#include "compile.h"
 
 /* Compute the name of the pointer representing a local symbol's
    address.  */
@@ -161,7 +162,13 @@ gcc_convert_symbol (void *datum,
 
   sym = lookup_symbol (identifier, context->base.block, domain, NULL);
   if (sym == NULL)
-    return;
+    {
+      if (compile_debug)
+	fprintf_unfiltered (gdb_stdout,
+			    "gcc_convert_symbol \"%s\": lookup_symbol failed\n",
+			    identifier);
+      return;
+    }
   found_block = block_found;
 
   /* If we found a symbol and it is not in the  static or global
@@ -186,9 +193,19 @@ gcc_convert_symbol (void *datum,
       /* FIXME: should we exclude the static block here?  Must look
 	 up.  */
       if (global_sym != NULL)
-	convert_one_symbol (context, global_sym, 1);
+	{
+	  if (compile_debug)
+	    fprintf_unfiltered (gdb_stdout,
+				"gcc_convert_symbol \"%s\": global symbol\n",
+				identifier);
+	  convert_one_symbol (context, global_sym, 1);
+	}
     }
 
+  if (compile_debug)
+    fprintf_unfiltered (gdb_stdout,
+			"gcc_convert_symbol \"%s\": local symbol\n",
+			identifier);
   convert_one_symbol (context, sym, 0);
 }
 
@@ -203,12 +220,28 @@ gcc_symbol_address (void *datum, struct gcc_c_context *gcc_context,
   /* We only need global functions here.  */
   sym = lookup_symbol (identifier, NULL, VAR_DOMAIN, NULL);
   if (sym != NULL && SYMBOL_CLASS (sym) == LOC_BLOCK)
-    return BLOCK_START (SYMBOL_BLOCK_VALUE (sym));
+    {
+      if (compile_debug)
+	fprintf_unfiltered (gdb_stdout,
+			    "gcc_symbol_address \"%s\": full symbol\n",
+			    identifier);
+      return BLOCK_START (SYMBOL_BLOCK_VALUE (sym));
+    }
 
   msym = lookup_bound_minimal_symbol (identifier);
   if (msym.minsym != NULL)
-    return BMSYMBOL_VALUE_ADDRESS (msym);
+    {
+      if (compile_debug)
+	fprintf_unfiltered (gdb_stdout,
+			    "gcc_symbol_address \"%s\": minimal symbol\n",
+			    identifier);
+      return BMSYMBOL_VALUE_ADDRESS (msym);
+    }
 
+  if (compile_debug)
+    fprintf_unfiltered (gdb_stdout,
+			"gcc_symbol_address \"%s\": failed\n",
+			identifier);
   return 0;
 }
 

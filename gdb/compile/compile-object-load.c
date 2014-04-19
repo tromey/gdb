@@ -28,6 +28,7 @@
 #include "gdbcmd.h"
 #include "regcache.h"
 #include "inferior.h"
+#include "compile.h"
 
 /* Helper data for setup_sections.  */
 
@@ -465,6 +466,10 @@ compile_object_load (const char *object_file, const char *source_file)
 
       if (sym->flags != 0)
 	continue;
+      if (compile_debug)
+	fprintf_unfiltered (gdb_stdout,
+			    "lookup undefined ELF symbol \"%s\"\n",
+			    sym->name);
       sym->flags = BSF_GLOBAL;
       sym->section = bfd_abs_section_ptr;
       if (strcmp (sym->name, "_GLOBAL_OFFSET_TABLE_") == 0)

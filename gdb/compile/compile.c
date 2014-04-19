@@ -45,7 +45,7 @@
 
 
 
-static int compile_debug;
+int compile_debug;
 struct cmd_list_element *compile_command_list;
 
 static void
