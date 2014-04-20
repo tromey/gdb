@@ -134,41 +134,12 @@ convert_one_symbol (struct compile_c_instance *context,
     }
 }
 
-void
-gcc_convert_symbol (void *datum,
-		    struct gcc_c_context *gcc_context,
-		    enum gcc_c_oracle_request request,
-		    const char *identifier)
+static void
+convert_symbol_sym (struct compile_c_instance *context, const char *identifier,
+		    struct symbol *sym, domain_enum domain)
 {
-  struct compile_c_instance *context = datum;
-  struct symbol *sym, *global_sym;
-  domain_enum domain;
   const struct block *static_block, *found_block;
 
-  switch (request)
-    {
-    case GCC_C_ORACLE_SYMBOL:
-      domain = VAR_DOMAIN;
-      break;
-    case GCC_C_ORACLE_TAG:
-      domain = STRUCT_DOMAIN;
-      break;
-    case GCC_C_ORACLE_LABEL:
-      domain = LABEL_DOMAIN;
-      break;
-    default:
-      gdb_assert_not_reached ("unrecognized oracle request");
-    }
-
-  sym = lookup_symbol (identifier, context->base.block, domain, NULL);
-  if (sym == NULL)
-    {
-      if (compile_debug)
-	fprintf_unfiltered (gdb_stdout,
-			    "gcc_convert_symbol \"%s\": lookup_symbol failed\n",
-			    identifier);
-      return;
-    }
   found_block = block_found;
 
   /* If we found a symbol and it is not in the  static or global
@@ -207,6 +178,111 @@ gcc_convert_symbol (void *datum,
 			"gcc_convert_symbol \"%s\": local symbol\n",
 			identifier);
   convert_one_symbol (context, sym, 0);
+}
+
+static void
+convert_symbol_bmsym (struct compile_c_instance *context,
+		      struct bound_minimal_symbol bmsym)
+{
+  struct minimal_symbol *msym = bmsym.minsym;
+  struct objfile *objfile = bmsym.objfile;
+  struct type *type;
+  enum gcc_c_symbol_kind kind;
+  gcc_type sym_type;
+  gcc_decl decl;
+  CORE_ADDR addr;
+
+  /* Conversion copied from write_exp_msymbol.  */
+  switch (MSYMBOL_TYPE (msym))
+    {
+    case mst_text:
+    case mst_file_text:
+    case mst_solib_trampoline:
+      type = objfile_type (objfile)->nodebug_text_symbol;
+      kind = GCC_C_SYMBOL_FUNCTION;
+      break;
+
+    case mst_text_gnu_ifunc:
+      type = objfile_type (objfile)->nodebug_text_gnu_ifunc_symbol;
+      kind = GCC_C_SYMBOL_FUNCTION;
+      break;
+
+    case mst_data:
+    case mst_file_data:
+    case mst_bss:
+    case mst_file_bss:
+      type = objfile_type (objfile)->nodebug_data_symbol;
+      kind = GCC_C_SYMBOL_VARIABLE;
+      break;
+
+    case mst_slot_got_plt:
+      type = objfile_type (objfile)->nodebug_got_plt_symbol;
+      kind = GCC_C_SYMBOL_FUNCTION;
+      break;
+
+    default:
+      type = objfile_type (objfile)->nodebug_unknown_symbol;
+      kind = GCC_C_SYMBOL_VARIABLE;
+      break;
+    }
+
+  sym_type = convert_type (context, type);
+  addr = MSYMBOL_VALUE_ADDRESS (objfile, msym);
+  decl = C_CTX (context)->c_ops->build_decl (C_CTX (context),
+					     MSYMBOL_NATURAL_NAME (msym),
+					     kind, sym_type, NULL, addr,
+					     NULL, 0);
+  C_CTX (context)->c_ops->bind (C_CTX (context), decl, 1 /* is_global */);
+}
+
+void
+gcc_convert_symbol (void *datum,
+		    struct gcc_c_context *gcc_context,
+		    enum gcc_c_oracle_request request,
+		    const char *identifier)
+{
+  struct compile_c_instance *context = datum;
+  struct symbol *sym, *global_sym;
+  struct bound_minimal_symbol bmsym;
+  domain_enum domain;
+
+  switch (request)
+    {
+    case GCC_C_ORACLE_SYMBOL:
+      domain = VAR_DOMAIN;
+      break;
+    case GCC_C_ORACLE_TAG:
+      domain = STRUCT_DOMAIN;
+      break;
+    case GCC_C_ORACLE_LABEL:
+      domain = LABEL_DOMAIN;
+      break;
+    default:
+      gdb_assert_not_reached ("unrecognized oracle request");
+    }
+
+  sym = lookup_symbol (identifier, context->base.block, domain, NULL);
+  if (sym != NULL)
+    {
+      convert_symbol_sym (context, identifier, sym, domain);
+      return;
+    }
+
+  if (domain == VAR_DOMAIN)
+    {
+      bmsym = lookup_minimal_symbol (identifier, NULL, NULL);
+      if (bmsym.minsym != NULL)
+	{
+	  convert_symbol_bmsym (context, bmsym);
+	  return;
+	}
+    }
+
+  if (compile_debug)
+    fprintf_unfiltered (gdb_stdout,
+			"gcc_convert_symbol \"%s\": lookup_symbol failed\n",
+			identifier);
+  return;
 }
 
 gcc_address

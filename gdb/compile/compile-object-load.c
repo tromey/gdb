@@ -470,26 +470,17 @@ compile_object_load (const char *object_file, const char *source_file)
 	fprintf_unfiltered (gdb_stdout,
 			    "lookup undefined ELF symbol \"%s\"\n",
 			    sym->name);
-      sym->flags = BSF_GLOBAL;
-      sym->section = bfd_abs_section_ptr;
       if (strcmp (sym->name, "_GLOBAL_OFFSET_TABLE_") == 0)
 	{
+	  sym->flags = BSF_GLOBAL;
+	  sym->section = bfd_abs_section_ptr;
 	  sym->value = 0;
 	  continue;
 	}
-      bmsym = lookup_minimal_symbol (sym->name, NULL, NULL);
-      switch (bmsym.minsym == NULL
-	      ? mst_unknown : MSYMBOL_TYPE (bmsym.minsym))
-	{
-	case mst_text:
-	  sym->value = BMSYMBOL_VALUE_ADDRESS (bmsym);
-	  break;
-	default:
-	  warning (_("Could not find symbol \"%s\" "
-		     "for compiled module \"%s\"."),
-		   sym->name, filename);
-	  missing_symbols++;
-	}
+      warning (_("Could not find symbol \"%s\" "
+		 "for compiled module \"%s\"."),
+	       sym->name, filename);
+      missing_symbols++;
     }
   if (missing_symbols)
     error (_("%ld symbols were missing, cannot continue."), missing_symbols);
