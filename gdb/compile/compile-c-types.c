@@ -175,6 +175,7 @@ convert_func (struct compile_c_instance *context, struct type *type)
   int i;
   gcc_type result, return_type;
   struct gcc_type_array array;
+  int is_varargs = TYPE_VARARGS (type) || !TYPE_PROTOTYPED (type);
 
   /* This approach means we can't make self-referential function
      types.  Those are impossible in C, though.  */
@@ -187,8 +188,7 @@ convert_func (struct compile_c_instance *context, struct type *type)
 
   result = C_CTX (context)->c_ops->build_function_type (C_CTX (context),
 							return_type,
-							&array,
-							TYPE_VARARGS (type));
+							&array, is_varargs);
   xfree (array.elements);
 
   return result;
