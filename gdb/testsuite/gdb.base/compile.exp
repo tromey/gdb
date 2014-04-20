@@ -197,8 +197,9 @@ gdb_test "p globalvar" " = 77" "expect 77"
 
 # Test reference to minimal_symbol, not (full) symbol.
 
-gdb_test_no_output "compile code globalvar = func_nodebug ();" "call func_nodebug"
-gdb_test "p globalvar" " = 75" "expect 75"
+gdb_test_no_output "compile code globalvar = func_nodebug (75);" \
+    "call func_nodebug"
+gdb_test "p globalvar" " = -75" "expect -75"
 
 
 #

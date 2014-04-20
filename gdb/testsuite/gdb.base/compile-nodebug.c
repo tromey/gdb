@@ -16,7 +16,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 int
-func_nodebug (void)
+func_nodebug (int neg)
 {
-  return 75;
+  return -neg;
 }
