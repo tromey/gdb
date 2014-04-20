@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-standard_testfile .c compile-shlib.c compile-constvar.S
+standard_testfile .c compile-shlib.c compile-constvar.S compile-nodebug.c
 
 get_compiler_info
 set options {debug}
@@ -26,13 +26,15 @@ if { ![istarget x86_64-*-* ] || ![is_lp64_target] } {
     set srcfile3 ""
 }   
 
-set srcfiles ${srcfile}
+set srcfilesoptions [list ${srcfile} ${options}]
 if { $srcfile3 != "" } {
-    lappend srcfiles $srcfile3
+    lappend srcfilesoptions $srcfile3 ${options}
 }
-if { [prepare_for_testing ${testfile}.exp ${testfile} ${srcfiles} $options] } {
+lappend srcfilesoptions $srcfile4 "nodebug"
+if { [eval build_executable_from_specs ${testfile}.exp $testfile {$options} ${srcfilesoptions}] } {
     return -1
 }
+clean_restart ${testfile}
 
 if ![runto_main] {
     return -1
@@ -134,10 +136,6 @@ gdb_test "p localvar" " = 52" "expect 52"
 #     "compile code localvar = (sizeof (vla) == bound * sizeof (vla\[0\]))"
 # gdb_test "p localvar" " = 1"
 
-gdb_test_no_output "compile code alarm (43); globalvar = alarm (0);" \
-    "test ELF symbol resolution"
-gdb_test "p globalvar" " = 43" "expect 43"
-
 #
 # Test setting fields and also many different types.
 #
@@ -195,6 +193,12 @@ gdb_continue_to_breakpoint "no_args_or_locals"
 
 gdb_test_no_output "compile code globalvar = 77;" "set variable to 77"
 gdb_test "p globalvar" " = 77" "expect 77"
+
+
+# Test reference to minimal_symbol, not (full) symbol.
+
+gdb_test_no_output "compile code globalvar = func_nodebug ();" "call func_nodebug"
+gdb_test "p globalvar" " = 75" "expect 75"
 
 
 #
