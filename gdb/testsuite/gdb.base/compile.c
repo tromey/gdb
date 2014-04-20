@@ -103,10 +103,12 @@ main (void)
   int localvar = 50;
   int shadowed = 51;
   int bound = 3;
+  int unresolved = 10;
 
   {
     int another_local = 7;
     int shadowed = 52;
+    extern int unresolved;
 
     int vla[bound];
 

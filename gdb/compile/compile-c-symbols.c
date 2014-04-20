@@ -26,6 +26,7 @@
 #include "block.h"
 #include "objfiles.h"
 #include "compile.h"
+#include "value.h"
 
 /* Compute the name of the pointer representing a local symbol's
    address.  */
@@ -111,8 +112,19 @@ convert_one_symbol (struct compile_c_instance *context,
 		 SYMBOL_PRINT_NAME (sym));
 
 	case LOC_UNRESOLVED:
-	  /* FIXME: some kind of error here.  */
-	  return;
+	  {
+	    // FIXME: Why does GCC crash using kind && symbol_name as below?
+	    struct value *val = read_var_value (sym, NULL);
+
+	    if (VALUE_LVAL (val) != lval_memory)
+	      error (_("Symbol \"%s\" cannot be used for compilation evaluation "
+		       "as its address has not been found."),
+		     SYMBOL_PRINT_NAME (sym));
+
+	    kind = GCC_C_SYMBOL_VARIABLE;
+	    addr = value_address (val);
+	  }
+	  break;
 
 	case LOC_REGISTER:
 	case LOC_ARG:

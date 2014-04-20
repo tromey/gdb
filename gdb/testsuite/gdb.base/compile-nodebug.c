@@ -20,3 +20,5 @@ func_nodebug (int neg)
 {
   return -neg;
 }
+
+int unresolved = 20;
