@@ -92,10 +92,23 @@ convert_one_symbol (struct compile_c_instance *context,
 	  return;
 
 	case LOC_CONST_BYTES:	/* FIXME */
+	  error (_("Internal error: Unsupported LOC_CONST_BYTES for \"%s\"."),
+		 SYMBOL_PRINT_NAME (sym));
 
 	case LOC_UNDEF:
+	  internal_error (__FILE__, __LINE__, _("LOC_UNDEF found for \"%s\"."),
+			  SYMBOL_PRINT_NAME (sym));
+
 	case LOC_COMMON_BLOCK:
+	  error (_("Fortran common block is unsupported for compilation "
+		   "evaluaton of symbol \"%s\"."),
+		 SYMBOL_PRINT_NAME (sym));
+
 	case LOC_OPTIMIZED_OUT:
+	  error (_("Symbol \"%s\" cannot be used for compilation evaluation "
+		   "as it is optimized out."),
+		 SYMBOL_PRINT_NAME (sym));
+
 	case LOC_UNRESOLVED:
 	  /* FIXME: some kind of error here.  */
 	  return;
