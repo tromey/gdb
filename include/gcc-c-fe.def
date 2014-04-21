@@ -52,11 +52,15 @@ GCC_METHOD2 (int /* bool */, bind, gcc_decl /* decl */,
 /* Insert a tagged type into the symbol table.  NAME is the tag name
    of the type and TAGGED_TYPE is the type itself.  TAGGED_TYPE must
    be either a struct, union, or enum type, as these are the only
-   types that have tags.  */
+   types that have tags.  FILENAME and LINE_NUMBER refer to the type's
+   source location.  If this is not known, FILENAME can be NULL and
+   LINE_NUMBER can be 0.  */
 
-GCC_METHOD2 (int /* bool */, tagbind,
+GCC_METHOD4 (int /* bool */, tagbind,
 	     const char */* name */,
-	     gcc_type /* tagged_type */)
+	     gcc_type /* tagged_type */,
+	     const char * /* filename */,
+	     unsigned int /* line_number */)
 
 /* Return the type of a pointer to a given base type.  */
 
@@ -165,12 +169,17 @@ GCC_METHOD2 (gcc_type, build_vector_type,
 	     gcc_type /* element_type */,
 	     int /* num_elements */)
 
-/* Build a constant.  NAME is the constant's name and VALUE is its value.  */
+/* Build a constant.  NAME is the constant's name and VALUE is its
+   value.  FILENAME and LINE_NUMBER refer to the type's source
+   location.  If this is not known, FILENAME can be NULL and
+   LINE_NUMBER can be 0.  */
 
-GCC_METHOD3 (int /* bool */, build_constant,
+GCC_METHOD5 (int /* bool */, build_constant,
 	     gcc_type /* type */,
 	     const char */* name */,
-	     unsigned long /* value */)
+	     unsigned long /* value */,
+	     const char * /* filename */,
+	     unsigned int /* line_number */)
 
 /* Emit an error and return an error type object.  */
 

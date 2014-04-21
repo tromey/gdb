@@ -42,6 +42,8 @@ convert_one_symbol (struct compile_c_instance *context,
 		    int is_global)
 {
   gcc_type sym_type;
+  const char *filename = SYMBOL_SYMTAB (sym)->filename;
+  unsigned short line = SYMBOL_LINE (sym);
 
   if (SYMBOL_CLASS (sym) == LOC_LABEL)
     sym_type = 0;
@@ -53,12 +55,10 @@ convert_one_symbol (struct compile_c_instance *context,
       /* Binding a tag, so we don't need to build a decl.  */
       C_CTX (context)->c_ops->tagbind (C_CTX (context),
 				       SYMBOL_NATURAL_NAME (sym),
-				       sym_type);
+				       sym_type, filename, line);
     }
   else
     {
-      const char *filename = SYMBOL_SYMTAB (sym)->filename;
-      unsigned short line = SYMBOL_LINE (sym);
       gcc_decl decl;
       enum gcc_c_symbol_kind kind;
       CORE_ADDR addr = 0;
@@ -88,7 +88,8 @@ convert_one_symbol (struct compile_c_instance *context,
 	    }
 	  C_CTX (context)->c_ops->build_constant (C_CTX (context), sym_type,
 						  SYMBOL_NATURAL_NAME (sym),
-						  SYMBOL_VALUE (sym));
+						  SYMBOL_VALUE (sym),
+						  filename, line);
 	  return;
 
 	case LOC_CONST_BYTES:	/* FIXME */
