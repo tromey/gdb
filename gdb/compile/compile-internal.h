@@ -18,7 +18,7 @@
 #define GDB_COMPILE_INTERNAL_H
 
 #include "hashtab.h"
-#include "gcc-interface.h"
+#include "gcc-c-interface.h"
 
 struct block;
 

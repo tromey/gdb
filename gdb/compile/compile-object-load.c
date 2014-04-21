@@ -279,8 +279,8 @@ copy_sections (bfd *abfd, asection *sect, void *data)
   do_cleanups (cleanups);
 }
 
-/* Fetch the type of first parameter of GCC_C_FE_WRAPPER_FUNCTION.
-   Return NULL if GCC_C_FE_WRAPPER_FUNCTION has no parameters.
+/* Fetch the type of first parameter of GCC_FE_WRAPPER_FUNCTION.
+   Return NULL if GCC_FE_WRAPPER_FUNCTION has no parameters.
    Throw an error otherwise.  */
 
 static struct type *
@@ -290,17 +290,17 @@ get_regs_type (struct objfile *objfile)
   struct type *func_type, *regsp_type, *regs_type;
 
   func_sym = lookup_global_symbol_from_objfile (objfile,
-						GCC_C_FE_WRAPPER_FUNCTION,
+						GCC_FE_WRAPPER_FUNCTION,
 						VAR_DOMAIN);
   if (func_sym == NULL)
     error (_("Cannot find function \"%s\" in compiled module \"%s\"."),
-	   GCC_C_FE_WRAPPER_FUNCTION, objfile_name (objfile));
+	   GCC_FE_WRAPPER_FUNCTION, objfile_name (objfile));
 
   func_type = SYMBOL_TYPE (func_sym);
   if (TYPE_CODE (func_type) != TYPE_CODE_FUNC)
     error (_("Invalid type code %d of function \"%s\" in compiled "
 	     "module \"%s\"."),
-	   TYPE_CODE (func_type), GCC_C_FE_WRAPPER_FUNCTION,
+	   TYPE_CODE (func_type), GCC_FE_WRAPPER_FUNCTION,
 	   objfile_name (objfile));
 
   /* No register parameter present.  */
@@ -310,21 +310,21 @@ get_regs_type (struct objfile *objfile)
   if (TYPE_NFIELDS (func_type) != 1)
     error (_("Invalid %d parameters of function \"%s\" in compiled "
 	     "module \"%s\"."),
-	   TYPE_NFIELDS (func_type), GCC_C_FE_WRAPPER_FUNCTION,
+	   TYPE_NFIELDS (func_type), GCC_FE_WRAPPER_FUNCTION,
 	   objfile_name (objfile));
 
   regsp_type = check_typedef (TYPE_FIELD_TYPE (func_type, 0));
   if (TYPE_CODE (regsp_type) != TYPE_CODE_PTR)
     error (_("Invalid type code %d of first parameter of function \"%s\" "
 	     "in compiled module \"%s\"."),
-	   TYPE_CODE (regsp_type), GCC_C_FE_WRAPPER_FUNCTION,
+	   TYPE_CODE (regsp_type), GCC_FE_WRAPPER_FUNCTION,
 	   objfile_name (objfile));
 
   regs_type = check_typedef (TYPE_TARGET_TYPE (regsp_type));
   if (TYPE_CODE (regs_type) != TYPE_CODE_STRUCT)
     error (_("Invalid type code %d of dereferenced first parameter "
 	     "of function \"%s\" in compiled module \"%s\"."),
-	   TYPE_CODE (regs_type), GCC_C_FE_WRAPPER_FUNCTION,
+	   TYPE_CODE (regs_type), GCC_FE_WRAPPER_FUNCTION,
 	   objfile_name (objfile));
 
   return regs_type;
@@ -444,10 +444,10 @@ compile_object_load (const char *object_file, const char *source_file)
   objfile = symbol_file_add_from_bfd (abfd, filename, 0, NULL, 0, NULL);
   cleanups_free_objfile = make_cleanup_free_objfile (objfile);
 
-  bmsym = lookup_minimal_symbol_text (GCC_C_FE_WRAPPER_FUNCTION, objfile);
+  bmsym = lookup_minimal_symbol_text (GCC_FE_WRAPPER_FUNCTION, objfile);
   if (bmsym.minsym == NULL || MSYMBOL_TYPE (bmsym.minsym) == mst_file_text)
     error (_("Could not find symbol \"%s\" of compiled module \"%s\"."),
-	   GCC_C_FE_WRAPPER_FUNCTION, filename);
+	   GCC_FE_WRAPPER_FUNCTION, filename);
   func_addr = BMSYMBOL_VALUE_ADDRESS (bmsym);
 
   /* The memory may be later needed

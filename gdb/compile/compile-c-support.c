@@ -89,11 +89,10 @@ c_get_compile_context (void)
       gdb_assert (func != NULL);
     }
 
-  context = (*func) (GCC_C_FE_VERSION);
+  context = (*func) (GCC_FE_VERSION_0, GCC_C_FE_VERSION_0);
   if (context == NULL)
-    error (_("the loaded version of GCC does not support version "
-	     "%d of the API"),
-	   GCC_C_FE_VERSION);
+    error (_("the loaded version of GCC does not support the required version "
+	     "of the API"));
 
   return new_compile_instance (context);
 }
@@ -163,7 +162,7 @@ add_code_header (enum compile_i_scope_types type, struct ui_file *buf)
   {
   case COMPILE_I_SIMPLE_SCOPE:
     fputs_unfiltered ("void "
-		      GCC_C_FE_WRAPPER_FUNCTION
+		      GCC_FE_WRAPPER_FUNCTION
 		      " (struct "
 		      COMPILE_I_SIMPLE_REGISTER_STRUCT_TAG
 		      " *"
