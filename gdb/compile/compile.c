@@ -591,16 +591,16 @@ String quoting is parsed like in shell, for example:\n\
   -mno-align-double \"-I/dir with a space/include\""),
 			  set_compile_args, show_compile_args, &setlist, &showlist);
 
-  // Override flags possibly coming from DW_AT_producer.
+  /* Override flags possibly coming from DW_AT_producer.  */
   compile_args = xstrdup ("-O0 -gdwarf-4"
-  // We use -fPIC to ensure that we can reference properly.  Otherwise
-  // on x86-64 a string constant's address might be truncated when gdb
-  // loads the object; another approach would be -mcmodel=large, but
-  // -fPIC seems more portable across back ends.
+  /* We use -fPIC to ensure that we can reference properly.  Otherwise
+     on x86-64 a string constant's address might be truncated when gdb
+     loads the object; another approach would be -mcmodel=large, but
+     -fPIC seems more portable across back ends.  */
 			 " -fPIC"
-  // We don't want warnings.
+  /* We don't want warnings.  */
 			 " -w"
-  // override CU's possible -fstack-protector-strong.
+  /* Override CU's possible -fstack-protector-strong.  */
 			 " -fno-stack-protector"
   );
   set_compile_args (compile_args, 0, NULL);

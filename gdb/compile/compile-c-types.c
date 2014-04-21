@@ -338,9 +338,11 @@ new_compile_instance (struct gcc_c_context *fe)
 
   result->base.fe = &fe->base;
   result->base.destroy = delete_instance;
-  result->base.gcc_target_options = "-std=gnu11"
-  // Otherwise the .o file may need "_Unwind_Resume" and "__gcc_personality_v0".
-				   " -fno-exceptions";
+  result->base.gcc_target_options = ("-std=gnu11"
+				     /* Otherwise the .o file may need
+					"_Unwind_Resume" and
+					"__gcc_personality_v0".  */
+				     " -fno-exceptions");
 
   result->type_map = htab_create_alloc (10, hash_type_map_instance,
 					eq_type_map_instance,
