@@ -35,7 +35,7 @@
 
 GCC_METHOD7 (gcc_decl, build_decl,
 	     const char */* name */,
-	     int /* enum gcc_c_symbol_kind */ /* sym_kind */,
+	     enum gcc_c_symbol_kind /* sym_kind */,
 	     gcc_type /* sym_type */,
 	     const char */* substitution_name */,
 	     gcc_address /* address */,
@@ -155,7 +155,7 @@ GCC_METHOD2 (gcc_type, build_array_type,
 
 GCC_METHOD2 (gcc_type, build_qualified_type,
 	     gcc_type /* unqualified_type */,
-	     int /* enum gcc_qualifiers */ /* qualifiers */)
+	     enum gcc_qualifiers /* qualifiers */)
 
 /* Build a complex type given its element type.  */
 
