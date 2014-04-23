@@ -142,7 +142,8 @@ extern int c_textual_element_type (struct type *, char);
 
 extern struct compile_instance *c_get_compile_context (void);
 
-extern char *c_compute_program (const char *input,
+extern char *c_compute_program (struct compile_instance *inst,
+				const char *input,
 				enum compile_i_scope_types scope,
 				struct gdbarch *gdbarch,
 				const struct block *expr_block,

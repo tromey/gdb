@@ -536,8 +536,6 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
       struct frame_info *frame = get_selected_frame (NULL);
       struct value *val;
 
-      /* FIXME we ought to issue warnings on demand here, not all the
-	 time.  */
       if (frame == NULL)
 	error (_("Symbol \"%s\" cannot be used because "
 		 "there is no selected frame"),

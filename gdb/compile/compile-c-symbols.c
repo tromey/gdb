@@ -27,6 +27,103 @@
 #include "objfiles.h"
 #include "compile.h"
 #include "value.h"
+#include "exceptions.h"
+
+
+
+/* Object of this type are stored in the compiler's symbol_err_map.  */
+
+struct symbol_error
+{
+  /* The symbol.  */
+
+  const struct symbol *sym;
+
+  /* The error message to emit.  This is malloc'd and owned by the
+     hash table.  */
+
+  char *message;
+};
+
+/* Hash function for struct symbol_error.  */
+
+static hashval_t
+hash_symbol_error (const void *a)
+{
+  const struct symbol_error *se = a;
+
+  return htab_hash_pointer (se->sym);
+}
+
+/* Equality function for struct symbol_error.  */
+
+static int
+eq_symbol_error (const void *a, const void *b)
+{
+  const struct symbol_error *sea = a;
+  const struct symbol_error *seb = b;
+
+  return sea->sym == seb->sym;
+}
+
+/* Deletion function for struct symbol_error.  */
+
+static void
+del_symbol_error (void *a)
+{
+  struct symbol_error *se = a;
+
+  xfree (se->message);
+  xfree (se);
+}
+
+/* Associate SYMBOL with some error text.  */
+
+static void
+insert_symbol_error (htab_t hash, const struct symbol *sym, const char *text)
+{
+  struct symbol_error e;
+  void **slot;
+
+  e.sym = sym;
+  slot = htab_find_slot (hash, &e, INSERT);
+  if (*slot == NULL)
+    {
+      struct symbol_error *e = XNEW (struct symbol_error);
+
+      e->sym = sym;
+      e->message = xstrdup (text);
+      *slot = e;
+    }
+}
+
+/* Emit the error message corresponding to SYM, if one exists, and
+   arrange for it not to be emitted again.  */
+
+static void
+error_symbol_once (struct compile_c_instance *context,
+		   const struct symbol *sym)
+{
+  struct symbol_error search;
+  struct symbol_error *err;
+  char *message;
+
+  if (context->symbol_err_map == NULL)
+    return;
+
+  search.sym = sym;
+  err = htab_find (context->symbol_err_map, &search);
+  if (err == NULL || err->message == NULL)
+    return;
+
+  C_CTX (context)->c_ops->error (C_CTX (context), err->message);
+  message = err->message;
+  err->message = NULL;
+  make_cleanup (xfree, message);
+  error (_("%s"), message);
+}
+
+
 
 /* Compute the name of the pointer representing a local symbol's
    address.  */
@@ -53,6 +150,8 @@ convert_one_symbol (struct compile_c_instance *context,
   gcc_type sym_type;
   const char *filename = SYMBOL_SYMTAB (sym)->filename;
   unsigned short line = SYMBOL_LINE (sym);
+
+  error_symbol_once (context, sym);
 
   if (SYMBOL_CLASS (sym) == LOC_LABEL)
     sym_type = 0;
@@ -450,41 +549,61 @@ symbol_seen (htab_t hashtab, struct symbol *sym)
 /* Generate C code to compute the address of SYM.  */
 
 static void
-generate_c_for_for_one_variable (struct ui_file *stream,
+generate_c_for_for_one_variable (struct compile_c_instance *compiler,
+				 struct ui_file *stream,
 				 struct gdbarch *gdbarch,
 				 unsigned char *registers_used,
 				 CORE_ADDR pc,
 				 struct symbol *sym)
 {
-  if (SYMBOL_COMPUTED_OPS (sym) != NULL)
-    {
-      char *generated_name = symbol_substitution_name (sym);
-      struct cleanup *cleanup = make_cleanup (xfree, generated_name);
+  volatile struct gdb_exception e;
 
-      SYMBOL_COMPUTED_OPS (sym)->generate_c_location (sym, stream, gdbarch,
-						      registers_used,
-						      pc, generated_name);
-      do_cleanups (cleanup);
-      return;
+  TRY_CATCH (e, RETURN_MASK_ERROR)
+    {
+      if (SYMBOL_COMPUTED_OPS (sym) != NULL)
+	{
+	  char *generated_name = symbol_substitution_name (sym);
+	  struct cleanup *cleanup = make_cleanup (xfree, generated_name);
+
+	  SYMBOL_COMPUTED_OPS (sym)->generate_c_location (sym, stream, gdbarch,
+							  registers_used,
+							  pc, generated_name);
+	  do_cleanups (cleanup);
+	}
+      else
+	{
+	  switch (SYMBOL_CLASS (sym))
+	    {
+	    case LOC_REGISTER:
+	    case LOC_ARG:
+	    case LOC_REF_ARG:
+	    case LOC_REGPARM_ADDR:
+	    case LOC_LOCAL:
+	      error (_("local symbol unhandled when generating C code"));
+
+	    case LOC_COMPUTED:
+	      gdb_assert_not_reached (_("LOC_COMPUTED variable "
+					"missing a method"));
+
+	    default:
+	      /* Nothing to do for all other cases, as they don't represent
+		 local variables.  */
+	      break;
+	    }
+	}
     }
 
-  switch (SYMBOL_CLASS (sym))
-    {
-    case LOC_REGISTER:
-    case LOC_ARG:
-    case LOC_REF_ARG:
-    case LOC_REGPARM_ADDR:
-    case LOC_LOCAL:
-      error (_("local symbol unhandled when generating C code"));
+  if (e.reason >= 0)
+    return;
 
-    case LOC_COMPUTED:
-      gdb_assert_not_reached (_("LOC_COMPUTED variable missing a method"));
-
-    default:
-      /* Nothing to do for all other cases, as they don't represent
-	 local variables.  */
-      break;
-    }
+  if (compiler->symbol_err_map == NULL)
+    compiler->symbol_err_map = htab_create_alloc (10,
+						  hash_symbol_error,
+						  eq_symbol_error,
+						  del_symbol_error,
+						  xcalloc,
+						  xfree);
+  insert_symbol_error (compiler->symbol_err_map, sym, e.message);
 }
 
 /* Emit code to compute the address for all the local variables in
@@ -493,7 +612,8 @@ generate_c_for_for_one_variable (struct ui_file *stream,
    register is needed to compute a local variable.  */
 
 unsigned char *
-generate_c_for_variable_locations (struct ui_file *stream,
+generate_c_for_variable_locations (struct compile_c_instance *compiler,
+				   struct ui_file *stream,
 				   struct gdbarch *gdbarch,
 				   const struct block *block,
 				   CORE_ADDR pc)
@@ -529,8 +649,8 @@ generate_c_for_variable_locations (struct ui_file *stream,
 	   sym = block_iterator_next (&iter))
 	{
 	  if (!symbol_seen (symhash, sym))
-	    generate_c_for_for_one_variable (stream, gdbarch, registers_used,
-					     pc, sym);
+	    generate_c_for_for_one_variable (compiler, stream, gdbarch,
+					     registers_used, pc, sym);
 	}
 
       /* If we just finished the outermost block of a function, we're

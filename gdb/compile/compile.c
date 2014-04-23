@@ -415,7 +415,7 @@ compile_to_object (struct command_line *cmd, char *cmd_string,
   else
     error (_("Neither a simple expression, or a multi-line specified."));
 
-  code = current_language->la_compute_program (code, scope,
+  code = current_language->la_compute_program (compiler, code, scope,
 					       get_current_arch (),
 					       expr_block, expr_pc);
   make_cleanup (xfree, code);

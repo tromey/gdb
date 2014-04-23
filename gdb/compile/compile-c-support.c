@@ -290,7 +290,8 @@ generate_register_struct (struct ui_file *stream, struct gdbarch *gdbarch,
    indicates the value of $PC.  */
 
 char *
-c_compute_program (const char *input,
+c_compute_program (struct compile_instance *inst,
+		   const char *input,
 		   enum compile_i_scope_types scope,
 		   struct gdbarch *gdbarch,
 		   const struct block *expr_block,
@@ -300,6 +301,7 @@ c_compute_program (const char *input,
   char *code, *reg_code;
   unsigned char *registers_used;
   struct cleanup *cleanup;
+  struct compile_c_instance *context = (struct compile_c_instance *) inst;
 
   buf = mem_fileopen ();
   cleanup = make_cleanup_ui_file_delete (buf);
@@ -312,7 +314,8 @@ c_compute_program (const char *input,
      stream.  */
   var_stream = mem_fileopen ();
   make_cleanup_ui_file_delete (var_stream);
-  registers_used = generate_c_for_variable_locations (var_stream, gdbarch,
+  registers_used = generate_c_for_variable_locations (context,
+						      var_stream, gdbarch,
 						      expr_block, expr_pc);
   make_cleanup (xfree, registers_used);
 

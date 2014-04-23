@@ -372,7 +372,8 @@ struct language_defn
        This takes the user-supplied text and returns a newly malloc'd
        bit of code to compile.  FIXME - more comment  */
 
-    char *(*la_compute_program) (const char *input,
+    char *(*la_compute_program) (struct compile_instance *inst,
+				 const char *input,
 				 enum compile_i_scope_types type,
 				 struct gdbarch *gdbarch,
 				 const struct block *expr_block,

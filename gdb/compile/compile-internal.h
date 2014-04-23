@@ -56,6 +56,10 @@ struct compile_c_instance
   /* Map from gdb types to gcc types.  */
 
   htab_t type_map;
+
+  /* Map from gdb symbols to gcc error messages to emit.  */
+
+  htab_t symbol_err_map;
 };
 
 #define C_CTX(I) ((struct gcc_c_context *) ((I)->base.fe))
@@ -105,7 +109,8 @@ extern gcc_c_symbol_address_function gcc_symbol_address;
 extern struct compile_instance *new_compile_instance (struct gcc_c_context *fe);
 
 extern unsigned char *generate_c_for_variable_locations
-     (struct ui_file *stream,
+     (struct compile_c_instance *compiler,
+      struct ui_file *stream,
       struct gdbarch *gdbarch,
       const struct block *block,
       CORE_ADDR pc);

@@ -328,6 +328,8 @@ delete_instance (struct compile_instance *c)
 
   context->base.fe->ops->destroy (context->base.fe);
   htab_delete (context->type_map);
+  if (context->symbol_err_map != NULL)
+    htab_delete (context->symbol_err_map);
   xfree (context);
 }
 
