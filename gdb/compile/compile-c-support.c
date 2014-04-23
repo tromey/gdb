@@ -298,7 +298,7 @@ c_compute_program (struct compile_instance *inst,
 		   CORE_ADDR expr_pc)
 {
   struct ui_file *buf, *var_stream;
-  char *code, *reg_code;
+  char *code;
   unsigned char *registers_used;
   struct cleanup *cleanup;
   struct compile_c_instance *context = (struct compile_c_instance *) inst;
@@ -332,10 +332,8 @@ c_compute_program (struct compile_instance *inst,
 
   add_code_header (scope, buf);
 
-  reg_code = ui_file_xstrdup (var_stream, NULL);
-  make_cleanup (xfree, reg_code);
   if (scope == COMPILE_I_SIMPLE_SCOPE)
-    fputs_unfiltered (reg_code, buf);
+    ui_file_put (var_stream, ui_file_write_for_put, buf);
 
   fputs_unfiltered ("#pragma GCC user_expression\n", buf);
 

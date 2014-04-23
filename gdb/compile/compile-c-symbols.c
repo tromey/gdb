@@ -564,10 +564,17 @@ generate_c_for_for_one_variable (struct compile_c_instance *compiler,
 	{
 	  char *generated_name = symbol_substitution_name (sym);
 	  struct cleanup *cleanup = make_cleanup (xfree, generated_name);
+	  /* We need to emit to a temporary buffer in case an error
+	     occurs in the middle.  */
+	  struct ui_file *local_file = mem_fileopen ();
 
+	  make_cleanup_ui_file_delete (local_file);
 	  SYMBOL_COMPUTED_OPS (sym)->generate_c_location (sym, stream, gdbarch,
 							  registers_used,
 							  pc, generated_name);
+	  ui_file_put (local_file, ui_file_write_for_put,
+		       stream);
+
 	  do_cleanups (cleanup);
 	}
       else
