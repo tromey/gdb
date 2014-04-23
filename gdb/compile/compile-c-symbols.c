@@ -268,9 +268,9 @@ gcc_convert_symbol (void *datum,
 		    const char *identifier)
 {
   struct compile_c_instance *context = datum;
-  struct symbol *sym, *global_sym;
-  struct bound_minimal_symbol bmsym;
   domain_enum domain;
+  volatile struct gdb_exception e;
+  int found = 0;
 
   switch (request)
     {
@@ -287,24 +287,35 @@ gcc_convert_symbol (void *datum,
       gdb_assert_not_reached ("unrecognized oracle request");
     }
 
-  sym = lookup_symbol (identifier, context->base.block, domain, NULL);
-  if (sym != NULL)
+  /* We can't allow exceptions to escape out of this callback.  Safest
+     is to simply emit a gcc error.  */
+  TRY_CATCH (e, RETURN_MASK_ERROR)
     {
-      convert_symbol_sym (context, identifier, sym, domain);
-      return;
-    }
+      struct symbol *sym;
 
-  if (domain == VAR_DOMAIN)
-    {
-      bmsym = lookup_minimal_symbol (identifier, NULL, NULL);
-      if (bmsym.minsym != NULL)
+      sym = lookup_symbol (identifier, context->base.block, domain, NULL);
+      if (sym != NULL)
 	{
-	  convert_symbol_bmsym (context, bmsym);
-	  return;
+	  convert_symbol_sym (context, identifier, sym, domain);
+	  found = 1;
+	}
+      else if (domain == VAR_DOMAIN)
+	{
+	  struct bound_minimal_symbol bmsym;
+
+	  bmsym = lookup_minimal_symbol (identifier, NULL, NULL);
+	  if (bmsym.minsym != NULL)
+	    {
+	      convert_symbol_bmsym (context, bmsym);
+	      found = 1;
+	    }
 	}
     }
 
-  if (compile_debug)
+  if (e.reason < 0)
+    C_CTX (context)->c_ops->error (C_CTX (context), e.message);
+
+  if (compile_debug && !found)
     fprintf_unfiltered (gdb_stdout,
 			"gcc_convert_symbol \"%s\": lookup_symbol failed\n",
 			identifier);
@@ -315,36 +326,54 @@ gcc_address
 gcc_symbol_address (void *datum, struct gcc_c_context *gcc_context,
 		    const char *identifier)
 {
-  struct compile_instance *context = datum;
-  struct symbol *sym;
-  struct bound_minimal_symbol msym;
+  struct compile_c_instance *context = datum;
+  volatile struct gdb_exception e;
+  gcc_address result = 0;
+  int found = 0;
 
-  /* We only need global functions here.  */
-  sym = lookup_symbol (identifier, NULL, VAR_DOMAIN, NULL);
-  if (sym != NULL && SYMBOL_CLASS (sym) == LOC_BLOCK)
+  /* We can't allow exceptions to escape out of this callback.  Safest
+     is to simply emit a gcc error.  */
+  TRY_CATCH (e, RETURN_MASK_ERROR)
     {
-      if (compile_debug)
-	fprintf_unfiltered (gdb_stdout,
-			    "gcc_symbol_address \"%s\": full symbol\n",
-			    identifier);
-      return BLOCK_START (SYMBOL_BLOCK_VALUE (sym));
+      struct symbol *sym;
+
+      /* We only need global functions here.  */
+      sym = lookup_symbol (identifier, NULL, VAR_DOMAIN, NULL);
+      if (sym != NULL && SYMBOL_CLASS (sym) == LOC_BLOCK)
+	{
+	  if (compile_debug)
+	    fprintf_unfiltered (gdb_stdout,
+				"gcc_symbol_address \"%s\": full symbol\n",
+				identifier);
+	  result = BLOCK_START (SYMBOL_BLOCK_VALUE (sym));
+	  found = 1;
+	}
+      else
+	{
+	  struct bound_minimal_symbol msym;
+
+	  msym = lookup_bound_minimal_symbol (identifier);
+	  if (msym.minsym != NULL)
+	    {
+	      if (compile_debug)
+		fprintf_unfiltered (gdb_stdout,
+				    "gcc_symbol_address \"%s\": minimal "
+				    "symbol\n",
+				    identifier);
+	      result = BMSYMBOL_VALUE_ADDRESS (msym);
+	      found = 1;
+	    }
+	}
     }
 
-  msym = lookup_bound_minimal_symbol (identifier);
-  if (msym.minsym != NULL)
-    {
-      if (compile_debug)
-	fprintf_unfiltered (gdb_stdout,
-			    "gcc_symbol_address \"%s\": minimal symbol\n",
-			    identifier);
-      return BMSYMBOL_VALUE_ADDRESS (msym);
-    }
+  if (e.reason < 0)
+    C_CTX (context)->c_ops->error (C_CTX (context), e.message);
 
-  if (compile_debug)
+  if (compile_debug && !found)
     fprintf_unfiltered (gdb_stdout,
 			"gcc_symbol_address \"%s\": failed\n",
 			identifier);
-  return 0;
+  return result;
 }
 
 
