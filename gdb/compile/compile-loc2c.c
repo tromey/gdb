@@ -28,6 +28,7 @@
 #include "block.h"
 #include "dwarf2-frame.h"
 #include "gdb_vecs.h"
+#include "value.h"
 
 
 
@@ -46,6 +47,12 @@ struct insn_info
   /* Whether this instruction needs a label.  */
 
   unsigned int label : 1;
+
+  /* Whether this instruction is DW_OP_GNU_push_tls_address.  This is
+     a hack until we can add a feature to glibc to let us properly
+     generate code for TLS.  */
+
+  unsigned int is_tls : 1;
 };
 
 static void
@@ -301,6 +308,10 @@ compute_stack_depth_worker (int start, int *need_tempvar,
 	  ++stack_depth;
 	  break;
 
+	case DW_OP_GNU_push_tls_address:
+	  info[ndx].is_tls = 1;
+	  break;
+
 	case DW_OP_skip:
 	  offset = extract_signed_integer (op_ptr, 2, byte_order);
 	  op_ptr += 2;
@@ -342,7 +353,7 @@ compute_stack_depth_worker (int start, int *need_tempvar,
 
 static int
 compute_stack_depth (enum bfd_endian byte_order, unsigned int addr_size,
-		     int *need_tempvar,
+		     int *need_tempvar, int *is_tls,
 		     const gdb_byte *op_ptr, const gdb_byte *op_end,
 		     int initial_depth,
 		     struct insn_info **info)
@@ -371,9 +382,14 @@ compute_stack_depth (enum bfd_endian byte_order, unsigned int addr_size,
     }
 
   stack_depth = 0;
+  *is_tls = 0;
   for (i = 0; i < op_end - op_ptr; ++i)
-    if ((*info)[i].depth > stack_depth)
-      stack_depth = (*info)[i].depth;
+    {
+      if ((*info)[i].depth > stack_depth)
+	stack_depth = (*info)[i].depth;
+      if ((*info)[i].is_tls)
+	*is_tls = 1;
+    }
 
   do_cleanups (cleanup);
   discard_cleanups (outer_cleanup);
@@ -472,10 +488,11 @@ pushf_register (int indent, struct ui_file *stream,
   do_cleanups (cleanups);
 }
 
+
 static void
 do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 			    const char *result_name,
-			    CORE_ADDR pc,
+			    struct symbol *sym, CORE_ADDR pc,
 			    struct gdbarch *arch,
 			    unsigned char *registers_used,
 			    unsigned int addr_size,
@@ -490,8 +507,10 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
   enum bfd_endian byte_order = gdbarch_byte_order (arch);
   const gdb_byte * const base = op_ptr;
   int need_tempvar = 0;
+  int is_tls = 0;
   struct cleanup *cleanup;
   struct insn_info *info;
+  int stack_depth;
 
   ++scope;
 
@@ -499,11 +518,47 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
   fprintfi_filtered (indent, stream, "{\n");
   indent += 2;
 
-  fprintfi_filtered (indent, stream, GCC_UINTPTR " __gdb_stack[%d];\n",
-		     compute_stack_depth (byte_order, addr_size, &need_tempvar,
-					  op_ptr, op_end, initial != NULL,
-					  &info));
+  stack_depth = compute_stack_depth (byte_order, addr_size,
+				     &need_tempvar, &is_tls,
+				     op_ptr, op_end, initial != NULL,
+				     &info);
   cleanup = make_cleanup (xfree, info);
+
+  /* This is a hack until we can add a feature to glibc to let us
+     properly generate code for TLS.  You might think we could emit
+     the address in the ordinary course of translating
+     DW_OP_GNU_push_tls_address, but since the operand appears on the
+     stack, it is relatively hard to find, and the idea of calling
+     target_translate_tls_address with OFFSET==0 and then adding the
+     offset by hand seemed too hackish.  */
+  if (is_tls)
+    {
+      struct frame_info *frame = get_selected_frame (NULL);
+      struct value *val;
+
+      /* FIXME we ought to issue warnings on demand here, not all the
+	 time.  */
+      if (frame == NULL)
+	error (_("Symbol \"%s\" cannot be used because "
+		 "there is no selected frame"),
+	       SYMBOL_PRINT_NAME (sym));
+
+      val = read_var_value (sym, frame);
+      if (VALUE_LVAL (val) != lval_memory)
+	error (_("Symbol \"%s\" cannot be used for compilation evaluation "
+		 "as its address has not been found."),
+	       SYMBOL_PRINT_NAME (sym));
+
+      fprintfi_filtered (indent, stream, "%s = %s;\n",
+			 result_name,
+			 core_addr_to_string (value_address (val)));
+      fprintfi_filtered (indent - 2, stream, "}\n");
+      do_cleanups (cleanup);
+      return;
+    }
+
+  fprintfi_filtered (indent, stream, GCC_UINTPTR " __gdb_stack[%d];\n",
+		     stack_depth);
 
   if (need_tempvar)
     fprintfi_filtered (indent, stream, GCC_UINTPTR " __gdb_tmp;\n");
@@ -750,7 +805,8 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 
 	    do_compile_dwarf_expr_to_c (indent, stream,
 					fb_name,
-					pc, arch, registers_used, addr_size,
+					sym, pc,
+					arch, registers_used, addr_size,
 					datastart, datastart + datalen,
 					NULL, per_cu);
 
@@ -930,7 +986,7 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 
 		do_compile_dwarf_expr_to_c (indent, stream,
 					    cfa_name,
-					    pc, arch, registers_used,
+					    sym, pc, arch, registers_used,
 					    addr_size,
 					    cfa_start, cfa_end,
 					    &text_offset, per_cu);
@@ -975,13 +1031,13 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 
 void
 compile_dwarf_expr_to_c (struct ui_file *stream, const char *result_name,
-			 CORE_ADDR pc,
+			 struct symbol *sym, CORE_ADDR pc,
 			 struct gdbarch *arch, unsigned char *registers_used,
 			 unsigned int addr_size,
 			 const gdb_byte *op_ptr, const gdb_byte *op_end,
 			 struct dwarf2_per_cu_data *per_cu)
 {
-  do_compile_dwarf_expr_to_c (2, stream, result_name, pc,
+  do_compile_dwarf_expr_to_c (2, stream, result_name, sym, pc,
 			      arch, registers_used, addr_size, op_ptr, op_end,
 			      NULL, per_cu);
 }

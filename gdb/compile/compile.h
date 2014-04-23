@@ -25,8 +25,10 @@ extern void _initialize_compile (void);
 struct ui_file;
 struct gdbarch;
 struct dwarf2_per_cu_data;
+struct symbol;
 extern void compile_dwarf_expr_to_c (struct ui_file *stream,
 				     const char *result_name,
+				     struct symbol *sym,
 				     CORE_ADDR pc,
 				     struct gdbarch *arch,
 				     unsigned char *registers_used,

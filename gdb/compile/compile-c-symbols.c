@@ -37,10 +37,18 @@ symbol_substitution_name (struct symbol *sym)
   return concat ("__", SYMBOL_NATURAL_NAME (sym), "_ptr", (char *) NULL);
 }
 
+/* Convert a given symbol, SYM, to the compiler's representation.
+   CONTEXT is how the compiler instance.  IS_GLOBAL is true if the
+   symbol came from the global scope.  IS_LOCAL is true if the symbol
+   came from a local scope.  (Note that the two are not strictly
+   inverses because the symbol might have come from the static
+   scope.)  */
+
 static void
 convert_one_symbol (struct compile_c_instance *context,
 		    struct symbol *sym,
-		    int is_global)
+		    int is_global,
+		    int is_local)
 {
   gcc_type sym_type;
   const char *filename = SYMBOL_SYMTAB (sym)->filename;
@@ -111,11 +119,26 @@ convert_one_symbol (struct compile_c_instance *context,
 		   "as it is optimized out."),
 		 SYMBOL_PRINT_NAME (sym));
 
+	case LOC_COMPUTED:
+	  if (is_local)
+	    goto substitution;
+	  /* FALLTHROUGH */
 	case LOC_UNRESOLVED:
 	  {
 	    // FIXME: Why does GCC crash using kind && symbol_name as below?
-	    struct value *val = read_var_value (sym, NULL);
+	    struct value *val;
+	    struct frame_info *frame = NULL;
 
+	    if (symbol_read_needs_frame (sym))
+	      {	      
+		frame = get_selected_frame (NULL);
+		if (frame == NULL)
+		  error (_("Symbol \"%s\" cannot be used because "
+			   "there is no selected frame"),
+			 SYMBOL_PRINT_NAME (sym));
+	      }
+
+	    val = read_var_value (sym, frame);
 	    if (VALUE_LVAL (val) != lval_memory)
 	      error (_("Symbol \"%s\" cannot be used for compilation evaluation "
 		       "as its address has not been found."),
@@ -126,12 +149,13 @@ convert_one_symbol (struct compile_c_instance *context,
 	  }
 	  break;
 
+
 	case LOC_REGISTER:
 	case LOC_ARG:
 	case LOC_REF_ARG:
 	case LOC_REGPARM_ADDR:
 	case LOC_LOCAL:
-	case LOC_COMPUTED:
+	substitution:
 	  kind = GCC_C_SYMBOL_VARIABLE;
 	  symbol_name = symbol_substitution_name (sym);
 	  break;
@@ -165,6 +189,7 @@ convert_symbol_sym (struct compile_c_instance *context, const char *identifier,
 		    struct symbol *sym, domain_enum domain)
 {
   const struct block *static_block, *found_block;
+  int is_local_symbol;
 
   found_block = block_found;
 
@@ -182,7 +207,8 @@ convert_symbol_sym (struct compile_c_instance *context, const char *identifier,
 
   static_block = block_static_block (found_block);
   /* STATIC_BLOCK is NULL if FOUND_BLOCK is the global block.  */
-  if (found_block != static_block && static_block != NULL)
+  is_local_symbol = (found_block != static_block && static_block != NULL);
+  if (is_local_symbol)
     {
       struct symbol *global_sym;
 
@@ -195,7 +221,7 @@ convert_symbol_sym (struct compile_c_instance *context, const char *identifier,
 	    fprintf_unfiltered (gdb_stdout,
 				"gcc_convert_symbol \"%s\": global symbol\n",
 				identifier);
-	  convert_one_symbol (context, global_sym, 1);
+	  convert_one_symbol (context, global_sym, 1, 0);
 	}
     }
 
@@ -203,7 +229,7 @@ convert_symbol_sym (struct compile_c_instance *context, const char *identifier,
     fprintf_unfiltered (gdb_stdout,
 			"gcc_convert_symbol \"%s\": local symbol\n",
 			identifier);
-  convert_one_symbol (context, sym, 0);
+  convert_one_symbol (context, sym, 0, is_local_symbol);
 }
 
 static void

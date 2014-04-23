@@ -4097,7 +4097,7 @@ locexpr_generate_c_location (struct symbol *sym, struct ui_file *stream,
   unsigned int addr_size = dwarf2_per_cu_addr_size (dlbaton->per_cu);
 
   compile_dwarf_expr_to_c (stream, result_name,
-			   pc, gdbarch, registers_used, addr_size,
+			   sym, pc, gdbarch, registers_used, addr_size,
 			   dlbaton->data, dlbaton->data + dlbaton->size,
 			   dlbaton->per_cu);
 }
@@ -4298,7 +4298,7 @@ loclist_generate_c_location (struct symbol *sym, struct ui_file *stream,
     return;
 
   compile_dwarf_expr_to_c (stream, result_name,
-			   pc, gdbarch, registers_used, addr_size,
+			   sym, pc, gdbarch, registers_used, addr_size,
 			   data, data + size,
 			   dlbaton->per_cu);
 }
