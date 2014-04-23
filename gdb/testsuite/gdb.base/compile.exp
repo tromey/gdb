@@ -82,6 +82,9 @@ gdb_test "p globalvar" " = 1" "check size of longer"
 gdb_test_no_output "compile code globalvar = MINUS_1"
 gdb_test "p globalvar" " = -1" "check MINUS_1"
 
+gdb_test_no_output "compile code globalvar = static_local"
+gdb_test "p globalvar" " = 77000" "check static_local"
+
 gdb_test_no_output "compile code static int staticvar = 5; intptr = &staticvar" \
     "keep jit in memory"
 gdb_test "p *intptr" " = 5" "expect 5"

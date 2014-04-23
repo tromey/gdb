@@ -105,6 +105,9 @@ main (void)
   int bound = 3;
   int unresolved = 10;
 
+  static int static_local = 77000;
+
+
   {
     int another_local = 7;
     int shadowed = 52;
