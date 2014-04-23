@@ -122,6 +122,11 @@ convert_one_symbol (struct compile_c_instance *context,
 	case LOC_COMPUTED:
 	  if (is_local)
 	    goto substitution;
+	  /* Probably TLS here.  */
+	  warning (_("Symbol \"%s\" is thread-local and currently can only "
+		     "be referenced from the current thread in "
+		     "compiled code."),
+		   SYMBOL_PRINT_NAME (sym));
 	  /* FALLTHROUGH */
 	case LOC_UNRESOLVED:
 	  {

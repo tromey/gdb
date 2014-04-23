@@ -26,9 +26,12 @@ if ![runto_main] then {
    return 0
 }
 
-gdb_test_no_output "compile code local_scope = 1"
+gdb_test "compile code local_scope = 1" \
+    "warning: .* compiled code."
 gdb_test "print local_scope" " = 1"
-gdb_test_no_output "compile code static_scope = 2"
+gdb_test "compile code static_scope = 2" \
+    "warning: .* compiled code."
 gdb_test "print static_scope" " = 2"
-gdb_test_no_output "compile code global_scope = 3"
+gdb_test "compile code global_scope = 3" \
+    "warning: .* compiled code."
 gdb_test "print global_scope" " = 3"

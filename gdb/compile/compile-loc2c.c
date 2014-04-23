@@ -549,6 +549,11 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 		 "as its address has not been found."),
 	       SYMBOL_PRINT_NAME (sym));
 
+      warning (_("Symbol \"%s\" is thread-local and currently can only "
+		 "be referenced from the current thread in "
+		 "compiled code."),
+	       SYMBOL_PRINT_NAME (sym));
+
       fprintfi_filtered (indent, stream, "%s = %s;\n",
 			 result_name,
 			 core_addr_to_string (value_address (val)));
