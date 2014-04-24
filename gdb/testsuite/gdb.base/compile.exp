@@ -192,6 +192,18 @@ gdb_test "print unresolved" " = 20"
 gdb_test "compile code globalvar = unresolved;"
 gdb_test "print globalvar" " = 20" "print unresolved value"
 
+# Test shadowing with global and static variables.
+
+gdb_test_no_output "compile code globalshadow += 1;"
+gdb_test "print globalshadow" " = 101"
+gdb_test_no_output "compile code extern int globalshadow; globalshadow += 5;"
+gdb_test "print 'compile.c'::globalshadow" " = 15"
+gdb_test "print globalshadow" " = 101" "print globalshadow second time"
+gdb_test_no_output "compile code staticshadow += 2;"
+gdb_test "print staticshadow" " = 202"
+# "extern int staticshadow;" cannot access static variable.
+
+
 #
 # Test the case where the registers structure would not normally have
 # any fields.
