@@ -179,7 +179,7 @@ get_compile_file_tempdir (void)
 #undef TEMPLATE
   tempdir_name = mkdtemp (tname);
   if (tempdir_name == NULL)
-    perror_with_name (_("could not make temporary directory"));
+    perror_with_name (_("Could not make temporary directory"));
 
   tempdir_name = xstrdup (tempdir_name);
   make_final_cleanup (do_rmdir, tempdir_name);
@@ -359,11 +359,10 @@ print_callback (void *ignore, const char *message)
   fprintf_filtered (gdb_stderr, "%s", message);
 }
 
-/* Process the compilation request.  This process sets up the context,
-   args, text and calls fork to compile the result.  On success it
-   returns the object file name and *SOURCE_FILEP is set to source file
-   name.  On an error condition, error () is called.  The caller is
-   responsible for freeing both strings.  */
+/* Process the compilation request.  On success it returns the object
+   file name and *SOURCE_FILEP is set to source file name.  On an
+   error condition, error () is called.  The caller is responsible for
+   freeing both strings.  */
 
 static char *
 compile_to_object (struct command_line *cmd, char *cmd_string,
@@ -390,7 +389,7 @@ compile_to_object (struct command_line *cmd, char *cmd_string,
 
   /* Set up instance and context for the compiler.  */
   if (current_language->la_get_compile_instance == NULL)
-    error (_("no compiler support for this language"));
+    error (_("No compiler support for this language."));
   compiler = current_language->la_get_compile_instance ();
   cleanup = make_cleanup (cleanup_compile_instance, compiler);
 
@@ -447,10 +446,10 @@ compile_to_object (struct command_line *cmd, char *cmd_string,
 
   src = gdb_fopen_cloexec (source_file, "w");
   if (src == NULL)
-    perror_with_name ("could not open source file for writing");
+    perror_with_name (_("Could not open source file for writing"));
   make_cleanup (cleanup_unlink_file, source_file);
   if (fputs (code, src) == EOF)
-    perror_with_name ("could not write source file");
+    perror_with_name (_("Could not write to source file"));
   fclose (src);
 
   if (compile_debug)
