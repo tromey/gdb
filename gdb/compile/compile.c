@@ -42,6 +42,7 @@
 #include "compile-object-run.h"
 #include "gdb_wait.h"
 #include "filestuff.h"
+#include "target.h"
 
 
 
@@ -380,6 +381,10 @@ compile_to_object (struct command_line *cmd, char *cmd_string,
   int ok;
   FILE *src;
 
+  if (!target_has_execution)
+    error (_("The program must be running for the compile command to "\
+	     "work."));
+
   expr_block = get_expr_block_and_pc (&trash_pc);
   expr_pc = get_frame_address_in_block (get_selected_frame (NULL));
 
@@ -547,26 +552,27 @@ Command to compile ad-hoc code and inject it into the inferior."),
 
   add_cmd ("code", class_obscure, compile_code_command,
 	   _("\
-Evaluate a block of C code.\n\
+Evaluate a block of code.\n\
 \n\
 Usage: code [-r|-raw] [CODE]\n\
 -r|-raw: Suppress automatic 'void _gdb_expr () { CODE }' wrapping.\n\
 the compiler.\n\
 \n\
-As an alternative you can provide your source code directly\n\
-to the command.  For example,\n\
+The code may be specified as a simple one line expression, e.g:\n\
 \n\
     compile code printf(\"Hello world\\n\");\n\
 \n\
-If no argument is given (I.E., \"code\" is typed with\n\
-nothing after it),  an interactive prompt will be shown\n\
-allowing you to enter multiple lines of source code.  Type a\n\
-line containing \"end\" to indicate the end of the source code."),
+Alternatively, you can type the source code interactively.\n\
+You can invoke this mode when no argument is given (i.e.,\n\
+\"compile code\" is typed with nothing after it).  An\n\
+interactive prompt will be shown allowing you to enter multiple\n\
+lines of source code.  Type a line containing \"end\" to indicate\n\
+the end of the source code."),
 	   &compile_command_list);
 
   c = add_cmd ("file", class_obscure, compile_file_command,
 	       _("\
-Evaluate a file containing C code.\n\
+Evaluate a file containing code.\n\
 \n\
 Usage: file [-r|-raw] [filename]\n\
 -r|-raw: Suppress automatic 'void _gdb_expr () { CODE }' wrapping.\n\
