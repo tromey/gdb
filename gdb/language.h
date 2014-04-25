@@ -374,7 +374,6 @@ struct language_defn
 
     char *(*la_compute_program) (struct compile_instance *inst,
 				 const char *input,
-				 enum compile_i_scope_types type,
 				 struct gdbarch *gdbarch,
 				 const struct block *expr_block,
 				 CORE_ADDR expr_pc);

@@ -388,6 +388,7 @@ compile_to_object (struct command_line *cmd, char *cmd_string,
 
   compiler->fe->ops->set_print_callback (compiler->fe, print_callback, NULL);
 
+  compiler->scope = scope;
   compiler->block = expr_block;
 
   /* From the provided expression, build a scope to pass to the
@@ -412,7 +413,7 @@ compile_to_object (struct command_line *cmd, char *cmd_string,
   else
     error (_("Neither a simple expression, or a multi-line specified."));
 
-  code = current_language->la_compute_program (compiler, code, scope,
+  code = current_language->la_compute_program (compiler, code,
 					       get_current_arch (),
 					       expr_block, expr_pc);
   make_cleanup (xfree, code);

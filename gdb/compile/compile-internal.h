@@ -31,6 +31,10 @@ struct compile_instance
 
   struct gcc_base_context *fe;
 
+  /* The "scope" of this compilation.  */
+
+  enum compile_i_scope_types scope;
+
   /* The block in which an expression is being parsed.  */
 
   const struct block *block;

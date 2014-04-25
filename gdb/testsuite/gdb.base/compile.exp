@@ -206,6 +206,11 @@ gdb_test_no_output "compile code staticshadow += 2;"
 gdb_test "print staticshadow" " = 202"
 # "extern int staticshadow;" cannot access static variable.
 
+# Raw code cannot refer to locals.
+gdb_test_no_output \
+    "compile code -r void _gdb_expr(void) { globalshadow = 77000; }"
+gdb_test "print 'compile.c'::globalshadow" " = 77000" \
+    "check globalshadow with -r"
 
 #
 # Test the case where the registers structure would not normally have

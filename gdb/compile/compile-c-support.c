@@ -292,14 +292,12 @@ generate_register_struct (struct ui_file *stream, struct gdbarch *gdbarch,
 char *
 c_compute_program (struct compile_instance *inst,
 		   const char *input,
-		   enum compile_i_scope_types scope,
 		   struct gdbarch *gdbarch,
 		   const struct block *expr_block,
 		   CORE_ADDR expr_pc)
 {
-  struct ui_file *buf, *var_stream;
+  struct ui_file *buf, *var_stream = NULL;
   char *code;
-  unsigned char *registers_used;
   struct cleanup *cleanup;
   struct compile_c_instance *context = (struct compile_c_instance *) inst;
 
@@ -308,36 +306,45 @@ c_compute_program (struct compile_instance *inst,
 
   write_macro_definitions (expr_block, expr_pc, buf);
 
-  /* Generate the code to compute variable locations, but do it before
-     generating the function header, so we can define the register
-     struct before the function body.  This requires a temporary
-     stream.  */
-  var_stream = mem_fileopen ();
-  make_cleanup_ui_file_delete (var_stream);
-  registers_used = generate_c_for_variable_locations (context,
-						      var_stream, gdbarch,
-						      expr_block, expr_pc);
-  make_cleanup (xfree, registers_used);
+  /* Do not generate local variable information for "raw"
+     compilations.  In this case we aren't emitting our own function
+     and the user's code may only refer to globals.  */
+  if (inst->scope != COMPILE_I_RAW_SCOPE)
+    {
+      unsigned char *registers_used;
 
-  generate_register_struct (buf, gdbarch, registers_used);
+      /* Generate the code to compute variable locations, but do it
+	 before generating the function header, so we can define the
+	 register struct before the function body.  This requires a
+	 temporary stream.  */
+      var_stream = mem_fileopen ();
+      make_cleanup_ui_file_delete (var_stream);
+      registers_used = generate_c_for_variable_locations (context,
+							  var_stream, gdbarch,
+							  expr_block, expr_pc);
+      make_cleanup (xfree, registers_used);
 
-  fputs_unfiltered ("typedef unsigned int"
-		    " __attribute__ ((__mode__(__pointer__)))"
-		    " __gdb_uintptr;\n",
-		    buf);
-  fputs_unfiltered ("typedef int"
-		    " __attribute__ ((__mode__(__pointer__)))"
-		    " __gdb_intptr;\n",
-		    buf);
+      generate_register_struct (buf, gdbarch, registers_used);
 
-  add_code_header (scope, buf);
+      fputs_unfiltered ("typedef unsigned int"
+			" __attribute__ ((__mode__(__pointer__)))"
+			" __gdb_uintptr;\n",
+			buf);
+      fputs_unfiltered ("typedef int"
+			" __attribute__ ((__mode__(__pointer__)))"
+			" __gdb_intptr;\n",
+			buf);
+    }
 
-  if (scope == COMPILE_I_SIMPLE_SCOPE)
+  add_code_header (inst->scope, buf);
+
+  if (inst->scope == COMPILE_I_SIMPLE_SCOPE)
     ui_file_put (var_stream, ui_file_write_for_put, buf);
 
   fputs_unfiltered ("#pragma GCC user_expression\n", buf);
 
-  /* For larger user expressions the automatic semicolons may be confusing.  */
+  /* For larger user expressions the automatic semicolons may be
+     confusing.  */
   if (strchr (input, '\n') == NULL)
     fputs_unfiltered ("#pragma GCC trailing_semicolon\n", buf);
 
@@ -345,17 +352,17 @@ c_compute_program (struct compile_instance *inst,
      works properly.  Otherwise gcc thinks that the "extern"
      declaration is in the same scope as the declaration provided by
      gdb.  */
-  if (scope != COMPILE_I_RAW_SCOPE)
+  if (inst->scope != COMPILE_I_RAW_SCOPE)
     fputs_unfiltered ("{\n", buf);
 
   fputs_unfiltered ("#line 1 \"gdb command line\"\n", buf);
   fputs_unfiltered (input, buf);
   fputs_unfiltered ("\n", buf);
 
-  if (scope != COMPILE_I_RAW_SCOPE)
+  if (inst->scope != COMPILE_I_RAW_SCOPE)
     fputs_unfiltered ("}\n", buf);
 
-  add_code_footer (scope, buf);
+  add_code_footer (inst->scope, buf);
   code = ui_file_xstrdup (buf, NULL);
   do_cleanups (cleanup);
   return code;

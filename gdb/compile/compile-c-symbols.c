@@ -275,14 +275,19 @@ convert_one_symbol (struct compile_c_instance *context,
 
 	}
 
-      decl = C_CTX (context)->c_ops->build_decl (C_CTX (context),
-						 SYMBOL_NATURAL_NAME (sym),
-						 kind,
-						 sym_type,
-						 symbol_name, addr,
-						 filename, line);
+      /* Don't emit local variable decls for a raw expression.  */
+      if (context->base.scope != COMPILE_I_RAW_SCOPE
+	  || symbol_name == NULL)
+	{
+	  decl = C_CTX (context)->c_ops->build_decl (C_CTX (context),
+						     SYMBOL_NATURAL_NAME (sym),
+						     kind,
+						     sym_type,
+						     symbol_name, addr,
+						     filename, line);
 
-      C_CTX (context)->c_ops->bind (C_CTX (context), decl, is_global);
+	  C_CTX (context)->c_ops->bind (C_CTX (context), decl, is_global);
+	}
 
       xfree (symbol_name);
     }
