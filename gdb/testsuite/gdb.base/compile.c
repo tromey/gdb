@@ -98,6 +98,7 @@ no_args_or_locals (void)
 int *intptr;
 int globalshadow = 10;
 static int staticshadow = 20;
+int externed = 7;
 
 int
 main (void)
@@ -108,6 +109,7 @@ main (void)
   int unresolved = 10;
   int globalshadow = 100;
   int staticshadow = 200;
+  int externed = 9;
 
   static int static_local = 77000;
 
@@ -115,6 +117,7 @@ main (void)
     int another_local = 7;
     int shadowed = 52;
     extern int unresolved;
+    extern int externed;
 
     int vla[bound];
 

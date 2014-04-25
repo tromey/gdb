@@ -131,6 +131,9 @@ gdb_test_no_output "compile code localvar = shadowed" \
     "test shadowing"
 gdb_test "p localvar" " = 52" "expect 52"
 
+gdb_test_no_output "compile code localvar = externed"
+gdb_test "p localvar" " = 7" "test extern in inner scope"
+
 # FIXME: these don't work yet.  We need the upstream VLA patches
 # first, then we need to adapt the translator to cope.
 # gdb_test_no_output "compile code vla\[2\] = 7"

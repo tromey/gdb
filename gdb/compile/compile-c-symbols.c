@@ -317,9 +317,10 @@ convert_symbol_sym (struct compile_c_instance *context, const char *identifier,
       struct symbol *global_sym;
 
       global_sym = lookup_symbol (identifier, NULL, domain, NULL);
-      /* FIXME: should we exclude the static block here?  Must look
-	 up.  */
-      if (global_sym != NULL)
+      /* If the outer symbol is in the static block, we ignore it, as
+	 it cannot be referenced.  */
+      if (global_sym != NULL
+	  && block_found != block_static_block (block_found))
 	{
 	  if (compile_debug)
 	    fprintf_unfiltered (gdb_stdout,

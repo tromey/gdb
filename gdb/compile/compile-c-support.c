@@ -341,9 +341,19 @@ c_compute_program (struct compile_instance *inst,
   if (strchr (input, '\n') == NULL)
     fputs_unfiltered ("#pragma GCC trailing_semicolon\n", buf);
 
+  /* The user expression has to be in its own scope, so that "extern"
+     works properly.  Otherwise gcc thinks that the "extern"
+     declaration is in the same scope as the declaration provided by
+     gdb.  */
+  if (scope != COMPILE_I_RAW_SCOPE)
+    fputs_unfiltered ("{\n", buf);
+
   fputs_unfiltered ("#line 1 \"gdb command line\"\n", buf);
   fputs_unfiltered (input, buf);
   fputs_unfiltered ("\n", buf);
+
+  if (scope != COMPILE_I_RAW_SCOPE)
+    fputs_unfiltered ("}\n", buf);
 
   add_code_footer (scope, buf);
   code = ui_file_xstrdup (buf, NULL);
