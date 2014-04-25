@@ -203,7 +203,7 @@ add_code_footer (enum compile_i_scope_types type, struct ui_file *buf)
 
 static void
 generate_register_struct (struct ui_file *stream, struct gdbarch *gdbarch,
-			  unsigned char *registers_used)
+			  const unsigned char *registers_used)
 {
   int i;
   int seen = 0;
