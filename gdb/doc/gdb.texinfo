@@ -161,7 +161,7 @@ software in general.  We will miss him.
 * Annotations::                 @value{GDBN}'s annotation interface.
 * JIT Interface::               Using the JIT debugging interface.
 * In-Process Agent::            In-Process Agent
-
+* Compiling and Injecting Code:: Compiling and injecting code in a @value{GDBN} session.
 * GDB Bugs::                    Reporting bugs in @value{GDBN}
 
 @ifset SYSTEM_READLINE
@@ -32167,6 +32167,200 @@ for an error
 @end table
 @item unprobe_marker_at:@var{address}
 Asks in-process agent to unprobe the marker at @var{address}.
+@end table
+
+@node Compiling and Injecting Code
+@chapter Compiling and injecting code in a @value{GDBN} session.
+@cindex compiling
+@cindex code injection
+
+@value{GDBN} supports on-demand compilation and injection of object code
+into the inferior if a suitable compiler is installed.  Currently,
+``@value{GCC}--4.x.x'' is the only supported compiler.  Compilation and
+injection is implemented with the following commands.
+
+@table @code
+@kindex compile code
+@item compile code @var{source}
+@itemx compile code -@var{raw} @var{source}
+Compile @var{source} in the language currently set in @value{GDBN}
+(@pxref{Languages}).  If compilation and injection is not supported in
+the current language specified in @value{GDBN}, an error message will be
+printed and the command will exit.  If @var{source} compiles
+successfully, @value{GDBN} will load the object file, and execute it
+within the context of the currently selected inferior.
+
+The command allows you to specify source code in two ways.  A simple
+single line expression:
+
+@smallexample
+compile code printf ("hello world\n");
+@end smallexample
+
+Alternatively you can enter source code as a multi-line expression.  To
+enter this mode type @samp{compile code} with nothing following the
+command.  When you have completed typing, write a line containing a
+single @samp{end} on its own line.
+
+@smallexample
+compile code
+>printf ("hello\n");
+>printf ("world\n");
+>end
+@end smallexample
+
+Specifying @samp{-@var{raw}}, prohibits @value{GDBN} from wrapping the
+provided @var{source} in a callable scope.  In this case, you must
+specify the entry point of the code by defining a function named
+@code{_gdb_expr_}.
+
+@kindex compile file
+@item compile file @var{filename}
+@itemx compile file -@var{raw} @var{filename}
+Load the source code from  the file specified by @var{filename},
+and compile it in the language currently set in @value{GDBN}
+(@pxref{Languages}).  If compilation and injection is not supported in
+the current language specified in @value{GDBN}, an error message will be
+printed and the command will exit.  If @var{filename} compiles
+successfully, @value{GDBN} will load the object file, and execute it
+within the context of the currently selected inferior.  Example:
+
+@smallexample
+compile file /home/user/example.c
+@end smallexample
+
+Specifying @samp{-@var{raw}}, prohibits @value{GDBN} from wrapping the
+provided source code specified in @var{filename} in a callable scope.
+In this case, you must specify the entry point of the code by defining a
+function named @code{_gdb_expr_}.
+@end table
+
+There are a few caveats to keep in mind when using the compile command.
+As the caveats are different per language, the table below highlights
+language specific issues.
+
+@table @code
+@item C Code example and issues
+When the language in @value{GDBN} is set to @samp{C}, the compiler will
+attempt to compile the source code specified with a @samp{C} compiler.
+The source code provided to the @samp{compile} command will have much
+the same access to variables and types as it normally would if it were
+part of the program currently being debugged in @value{GDBN}.
+
+Below is a sample program that forms the basis of the examples that
+follow.  This program has been compiled and loaded into @value{GDBN},
+much like any other normal debugging session.
+
+@smallexample
+void function1 (void)
+@{
+   int i = 42;
+   printf ("function 1\n");
+@}
+
+void function2 (void)
+@{
+   int j = 12;
+   function1 ();
+@}
+
+int main(void)
+@{
+   int k = 6;
+   int *p;
+
+   function2 ();
+   return 0;
+@}
+@end smallexample
+
+
+For this example, we will presume that the program is stopped at
+@samp{main} and the @value{GDBN} prompt is awaiting input from the user.
+
+As it is stopped in the @samp{main} function, source code specified in a
+@samp{compile} command would have access to the variable @var{k}.  There
+is one exception to this rule: debug information must be available to
+@value{GDBN}.  If the example above was compiled without debug
+information, you can still use the @samp{compile} command, but you will
+not have access to variables and types specified in the program.  This
+example has been compiled with debug information enabled, so the
+@samp{compile} command will have access to variables and types.
+
+The source code specified in a @samp{compile} command could set the
+value of the @var{k}, read it, and do anything that a normal @samp{C}
+program could.  Changes to variables defined in the program are
+persistent, so in the following example:
+
+@smallexample
+compile code k = 3;
+@end smallexample
+
+The variable @var{k} is now 3.  It will remain that value until
+something else in the example program changes it, or another
+@samp{compile} command changes it.
+
+In the above example, the variables @var{j} and @var{k} are not
+accessible to the source code specified in the @samp{compile} command.
+Normal scoping rules apply to the command, as they would in any other
+@samp{C} program.  If you were to do the following at the same point:
+
+@smallexample
+compile code j = 3;
+@end smallexample
+
+@value{GDBN} would print the error from the compiler. The scoping rules
+of the compile command are as the would be in any other scenario; the
+compiler would note that you cannot access @var{j} at this point, as it
+is not in-scope.
+
+You can create variables and types with the @samp{compile} command as
+part of your source code.  Variables and types that are created as part
+of the @samp{compile} command are not persistent, they only exist as
+long as the injected object code exists.  This example is valid:
+
+@smallexample
+compile code int ff = 5; printf ("ff is %d\n", ff);
+@end smallexample
+
+However, if you were to type the following into @value{GDBN} after that
+command is completed:
+
+@smallexample
+compile code printf ("ff is %d\n'', ff);
+@end smallexample
+
+A compiler error would be raised.  The variable no longer exists as the
+object code from the previous command has exited.  Caution is therefore
+needed when assigning variables belonging to the program with the
+@samp{compile} command.  This example is valid:
+
+@smallexample
+compile code int ff = 5; k = ff;
+@end smallexample
+
+The @var{k} variable is assigned to the value of @var{ff}.  However, if
+the source code changed the address of a pointer to a variable defined
+in the @samp{compile} command, that pointer would point to an invalid
+address when the command exits.  This example would likely cause issues
+with your debugged program:
+
+@smallexample
+compile code int ff = 5; p = &ff;
+@end smallexample
+
+As @var{p} would point to an invalid address after the command exits.
+The variable @var{ff} is defined in the @samp{compile} command and
+becomes invalid after the command exits.  However, variable @var{p} is
+defined in the program and is persistent.  The end result is @var{p} is
+still pointing to the address where @var{ff} used to be.
+
+Similar caution must be exercised with types defined
+in @samp{compile} command.  Types defined in the @samp{compile} command
+disappear when the command exits.
+
+Finally, variables that have been optimized away by the compiler are not
+accessible to the @samp{compile} command.
 @end table
 
 @node GDB Bugs
