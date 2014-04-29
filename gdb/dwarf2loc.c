@@ -4096,6 +4096,9 @@ locexpr_generate_c_location (struct symbol *sym, struct ui_file *stream,
   struct dwarf2_locexpr_baton *dlbaton = SYMBOL_LOCATION_BATON (sym);
   unsigned int addr_size = dwarf2_per_cu_addr_size (dlbaton->per_cu);
 
+  if (dlbaton->size == 0)
+    error (_("symbol \"%s\" is optimized out"), SYMBOL_NATURAL_NAME (sym));
+
   compile_dwarf_expr_to_c (stream, result_name,
 			   sym, pc, gdbarch, registers_used, addr_size,
 			   dlbaton->data, dlbaton->data + dlbaton->size,
@@ -4295,7 +4298,7 @@ loclist_generate_c_location (struct symbol *sym, struct ui_file *stream,
 
   data = dwarf2_find_location_expression (dlbaton, &size, pc);
   if (size == 0)
-    return;
+    error (_("symbol \"%s\" is optimized out"), SYMBOL_NATURAL_NAME (sym));
 
   compile_dwarf_expr_to_c (stream, result_name,
 			   sym, pc, gdbarch, registers_used, addr_size,
