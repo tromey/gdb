@@ -165,11 +165,6 @@ static void describe_other_breakpoints (struct gdbarch *,
 					struct program_space *, CORE_ADDR,
 					struct obj_section *, int);
 
-static int breakpoint_address_match (struct address_space *aspace1,
-				     CORE_ADDR addr1,
-				     struct address_space *aspace2,
-				     CORE_ADDR addr2);
-
 static int watchpoint_locations_match (struct bp_location *loc1,
 				       struct bp_location *loc2);
 
@@ -232,9 +227,6 @@ static void stopat_command (char *arg, int from_tty);
 static void tcatch_command (char *arg, int from_tty);
 
 static void detach_single_step_breakpoints (void);
-
-static int single_step_breakpoint_inserted_here_p (struct address_space *,
-						   CORE_ADDR pc);
 
 static void free_bp_location (struct bp_location *loc);
 static void incref_bp_location (struct bp_location *loc);
@@ -300,6 +292,12 @@ static struct breakpoint_ops bkpt_probe_breakpoint_ops;
 
 /* Dynamic printf class type.  */
 struct breakpoint_ops dprintf_breakpoint_ops;
+
+/* One (or perhaps two) breakpoints used for software single
+   stepping.  */
+
+static void *single_step_breakpoints[2];
+static struct gdbarch *single_step_gdbarch[2];
 
 /* The style in which to perform a dynamic printf.  This is a user
    option because different output options have different tradeoffs;
@@ -1417,6 +1415,100 @@ bp_location_has_shadow (struct bp_location *bl)
   return 1;
 }
 
+/* Update BUF, which is LEN bytes read from the target address
+   MEMADDR, by replacing a memory breakpoint with its shadowed
+   contents.
+
+   If READBUF is not NULL, this buffer must not overlap with the of
+   the breakpoint location's shadow_contents buffer.  Otherwise, a
+   failed assertion internal error will be raised.  */
+
+static void
+one_breakpoint_xfer_memory (gdb_byte *readbuf, gdb_byte *writebuf,
+			    const gdb_byte *writebuf_org,
+			    ULONGEST memaddr, LONGEST len,
+			    struct bp_target_info *target_info,
+			    struct gdbarch *gdbarch)
+{
+  /* Now do full processing of the found relevant range of elements.  */
+  CORE_ADDR bp_addr = 0;
+  int bp_size = 0;
+  int bptoffset = 0;
+
+  if (!breakpoint_address_match (target_info->placed_address_space, 0,
+				 current_program_space->aspace, 0))
+    {
+      /* The breakpoint is inserted in a different address space.  */
+      return;
+    }
+
+  /* Addresses and length of the part of the breakpoint that
+     we need to copy.  */
+  bp_addr = target_info->placed_address;
+  bp_size = target_info->shadow_len;
+
+  if (bp_addr + bp_size <= memaddr)
+    {
+      /* The breakpoint is entirely before the chunk of memory we are
+	 reading.  */
+      return;
+    }
+
+  if (bp_addr >= memaddr + len)
+    {
+      /* The breakpoint is entirely after the chunk of memory we are
+	 reading.  */
+      return;
+    }
+
+  /* Offset within shadow_contents.  */
+  if (bp_addr < memaddr)
+    {
+      /* Only copy the second part of the breakpoint.  */
+      bp_size -= memaddr - bp_addr;
+      bptoffset = memaddr - bp_addr;
+      bp_addr = memaddr;
+    }
+
+  if (bp_addr + bp_size > memaddr + len)
+    {
+      /* Only copy the first part of the breakpoint.  */
+      bp_size -= (bp_addr + bp_size) - (memaddr + len);
+    }
+
+  if (readbuf != NULL)
+    {
+      /* Verify that the readbuf buffer does not overlap with the
+	 shadow_contents buffer.  */
+      gdb_assert (target_info->shadow_contents >= readbuf + len
+		  || readbuf >= (target_info->shadow_contents
+				 + target_info->shadow_len));
+
+      /* Update the read buffer with this inserted breakpoint's
+	 shadow.  */
+      memcpy (readbuf + bp_addr - memaddr,
+	      target_info->shadow_contents + bptoffset, bp_size);
+    }
+  else
+    {
+      const unsigned char *bp;
+      CORE_ADDR placed_address = target_info->placed_address;
+      int placed_size = target_info->placed_size;
+
+      /* Update the shadow with what we want to write to memory.  */
+      memcpy (target_info->shadow_contents + bptoffset,
+	      writebuf_org + bp_addr - memaddr, bp_size);
+
+      /* Determine appropriate breakpoint contents and size for this
+	 address.  */
+      bp = gdbarch_breakpoint_from_pc (gdbarch, &placed_address, &placed_size);
+
+      /* Update the final write buffer with this inserted
+	 breakpoint's INSN.  */
+      memcpy (writebuf + bp_addr - memaddr, bp + bptoffset, bp_size);
+    }
+}
+
 /* Update BUF, which is LEN bytes read from the target address MEMADDR,
    by replacing any memory breakpoints with their shadowed contents.
 
@@ -1443,6 +1535,7 @@ breakpoint_xfer_memory (gdb_byte *readbuf, gdb_byte *writebuf,
   /* Left boundary, right boundary and median element of our binary
      search.  */
   unsigned bc_l, bc_r, bc;
+  size_t i;
 
   /* Find BC_L which is a leftmost element which may affect BUF
      content.  It is safe to report lower value but a failure to
@@ -1516,74 +1609,27 @@ breakpoint_xfer_memory (gdb_byte *readbuf, gdb_byte *writebuf,
 
     if (!bp_location_has_shadow (bl))
       continue;
-    if (!breakpoint_address_match (bl->target_info.placed_address_space, 0,
-				   current_program_space->aspace, 0))
-      continue;
 
-    /* Addresses and length of the part of the breakpoint that
-       we need to copy.  */
-    bp_addr = bl->target_info.placed_address;
-    bp_size = bl->target_info.shadow_len;
-
-    if (bp_addr + bp_size <= memaddr)
-      /* The breakpoint is entirely before the chunk of memory we
-         are reading.  */
-      continue;
-
-    if (bp_addr >= memaddr + len)
-      /* The breakpoint is entirely after the chunk of memory we are
-         reading.  */
-      continue;
-
-    /* Offset within shadow_contents.  */
-    if (bp_addr < memaddr)
-      {
-	/* Only copy the second part of the breakpoint.  */
-	bp_size -= memaddr - bp_addr;
-	bptoffset = memaddr - bp_addr;
-	bp_addr = memaddr;
-      }
-
-    if (bp_addr + bp_size > memaddr + len)
-      {
-	/* Only copy the first part of the breakpoint.  */
-	bp_size -= (bp_addr + bp_size) - (memaddr + len);
-      }
-
-    if (readbuf != NULL)
-      {
-	/* Verify that the readbuf buffer does not overlap with
-	   the shadow_contents buffer.  */
-	gdb_assert (bl->target_info.shadow_contents >= readbuf + len
-		    || readbuf >= (bl->target_info.shadow_contents
-				   + bl->target_info.shadow_len));
-
-	/* Update the read buffer with this inserted breakpoint's
-	   shadow.  */
-	memcpy (readbuf + bp_addr - memaddr,
-		bl->target_info.shadow_contents + bptoffset, bp_size);
-      }
-    else
-      {
-	struct gdbarch *gdbarch = bl->gdbarch;
-	const unsigned char *bp;
-	CORE_ADDR placed_address = bl->target_info.placed_address;
-	int placed_size = bl->target_info.placed_size;
-
-	/* Update the shadow with what we want to write to memory.  */
-	memcpy (bl->target_info.shadow_contents + bptoffset,
-		writebuf_org + bp_addr - memaddr, bp_size);
-
-	/* Determine appropriate breakpoint contents and size for this
-	   address.  */
-	bp = gdbarch_breakpoint_from_pc (gdbarch, &placed_address, &placed_size);
-
-	/* Update the final write buffer with this inserted
-	   breakpoint's INSN.  */
-	memcpy (writebuf + bp_addr - memaddr, bp + bptoffset, bp_size);
-      }
+    one_breakpoint_xfer_memory (readbuf, writebuf, writebuf_org,
+				memaddr, len, &bl->target_info, bl->gdbarch);
   }
+
+  /* Now process single-step breakpoints.  These are not found in the
+     bp_location array.  */
+  for (i = 0; i < 2; i++)
+    {
+      struct bp_target_info *bp_tgt = single_step_breakpoints[i];
+
+      if (bp_tgt != NULL)
+	{
+	  struct gdbarch *gdbarch = single_step_gdbarch[i];
+
+	  one_breakpoint_xfer_memory (readbuf, writebuf, writebuf_org,
+				      memaddr, len, bp_tgt, gdbarch);
+	}
+    }
 }
+
 
 
 /* Return true if BPT is either a software breakpoint or a hardware
@@ -2032,6 +2078,14 @@ should_be_inserted (struct bp_location *bl)
      the child could still trip on the parent's breakpoints.  Since
      the parent is blocked anyway, it won't miss any breakpoint.  */
   if (bl->pspace->breakpoints_not_allowed)
+    return 0;
+
+  /* Don't insert a breakpoint if we're trying to step past its
+     location.  */
+  if ((bl->loc_type == bp_loc_software_breakpoint
+       || bl->loc_type == bp_loc_hardware_breakpoint)
+      && stepping_past_instruction_at (bl->pspace->aspace,
+				       bl->address))
     return 0;
 
   return 1;
@@ -2588,13 +2642,15 @@ insert_bp_location (struct bp_location *bl,
 	     breakpoint in a shared library that has already been
 	     removed, but we have not yet processed the shlib unload
 	     event.  Unfortunately, some targets that implement
-	     breakpoint insertion themselves (necessary if this is a
-	     HW breakpoint, but SW breakpoints likewise) can't tell
-	     why the breakpoint insertion failed (e.g., the remote
-	     target doesn't define error codes), so we must treat
-	     generic errors as memory errors.  */
+	     breakpoint insertion themselves can't tell why the
+	     breakpoint insertion failed (e.g., the remote target
+	     doesn't define error codes), so we must treat generic
+	     errors as memory errors.  */
 	  if ((bp_err == GENERIC_ERROR || bp_err == MEMORY_ERROR)
-	      && solib_name_from_address (bl->pspace, bl->address))
+	      && bl->loc_type == bp_loc_software_breakpoint
+	      && (solib_name_from_address (bl->pspace, bl->address)
+		  || userloaded_objfile_contains_address_p (bl->pspace,
+							    bl->address)))
 	    {
 	      /* See also: disable_breakpoints_in_shlibs.  */
 	      bl->shlib_disabled = 1;
@@ -3724,7 +3780,31 @@ remove_breakpoint_1 (struct bp_location *bl, insertion_state_t is)
 	  || !(section_is_overlay (bl->section)))
 	{
 	  /* No overlay handling: just remove the breakpoint.  */
-	  val = bl->owner->ops->remove_location (bl);
+
+	  /* If we're trying to uninsert a memory breakpoint that we
+	     know is set in a dynamic object that is marked
+	     shlib_disabled, then either the dynamic object was
+	     removed with "remove-symbol-file" or with
+	     "nosharedlibrary".  In the former case, we don't know
+	     whether another dynamic object might have loaded over the
+	     breakpoint's address -- the user might well let us know
+	     about it next with add-symbol-file (the whole point of
+	     OBJF_USERLOADED is letting the user manually maintain a
+	     list of dynamically loaded objects).  If we have the
+	     breakpoint's shadow memory, that is, this is a software
+	     breakpoint managed by GDB, check whether the breakpoint
+	     is still inserted in memory, to avoid overwriting wrong
+	     code with stale saved shadow contents.  Note that HW
+	     breakpoints don't have shadow memory, as they're
+	     implemented using a mechanism that is not dependent on
+	     being able to modify the target's memory, and as such
+	     they should always be removed.  */
+	  if (bl->shlib_disabled
+	      && bl->target_info.shadow_len != 0
+	      && !memory_validate_breakpoint (bl->gdbarch, &bl->target_info))
+	    val = 0;
+	  else
+	    val = bl->owner->ops->remove_location (bl);
 	}
       else
 	{
@@ -3769,10 +3849,21 @@ remove_breakpoint_1 (struct bp_location *bl, insertion_state_t is)
 	    }
 	}
 
-      /* In some cases, we might not be able to remove a breakpoint
-	 in a shared library that has already been removed, but we
-	 have not yet processed the shlib unload event.  */
-      if (val && solib_name_from_address (bl->pspace, bl->address))
+      /* In some cases, we might not be able to remove a breakpoint in
+	 a shared library that has already been removed, but we have
+	 not yet processed the shlib unload event.  Similarly for an
+	 unloaded add-symbol-file object - the user might not yet have
+	 had the chance to remove-symbol-file it.  shlib_disabled will
+	 be set if the library/object has already been removed, but
+	 the breakpoint hasn't been uninserted yet, e.g., after
+	 "nosharedlibrary" or "remove-symbol-file" with breakpoints
+	 always-inserted mode.  */
+      if (val
+	  && (bl->loc_type == bp_loc_software_breakpoint
+	      && (bl->shlib_disabled
+		  || solib_name_from_address (bl->pspace, bl->address)
+		  || userloaded_objfile_contains_address_p (bl->pspace,
+							    bl->address))))
 	val = 0;
 
       if (val)
@@ -6792,12 +6883,9 @@ watchpoint_locations_match (struct bp_location *loc1,
 	  && loc1->length == loc2->length);
 }
 
-/* Returns true if {ASPACE1,ADDR1} and {ASPACE2,ADDR2} represent the
-   same breakpoint location.  In most targets, this can only be true
-   if ASPACE1 matches ASPACE2.  On targets that have global
-   breakpoints, the address space doesn't really matter.  */
+/* See breakpoint.h.  */
 
-static int
+int
 breakpoint_address_match (struct address_space *aspace1, CORE_ADDR addr1,
 			  struct address_space *aspace2, CORE_ADDR addr2)
 {
@@ -7612,10 +7700,18 @@ disable_breakpoints_in_freed_objfile (struct objfile *objfile)
   if (objfile == NULL)
     return;
 
-  /* If the file is a shared library not loaded by the user then
-     solib_unloaded was notified and disable_breakpoints_in_unloaded_shlib
-     was called.  In that case there is no need to take action again.  */
-  if ((objfile->flags & OBJF_SHARED) && !(objfile->flags & OBJF_USERLOADED))
+  /* OBJF_USERLOADED are dynamic modules manually managed by the user
+     with add-symbol-file/remove-symbol-file.  Similarly to how
+     breakpoints in shared libraries are handled in response to
+     "nosharedlibrary", mark breakpoints in OBJF_USERLOADED modules
+     shlib_disabled so they end up uninserted on the next global
+     location list update.  Shared libraries not loaded by the user
+     aren't handled here -- they're already handled in
+     disable_breakpoints_in_unloaded_shlib, called by solib.c's
+     solib_unloaded observer.  We skip objfiles that are not
+     OBJF_USERLOADED (nor OBJF_SHARED) as those aren't considered
+     dynamic objects (e.g. the main objfile).  */
+  if ((objfile->flags & OBJF_USERLOADED) == 0)
     return;
 
   ALL_BREAKPOINTS (b)
@@ -7647,7 +7743,11 @@ disable_breakpoints_in_freed_objfile (struct objfile *objfile)
 	  if (is_addr_in_objfile (loc_addr, objfile))
 	    {
 	      loc->shlib_disabled = 1;
-	      loc->inserted = 0;
+	      /* At this point, we don't know whether the object was
+		 unmapped from the inferior or not, so leave the
+		 inserted flag alone.  We'll handle failure to
+		 uninsert quietly, in case the object was indeed
+		 unmapped.  */
 
 	      mark_breakpoint_location_modified (loc);
 
@@ -15039,12 +15139,6 @@ deprecated_remove_raw_breakpoint (struct gdbarch *gdbarch, void *bp)
   return ret;
 }
 
-/* One (or perhaps two) breakpoints used for software single
-   stepping.  */
-
-static void *single_step_breakpoints[2];
-static struct gdbarch *single_step_gdbarch[2];
-
 /* Create and insert a breakpoint for software single step.  */
 
 void
@@ -15148,7 +15242,7 @@ detach_single_step_breakpoints (void)
 /* Check whether a software single-step breakpoint is inserted at
    PC.  */
 
-static int
+int
 single_step_breakpoint_inserted_here_p (struct address_space *aspace, 
 					CORE_ADDR pc)
 {

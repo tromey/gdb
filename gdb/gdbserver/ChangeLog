@@ -1,3 +1,114 @@
+2014-04-28  Yao Qi  <yao@codesourcery.com>
+
+	* Makefile.in (i386-avx512.c): Fix the typo of generated file
+	name.
+
+2014-04-25  Pedro Alves  <palves@redhat.com>
+
+	PR server/16255
+	* linux-low.c (linux_attach_fail_reason_string): New function.
+	(linux_attach_lwp): Delete.
+	(linux_attach_lwp_1): Rename to ...
+	(linux_attach_lwp): ... this.  Take a ptid instead of a pid as
+	argument.  Remove "initial" parameter.  Return int instead of
+	void.  Don't error or warn here.
+	(linux_attach): Adjust to call linux_attach_lwp.  Call error on
+	failure to attach to the tgid.  Call warning when failing to
+	attach to an lwp.
+	* linux-low.h (linux_attach_lwp): Take a ptid instead of a pid as
+	argument.  Remove "initial" parameter.  Return int instead of
+	void.  Don't error or warn here.
+	(linux_attach_fail_reason_string): New declaration.
+	* thread-db.c (attach_thread): Adjust to linux_attach_lwp's
+	interface change.  Use linux_attach_fail_reason_string.
+
+2014-04-24  Michael Sturm  <michael.sturm@mintel.com>
+	    Walfred Tedeschi  <walfred.tedeschi@intel.com>
+
+	* Makefile.in: Added rules to handle new files
+	i386-avx512.c i386-avx512-linux.c amd64-avx512.c
+	amd64-avx512-linux.c x32-avx512.c x32-avx512-linux.c.
+	* configure.srv (srv_i386_regobj): Add i386-avx512.o.
+	(srv_i386_linux_regobj): Add i386-avx512-linux.o.
+	(srv_amd64_regobj): Add amd64-avx512.o and x32-avx512.o.
+	(srv_amd64_linux_regobj): Add amd64-avx512-linux.o and
+	x32-avx512-linux.o.
+	(srv_i386_32bit_xmlfiles): Add i386/32bit-avx512.xml.
+	(srv_i386_64bit_xmlfiles): Add i386/64bit-avx512.xml.
+	(srv_amd64_xmlfiles): Add i386/amd64-avx512.xml and
+	i386/x32-avx512.xml.
+	(srv_i386_linux_xmlfiles): Add i386/i386-avx512-linux.xml.
+	(srv_amd64_linux_xmlfiles): Add i386/amd64-avx512-linux.xml and
+	i386/x32-avx512-linux.xml.
+	* i387-fp.c (num_avx512_k_registers): New constant for number
+	of K registers.
+	(num_avx512_zmmh_low_registers): New constant for number of
+	lower ZMM registers (0-15).
+	(num_avx512_zmmh_high_registers): New constant for number of
+	higher ZMM registers (16-31).
+	(num_avx512_ymmh_registers): New contant for number of higher
+	YMM registers (ymm16-31 added by avx521 on x86_64).
+	(num_avx512_xmm_registers): New constant for number of higher
+	XMM registers (xmm16-31 added by AVX512 on x86_64).
+	(struct i387_xsave): Add space for AVX512 registers.
+	(i387_cache_to_xsave): Change raw buffer size to 64 characters.
+	Add code to handle AVX512 registers.
+	(i387_xsave_to_cache): Add code to handle AVX512 registers.
+	* linux-x86-low.c (init_registers_amd64_avx512_linux): New
+	prototypei from generated file.
+	(tdesc_amd64_avx512_linux): Likewise.
+	(init_registers_x32_avx512_linux): Likewise.
+	(tdesc_x32_avx512_linux): Likewise.
+	(init_registers_i386_avx512_linux): Likewise.
+	(tdesc_i386_avx512_linux): Likewise.
+	(x86_64_regmap): Add AVX512 registers.
+	(x86_linux_read_description): Add code to handle AVX512 XSTATE
+	mask.
+	(initialize_low_arch): Add code to initialize AVX512 registers.
+
+2014-04-23  Pedro Alves  <palves@redhat.com>
+
+	* mem-break.c (find_gdb_breakpoint_at): Make static.
+	* mem-break.h (find_gdb_breakpoint_at): Delete declaration.
+
+2014-04-23  Pedro Alves  <palves@redhat.com>
+
+	* i386-low.c: Don't include break-common.h here.
+	(i386_low_insert_watchpoint, i386_low_remove_watchpoint): Change
+	prototype to take target_hw_bp_type as argument instead of a Z
+	packet char.
+	* i386-low.h: Include break-common.h here.
+	(Z_packet_to_hw_type): Declare.
+	(i386_low_insert_watchpoint, i386_low_remove_watchpoint): Change
+	prototypes.
+	* linux-x86-low.c (x86_insert_point): Convert the packet number to
+	a target_hw_bp_type before calling i386_low_insert_watchpoint.
+	(x86_remove_point): Convert the packet number to a
+	target_hw_bp_type before calling i386_low_remove_watchpoint.
+	* win32-i386-low.c (i386_insert_point): Convert the packet number
+	to a target_hw_bp_type before calling i386_low_insert_watchpoint.
+	(i386_remove_point): Convert the packet number to a
+	target_hw_bp_type before calling i386_low_remove_watchpoint.
+
+2014-04-23  Pedro Alves  <palves@redhat.com>
+
+	* utils.h (perror_with_name): Add ATTRIBUTE_NORETURN.
+
+2014-04-10  Pedro Alves  <palves@redhat.com>
+
+	* mem-break.c (add_breakpoint_condition, add_breakpoint_commands):
+	Check if the condition or command is NULL before checking if the
+	breakpoint is known.  On success, return true.
+	* mem-break.h (add_breakpoint_condition): Document return.
+	(add_breakpoint_commands): Add describing comment.
+	* server.c (skip_to_semicolon): New function.
+	(process_point_options): Use it.
+
+2014-04-09  Pedro Alves  <palves@redhat.com>
+
+	* linux-low.c (linux_read_loadmap): Pass current_inferior directly
+	to lwpid_of.
+
 2014-02-27  Pedro Alves  <palves@redhat.com>
 
 	PR 12702

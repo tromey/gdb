@@ -1,3 +1,81 @@
+2014-04-26  Alan Modra  <amodra@gmail.com>
+
+	* po/POTFILES.in: Regenerate.
+
+2014-04-23  Andrew Bennett  <andrew.bennett@imgtec.com>
+
+	* mips-dis.c (mips_arch_choices): Update mips32r2 and mips64r2
+	to allow the MIPS XPA ASE.
+	(parse_mips_dis_option): Process the -Mxpa option.
+	* mips-opc.c (XPA): New define.
+	(mips_builtin_opcodes): Add MIPS XPA instructions and move the
+	locations of the ctc0 and cfc0 instructions.
+
+2014-04-22  Christian Svensson  <blue@cmd.nu>
+
+	* Makefile.am: Remove openrisc and or32 support.  Add support for or1k.
+	* configure.in: Likewise.
+	* disassemble.c: Likewise.
+	* or1k-asm.c: New file.
+	* or1k-desc.c: New file.
+	* or1k-desc.h: New file.
+	* or1k-dis.c: New file.
+	* or1k-ibld.c: New file.
+	* or1k-opc.c: New file.
+	* or1k-opc.h: New file.
+	* or1k-opinst.c: New file.
+	* Makefile.in: Regenerate.
+	* configure: Regenerate.
+	* openrisc-asm.c: Delete.
+	* openrisc-desc.c: Delete.
+	* openrisc-desc.h: Delete.
+	* openrisc-dis.c: Delete.
+	* openrisc-ibld.c: Delete.
+	* openrisc-opc.c: Delete.
+	* openrisc-opc.h: Delete.
+	* or32-dis.c: Delete.
+	* or32-opc.c: Delete.
+
+2014-04-04  Ilya Tocar  <ilya.tocar@intel.com>
+
+	* i386-dis.c (rm_table): Add encls, enclu.
+	* i386-gen.c (cpu_flag_init): Add CPU_SE1_FLAGS,
+	(cpu_flags): Add CpuSE1.
+	* i386-opc.h (enum): Add CpuSE1.
+	(i386_cpu_flags): Add cpuse1.
+	* i386-opc.tbl: Add encls, enclu.
+	* i386-init.h: Regenerated.
+	* i386-tbl.h: Likewise.
+
+2014-04-02  Anthony Green  <green@moxielogic.com>
+
+	* moxie-opc.c (moxie_form1_opc_info): Add sign-extension
+	instructions, sex.b and sex.s.
+
+2014-03-26  Jiong Wang  <jiong.wang@arm.com>
+
+	* aarch64-dis.c (aarch64_ext_ldst_elemlist): Check H/S undefined
+	instructions.
+
+2014-03-20  Ilya Tocar  <ilya.tocar@intel.com>
+
+	* i386-opc.tbl: Change memory size for vgatherpf0qps, vgatherpf1qps,
+	vscatterpf0qps, vscatterpf1qps, vgatherqps, vpgatherqd, vpscatterqd,
+	vscatterqps.
+	* i386-tbl.h: Regenerate.
+
+2014-03-19  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* sparc-dis.c (v9_hpriv_reg_names): Names for %hstick_offset and
+	%hstick_enable added.
+
+2014-03-19  Nick Clifton  <nickc@redhat.com>
+
+	* rx-decode.opc (bwl): Allow for bogus instructions with a size
+	field of 3.
+	(sbwl, ubwl, SCALE): Likewise.
+	* rx-decode.c: Regenerate.
+
 2014-03-12  Alan Modra  <amodra@gmail.com>
 
 	* Makefile.in: Regenerate.

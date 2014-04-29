@@ -1,3 +1,503 @@
+2014-04-29  Christian Svensson  <blue@cmd.nu>
+
+	* elf32-or1k.c: Fix a bug where non-TLS relocations would be forced
+	into .rela.got if it contained TLS relocations as well.
+
+2014-04-28  Nick Clifton  <nickc@redhat.com>
+
+	PR ld/16821
+	* peXXigen.c (_bfd_XXi_swap_sym_out): Rework fix to avoid compile
+	time warning.
+
+2014-04-26  Alan Modra  <amodra@gmail.com>
+
+	* po/SRC-POTFILES.in: Regenerate.
+	* configure: Regenerate.
+
+2014-04-25  Nick Clifton  <nickc@redhat.com>
+
+	PR ld/16821
+	* peXXigen.c (_bfd_XXi_swap_sym_out): Another fix for building on
+	a 342-bit host.  This time for older versions of gcc.
+
+2014-04-24  Nick Clifton  <nickc@redhat.com>
+
+	* peXXigen.c (rsrc_print_section): Fix compile time warning for
+	32-bit hosts.
+
+2014-04-24  Alan Modra  <amodra@gmail.com>
+
+	PR 16867
+	* dwarf2.c: Formatting.
+	(struct dwarf2_debug): Make adjusted_section_count signed.
+	(unset_sections): Make i signed.
+	(set_debug_vma): New function.
+	(place_sections): Handle separate debug object file.  Set VMA
+	on debug sections, even if they have an output section.  Also
+	set VMA on zero size sections, and non-load but alloc sections.
+	Set adjusted_section_count to -1 when no section adjustment.
+	Malloc adjusted_sections.  Don't double last_vma.  Transfer
+	alloc section VMAs to separate debug file.
+	(_bfd_dwarf2_cleanup_debug_info): Free adjusted_sections.
+	(_bfd_dwarf2_slurp_debug_info): Add do_place parameter.  Drop
+	test on symbols being the same before using old stash.  Read
+	and use separate debug file symbols.  Call place_sections.
+	(find_line): Don't call place_sections here.
+	* libbfd-in.h (_bfd_dwarf2_slurp_debug_info): Update proto.
+	* libbfd.h: Regenerate.
+	* mach-o.c (bfd_mach_o_find_nearest_line): Adjust
+	_bfd_dwarf2_slurp_debug_info call.
+	* simple.c (simple_save_output_info): Clarify comment.
+
+2014-04-24  Nick Clifton  <nickc@redhat.com>
+
+	PR ld/16807
+	* peXXigen.c (struct rsrc_regions): New structure.
+	(rsrc_print_resource_directory): Use new structure.  Include
+	offset of directory in listing.
+	(rsrc_print_resource_entry): Likewise.
+	(rsrc_print_section): Likewise.
+	(rsrc_count_entries): Do not increment sizeof_strings or
+	sizeof_leaves.
+	(rsrc_count_directory): Do not increment sizeof_tables.
+	(rsrc_compute_region_sizes): New function.
+	(rsrc_write_leaf): Maintain 8-byte alignment for resource data.
+	(rsrc_process_section): Compute size of regions after merging
+	entries.
+
+2014-04-23  Alan Modra  <amodra@gmail.com>
+
+	PR ld/16787
+	* dwarf2.c (struct dwarf2_debug): Add sec_vma field.
+	(place_sections): Do not modify VMA of sections when called from
+	linker after sections have been placed in output sections.  Short
+	circuit single section case.
+	(save_section_vma, section_vma_same): New functions.
+	(_bfd_dwarf2_slurp_debug_info): Throw away stash if section VMAs
+	change.
+	* reloc.c (bfd_perform_relocation): Do not modify reloc addend
+	when non-relocatable.
+
+2014-04-22  Nick Clifton  <nickc@redhat.com>
+
+	PR ld/16821
+	* peXXigen.c (_bfd_XXi_swap_sym_out): Fix for 32-bit hosts.
+
+2014-04-22  Christian Svensson  <blue@cmd.nu>
+
+	* Makefile.am: Remove openrisc and or32 support.  Add support for or1k.
+	* archures.c: Likewise.
+	* coffcode.h: Likewise.
+	* config.bfd: Likewise.
+	* configure.in: Likewise.
+	* reloc.c: Likewise.
+	* targets.c: Likewise.
+	* cpu-or1k.c: New file.
+	* elf32-or1k.c: New file.
+	* coff-or32.c: Delete.
+	* cpu-openrisc.c: Delete.
+	* cpu-or32.c: Delete.
+	* elf32-openrisc.c: Delete.
+	* elf32-or32.c: Delete.
+	* Makefile.in: Regenerate.
+	* bfd-in2.h: Regenerate.
+	* configure: Regenerate.
+	* libbfd.h: Regenerate.
+
+2014-04-22  Yuanhui Zhang  <asmwarrior@gmail.com>
+
+	PR ld/16821
+	* peXXigen.c (abs_finder): Fix for 32-bit host builds.
+
+2014-04-22  Will Newton  <will.newton@linaro.org>
+
+	* elfnn-aarch64.c (elfNN_aarch64_section_flags): Remove
+	function.  (elf_backend_section_flags): Remove define.
+
+2014-04-21  Richard Henderson  <rth@redhat.com>
+
+	* elf64-alpha.c (elf64_alpha_size_got_sections): New may_merge
+	parameter; honor it and disable got merging when false.
+	(elf64_alpha_relax_got_load): Do not relax to GPREL relocs during
+	the first pass of relaxation.
+	(elf64_alpha_relax_with_lituse): Likewise.  Move relaxed relocs to
+	the end of the LITERAL+LITUSE chain.
+	(elf64_alpha_relax_section): Only process LITERAL relocs during the
+	second pass of relaxation.
+
+	* configure.ac (use_secureplt): Enable by default.
+	* configure: Rebuild.
+
+2014-04-18  Tristan Gingold  <gingold@adacore.com>
+
+	* mach-o.h (bfd_mach_o_dyld_info_command): Add rebase_content,
+	bind_content, weak_bind_content, lazy_bind_content,
+	export_content.
+	(bfd_mach_o_load_command): Add comments, add next field.
+	(mach_o_data_struct): Replace commands field by first_command
+	and last_command.
+	* mach-o.c (bfd_mach_o_append_command): New function.
+	(bfd_mach_o_bfd_copy_private_symbol_data): Add blank lines.
+	(bfd_mach_o_bfd_copy_private_section_data): Check flavour,
+	copy fields.
+	(bfd_mach_o_bfd_copy_private_header_data): Copy load commands.
+	(bfd_mach_o_pad4, bfd_mach_o_pad_command): New functions.
+	(bfd_mach_o_write_thread): Use macro instead of literal.
+	(bfd_mach_o_write_dylinker, bfd_mach_o_write_dylib)
+	(bfd_mach_o_write_main, bfd_mach_o_write_dyld_info): New
+	functions.
+	(bfd_mach_o_write_symtab_content): New function (extracted
+	from bfd_mach_o_write_symtab).
+	(bfd_mach_o_write_symtab): Split.
+	(bfd_mach_o_count_indirect_symbols): Move
+	(bfd_mach_o_build_dysymtab): Remove layout code.
+	(bfd_mach_o_write_contents): Rewritten to build commands in order.
+	(bfd_mach_o_count_sections_for_seg): Remove.
+	(bfd_mach_o_build_obj_seg_command): New function (extracted from
+	bfd_mach_o_build_seg_command).
+	(bfd_mach_o_build_exec_seg_command): New function.
+	(bfd_mach_o_build_dysymtab_command): Remove.
+	(bfd_mach_o_layout_commands): New function.
+	(bfd_mach_o_init_segment): New function.
+	(bfd_mach_o_build_commands): Major rework to handle non-object
+	files.
+	(bfd_mach_o_alloc_and_read, bfd_mach_o_read_dyld_content): New
+	function.
+	(bfd_mach_o_read_dyld_info): Clear content fields.
+	(bfd_mach_o_read_segment): Adjust call.
+	(bfd_mach_o_flatten_sections): Adjust as now load commands are
+	chained.
+	(bfd_mach_o_scan_start_address, bfd_mach_o_scan)
+	(bfd_mach_o_mkobject_init, bfd_mach_o_get_base_address)
+	(bfd_mach_o_lookup_command, bfd_mach_o_core_fetch_environment):
+	Likewise.
+
+2014-04-18  Tristan Gingold  <gingold@adacore.com>
+
+	* mach-o-target.c (bfd_mach_o_bfd_copy_private_header_data):
+	Define instead of bfd_mach_o_bfd_copy_private_bfd_data.
+	* mach-o.c (bfd_mach_o_bfd_copy_private_bfd_data): Rename.
+	* mach-o.h (bfd_mach_o_bfd_copy_private_bfd_data): Likewise.
+
+2014-04-18  Tristan Gingold  <gingold@adacore.com>
+
+	* mach-o.h (bfd_mach_o_dylinker_command)
+	(bfd_mach_o_dylib_command, bfd_mach_o_fvmlib_command): Remove
+	name_len field.
+	* mach-o.c (bfd_mach_o_read_dylinker, bfd_mach_o_read_dylib)
+	(bfd_mach_o_read_fvmlib): Adjust after name_len removal.
+
+2014-04-18  Tristan Gingold  <gingold@adacore.com>
+
+	* mach-o.h (bfd_mach_o_backend_data): Add page_size field.
+	* mach-o-target.c: Check TARGET_PAGESIZE is defined.
+	(TARGET_NAME_BACKEND): Add TARGET_PAGESIZE.
+	* mach-o.c (TARGET_PAGESIZE): Define and undefined for
+	each targets declared.
+	* mach-o-x86-64.c (TARGET_PAGESIZE): Define.
+	* mach-o-i386.c (TARGET_PAGESIZE): Define.
+
+2014-04-18  Tristan Gingold  <gingold@adacore.com>
+
+	* mach-o.c (bfd_mach_o_write_thread)
+	(bfd_mach_o_write_section_32, bfd_mach_o_write_section_64)
+	(bfd_mach_o_write_segment_32, bfd_mach_o_write_segment_64)
+	(bfd_mach_o_read_dylinker, bfd_mach_o_read_dylib)
+	(bfd_mach_o_read_prebound_dylib, bfd_mach_o_read_prebind_cksum)
+	(bfd_mach_o_read_twolevel_hints, bfd_mach_o_read_fvmlib)
+	(bfd_mach_o_read_thread, bfd_mach_o_read_dysymtab)
+	(bfd_mach_o_read_symtab, bfd_mach_o_read_uuid)
+	(bfd_mach_o_read_linkedit, bfd_mach_o_read_str)
+	(bfd_mach_o_read_dyld_info, bfd_mach_o_read_segment)
+	(bfd_mach_o_read_segment_32, bfd_mach_o_read_segment_64)
+	(bfd_mach_o_read_command): Now return a boolean status.
+	Adjust return statements.
+	(bfd_mach_o_write_contents, bfd_mach_o_scan): Adjust tests.
+	(bfd_mach_o_core_file_failing_command): Remove useless initialization.
+
+2014-04-17  Kwok Cheung Yeung  <kcy@codesourcery.com>
+
+	* elfxx-mips.c (struct mips_got_info): Delete assigned_gotno
+	field.  Add assigned_low_gotno and assigned_high_gotno fields.
+	(mips_elf_create_local_got_entry): Update out-of-space condition.
+	Set index of new GOT entry to assigned_low_gotno if required by
+	the current relocation, else set it to assigned_high_gotno.
+	(mips_elf_set_global_gotidx): Replace uses of assigned_gotno
+	with assigned_low_gotno.
+	(mips_elf_multi_got): Initialize assigned_low_gotno and
+	assigned_high_gotno in secondary GOTs.  Use assigned_low_gotno
+	in place of assigned_gotno when handling global GOT entries.
+	(mips_elf_lay_out_got): Initialize assigned_low_gotno and
+	assigned_high_gotno.
+	(_bfd_mips_elf_finish_dynamic_sections): Account for a possible
+	gap in the middle of local GOT space.
+
+2014-04-17  Alan Modra  <amodra@gmail.com>
+
+	PR 16846
+	* elflink.c (_bfd_elf_merge_symbol): Ignore TLS mismatch when
+	current bfd is a plugin.  Don't always set type_change_ok
+	when old bfd is a plugin.
+
+2014-04-16  Tristan Gingold  <gingold@adacore.com>
+
+	* mach-o-x86-64.c (bfd_mach_o_x86_64_mkobject): Adjust cpusubtype
+	flag.
+
+2014-04-16  Alan Modra  <amodra@gmail.com>
+
+	* elf32-ppc.c (ppc_elf_relocate_section): Fill 476 fixup area
+	with "ba 0" rather than zeros.
+
+2014-04-15  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* (elfNN_aarch64_tls_relax): Fix instruction mask.
+
+2014-04-14  Alan Modra  <amodra@gmail.com>
+
+	* elf32-ppc.c (BA): Define
+	(ppc_elf_link_hash_table_create): Correct default_params.
+	(write_glink_stub): Pad small plt call stub with "ba 0" rather
+	than "nop" for ppc476_workaround.
+	(ppc_elf_finish_dynamic_sections): Likewise for branch table
+	and __glink_PLTresolve.  Ensure plt call stub at end of page
+	doesn't allow fall-thru prefetch.
+
+2014-04-11  Nick Clifton  <nickc@redhat.com>
+
+	PR ld/16821
+	* peXXigen.c (abs_finder): New function.
+	(_bfd_XXi_swap_sym_out): For absolute symbols with values larger
+	than 1^32 try to convert them into section relative values
+	instead.
+
+2014-04-11  Nick Clifton  <nickc@redhat.com>
+
+	* bfd-in2.h: Regenerate.
+	* libbfd.h: Regenerate.
+
+2014-04-10  Cesar Philippidis  <cesar@codesourcery.com>
+
+	* elf32-nios2.c (nios2_elf32_build_stubs): Ignore dynobjs
+	when building function stubs.
+
+2014-04-10  Senthil Kumar Selvaraj  <senthil_kumar.selvaraj@atmel.com>
+
+	* elf32-avr.c: Add DIFF relocations for AVR.
+	(avr_final_link_relocate): Handle the DIFF relocs.
+	(bfd_elf_avr_diff_reloc): New.
+	(elf32_avr_is_diff_reloc): New.
+	(elf32_avr_adjust_diff_reloc_value): Reduce difference value.
+	(elf32_avr_relax_delete_bytes): Recompute difference after deleting
+	bytes.
+
+	* reloc.c: Add BFD_RELOC_AVR_DIFF8/16/32 relocations
+
+2014-04-09  Alan Modra  <amodra@gmail.com>
+
+	* libcoff.h: Regenerate.
+
+2014-04-09  Alan Modra  <amodra@gmail.com>
+
+	* elf32-ppc.c (ppc_elf_relocate_section): Remove bctr from list
+	of safe ppc476 insns at end of page.  Also remove non-branch insns.
+	Expand comments.
+
+2014-04-08  Jon TURNEY  <jon.turney@dronecode.org.uk>
+
+	* peXXigen.c (pe_print_debugdata): New function: Displays the
+	contents of the debug directory and decodes codeview entries.
+	(_bfd_XXi_swap_debugdir_in, _bfd_XXi_swap_debugdir_out)
+	(_bfd_XXi_slurp_codeview_record, _bfd_XXi_write_codeview_record):
+	Add functions for reading and writing debugdir and codeview
+	records.
+	* libpei.h (_bfd_XXi_swap_debugdir_in, _bfd_XXi_swap_debugdir_out)
+	(_bfd_XXi_write_codeview_record): Add prototypes and macros.
+	* libcoff-in.h (pe_tdata): Add build-id data.
+	* libcoff.h: Regenerate.
+	* coffcode.h (coff_write_object_contents): Run build_id
+	after_write_object_contents hook.
+
+2014-04-05  Alan Modra  <amodra@gmail.com>
+
+	* elflink.c (_bfd_elf_add_default_symbol): Pass poldbfd when
+	merging non-default sym.
+
+2014-04-04  Tristan Gingold  <gingold@adacore.com>
+
+	* mach-o.c (bfd_mach_o_header_p): Reject 64 bit target when not
+	configured for.
+
+2014-04-04  Tristan Gingold  <gingold@adacore.com>
+
+	* mach-o.c (bfd_mach_o_convert_section_name_to_mach_o): Fix
+	thinko on names length.
+
+2014-04-04  Tristan Gingold  <gingold@adacore.com>
+
+	* mach-o-i386.c (bfd_mach_o_i386_swap_reloc_out): Use target index
+	of output_section.
+	* mach-o-x86-64.c (bfd_mach_o_x86_64_swap_reloc_out): Ditto.
+
+2014-04-04  Tristan Gingold  <gingold@adacore.com>
+
+	* bfd.c (bfd_get_arch_size): Default is taken from arch.
+
+2014-04-03  Jon Turney  <jon.turney@dronecode.org.uk>
+
+	* peXXigen.c (pe_print_edata): Verify edt.name lies inside
+	section before dereferencing.
+	(pe_print_idata, pe_print_edata, pe_print_reloc)
+	(rsrc_print_section): Don't bother interpreting the contents
+	of sections which have no contents.
+
+2014-04-03  Maria Guseva  <m.guseva@samsung.com>
+
+	PR ld/16803
+	* elf.c (_bfd_elf_set_section_contents): Use correct type to hold
+	file position.
+
+2014-04-03  Tristan Gingold  <gingold@adacore.com>
+
+	* mach-o.c (bfd_mach_o_mangle_symbols): Use index from
+	output_section.
+	(bfd_mach_o_build_seg_command): Add comment.  Realign segment.
+	Fix style.
+	(bfd_mach_o_build_commands, bfd_mach_o_read_thread): Fix style.
+
+2014-04-03  Alan Modra  <amodra@gmail.com>
+
+	* elf-bfd.h (struct elf_backend_data
+	<elf_backend_bfd_from_remote_memory>): Replace "size_t size"
+	with "bfd_size_type size".
+	(_bfd_elf32_bfd_from_remote_memory): Likewise.
+	(_bfd_elf64_bfd_from_remote_memory): Likewise.
+	* elf.c (bfd_elf_bfd_from_remote_memory): Likewise.
+	* elfcode.h (bfd_from_remote_memory): Likewise.
+	* bfd-in.h (bfd_elf_bfd_from_remote_memory): Likewise.
+	* bfd-in2.h: Regenerate.
+
+2014-04-02  Tristan Gingold  <gingold@adacore.com>
+
+	* mach-o.h (bfd_mach_o_twolevel_hints_command)
+	(bfd_mach_o_prebind_cksum_command): New types.
+	(bfd_mach_o_prebound_dylib_command): Rewrite.
+	(bfd_mach_o_load_command): Add prebind_cksum and twolevel_hints
+	fields.
+	* mach-o.c (bfd_mach_o_read_prebound_dylib): Read and decode the
+	command.
+	(bfd_mach_o_read_prebind_cksum): New function.
+	(bfd_mach_o_read_twolevel_hints): Ditto.
+	(bfd_mach_o_read_command): Handle prebind cksum and twolevel hints
+	commands.
+
+2014-04-02  Alan Modra  <amodra@gmail.com>
+
+	* elfcode.h (bfd_from_remote_memory): Add "size" parameter.
+	Consolidate code handling possible section headers past end of
+	segment.  Don't use p_align for page size guess, instead use
+	minpagesize.  Take note of ld.so clearing section headers when
+	p_memsz > p_filesz.  Handle file header specifying no section
+	headers.  Handle zero p_align throughout.  Default loadbase to
+	zero.  Add comments.  Rename contents_size to high_offset, and
+	make it a bfd_vma.  Delete unnecessary bfd_set_error calls.
+	* bfd-in.h (bfd_elf_bfd_from_remote_memory): Update prototpe.
+	* elf-bfd.h (struct elf_backend_data <elf_backend_from_remote_memory>):
+	Likewise.
+	(_bfd_elf32_bfd_from_remote_memory): Likewise.
+	(_bfd_elf64_bfd_from_remote_memory): Likewise.
+	* elf.c (bfd_elf_bfd_from_remote_memory): Adjust.
+	* bfd-in2.h: Regnerate.
+
+2014-04-01  Tristan Gingold  <gingold@adacore.com>
+
+	* mach-o.c (bfd_mach_o_canonicalize_one_reloc): Avoid to crash
+	when num == 0.
+
+2014-03-27  Yury Gribov  <y.gribov@samsung.com>
+    	    Pavel Fedin  <p.fedin@samsung.com>
+
+    	* elf32-arm.c: Add support for limited pretty-printing of PLT
+	entries on eabi and nacl targets.
+	(elf32_arm_get_synthetic_symtab): Add new callback.
+    	(elf32_arm_nacl_plt_sym_val): Likewise.
+    	(elf32_arm_plt0_size): Add helper function.
+    	(elf32_arm_plt_size): Likewise.
+
+2014-03-27  Tristan Gingold  <gingold@adacore.com>
+
+	* mach-o.c (bfd_mach_o_read_dylinker): Remove assert.
+	(bfd_mach_o_read_command): Handle BFD_MACH_O_LC_DYLD_ENVIRONMENT.
+
+2014-03-27  Tristan Gingold  <gingold@adacore.com>
+
+	* mach-o.h (bfd_mach_o_get_base_address): New prototype.
+	* mach-o.c (bfd_mach_o_write_symtab)
+	(bfd_mach_o_write_contents)
+	(bfd_mach_o_set_section_flags_from_bfd)
+	(bfd_mach_o_build_seg_command): Fix indentation.
+	(bfd_mach_o_get_base_address): New function.
+
+2014-03-26  Nick Clifton  <nickc@redhat.com>
+
+	* cofflink.c (_bfd_coff_generic_relocate_section): Skip
+	relocations in discarded sections.
+
+2014-03-26  Tristan Gingold  <gingold@adacore.com>
+
+	* mach-o.c (bfd_mach_o_convert_architecture): Add
+	BFD_MACH_O_CPU_TYPE_ARM64.
+
+2014-03-26  Alan Modra  <amodra@gmail.com>
+
+	* elf64-ppc.c (ppc64_elf_check_relocs): Account for possibly
+	needed plt entries when taking the address of functions for
+	abiversion == 0 (ie. unknown) as well as abiversion == 2.
+	Move opd setup and abiversion checks to..
+	(ppc64_elf_before_check_relocs): ..here.  Renamed from
+	ppc64_elf_process_dot_syms.  Set output abiversion from input and
+	input abiversion from output, if either is not set.
+	(ppc64_elf_merge_private_bfd_data): Don't merge flags here.
+	(elf_backend_check_directives): Update.
+
+2014-03-25  Will Newton  <will.newton@linaro.org>
+
+	 * elfnn-aarch64.c (elfNN_aarch64_finish_dynamic_sections):
+	 Set value of DT_PLTRELSZ and DT_RELASZ based on the size
+	 of input sections rather than output sections.
+
+2014-03-20  Will Newton  <will.newton@linaro.org>
+
+	PR ld/16715
+	* elf32-arm.c (elf32_arm_check_relocs): Set
+	pointer_equality_needed for absolute references within
+	executable links.
+	(elf32_arm_finish_dynamic_symbol): Set st_value to zero
+	unless pointer_equality_needed is set.
+
+2014-03-19  Nick Clifton  <nickc@redhat.com>
+
+	* peXXigen.c (rsrc_process_section): Add code to scan input
+	sections and record their lengths.  Use these lengths to find the
+	start of each merged .rsrc section.
+
+2014-03-17  Tristan Gingold  <gingold@adacore.com>
+
+	* mach-o.c (bfd_mach_o_read_dylib): Handle lazy load dylib.
+	(bfd_mach_o_read_command): Ditto.
+
+2014-03-14  Meador Inge  <meadori@codesourcery.com>
+
+	 * configure.in: Add strnlen to AC_CHECK_DECLS.
+	 * config.in: Regenerate.
+         * configure: Regenerate.
+	 * sysdep.h (strnlen): Add prototype.
+
+2014-03-14  Alan Modra  <amodra@gmail.com>
+
+	* elf32-ppc.c (ppc_elf_relocate_section): Correct overflow
+	handling for VLE_SDA21 relocs.
+
 2014-03-13  Tristan Gingold  <gingold@adacore.com>
 
 	* peicode.h (pe_ILF_object_p): Adjust, as the version number

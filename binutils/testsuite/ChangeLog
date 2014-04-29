@@ -1,3 +1,20 @@
+2014-04-22  Christian Svensson  <blue@cmd.nu>
+
+	* binutils-all/objcopy.exp: Remove openrisc and or32 support.  Add
+	support for or1k.
+	* binutils-all/objdump.exp: Likewise.
+	* binutils-all/dw2-decodedline-1.S: Likewise.
+
+2014-03-26  Jiong Wang  <jiong.wang@arm.com>
+
+	* binutils-all/aarch64/aarch64.exp: New test driver for AArch64.
+	* binutils-all/aarch64/unallocated-encoding.s: New testcase.
+	* binutils-all/aarch64/unallocated-encoding.d: Ditto.
+
+2014-03-17  Nick Clifton  <nickc@redhat.com>
+
+	* binutils-all/readelf.ss: Add skip of MSP430 defined symbols.
+
 2014-01-29  Nick Clifton  <nickc@redhat.com>
 
 	PR binutils/16318

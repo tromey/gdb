@@ -3,6 +3,12 @@
 
 *** Changes since GDB 7.7
 
+* GDB supports printing and modifying of variable length automatic arrays
+  as specified in ISO C99.
+
+* The ARM simulator now supports instruction level tracing
+  with or without disassembly.
+
 * Guile scripting
 
   GDB now has support for scripting using Guile.  Whether this is
@@ -27,6 +33,13 @@ info auto-load guile-scripts [regexp]
   This feature is dependent on the debugger being built with Guile support.
 
 * New options
+
+set print symbol-loading (off|brief|full)
+show print symbol-loading
+  Control whether to print informational messages when loading symbol
+  information for a file.  The default is "full", but when debugging
+  programs with large numbers of shared libraries the amount of output
+  becomes less useful.
 
 set guile print-stack (none|message|full)
 show guile print-stack
@@ -5684,3 +5697,8 @@ Host is the machine where GDB will run; targ is the machine
 where the program that you are debugging will run.
 
  *  GDB now supports access to Intel(R) MPX registers on GNU/Linux.
+
+ *  Support for Intel(R) AVX-512 registers on GNU/Linux.
+
+Support displaying and modifying Intel(R) AVX-512 registers $zmm0 - $zmm31 and
+$k0 - $k7 on GNU/Linux.

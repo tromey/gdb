@@ -67,6 +67,10 @@ proc test_value_in_inferior {} {
     gdb_test "gu (history-ref i)" "#<gdb:value 42>"
     gdb_test "p \$" "= 42"
 
+    # Verify the recorded history value survives a gc.
+    gdb_test_no_output "guile (gc)"
+    gdb_test "p \$\$" "= 42"
+
     # Test dereferencing the argv pointer.
 
     # Just get inferior variable argv the value history, available to guile.
@@ -282,6 +286,9 @@ proc test_value_after_death {} {
 	"Discard symbol table from.*y or n. $" \
 	"y"
 
+    # First do a garbage collect to delete anything unused.  PR 16612.
+    gdb_scm_test_silent_cmd "gu (gc)" "garbage collect"
+
     # Now create a value using that type.  Relies on arg0, created by
     # test_value_in_inferior.
     gdb_scm_test_silent_cmd "gu (define castval (value-cast arg0 (type-pointer ptrtype)))" \
@@ -328,6 +335,8 @@ proc test_subscript_regression {exefile lang} {
 	# Likewise.
 	gdb_test "gu (print (value-dynamic-type (parse-and-eval \"base\")))" \
 	    "= Derived \[*\]"
+	gdb_test "gu (print (value-dynamic-type (parse-and-eval \"base_ref\")))" \
+	    "= Derived \[&\]"
 	# A static type case.
 	gdb_test "gu (print (value-dynamic-type (parse-and-eval \"5\")))" \
 	    "= int"

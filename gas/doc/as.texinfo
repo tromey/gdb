@@ -413,6 +413,7 @@ gcc(1), ld(1), and the Info entries for @file{binutils} and @file{ld}.
    [@b{-mdsp}] [@b{-mno-dsp}]
    [@b{-mdspr2}] [@b{-mno-dspr2}]
    [@b{-mmsa}] [@b{-mno-msa}]
+   [@b{-mxpa}] [@b{-mno-xpa}]
    [@b{-mmt}] [@b{-mno-mt}]
    [@b{-mmcu}] [@b{-mno-mcu}]
    [@b{-minsn32}] [@b{-mno-insn32}]
@@ -543,6 +544,7 @@ gcc(1), ld(1), and the Info entries for @file{binutils} and @file{ld}.
  [@b{--[no-]target-align}] [@b{--[no-]longcalls}]
  [@b{--[no-]transform}]
  [@b{--rename-section} @var{oldname}=@var{newname}]
+ [@b{--[no-]trampolines}]
 @end ifset
 
 @ifset Z80
@@ -848,6 +850,8 @@ Select either big-endian (-EB) or little-endian (-EL) output.
 @item -mthumb-interwork
 Specify that the code has been generated with interworking between Thumb and
 ARM code in mind.
+@item -mccs
+Turns on CodeComposer Studio assembly syntax compatibility mode.
 @item -k
 Specify that PIC code has been generated.
 @end table
@@ -1353,6 +1357,12 @@ This tells the assembler to accept DSP Release 2 instructions.
 Generate code for the MIPS SIMD Architecture Extension.
 This tells the assembler to accept MSA instructions.
 @samp{-mno-msa} turns off this option.
+
+@item -mxpa
+@itemx -mno-xpa
+Generate code for the MIPS eXtended Physical Address (XPA) Extension.
+This tells the assembler to accept XPA instructions.
+@samp{-mno-xpa} turns off this option.
 
 @item -mmt
 @itemx -mno-mt
@@ -4347,7 +4357,7 @@ required alignment; this can be useful if you want the alignment to be filled
 with no-op instructions when appropriate.
 
 The way the required alignment is specified varies from system to system.
-For the arc, hppa, i386 using ELF, i860, iq2000, m68k, or32,
+For the arc, hppa, i386 using ELF, i860, iq2000, m68k, or1k,
 s390, sparc, tic4x, tic80 and xtensa, the first expression is the
 alignment request in bytes.  For example @samp{.align 8} advances
 the location counter until it is a multiple of 8.  If the location counter

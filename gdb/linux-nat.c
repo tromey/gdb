@@ -1320,13 +1320,16 @@ linux_nat_attach (struct target_ops *ops, char *args, int from_tty)
       make_cleanup (xfree, message);
 
       buffer_init (&buffer);
-      linux_ptrace_attach_warnings (pid, &buffer);
+      linux_ptrace_attach_fail_reason (pid, &buffer);
 
       buffer_grow_str0 (&buffer, "");
       buffer_s = buffer_finish (&buffer);
       make_cleanup (xfree, buffer_s);
 
-      throw_error (ex.error, "%s%s", buffer_s, message);
+      if (*buffer_s != '\0')
+	throw_error (ex.error, "warning: %s\n%s", buffer_s, message);
+      else
+	throw_error (ex.error, "%s", message);
     }
 
   /* The ptrace base target adds the main thread with (pid,0,0)
@@ -4011,19 +4014,15 @@ linux_nat_thread_name (struct target_ops *self, struct thread_info *thr)
 static char *
 linux_child_pid_to_exec_file (struct target_ops *self, int pid)
 {
-  char *name1, *name2;
+  static char buf[PATH_MAX];
+  char name[PATH_MAX];
 
-  name1 = xmalloc (PATH_MAX);
-  name2 = xmalloc (PATH_MAX);
-  make_cleanup (xfree, name1);
-  make_cleanup (xfree, name2);
-  memset (name2, 0, PATH_MAX);
+  xsnprintf (name, PATH_MAX, "/proc/%d/exe", pid);
+  memset (buf, 0, PATH_MAX);
+  if (readlink (name, buf, PATH_MAX - 1) <= 0)
+    strcpy (buf, name);
 
-  xsnprintf (name1, PATH_MAX, "/proc/%d/exe", pid);
-  if (readlink (name1, name2, PATH_MAX - 1) > 0)
-    return name2;
-  else
-    return name1;
+  return buf;
 }
 
 /* Records the thread's register state for the corefile note
@@ -4568,11 +4567,11 @@ linux_nat_terminal_inferior (struct target_ops *self)
   if (!target_is_async_p ())
     {
       /* Async mode is disabled.  */
-      terminal_inferior (self);
+      child_terminal_inferior (self);
       return;
     }
 
-  terminal_inferior (self);
+  child_terminal_inferior (self);
 
   /* Calls to target_terminal_*() are meant to be idempotent.  */
   if (!async_terminal_is_ours)
@@ -4591,14 +4590,14 @@ linux_nat_terminal_ours (struct target_ops *self)
   if (!target_is_async_p ())
     {
       /* Async mode is disabled.  */
-      terminal_ours (self);
+      child_terminal_ours (self);
       return;
     }
 
   /* GDB should never give the terminal to the inferior if the
      inferior is running in the background (run&, continue&, etc.),
      but claiming it sure should.  */
-  terminal_ours (self);
+  child_terminal_ours (self);
 
   if (async_terminal_is_ours)
     return;

@@ -309,7 +309,10 @@ valpy_get_dynamic_type (PyObject *self, void *closure)
 	  struct value *target;
 	  int was_pointer = TYPE_CODE (type) == TYPE_CODE_PTR;
 
-	  target = value_ind (val);
+	  if (was_pointer)
+	    target = value_ind (val);
+	  else
+	    target = coerce_ref (val);
 	  type = value_rtti_type (target, NULL, NULL, NULL);
 
 	  if (type)
@@ -551,7 +554,8 @@ static int
 get_field_flag (PyObject *field, const char *flag_name)
 {
   int flag_value;
-  PyObject *flag_object = PyObject_GetAttrString (field, flag_name);
+  /* Python 2.4 did not have a 'const' here.  */
+  PyObject *flag_object = PyObject_GetAttrString (field, (char *) flag_name);
 
   if (flag_object == NULL)
     return -1;

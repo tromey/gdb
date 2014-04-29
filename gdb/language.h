@@ -35,6 +35,7 @@ struct ui_file;
 struct value_print_options;
 struct type_print_options;
 struct lang_varobj_ops;
+struct parser_state;
 struct compile_instance;
 
 #define MAX_FORTRAN_DIMS  7	/* Maximum number of F77 array dims.  */
@@ -166,7 +167,7 @@ struct language_defn
 
     /* Parser function.  */
 
-    int (*la_parser) (void);
+    int (*la_parser) (struct parser_state *);
 
     /* Parser error function.  */
 

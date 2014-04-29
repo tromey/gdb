@@ -914,6 +914,8 @@ static const arch_entry cpu_arch[] =
     CPU_XSAVES_FLAGS, 0, 0 },
   { STRING_COMMA_LEN (".prefetchwt1"), PROCESSOR_UNKNOWN,
     CPU_PREFETCHWT1_FLAGS, 0, 0 },
+  { STRING_COMMA_LEN (".se1"), PROCESSOR_UNKNOWN,
+    CPU_SE1_FLAGS, 0, 0 },
 };
 
 #ifdef I386COFF
@@ -7332,16 +7334,13 @@ output_imm (fragS *insn_start_frag, offsetT insn_start_off)
 
 /* x86_cons_fix_new is called via the expression parsing code when a
    reloc is needed.  We use this hook to get the correct .got reloc.  */
-static enum bfd_reloc_code_real got_reloc = NO_RELOC;
 static int cons_sign = -1;
 
 void
 x86_cons_fix_new (fragS *frag, unsigned int off, unsigned int len,
-		  expressionS *exp)
+		  expressionS *exp, bfd_reloc_code_real_type r)
 {
-  enum bfd_reloc_code_real r = reloc (len, 0, cons_sign, 0, got_reloc);
-
-  got_reloc = NO_RELOC;
+  r = reloc (len, 0, cons_sign, 0, r);
 
 #ifdef TE_PE
   if (exp->X_op == O_secrel)
@@ -7637,9 +7636,11 @@ lex_got (enum bfd_reloc_code_real *rel ATTRIBUTE_UNUSED,
 
 #endif /* TE_PE */
 
-void
+bfd_reloc_code_real_type
 x86_cons (expressionS *exp, int size)
 {
+  bfd_reloc_code_real_type got_reloc = NO_RELOC;
+
   intel_syntax = -intel_syntax;
 
   exp->X_md = 0;
@@ -7686,6 +7687,8 @@ x86_cons (expressionS *exp, int size)
 
   if (intel_syntax)
     i386_intel_simplify (exp);
+
+  return got_reloc;
 }
 
 static void
@@ -9143,7 +9146,10 @@ md_apply_fix (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
 #endif
     }
 #if defined (OBJ_COFF) && defined (TE_PE)
-  if (fixP->fx_addsy != NULL && S_IS_WEAK (fixP->fx_addsy))
+  if (fixP->fx_addsy != NULL
+      && S_IS_WEAK (fixP->fx_addsy)
+      /* PR 16858: Do not modify weak function references.  */
+      && ! fixP->fx_pcrel)
     {
       value -= S_GET_VALUE (fixP->fx_addsy);
     }

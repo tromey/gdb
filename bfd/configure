@@ -12060,7 +12060,7 @@ if test "${enable_secureplt+set}" = set; then :
   *)    as_fn_error "bad value ${enableval} for secureplt option" "$LINENO" 5 ;;
 esac
 else
-  use_secureplt=false
+  use_secureplt=true
 fi
 if test $use_secureplt = true; then
 
@@ -13766,6 +13766,17 @@ cat >>confdefs.h <<_ACEOF
 #define HAVE_DECL_VSNPRINTF $ac_have_decl
 _ACEOF
 
+ac_fn_c_check_decl "$LINENO" "strnlen" "ac_cv_have_decl_strnlen" "$ac_includes_default"
+if test "x$ac_cv_have_decl_strnlen" = x""yes; then :
+  ac_have_decl=1
+else
+  ac_have_decl=0
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_STRNLEN $ac_have_decl
+_ACEOF
+
 
 # Link in zlib if we can.  This allows us to read compressed debug sections.
 # This is used only by compress.c.
@@ -15088,6 +15099,11 @@ if test "$enable_shared" = "yes"; then
     SHARED_LDFLAGS="-no-undefined"
     SHARED_LIBADD="-L`pwd`/../libiberty -liberty -L`pwd`/../intl -lintl -lcygwin -lkernel32"
   ;;
+
+  # Hack to build or1k-src on OSX
+  or1k*-*-darwin*)
+    SHARED_LIBADD="-L`pwd`/../libiberty/pic -L`pwd`/../intl -liberty -lintl"
+  ;;
   esac
 
   if test -n "$SHARED_LIBADD"; then
@@ -15311,8 +15327,7 @@ do
     bfd_elf32_nds32le_vec)      tb="$tb elf32-nds32.lo elf32.lo $elf" ;;
     bfd_elf32_nds32belin_vec)   tb="$tb elf32-nds32.lo elf32.lo $elf" ;;
     bfd_elf32_nds32lelin_vec)   tb="$tb elf32-nds32.lo elf32.lo $elf" ;;
-    bfd_elf32_openrisc_vec)	tb="$tb elf32-openrisc.lo elf32.lo $elf" ;;
-    bfd_elf32_or32_big_vec)	tb="$tb elf32-or32.lo elf32.lo $elf" ;;
+    bfd_elf32_or1k_vec)		tb="$tb elf32-or1k.lo elf32.lo $elf" ;;
     bfd_elf32_pj_vec)           tb="$tb elf32-pj.lo elf32.lo $elf";;
     bfd_elf32_pjl_vec)          tb="$tb elf32-pj.lo elf32.lo $elf";;
     bfd_elf32_powerpc_vec)	tb="$tb elf32-ppc.lo elf-vxworks.lo elf32.lo $elf" ;;
@@ -15484,7 +15499,6 @@ do
     nlm32_i386_vec)		tb="$tb nlm32-i386.lo nlm32.lo nlm.lo" ;;
     nlm32_powerpc_vec)		tb="$tb nlm32-ppc.lo nlm32.lo nlm.lo" ;;
     nlm32_sparc_vec)		tb="$tb nlm32-sparc.lo nlm32.lo nlm.lo" ;;
-    or32coff_big_vec)		tb="$tb coff-or32.lo cofflink.lo" ;;
     pc532machaout_vec)		tb="$tb pc532-mach.lo aout-ns32k.lo" ;;
     pc532netbsd_vec)		tb="$tb ns32knetbsd.lo aout-ns32k.lo" ;;
     pef_vec)                    tb="$tb pef.lo" ;;

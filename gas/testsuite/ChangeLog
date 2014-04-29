@@ -1,3 +1,131 @@
+2014-04-23  Will Newton  <will.newton@linaro.org>
+
+	* gas/arm/backslash-at.d: Fix dump output regexps for
+	armeb-linux-eabi configuration.
+	* gas/arm/got_prel.d: Likewise.
+	* gas/arm/inst-po.d: Likewise.
+	* gas/arm/unwind.d: Likewise.
+
+	* gas/arm/mapmisc.d: Check literal pool mapping with
+	a trailing .align statement.
+	* gas/arm/mapmisc.s: Likewise.
+
+2014-04-23  Andrew Bennett  <andrew.bennett@imgtec.com>
+
+	* gas/mips/mips.exp: Add xpa tests.
+	* gas/mips/xpa.s: New test.
+	* gas/mips/xpa.d: Likewise.
+
+2014-04-22  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* gas/nios2/selftest.s: New.
+	* gas/nios2/selftest.d: New.
+
+2014-04-22  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* gas/xtensa/all.exp: Add test for the first section frag alignment.
+	* gas/xtensa/first_frag_align.d: First section frag alignment expected
+	dump.
+	* gas/xtensa/first_frag_align.s: First section frag alignment test
+	source.
+
+2014-04-22  Christian Svensson  <blue@cmd.nu>
+
+	* Makefile.am: Remove openrisc and or32 support.  Add support for or1k.
+	* gas/all/gas.exp: Likewise.
+	* gas/elf/warn-2.s: Likewise.
+	* gas/lns/lns.exp: Likewise.
+	* gas/lns/lns-common-1-or1k.s: New file.
+	* gas/or1k/allinsn.d: New file.
+	* gas/or1k/allinsn.exp: New file.
+	* gas/or1k/allinsn.s: New file.
+	* gas/openrisc/addi.d: Delete.
+	* gas/openrisc/addi.s: Delete.
+	* gas/openrisc/allinsn.d: Delete.
+	* gas/openrisc/allinsn.exp: Delete.
+	* gas/openrisc/allinsn.s: Delete.
+	* gas/openrisc/lohi.d: Delete.
+	* gas/openrisc/lohi.s: Delete.
+	* gas/openrisc/store.d: Delete.
+	* gas/openrisc/store.s: Delete.
+
+2014-04-10  Senthil Kumar Selvaraj  <senthil_kumar.selvaraj@atmel.com>
+
+	* gas/avr/diffreloc_withrelax.d: New testcase.
+	* gas/avr/noreloc_withoutrelax.d: Likewise.
+	* gas/avr/relax.s: Likewise.
+
+2014-04-04  Ilya Tocar  <ilya.tocar@intel.com>
+
+	* gas/i386/i386.exp: Run SE1 tests.
+	* gas/i386/se1.d: New file.
+	* gas/i386/se1.s: Ditto.
+	* gas/i386/x86-64-se1.d: Ditto.
+	* gas/i386/x86-64-se1.s: Ditto.
+
+2014-03-21  David Weatherford <weath@cadence.com>
+            Max Filippov <jcmvbkbc@gmail.com>
+
+	* gas/xtensa/all.exp: Add test for trampoline relaxation.
+	* gas/xtensa/trampoline.d: Trampoline relaxation expected dump.
+	* gas/xtensa/trampoline.s: Trampoline relaxation test source.
+
+2014-03-20  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	* gas/all/gas.exp: Remove XFAIL of forward.d for MIPS.
+	* gas/mips/pcrel-1.s, gas/mips/pcrel-1.d, gas/mips/pcrel-2.s,
+	gas/mips/pcrel-2.d, gas/mips/pcrel-3.s, gas/mips/pcrel-3.l,
+	gas/mips/pcrel-4.s, gas/mips/pcrel-4-32.d, gas/mips/pcrel-4-n32.d,
+	gas/mips/pcrel-4-64.d: New tests.
+	* gas/mips/mips.exp: Run them.
+	* gas/mips/lui-2.l: Tweak error message for line 7.
+
+2014-03-20  Ilya Tocar  <ilya.tocar@intel.com>
+
+	* gas/i386/avx512pf-intel.d: Change memory size for vgatherpf0qps,
+	vgatherpf1qps, vscatterpf0qps, vscatterpf1qps.
+	* gas/i386/avx512pf.s: Ditto.
+	* gas/i386/x86-64-avx512pf-intel.d: Ditto.
+	* gas/i386/x86-64-avx512pf.s: Ditto.
+	* gas/i386/avx512f-intel.d: Change memory size for vgatherqps,
+	vpgatherqd, vpscatterqd, vscatterqps.
+	* gas/i386/avx512f.s: Ditto.
+	* gas/i386/x86-64-avx512f-intel.d: Ditto.
+	* gas/i386/x86-64-avx512f.s: Ditto.
+
+2014-03-19  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* gas/sparc/ldd_std.d: Fix objdump invocation in order to get
+	the old opcodes for the ldtw, ldtwa, stw and stwa instructions.
+
+	* gas/sparc/rdhpr.s: Test rd %hstick_offset and %hstick_enable.
+	* gas/sparc/rdhpr.d: Likewise.
+
+	* gas/sparc/wrhpr.s: Test wr %hstick_offset and %hstick_enable.
+	* gas/sparc/wrhpr.d: Likewise.
+
+2014-03-19  Daniel Gutson <daniel.gutson@tallertechnologies.com>
+	    Nick Clifton  <nickc@redhat.com>
+
+	* gas/arm/ccs.s: New test case.
+	* gas/arm/ccs.d: New expected disassembly.
+
+2014-03-19  Nick Clifton  <nickc@redhat.com>
+
+	* gas/rx/mov.d: Update expected disassembly.
+
+2014-03-18  Jiong Wang  <jiong.wang@arm.com>
+
+	* gas/aarch64/illegal.d: Pass -mno-verbose-error.
+	* gas/aarch64/verbose-error.s: Add more verbose message testcases.
+	* gas/aarch64/verbose-error.l: Ditto.
+
+2014-03-17  Nick Clifton  <nickc@redhat.com>
+
+	PR gas/16694
+	* gas/cfi/cfi-arm-1.s: Add checks of VFP registers.
+	* gas/cfi/cfi-arm-1.d: Update expected output.
+
 2014-03-13  Nick Clifton  <nickc@redhat.com>
 
 	* gas/aarch64/litpool.s: Make the test endian agnostic.

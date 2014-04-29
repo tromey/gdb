@@ -210,7 +210,8 @@ bfd_mach_o_i386_swap_reloc_out (arelent *rel, bfd_mach_o_reloc_info *rinfo)
       if ((*rel->sym_ptr_ptr)->flags & BSF_SECTION_SYM)
         {
           rinfo->r_extern = 0;
-          rinfo->r_value = (*rel->sym_ptr_ptr)->section->target_index;
+          rinfo->r_value =
+	    (*rel->sym_ptr_ptr)->section->output_section->target_index;
         }
       else
         {
@@ -396,6 +397,7 @@ const mach_o_segment_name_xlat mach_o_i386_segsec_names_xlat[] =
 #define TARGET_NAME 		mach_o_i386_vec
 #define TARGET_STRING 		"mach-o-i386"
 #define TARGET_ARCHITECTURE	bfd_arch_i386
+#define TARGET_PAGESIZE		4096
 #define TARGET_BIG_ENDIAN 	0
 #define TARGET_ARCHIVE 		0
 #define TARGET_PRIORITY		0

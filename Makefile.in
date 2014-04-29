@@ -46730,6 +46730,7 @@ all-stageprofile-libcpp: maybe-all-stageprofile-intl
 all-stagefeedback-libcpp: maybe-all-stagefeedback-intl
 all-fixincludes: maybe-all-libiberty
 all-gnattools: maybe-all-target-libada
+all-gnattools: maybe-all-target-libstdc++-v3
 all-lto-plugin: maybe-all-libiberty
 
 all-stage1-lto-plugin: maybe-all-stage1-libiberty
@@ -47022,6 +47023,14 @@ all-stage3-ld: maybe-all-stage3-gas
 all-stage4-ld: maybe-all-stage4-gas
 all-stageprofile-ld: maybe-all-stageprofile-gas
 all-stagefeedback-ld: maybe-all-stagefeedback-gas
+all-ld: maybe-all-binutils
+
+all-stage1-ld: maybe-all-stage1-binutils
+all-stage2-ld: maybe-all-stage2-binutils
+all-stage3-ld: maybe-all-stage3-binutils
+all-stage4-ld: maybe-all-stage4-binutils
+all-stageprofile-ld: maybe-all-stageprofile-binutils
+all-stagefeedback-ld: maybe-all-stagefeedback-binutils
 install-ld: maybe-install-gold
 install-strip-ld: maybe-install-strip-gold
 configure-gold: maybe-configure-intl

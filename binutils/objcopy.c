@@ -1598,6 +1598,13 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
       return FALSE;
     }
 
+  if (ibfd->sections == NULL)
+    {
+      non_fatal (_("error: the input file '%s' has no sections"),
+		 bfd_get_archive_filename (ibfd));
+      return FALSE;
+    }
+
   if (verbose)
     printf (_("copy from `%s' [%s] to `%s' [%s]\n"),
 	    bfd_get_archive_filename (ibfd), bfd_get_target (ibfd),
@@ -1875,7 +1882,12 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
 
 	  bfd_byte * contents = xmalloc (size);
 	  if (bfd_get_section_contents (ibfd, sec, contents, 0, size))
-	    fwrite (contents, 1, size, f);
+	    {
+	      if (fwrite (contents, 1, size, f) != size)
+		fatal (_("error writing section contents to %s (error: %s)"),
+		       pdump->filename,
+		       strerror (errno));
+	    }
 	  else
 	    bfd_nonfatal_message (NULL, ibfd, sec,
 				  _("could not retrieve section contents"));

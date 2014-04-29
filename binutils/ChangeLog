@@ -1,3 +1,153 @@
+2014-04-24  Christian Svensson  <blue@cmd.nu>
+
+	* MAINTAINERS: Add myself and Stefan as OR1K maintainers.
+
+2014-04-23  Andrew Bennett  <andrew.bennett@imgtec.com>
+
+	* doc/binutils.texi: Document the disassemble MIPS XPA instructions
+	command line option.
+
+2014-04-22  Christian Svensson  <blue@cmd.nu>
+
+	* readelf.c: Remove openrisc and or32 support.  Add support for or1k.
+
+2014-04-18  Tristan Gingold  <gingold@adacore.com>
+
+	* od-macho.c (dump_section_map): Adjust as load commands
+	are now chained.
+	(dump_load_command, dump_section_content): Likewise.
+
+2014-04-16  Tristan Gingold  <gingold@adacore.com>
+
+	* od-macho.c (OPT_DYLD_INFO): New macro.
+	(options): Add entry for dyld_info.
+	(mach_o_help): Likewise.
+	(load_and_dump, dump_dyld_info_rebase, dump_dyld_info_bind)
+	(dump_dyld_info_export_1, dump_dyld_info_export): New functions.
+	(bfd_mach_o_dyld_rebase_type_name): New array.
+	(export_info_data): New struct.
+	(dump_dyld_info): Add verbose argument.  Dump rebase, bind and
+	exports data.
+	(dump_load_command): Adjust dump_dyld_info call.
+	(mach_o_dump): Handle dyld_info.
+
+2014-04-16  Tristan Gingold  <gingold@adacore.com>
+
+	* od-macho.c (dump_header): Display sizeofcmds in decimal too.
+	(dump_segment): Reformat output.
+	(dump_dyld_info): Also display end offsets.
+	(dump_load_command): Add IDX argument, display commands size
+	and offset, reformat display.
+	(dump_load_commands): Adjust for added argument.
+
+2014-04-07  Alan Modra  <amodra@gmail.com>
+
+	PR binutils/16811
+	* objcopy.c (copy_object): Error if no sections.
+
+2014-04-03  Markus Trippelsdorf  <markus@trippelsdorf.de>
+
+	PR binutils/14698
+	ar.c: Set plugin_target early if plugins are supported.
+	nm.c: Likewise.
+
+2014-04-03  Tristan Gingold  <gingold@adacore.com>
+
+	* od-macho.c (printf_uint64): New function.
+	(dump_load_command, dump_obj_compact_unwind): Use it.
+	(dump_exe_compact_unwind): Display personality functions.
+
+2014-04-02  Tristan Gingold  <gingold@adacore.com>
+
+	* od-macho.c (OPT_TWOLEVEL_HINTS): New macro.
+	(options): Add entry for twolevel_hints.
+	(dump_data_in_code): Fix error message.
+	(dump_twolevel_hints): New function.
+	(dump_load_command): Handle prebound dylib, prebind cksum
+	and twolevel hints.
+	(mach_o_dump): Handle twolevel hints.
+
+2014-04-01  Tristan Gingold  <gingold@adacore.com>
+
+	* od-macho.c (OPT_DATA_IN_CODE): New macro.
+	(options): Add entry for data in code.
+	(mach_o_help): Ditto.
+	(data_in_code_kind_name): New array.
+	(dump_data_in_code): New function.
+	(dump_load_command): Handle data in code.
+	(mach_o_dump): Ditto.
+	(dump_header): Display a terminal newline.
+
+2014-03-27  Tristan Gingold  <gingold@adacore.com>
+
+	* od-macho.c (dump_load_command): Display value for
+	BFD_MACH_O_LC_DYLD_ENVIRONMENT.  Handle BFD_MACH_O_LC_DATA_IN_CODE
+	and BFD_MACH_O_LC_DYLIB_CODE_SIGN_DRS.
+
+2014-03-27  Tristan Gingold  <gingold@adacore.com>
+
+	* od-macho.c (OPT_FUNCTION_STARTS): New macro.
+	(options): Add entry for function_starts.
+	(mach_o_help): Ditto.
+	(disp_segment_prot): New function.
+	(dump_section_map): Call disp_segment_prot.
+	(dump_function_starts): New function.
+	(dump_obj_compact_unwind): Fix ouput indentation.
+	(dump_exe_compact_unwind): Fix ouput indentation.
+	(mach_o_dump): Handle function_starts.
+
+2014-03-26  Tristan Gingold  <gingold@adacore.com>
+
+	* od-macho.c (bfd_mach_o_cpu_name): Add BFD_MACH_O_CPU_TYPE_ARM64.
+
+2014-03-24  Tristan Gingold  <gingold@adacore.com>
+
+	* objdump.c (load_specific_debug_section): Set address of section.
+
+2014-03-24  Tristan Gingold  <gingold@adacore.com>
+
+	* od-macho.c (dump_unwind_encoding_x86): Set the factor.
+	(dump_exe_compact_unwind): Change the condition.  Improve
+	indentation.
+
+2014-03-20  Nick Clifton  <nickc@redhat.com>
+
+	* readelf.c (process_version_sections): Fix off-by-one error in
+	previous delta.
+
+2014-03-19  Nick Clifton  <nickc@redhat.com>
+
+	PR binutils/16723
+	* readelf.c (process_version_sections): Prevent an infinite loop
+	when the vn_next field is zero but there are still entries to be
+	processed.
+
+2014-03-17  Tristan Gingold  <gingold@adacore.com>
+
+	* od-macho.c (dump_section_header): Renames of dump_section.
+	(dump_segment): Adjust after renaming.
+	(OPT_COMPACT_UNWIND): Define.
+	(options): Add compact unwind.
+	(mach_o_help): Document compact_unwind.
+	(unwind_x86_64_regs, unwind_x86_regs): New arrays.
+	(dump_unwind_encoding_x86, dump_unwind_encoding)
+	(dump_obj_compact_unwind, dump_exe_compact_unwind)
+	(dump_section_content): New functions.
+	(mach_o_dump): Handle compact unwind.
+
+2014-03-17  Tristan Gingold  <gingold@adacore.com>
+
+	* od-macho.c (dump_load_command): Handle lazy load dylib.
+
+2014-03-14  Anthony Green  <green@moxielogic.com>
+
+	* objcopy.c (copy_object): Check fwrite return code.
+
+2014-03-14  Meador Inge  <meadori@codesourcery.com>
+
+         * dwarf.c (strnlen): Move prototype ...
+	 * sysdep.h (strnlen): ... to here.
+
 2014-03-12  Nick Clifton  <nickc@redhat.com>
 
 	PR binutils/16652

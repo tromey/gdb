@@ -466,6 +466,24 @@ make_cleanup_restore_current_language (void)
 		       (void *) (uintptr_t) saved_lang);
 }
 
+/* Helper function for make_cleanup_clear_parser_state.  */
+
+static void
+do_clear_parser_state (void *ptr)
+{
+  struct parser_state **p = (struct parser_state **) ptr;
+
+  *p = NULL;
+}
+
+/* Clean (i.e., set to NULL) the parser state variable P.  */
+
+struct cleanup *
+make_cleanup_clear_parser_state (struct parser_state **p)
+{
+  return make_cleanup (do_clear_parser_state, (void *) p);
+}
+
 /* This function is useful for cleanups.
    Do
 
@@ -999,6 +1017,12 @@ print_sys_errmsg (const char *string, int errcode)
 void
 quit (void)
 {
+  if (sync_quit_force_run)
+    {
+      sync_quit_force_run = 0;
+      quit_force (NULL, stdin == instream);
+    }
+
 #ifdef __MSDOS__
   /* No steenking SIGINT will ever be coming our way when the
      program is resumed.  Don't lie.  */

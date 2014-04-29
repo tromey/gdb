@@ -378,6 +378,13 @@ main (int argc, char **argv)
 
   lang_final ();
 
+  /* If the only command line argument has been -v or --version or --verbose
+     then ignore any input files provided by linker scripts and exit now.
+     We do not want to create an output file when the linker is just invoked
+     to provide version information.  */
+  if (argc == 2 && version_printed)
+    xexit (0);
+
   if (!lang_has_input_file)
     {
       if (version_printed || command_line.print_output_format)
@@ -425,7 +432,14 @@ main (int argc, char **argv)
     output_cref (config.map_file != NULL ? config.map_file : stdout);
   if (nocrossref_list != NULL)
     check_nocrossrefs ();
+#if 0
+  {
+    struct bfd_link_hash_entry * h;
 
+    h = bfd_link_hash_lookup (link_info.hash, "__image_base__", 0,0,1);
+    fprintf (stderr, "lookup = %p val %lx\n", h, h ? h->u.def.value : 1);
+  }
+#endif
   lang_finish ();
 
   /* Even if we're producing relocatable output, some non-fatal errors should
@@ -1150,6 +1164,25 @@ struct warning_callback_info
   asymbol **asymbols;
 };
 
+/* Look through the relocs to see if we can find a plausible address
+   for SYMBOL in ABFD.  Return TRUE if found.  Otherwise return FALSE.  */
+
+static bfd_boolean
+symbol_warning (const char *warning, const char *symbol, bfd *abfd)
+{
+  struct warning_callback_info cinfo;
+
+  if (!bfd_generic_link_read_symbols (abfd))
+    einfo (_("%B%F: could not read symbols: %E\n"), abfd);
+
+  cinfo.found = FALSE;
+  cinfo.warning = warning;
+  cinfo.symbol = symbol;
+  cinfo.asymbols = bfd_get_outsymbols (abfd);
+  bfd_map_over_sections (abfd, warning_find_reloc, &cinfo);
+  return cinfo.found;
+}
+
 /* This is called when there is a reference to a warning symbol.  */
 
 static bfd_boolean
@@ -1172,24 +1205,14 @@ warning_callback (struct bfd_link_info *info ATTRIBUTE_UNUSED,
     einfo ("%P: %s%s\n", _("warning: "), warning);
   else if (symbol == NULL)
     einfo ("%B: %s%s\n", abfd, _("warning: "), warning);
-  else
+  else if (! symbol_warning (warning, symbol, abfd))
     {
-      struct warning_callback_info cinfo;
-
-      /* Look through the relocs to see if we can find a plausible
-	 address.  */
-
-      if (!bfd_generic_link_read_symbols (abfd))
-	einfo (_("%B%F: could not read symbols: %E\n"), abfd);
-
-      cinfo.found = FALSE;
-      cinfo.warning = warning;
-      cinfo.symbol = symbol;
-      cinfo.asymbols = bfd_get_outsymbols (abfd);
-      bfd_map_over_sections (abfd, warning_find_reloc, &cinfo);
-
-      if (! cinfo.found)
-	einfo ("%B: %s%s\n", abfd, _("warning: "), warning);
+      bfd *b;
+      /* Search all input files for a reference to SYMBOL.  */
+      for (b = info->input_bfds; b; b = b->link_next)
+	if (b != abfd && symbol_warning (warning, symbol, b))
+	  return TRUE;
+      einfo ("%B: %s%s\n", abfd, _("warning: "), warning);
     }
 
   return TRUE;

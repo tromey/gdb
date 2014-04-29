@@ -1338,6 +1338,8 @@ enum options
     OPTION_NO_DSPR2,
     OPTION_EVA,
     OPTION_NO_EVA,
+    OPTION_XPA,
+    OPTION_NO_XPA,
     OPTION_MICROMIPS,
     OPTION_NO_MICROMIPS,
     OPTION_MCU,
@@ -1447,6 +1449,8 @@ struct option md_longopts[] =
   {"mno-virt", no_argument, NULL, OPTION_NO_VIRT},
   {"mmsa", no_argument, NULL, OPTION_MSA},
   {"mno-msa", no_argument, NULL, OPTION_NO_MSA},
+  {"mxpa", no_argument, NULL, OPTION_XPA},
+  {"mno-xpa", no_argument, NULL, OPTION_NO_XPA},
 
   /* Old-style architecture options.  Don't add more of these.  */
   {"m4650", no_argument, NULL, OPTION_M4650},
@@ -1599,7 +1603,11 @@ static const struct mips_ase mips_ases[] = {
 
   { "msa", ASE_MSA, ASE_MSA64,
     OPTION_MSA, OPTION_NO_MSA,
-    2, 2, 2, 2 }
+    2, 2, 2, 2 },
+
+  { "xpa", ASE_XPA, 0,
+    OPTION_XPA, OPTION_NO_XPA,
+    2, 2, -1, -1 }
 };
 
 /* The set of ASEs that require -mfp64.  */
@@ -14057,15 +14065,7 @@ md_pcrel_from (fixS *fixP)
       /* Return the address of the delay slot.  */
       return addr + 4;
 
-    case BFD_RELOC_32_PCREL:
-      return addr;
-
     default:
-      /* We have no relocation type for PC relative MIPS16 instructions.  */
-      if (fixP->fx_addsy && S_GET_SEGMENT (fixP->fx_addsy) != now_seg)
-	as_bad_where (fixP->fx_file, fixP->fx_line,
-		      _("PC relative MIPS16 instruction references"
-			" a different section"));
       return addr;
     }
 }
@@ -14262,13 +14262,38 @@ md_apply_fix (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
   unsigned long insn;
   reloc_howto_type *howto;
 
-  /* We ignore generic BFD relocations we don't know about.  */
-  howto = bfd_reloc_type_lookup (stdoutput, fixP->fx_r_type);
-  if (! howto)
-    return;
+  if (fixP->fx_pcrel)
+    switch (fixP->fx_r_type)
+      {
+      case BFD_RELOC_16_PCREL_S2:
+      case BFD_RELOC_MICROMIPS_7_PCREL_S1:
+      case BFD_RELOC_MICROMIPS_10_PCREL_S1:
+      case BFD_RELOC_MICROMIPS_16_PCREL_S1:
+      case BFD_RELOC_32_PCREL:
+	break;
+
+      case BFD_RELOC_32:
+	fixP->fx_r_type = BFD_RELOC_32_PCREL;
+	break;
+
+      default:
+	as_bad_where (fixP->fx_file, fixP->fx_line,
+		      _("PC-relative reference to a different section"));
+	break;
+      }
+
+  /* Handle BFD_RELOC_8, since it's easy.  Punt on other bfd relocations
+     that have no MIPS ELF equivalent.  */
+  if (fixP->fx_r_type != BFD_RELOC_8)
+    {
+      howto = bfd_reloc_type_lookup (stdoutput, fixP->fx_r_type);
+      if (!howto)
+	return;
+    }
 
   gas_assert (fixP->fx_size == 2
 	      || fixP->fx_size == 4
+	      || fixP->fx_r_type == BFD_RELOC_8
 	      || fixP->fx_r_type == BFD_RELOC_16
 	      || fixP->fx_r_type == BFD_RELOC_64
 	      || fixP->fx_r_type == BFD_RELOC_CTOR
@@ -14279,12 +14304,6 @@ md_apply_fix (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
 	      || fixP->fx_r_type == BFD_RELOC_MIPS_TLS_DTPREL64);
 
   buf = fixP->fx_frag->fr_literal + fixP->fx_where;
-
-  gas_assert (!fixP->fx_pcrel || fixP->fx_r_type == BFD_RELOC_16_PCREL_S2
-	      || fixP->fx_r_type == BFD_RELOC_MICROMIPS_7_PCREL_S1
-	      || fixP->fx_r_type == BFD_RELOC_MICROMIPS_10_PCREL_S1
-	      || fixP->fx_r_type == BFD_RELOC_MICROMIPS_16_PCREL_S1
-	      || fixP->fx_r_type == BFD_RELOC_32_PCREL);
 
   /* Don't treat parts of a composite relocation as done.  There are two
      reasons for this:
@@ -14435,6 +14454,7 @@ md_apply_fix (fixS *fixP, valueT *valP, segT seg ATTRIBUTE_UNUSED)
     case BFD_RELOC_32:
     case BFD_RELOC_32_PCREL:
     case BFD_RELOC_16:
+    case BFD_RELOC_8:
       /* If we are deleting this reloc entry, we must fill in the
 	 value now.  This can happen if we have a .word which is not
 	 resolved when it appears but is later defined.  */
@@ -17890,6 +17910,8 @@ static const struct mips_cpu_info mips_cpu_info_table[] =
   { "1004kf2_1",      0, ASE_DSP | ASE_MT,	ISA_MIPS32R2, CPU_MIPS32R2 },
   { "1004kf",         0, ASE_DSP | ASE_MT,	ISA_MIPS32R2, CPU_MIPS32R2 },
   { "1004kf1_1",      0, ASE_DSP | ASE_MT,	ISA_MIPS32R2, CPU_MIPS32R2 },
+  /* P5600 with EVA and Virtualization ASEs, other ASEs are optional.  */
+  { "p5600",          0, ASE_VIRT | ASE_EVA | ASE_XPA, 	ISA_MIPS32R2, CPU_MIPS32R2 },
 
   /* MIPS 64 */
   { "5kc",            0, 0,			ISA_MIPS64,   CPU_MIPS64 },
@@ -18146,6 +18168,9 @@ MIPS options:\n\
   fprintf (stream, _("\
 -mmsa			generate MSA instructions\n\
 -mno-msa		do not generate MSA instructions\n"));
+  fprintf (stream, _("\
+-mxpa			generate eXtended Physical Address (XPA) instructions\n\
+-mno-xpa		do not generate eXtended Physical Address (XPA) instructions\n"));
   fprintf (stream, _("\
 -mvirt			generate Virtualization instructions\n\
 -mno-virt		do not generate Virtualization instructions\n"));

@@ -1659,7 +1659,11 @@ record_latest_value (struct value *val)
      from.  This is a bit dubious, because then *&$1 does not just return $1
      but the current contents of that location.  c'est la vie...  */
   val->modifiable = 0;
-  release_value (val);
+
+  /* The value may have already been released, in which case we're adding a
+     new reference for its entry in the history.  That is why we call
+     release_value_or_incref here instead of release_value.  */
+  release_value_or_incref (val);
 
   /* Here we treat value_history_count as origin-zero
      and applying to the value being stored now.  */
@@ -3315,32 +3319,39 @@ value_from_ulongest (struct type *type, ULONGEST num)
 
 
 /* Create a value representing a pointer of type TYPE to the address
-   ADDR.  */
+   ADDR.  The type of the created value may differ from the passed
+   type TYPE. Make sure to retrieve the returned values's new type
+   after this call e.g. in case of an variable length array.  */
+
 struct value *
 value_from_pointer (struct type *type, CORE_ADDR addr)
 {
-  struct value *val = allocate_value (type);
+  struct type *resolved_type = resolve_dynamic_type (type, addr);
+  struct value *val = allocate_value (resolved_type);
 
-  store_typed_address (value_contents_raw (val), check_typedef (type), addr);
+  store_typed_address (value_contents_raw (val),
+		       check_typedef (resolved_type), addr);
   return val;
 }
 
 
 /* Create a value of type TYPE whose contents come from VALADDR, if it
    is non-null, and whose memory address (in the inferior) is
-   ADDRESS.  */
+   ADDRESS.  The type of the created value may differ from the passed
+   type TYPE.  Make sure to retrieve values new type after this call.  */
 
 struct value *
 value_from_contents_and_address (struct type *type,
 				 const gdb_byte *valaddr,
 				 CORE_ADDR address)
 {
+  struct type *resolved_type = resolve_dynamic_type (type, address);
   struct value *v;
 
   if (valaddr == NULL)
-    v = allocate_value_lazy (type);
+    v = allocate_value_lazy (resolved_type);
   else
-    v = value_from_contents (type, valaddr);
+    v = value_from_contents (resolved_type, valaddr);
   set_value_address (v, address);
   VALUE_LVAL (v) = lval_memory;
   return v;
@@ -3494,6 +3505,7 @@ coerce_ref (struct value *arg)
   retval = value_at_lazy (enc_type,
                           unpack_pointer (value_type (arg),
                                           value_contents (arg)));
+  enc_type = value_type (retval);
   return readjust_indirect_value_type (retval, enc_type,
                                        value_type_arg_tmp, arg);
 }

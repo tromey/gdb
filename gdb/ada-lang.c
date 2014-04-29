@@ -793,6 +793,7 @@ min_of_type (struct type *t)
 LONGEST
 ada_discrete_type_high_bound (struct type *type)
 {
+  type = resolve_dynamic_type (type, 0);
   switch (TYPE_CODE (type))
     {
     case TYPE_CODE_RANGE:
@@ -813,6 +814,7 @@ ada_discrete_type_high_bound (struct type *type)
 LONGEST
 ada_discrete_type_low_bound (struct type *type)
 {
+  type = resolve_dynamic_type (type, 0);
   switch (TYPE_CODE (type))
     {
     case TYPE_CODE_RANGE:
@@ -1981,9 +1983,9 @@ ada_type_of_array (struct value *arr, int bounds)
           struct value *high = desc_one_bound (descriptor, arity, 1);
 
           arity -= 1;
-          create_range_type (range_type, value_type (low),
-                             longest_to_int (value_as_long (low)),
-                             longest_to_int (value_as_long (high)));
+          create_static_range_type (range_type, value_type (low),
+				    longest_to_int (value_as_long (low)),
+				    longest_to_int (value_as_long (high)));
           elt_type = create_array_type (array_type, elt_type, range_type);
 
 	  if (ada_is_unconstrained_packed_array_type (value_type (arr)))
@@ -2250,14 +2252,14 @@ decode_constrained_packed_array (struct value *arr)
 {
   struct type *type;
 
-  arr = ada_coerce_ref (arr);
-
-  /* If our value is a pointer, then dererence it.  Make sure that
-     this operation does not cause the target type to be fixed, as
-     this would indirectly cause this array to be decoded.  The rest
-     of the routine assumes that the array hasn't been decoded yet,
-     so we use the basic "value_ind" routine to perform the dereferencing,
-     as opposed to using "ada_value_ind".  */
+  /* If our value is a pointer, then dereference it. Likewise if
+     the value is a reference.  Make sure that this operation does not
+     cause the target type to be fixed, as this would indirectly cause
+     this array to be decoded.  The rest of the routine assumes that
+     the array hasn't been decoded yet, so we use the basic "coerce_ref"
+     and "value_ind" routines to perform the dereferencing, as opposed
+     to using "ada_coerce_ref" or "ada_value_ind".  */
+  arr = coerce_ref (arr);
   if (TYPE_CODE (ada_check_typedef (value_type (arr))) == TYPE_CODE_PTR)
     arr = value_ind (arr);
 
@@ -2406,6 +2408,7 @@ ada_value_primitive_packed_val (struct value *obj, const gdb_byte *valaddr,
   else if (VALUE_LVAL (obj) == lval_memory && value_lazy (obj))
     {
       v = value_at (type, value_address (obj));
+      type = value_type (v);
       bytes = (unsigned char *) alloca (len);
       read_memory (value_address (v) + offset, bytes, len);
     }
@@ -2754,9 +2757,10 @@ ada_value_slice_from_ptr (struct value *array_ptr, struct type *type,
   CORE_ADDR base = value_as_address (array_ptr)
     + ((low - ada_discrete_type_low_bound (TYPE_INDEX_TYPE (type0)))
        * TYPE_LENGTH (TYPE_TARGET_TYPE (type0)));
-  struct type *index_type =
-    create_range_type (NULL, TYPE_TARGET_TYPE (TYPE_INDEX_TYPE (type0)),
-                       low, high);
+  struct type *index_type
+    = create_static_range_type (NULL,
+				TYPE_TARGET_TYPE (TYPE_INDEX_TYPE (type0)),
+				low, high);
   struct type *slice_type =
     create_array_type (NULL, TYPE_TARGET_TYPE (type0), index_type);
 
@@ -2768,8 +2772,8 @@ static struct value *
 ada_value_slice (struct value *array, int low, int high)
 {
   struct type *type = ada_check_typedef (value_type (array));
-  struct type *index_type =
-    create_range_type (NULL, TYPE_INDEX_TYPE (type), low, high);
+  struct type *index_type
+    = create_static_range_type (NULL, TYPE_INDEX_TYPE (type), low, high);
   struct type *slice_type =
     create_array_type (NULL, TYPE_TARGET_TYPE (type), index_type);
 
@@ -2980,9 +2984,9 @@ static struct value *
 empty_array (struct type *arr_type, int low)
 {
   struct type *arr_type0 = ada_check_typedef (arr_type);
-  struct type *index_type =
-    create_range_type (NULL, TYPE_TARGET_TYPE (TYPE_INDEX_TYPE (arr_type0)),
-                       low, low - 1);
+  struct type *index_type
+    = create_static_range_type
+        (NULL, TYPE_TARGET_TYPE (TYPE_INDEX_TYPE (arr_type0)),  low, low - 1);
   struct type *elt_type = ada_array_element_type (arr_type0, 1);
 
   return allocate_value (create_array_type (NULL, elt_type, index_type));
@@ -4389,6 +4393,20 @@ ada_clear_symbol_cache (void)
   ada_init_symbol_cache (sym_cache);
 }
 
+/* STRUCT_DOMAIN symbols are also typedefs for the type.  This function tests
+   the equivalency of two Ada symbol domain types.  */
+
+static int
+ada_symbol_matches_domain (domain_enum symbol_domain, domain_enum domain)
+{
+  if (symbol_domain == domain
+      || ((domain == VAR_DOMAIN || domain == STRUCT_DOMAIN)
+	  && symbol_domain == STRUCT_DOMAIN))
+    return 1;
+
+  return 0;
+}
+
 /* Search our cache for an entry matching NAME and NAMESPACE.
    Return it if found, or NULL otherwise.  */
 
@@ -4490,6 +4508,13 @@ standard_lookup (const char *name, const struct block *block,
   if (lookup_cached_symbol (name, domain, &sym, NULL))
     return sym;
   sym = lookup_symbol_in_language (name, block, domain, language_c, 0);
+
+  /* STRUCT_DOMAIN symbols also define a typedef for the type.  Lookup
+     a STRUCT_DOMAIN symbol if one is requested for VAR_DOMAIN and not
+     found.  */
+  if (sym == NULL && domain == VAR_DOMAIN)
+    sym = lookup_symbol_in_language (name, block, STRUCT_DOMAIN, language_c, 0);
+
   cache_symbol (name, domain, sym, block_found);
   return sym;
 }
@@ -5315,13 +5340,29 @@ add_nonlocal_symbols (struct obstack *obstackp, const char *name,
       data.objfile = objfile;
 
       if (is_wild_match)
-	objfile->sf->qf->map_matching_symbols (objfile, name, domain, global,
-					       aux_add_nonlocal_symbols, &data,
-					       wild_match, NULL);
+	{
+	  objfile->sf->qf->map_matching_symbols (objfile, name, domain, global,
+						 aux_add_nonlocal_symbols,
+						 &data, wild_match, NULL);
+	  if (domain == VAR_DOMAIN)
+	    objfile->sf->qf->map_matching_symbols (objfile, name,
+						   STRUCT_DOMAIN, global,
+						   aux_add_nonlocal_symbols,
+						   &data, wild_match, NULL);
+	}
       else
-	objfile->sf->qf->map_matching_symbols (objfile, name, domain, global,
-					       aux_add_nonlocal_symbols, &data,
-					       full_match, compare_names);
+	{
+	  objfile->sf->qf->map_matching_symbols (objfile, name, domain, global,
+						 aux_add_nonlocal_symbols,
+						 &data, full_match,
+						 compare_names);
+	  if (domain == VAR_DOMAIN)
+	    objfile->sf->qf->map_matching_symbols (objfile, name,
+						   STRUCT_DOMAIN, global,
+						   aux_add_nonlocal_symbols,
+						   &data, full_match,
+						   compare_names);
+	}
     }
 
   if (num_defns_collected (obstackp) == 0 && global && !is_wild_match)
@@ -5845,8 +5886,7 @@ ada_add_block_symbols (struct obstack *obstackp,
       for (sym = block_iter_match_first (block, name, wild_match, &iter);
 	   sym != NULL; sym = block_iter_match_next (name, wild_match, &iter))
       {
-        if (symbol_matches_domain (SYMBOL_LANGUAGE (sym),
-                                   SYMBOL_DOMAIN (sym), domain)
+        if (ada_symbol_matches_domain (SYMBOL_DOMAIN (sym), domain)
             && wild_match (SYMBOL_LINKAGE_NAME (sym), name) == 0)
           {
 	    if (SYMBOL_CLASS (sym) == LOC_UNRESOLVED)
@@ -5868,8 +5908,7 @@ ada_add_block_symbols (struct obstack *obstackp,
      for (sym = block_iter_match_first (block, name, full_match, &iter);
 	  sym != NULL; sym = block_iter_match_next (name, full_match, &iter))
       {
-        if (symbol_matches_domain (SYMBOL_LANGUAGE (sym),
-                                   SYMBOL_DOMAIN (sym), domain))
+        if (ada_symbol_matches_domain (SYMBOL_DOMAIN (sym), domain))
           {
 	    if (SYMBOL_CLASS (sym) != LOC_UNRESOLVED)
 	      {
@@ -5901,8 +5940,7 @@ ada_add_block_symbols (struct obstack *obstackp,
 
       ALL_BLOCK_SYMBOLS (block, iter, sym)
       {
-        if (symbol_matches_domain (SYMBOL_LANGUAGE (sym),
-                                   SYMBOL_DOMAIN (sym), domain))
+        if (ada_symbol_matches_domain (SYMBOL_DOMAIN (sym), domain))
           {
             int cmp;
 
@@ -7486,11 +7524,12 @@ ada_find_any_type_symbol (const char *name)
   struct symbol *sym;
 
   sym = standard_lookup (name, get_selected_block (NULL), VAR_DOMAIN);
-  if (sym != NULL && SYMBOL_CLASS (sym) == LOC_TYPEDEF)
+  if (sym != NULL
+      && (SYMBOL_DOMAIN (sym) != VAR_DOMAIN
+	  || SYMBOL_CLASS (sym) == LOC_TYPEDEF))
     return sym;
 
-  sym = standard_lookup (name, NULL, STRUCT_DOMAIN);
-  return sym;
+  return NULL;
 }
 
 /* Find a type named NAME.  Ignores ambiguity.  This routine will look
@@ -7887,6 +7926,7 @@ ada_template_to_fixed_record_type_1 (struct type *type,
 		 size first before creating the value.  */
 	      check_size (rtype);
 	      dval = value_from_contents_and_address (rtype, valaddr, address);
+	      rtype = value_type (dval);
 	    }
           else
             dval = dval0;
@@ -7989,7 +8029,10 @@ ada_template_to_fixed_record_type_1 (struct type *type,
       off = TYPE_FIELD_BITPOS (rtype, variant_field);
 
       if (dval0 == NULL)
-        dval = value_from_contents_and_address (rtype, valaddr, address);
+	{
+	  dval = value_from_contents_and_address (rtype, valaddr, address);
+	  rtype = value_type (dval);
+	}
       else
         dval = dval0;
 
@@ -8130,7 +8173,10 @@ to_record_with_fixed_variant_part (struct type *type, const gdb_byte *valaddr,
     return type;
 
   if (dval0 == NULL)
-    dval = value_from_contents_and_address (type, valaddr, address);
+    {
+      dval = value_from_contents_and_address (type, valaddr, address);
+      type = value_type (dval);
+    }
   else
     dval = dval0;
 
@@ -8428,6 +8474,7 @@ ada_to_fixed_type_1 (struct type *type, const gdb_byte *valaddr,
 	      value_from_contents_and_address (fixed_record_type,
 					       valaddr,
 					       address);
+            fixed_record_type = value_type (obj);
             if (real_type != NULL)
               return to_fixed_record_type
 		(real_type, NULL,
@@ -10160,10 +10207,7 @@ ada_evaluate_subexp (struct type *expect_type, struct expression *exp,
           }
 
           *pos += 4;
-          return value_zero
-            (to_static_fixed_type
-             (static_unwrap_type (SYMBOL_TYPE (exp->elts[pc + 2].symbol))),
-             not_lval);
+          return value_zero (to_static_fixed_type (type), not_lval);
         }
       else
         {
@@ -11120,9 +11164,8 @@ to_fixed_range_type (struct type *raw_type, struct value *dval)
       if (L < INT_MIN || U > INT_MAX)
 	return raw_type;
       else
-	return create_range_type (alloc_type_copy (raw_type), raw_type,
-				  ada_discrete_type_low_bound (raw_type),
-				  ada_discrete_type_high_bound (raw_type));
+	return create_static_range_type (alloc_type_copy (raw_type), raw_type,
+					 L, U);
     }
   else
     {
@@ -11185,7 +11228,8 @@ to_fixed_range_type (struct type *raw_type, struct value *dval)
             }
         }
 
-      type = create_range_type (alloc_type_copy (raw_type), base_type, L, U);
+      type = create_static_range_type (alloc_type_copy (raw_type),
+				       base_type, L, U);
       TYPE_NAME (type) = name;
       return type;
     }
@@ -11249,7 +11293,19 @@ ada_modulus (struct type *type)
    variants of the runtime, we use a sniffer that will determine
    the runtime variant used by the program being debugged.  */
 
-/* Ada's standard exceptions.  */
+/* Ada's standard exceptions.
+
+   The Ada 83 standard also defined Numeric_Error.  But there so many
+   situations where it was unclear from the Ada 83 Reference Manual
+   (RM) whether Constraint_Error or Numeric_Error should be raised,
+   that the ARG (Ada Rapporteur Group) eventually issued a Binding
+   Interpretation saying that anytime the RM says that Numeric_Error
+   should be raised, the implementation may raise Constraint_Error.
+   Ada 95 went one step further and pretty much removed Numeric_Error
+   from the list of standard exceptions (it made it a renaming of
+   Constraint_Error, to help preserve compatibility when compiling
+   an Ada83 compiler). As such, we do not include Numeric_Error from
+   this list of standard exceptions.  */
 
 static char *standard_exc[] = {
   "constraint_error",
@@ -13376,10 +13432,10 @@ emit_char (int c, struct type *type, struct ui_file *stream, int quoter)
 }
 
 static int
-parse (void)
+parse (struct parser_state *ps)
 {
   warnings_issued = 0;
-  return ada_parse ();
+  return ada_parse (ps);
 }
 
 static const struct exp_descriptor ada_exp_descriptor = {
