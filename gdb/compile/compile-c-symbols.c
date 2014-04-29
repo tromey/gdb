@@ -575,7 +575,8 @@ generate_c_for_for_one_variable (struct compile_c_instance *compiler,
 	  struct ui_file *local_file = mem_fileopen ();
 
 	  make_cleanup_ui_file_delete (local_file);
-	  SYMBOL_COMPUTED_OPS (sym)->generate_c_location (sym, stream, gdbarch,
+	  SYMBOL_COMPUTED_OPS (sym)->generate_c_location (sym, local_file,
+							  gdbarch,
 							  registers_used,
 							  pc, generated_name);
 	  ui_file_put (local_file, ui_file_write_for_put,
