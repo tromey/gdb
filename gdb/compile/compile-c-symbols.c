@@ -578,8 +578,7 @@ generate_c_for_for_one_variable (struct compile_c_instance *compiler,
 							  gdbarch,
 							  registers_used,
 							  pc, generated_name);
-	  ui_file_put (local_file, ui_file_write_for_put,
-		       stream);
+	  ui_file_put (local_file, ui_file_write_for_put, stream);
 
 	  do_cleanups (cleanup);
 	}
