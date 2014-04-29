@@ -116,7 +116,6 @@ error_symbol_once (struct compile_c_instance *context,
   if (err == NULL || err->message == NULL)
     return;
 
-  C_CTX (context)->c_ops->error (C_CTX (context), err->message);
   message = err->message;
   err->message = NULL;
   make_cleanup (xfree, message);
