@@ -343,11 +343,6 @@ c_compute_program (struct compile_instance *inst,
 
   fputs_unfiltered ("#pragma GCC user_expression\n", buf);
 
-  /* For larger user expressions the automatic semicolons may be
-     confusing.  */
-  if (strchr (input, '\n') == NULL)
-    fputs_unfiltered ("#pragma GCC trailing_semicolon\n", buf);
-
   /* The user expression has to be in its own scope, so that "extern"
      works properly.  Otherwise gcc thinks that the "extern"
      declaration is in the same scope as the declaration provided by
@@ -358,6 +353,11 @@ c_compute_program (struct compile_instance *inst,
   fputs_unfiltered ("#line 1 \"gdb command line\"\n", buf);
   fputs_unfiltered (input, buf);
   fputs_unfiltered ("\n", buf);
+
+  /* For larger user expressions the automatic semicolons may be
+     confusing.  */
+  if (strchr (input, '\n') == NULL)
+    fputs_unfiltered (";\n", buf);
 
   if (inst->scope != COMPILE_I_RAW_SCOPE)
     fputs_unfiltered ("}\n", buf);

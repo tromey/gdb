@@ -42,6 +42,10 @@ if ![runto_main] {
 
 gdb_test "p globalvar" " = 10" "expect 10"
 
+gdb_test_no_output "compile code globalvar = 11" \
+    "set variable without trailing semicolon"
+gdb_test "p globalvar" " = 11" "check variable without trailing semicolon"
+
 gdb_test_no_output "compile code globalvar = SOME_MACRO;" \
     "set variable from macro"
 gdb_test "p globalvar" " = 23" "expect 23"
