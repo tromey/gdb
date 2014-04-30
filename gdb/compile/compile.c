@@ -127,8 +127,11 @@ compile_code_command (char *arg, int from_tty)
 
   arg = skip_spaces (arg);
 
-  if (arg != NULL && arg[0] == '-')
-    error (_("Unknown argument specified."));
+  if (arg != NULL && !check_for_argument (&arg, "--", sizeof ("--") - 1))
+    {
+      if (arg[0] == '-')
+	error (_("Unknown argument specified."));
+    }
 
   if (arg && *arg)
       eval_compile_command (NULL, arg, scope);

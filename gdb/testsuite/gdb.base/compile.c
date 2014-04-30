@@ -110,6 +110,7 @@ main (void)
   int globalshadow = 100;
   int staticshadow = 200;
   int externed = 9;
+  int f = 0;
 
   static int static_local = 77000;
 

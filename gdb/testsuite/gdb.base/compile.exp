@@ -40,6 +40,26 @@ if ![runto_main] {
     return -1
 }
 
+#
+# Test delimeter for code, and arguments.
+#
+
+gdb_test_no_output "compile -- f = 10" \
+    "Test abbreviations and code delimeter"
+
+gdb_test "compile f = 10;" ".*= 10;: No such file.*" \
+    "Test abbreviations and code collision"
+
+gdb_test_no_output "compile -r -- _gdb_expr(){int i = 5;}" \
+    "Test delimeter with -r"
+
+gdb_test_no_output "compile -raw -- _gdb_expr(){int i = 5;}" \
+    "Test delimeter with -raw"
+
+gdb_test "compile -- -r  _gdb_expr(){int i = 5;}" \
+    ".* error: 'r' undeclared \\(first use in this function\\).*" \
+    "Test delimeter with -r after it"
+
 gdb_test "p globalvar" " = 10" "expect 10"
 
 gdb_test_no_output "compile code globalvar = 11" \
