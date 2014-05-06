@@ -107,8 +107,8 @@ compile_file_command (char *arg, int from_tty)
 
 /* Handle the input from the 'compile code' command.  The
    "compile code" command is used to evaluate an expression that may
-   contain calls to the GCC compiler.  TODO: Initially all we
-   expect in this command is straight up C code blocks.  */
+   contain calls to the GCC compiler.  The language expected in this
+   compile command is the language currently set in GDB.  */
 
 static void
 compile_code_command (char *arg, int from_tty)
