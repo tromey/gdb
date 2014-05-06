@@ -34,7 +34,23 @@ lappend srcfilesoptions $srcfile4 "nodebug"
 if { [eval build_executable_from_specs ${testfile}.exp $testfile {$options} ${srcfilesoptions}] } {
     return -1
 }
+
 clean_restart ${testfile}
+
+#
+# Test command without an running inferior.
+#
+gdb_test "compile code int i=2;" \
+    "The program must be running for the compile command to work.*" \
+    "Test compile code command without running inferior"
+
+gdb_test "compile int i=2;" \
+    "The program must be running for the compile command to work.*" \
+    "Test compile command without running inferior"
+
+gdb_test "compile file -r ${srcdir}/${subdir}/${testfile}-mod.c" \
+    "The program must be running for the compile command to work.*" \
+    "Test compile file command without running inferior"
 
 if ![runto_main] {
     return -1
@@ -276,6 +292,16 @@ gdb_test_no_output "set lang auto"
 gdb_test_no_output "compile code union union_type newdecl_u"
 gdb_test_no_output "compile code struct struct_type newdecl_s"
 gdb_test_no_output "compile code inttypedef newdecl_i"
+
+gdb_test "compile file" \
+    "You must provide a filename for this command.*" \
+    "Test compile file without a filename"
+gdb_test "compile file -r" \
+    "You must provide a filename with the raw option set.*" \
+    "Test compile file and raw option without a filename"
+gdb_test "compile file -z" \
+    "Unknown argument.*" \
+    "Test compile file with unknown argument"
 
 
 # LOC_CONST tests.
