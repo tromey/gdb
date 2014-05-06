@@ -173,8 +173,7 @@ add_code_header (enum compile_i_scope_types type, struct ui_file *buf)
   case COMPILE_I_RAW_SCOPE:
     break;
   default:
-    break;
-    /* TODO: Error case, but do nothing for now.  */
+    gdb_assert_not_reached (_("Unknown compiler scope reached."));
   }
 }
 
@@ -193,8 +192,7 @@ add_code_footer (enum compile_i_scope_types type, struct ui_file *buf)
   case COMPILE_I_RAW_SCOPE:
     break;
   default:
-    /* TODO: Error case, but do nothing for now.  */
-    break;
+    gdb_assert_not_reached (_("Unknown compiler scope reached."));
   }
 }
 
