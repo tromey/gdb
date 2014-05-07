@@ -390,6 +390,12 @@ Dwarf::assemble $asm_file {
 		    {type :$int_label}
 		    {location $program SPECIAL_expr}
 		}
+
+		formal_parameter {
+		    {name optimized_out}
+		    {variable_parameter 1 flag}
+		    {type :$int_label}
+		}
 	    }
 	}
     }
@@ -406,3 +412,8 @@ if ![runto func] {
 
 # If we have a bug, this will hang.
 gdb_test_no_output "compile code param"
+
+# We can't access optimized-out variables, but their presence should
+# not affect compilations that don't refer to them.
+gdb_test "compile code optimized_out" \
+    ".*optimized out.*Compilation failed."
