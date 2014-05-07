@@ -270,7 +270,7 @@ convert_one_symbol (struct compile_c_instance *context,
 
 	case LOC_FINAL_VALUE:
 	default:
-	  gdb_assert_not_reached ("unreachable case in convert_one_symbol");
+	  gdb_assert_not_reached ("Unreachable case in convert_one_symbol.");
 
 	}
 
@@ -419,7 +419,7 @@ gcc_convert_symbol (void *datum,
       domain = LABEL_DOMAIN;
       break;
     default:
-      gdb_assert_not_reached ("unrecognized oracle request");
+      gdb_assert_not_reached ("Unrecognized oracle request.");
     }
 
   /* We can't allow exceptions to escape out of this callback.  Safest
@@ -592,11 +592,11 @@ generate_c_for_for_one_variable (struct compile_c_instance *compiler,
 	    case LOC_REF_ARG:
 	    case LOC_REGPARM_ADDR:
 	    case LOC_LOCAL:
-	      error (_("local symbol unhandled when generating C code"));
+	      error (_("Local symbol unhandled when generating C code."));
 
 	    case LOC_COMPUTED:
 	      gdb_assert_not_reached (_("LOC_COMPUTED variable "
-					"missing a method"));
+					"missing a method."));
 
 	    default:
 	      /* Nothing to do for all other cases, as they don't represent
