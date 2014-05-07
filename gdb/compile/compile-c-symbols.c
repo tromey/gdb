@@ -134,7 +134,7 @@ symbol_substitution_name (struct symbol *sym)
 }
 
 /* Convert a given symbol, SYM, to the compiler's representation.
-   CONTEXT is how the compiler instance.  IS_GLOBAL is true if the
+   CONTEXT is the compiler instance.  IS_GLOBAL is true if the
    symbol came from the global scope.  IS_LOCAL is true if the symbol
    came from a local scope.  (Note that the two are not strictly
    inverses because the symbol might have come from the static
