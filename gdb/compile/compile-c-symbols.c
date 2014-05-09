@@ -227,8 +227,11 @@ convert_one_symbol (struct compile_c_instance *context,
 		   SYMBOL_PRINT_NAME (sym));
 	  /* FALLTHROUGH */
 	case LOC_UNRESOLVED:
+	  /* 'symbol_name' cannot be used here as that one is used only for 
+	     local variables from compile_dwarf_expr_to_c.
+	     Global variables can be accessed by GCC only by their address, not
+	     by their name.  */
 	  {
-	    // FIXME: Why does GCC crash using kind && symbol_name as below?
 	    struct value *val;
 	    struct frame_info *frame = NULL;
 
