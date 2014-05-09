@@ -28,6 +28,8 @@
 #include "compile.h"
 #include "value.h"
 #include "exceptions.h"
+#include "gdbtypes.h"
+#include "dwarf2loc.h"
 
 
 
@@ -554,6 +556,62 @@ symbol_seen (htab_t hashtab, struct symbol *sym)
   return 0;
 }
 
+/* Generate C code to compute the length of a VLA.  */
+
+static void
+generate_vla_size (struct compile_c_instance *compiler,
+		   struct ui_file *stream,
+		   struct gdbarch *gdbarch,
+		   unsigned char *registers_used,
+		   CORE_ADDR pc,
+		   struct type *type,
+		   struct symbol *sym)
+{
+  type = check_typedef (type);
+
+  if (TYPE_CODE (type) == TYPE_CODE_REF)
+    type = check_typedef (TYPE_TARGET_TYPE (type));
+
+  switch (TYPE_CODE (type))
+    {
+    case TYPE_CODE_RANGE:
+      {
+	if (TYPE_HIGH_BOUND_KIND (type) == PROP_LOCEXPR
+	    || TYPE_HIGH_BOUND_KIND (type) == PROP_LOCLIST)
+	  {
+	    const struct dynamic_prop *prop = &TYPE_RANGE_DATA (type)->high;
+	    char *name = c_get_range_decl_name (prop);
+	    struct cleanup *cleanup = make_cleanup (xfree, name);
+
+	    dwarf2_compile_property_to_c (stream, name,
+					  gdbarch, registers_used,
+					  prop, pc, sym);
+	    do_cleanups (cleanup);
+	  }
+      }
+      break;
+
+    case TYPE_CODE_ARRAY:
+      generate_vla_size (compiler, stream, gdbarch, registers_used, pc,
+			 TYPE_INDEX_TYPE (type), sym);
+      generate_vla_size (compiler, stream, gdbarch, registers_used, pc,
+			 TYPE_TARGET_TYPE (type), sym);
+      break;
+
+    case TYPE_CODE_UNION:
+    case TYPE_CODE_STRUCT:
+      {
+	int i;
+
+	for (i = 0; i < TYPE_NFIELDS (type); ++i)
+	  if (!field_is_static (&TYPE_FIELD (type, i)))
+	    generate_vla_size (compiler, stream, gdbarch, registers_used, pc,
+			       TYPE_FIELD_TYPE (type, i), sym);
+      }
+      break;
+    }
+}
+
 /* Generate C code to compute the address of SYM.  */
 
 static void
@@ -568,6 +626,18 @@ generate_c_for_for_one_variable (struct compile_c_instance *compiler,
 
   TRY_CATCH (e, RETURN_MASK_ERROR)
     {
+      if (is_dynamic_type (SYMBOL_TYPE (sym)))
+	{
+	  struct ui_file *size_file = mem_fileopen ();
+	  struct cleanup *cleanup = make_cleanup_ui_file_delete (size_file);
+
+	  generate_vla_size (compiler, size_file, gdbarch, registers_used, pc,
+			     SYMBOL_TYPE (sym), sym);
+	  ui_file_put (size_file, ui_file_write_for_put, stream);
+
+	  do_cleanups (cleanup);
+	}
+
       if (SYMBOL_COMPUTED_OPS (sym) != NULL)
 	{
 	  char *generated_name = symbol_substitution_name (sym);

@@ -37,6 +37,18 @@ extern void compile_dwarf_expr_to_c (struct ui_file *stream,
 				     const gdb_byte *op_end,
 				     struct dwarf2_per_cu_data *per_cu);
 
+struct dynamic_prop;
+extern void compile_dwarf_bounds_to_c (struct ui_file *stream,
+				       const char *result_name,
+				       const struct dynamic_prop *prop,
+				       struct symbol *sym, CORE_ADDR pc,
+				       struct gdbarch *arch,
+				       unsigned char *registers_used,
+				       unsigned int addr_size,
+				       const gdb_byte *op_ptr,
+				       const gdb_byte *op_end,
+				       struct dwarf2_per_cu_data *per_cu);
+
 extern int compile_debug;
 
 #endif /* GDB_COMPILE_H */

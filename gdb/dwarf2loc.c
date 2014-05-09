@@ -2545,6 +2545,42 @@ dwarf2_evaluate_property (const struct dynamic_prop *prop, CORE_ADDR address,
   return 0;
 }
 
+/* See dwarf2loc.h.  */
+
+void
+dwarf2_compile_property_to_c (struct ui_file *stream,
+			      const char *result_name,
+			      struct gdbarch *gdbarch,
+			      unsigned char *registers_used,
+			      const struct dynamic_prop *prop,
+			      CORE_ADDR pc,
+			      struct symbol *sym)
+{
+  struct dwarf2_property_baton *baton = prop->data.baton;
+  const gdb_byte *data;
+  size_t size;
+  struct dwarf2_per_cu_data *per_cu;
+
+  if (prop->kind == PROP_LOCEXPR)
+    {
+      data = baton->locexpr.data;
+      size = baton->locexpr.size;
+      per_cu = baton->locexpr.per_cu;
+    }
+  else
+    {
+      gdb_assert (prop->kind == PROP_LOCLIST);
+
+      data = dwarf2_find_location_expression (&baton->loclist, &size, pc);
+      per_cu = baton->loclist.per_cu;
+    }
+
+  compile_dwarf_bounds_to_c (stream, result_name, prop, sym, pc,
+			     gdbarch, registers_used,
+			     dwarf2_per_cu_addr_size (per_cu),
+			     data, data + size, per_cu);
+}
+
 
 /* Helper functions and baton for dwarf2_loc_desc_needs_frame.  */
 

@@ -124,4 +124,12 @@ extern unsigned char *generate_c_for_variable_locations
 
 extern const char *c_get_mode_for_size (int size);
 
+/* Given a dynamic property, return an xmallocd name that is used to
+   represent its size.  The result must be freed by the caller.  The
+   contents of the resulting string will be the same each time for
+   each call with the same argument.  */
+
+struct dynamic_prop;
+extern char *c_get_range_decl_name (const struct dynamic_prop *prop);
+
 #endif /* GDB_COMPILE_INTERNAL_H */

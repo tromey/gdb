@@ -85,26 +85,56 @@ static gcc_type
 convert_array (struct compile_c_instance *context, struct type *type)
 {
   gcc_type element_type;
-  LONGEST low_bound, high_bound, count;
+  struct type *range = TYPE_INDEX_TYPE (type);
 
   element_type = convert_type (context, TYPE_TARGET_TYPE (type));
 
-  if (get_array_bounds (type, &low_bound, &high_bound) == 0)
-    count = -1;
-  else if (low_bound != 0)
+  if (TYPE_LOW_BOUND_KIND (range) != PROP_CONST)
+    return C_CTX (context)->c_ops->error (C_CTX (context),
+					  _("array type with non-constant"
+					    " lower bound is not supported"));
+  if (TYPE_LOW_BOUND (range) != 0)
     return C_CTX (context)->c_ops->error (C_CTX (context),
 					  _("cannot convert array type with "
 					    "non-zero lower bound to C"));
-  else
-    count = high_bound + 1;
 
-  /* Doesn't handle VLA yet.  */
-  if (TYPE_VECTOR (type))
-    return C_CTX (context)->c_ops->build_vector_type (C_CTX (context),
-						      element_type,
-						      count);
-  return C_CTX (context)->c_ops->build_array_type (C_CTX (context),
-						   element_type, count);
+  if (TYPE_HIGH_BOUND_KIND (range) == PROP_LOCEXPR
+      || TYPE_HIGH_BOUND_KIND (range) == PROP_LOCLIST)
+    {
+      gcc_type result;
+      char *upper_bound;
+
+      if (TYPE_VECTOR (type))
+	return C_CTX (context)->c_ops->error (C_CTX (context),
+					      _("variably-sized vector type"
+						" is not supported"));
+
+      upper_bound = c_get_range_decl_name (&TYPE_RANGE_DATA (range)->high);
+      result = C_CTX (context)->c_ops->build_vla_array_type (C_CTX (context),
+							     element_type,
+							     upper_bound);
+      xfree (upper_bound);
+      return result;
+    }
+  else
+    {
+      LONGEST low_bound, high_bound, count;
+
+      if (get_array_bounds (type, &low_bound, &high_bound) == 0)
+	count = -1;
+      else
+	{
+	  gdb_assert (low_bound == 0); /* Ensured above.  */
+	  count = high_bound + 1;
+	}
+
+      if (TYPE_VECTOR (type))
+	return C_CTX (context)->c_ops->build_vector_type (C_CTX (context),
+							  element_type,
+							  count);
+      return C_CTX (context)->c_ops->build_array_type (C_CTX (context),
+						       element_type, count);
+    }
 }
 
 static gcc_type

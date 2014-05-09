@@ -52,6 +52,14 @@ c_get_mode_for_size (int size)
   return mode;
 }
 
+/* See compile-internal.h.  */
+
+char *
+c_get_range_decl_name (const struct dynamic_prop *prop)
+{
+  return xstrprintf ("__gdb_prop_%s", host_address_to_string (prop));
+}
+
 
 
 #define STR(x) #x
@@ -310,6 +318,7 @@ c_compute_program (struct compile_instance *inst,
   if (inst->scope != COMPILE_I_RAW_SCOPE)
     {
       unsigned char *registers_used;
+      int i;
 
       /* Generate the code to compute variable locations, but do it
 	 before generating the function header, so we can define the
@@ -332,6 +341,18 @@ c_compute_program (struct compile_instance *inst,
 			" __attribute__ ((__mode__(__pointer__)))"
 			" __gdb_intptr;\n",
 			buf);
+
+      for (i = 0; i < 4; ++i)
+	{
+	  const char *mode = c_get_mode_for_size (1 << i);
+
+	  gdb_assert (mode != NULL);
+	  fprintf_unfiltered (buf,
+			      "typedef int"
+			      " __attribute__ ((__mode__(__%s__)))"
+			      " __gdb_int_%s;\n",
+			      mode, mode);
+	}
     }
 
   add_code_header (inst->scope, buf);

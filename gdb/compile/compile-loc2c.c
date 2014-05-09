@@ -491,6 +491,7 @@ pushf_register (int indent, struct ui_file *stream,
 
 static void
 do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
+			    const char *type_name,
 			    const char *result_name,
 			    struct symbol *sym, CORE_ADDR pc,
 			    struct gdbarch *arch,
@@ -514,7 +515,7 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 
   ++scope;
 
-  fprintfi_filtered (indent, stream, "void *%s;\n", result_name);
+  fprintfi_filtered (indent, stream, "%s%s;\n", type_name, result_name);
   fprintfi_filtered (indent, stream, "{\n");
   indent += 2;
 
@@ -807,7 +808,7 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 		       (long) (op_ptr - base));
 
 	    do_compile_dwarf_expr_to_c (indent, stream,
-					fb_name,
+					"void *", fb_name,
 					sym, pc,
 					arch, registers_used, addr_size,
 					datastart, datastart + datalen,
@@ -877,8 +878,7 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 	       dereference.  */
 	    fprintfi_filtered (indent, stream,
 			       "__gdb_stack[__gdb_tos] = "
-			       "*((unsigned int __attribute__"
-			       "((__mode__(__%s__))) *) "
+			       "*((__gdb_int_%s *) "
 			       "__gdb_stack[__gdb_tos]);\n",
 			       mode);
 	  }
@@ -988,7 +988,7 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 			   "__cfa_%ld", (long) (op_ptr - base));
 
 		do_compile_dwarf_expr_to_c (indent, stream,
-					    cfa_name,
+					    "void *", cfa_name,
 					    sym, pc, arch, registers_used,
 					    addr_size,
 					    cfa_start, cfa_end,
@@ -1025,8 +1025,8 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 	}
     }
 
-  fprintfi_filtered (indent, stream, "%s = (void *) __gdb_stack[__gdb_tos];\n",
-		     result_name);
+  fprintfi_filtered (indent, stream, "%s = (%s) __gdb_stack[__gdb_tos];\n",
+		     result_name, type_name);
   fprintfi_filtered (indent - 2, stream, "}\n");
 
   do_cleanups (cleanup);
@@ -1040,7 +1040,22 @@ compile_dwarf_expr_to_c (struct ui_file *stream, const char *result_name,
 			 const gdb_byte *op_ptr, const gdb_byte *op_end,
 			 struct dwarf2_per_cu_data *per_cu)
 {
-  do_compile_dwarf_expr_to_c (2, stream, result_name, sym, pc,
+  do_compile_dwarf_expr_to_c (2, stream, "void *", result_name, sym, pc,
 			      arch, registers_used, addr_size, op_ptr, op_end,
 			      NULL, per_cu);
+}
+
+void
+compile_dwarf_bounds_to_c (struct ui_file *stream,
+			   const char *result_name,
+			   const struct dynamic_prop *prop,
+			   struct symbol *sym, CORE_ADDR pc,
+			   struct gdbarch *arch, unsigned char *registers_used,
+			   unsigned int addr_size,
+			   const gdb_byte *op_ptr, const gdb_byte *op_end,
+			   struct dwarf2_per_cu_data *per_cu)
+{
+  do_compile_dwarf_expr_to_c (2, stream, "unsigned long ", result_name,
+			      sym, pc, arch, registers_used,
+			      addr_size, op_ptr, op_end, NULL, per_cu);
 }

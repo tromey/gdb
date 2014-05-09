@@ -1,4 +1,4 @@
-/* Interface between GCC C FE and GDB
+/* Interface between GCC C FE and GDB  -*- c -*-
 
    Copyright (C) 2014 Free Software Foundation, Inc.
 
@@ -148,6 +148,14 @@ GCC_METHOD0 (gcc_type, bool_type)
 GCC_METHOD2 (gcc_type, build_array_type,
 	     gcc_type /* element_type */,
 	     int /* num_elements */)
+
+/* Create a new variably-sized array type.  UPPER_BOUND_NAME is the
+   name of a local variable that holds the upper bound of the array;
+   it is one less than the array size.  */
+
+GCC_METHOD2 (gcc_type, build_vla_array_type,
+	     gcc_type /* element_type */,
+	     const char * /* upper_bound_name */)
 
 /* Return a qualified variant of a given base type.  QUALIFIERS says
    which qualifiers to use; it is composed of or'd together
