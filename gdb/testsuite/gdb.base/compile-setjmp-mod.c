@@ -15,12 +15,32 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-// Make 'globalvar' lookup working.
+#include <setjmp.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+// Make 'done' lookup working.
 #pragma GCC user_expression
+
+static void
+foo ()
+{
+  jmp_buf env;
+
+  switch (setjmp (env))
+    {
+    case 2:
+      done = 1;
+      return;
+    case 0:
+      longjmp (env, 2);
+      break;
+    }
+  abort ();
+}
 
 void
 _gdb_expr (void)
 {
-  globalvar = 3;
-  globalvar += 4;
+  foo ();
 }

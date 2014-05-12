@@ -358,9 +358,10 @@ c_compute_program (struct compile_instance *inst,
   add_code_header (inst->scope, buf);
 
   if (inst->scope == COMPILE_I_SIMPLE_SCOPE)
-    ui_file_put (var_stream, ui_file_write_for_put, buf);
-
-  fputs_unfiltered ("#pragma GCC user_expression\n", buf);
+    {
+      ui_file_put (var_stream, ui_file_write_for_put, buf);
+      fputs_unfiltered ("#pragma GCC user_expression\n", buf);
+    }
 
   /* The user expression has to be in its own scope, so that "extern"
      works properly.  Otherwise gcc thinks that the "extern"

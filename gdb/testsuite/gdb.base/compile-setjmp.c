@@ -15,12 +15,10 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-// Make 'globalvar' lookup working.
-#pragma GCC user_expression
+static int done;
 
-void
-_gdb_expr (void)
+int
+main (void)
 {
-  globalvar = 3;
-  globalvar += 4;
+  return 0;
 }
