@@ -229,7 +229,7 @@ convert_one_symbol (struct compile_c_instance *context,
 		   SYMBOL_PRINT_NAME (sym));
 	  /* FALLTHROUGH */
 	case LOC_UNRESOLVED:
-	  /* 'symbol_name' cannot be used here as that one is used only for 
+	  /* 'symbol_name' cannot be used here as that one is used only for
 	     local variables from compile_dwarf_expr_to_c.
 	     Global variables can be accessed by GCC only by their address, not
 	     by their name.  */
@@ -238,7 +238,7 @@ convert_one_symbol (struct compile_c_instance *context,
 	    struct frame_info *frame = NULL;
 
 	    if (symbol_read_needs_frame (sym))
-	      {	      
+	      {
 		frame = get_selected_frame (NULL);
 		if (frame == NULL)
 		  error (_("Symbol \"%s\" cannot be used because "

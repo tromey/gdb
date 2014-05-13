@@ -494,7 +494,7 @@ eval_compile_command (struct command_line *cmd, char *cmd_string,
     {
       struct cleanup *cleanup_xfree, *cleanup_unlink;
       struct compile_module *compile_module;
-      
+
       cleanup_xfree = make_cleanup (xfree, object_file);
       make_cleanup (xfree, source_file);
       cleanup_unlink = make_cleanup (cleanup_unlink_file, object_file);

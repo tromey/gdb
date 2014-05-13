@@ -103,7 +103,7 @@ int dwarf2_evaluate_property (const struct dynamic_prop *prop,
 
 /* A helper for the compiler interface that compiles a single dynamic
    property to C code.
-   
+
    STREAM is where the C code is to be written.
    RESULT_NAME is the name of the generated variable.
    GDBARCH is the architecture to use.
