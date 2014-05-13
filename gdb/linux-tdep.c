@@ -1772,7 +1772,7 @@ linux_gdb_signal_to_target (struct gdbarch *gdbarch,
 /* See gdbarch.sh 'infcall_mmap'.  */
 
 static CORE_ADDR
-linux_infcall_mmap (CORE_ADDR size)
+linux_infcall_mmap (CORE_ADDR size, unsigned prot)
 {
   struct objfile *objf;
   /* Do there still exist any Linux systems without "mmap64"?
@@ -1792,9 +1792,12 @@ linux_infcall_mmap (CORE_ADDR size)
   /* Assuming sizeof (unsigned long) == sizeof (size_t).  */
   arg[ARG_LENGTH] = value_from_ulongest
 		    (builtin_type (gdbarch)->builtin_unsigned_long, size);
-  /* FIXME: Separate r/o vs. r/w segments.  */
+  gdb_assert ((prot & ~7) == 0);
   arg[ARG_PROT] = value_from_longest (builtin_type (gdbarch)->builtin_int,
-				      PROT_EXEC | PROT_READ | PROT_WRITE);
+				      0
+				      | ((prot & 4) != 0 ? PROT_READ : 0)
+				      | ((prot & 2) != 0 ? PROT_WRITE : 0)
+				      | ((prot & 1) != 0 ? PROT_EXEC : 0));
   arg[ARG_FLAGS] = value_from_longest (builtin_type (gdbarch)->builtin_int,
 				       MAP_PRIVATE | MAP_ANONYMOUS);
   arg[ARG_FD] = value_from_longest (builtin_type (gdbarch)->builtin_int, -1);

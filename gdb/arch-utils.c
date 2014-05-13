@@ -820,7 +820,7 @@ int default_insn_is_jump (struct gdbarch *gdbarch, CORE_ADDR addr)
 }
 
 CORE_ADDR
-default_infcall_mmap (CORE_ADDR size)
+default_infcall_mmap (CORE_ADDR size, unsigned prot)
 {
   error (_("This target does not support inferior memory allocation by mmap."));
 }

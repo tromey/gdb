@@ -277,6 +277,14 @@ gdb_test_no_output \
 gdb_test "p globalvar" " = -76" "expect -76"
 
 
+# Test compiled module memory protection.
+
+gdb_test_no_output "set debug compile on"
+gdb_test "compile code static const int readonly = 1; *(int *) &readonly = 2;" \
+    "The program being debugged was signaled while in a function called from GDB\\.\r\nGDB has restored the context to what it was before the call\\.\r\n.*"
+gdb_test_no_output "set debug compile off"
+
+
 #
 # Some simple coverage tests.
 #

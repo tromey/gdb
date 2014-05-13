@@ -1316,11 +1316,13 @@ typedef int (gdbarch_auxv_parse_ftype) (struct gdbarch *gdbarch, gdb_byte **read
 extern int gdbarch_auxv_parse (struct gdbarch *gdbarch, gdb_byte **readptr, gdb_byte *endptr, CORE_ADDR *typep, CORE_ADDR *valp);
 extern void set_gdbarch_auxv_parse (struct gdbarch *gdbarch, gdbarch_auxv_parse_ftype *auxv_parse);
 
-/* Allocate SIZE bytes of page aligned memory in inferior.
+/* Allocate SIZE bytes of PROT protected page aligned memory in inferior.
+   PROT has rwx bitmask format - bit 2 (value 4) is for readable memory, bit 1
+   (value 2) is for writable memory and bit 0 (value 1) is for executable memory.
    Throw an error if it is not possible.  Returned address is always valid. */
 
-typedef CORE_ADDR (gdbarch_infcall_mmap_ftype) (CORE_ADDR size);
-extern CORE_ADDR gdbarch_infcall_mmap (struct gdbarch *gdbarch, CORE_ADDR size);
+typedef CORE_ADDR (gdbarch_infcall_mmap_ftype) (CORE_ADDR size,unsigned prot);
+extern CORE_ADDR gdbarch_infcall_mmap (struct gdbarch *gdbarch, CORE_ADDR size,unsigned prot);
 extern void set_gdbarch_infcall_mmap (struct gdbarch *gdbarch, gdbarch_infcall_mmap_ftype *infcall_mmap);
 
 /* Return string (caller has to use xfree for it) with options for GCC

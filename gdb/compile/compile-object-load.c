@@ -34,12 +34,18 @@
 
 struct setup_sections_data
 {
-  /* First unused VMA address where to put the next section.  */
-  CORE_ADDR vma;
+  /* Size of all recent sections with matching LAST_PROT.  */
+  CORE_ADDR last_size;
 
-  /* Maximum of alignments of all sections.  This value is always at least 1.
-     This value is always a power of 2.  */
-  CORE_ADDR max_alignment;
+  /* First section matching LAST_PROT.  */
+  asection *last_section_first;
+
+  /* Memory protection like the prot parameter of gdbarch_infcall_mmap. */
+  unsigned last_prot;
+
+  /* Maximum of alignments of all sections matching LAST_PROT.
+     This value is always at least 1.  This value is always a power of 2.  */
+  CORE_ADDR last_max_alignment;
 };
 
 /* Place all ABFD sections next to each other obeying all constraints.  */
@@ -49,37 +55,86 @@ setup_sections (bfd *abfd, asection *sect, void *data_voidp)
 {
   struct setup_sections_data *data = data_voidp;
   CORE_ADDR alignment;
+  unsigned prot;
 
-  /* It is required by later bfd_get_relocated_section_contents.  */
-  if (sect->output_section == NULL)
-    sect->output_section = sect;
+  if (sect != NULL)
+    {
+      /* It is required by later bfd_get_relocated_section_contents.  */
+      if (sect->output_section == NULL)
+	sect->output_section = sect;
 
-  if ((bfd_get_section_flags (abfd, sect) & SEC_ALLOC) == 0)
+      if ((bfd_get_section_flags (abfd, sect) & SEC_ALLOC) == 0)
+	return;
+
+      // Make the memory always readable.
+      prot = 4;
+      if ((bfd_get_section_flags (abfd, sect) & SEC_READONLY) == 0)
+	prot |= 2;
+      if ((bfd_get_section_flags (abfd, sect) & SEC_CODE) != 0)
+	prot |= 1;
+
+      if (compile_debug)
+	fprintf_unfiltered (gdb_stdout,
+			    "module \"%s\" section \"%s\" size %s prot %u\n",
+			    bfd_get_filename (abfd),
+			    bfd_get_section_name (abfd, sect),
+			    paddress (target_gdbarch (),
+				      bfd_get_section_size (sect)),
+			    prot);
+    }
+  else
+    prot = -1;
+
+  if (sect == NULL
+      || (data->last_prot != prot && bfd_get_section_size (sect) != 0))
+    {
+      CORE_ADDR addr;
+      asection *sect_iter;
+
+      if (data->last_size != 0)
+	{
+	  addr = gdbarch_infcall_mmap (target_gdbarch (), data->last_size,
+				       data->last_prot);
+	  if (compile_debug)
+	    fprintf_unfiltered (gdb_stdout,
+				"allocated %s bytes at %s prot %u\n",
+				paddress (target_gdbarch (), data->last_size),
+				paddress (target_gdbarch (), addr),
+				data->last_prot);
+	}
+      else
+	addr = 0;
+
+      if ((addr & (data->last_max_alignment - 1)) != 0)
+	error (_("Inferior compiled module address %s "
+		 "is not aligned to BFD required %s."),
+	       paddress (target_gdbarch (), addr),
+	       paddress (target_gdbarch (), data->last_max_alignment));
+
+      for (sect_iter = data->last_section_first; sect_iter != sect;
+	   sect_iter = sect_iter->next)
+	if ((bfd_get_section_flags (abfd, sect_iter) & SEC_ALLOC) != 0)
+	  bfd_set_section_vma (abfd, sect_iter,
+			       addr + bfd_get_section_vma (abfd, sect_iter));
+
+      data->last_size = 0;
+      data->last_section_first = sect;
+      data->last_prot = prot;
+      data->last_max_alignment = 1;
+    }
+
+  if (sect == NULL)
     return;
 
   alignment = ((CORE_ADDR) 1) << bfd_get_section_alignment (abfd, sect);
-  data->max_alignment = max (data->max_alignment, alignment);
+  data->last_max_alignment = max (data->last_max_alignment, alignment);
 
-  data->vma = (data->vma + alignment - 1) & -alignment;
+  data->last_size = (data->last_size + alignment - 1) & -alignment;
 
-  bfd_set_section_vma (abfd, sect, data->vma);
+  bfd_set_section_vma (abfd, sect, data->last_size);
 
-  data->vma += bfd_get_section_size (sect);
-  data->vma = (data->vma + alignment - 1) & -alignment;
-}
-
-/* Relocate each section SECT of ABFD by specified CORE_ADDR displacement.  */
-
-static void
-add_to_vma (bfd *abfd, asection *sect, void *data)
-{
-  CORE_ADDR addr = *(CORE_ADDR *) data;
-  CORE_ADDR alignment;
-
-  if ((bfd_get_section_flags (abfd, sect) & SEC_ALLOC) == 0)
-    return;
-
-  bfd_set_section_vma (abfd, sect, addr + bfd_get_section_vma (abfd, sect));
+  data->last_size += bfd_get_section_size (sect);
+  data->last_size = (data->last_size + alignment - 1) & -alignment;
 }
 
 /* Helper for link_callbacks callbacks vector.  */
@@ -422,22 +477,17 @@ compile_object_load (const char *object_file, const char *source_file)
   if ((bfd_get_file_flags (abfd) & (EXEC_P | DYNAMIC)) != 0)
     error (_("\"%s\": not in object format."), filename);
 
-  setup_sections_data.vma = 0;
-  setup_sections_data.max_alignment = 1;
+  setup_sections_data.last_size = 0;
+  setup_sections_data.last_section_first = abfd->sections;
+  setup_sections_data.last_prot = -1;
+  setup_sections_data.last_max_alignment = 1;
   bfd_map_over_sections (abfd, setup_sections, &setup_sections_data);
+  setup_sections (abfd, NULL, &setup_sections_data);
 
   storage_needed = bfd_get_symtab_upper_bound (abfd);
   if (storage_needed < 0)
     error (_("Cannot read symbols of compiled module \"%s\": %s"),
           filename, bfd_errmsg (bfd_get_error ()));
-
-  addr = gdbarch_infcall_mmap (target_gdbarch (), setup_sections_data.vma);
-  if ((addr & (setup_sections_data.max_alignment - 1)) != 0)
-    error (_("Inferior compiled module address %s not aligned to BFD required %s."),
-	   paddress (target_gdbarch (), addr),
-	   paddress (target_gdbarch (), setup_sections_data.max_alignment));
-
-  bfd_map_over_sections (abfd, add_to_vma, &addr);
 
   /* SYMFILE_VERBOSE is not passed even if FROM_TTY, user is not interested in
      "Reading symbols from ..." message for automatically generated file.  */
@@ -501,8 +551,9 @@ compile_object_load (const char *object_file, const char *source_file)
     regs_addr = 0;
   else
     {
+      /* Use read-only non-executable memory protection.  */
       regs_addr = gdbarch_infcall_mmap (target_gdbarch (),
-					TYPE_LENGTH (regs_type));
+					TYPE_LENGTH (regs_type), 4);
       gdb_assert (regs_addr != 0);
       store_regs (regs_type, regs_addr);
     }
