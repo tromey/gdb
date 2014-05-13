@@ -1945,7 +1945,7 @@ install_variable (struct varobj *var)
     error (_("Duplicate variable object name"));
 
   /* Add varobj to hash table.  */
-  newvl = xmalloc (sizeof (struct vlist));
+  newvl = XNEW (struct vlist);
   newvl->next = *(varobj_table + index);
   newvl->var = var;
   *(varobj_table + index) = newvl;
@@ -2734,10 +2734,7 @@ extern void _initialize_varobj (void);
 void
 _initialize_varobj (void)
 {
-  int sizeof_table = sizeof (struct vlist *) * VAROBJ_TABLE_SIZE;
-
-  varobj_table = xmalloc (sizeof_table);
-  memset (varobj_table, 0, sizeof_table);
+  varobj_table = XCNEWVEC (struct vlist *, VAROBJ_TABLE_SIZE);
 
   add_setshow_zuinteger_cmd ("varobj", class_maintenance,
 			     &varobjdebug,

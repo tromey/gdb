@@ -5260,7 +5260,7 @@ init_tu_and_read_dwo_dies (struct dwarf2_per_cu_data *this_cu,
     {
       /* If !use_existing_cu, this_cu->cu must be NULL.  */
       gdb_assert (this_cu->cu == NULL);
-      cu = xmalloc (sizeof (*cu));
+      cu = XNEW (struct dwarf2_cu);
       init_one_comp_unit (cu, this_cu);
       /* If an error occurs while loading, release our storage.  */
       free_cu_cleanup = make_cleanup (free_heap_comp_unit, cu);
@@ -5397,7 +5397,12 @@ init_cutu_and_read_dies (struct dwarf2_per_cu_data *this_cu,
     {
       /* If !use_existing_cu, this_cu->cu must be NULL.  */
       gdb_assert (this_cu->cu == NULL);
+<<<<<<< HEAD
       cu = xmalloc (sizeof (*cu));
+=======
+
+      cu = XNEW (struct dwarf2_cu);
+>>>>>>> use new and newvec in some sopts
       init_one_comp_unit (cu, this_cu);
       /* If an error occurs while loading, release our storage.  */
       free_cu_cleanup = make_cleanup (free_heap_comp_unit, cu);
@@ -7368,7 +7373,7 @@ queue_comp_unit (struct dwarf2_per_cu_data *per_cu,
   struct dwarf2_queue_item *item;
 
   per_cu->queued = 1;
-  item = xmalloc (sizeof (*item));
+  item = XNEW (struct dwarf2_queue_item);
   item->per_cu = per_cu;
   item->pretend_language = pretend_language;
   item->next = NULL;
@@ -11037,7 +11042,7 @@ inherit_abstract_dies (struct die_info *die, struct dwarf2_cu *cu)
       child_die = sibling_die (child_die);
       die_children_count++;
     }
-  offsets = xmalloc (sizeof (*offsets) * die_children_count);
+  offsets = XNEWVEC (sect_offset, die_children_count);
   cleanups = make_cleanup (xfree, offsets);
 
   offsets_end = offsets;
@@ -16958,8 +16963,7 @@ dwarf_decode_line_header (unsigned int offset, struct dwarf2_cu *cu)
       return 0;
     }
 
-  lh = xmalloc (sizeof (*lh));
-  memset (lh, 0, sizeof (*lh));
+  lh = XCNEW (struct line_header);
   back_to = make_cleanup ((make_cleanup_ftype *) free_line_header,
                           (void *) lh);
 

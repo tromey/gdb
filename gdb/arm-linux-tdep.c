@@ -1090,7 +1090,7 @@ arm_linux_displaced_step_copy_insn (struct gdbarch *gdbarch,
 				    struct regcache *regs)
 {
   struct displaced_step_closure *dsc
-    = xmalloc (sizeof (struct displaced_step_closure));
+    = XNEW (struct displaced_step_closure);
 
   /* Detect when we enter an (inaccessible by GDB) Linux kernel helper, and
      stop at the return location.  */

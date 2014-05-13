@@ -557,7 +557,7 @@ addrs_section_sort (struct section_addr_info *addrs)
   int i;
 
   /* `+ 1' for the NULL terminator.  */
-  array = xmalloc (sizeof (*array) * (addrs->num_sections + 1));
+  array = XNEWVEC (struct other_sections *, (addrs->num_sections + 1));
   for (i = 0; i < addrs->num_sections; i++)
     array[i] = &addrs->other[i];
   array[i] = NULL;

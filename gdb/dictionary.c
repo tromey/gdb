@@ -402,7 +402,7 @@ dict_create_hashed_expandable (void)
 {
   struct dictionary *retval;
 
-  retval = xmalloc (sizeof (struct dictionary));
+  retval = XNEW (struct dictionary);
   DICT_VECTOR (retval) = &dict_hashed_expandable_vector;
   DICT_HASHED_NBUCKETS (retval) = DICT_EXPANDABLE_INITIAL_CAPACITY;
   DICT_HASHED_BUCKETS (retval) = xcalloc (DICT_EXPANDABLE_INITIAL_CAPACITY,
@@ -467,7 +467,7 @@ dict_create_linear_expandable (void)
 {
   struct dictionary *retval;
 
-  retval = xmalloc (sizeof (struct dictionary));
+  retval = XNEW (struct dictionary);
   DICT_VECTOR (retval) = &dict_linear_expandable_vector;
   DICT_LINEAR_NSYMS (retval) = 0;
   DICT_LINEAR_EXPANDABLE_CAPACITY (retval)

@@ -1164,7 +1164,7 @@ make_cleanup_restore_current_thread (void)
   struct frame_info *frame;
   struct current_thread_cleanup *old;
 
-  old = xmalloc (sizeof (struct current_thread_cleanup));
+  old = XNEW (struct current_thread_cleanup);
   old->inferior_ptid = inferior_ptid;
   old->inf_id = current_inferior ()->num;
   old->was_removable = current_inferior ()->removable;
@@ -1238,7 +1238,7 @@ thread_apply_all_command (char *cmd, int from_tty)
 
       /* Save a copy of the thread_list in case we execute detach
          command.  */
-      tp_array = xmalloc (sizeof (struct thread_info *) * tc);
+      tp_array = XNEWVEC (struct thread_info *, tc);
       make_cleanup (xfree, tp_array);
       ta_cleanup.tp_array = tp_array;
       ta_cleanup.count = tc;

@@ -3031,7 +3031,7 @@ all_tracepoint_actions_and_cleanup (struct breakpoint *t)
       make_cleanup (xfree, default_collect_line);
 
       validate_actionline (default_collect_line, t);
-      default_collect_action = xmalloc (sizeof (struct command_line));
+      default_collect_action = XNEW (struct command_line);
       make_cleanup (xfree, default_collect_action);
       default_collect_action->next = actions;
       default_collect_action->line = default_collect_line;
@@ -3245,7 +3245,7 @@ make_cleanup_restore_current_traceframe (void)
 {
   struct current_traceframe_cleanup *old;
 
-  old = xmalloc (sizeof (struct current_traceframe_cleanup));
+  old = XNEW (struct current_traceframe_cleanup);
   old->traceframe_number = traceframe_number;
 
   return make_cleanup_dtor (do_restore_current_traceframe_cleanup, old,

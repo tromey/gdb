@@ -589,7 +589,7 @@ tui_alloc_content (int num_elements, enum tui_win_type type)
   char *element_block_ptr;
   int i;
 
-  content = xmalloc (sizeof (struct tui_win_element *) *num_elements);
+  content = XNEWVEC (struct tui_win_element *, num_elements);
   if (content != NULL)
     {
       /*

@@ -265,7 +265,7 @@ create_event (event_handler_func proc, event_data data)
 {
   gdb_event *event;
 
-  event = xmalloc (sizeof (*event));
+  event = XNEW (gdb_event);
   event->proc = proc;
   event->data = data;
 
@@ -1031,7 +1031,7 @@ create_async_event_handler (async_event_handler_func *proc,
 {
   async_event_handler *h;
 
-  h = xmalloc (sizeof (*h));
+  h = XNEW (async_event_handler);
   h->ready = 0;
   h->next_handler = NULL;
   h->proc = proc;
@@ -1089,7 +1089,7 @@ check_async_event_handlers (void)
 	{
 	  async_handler_ptr->ready = 0;
 
-	  hdata = xmalloc (sizeof (*hdata));
+	  hdata = XNEW (struct async_event_handler_data);
 
 	  hdata->proc = async_handler_ptr->proc;
 	  hdata->client_data = async_handler_ptr->client_data;

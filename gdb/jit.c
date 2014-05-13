@@ -136,7 +136,7 @@ mem_bfd_iovec_stat (struct bfd *abfd, void *stream, struct stat *sb)
 static struct bfd *
 bfd_open_from_target_memory (CORE_ADDR addr, ULONGEST size, char *target)
 {
-  struct target_buffer *buffer = xmalloc (sizeof (struct target_buffer));
+  struct target_buffer *buffer = XNEW (struct target_buffer);
 
   buffer->base = addr;
   buffer->size = size;

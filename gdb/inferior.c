@@ -128,8 +128,7 @@ add_inferior_silent (int pid)
 {
   struct inferior *inf;
 
-  inf = xmalloc (sizeof (*inf));
-  memset (inf, 0, sizeof (*inf));
+  inf = XCNEW (struct inferior);
   inf->pid = pid;
 
   inf->control.stop_soon = NO_STOP_QUIETLY;

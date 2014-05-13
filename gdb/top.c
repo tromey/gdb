@@ -792,7 +792,7 @@ gdb_readline_wrapper (char *prompt)
   struct gdb_readline_wrapper_cleanup *cleanup;
   char *retval;
 
-  cleanup = xmalloc (sizeof (*cleanup));
+  cleanup = XNEW (struct gdb_readline_wrapper_cleanup);
   cleanup->handler_orig = input_handler;
   input_handler = gdb_readline_wrapper_line;
 

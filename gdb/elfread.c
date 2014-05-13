@@ -1203,7 +1203,7 @@ elf_read_minimal_symbols (struct objfile *objfile, int symfile_flags,
       long i;
 
       make_cleanup (xfree, synthsyms);
-      synth_symbol_table = xmalloc (sizeof (asymbol *) * synthcount);
+      synth_symbol_table = XNEWVEC (asymbol *, synthcount);
       for (i = 0; i < synthcount; i++)
 	synth_symbol_table[i] = synthsyms + i;
       make_cleanup (xfree, synth_symbol_table);

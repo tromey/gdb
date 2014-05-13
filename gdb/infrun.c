@@ -1378,7 +1378,7 @@ displaced_step_prepare (ptid_t ptid)
 			    "displaced: defering step of %s\n",
 			    target_pid_to_str (ptid));
 
-      new_req = xmalloc (sizeof (*new_req));
+      new_req = XNEW (struct displaced_step_request);
       new_req->ptid = ptid;
       new_req->next = NULL;
 
@@ -6996,7 +6996,8 @@ struct infcall_control_state
 struct infcall_control_state *
 save_infcall_control_state (void)
 {
-  struct infcall_control_state *inf_status = xmalloc (sizeof (*inf_status));
+  struct infcall_control_state *inf_status
+    = XNEW (struct infcall_control_state);
   struct thread_info *tp = inferior_thread ();
   struct inferior *inf = current_inferior ();
 
@@ -7138,7 +7139,7 @@ save_inferior_ptid (void)
 {
   ptid_t *saved_ptid_ptr;
 
-  saved_ptid_ptr = xmalloc (sizeof (ptid_t));
+  saved_ptid_ptr = XNEW (ptid_t);
   *saved_ptid_ptr = inferior_ptid;
   return make_cleanup (restore_inferior_ptid, saved_ptid_ptr);
 }

@@ -205,7 +205,7 @@ do_close_cleanup (void *arg)
 struct cleanup *
 make_cleanup_close (int fd)
 {
-  int *saved_fd = xmalloc (sizeof (fd));
+  int *saved_fd = XNEW (int);
 
   *saved_fd = fd;
   return make_cleanup_dtor (do_close_cleanup, saved_fd, xfree);
@@ -311,8 +311,7 @@ restore_integer (void *p)
 struct cleanup *
 make_cleanup_restore_integer (int *variable)
 {
-  struct restore_integer_closure *c =
-    xmalloc (sizeof (struct restore_integer_closure));
+  struct restore_integer_closure *c = XNEW (struct restore_integer_closure);
 
   c->variable = variable;
   c->value = *variable;
@@ -869,8 +868,8 @@ add_internal_problem_command (struct internal_problem *problem)
   char *set_doc;
   char *show_doc;
 
-  set_cmd_list = xmalloc (sizeof (*set_cmd_list));
-  show_cmd_list = xmalloc (sizeof (*set_cmd_list));
+  set_cmd_list = XNEW (struct cmd_list_element *);
+  show_cmd_list = XNEW (struct cmd_list_element *);
   *set_cmd_list = NULL;
   *show_cmd_list = NULL;
 

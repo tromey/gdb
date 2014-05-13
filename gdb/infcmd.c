@@ -1096,7 +1096,7 @@ step_once (int skip_subroutines, int single_inst, int count, int thread)
 	{
 	  struct step_1_continuation_args *args;
 
-	  args = xmalloc (sizeof (*args));
+	  args = XNEW (struct step_1_continuation_args);
 	  args->skip_subroutines = skip_subroutines;
 	  args->single_inst = single_inst;
 	  args->count = count;
@@ -1644,7 +1644,7 @@ finish_forward (struct symbol *function, struct frame_info *frame)
 
   /* We want stop_registers, please...  */
   tp->control.proceed_to_finish = 1;
-  cargs = xmalloc (sizeof (*cargs));
+  cargs = XNEW (struct finish_command_continuation_args);
 
   cargs->thread = thread;
   cargs->breakpoint = breakpoint;
@@ -2537,7 +2537,7 @@ attach_command (char *args, int from_tty)
 	  /* sync_execution mode.  Wait for stop.  */
 	  struct attach_command_continuation_args *a;
 
-	  a = xmalloc (sizeof (*a));
+	  a = XNEW (struct attach_command_continuation_args);
 	  a->args = xstrdup (args);
 	  a->from_tty = from_tty;
 	  a->async_exec = async_exec;
@@ -2598,7 +2598,7 @@ notice_new_inferior (ptid_t ptid, int leave_running, int from_tty)
 	{
 	  struct attach_command_continuation_args *a;
 
-	  a = xmalloc (sizeof (*a));
+	  a = XNEW (struct attach_command_continuation_args);
 	  a->args = xstrdup ("");
 	  a->from_tty = from_tty;
 	  a->async_exec = async_exec;

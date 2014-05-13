@@ -1810,7 +1810,7 @@ add_substitute_path_rule (char *from, char *to)
   struct substitute_path_rule *rule;
   struct substitute_path_rule *new_rule;
 
-  new_rule = xmalloc (sizeof (struct substitute_path_rule));
+  new_rule = XNEW (struct substitute_path_rule);
   new_rule->from = xstrdup (from);
   new_rule->to = xstrdup (to);
   new_rule->next = NULL;
