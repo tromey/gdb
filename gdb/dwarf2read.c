@@ -1982,9 +1982,9 @@ dwarf2_has_info (struct objfile *objfile,
     {
       /* Initialize per-objfile state.  */
       struct dwarf2_per_objfile *data
-	= obstack_alloc (&objfile->objfile_obstack, sizeof (*data));
+	= OBSTACK_ZALLOC (&objfile->objfile_obstack,
+			  struct dwarf2_per_objfile);
 
-      memset (data, 0, sizeof (*data));
       set_objfile_data (objfile, dwarf2_objfile_data_key, data);
       dwarf2_per_objfile = data;
 
@@ -3160,7 +3160,7 @@ dwarf2_read_index (struct objfile *objfile)
 
   create_addrmap_from_index (objfile, &local_map);
 
-  map = obstack_alloc (&objfile->objfile_obstack, sizeof (struct mapped_index));
+  map = XOBNEW (&objfile->objfile_obstack, struct mapped_index);
   *map = local_map;
 
   dwarf2_per_objfile->index_table = map;
@@ -3244,7 +3244,7 @@ dw2_get_file_names_reader (const struct die_reader_specs *reader,
       return;
     }
 
-  qfn = obstack_alloc (&objfile->objfile_obstack, sizeof (*qfn));
+  qfn = XOBNEW (&objfile->objfile_obstack, struct quick_file_names);
   qfn->hash.dwo_unit = cu->dwo_unit;
   qfn->hash.line_offset.sect_off = line_offset;
   gdb_assert (slot != NULL);
@@ -11480,7 +11480,7 @@ read_call_site_scope (struct die_info *die, struct dwarf2_cu *cu)
     {
       struct dwarf2_locexpr_baton *dlbaton;
 
-      dlbaton = obstack_alloc (&objfile->objfile_obstack, sizeof (*dlbaton));
+      dlbaton = XOBNEW (&objfile->objfile_obstack, struct dwarf2_locexpr_baton);
       dlbaton->data = DW_BLOCK (attr)->data;
       dlbaton->size = DW_BLOCK (attr)->size;
       dlbaton->per_cu = cu->per_cu;
@@ -12429,7 +12429,7 @@ dwarf2_add_typedef (struct field_info *fip, struct die_info *die,
   char *fieldname = "";
 
   /* Allocate a new field list entry and link it in.  */
-  new_field = xzalloc (sizeof (*new_field));
+  new_field = XCNEW (struct typedef_field_list);
   make_cleanup (xfree, new_field);
 
   gdb_assert (die->tag == DW_TAG_typedef);
@@ -14532,7 +14532,7 @@ attr_to_dynamic_prop (const struct attribute *attr, struct die_info *die,
 
   if (attr_form_is_block (attr))
     {
-      baton = obstack_alloc (obstack, sizeof (*baton));
+      baton = XOBNEW (obstack, struct dwarf2_property_baton);
       baton->referenced_type = NULL;
       baton->locexpr.per_cu = cu->per_cu;
       baton->locexpr.size = DW_BLOCK (attr)->size;
@@ -14554,7 +14554,7 @@ attr_to_dynamic_prop (const struct attribute *attr, struct die_info *die,
 
       if (attr_form_is_section_offset (target_attr))
 	{
-	  baton = obstack_alloc (obstack, sizeof (*baton));
+	  baton = XOBNEW (obstack, struct dwarf2_property_baton);
 	  baton->referenced_type = die_type (target_die, target_cu);
 	  fill_in_loclist_baton (cu, &baton->loclist, target_attr);
 	  prop->data.baton = baton;
@@ -14563,7 +14563,7 @@ attr_to_dynamic_prop (const struct attribute *attr, struct die_info *die,
 	}
       else if (attr_form_is_block (target_attr))
 	{
-	  baton = obstack_alloc (obstack, sizeof (*baton));
+	  baton = XOBNEW (obstack, struct dwarf2_property_baton);
 	  baton->referenced_type = die_type (target_die, target_cu);
 	  baton->locexpr.per_cu = cu->per_cu;
 	  baton->locexpr.size = DW_BLOCK (target_attr)->size;
@@ -15038,7 +15038,7 @@ abbrev_table_read_table (struct dwarf2_section_info *section,
   abbrev_ptr += bytes_read;
 
   allocated_attrs = ATTR_ALLOC_CHUNK;
-  cur_attrs = xmalloc (allocated_attrs * sizeof (struct attr_abbrev));
+  cur_attrs = XNEWVEC (struct attr_abbrev, allocated_attrs);
 
   /* Loop until we reach an abbrev number of 0.  */
   while (abbrev_number)
@@ -17011,8 +17011,7 @@ dwarf_decode_line_header (unsigned int offset, struct dwarf2_cu *cu)
   line_ptr += 1;
   lh->opcode_base = read_1_byte (abfd, line_ptr);
   line_ptr += 1;
-  lh->standard_opcode_lengths
-    = xmalloc (lh->opcode_base * sizeof (lh->standard_opcode_lengths[0]));
+  lh->standard_opcode_lengths = XNEWVEC (unsigned char, lh->opcode_base);
 
   lh->standard_opcode_lengths[0] = 1;  /* This should never be used anyway.  */
   for (i = 1; i < lh->opcode_base; ++i)
@@ -18125,7 +18124,7 @@ dwarf2_const_value_attr (const struct attribute *attr, struct type *type,
 	/* Symbols of this form are reasonably rare, so we just
 	   piggyback on the existing location code rather than writing
 	   a new implementation of symbol_computed_ops.  */
-	*baton = obstack_alloc (obstack, sizeof (struct dwarf2_locexpr_baton));
+	*baton = XOBNEW (obstack, struct dwarf2_locexpr_baton);
 	(*baton)->per_cu = cu->per_cu;
 	gdb_assert ((*baton)->per_cu);
 
@@ -20343,7 +20342,7 @@ parse_macro_definition (struct macro_source_file *file, int line,
       char *name = copy_string (body, p - body);
       int argc = 0;
       int argv_size = 1;
-      char **argv = xmalloc (argv_size * sizeof (*argv));
+      char **argv = XNEWVEC (char *, argv_size);
 
       p++;
 
@@ -21681,7 +21680,8 @@ set_die_type (struct die_info *die, struct type *type, struct dwarf2_cu *cu)
     complaint (&symfile_complaints,
 	       _("A problem internal to GDB: DIE 0x%x has type already set"),
 	       die->offset.sect_off);
-  *slot = obstack_alloc (&objfile->objfile_obstack, sizeof (**slot));
+  *slot = XOBNEW (&objfile->objfile_obstack, struct
+		  dwarf2_per_cu_offset_and_type);
   **slot = ofs;
   return type;
 }

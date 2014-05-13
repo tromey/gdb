@@ -96,7 +96,7 @@ cache_new_ref1 (struct frame_info *next_bottom_frame)
   struct tailcall_cache *cache;
   void **slot;
 
-  cache = xzalloc (sizeof (*cache));
+  cache = XCNEW (struct tailcall_cache);
 
   cache->next_bottom_frame = next_bottom_frame;
   cache->refc = 1;

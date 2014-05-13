@@ -55,8 +55,7 @@ new_agent_expr (struct gdbarch *gdbarch, CORE_ADDR scope)
 
   /* Bit vector for registers used.  */
   x->reg_mask_len = 1;
-  x->reg_mask = xmalloc (x->reg_mask_len * sizeof (x->reg_mask[0]));
-  memset (x->reg_mask, 0, x->reg_mask_len * sizeof (x->reg_mask[0]));
+  x->reg_mask = XCNEWVEC (unsigned char, x->reg_mask_len);
 
   x->tracing = 0;
   x->trace_string = 0;

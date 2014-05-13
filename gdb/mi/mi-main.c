@@ -1780,7 +1780,7 @@ mi_cmd_data_write_memory_bytes (char *command, char **argv, int argc)
   else
     count = len;
 
-  databuf = xmalloc (len * sizeof (gdb_byte));
+  databuf = XNEWVEC (gdb_byte, len);
   back_to = make_cleanup (xfree, databuf);
 
   for (i = 0; i < len; ++i)

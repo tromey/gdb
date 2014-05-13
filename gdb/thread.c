@@ -178,7 +178,7 @@ new_thread (ptid_t ptid)
 {
   struct thread_info *tp;
 
-  tp = xcalloc (1, sizeof (*tp));
+  tp = XCNEW (struct thread_info);
 
   tp->ptid = ptid;
   tp->num = ++highest_thread_num;

@@ -109,7 +109,7 @@ tui_sfileopen (int n)
   tmpstream->ts_filestream = NULL;
   if (n > 0)
     {
-      tmpstream->ts_strbuf = xmalloc ((n + 1) * sizeof (char));
+      tmpstream->ts_strbuf = XNEWVEC (char, n + 1);
       tmpstream->ts_strbuf[0] = '\0';
     }
   else
@@ -224,7 +224,7 @@ tui_file_adjust_strbuf (int n, struct ui_file *file)
     }
   else
     /* No buffer yet, so allocate one of the desired size.  */
-    stream->ts_strbuf = xmalloc ((n + 1) * sizeof (char));
+    stream->ts_strbuf = XNEWVEC (char, n + 1);
 }
 
 static void

@@ -1454,7 +1454,7 @@ jit_gdbarch_data_init (struct obstack *obstack)
 {
   struct jit_gdbarch_data_type *data;
 
-  data = obstack_alloc (obstack, sizeof (struct jit_gdbarch_data_type));
+  data = XOBNEW (obstack, struct jit_gdbarch_data_type);
   data->unwinder_registered = 0;
   return data;
 }

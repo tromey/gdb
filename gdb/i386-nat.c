@@ -194,7 +194,7 @@ i386_add_process (pid_t pid)
 {
   struct i386_process_info *proc;
 
-  proc = xcalloc (1, sizeof (*proc));
+  proc = XCNEW (struct i386_process_info);
   proc->pid = pid;
 
   proc->next = i386_process_list;

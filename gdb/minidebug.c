@@ -119,7 +119,7 @@ lzma_open (struct bfd *nbfd, void *open_closure)
     }
   xfree (indexdata);
 
-  lstream = xzalloc (sizeof (struct lzma_stream));
+  lstream = XCNEW (struct lzma_stream);
   lstream->section = section;
   lstream->index = index;
 

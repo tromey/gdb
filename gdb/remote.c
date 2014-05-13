@@ -649,7 +649,7 @@ remote_register_number_and_offset (struct gdbarch *gdbarch, int regnum,
 
   gdb_assert (regnum < gdbarch_num_regs (gdbarch));
 
-  regs = xcalloc (gdbarch_num_regs (gdbarch), sizeof (struct packet_reg));
+  regs = XCNEWVEC (struct packet_reg, gdbarch_num_regs (gdbarch));
   old_chain = make_cleanup (xfree, regs);
 
   sizeof_g_packet = map_regcache_remote_table (gdbarch, regs);
@@ -11269,7 +11269,7 @@ remote_enable_btrace (struct target_ops *self, ptid_t ptid)
 	       target_pid_to_str (ptid));
     }
 
-  tinfo = xzalloc (sizeof (*tinfo));
+  tinfo = XCNEW (struct btrace_target_info);
   tinfo->ptid = ptid;
 
   return tinfo;

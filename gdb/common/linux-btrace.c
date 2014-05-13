@@ -432,7 +432,7 @@ linux_enable_btrace (ptid_t ptid)
   struct btrace_target_info *tinfo;
   int pid, pg;
 
-  tinfo = xzalloc (sizeof (*tinfo));
+  tinfo = XCNEW (struct btrace_target_info);
   tinfo->ptid = ptid;
 
   tinfo->attr.size = sizeof (tinfo->attr);

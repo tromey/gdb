@@ -362,7 +362,7 @@ dict_create_hashed (struct obstack *obstack,
   struct symbol **buckets;
   const struct pending *list_counter;
 
-  retval = obstack_alloc (obstack, sizeof (struct dictionary));
+  retval = XOBNEW (obstack, struct dictionary);
   DICT_VECTOR (retval) = &dict_hashed_vector;
 
   /* Calculate the number of symbols, and allocate space for them.  */
@@ -374,8 +374,7 @@ dict_create_hashed (struct obstack *obstack,
     }
   nbuckets = DICT_HASHTABLE_SIZE (nsyms);
   DICT_HASHED_NBUCKETS (retval) = nbuckets;
-  buckets = obstack_alloc (obstack, nbuckets * sizeof (struct symbol *));
-  memset (buckets, 0, nbuckets * sizeof (struct symbol *));
+  buckets = OBSTACK_CALLOC (obstack, nbuckets, struct symbol *);
   DICT_HASHED_BUCKETS (retval) = buckets;
 
   /* Now fill the buckets.  */
@@ -426,7 +425,7 @@ dict_create_linear (struct obstack *obstack,
   struct symbol **syms;
   const struct pending *list_counter;
 
-  retval = obstack_alloc (obstack, sizeof (struct dictionary));
+  retval = XOBNEW (obstack, struct dictionary);
   DICT_VECTOR (retval) = &dict_linear_vector;
 
   /* Calculate the number of symbols, and allocate space for them.  */
@@ -437,7 +436,7 @@ dict_create_linear (struct obstack *obstack,
       nsyms += list_counter->nsyms;
     }
   DICT_LINEAR_NSYMS (retval) = nsyms;
-  syms = obstack_alloc (obstack, nsyms * sizeof (struct symbol *));
+  syms = XOBNEWVEC (obstack, struct symbol *, nsyms);
   DICT_LINEAR_SYMS (retval) = syms;
 
   /* Now fill in the symbols.  Start filling in from the back, so as

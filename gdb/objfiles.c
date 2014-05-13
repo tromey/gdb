@@ -1295,7 +1295,7 @@ update_section_map (struct program_space *pspace,
       return;
     }
 
-  map = xmalloc (alloc_size * sizeof (*map));
+  map = XNEWVEC (struct obj_section *, alloc_size);
 
   i = 0;
   ALL_PSPACE_OBJFILES (pspace, objfile)

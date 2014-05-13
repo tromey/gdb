@@ -326,7 +326,7 @@ block_initialize_namespace (struct block *block, struct obstack *obstack)
   if (BLOCK_NAMESPACE (block) == NULL)
     {
       BLOCK_NAMESPACE (block)
-	= obstack_alloc (obstack, sizeof (struct block_namespace_info));
+	= XOBNEW (obstack, struct block_namespace_info);
       BLOCK_NAMESPACE (block)->scope = NULL;
       BLOCK_NAMESPACE (block)->using = NULL;
     }
@@ -374,14 +374,7 @@ block_global_block (const struct block *block)
 struct block *
 allocate_block (struct obstack *obstack)
 {
-  struct block *bl = obstack_alloc (obstack, sizeof (struct block));
-
-  BLOCK_START (bl) = 0;
-  BLOCK_END (bl) = 0;
-  BLOCK_FUNCTION (bl) = NULL;
-  BLOCK_SUPERBLOCK (bl) = NULL;
-  BLOCK_DICT (bl) = NULL;
-  BLOCK_NAMESPACE (bl) = NULL;
+  struct block *bl = OBSTACK_ZALLOC (obstack, struct block);
 
   return bl;
 }

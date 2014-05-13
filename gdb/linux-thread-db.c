@@ -219,7 +219,7 @@ add_thread_db_info (void *handle)
 {
   struct thread_db_info *info;
 
-  info = xcalloc (1, sizeof (*info));
+  info = XCNEW (struct thread_db_info);
   info->pid = ptid_get_pid (inferior_ptid);
   info->handle = handle;
 

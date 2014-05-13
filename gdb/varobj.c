@@ -530,7 +530,7 @@ varobj_delete (struct varobj *var, char ***dellist, int only_children)
   /* We may have been asked to return a list of what has been deleted.  */
   if (dellist != NULL)
     {
-      *dellist = xmalloc ((delcount + 1) * sizeof (char *));
+      *dellist = XNEWVEC (char *, delcount + 1);
 
       cp = *dellist;
       mycount = delcount;
