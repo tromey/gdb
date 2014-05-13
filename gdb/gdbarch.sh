@@ -1034,7 +1034,7 @@ M:int:auxv_parse:gdb_byte **readptr, gdb_byte *endptr, CORE_ADDR *typep, CORE_AD
 # PROT has rwx bitmask format - bit 2 (value 4) is for readable memory, bit 1
 # (value 2) is for writable memory and bit 0 (value 1) is for executable memory.
 # Throw an error if it is not possible.  Returned address is always valid.
-f:CORE_ADDR:infcall_mmap:CORE_ADDR size,unsigned prot:size, prot::default_infcall_mmap::0
+f:CORE_ADDR:infcall_mmap:CORE_ADDR size, unsigned prot:size, prot::default_infcall_mmap::0
 
 # Return string (caller has to use xfree for it) with options for GCC
 # to produce code for this target, typically "-m64", "-m32" or "-m31".

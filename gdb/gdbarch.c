@@ -4419,7 +4419,7 @@ set_gdbarch_auxv_parse (struct gdbarch *gdbarch,
 }
 
 CORE_ADDR
-gdbarch_infcall_mmap (struct gdbarch *gdbarch, CORE_ADDR size,unsigned prot)
+gdbarch_infcall_mmap (struct gdbarch *gdbarch, CORE_ADDR size, unsigned prot)
 {
   gdb_assert (gdbarch != NULL);
   gdb_assert (gdbarch->infcall_mmap != NULL);
