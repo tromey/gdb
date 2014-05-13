@@ -1,3 +1,84 @@
+2014-05-12  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* mi/mi-console.c (mi_console_raw_packet): Use the value from
+	mi_console->quote as the quoting character.
+
+2014-05-12  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* MAINTAINERS (Write After Approval): Add "Simon Marchi".
+
+2014-04-29  Tom Tromey  <tromey@redhat.com>
+
+	* varobj.c (_initialize_varobj): Rename to "set debug varobj" and
+	"show debug varobj".
+
+2014-05-07  Kyle McMartin  <kyle@redhat.com>
+
+	Pushed by Joel Brobecker  <brobecker@adacore.com>.
+	* aarch64-tdep.c (aarch64_software_single_step): New function.
+	(aarch64_gdbarch_init): Handle single stepping of atomic sequences
+	with aarch64_software_single_step.
+
+2014-05-05  Joel Brobecker  <brobecker@adacore.com>
+
+	GDB 7.7.1 released.
+
+2014-05-05  Keith Seitz  <keiths@redhat.com>
+
+	* linespec.c (linespec_parse_basic): Run cleanups if a convenience
+	variable or history value is successfully parsed.
+
+2014-05-05  Yao Qi  <yao@codesourcery.com>
+	    Pedro Alves  <palves@redhat.com>
+
+	* tracefile-tfile.c (tfile_xfer_partial): Record the lowest
+	address of blocks that intersects the requested range.  Trim
+	LEN up to LOW_ADDR_AVAILABLE if read from executable read-only
+	sections.
+	* ctf.c (ctf_xfer_partial): Likewise.
+
+2014-05-05  Yao Qi  <yao@codesourcery.com>
+
+	* printcmd.c (display_command): Remove the check to
+	target_has_execution.
+
+2014-05-03  Mark Kettenis  <kettenis@gnu.org>
+
+	* ppcobsd-nat.c: Include "obsd-nat.h".
+	(_initialize_ppcobsd_nat): Call obsd_add_target instead of
+	add_target.
+	* config/powerpc/obsd.mh (NATDEPFILES): Add obsd-nat.o.
+
+2014-05-02  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* stap-probe.c (enum stap_arg_bitness): New enums to represent 8
+	and 16-bit signed and unsigned arguments.  Update comment.
+	(stap_parse_probe_arguments): Extend code to handle such
+	arguments.  Use warning instead of complaint to notify about
+	unrecognized bitness.
+
+2014-05-02  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	PR breakpoints/16889
+	* stap-probe.c (stap_parse_probe_arguments): Simplify
+	check for non-prefixed probes (i.e., probes whose
+	arguments do not start with "N@").  Always set the
+	argument type to a sane value.
+
+2014-05-01  David Taylor  <dtaylor@emc.com>
+
+	* remote.c (compare_sections_command): Add -r option to compare
+	all loadable read-only sections.
+
+2014-04-30  Siva Chandra Reddy  <sivachandra@google.com>
+
+	* dwarf2loc.c (dwarf2_locexpr_baton_eval,
+	dwarf2_evaluate_property): Remove unused CORE_ADDR argument.
+	Update all callers.
+	* dwarf2loc.h (dwarf2_evaluate_property): Update signature.
+	* gdbtypes.c (resolve_dynamic_range, resolve_dynamic_array):
+	Remove unused CORE_ADDR argument.  Update all callers.
+
 2014-04-29  Pedro Alves  <palves@redhat.com>
 
 	* remote.c (struct packet_config) <detect>: Extend comment.

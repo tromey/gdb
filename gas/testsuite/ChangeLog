@@ -1,3 +1,94 @@
+2014-05-09  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* gas/i386/nops-1-core2.d: Replace data32 with data16.
+	* gas/i386/nops-4a-i686.d: Likewise.
+	* gas/i386/nops-5-i686.d: Likewise.
+	* gas/i386/nops-5.d: Likewise.
+	* gas/i386/x86-64-cbw-intel.d: Likewise.
+	* gas/i386/x86-64-cbw.d: Likewise.
+	* gas/i386/x86-64-io-intel.d: Likewise.
+	* gas/i386/x86-64-io-suffix.d: Likewise.
+	* gas/i386/x86-64-io.d: Likewise.
+	* gas/i386/x86-64-nops-1-core2.d: Likewise.
+	* gas/i386/x86-64-nops-1-g64.d: Likewise.
+	* gas/i386/x86-64-nops-1-nocona.d: Likewise.
+	* gas/i386/x86-64-nops-1.d: Likewise.
+	* gas/i386/x86-64-nops-2.d: Likewise.
+	* gas/i386/x86-64-nops-3.d: Likewise.
+	* gas/i386/x86-64-nops-4-core2.d: Likewise.
+	* gas/i386/x86-64-nops-4.d: Likewise.
+	* gas/i386/x86-64-nops-5-k8.d: Likewise.
+	* gas/i386/x86-64-nops-5.d: Likewise.
+	* gas/i386/x86-64-stack-intel.d: Likewise.
+	* gas/i386/x86-64-stack-suffix.d: Likewise.
+	* gas/i386/x86-64-stack.d: Likewise.
+	* gas/i386/ilp32/x86-64-cbw-intel.d: Likewise.
+	* gas/i386/ilp32/x86-64-cbw.d: Likewise.
+	* gas/i386/ilp32/x86-64-io-intel.d: Likewise.
+	* gas/i386/ilp32/x86-64-io-suffix.d: Likewise.
+	* gas/i386/ilp32/x86-64-io.d: Likewise.
+	* gas/i386/ilp32/x86-64-nops-1-core2.d:
+	* gas/i386/ilp32/x86-64-nops-1-nocona.d: Likewise.
+	* gas/i386/ilp32/x86-64-nops-1.d: Likewise.
+	* gas/i386/ilp32/x86-64-nops-2.d: Likewise.
+	* gas/i386/ilp32/x86-64-nops-3.d: Likewise.
+	* gas/i386/ilp32/x86-64-nops-4-core2.d: Likewise.
+	* gas/i386/ilp32/x86-64-nops-4.d: Likewise.
+	* gas/i386/ilp32/x86-64-nops-5-k8.d: Likewise.
+	* gas/i386/ilp32/x86-64-nops-5.: Likewise.
+	* gas/i386/ilp32/x86-64-stack-intel.d: Likewise.
+	* gas/i386/ilp32/x86-64-stack-suffix.: Likewise.
+	* gas/i386/ilp32/x86-64-stack.d: Likewise.
+
+2014-05-08  Matthew Fortune  <matthew.fortune@imgtec.com>
+
+	* gas/mips/attr-gnu-abi-fp-1.s: New.
+	* gas/mips/attr-gnu-abi-fp-1.d: New.
+	* gas/mips/attr-gnu-abi-msa-1.s: New.
+	* gas/mips/attr-gnu-abi-msa-1.d: New.
+	* gas/mips/mips.exp: Add new tests.
+
+2014-05-07  Andrew Bennett  <andrew.bennett@imgtec.com>
+
+	* gas/mips/mips.exp: Add MIPS32r5 tests.  Also add the mips32r3,
+	mips32r5, mips64r3 and mips64r5 isas to the testsuite.
+	* gas/mips/r5.s: New test.
+	* gas/mips/r5.d: Likewise.
+
+2014-05-05  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR binutils/16893
+	* gas/i386/katmai.d: Expect "gs" as prefix.
+
+	* gas/i386/long-1.s: Replace movapd with movss.
+	* gas/i386/x86-64-long-1.s: Likewise.
+	* gas/i386/long-1-intel.d: Updated.
+	* gas/i386/long-1.d: Likewise.
+	* gas/i386/x86-64-long-1-intel.d: Likewise.
+	* gas/i386/x86-64-long-1.d: Likewise.
+
+	* gas/i386/prefix.s: Add tests for multiple 0x66, 0x67, 0xf0,
+	0xf2 and 0xf3 prefixes.
+	* gas/i386/prefix.d: Updated.
+
+2014-05-02  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* gas/i386/opcode-intel.d: Undo the last change.
+	* gas/i386/opcode-suffix.d: Likewise.
+	* gas/i386/opcode.d: Likewise.
+	* gas/i386/opcode.s: Likewise.
+
+	* gas/i386/prefix.s: Add test for fwait with prefix.
+	* gas/i386/prefix.d: Updated.
+
+2014-05-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR binutils/16891
+	* gas/i386/opcode.s: Add test for fwait with prefix.
+	* gas/i386/opcode-intel.d: Updated.
+	* gas/i386/opcode-suffix.d: Likewise.
+	* gas/i386/opcode.d: Likewise.
+
 2014-04-23  Will Newton  <will.newton@linaro.org>
 
 	* gas/arm/backslash-at.d: Fix dump output regexps for

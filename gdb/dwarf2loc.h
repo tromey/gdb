@@ -99,7 +99,7 @@ struct value *dwarf2_evaluate_loc_desc (struct type *type,
    into VALUE, otherwise returns 0.  */
 
 int dwarf2_evaluate_property (const struct dynamic_prop *prop,
-			      CORE_ADDR addr, CORE_ADDR *value);
+			      CORE_ADDR *value);
 
 /* A helper for the compiler interface that compiles a single dynamic
    property to C code.

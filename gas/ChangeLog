@@ -1,3 +1,64 @@
+2014-05-13  Matthew Fortune  <matthew.fortune@imgtec.com>
+
+	* config/tc-mips.c (mips_set_options): Rename gp32 to gp throughout.
+	(HAVE_32BIT_GPRS, HAVE_64BIT_GPRS): Remove. Re-implement via GPR_SIZE.
+	(HAVE_32BIT_FPRS, HAVE_64BIT_FPRS): Remove. Re-implement via FPR_SIZE.
+	(GPR_SIZE, FPR_SIZE): New macros. Use throughout.
+
+2014-05-08  Matthew Fortune  <matthew.fortune@imgtec.com>
+
+	* config/tc-mips.c (md_parse_option): Update missed file_mips_isa
+	references.
+
+2014-05-08  Matthew Fortune  <matthew.fortune@imgtec.com>
+
+	* config/tc-mips.c (mips_set_options): Rename fp32 field to fp.
+	Update fp32 == 0 to fp == 64 and fp32 == 1 to fp != 64 throughout.
+	(file_mips_gp32, file_mips_fp32, file_mips_soft_float,
+	file_mips_single_float, file_mips_isa, file_mips_arch): Merge into
+	one struct...
+	(file_mips_opts): Here. New static global. Update throughout.
+	(mips_opts): Update defaults for gp32 and fp.
+
+2014-05-08  Matthew Fortune  <matthew.fortune@imgtec.com>
+
+	* config/tc-mips.c (streq): Define.
+	(mips_convert_symbolic_attribute): New function.
+	* config/tc-mips.h (CONVERT_SYMBOLIC_ATTRIBUTE): Define.
+	(mips_convert_symbolic_attribute): New prototype.
+
+2014-05-02  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* config/tc-xtensa.c (md_apply_fix): mark BFD_RELOC_XTENSA_DIFF*
+	fixups as signed.
+
+2014-05-07  Andrew Bennett  <andrew.bennett@imgtec.com>
+
+	* tc-mips.c (ISA_SUPPORTS_MIPS16E): Add mips32r3, mips32r5, mips64r3
+	and mips64r5.
+	(ISA_HAS_64BIT_FPRS): Likewise.
+	(ISA_HAS_ROR): Likewise.
+	(ISA_HAS_ODD_SINGLE_FPR): Likewise.
+	(ISA_HAS_MXHC1): Likewise.
+	(hilo_interlocks): Likewise.
+	(md_longopts): Likewise.
+	(ISA_HAS_64BIT_REGS): Add mips64r3 and mips64r5.
+	(ISA_HAS_DROR): Likewise.
+	(options): Add OPTION_MIPS32R3, OPTION_MIPS32R5, OPTION_MIPS64R3, and
+	OPTION_MIPS64R5.
+	(mips_isa_rev): Add support for mips32r3, mips32r5, mips64r3 and
+	mips64r5.
+	(md_parse_option): Likewise.
+	(s_mipsset): Likewise.
+	(mips_cpu_info_table): Add entries for mips32r3, mips32r5, mips64r3
+	and mips64r5.  Also change p5600 entry to be mips32r5.
+	* configure.in: Add support for mips32r3, mips32r5, mips64r3 and
+	mips64r5.
+	* configure: Regenerate.
+	* doc/c-mips.texi: Document the -mips32r3, -mips32r5, -mips64r3 and
+	-mips64r5 command line options.
+	* doc/as.texinfo: Likewise.
+
 2014-04-28  Nick Clifton  <nickc@redhat.com>
 
 	PR gas/16858

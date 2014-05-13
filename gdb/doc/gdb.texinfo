@@ -8771,11 +8771,12 @@ situations.
 
 @table @code
 @kindex compare-sections
-@item compare-sections @r{[}@var{section-name}@r{]}
+@item compare-sections @r{[}@var{section-name}@r{|}@code{-r}@r{]}
 Compare the data of a loadable section @var{section-name} in the
 executable file of the program being debugged with the same section in
 the remote machine's memory, and report any mismatches.  With no
-arguments, compares all loadable sections.  This command's
+arguments, compares all loadable sections.  With an argument of
+@code{-r}, compares all loadable read-only sections.  This command's
 availability depends on the target's support for the @code{"qCRC"}
 remote request.
 @end table
@@ -23148,11 +23149,11 @@ message.
 @item show debug timestamp
 Displays the current state of displaying timestamps with @value{GDBN}
 debugging info.
-@item set debugvarobj
+@item set debug varobj
 @cindex variable object debugging info
 Turns on or off display of @value{GDBN} variable object debugging
 info. The default is off.
-@item show debugvarobj
+@item show debug varobj
 Displays the current state of displaying @value{GDBN} variable object
 debugging info.
 @item set debug xml
