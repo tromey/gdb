@@ -51,7 +51,6 @@
 #include "cli/cli-utils.h"
 
 #include "extension.h"
-#include "interps.h"
 
 #ifdef TUI
 #include "tui/tui.h"	/* For tui_active et.al.  */
@@ -239,7 +238,6 @@ help_command (char *command, int from_tty)
   help_cmd (command, gdb_stdout);
 }
 
-
 /* The "complete" command is used by Emacs to implement completion.  */
 
 static void

@@ -75,7 +75,6 @@
 
 /* Scope types enumerator.  List the types of scopes the compiler will
    accept.  */
-/* FIXME this really should not be here.  */
 
 enum compile_i_scope_types
   {
