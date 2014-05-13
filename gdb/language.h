@@ -361,8 +361,9 @@ struct language_defn
        this method should be non-NULL.  When called it should return
        an instance of struct gcc_context appropriate to the language.
        When defined this method must never return NULL; instead it
-       should throw an exception on failure.  FIXME: the lifetime
-       assumptions are weird here.  */
+       should throw an exception on failure.  The returned compiler
+       instance is owned by its caller and must be deallocated by
+       calling its 'destroy' method.  */
 
     struct compile_instance *(*la_get_compile_instance) (void);
 
@@ -371,7 +372,14 @@ struct language_defn
        ignored.
 
        This takes the user-supplied text and returns a newly malloc'd
-       bit of code to compile.  FIXME - more comment  */
+       bit of code to compile.  The caller owns the result.
+
+       INST is the compiler instance being used.
+       INPUT is the user's input text.
+       GDBARCH is the architecture to use.
+       EXPR_BLOCK is the block in which the expression is being
+       parsed.
+       EXPR_PC is the PC at which the expression is being parsed.  */
 
     char *(*la_compute_program) (struct compile_instance *inst,
 				 const char *input,
