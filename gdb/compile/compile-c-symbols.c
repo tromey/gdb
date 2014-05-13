@@ -201,8 +201,8 @@ convert_one_symbol (struct compile_c_instance *context,
 						  filename, line);
 	  return;
 
-	case LOC_CONST_BYTES:	/* FIXME */
-	  error (_("Internal error: Unsupported LOC_CONST_BYTES for \"%s\"."),
+	case LOC_CONST_BYTES:
+	  error (_("Unsupported LOC_CONST_BYTES for symbol \"%s\"."),
 		 SYMBOL_PRINT_NAME (sym));
 
 	case LOC_UNDEF:
