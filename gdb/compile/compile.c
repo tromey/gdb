@@ -542,25 +542,26 @@ _initialize_compile (void)
 
   add_prefix_cmd ("compile", class_obscure, compile_command,
 		  _("\
-Command to compile ad-hoc code and inject it into the inferior."),
+Command to compile source code and inject it into the inferior."),
 		  &compile_command_list, "compile ", 1, &cmdlist);
   add_com_alias ("expression", "compile", class_obscure, 0);
 
   add_cmd ("code", class_obscure, compile_code_command,
 	   _("\
-Evaluate a block of code.\n\
+Evaluate a block of source code.\n\
 \n\
-Usage: code [-r|-raw] [CODE]\n\
+Usage: code [-r|-raw] [--] [CODE]\n\
 -r|-raw: Suppress automatic 'void _gdb_expr () { CODE }' wrapping.\n\
-the compiler.\n\
+--: Do not parse any options beyond this delimiter.  All text to the\n\
+    right will be treated as source code.\n\
 \n\
-The code may be specified as a simple one line expression, e.g:\n\
+The source code may be specified as a simple one line expression, e.g:\n\
 \n\
     compile code printf(\"Hello world\\n\");\n\
 \n\
 Alternatively, you can type the source code interactively.\n\
-You can invoke this mode when no argument is given (i.e.,\n\
-\"compile code\" is typed with nothing after it).  An\n\
+You can invoke this mode when no argument is given to the command\n\
+(i.e.,\"compile code\" is typed with nothing after it).  An\n\
 interactive prompt will be shown allowing you to enter multiple\n\
 lines of source code.  Type a line containing \"end\" to indicate\n\
 the end of the source code."),
@@ -568,17 +569,16 @@ the end of the source code."),
 
   c = add_cmd ("file", class_obscure, compile_file_command,
 	       _("\
-Evaluate a file containing code.\n\
+Evaluate a file containing source code.\n\
 \n\
 Usage: file [-r|-raw] [filename]\n\
--r|-raw: Suppress automatic 'void _gdb_expr () { CODE }' wrapping.\n\
-the compiler."),
+-r|-raw: Suppress automatic 'void _gdb_expr () { CODE }' wrapping."),
 	       &compile_command_list);
   set_cmd_completer (c, filename_completer);
 
   add_setshow_boolean_cmd ("compile", class_maintenance, &compile_debug, _("\
-Set compile command  debugging."), _("\
-Show compile command  debugging."), _("\
+Set compile command debugging."), _("\
+Show compile command debugging."), _("\
 When on, compile command debugging is enabled."),
 			   NULL, show_compile_debug,
 			   &setdebuglist, &showdebuglist);
