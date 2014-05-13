@@ -49,7 +49,7 @@ enum gcc_base_api_version
 
 /* The operations defined by the GCC base API.  This is the vtable for
    the real context structure which is passed around.
-   
+
    The "base" API is concerned with basics shared by all compiler
    front ends: setting command-line arguments, the file names, etc.
 
