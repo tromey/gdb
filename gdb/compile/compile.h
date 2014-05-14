@@ -20,7 +20,6 @@
 
 extern void eval_compile_command (struct command_line *cmd, char *cmd_string,
 				  enum compile_i_scope_types scope);
-extern void _initialize_compile (void);
 
 struct ui_file;
 struct gdbarch;
