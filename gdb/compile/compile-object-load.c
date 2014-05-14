@@ -48,7 +48,8 @@ struct setup_sections_data
   CORE_ADDR last_max_alignment;
 };
 
-/* Place all ABFD sections next to each other obeying all constraints.  */
+/* Place all ABFD sections next to each other obeying all constraints.
+   SECT is NULL for the very last call to finish last sections in DATA.  */
 
 static void
 setup_sections (bfd *abfd, asection *sect, void *data_voidp)
@@ -482,6 +483,7 @@ compile_object_load (const char *object_file, const char *source_file)
   setup_sections_data.last_prot = -1;
   setup_sections_data.last_max_alignment = 1;
   bfd_map_over_sections (abfd, setup_sections, &setup_sections_data);
+  /* Finish the last sections unfinished in SETUP_SECTIONS_DATA.  */
   setup_sections (abfd, NULL, &setup_sections_data);
 
   storage_needed = bfd_get_symtab_upper_bound (abfd);
