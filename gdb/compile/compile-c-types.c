@@ -23,11 +23,20 @@
 #include "compile-internal.h"
 #include "gdb_assert.h"
 
+/* An object that maps a gdb type to a gcc type.  */
+
 struct type_map_instance
 {
+  /* The gdb type.  */
+
   struct type *type;
+
+  /* The corresponding gcc type handle.  */
+
   gcc_type gcc_type;
 };
+
+/* Hash a type_map_instance.  */
 
 static hashval_t
 hash_type_map_instance (const void *p)
@@ -36,6 +45,8 @@ hash_type_map_instance (const void *p)
 
   return htab_hash_pointer (inst->type);
 }
+
+/* Check two type_map_instance objects for equality.  */
 
 static int
 eq_type_map_instance (const void *a, const void *b)
@@ -47,6 +58,13 @@ eq_type_map_instance (const void *a, const void *b)
 }
 
 
+
+/* Insert an entry into the type map associated with CONTEXT that maps
+   from the gdb type TYPE to the gcc type GCC_TYPE.  It is ok for a
+   given type to be inserted more than once, provided that the exact
+   same association is made each time.  This simplifies how type
+   caching works elsewhere in this file -- see how struct type caching
+   is handled.  */
 
 static void
 insert_type (struct compile_c_instance *context, struct type *type,
@@ -72,6 +90,8 @@ insert_type (struct compile_c_instance *context, struct type *type,
     }
 }
 
+/* Convert a pointer type to its gcc representation.  */
+
 static gcc_type
 convert_pointer (struct compile_c_instance *context, struct type *type)
 {
@@ -80,6 +100,8 @@ convert_pointer (struct compile_c_instance *context, struct type *type)
   return C_CTX (context)->c_ops->build_pointer_type (C_CTX (context),
 						     target);
 }
+
+/* Convert an array type to its gcc representation.  */
 
 static gcc_type
 convert_array (struct compile_c_instance *context, struct type *type)
@@ -137,6 +159,8 @@ convert_array (struct compile_c_instance *context, struct type *type)
     }
 }
 
+/* Convert a struct or union type to its gcc representation.  */
+
 static gcc_type
 convert_struct_or_union (struct compile_c_instance *context, struct type *type)
 {
@@ -174,6 +198,8 @@ convert_struct_or_union (struct compile_c_instance *context, struct type *type)
   return result;
 }
 
+/* Convert an enum type to its gcc representation.  */
+
 static gcc_type
 convert_enum (struct compile_c_instance *context, struct type *type)
 {
@@ -198,6 +224,8 @@ convert_enum (struct compile_c_instance *context, struct type *type)
 
   return result;
 }
+
+/* Convert a function type to its gcc representation.  */
 
 static gcc_type
 convert_func (struct compile_c_instance *context, struct type *type)
@@ -224,6 +252,8 @@ convert_func (struct compile_c_instance *context, struct type *type)
   return result;
 }
 
+/* Convert an integer type to its gcc representation.  */
+
 static gcc_type
 convert_int (struct compile_c_instance *context, struct type *type)
 {
@@ -232,6 +262,8 @@ convert_int (struct compile_c_instance *context, struct type *type)
 					   TYPE_LENGTH (type));
 }
 
+/* Convert a floating-point type to its gcc representation.  */
+
 static gcc_type
 convert_float (struct compile_c_instance *context, struct type *type)
 {
@@ -239,17 +271,23 @@ convert_float (struct compile_c_instance *context, struct type *type)
 					     TYPE_LENGTH (type));
 }
 
+/* Convert the 'void' type to its gcc representation.  */
+
 static gcc_type
 convert_void (struct compile_c_instance *context, struct type *type)
 {
   return C_CTX (context)->c_ops->void_type (C_CTX (context));
 }
 
+/* Convert a boolean type to its gcc representation.  */
+
 static gcc_type
 convert_bool (struct compile_c_instance *context, struct type *type)
 {
   return C_CTX (context)->c_ops->bool_type (C_CTX (context));
 }
+
+/* Convert a qualified type to its gcc representation.  */
 
 static gcc_type
 convert_qualified (struct compile_c_instance *context, struct type *type)
@@ -272,6 +310,8 @@ convert_qualified (struct compile_c_instance *context, struct type *type)
 						       quals);
 }
 
+/* Convert a complex type to its gcc representation.  */
+
 static gcc_type
 convert_complex (struct compile_c_instance *context, struct type *type)
 {
@@ -279,6 +319,11 @@ convert_complex (struct compile_c_instance *context, struct type *type)
 
   return C_CTX (context)->c_ops->build_complex_type (C_CTX (context), base);
 }
+
+/* A helper function which knows how to convert most types from their
+   gdb representation to the corresponding gcc form.  This examines
+   the TYPE and dispatches to the appropriate conversion function.  It
+   returns the gcc type.  */
 
 static gcc_type
 convert_type_basic (struct compile_c_instance *context, struct type *type)
@@ -329,6 +374,10 @@ convert_type_basic (struct compile_c_instance *context, struct type *type)
 					  "to gcc type"));
 }
 
+/* Return the gcc form of TYPE, according to the compiler CONTEXT.
+   The result is cached in CONTEXT, so subsequent calls will always
+   return the same value.  */
+
 gcc_type
 convert_type (struct compile_c_instance *context, struct type *type)
 {
@@ -351,6 +400,8 @@ convert_type (struct compile_c_instance *context, struct type *type)
 
 
 
+/* Delete the compiler instance C.  */
+
 static void
 delete_instance (struct compile_instance *c)
 {
@@ -362,6 +413,9 @@ delete_instance (struct compile_instance *c)
     htab_delete (context->symbol_err_map);
   xfree (context);
 }
+
+/* Create a new 'struct compile_instance' given the C front end
+   FE.  */
 
 struct compile_instance *
 new_compile_instance (struct gcc_c_context *fe)
