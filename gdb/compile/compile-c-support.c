@@ -26,7 +26,7 @@
 #include "macroscope.h"
 #include "regcache.h"
 
-/* A silly little helper to get the gcc mode name for a size.  */
+/* Helper function to return a GCC mode name for a given size.  */
 
 const char *
 c_get_mode_for_size (int size)
@@ -65,9 +65,9 @@ c_get_range_decl_name (const struct dynamic_prop *prop)
 #define STR(x) #x
 #define STRINGIFY(x) STR(x)
 
-/* Helper function for get_compile_context.  dlopen the GCC front-end,
-   extract the symbol that will provide a vtable and call that
-   function.  Return the gcc_context that was returned.  */
+/* Helper function for c_get_compile_context.  Open the GCC front-end
+   shared library and return the symbol specified by the current
+   GCC_C_FE_CONTEXT.  */
 
 static gcc_c_fe_context_function *
 load_libcc (void)
@@ -82,7 +82,9 @@ load_libcc (void)
   return gdb_dlsym (handle, STRINGIFY (GCC_C_FE_CONTEXT));
 }
 
-/* Return the GCC FE context.  */
+/* Return the compile instance associated with the current context.
+   This function calls the symbol returned from the load_libcc
+   function.  This will provide the gcc_c_context.  */
 
 struct compile_instance *
 c_get_compile_context (void)
@@ -99,8 +101,8 @@ c_get_compile_context (void)
 
   context = (*func) (GCC_FE_VERSION_0, GCC_C_FE_VERSION_0);
   if (context == NULL)
-    error (_("the loaded version of GCC does not support the required version "
-	     "of the API"));
+    error (_("The loaded version of GCC does not support the required version "
+	     "of the API."));
 
   return new_compile_instance (context);
 }
@@ -161,7 +163,7 @@ write_macro_definitions (const struct block *block, CORE_ADDR pc,
 
 /* Helper function to construct a header scope for a block of code.
    Takes a scope argument which selects the correct header to
-   insert.  */
+   insert into BUF.  */
 
 static void
 add_code_header (enum compile_i_scope_types type, struct ui_file *buf)
@@ -187,7 +189,7 @@ add_code_header (enum compile_i_scope_types type, struct ui_file *buf)
 
 /* Helper function to construct a footer scope for a block of code.
    Takes a scope argument which selects the correct footer to
-   insert.  */
+   insert into BUF.  */
 
 static void
 add_code_footer (enum compile_i_scope_types type, struct ui_file *buf)
@@ -286,13 +288,12 @@ generate_register_struct (struct ui_file *stream, struct gdbarch *gdbarch,
   fputs_unfiltered ("};\n\n", stream);
 }
 
-/* Helper function to take an expression and wrap it in a scope for
-   the compiler.  CMD is populated for a multi-line expression, while
-   SIMPLE_STRING is populated if the expression is on one single line.
-   TYPE denotes the scope type to use.  Either CMD must be NULL and
-   SIMPLE_STRING populated (the two are mutually exclusive), or
-   vice-versa.  EXPR_BLOCK denotes the block relevant contextually to
-   the inferior when the expression was created, and EXPR_PC
+/* Take the source code provided by the user with the 'compile'
+   command, and compute the additional wrapping, macro, variable and
+   register operations needed.  INPUT is the source code derived from
+   the 'compile' command, GDBARCH is the architecture to use when
+   computing above, EXPR_BLOCK denotes the block relevant contextually
+   to the inferior when the expression was created, and EXPR_PC
    indicates the value of $PC.  */
 
 char *
