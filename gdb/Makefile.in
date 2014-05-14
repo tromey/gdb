@@ -281,13 +281,13 @@ SUBDIR_TUI_CFLAGS= \
 	-DTUI=1
 
 #
-# GCC GIT sub directory definitions
+# GCC Compile support sub-directory definitions
 #
-SUBDIR_GCC_JIT_OBS = \
+SUBDIR_GCC_COMPILE_OBS = \
 	compile.o compile-c-symbols.o compile-c-types.o \
 	compile-object-load.o compile-object-run.o \
 	compile-loc2c.o compile-c-support.o
-SUBDIR_GCC_JIT_SRCS = \
+SUBDIR_GCC_COMPILE_SRCS = \
 	compile/compile.c \
 	compile/compile-c-symbols.c \
 	compile/compile-c-types.c \
@@ -859,7 +859,7 @@ SFILES = ada-exp.y ada-lang.c ada-typeprint.c ada-valprint.c ada-tasks.c \
 	common/ptid.c common/buffer.c gdb-dlfcn.c common/agent.c \
 	common/format.c common/filestuff.c btrace.c record-btrace.c ctf.c \
 	target/waitstatus.c common/print-utils.c common/rsp-low.c \
-	$(SUBDIR_GCC_JIT_SRCS)
+	$(SUBDIR_GCC_COMPILE_SRCS)
 
 LINTFILES = $(SFILES) $(YYFILES) $(CONFIG_SRCS) init.c
 
@@ -1042,7 +1042,7 @@ COMMON_OBS = $(DEPFILES) $(CONFIG_OBS) $(YYOBJ) \
 	common-utils.o buffer.o ptid.o gdb-dlfcn.o common-agent.o \
 	format.o registry.o btrace.o record-btrace.o waitstatus.o \
 	print-utils.o rsp-low.o \
-	$(SUBDIR_GCC_JIT_OBS)
+	$(SUBDIR_GCC_COMPILE_OBS)
 
 TSOBS = inflow.o
 
@@ -1277,7 +1277,7 @@ test-cp-name-parser$(EXEEXT): test-cp-name-parser.o $(LIBIBERTY)
 # duplicates.  Files in the gdb/ directory can end up appearing in
 # COMMON_OBS (as a .o file) and CONFIG_SRCS (as a .c file).
 
-INIT_FILES = $(COMMON_OBS) $(TSOBS) $(CONFIG_SRCS) $(SUBDIR_GCC_JIT_SRCS)
+INIT_FILES = $(COMMON_OBS) $(TSOBS) $(CONFIG_SRCS) $(SUBDIR_GCC_COMPILE_SRCS)
 init.c: $(INIT_FILES)
 	@echo Making init.c
 	@rm -f init.c-tmp init.l-tmp
@@ -1910,7 +1910,7 @@ cli-utils.o: $(srcdir)/cli/cli-utils.c
 	$(COMPILE) $(srcdir)/cli/cli-utils.c
 	$(POSTCOMPILE)
 
-# GCC JIT dependencies
+# GCC Compile support dependencies
 #
 # Need to explicitly specify the compile rule as make will do nothing
 # or try to compile the object file into the sub-directory.
