@@ -1,3 +1,9 @@
+2014-10-07  Phil Muldoon  <pmuldoon@redhat.com>
+	    Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* gdb.texinfo (Altering): Update.
+	(Compiling and Injecting Code): New node.
+
 2014-10-30  Doug Evans  <dje@google.com>
 
 	* python.texi (Progspaces In Python): Document ability to add
