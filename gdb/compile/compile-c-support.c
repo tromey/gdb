@@ -74,12 +74,18 @@ load_libcc (void)
 {
   void *handle;
   gcc_c_fe_context_function *func;
-  struct gcc_context *result;
 
-   /* gdb_dlopen and gdb_dlsym will call error () on an error, so no
-      need to check value.  */
+   /* gdb_dlopen will call error () on an error, so no need to check
+      value.  */
   handle = gdb_dlopen (STRINGIFY (GCC_C_FE_LIBCC));
-  return gdb_dlsym (handle, STRINGIFY (GCC_C_FE_CONTEXT));
+  func = (gcc_c_fe_context_function *) gdb_dlsym (handle,
+						  STRINGIFY (GCC_C_FE_CONTEXT));
+
+  if (func == NULL)
+    error (_("could not find symbol %s in library %s"),
+	   STRINGIFY (GCC_C_FE_CONTEXT),
+	   STRINGIFY (GCC_C_FE_LIBCC));
+  return func;
 }
 
 /* Return the compile instance associated with the current context.

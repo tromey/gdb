@@ -101,32 +101,10 @@ gdb_dlopen (const char *filename)
 void *
 gdb_dlsym (void *handle, const char *symbol)
 {
-  void *result;
-
 #ifdef HAVE_DLFCN_H
-  result =  dlsym (handle, symbol);
+  return dlsym (handle, symbol);
 #elif __MINGW32__
-  result = (void *) GetProcAddress (handle, symbol);
-#endif
-  if (result != NULL)
-    return result;
-
-#ifdef HAVE_DLFCN_H
-  error (_("Could not find %s: %s"), symbol, dlerror ());
-#else
-  {
-    LPVOID buffer;
-    DWORD dw;
-
-    dw = GetLastError ();
-
-    FormatMessage (FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
-                   FORMAT_MESSAGE_IGNORE_INSERTS,
-                   NULL, dw, MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
-                   (LPTSTR) &buffer,
-                   0, NULL);
-
-    error (_("Could not find %s: %s"), symbol, (char *) buffer);
+  return (void *) GetProcAddress (handle, symbol);
 #endif
 }
 
