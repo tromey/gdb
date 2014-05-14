@@ -26,7 +26,7 @@
 #include "macroscope.h"
 #include "regcache.h"
 
-/* Helper function to return a GCC mode name for a given size.  */
+/* See compile-internal.h.  */
 
 const char *
 c_get_mode_for_size (int size)
@@ -169,22 +169,22 @@ static void
 add_code_header (enum compile_i_scope_types type, struct ui_file *buf)
 {
   switch (type)
-  {
-  case COMPILE_I_SIMPLE_SCOPE:
-    fputs_unfiltered ("void "
-		      GCC_FE_WRAPPER_FUNCTION
-		      " (struct "
-		      COMPILE_I_SIMPLE_REGISTER_STRUCT_TAG
-		      " *"
-		      COMPILE_I_SIMPLE_REGISTER_ARG_NAME
-		      ") {\n",
-		      buf);
-    break;
-  case COMPILE_I_RAW_SCOPE:
-    break;
-  default:
-    gdb_assert_not_reached (_("Unknown compiler scope reached."));
-  }
+    {
+    case COMPILE_I_SIMPLE_SCOPE:
+      fputs_unfiltered ("void "
+			GCC_FE_WRAPPER_FUNCTION
+			" (struct "
+			COMPILE_I_SIMPLE_REGISTER_STRUCT_TAG
+			" *"
+			COMPILE_I_SIMPLE_REGISTER_ARG_NAME
+			") {\n",
+			buf);
+      break;
+    case COMPILE_I_RAW_SCOPE:
+      break;
+    default:
+      gdb_assert_not_reached (_("Unknown compiler scope reached."));
+    }
 }
 
 /* Helper function to construct a footer scope for a block of code.
@@ -195,15 +195,15 @@ static void
 add_code_footer (enum compile_i_scope_types type, struct ui_file *buf)
 {
   switch (type)
-  {
-  case COMPILE_I_SIMPLE_SCOPE:
-    fputs_unfiltered ("}\n", buf);
-    break;
-  case COMPILE_I_RAW_SCOPE:
-    break;
-  default:
-    gdb_assert_not_reached (_("Unknown compiler scope reached."));
-  }
+    {
+    case COMPILE_I_SIMPLE_SCOPE:
+      fputs_unfiltered ("}\n", buf);
+      break;
+    case COMPILE_I_RAW_SCOPE:
+      break;
+    default:
+      gdb_assert_not_reached (_("Unknown compiler scope reached."));
+    }
 }
 
 /* Generate a structure holding all the registers used by the function

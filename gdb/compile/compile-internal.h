@@ -67,6 +67,9 @@ struct compile_c_instance
   htab_t symbol_err_map;
 };
 
+/* A helper macro that takes a compile_c_instance and returns its
+   corresponding gcc_c_context.  */
+
 #define C_CTX(I) ((struct gcc_c_context *) ((I)->base.fe))
 
 /* Define header and footers for different scopes.  */
@@ -112,6 +115,11 @@ extern gcc_c_symbol_address_function gcc_symbol_address;
    new object is returned.  */
 
 extern struct compile_instance *new_compile_instance (struct gcc_c_context *fe);
+
+/* Emit code to compute the address for all the local variables in
+   scope at PC in BLOCK.  Returns a malloc'd vector, indexed by gdb
+   register number, where each element indicates if the corresponding
+   register is needed to compute a local variable.  */
 
 extern unsigned char *generate_c_for_variable_locations
      (struct compile_c_instance *compiler,

@@ -702,10 +702,7 @@ generate_c_for_for_one_variable (struct compile_c_instance *compiler,
   insert_symbol_error (compiler->symbol_err_map, sym, e.message);
 }
 
-/* Emit code to compute the address for all the local variables in
-   scope at PC in BLOCK.  Returns a malloc'd vector, indexed by gdb
-   register number, where each element indicates if the corresponding
-   register is needed to compute a local variable.  */
+/* See compile-internal.h.  */
 
 unsigned char *
 generate_c_for_variable_locations (struct compile_c_instance *compiler,
