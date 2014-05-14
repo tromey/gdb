@@ -248,8 +248,8 @@ convert_one_symbol (struct compile_c_instance *context,
 
 	    val = read_var_value (sym, frame);
 	    if (VALUE_LVAL (val) != lval_memory)
-	      error (_("Symbol \"%s\" cannot be used for compilation evaluation "
-		       "as its address has not been found."),
+	      error (_("Symbol \"%s\" cannot be used for compilation "
+		       "evaluation as its address has not been found."),
 		     SYMBOL_PRINT_NAME (sym));
 
 	    kind = GCC_C_SYMBOL_VARIABLE;
@@ -296,6 +296,10 @@ convert_one_symbol (struct compile_c_instance *context,
       xfree (symbol_name);
     }
 }
+
+/* Convert a full symbol to its gcc form.  CONTEXT is the compiler to
+   use, IDENTIFIER is the name of the symbol, SYM is the symbol
+   itself, and DOMAIN is the domain which was searched.  */
 
 static void
 convert_symbol_sym (struct compile_c_instance *context, const char *identifier,
@@ -345,6 +349,9 @@ convert_symbol_sym (struct compile_c_instance *context, const char *identifier,
 			identifier);
   convert_one_symbol (context, sym, 0, is_local_symbol);
 }
+
+/* Convert a minimal symbol to its gcc form.  CONTEXT is the compiler
+   to use and BMSYM is the minimal symbol to convert.  */
 
 static void
 convert_symbol_bmsym (struct compile_c_instance *context,
@@ -400,6 +407,8 @@ convert_symbol_bmsym (struct compile_c_instance *context,
 					     NULL, 0);
   C_CTX (context)->c_ops->bind (C_CTX (context), decl, 1 /* is_global */);
 }
+
+/* See compile-internal.h.  */
 
 void
 gcc_convert_symbol (void *datum,
@@ -461,6 +470,8 @@ gcc_convert_symbol (void *datum,
 			identifier);
   return;
 }
+
+/* See compile-internal.h.  */
 
 gcc_address
 gcc_symbol_address (void *datum, struct gcc_c_context *gcc_context,

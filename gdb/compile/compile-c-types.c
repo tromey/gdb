@@ -374,9 +374,7 @@ convert_type_basic (struct compile_c_instance *context, struct type *type)
 					  "to gcc type"));
 }
 
-/* Return the gcc form of TYPE, according to the compiler CONTEXT.
-   The result is cached in CONTEXT, so subsequent calls will always
-   return the same value.  */
+/* See compile-internal.h.  */
 
 gcc_type
 convert_type (struct compile_c_instance *context, struct type *type)
@@ -414,8 +412,7 @@ delete_instance (struct compile_instance *c)
   xfree (context);
 }
 
-/* Create a new 'struct compile_instance' given the C front end
-   FE.  */
+/* See compile-internal.h.  */
 
 struct compile_instance *
 new_compile_instance (struct gcc_c_context *fe)
