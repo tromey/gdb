@@ -24,7 +24,7 @@ if [test_compiler_info gcc*] {
 if { ![istarget x86_64-*-* ] || ![is_lp64_target] } {
     verbose "Skipping x86_64 LOC_CONST test."
     set srcfile3 ""
-}   
+}
 
 set srcfilesoptions [list ${srcfile} ${options}]
 if { $srcfile3 != "" } {
