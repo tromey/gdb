@@ -39,8 +39,15 @@
 
 
 
+/* Hold "compile" commands.  */
+
+static struct cmd_list_element *compile_command_list;
+
+/* Debug flag for "compile" commands.  */
+
 int compile_debug;
-struct cmd_list_element *compile_command_list;
+
+/* Implement "show debug compile".  */
 
 static void
 show_compile_debug (struct ui_file *file, int from_tty,
@@ -50,6 +57,9 @@ show_compile_debug (struct ui_file *file, int from_tty,
 }
 
 
+
+/* Check *ARG for a "-raw" or "-r" argument.  Return 0 if not seen.
+   Return 1 if seen and update *ARG.  */
 
 static int
 check_raw_argument (char **arg)
@@ -349,10 +359,13 @@ cleanup_unlink_file (void *arg)
   unlink (filename);
 }
 
+/* A helper function suitable for use as the "print_callback" in the
+   compiler object.  */
+
 static void
 print_callback (void *ignore, const char *message)
 {
-  fprintf_filtered (gdb_stderr, "%s", message);
+  fputs_filtered (message, gdb_stderr);
 }
 
 /* Process the compilation request.  On success it returns the object
@@ -470,6 +483,7 @@ compile_to_object (struct command_line *cmd, char *cmd_string,
   return object_file;
 }
 
+/* The "compile" prefix command.  */
 
 static void
 compile_command (char *args, int from_tty)
