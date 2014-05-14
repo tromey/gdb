@@ -886,6 +886,8 @@ dwarf2_frame_find_quirks (struct dwarf2_frame_state *fs,
 }
 
 
+/* See dwarf2-frame.h.  */
+
 int
 dwarf2_fetch_cfa_info (struct gdbarch *gdbarch, CORE_ADDR pc,
 		       struct dwarf2_per_cu_data *data,

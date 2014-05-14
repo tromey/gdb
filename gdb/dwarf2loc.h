@@ -80,6 +80,13 @@ extern const gdb_byte *dwarf2_fetch_constant_bytes (sect_offset,
 struct type *dwarf2_get_die_type (cu_offset die_offset,
 				  struct dwarf2_per_cu_data *per_cu);
 
+/* Find the frame base information for FRAMEFUNC at PC.  START is an
+   out parameter which is set to point to the DWARF expression to
+   compute.  LENGTH is an out parameter which is set to the length of
+   the DWARF expression.  This throws an exception on error or if an
+   expression is not found; the returned length will never be
+   zero.  */
+
 extern void dwarf_expr_frame_base_1 (struct symbol *framefunc, CORE_ADDR pc,
 				     const gdb_byte **start, size_t *length);
 
@@ -232,6 +239,12 @@ struct call_site_stuff;
 extern struct call_site_chain *call_site_find_chain (struct gdbarch *gdbarch,
 						     CORE_ADDR caller_pc,
 						     CORE_ADDR callee_pc);
+
+/* A helper function to convert a DWARF register to an arch register.
+   ARCH is the architecture.
+   DWARF_REG is the register.
+   This will throw an exception if the DWARF register cannot be
+   translated to an architecture register.  */
 
 extern int dwarf2_reg_to_regnum_or_error (struct gdbarch *arch, int dwarf_reg);
 

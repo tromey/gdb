@@ -412,6 +412,8 @@ const struct symbol_block_ops dwarf2_block_frame_base_loclist_funcs =
   loclist_find_frame_base_location
 };
 
+/* See dwarf2loc.h.  */
+
 void
 dwarf_expr_frame_base_1 (struct symbol *framefunc, CORE_ADDR pc,
 			 const gdb_byte **start, size_t *length)
@@ -2768,11 +2770,7 @@ unimplemented (unsigned int op)
 	   op);
 }
 
-/* A helper function to convert a DWARF register to an arch register.
-   ARCH is the architecture.
-   DWARF_REG is the register.
-   This will throw an exception if the DWARF register cannot be
-   translated to an architecture register.  */
+/* See dwarf2loc.h.  */
 
 int
 dwarf2_reg_to_regnum_or_error (struct gdbarch *arch, int dwarf_reg)
@@ -4237,6 +4235,8 @@ locexpr_tracepoint_var_ref (struct symbol *symbol, struct gdbarch *gdbarch,
 			       dlbaton->per_cu);
 }
 
+/* symbol_computed_ops 'generate_c_location' method.  */
+
 static void
 locexpr_generate_c_location (struct symbol *sym, struct ui_file *stream,
 			     struct gdbarch *gdbarch,
@@ -4434,6 +4434,8 @@ loclist_tracepoint_var_ref (struct symbol *symbol, struct gdbarch *gdbarch,
     dwarf2_compile_expr_to_ax (ax, value, gdbarch, addr_size, data, data + size,
 			       dlbaton->per_cu);
 }
+
+/* symbol_computed_ops 'generate_c_location' method.  */
 
 static void
 loclist_generate_c_location (struct symbol *sym, struct ui_file *stream,

@@ -120,6 +120,21 @@ extern const struct frame_base *
 
 CORE_ADDR dwarf2_frame_cfa (struct frame_info *this_frame);
 
+/* Find the CFA information for PC.
+
+   Return 1 if a register is used for the CFA, or 0 if another
+   expression is used.  Throw an exception on error.
+
+   GDBARCH is the architecture to use.
+   DATA is the per-CU data.
+
+   REGNUM_OUT is an out parameter that is set to the register number.
+   OFFSET_OUT is the offset to use from this register.
+   These are only filled in when 1 is returned.
+
+   TEXT_OFFSET_OUT, CFA_START_OUT, and CFA_END_OUT describe the CFA
+   in other cases.  These are only used when 0 is returned.  */
+
 extern int dwarf2_fetch_cfa_info (struct gdbarch *gdbarch, CORE_ADDR pc,
 				  struct dwarf2_per_cu_data *data,
 				  int *regnum_out, LONGEST *offset_out,

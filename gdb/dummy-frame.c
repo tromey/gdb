@@ -43,7 +43,12 @@ struct dummy_frame
   struct frame_id id;
   /* The caller's state prior to the call.  */
   struct infcall_suspend_state *caller_state;
+
+  /* If non-NULL, a destructor that is run when this dummy frame is
+     popped.  */
   void (*dtor) (void *data);
+
+  /* Arbitrary data that is passed to DTOR.  */
   void *dtor_data;
 };
 
