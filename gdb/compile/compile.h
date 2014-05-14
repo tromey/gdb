@@ -18,13 +18,41 @@
 #ifndef GDB_COMPILE_H
 #define GDB_COMPILE_H
 
-extern void eval_compile_command (struct command_line *cmd, char *cmd_string,
-				  enum compile_i_scope_types scope);
-
 struct ui_file;
 struct gdbarch;
 struct dwarf2_per_cu_data;
 struct symbol;
+struct dynamic_prop;
+
+/* Public function that is called from compile_control case in the
+   expression command.  GDB returns either a CMD, or a CMD_STRING, but
+   never both.  */
+
+extern void eval_compile_command (struct command_line *cmd, char *cmd_string,
+				  enum compile_i_scope_types scope);
+
+/* Compile a DWARF location expression to C, suitable for use by the
+   compiler.
+
+   STREAM is the stream where the code should be written.
+
+   RESULT_NAME is the name of a variable in the resulting C code.  The
+   result of the expression will be assigned to this variable.
+
+   SYM is the symbol corresponding to this expression.
+   PC is the location at which the expression is being evaluated.
+   ARCH is the architecture to use.
+
+   REGISTERS_USED is an out parameter which is updated to note which
+   registers were needed by this expression.
+
+   ADDR_SIZE is the DWARF address size to use.
+
+   OPT_PTR and OP_END are the bounds of the DWARF expression.
+
+   PER_CU is the per-CU object used for looking up various other
+   things.  */
+
 extern void compile_dwarf_expr_to_c (struct ui_file *stream,
 				     const char *result_name,
 				     struct symbol *sym,
@@ -36,7 +64,30 @@ extern void compile_dwarf_expr_to_c (struct ui_file *stream,
 				     const gdb_byte *op_end,
 				     struct dwarf2_per_cu_data *per_cu);
 
-struct dynamic_prop;
+/* Compile a DWARF bounds expression to C, suitable for use by the
+   compiler.
+
+   STREAM is the stream where the code should be written.
+
+   RESULT_NAME is the name of a variable in the resulting C code.  The
+   result of the expression will be assigned to this variable.
+
+   PROP is the dynamic property for which we're compiling.
+
+   SYM is the symbol corresponding to this expression.
+   PC is the location at which the expression is being evaluated.
+   ARCH is the architecture to use.
+
+   REGISTERS_USED is an out parameter which is updated to note which
+   registers were needed by this expression.
+
+   ADDR_SIZE is the DWARF address size to use.
+
+   OPT_PTR and OP_END are the bounds of the DWARF expression.
+
+   PER_CU is the per-CU object used for looking up various other
+   things.  */
+
 extern void compile_dwarf_bounds_to_c (struct ui_file *stream,
 				       const char *result_name,
 				       const struct dynamic_prop *prop,
@@ -47,7 +98,5 @@ extern void compile_dwarf_bounds_to_c (struct ui_file *stream,
 				       const gdb_byte *op_ptr,
 				       const gdb_byte *op_end,
 				       struct dwarf2_per_cu_data *per_cu);
-
-extern int compile_debug;
 
 #endif /* GDB_COMPILE_H */

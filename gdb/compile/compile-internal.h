@@ -20,6 +20,10 @@
 #include "hashtab.h"
 #include "gcc-c-interface.h"
 
+/* Debugging flag for the "compile" family of commands.  */
+
+extern int compile_debug;
+
 struct block;
 
 /* An object of this type holds state associated with a given

@@ -493,9 +493,7 @@ compile_command (char *args, int from_tty)
   compile_code_command (args, from_tty);
 }
 
-/* Public function that is called from compile_control case in the
-   expression command.  GDB returns either a CMD, or a CMD_STRING, but
-   never both.  */
+/* See compile.h.  */
 
 void
 eval_compile_command (struct command_line *cmd, char *cmd_string,

@@ -55,6 +55,20 @@ struct insn_info
   unsigned int is_tls : 1;
 };
 
+/* A helper function for compute_stack_depth that does the work.  This
+   examines the DWARF expression starting from START and computes
+   stack effects.
+
+   NEED_TEMPVAR is an out parameter which is set if this expression
+   needs a special temporary variable to be emitted (see the code
+   generator).
+   INFO is an array of insn_info objects, indexed by offset from the
+   start of the DWARF expression.
+   TO_DO is a list of bytecodes which must be examined; it may be
+   added to by this function.
+   BYTE_ORDER and ADDR_SIZE describe this bytecode in the obvious way.
+   OP_PTR and OP_END are the bounds of the DWARF expression.  */
+
 static void
 compute_stack_depth_worker (int start, int *need_tempvar,
 			    struct insn_info *info,
@@ -351,6 +365,22 @@ compute_stack_depth_worker (int start, int *need_tempvar,
 #undef SET_CHECK_DEPTH
 }
 
+/* Compute the maximum needed stack depth of a DWARF expression, and
+   some other information as well.
+
+   BYTE_ORDER and ADDR_SIZE describe this bytecode in the obvious way.
+   NEED_TEMPVAR is an out parameter which is set if this expression
+   needs a special temporary variable to be emitted (see the code
+   generator).
+   IS_TLS is an out parameter which is set if this expression refers
+   to a TLS variable.
+   OP_PTR and OP_END are the bounds of the DWARF expression.
+   INITIAL_DEPTH is the initial depth of the DWARF expression stack.
+   INFO is an array of insn_info objects, indexed by offset from the
+   start of the DWARF expression.
+
+   This returns the maximum stack depth.  */
+
 static int
 compute_stack_depth (enum bfd_endian byte_order, unsigned int addr_size,
 		     int *need_tempvar, int *is_tls,
@@ -401,12 +431,17 @@ compute_stack_depth (enum bfd_endian byte_order, unsigned int addr_size,
 #define GCC_UINTPTR "__gdb_uintptr"
 #define GCC_INTPTR "__gdb_intptr"
 
+/* Emit code to push a constant.  */
+
 static void
 push (int indent, struct ui_file *stream, ULONGEST l)
 {
   fprintfi_filtered (indent, stream, "__gdb_stack[++__gdb_tos] = %s;\n",
 		     hex_string (l));
 }
+
+/* Emit code to push an arbitrary expression.  This works like
+   printf.  */
 
 static void
 pushf (int indent, struct ui_file *stream, const char *format, ...)
@@ -422,6 +457,9 @@ pushf (int indent, struct ui_file *stream, const char *format, ...)
   fprintfi_filtered (indent, stream, "++__gdb_tos;\n");
 }
 
+/* Emit code for a unary expression -- one which operates in-place on
+   the top-of-stack.  This works like printf.  */
+
 static void
 unary (int indent, struct ui_file *stream, const char *format, ...)
 {
@@ -433,6 +471,9 @@ unary (int indent, struct ui_file *stream, const char *format, ...)
   va_end (args);
   fprintf_filtered (stream, ";\n");
 }
+
+/* Emit code for a unary expression -- one which uses the top two
+   stack items, popping the topmost one.  This works like printf.  */
 
 static void
 binary (int indent, struct ui_file *stream, const char *format, ...)
@@ -447,12 +488,20 @@ binary (int indent, struct ui_file *stream, const char *format, ...)
   fprintfi_filtered (indent, stream, "--__gdb_tos;\n");
 }
 
+/* Print the name of a label given its "SCOPE", an arbitrary integer
+   used for uniqueness, and its TARGET, the bytecode offset
+   corresponding to the label's point of definition.  */
+
 static void
 print_label (struct ui_file *stream, unsigned int scope, int target)
 {
   fprintf_filtered (stream, "__label_%u_%s",
 		    scope, pulongest (target));
 }
+
+/* Emit code that pushes a register's address on the stack.
+   REGISTERS_USED is an out parameter which is updated to note which
+   register was needed by this expression.  */
 
 static void
 pushf_register_address (int indent, struct ui_file *stream,
@@ -468,6 +517,11 @@ pushf_register_address (int indent, struct ui_file *stream,
 
   do_cleanups (cleanups);
 }
+
+/* Emit code that pushes a register's value on the stack.
+   REGISTERS_USED is an out parameter which is updated to note which
+   register was needed by this expression.  OFFSET is added to the
+   register's value before it is pushed.  */
 
 static void
 pushf_register (int indent, struct ui_file *stream,
@@ -488,6 +542,34 @@ pushf_register (int indent, struct ui_file *stream,
   do_cleanups (cleanups);
 }
 
+/* Compile a DWARF expression to C code.
+
+   INDENT is the indentation level to use.
+   STREAM is the stream where the code should be written.
+
+   TYPE_NAME names the type of the result of the DWARF expression.
+   For locations this is "void *" but for array bounds it will be an
+   integer type.
+
+   RESULT_NAME is the name of a variable in the resulting C code.  The
+   result of the expression will be assigned to this variable.
+
+   SYM is the symbol corresponding to this expression.
+   PC is the location at which the expression is being evaluated.
+   ARCH is the architecture to use.
+
+   REGISTERS_USED is an out parameter which is updated to note which
+   registers were needed by this expression.
+
+   ADDR_SIZE is the DWARF address size to use.
+
+   OPT_PTR and OP_END are the bounds of the DWARF expression.
+
+   If non-NULL, INITIAL points to an initial value to write to the
+   stack.  If NULL, no initial value is written.
+
+   PER_CU is the per-CU object used for looking up various other
+   things.  */
 
 static void
 do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
@@ -1032,6 +1114,8 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
   do_cleanups (cleanup);
 }
 
+/* See compile.h.  */
+
 void
 compile_dwarf_expr_to_c (struct ui_file *stream, const char *result_name,
 			 struct symbol *sym, CORE_ADDR pc,
@@ -1044,6 +1128,8 @@ compile_dwarf_expr_to_c (struct ui_file *stream, const char *result_name,
 			      arch, registers_used, addr_size, op_ptr, op_end,
 			      NULL, per_cu);
 }
+
+/* See compile.h.  */
 
 void
 compile_dwarf_bounds_to_c (struct ui_file *stream,
