@@ -1,3 +1,8 @@
+2014-10-07  Tom Tromey  <tromey@redhat.com>
+
+	* lib/dwarf.exp (_location): Ignore blank lines.  Allow comments.
+	Handle DW_OP_pick, DW_OP_skip, DW_OP_bra.
+
 2014-11-22  Yao Qi  <yao@codesourcery.com>
 
 	* gdb.trace/entry-values.c: Remove asms.
