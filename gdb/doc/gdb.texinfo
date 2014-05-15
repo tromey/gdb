@@ -16757,8 +16757,17 @@ compile code
 Specifying @samp{-@var{raw}}, prohibits @value{GDBN} from wrapping the
 provided @var{source} in a callable scope.  In this case, you must
 specify the entry point of the code by defining a function named
-@code{_gdb_expr_}.  The use of @var{raw} is considered to be expert
-usage, and care should be taken when using it.
+@code{_gdb_expr_}.  @samp{-@var{raw}} code does not automatically access
+variables of the inferior, for their import you must use
+the @samp{#pragma} line first:
+
+@smallexample
+#pragma GCC user_expression
+@end smallexample
+
+@samp{#include} lines are better to be placed before the @samp{#pragma}
+line.  The use of @var{raw} is considered to be expert usage, and care
+should be taken when using it.
 
 @kindex compile file
 @item compile file @var{filename}
@@ -16778,10 +16787,19 @@ compile file /home/user/example.c
 @end smallexample
 
 Specifying @samp{-@var{raw}}, prohibits @value{GDBN} from wrapping the
-provided source code specified in @var{filename} in a callable scope.
-In this case, you must specify the entry point of the code by defining a
-function named @code{_gdb_expr_}.  The use of @var{raw} is considered to
-be expert usage, and care should be taken when using it.
+provided @var{source} in a callable scope.  In this case, you must
+specify the entry point of the code by defining a function named
+@code{_gdb_expr_}.  @samp{-@var{raw}} code does not automatically access
+variables of the inferior, for their import you must use
+the @samp{#pragma} line first:
+
+@smallexample
+#pragma GCC user_expression
+@end smallexample
+
+@samp{#include} lines are better to be placed before the @samp{#pragma}
+line.  The use of @var{raw} is considered to be expert usage, and care
+should be taken when using it.
 @end table
 
 There are a few caveats to keep in mind when using the compile command.
