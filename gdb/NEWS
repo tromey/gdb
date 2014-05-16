@@ -3,6 +3,16 @@
 
 *** Changes since GDB 7.7
 
+* GDB now supports the compilation and injection of source code into
+  the inferior.  GDB will use a feature-capable compiler to compile
+  the source code to object code, and if successful, inject and
+  execute that code within the current context of the inferior.
+  Currently the "C" language is supported.  The commands used to
+  interface with this new feature are:
+
+     compile code [source code]
+     compile file [filename.c]
+
 * GDB supports printing and modifying of variable length automatic arrays
   as specified in ISO C99.
 
@@ -25,6 +35,20 @@ gu [code]
 guile-repl
 gr
   Start a Guile interactive prompt (or "repl" for "read-eval-print loop").
+
+compile code [source code]
+  Compile and inject into the inferior the executable object code
+  produced by compiling the provided source code.  This resulting
+  object code will be executed within the current context of the
+  inferior, allowing access to variables, types and other elements
+  that are currently within scope.
+
+compile file [filename]
+  Compile and inject into the inferior the executable object code
+  produced by compiling the source code stored in the filename
+  provided.  This resulting object code will be executed within the
+  current context of the inferior, allowing access to variables, types
+  and other elements that are currently within scope.
 
 info auto-load guile-scripts [regexp]
   Print the list of automatically loaded Guile scripts.
