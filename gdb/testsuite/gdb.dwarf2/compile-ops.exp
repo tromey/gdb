@@ -410,6 +410,11 @@ if ![runto func] {
     return -1
 }
 
+if {[skip_compile_feature_tests]} {
+    untested "could not find libcc1 shared library"
+    return -1
+}
+
 # If we have a bug, this will hang.
 gdb_test_no_output "compile code param"
 

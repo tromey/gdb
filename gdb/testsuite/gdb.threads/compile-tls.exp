@@ -26,6 +26,11 @@ if ![runto_main] then {
    return 0
 }
 
+if {[skip_compile_feature_tests]} {
+    untested "could not find libcc1 shared library"
+    return -1
+}
+
 gdb_test "compile code local_scope = 1" \
     "warning: .* compiled code."
 gdb_test "print local_scope" " = 1"

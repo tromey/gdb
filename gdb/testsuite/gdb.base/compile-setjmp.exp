@@ -23,6 +23,11 @@ if ![runto_main] {
     return -1
 }
 
+if {[skip_compile_feature_tests]} {
+    untested "could not find libcc1 shared library"
+    return -1
+}
+
 gdb_test_no_output "compile file -r ${srcdir}/${subdir}/$srcfile2" \
     "compile file -r"
 
