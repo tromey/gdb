@@ -10,8 +10,8 @@
   Currently the "C" language is supported.  The commands used to
   interface with this new feature are:
 
-     compile code [source code]
-     compile file [filename.c]
+     compile code [-raw|-r] [--] [source code]
+     compile file [-raw|-r] filename.c
 
 * GDB supports printing and modifying of variable length automatic arrays
   as specified in ISO C99.
@@ -36,19 +36,27 @@ guile-repl
 gr
   Start a Guile interactive prompt (or "repl" for "read-eval-print loop").
 
-compile code [source code]
+compile code [-r|-raw] [--] [source code]
   Compile and inject into the inferior the executable object code
   produced by compiling the provided source code.  This resulting
   object code will be executed within the current context of the
   inferior, allowing access to variables, types and other elements
-  that are currently within scope.
+  that are currently within scope.  The -raw option will prevent GDB
+  automatically wrapping the source code into a callable scope (this
+  will have to be provided in the source code, and is considered
+  expert level usage).  The "--" option indicates that all text to the
+  right of the "--" is to be considered as source code, and will not
+  be considered for option parsing.
 
 compile file [filename]
   Compile and inject into the inferior the executable object code
   produced by compiling the source code stored in the filename
   provided.  This resulting object code will be executed within the
   current context of the inferior, allowing access to variables, types
-  and other elements that are currently within scope.
+  and other elements that are currently within scope.  The -raw option
+  will prevent GDB automatically wrapping the source code into a
+  callable scope (this will have to be provided in the source code,
+  and is considered expert level usage).
 
 info auto-load guile-scripts [regexp]
   Print the list of automatically loaded Guile scripts.
