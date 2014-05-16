@@ -11,7 +11,7 @@
   interface with this new feature are:
 
      compile code [-raw|-r] [--] [source code]
-     compile file [-raw|-r] filename.c
+     compile file [-raw|-r] filename
 
 * GDB supports printing and modifying of variable length automatic arrays
   as specified in ISO C99.
@@ -48,7 +48,7 @@ compile code [-r|-raw] [--] [source code]
   right of the "--" is to be considered as source code, and will not
   be considered for option parsing.
 
-compile file [filename]
+compile file [-r|-raw] filename
   Compile and inject into the inferior the executable object code
   produced by compiling the source code stored in the filename
   provided.  This resulting object code will be executed within the
