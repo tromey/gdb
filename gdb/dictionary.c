@@ -404,8 +404,8 @@ dict_create_hashed_expandable (void)
   retval = XNEW (struct dictionary);
   DICT_VECTOR (retval) = &dict_hashed_expandable_vector;
   DICT_HASHED_NBUCKETS (retval) = DICT_EXPANDABLE_INITIAL_CAPACITY;
-  DICT_HASHED_BUCKETS (retval) = xcalloc (DICT_EXPANDABLE_INITIAL_CAPACITY,
-					  sizeof (struct symbol *));
+  DICT_HASHED_BUCKETS (retval) = XCNEWVEC (struct symbol *,
+					   DICT_EXPANDABLE_INITIAL_CAPACITY);
   DICT_HASHED_EXPANDABLE_NSYMS (retval) = 0;
 
   return retval;
@@ -472,8 +472,8 @@ dict_create_linear_expandable (void)
   DICT_LINEAR_EXPANDABLE_CAPACITY (retval)
     = DICT_EXPANDABLE_INITIAL_CAPACITY;
   DICT_LINEAR_SYMS (retval)
-    = xmalloc (DICT_LINEAR_EXPANDABLE_CAPACITY (retval)
-	       * sizeof (struct symbol *));
+    = XNEWVEC (struct symbol *,
+	       DICT_LINEAR_EXPANDABLE_CAPACITY (retval));
 
   return retval;
 }
@@ -755,8 +755,7 @@ expand_hashtable (struct dictionary *dict)
   int old_nbuckets = DICT_HASHED_NBUCKETS (dict);
   struct symbol **old_buckets = DICT_HASHED_BUCKETS (dict);
   int new_nbuckets = 2*old_nbuckets + 1;
-  struct symbol **new_buckets = xcalloc (new_nbuckets,
-					 sizeof (struct symbol *));
+  struct symbol **new_buckets = XCNEWVEC (struct symbol *, new_nbuckets);
   int i;
 
   DICT_HASHED_NBUCKETS (dict) = new_nbuckets;
@@ -942,9 +941,9 @@ add_symbol_linear_expandable (struct dictionary *dict,
     {
       DICT_LINEAR_EXPANDABLE_CAPACITY (dict) *= 2;
       DICT_LINEAR_SYMS (dict)
-	= xrealloc (DICT_LINEAR_SYMS (dict),
-		    DICT_LINEAR_EXPANDABLE_CAPACITY (dict)
-		    * sizeof (struct symbol *));
+	= XRESIZEVEC (struct symbol *,
+		      DICT_LINEAR_SYMS (dict),
+		      DICT_LINEAR_EXPANDABLE_CAPACITY (dict));
     }
 
   DICT_LINEAR_SYM (dict, nsyms - 1) = sym;

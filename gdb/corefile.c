@@ -111,8 +111,7 @@ specify_exec_file_hook (void (*hook) (char *))
 	{
 	  /* If this is the first extra hook, initialize the hook
 	     array.  */
-	  exec_file_extra_hooks = (hook_type *)
-	    xmalloc (sizeof (hook_type));
+	  exec_file_extra_hooks = XNEW (hook_type);
 	  exec_file_extra_hooks[0] = deprecated_exec_file_display_hook;
 	  deprecated_exec_file_display_hook = call_extra_exec_file_hooks;
 	  exec_file_hook_count = 1;
@@ -122,9 +121,8 @@ specify_exec_file_hook (void (*hook) (char *))
          Yes, it's inefficient to grow it by one each time but since
          this is hardly ever called it's not a big deal.  */
       exec_file_hook_count++;
-      new_array = (hook_type *)
-	xrealloc (exec_file_extra_hooks,
-		  exec_file_hook_count * sizeof (hook_type));
+      new_array = XRESIZEVEC (hook_type, exec_file_extra_hooks
+			      exec_file_hook_count);
       exec_file_extra_hooks = new_array;
       exec_file_extra_hooks[exec_file_hook_count - 1] = hook;
     }
@@ -525,7 +523,7 @@ complete_set_gnutarget (struct cmd_list_element *cmd,
       for (last = 0; bfd_targets[last] != NULL; ++last)
 	;
 
-      bfd_targets = xrealloc (bfd_targets, (last + 2) * sizeof (const char **));
+      bfd_targets = XRESIZEVEC (const char *, bfd_targets, last + 2);
       bfd_targets[last] = "auto";
       bfd_targets[last + 1] = NULL;
     }

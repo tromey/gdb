@@ -141,8 +141,7 @@ dwarf_expr_grow_stack (struct dwarf_expr_context *ctx, size_t need)
     {
       size_t newlen = ctx->stack_len + need + 10;
 
-      ctx->stack = xrealloc (ctx->stack,
-			     newlen * sizeof (struct dwarf_stack_value));
+      ctx->stack = XRESIZEVEC (struct dwarf_stack_value, ctx->stack, newlen);
       ctx->stack_allocated = newlen;
     }
 }
@@ -310,9 +309,8 @@ add_piece (struct dwarf_expr_context *ctx, ULONGEST size, ULONGEST offset)
 
   ctx->num_pieces++;
 
-  ctx->pieces = xrealloc (ctx->pieces,
-			  (ctx->num_pieces
-			   * sizeof (struct dwarf_expr_piece)));
+  ctx->pieces = XRESIZEVEC (struct dwarf_expr_piece, ctx->pieces,
+			    ctx->num_pieces);
 
   p = &ctx->pieces[ctx->num_pieces - 1];
   p->location = ctx->location;

@@ -153,7 +153,7 @@ add_symbol_to_list (struct symbol *symbol, struct pending **listhead)
 	}
       else
 	{
-	  link = (struct pending *) xmalloc (sizeof (struct pending));
+	  link = XNEW (struct pending);
 	}
 
       link->next = *listhead;
@@ -453,8 +453,7 @@ record_pending_block (struct objfile *objfile, struct block *block,
   if (pending_blocks == NULL)
     obstack_init (&pending_block_obstack);
 
-  pblock = (struct pending_block *)
-    obstack_alloc (&pending_block_obstack, sizeof (struct pending_block));
+  pblock = XOBNEW (&pending_block_obstack, struct pending_block);
   pblock->block = block;
   if (opblock)
     {
@@ -608,8 +607,7 @@ start_subfile (const char *name, const char *dirname)
      for this subfile in the list of all subfiles of the current main
      source file.  */
 
-  subfile = (struct subfile *) xmalloc (sizeof (struct subfile));
-  memset ((char *) subfile, 0, sizeof (struct subfile));
+  subfile = XCNEW (struct subfile);
   subfile->next = subfiles;
   subfiles = subfile;
   current_subfile = subfile;
@@ -722,8 +720,7 @@ patch_subfile_names (struct subfile *subfile, char *name)
 void
 push_subfile (void)
 {
-  struct subfile_stack *tem
-    = (struct subfile_stack *) xmalloc (sizeof (struct subfile_stack));
+  struct subfile_stack *tem = XNEW (struct subfile_stack);
 
   tem->next = subfile_stack;
   subfile_stack = tem;
@@ -886,8 +883,7 @@ restart_symtab (CORE_ADDR start_addr)
   if (context_stack == NULL)
     {
       context_stack_size = INITIAL_CONTEXT_STACK_SIZE;
-      context_stack = (struct context_stack *)
-	xmalloc (context_stack_size * sizeof (struct context_stack));
+      context_stack = XNEWVEC (struct context_stack, context_stack_size);
     }
   context_stack_depth = 0;
 
@@ -1443,9 +1439,8 @@ push_context (int desc, CORE_ADDR valu)
   if (context_stack_depth == context_stack_size)
     {
       context_stack_size *= 2;
-      context_stack = (struct context_stack *)
-	xrealloc ((char *) context_stack,
-		  (context_stack_size * sizeof (struct context_stack)));
+      context_stack = XRESIZEVEC (struct context_stack, context_stack,
+				  context_stack_size);
     }
 
   new = &context_stack[context_stack_depth++];

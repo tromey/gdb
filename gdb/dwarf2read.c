@@ -2751,9 +2751,8 @@ create_cus_from_index (struct objfile *objfile,
 
   dwarf2_per_objfile->n_comp_units = (cu_list_elements + dwz_elements) / 2;
   dwarf2_per_objfile->all_comp_units
-    = obstack_alloc (&objfile->objfile_obstack,
-		     dwarf2_per_objfile->n_comp_units
-		     * sizeof (struct dwarf2_per_cu_data *));
+    = XOBNEWVEC (&objfile->objfile_obstack, struct dwarf2_per_cu_data *,
+		 dwarf2_per_objfile->n_comp_units);
 
   create_cus_from_index_list (objfile, cu_list, cu_list_elements,
 			      &dwarf2_per_objfile->info, 0, 0);
@@ -2781,8 +2780,7 @@ create_signatured_type_table_from_index (struct objfile *objfile,
     = dwarf2_per_objfile->n_allocated_type_units
     = elements / 3;
   dwarf2_per_objfile->all_type_units
-    = xmalloc (dwarf2_per_objfile->n_type_units
-	       * sizeof (struct signatured_type *));
+    = XNEWVEC (struct signatured_type *, dwarf2_per_objfile->n_type_units);
 
   sig_types_hash = allocate_signatured_type_table (objfile);
 
@@ -3253,8 +3251,8 @@ dw2_get_file_names_reader (const struct die_reader_specs *reader,
   find_file_and_directory (comp_unit_die, cu, &name, &comp_dir);
 
   qfn->num_file_names = lh->num_file_names;
-  qfn->file_names = obstack_alloc (&objfile->objfile_obstack,
-				   lh->num_file_names * sizeof (char *));
+  qfn->file_names = XOBNEWVEC (&objfile->objfile_obstack, const char *,
+			       lh->num_file_names);
   for (i = 0; i < lh->num_file_names; ++i)
     qfn->file_names[i] = file_full_name (i + 1, lh, comp_dir);
   qfn->real_names = NULL;
@@ -4412,9 +4410,8 @@ dwarf2_create_include_psymtab (const char *name, struct partial_symtab *pst,
   subpst->textlow = 0;
   subpst->texthigh = 0;
 
-  subpst->dependencies = (struct partial_symtab **)
-    obstack_alloc (&objfile->objfile_obstack,
-                   sizeof (struct partial_symtab *));
+  subpst->dependencies = XOBNEW (&objfile->objfile_obstack,
+				 struct partial_symtab *);
   subpst->dependencies[0] = pst;
   subpst->number_of_dependencies = 1;
 
@@ -4687,8 +4684,7 @@ create_all_type_units (struct objfile *objfile)
     = dwarf2_per_objfile->n_allocated_type_units
     = htab_elements (types_htab);
   dwarf2_per_objfile->all_type_units
-    = xmalloc (dwarf2_per_objfile->n_type_units
-	       * sizeof (struct signatured_type *));
+    = XNEWVEC (struct signatured_type *, dwarf2_per_objfile->n_type_units);
   iter = &dwarf2_per_objfile->all_type_units[0];
   htab_traverse_noresize (types_htab, add_signatured_type_cu_to_table, &iter);
   gdb_assert (iter - &dwarf2_per_objfile->all_type_units[0]
@@ -5036,8 +5032,7 @@ read_cutu_die_from_dwo (struct dwarf2_per_cu_data *this_cu,
   else if (stub_comp_dir != NULL)
     {
       /* Reconstruct the comp_dir attribute to simplify the code below.  */
-      comp_dir = (struct attribute *)
-	obstack_alloc (&cu->comp_unit_obstack, sizeof (*comp_dir));
+      comp_dir = XOBNEW (&cu->comp_unit_obstack, struct attribute);
       comp_dir->name = DW_AT_comp_dir;
       comp_dir->form = DW_FORM_string;
       DW_STRING_IS_CANONICAL (comp_dir) = 0;
@@ -5397,12 +5392,8 @@ init_cutu_and_read_dies (struct dwarf2_per_cu_data *this_cu,
     {
       /* If !use_existing_cu, this_cu->cu must be NULL.  */
       gdb_assert (this_cu->cu == NULL);
-<<<<<<< HEAD
-      cu = xmalloc (sizeof (*cu));
-=======
 
       cu = XNEW (struct dwarf2_cu);
->>>>>>> use new and newvec in some sopts
       init_one_comp_unit (cu, this_cu);
       /* If an error occurs while loading, release our storage.  */
       free_cu_cleanup = make_cleanup (free_heap_comp_unit, cu);

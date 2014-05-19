@@ -79,8 +79,7 @@ static struct cleanup *
 make_my_cleanup2 (struct cleanup **pmy_chain, make_cleanup_ftype *function,
 		  void *arg,  void (*free_arg) (void *))
 {
-  struct cleanup *new
-    = (struct cleanup *) xmalloc (sizeof (struct cleanup));
+  struct cleanup *new = XNEW (struct cleanup);
   struct cleanup *old_chain = *pmy_chain;
 
   new->next = *pmy_chain;

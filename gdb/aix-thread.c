@@ -705,7 +705,7 @@ sync_threadlists (void)
 
   pcount = 0;
   psize = 1;
-  pbuf = (struct pd_thread *) xmalloc (psize * sizeof *pbuf);
+  pbuf = XNEWVEC (struct pd_thread, psize);
 
   for (cmd = PTHDB_LIST_FIRST;; cmd = PTHDB_LIST_NEXT)
     {
@@ -720,8 +720,7 @@ sync_threadlists (void)
       if (pcount == psize)
 	{
 	  psize *= 2;
-	  pbuf = (struct pd_thread *) xrealloc (pbuf, 
-						psize * sizeof *pbuf);
+	  pbuf = XRESIZEVEC (struct pd_thread, pbuf, psize)
 	}
       pbuf[pcount].pdtid = pdtid;
       pbuf[pcount].pthid = pthid;
@@ -742,7 +741,7 @@ sync_threadlists (void)
 
   gcount = 0;
   iterate_over_threads (giter_count, &gcount);
-  g = gbuf = (struct thread_info **) xmalloc (gcount * sizeof *gbuf);
+  g = gbuf = XNEWVEC (struct thread_info *, gcount);
   iterate_over_threads (giter_accum, &g);
   qsort (gbuf, gcount, sizeof *gbuf, gcmp);
 
@@ -759,7 +758,7 @@ sync_threadlists (void)
       else if (gi == gcount)
 	{
 	  thread = add_thread (ptid_build (infpid, 0, pbuf[pi].pthid));
-	  thread->private = xmalloc (sizeof (struct private_thread_info));
+	  thread->private = XNEW (struct private_thread_info);
 	  thread->private->pdtid = pbuf[pi].pdtid;
 	  thread->private->tid = pbuf[pi].tid;
 	  pi++;
@@ -791,7 +790,7 @@ sync_threadlists (void)
 	  else
 	    {
 	      thread = add_thread (pptid);
-	      thread->private = xmalloc (sizeof (struct private_thread_info));
+	      thread->private = XNEW (struct private_thread_info);
 	      thread->private->pdtid = pdtid;
 	      thread->private->tid = tid;
 	      pi++;

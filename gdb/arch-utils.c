@@ -659,7 +659,7 @@ initialize_current_architecture (void)
     /* Append ``auto''.  */
     int nr;
     for (nr = 0; arches[nr] != NULL; nr++);
-    arches = xrealloc (arches, sizeof (char*) * (nr + 2));
+    arches = XRESIZEVEC (const char *, arches, nr + 2);
     arches[nr + 0] = "auto";
     arches[nr + 1] = NULL;
     add_setshow_enum_cmd ("architecture", class_support,

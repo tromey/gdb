@@ -323,7 +323,7 @@ void
 init_header_files (void)
 {
   n_allocated_this_object_header_files = 10;
-  this_object_header_files = (int *) xmalloc (10 * sizeof (int));
+  this_object_header_files = XNEWVEC (int, 10);
 }
 
 /* Add header file number I for this object file
@@ -336,8 +336,8 @@ add_this_object_header_file (int i)
     {
       n_allocated_this_object_header_files *= 2;
       this_object_header_files
-	= (int *) xrealloc ((char *) this_object_header_files,
-		       n_allocated_this_object_header_files * sizeof (int));
+	= XRESIZEVEC (int, this_object_header_files,
+		      n_allocated_this_object_header_files);
     }
 
   this_object_header_files[n_this_object_header_files++] = i;
@@ -389,16 +389,15 @@ add_new_header_file (char *name, int instance)
       if (i == 0)
 	{
 	  N_ALLOCATED_HEADER_FILES (dbxread_objfile) = 10;
-	  HEADER_FILES (dbxread_objfile) = (struct header_file *)
-	    xmalloc (10 * sizeof (struct header_file));
+	  HEADER_FILES (dbxread_objfile) = XNEWVEC (struct header_file, 10);
 	}
       else
 	{
 	  i *= 2;
 	  N_ALLOCATED_HEADER_FILES (dbxread_objfile) = i;
-	  HEADER_FILES (dbxread_objfile) = (struct header_file *)
-	    xrealloc ((char *) HEADER_FILES (dbxread_objfile),
-		      (i * sizeof (struct header_file)));
+	  HEADER_FILES (dbxread_objfile) =
+	    XRESIZEVEC (struct header_file, HEADER_FILES (dbxread_objfile),
+			i);
 	}
     }
 
@@ -409,9 +408,7 @@ add_new_header_file (char *name, int instance)
   hfile->name = xstrdup (name);
   hfile->instance = instance;
   hfile->length = 10;
-  hfile->vector
-    = (struct type **) xmalloc (10 * sizeof (struct type *));
-  memset (hfile->vector, 0, 10 * sizeof (struct type *));
+  hfile->vector = XCNEWVEC (struct type *, 10);
 
   add_this_object_header_file (i);
 }
@@ -425,8 +422,7 @@ explicit_lookup_type (int real_filenum, int index)
   if (index >= f->length)
     {
       f->length *= 2;
-      f->vector = (struct type **)
-	xrealloc (f->vector, f->length * sizeof (struct type *));
+      f->vector = XRESIZEVEC (struct type *, f->vector, f->length);
       memset (&f->vector[f->length / 2],
 	      '\0', f->length * sizeof (struct type *) / 2);
     }
@@ -896,8 +892,8 @@ static void
 init_bincl_list (int number, struct objfile *objfile)
 {
   bincls_allocated = number;
-  next_bincl = bincl_list = (struct header_file_location *)
-    xmalloc (bincls_allocated * sizeof (struct header_file_location));
+  next_bincl = bincl_list = XNEWVEC (struct header_file_location,
+				     bincls_allocated);
 }
 
 /* Add a bincl to the list.  */
@@ -910,9 +906,8 @@ add_bincl_to_list (struct partial_symtab *pst, char *name, int instance)
       int offset = next_bincl - bincl_list;
 
       bincls_allocated *= 2;
-      bincl_list = (struct header_file_location *)
-	xrealloc ((char *) bincl_list,
-		  bincls_allocated * sizeof (struct header_file_location));
+      bincl_list = XRESIZEVEC (struct header_file_location, bincl_list,
+			       bincls_allocated);
       next_bincl = bincl_list + offset;
     }
   next_bincl->pst = pst;
@@ -2179,8 +2174,8 @@ start_psymtab (struct objfile *objfile, char *filename, CORE_ADDR textlow,
     start_psymtab_common (objfile, objfile->section_offsets,
 			  filename, textlow, global_syms, static_syms);
 
-  result->read_symtab_private = obstack_alloc (&objfile->objfile_obstack,
-					       sizeof (struct symloc));
+  result->read_symtab_private = XOBNEW (&objfile->objfile_obstack,
+					struct symloc);
   LDSYMOFF (result) = ldsymoff;
   result->read_symtab = dbx_read_symtab;
   SYMBOL_SIZE (result) = symbol_size;
@@ -2309,9 +2304,9 @@ end_psymtab (struct objfile *objfile, struct partial_symtab *pst,
   pst->number_of_dependencies = number_dependencies;
   if (number_dependencies)
     {
-      pst->dependencies = (struct partial_symtab **)
-	obstack_alloc (&objfile->objfile_obstack,
-		       number_dependencies * sizeof (struct partial_symtab *));
+      pst->dependencies = XOBNEWVEC (&objfile->objfile_obstack,
+				     struct partial_symtab,
+				     number_dependencies);
       memcpy (pst->dependencies, dependency_list,
 	      number_dependencies * sizeof (struct partial_symtab *));
     }
@@ -2326,7 +2321,7 @@ end_psymtab (struct objfile *objfile, struct partial_symtab *pst,
       /* Copy the sesction_offsets array from the main psymtab.  */
       subpst->section_offsets = pst->section_offsets;
       subpst->read_symtab_private =
-	obstack_alloc (&objfile->objfile_obstack, sizeof (struct symloc));
+	XOBNEW (&objfile->objfile_obstack, struct symloc);
       LDSYMOFF (subpst) =
 	LDSYMLEN (subpst) =
 	subpst->textlow =
@@ -2334,9 +2329,8 @@ end_psymtab (struct objfile *objfile, struct partial_symtab *pst,
 
       /* We could save slight bits of space by only making one of these,
          shared by the entire set of include files.  FIXME-someday.  */
-      subpst->dependencies = (struct partial_symtab **)
-	obstack_alloc (&objfile->objfile_obstack,
-		       sizeof (struct partial_symtab *));
+      subpst->dependencies =
+	XOBNEW (&objfile->objfile_obstack, struct partial_symtab *);
       subpst->dependencies[0] = pst;
       subpst->number_of_dependencies = 1;
 

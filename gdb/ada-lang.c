@@ -4457,8 +4457,7 @@ cache_symbol (const char *name, domain_enum namespace, struct symbol *sym,
     return;
 
   h = msymbol_hash (name) % HASH_SIZE;
-  e = (struct cache_entry *) obstack_alloc (&sym_cache->cache_space,
-					    sizeof (*e));
+  e = XOBNEW (&sym_cache->cache_space, struct cache_entry);
   e->next = sym_cache->root[h];
   sym_cache->root[h] = e;
   e->name = copy = obstack_alloc (&sym_cache->cache_space, strlen (name) + 1);
@@ -4921,10 +4920,7 @@ xget_renaming_scope (struct type *renaming_type)
   /* Make a copy of scope and return it.  */
 
   scope_len = last - name;
-  scope = (char *) xmalloc ((scope_len + 1) * sizeof (char));
-
-  strncpy (scope, name, scope_len);
-  scope[scope_len] = '\0';
+  scope = savestring (scope, scope_len);
 
   return scope;
 }

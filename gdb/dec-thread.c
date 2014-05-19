@@ -357,8 +357,7 @@ update_dec_thread_list (void)
       else if (info.kind == PTHREAD_DEBUG_THD_KIND_INITIAL
                || info.kind == PTHREAD_DEBUG_THD_KIND_NORMAL)
         {
-          struct dec_thread_info *item = 
-            xmalloc (sizeof (struct dec_thread_info));
+          struct dec_thread_info *item = XNEW (struct dec_thread_info);
 
           item->thread = thread;
           item->info = info;

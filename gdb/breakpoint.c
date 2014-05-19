@@ -3265,10 +3265,8 @@ get_breakpoint_objfile_data (struct objfile *objfile)
   bp_objfile_data = objfile_data (objfile, breakpoint_objfile_key);
   if (bp_objfile_data == NULL)
     {
-      bp_objfile_data = obstack_alloc (&objfile->objfile_obstack,
-				       sizeof (*bp_objfile_data));
-
-      memset (bp_objfile_data, 0, sizeof (*bp_objfile_data));
+      bp_objfile_data = OBSTACK_ZALLOC (&objfile->objfile_obstack,
+					struct breakpoint_objfile_data);
       set_objfile_data (objfile, breakpoint_objfile_key, bp_objfile_data);
     }
   return bp_objfile_data;
@@ -4364,8 +4362,7 @@ bpstat_copy (bpstat bs)
 
   for (; bs != NULL; bs = bs->next)
     {
-      tmp = (bpstat) xmalloc (sizeof (*tmp));
-      memcpy (tmp, bs, sizeof (*tmp));
+      tmp = XDUP (struct bpstats, bs);
       incref_counted_command_line (tmp->commands);
       incref_bp_location (tmp->bp_location_at);
       if (bs->old_val != NULL)
@@ -4846,7 +4843,7 @@ bpstat_alloc (struct bp_location *bl, bpstat **bs_link_pointer)
 {
   bpstat bs;
 
-  bs = (bpstat) xmalloc (sizeof (*bs));
+  bs = XNEW (struct bpstats);
   bs->next = NULL;
   **bs_link_pointer = bs;
   *bs_link_pointer = &bs->next;
@@ -9562,8 +9559,7 @@ parse_breakpoint_sals (char **address,
 	  CORE_ADDR pc;
 
 	  init_sal (&sal);		/* Initialize to zeroes.  */
-	  lsal.sals.sals = (struct symtab_and_line *)
-	    xmalloc (sizeof (struct symtab_and_line));
+	  lsal.sals.sals = XNEW (struct symtab_and_line);
 
 	  /* Set sal's pspace, pc, symtab, and line to the values
 	     corresponding to the last call to print_frame_info.
@@ -12067,8 +12063,7 @@ clear_command (char *arg, int from_tty)
     }
   else
     {
-      sals.sals = (struct symtab_and_line *)
-	xmalloc (sizeof (struct symtab_and_line));
+      sals.sals = XNEW (struct symtab_and_line);
       make_cleanup (xfree, sals.sals);
       init_sal (&sal);		/* Initialize to zeroes.  */
 
