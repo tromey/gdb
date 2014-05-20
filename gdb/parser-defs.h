@@ -266,6 +266,8 @@ extern void operator_length_standard (const struct expression *, int, int *,
 extern int operator_check_standard (struct expression *exp, int pos,
 				    int (*objfile_func)
 				      (struct objfile *objfile, void *data),
+				    int (*type_func) (struct type *type,
+						      void *data),
 				    void *data);
 
 extern char *op_name_standard (enum exp_opcode);
@@ -352,6 +354,8 @@ struct exp_descriptor
     int (*operator_check) (struct expression *exp, int pos,
 			   int (*objfile_func) (struct objfile *objfile,
 						void *data),
+			   int (*type_func) (struct type *type,
+					     void *data),
 			   void *data);
 
     /* Name of this operator for dumping purposes.

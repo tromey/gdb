@@ -1758,6 +1758,7 @@ int
 operator_check_standard (struct expression *exp, int pos,
 			 int (*objfile_func) (struct objfile *objfile,
 					      void *data),
+			 int (*type_func) (struct type *type, void *data),
 			 void *data)
 {
   const union exp_element *const elts = exp->elts;
@@ -1793,9 +1794,8 @@ operator_check_standard (struct expression *exp, int pos,
 	for (arg = 0; arg < nargs; arg++)
 	  {
 	    struct type *type = elts[pos + 2 + arg].type;
-	    struct objfile *objfile = TYPE_STORAGE (type);
 
-	    if (objfile && (*objfile_func) (objfile, data))
+	    if ((*type_func) (type, data))
 	      return 1;
 	  }
       }
@@ -1826,8 +1826,7 @@ operator_check_standard (struct expression *exp, int pos,
 
   /* Invoke callbacks for TYPE and OBJFILE if they were set as non-NULL.  */
 
-  if (type && TYPE_STORAGE (type)
-      && (*objfile_func) (TYPE_STORAGE (type), data))
+  if (type && (*type_func) (type, data))
     return 1;
   if (objfile && (*objfile_func) (objfile, data))
     return 1;
@@ -1845,6 +1844,7 @@ operator_check_standard (struct expression *exp, int pos,
 static int
 exp_iterate (struct expression *exp,
 	     int (*objfile_func) (struct objfile *objfile, void *data),
+	     int (*type_func) (struct type *type, void *data),
 	     void *data)
 {
   int endpos;
@@ -1858,7 +1858,9 @@ exp_iterate (struct expression *exp,
 
       pos = endpos - oplen;
       if (exp->language_defn->la_exp_desc->operator_check (exp, pos,
-							   objfile_func, data))
+							   objfile_func,
+							   type_func,
+							   data))
 	return 1;
 
       endpos = pos;
@@ -1880,6 +1882,14 @@ exp_uses_objfile_iter (struct objfile *exp_objfile, void *objfile_voidp)
   return exp_objfile == objfile;
 }
 
+static int
+exp_uses_type_iter (struct type *type, void *objfile_voidp)
+{
+  if (TYPE_OWNED (type))
+    return exp_uses_objfile_iter (TYPE_STORAGE (type), objfile_voidp);
+  return 0;
+}
+
 /* Return 1 if EXP uses OBJFILE (and will become dangling when OBJFILE
    is unloaded), otherwise return 0.  OBJFILE must not be a separate debug info
    file.  */
@@ -1889,7 +1899,7 @@ exp_uses_objfile (struct expression *exp, struct objfile *objfile)
 {
   gdb_assert (objfile->separate_debug_objfile_backlink == NULL);
 
-  return exp_iterate (exp, exp_uses_objfile_iter, objfile);
+  return exp_iterate (exp, exp_uses_objfile_iter, exp_uses_type_iter, objfile);
 }
 
 /* See definition in parser-defs.h.  */
