@@ -142,7 +142,7 @@ class StructMainTypePrettyPrinter:
     def owner_to_string(self):
         """Return an image of component "owner".
         """
-        if self.val['flag_objfile_owned'] != 0:
+        if self.val['flag_owned'] != 0:
             return "%s (objfile)" % self.val['owner']['objfile']
         else:
             return "%s (gdbarch)" % self.val['owner']['gdbarch']

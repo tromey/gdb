@@ -323,13 +323,13 @@ enum type_instance_flag_value
 
 #define TYPE_GNU_IFUNC(t)	(TYPE_MAIN_TYPE (t)->flag_gnu_ifunc)
 
-/* * Type owner.  If TYPE_OBJFILE_OWNED is true, the type is owned by
+/* * Type owner.  If TYPE_OWNED is true, the type is owned by
    the objfile retrieved as TYPE_OBJFILE.  Otherweise, the type is
    owned by an architecture; TYPE_OBJFILE is NULL in this case.  */
 
-#define TYPE_OBJFILE_OWNED(t) (TYPE_MAIN_TYPE (t)->flag_objfile_owned)
+#define TYPE_OWNED(t) (TYPE_MAIN_TYPE (t)->flag_owned)
 #define TYPE_OWNER(t) TYPE_MAIN_TYPE(t)->owner
-#define TYPE_OBJFILE(t) (TYPE_OBJFILE_OWNED(t)? TYPE_OWNER(t).objfile : NULL)
+#define TYPE_OBJFILE(t) (TYPE_OWNED(t)? TYPE_OWNER(t).objfile : NULL)
 
 /* * True if this type was declared using the "class" keyword.  This is
    only valid for C++ structure and enum types.  If false, a structure
@@ -489,7 +489,7 @@ struct main_type
   unsigned int flag_stub_supported : 1;
   unsigned int flag_gnu_ifunc : 1;
   unsigned int flag_fixed_instance : 1;
-  unsigned int flag_objfile_owned : 1;
+  unsigned int flag_owned : 1;
 
   /* * True if this type was declared with "class" rather than
      "struct".  */
@@ -1541,12 +1541,12 @@ extern const struct floatformat *floatformats_ibm_long_double[BFD_ENDIAN_UNKNOWN
    the type structure.  */
 
 #define TYPE_ALLOC(t,size)  \
-   (TYPE_OBJFILE_OWNED (t) \
+   (TYPE_OWNED (t) \
     ? obstack_alloc (&TYPE_OBJFILE (t) -> objfile_obstack, size) \
     : xmalloc (size))
 
 #define TYPE_ZALLOC(t,size)  \
-   (TYPE_OBJFILE_OWNED (t) \
+   (TYPE_OWNED (t) \
     ? memset (obstack_alloc (&TYPE_OBJFILE (t)->objfile_obstack, size),  \
 	      0, size)  \
     : xzalloc (size))

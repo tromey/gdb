@@ -177,7 +177,7 @@ alloc_type (struct objfile *objfile)
 					  struct main_type);
   OBJSTAT (objfile, n_types++);
 
-  TYPE_OBJFILE_OWNED (type) = 1;
+  TYPE_OWNED (type) = 1;
   TYPE_OWNER (type).objfile = objfile;
 
   /* Initialize the fields that might not be zero.  */
@@ -205,7 +205,7 @@ alloc_type_arch (struct gdbarch *gdbarch)
   type = XCNEW (struct type);
   TYPE_MAIN_TYPE (type) = XCNEW (struct main_type);
 
-  TYPE_OBJFILE_OWNED (type) = 0;
+  TYPE_OWNED (type) = 0;
   TYPE_OWNER (type).gdbarch = gdbarch;
 
   /* Initialize the fields that might not be zero.  */
@@ -224,7 +224,7 @@ alloc_type_arch (struct gdbarch *gdbarch)
 struct type *
 alloc_type_copy (const struct type *type)
 {
-  if (TYPE_OBJFILE_OWNED (type))
+  if (TYPE_OWNED (type))
     return alloc_type (TYPE_OWNER (type).objfile);
   else
     return alloc_type_arch (TYPE_OWNER (type).gdbarch);
@@ -236,7 +236,7 @@ alloc_type_copy (const struct type *type)
 struct gdbarch *
 get_type_arch (const struct type *type)
 {
-  if (TYPE_OBJFILE_OWNED (type))
+  if (TYPE_OWNED (type))
     return get_objfile_arch (TYPE_OWNER (type).objfile);
   else
     return TYPE_OWNER (type).gdbarch;
@@ -268,7 +268,7 @@ alloc_type_instance (struct type *oldtype)
 
   /* Allocate the structure.  */
 
-  if (! TYPE_OBJFILE_OWNED (oldtype))
+  if (! TYPE_OWNED (oldtype))
     type = XCNEW (struct type);
   else
     type = OBSTACK_ZALLOC (&TYPE_OBJFILE (oldtype)->objfile_obstack,
@@ -287,13 +287,13 @@ alloc_type_instance (struct type *oldtype)
 static void
 smash_type (struct type *type)
 {
-  int objfile_owned = TYPE_OBJFILE_OWNED (type);
+  int owned = TYPE_OWNED (type);
   union type_owner owner = TYPE_OWNER (type);
 
   memset (TYPE_MAIN_TYPE (type), 0, sizeof (struct main_type));
 
   /* Restore owner information.  */
-  TYPE_OBJFILE_OWNED (type) = objfile_owned;
+  TYPE_OWNED (type) = owned;
   TYPE_OWNER (type) = owner;
 
   /* For now, delete the rings.  */
@@ -3618,7 +3618,7 @@ recursive_dump_type (struct type *type, int spaces)
     }
   puts_filtered ("\n");
   printfi_filtered (spaces, "length %d\n", TYPE_LENGTH (type));
-  if (TYPE_OBJFILE_OWNED (type))
+  if (TYPE_OWNED (type))
     {
       printfi_filtered (spaces, "objfile ");
       gdb_print_host_address (TYPE_OWNER (type).objfile, gdb_stdout);
@@ -3879,7 +3879,7 @@ copy_type_recursive (struct objfile *objfile,
   void **slot;
   struct type *new_type;
 
-  if (! TYPE_OBJFILE_OWNED (type))
+  if (! TYPE_OWNED (type))
     return type;
 
   /* This type shouldn't be pointing to any types in other objfiles;
@@ -3904,7 +3904,7 @@ copy_type_recursive (struct objfile *objfile,
   /* Copy the common fields of types.  For the main type, we simply
      copy the entire thing and then update specific fields as needed.  */
   *TYPE_MAIN_TYPE (new_type) = *TYPE_MAIN_TYPE (type);
-  TYPE_OBJFILE_OWNED (new_type) = 0;
+  TYPE_OWNED (new_type) = 0;
   TYPE_OWNER (new_type).gdbarch = get_type_arch (type);
 
   if (TYPE_NAME (type))
@@ -4006,7 +4006,7 @@ copy_type (const struct type *type)
 {
   struct type *new_type;
 
-  gdb_assert (TYPE_OBJFILE_OWNED (type));
+  gdb_assert (TYPE_OWNED (type));
 
   new_type = alloc_type_copy (type);
   TYPE_INSTANCE_FLAGS (new_type) = TYPE_INSTANCE_FLAGS (type);
