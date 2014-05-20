@@ -1540,14 +1540,17 @@ extern const struct floatformat *floatformats_ibm_long_double[BFD_ENDIAN_UNKNOWN
    then the data space will be allocated with xmalloc, the same as for
    the type structure.  */
 
+/* Only valid for owned types.  */
+#define TYPE_OBSTACK(t) (&TYPE_OBJFILE (t)->objfile_obstack)
+
 #define TYPE_ALLOC(t,size)  \
    (TYPE_OWNED (t) \
-    ? obstack_alloc (&TYPE_OBJFILE (t) -> objfile_obstack, size) \
+    ? obstack_alloc (TYPE_OBSTACK (t), size) \
     : xmalloc (size))
 
 #define TYPE_ZALLOC(t,size)  \
    (TYPE_OWNED (t) \
-    ? memset (obstack_alloc (&TYPE_OBJFILE (t)->objfile_obstack, size),  \
+    ? memset (obstack_alloc (TYPE_OBSTACK (t), size),  \
 	      0, size)  \
     : xzalloc (size))
 

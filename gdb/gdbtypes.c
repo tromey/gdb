@@ -268,11 +268,7 @@ alloc_type_instance (struct type *oldtype)
 
   /* Allocate the structure.  */
 
-  if (! TYPE_OWNED (oldtype))
-    type = XCNEW (struct type);
-  else
-    type = OBSTACK_ZALLOC (&TYPE_OBJFILE (oldtype)->objfile_obstack,
-			   struct type);
+  type = TYPE_ZALLOC (oldtype, sizeof (struct type));
 
   TYPE_MAIN_TYPE (type) = TYPE_MAIN_TYPE (oldtype);
 
