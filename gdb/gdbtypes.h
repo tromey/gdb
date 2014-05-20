@@ -323,10 +323,6 @@ enum type_instance_flag_value
 
 #define TYPE_GNU_IFUNC(t)	(TYPE_MAIN_TYPE (t)->flag_gnu_ifunc)
 
-/* FIXME */
-
-typedef struct objfile *type_owner_type;
-
 /* * Type owner.  If TYPE_OWNED is true, the type is owned by
    the objfile retrieved as TYPE_STORAGE.  Otherweise, the type is
    owned by an architecture; TYPE_STORAGE is NULL in this case.  */
@@ -334,6 +330,18 @@ typedef struct objfile *type_owner_type;
 #define TYPE_OWNED(t) (TYPE_MAIN_TYPE (t)->flag_owned)
 #define TYPE_OWNER(t) TYPE_MAIN_TYPE(t)->owner
 #define TYPE_STORAGE(t) (TYPE_OWNED(t) ? TYPE_OWNER(t).storage : NULL)
+
+/* FIXME */
+
+typedef struct objfile *type_owner_type;
+typedef const struct objfile_data *type_owner_data;
+
+#define TYPE_STORAGE_DATA(STORAGE, KEY) objfile_data (STORAGE, KEY)
+#define SET_TYPE_STORAGE_DATA(STORAGE, KEY, DATA) \
+  set_objfile_data (STORAGE, KEY, DATA)
+
+#define register_type_data_with_cleanup(A1, A2)	\
+  register_objfile_data_with_cleanup (A1, A2)
 
 /* * True if this type was declared using the "class" keyword.  This is
    only valid for C++ structure and enum types.  If false, a structure

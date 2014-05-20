@@ -83,7 +83,7 @@ static SCM tyscm_next_field_x_proc;
 /* Keywords used in argument passing.  */
 static SCM block_keyword;
 
-static const struct objfile_data *tyscm_objfile_data_key;
+static type_owner_data tyscm_storage_data_key;
 
 /* Hash table to uniquify global (non-objfile-owned) types.  */
 static htab_t global_types_map;
@@ -164,18 +164,18 @@ tyscm_eq_type_smob (const void *ap, const void *bp)
 static htab_t
 tyscm_type_map (struct type *type)
 {
-  struct objfile *objfile = TYPE_STORAGE (type);
+  type_owner_type storage = TYPE_STORAGE (type);
   htab_t htab;
 
-  if (objfile == NULL)
+  if (storage == NULL)
     return global_types_map;
 
-  htab = objfile_data (objfile, tyscm_objfile_data_key);
+  htab = TYPE_STORAGE_DATA (storage, tyscm_storage_data_key);
   if (htab == NULL)
     {
       htab = gdbscm_create_eqable_gsmob_ptr_map (tyscm_hash_type_smob,
 						 tyscm_eq_type_smob);
-      set_objfile_data (objfile, tyscm_objfile_data_key, htab);
+      SET_TYPE_STORAGE_DATA (storage, tyscm_storage_data_key, htab);
     }
 
   return htab;
@@ -355,22 +355,22 @@ tyscm_get_type_smob_arg_unsafe (SCM self, int arg_pos, const char *func_name)
   return t_smob;
 }
 
-/* Helper function for save_objfile_types to make a deep copy of the type.  */
+/* Helper function for save_types to make a deep copy of the type.  */
 
 static int
 tyscm_copy_type_recursive (void **slot, void *info)
 {
   type_smob *t_smob = (type_smob *) *slot;
   htab_t copied_types = info;
-  struct objfile *objfile = TYPE_STORAGE (t_smob->type);
+  type_owner_type storage = TYPE_STORAGE (t_smob->type);
   htab_t htab;
   eqable_gdb_smob **new_slot;
   type_smob t_smob_for_lookup;
 
-  gdb_assert (objfile != NULL);
+  gdb_assert (storage != NULL);
 
   htab_empty (copied_types);
-  t_smob->type = copy_type_recursive (objfile, t_smob->type, copied_types);
+  t_smob->type = copy_type_recursive (storage, t_smob->type, copied_types);
 
   /* The eq?-hashtab that the type lived in is going away.
      Add the type to its new eq?-hashtab: Otherwise if/when the type is later
@@ -378,8 +378,8 @@ tyscm_copy_type_recursive (void **slot, void *info)
      PR 16612.
 
      Types now live in "arch space", and things like "char" that came from
-     the objfile *could* be considered eq? with the arch "char" type.
-     However, they weren't before the objfile got deleted, so making them
+     the storage *could* be considered eq? with the arch "char" type.
+     However, they weren't before the storage got deleted, so making them
      eq? now is debatable.  */
   htab = tyscm_type_map (t_smob->type);
   t_smob_for_lookup.type = t_smob->type;
@@ -390,11 +390,11 @@ tyscm_copy_type_recursive (void **slot, void *info)
   return 1;
 }
 
-/* Called when OBJFILE is about to be deleted.
-   Make a copy of all types associated with OBJFILE.  */
+/* Called when STORAGE is about to be deleted.
+   Make a copy of all types associated with STORAGE.  */
 
 static void
-save_objfile_types (struct objfile *objfile, void *datum)
+save_types (type_owner_type storage, void *datum)
 {
   htab_t htab = datum;
   htab_t copied_types;
@@ -402,7 +402,7 @@ save_objfile_types (struct objfile *objfile, void *datum)
   if (!gdb_scheme_initialized)
     return;
 
-  copied_types = create_copied_types_hash (objfile);
+  copied_types = create_copied_types_hash (storage);
 
   if (htab != NULL)
     {
@@ -1504,10 +1504,10 @@ Internal function to assist the type fields iterator."));
 
   block_keyword = scm_from_latin1_keyword ("block");
 
-  /* Register an objfile "free" callback so we can properly copy types
-     associated with the objfile when it's about to be deleted.  */
-  tyscm_objfile_data_key
-    = register_objfile_data_with_cleanup (save_objfile_types, NULL);
+  /* Register a "free" callback so we can properly copy types
+     associated with the storage when it's about to be deleted.  */
+  tyscm_storage_data_key
+    = register_type_data_with_cleanup (save_types, NULL);
 
   global_types_map = gdbscm_create_eqable_gsmob_ptr_map (tyscm_hash_type_smob,
 							 tyscm_eq_type_smob);

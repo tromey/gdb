@@ -1032,10 +1032,11 @@ typy_richcompare (PyObject *self, PyObject *other, int op)
 
 
 
-static const struct objfile_data *typy_objfile_data_key;
+static type_owner_data typy_storage_data_key;
 
+/* FIXME */
 static void
-save_objfile_types (struct objfile *objfile, void *datum)
+save_types (type_owner_type storage, void *datum)
 {
   type_object *obj = datum;
   htab_t copied_types;
@@ -1046,9 +1047,9 @@ save_objfile_types (struct objfile *objfile, void *datum)
 
   /* This prevents another thread from freeing the objects we're
      operating on.  */
-  cleanup = ensure_python_env (get_objfile_arch (objfile), current_language);
+  cleanup = ensure_python_env (get_objfile_arch (storage), current_language);
 
-  copied_types = create_copied_types_hash (objfile);
+  copied_types = create_copied_types_hash (storage);
 
   while (obj)
     {
@@ -1056,7 +1057,7 @@ save_objfile_types (struct objfile *objfile, void *datum)
 
       htab_empty (copied_types);
 
-      obj->type = copy_type_recursive (objfile, obj->type, copied_types);
+      obj->type = copy_type_recursive (storage, obj->type, copied_types);
 
       obj->next = NULL;
       obj->prev = NULL;
@@ -1076,12 +1077,12 @@ set_type (type_object *obj, struct type *type)
   obj->prev = NULL;
   if (type && TYPE_STORAGE (type))
     {
-      struct objfile *objfile = TYPE_STORAGE (type);
+      type_owner_type storage = TYPE_STORAGE (type);
 
-      obj->next = objfile_data (objfile, typy_objfile_data_key);
+      obj->next = TYPE_STORAGE_DATA (storage, typy_storage_data_key);
       if (obj->next)
 	obj->next->prev = obj;
-      set_objfile_data (objfile, typy_objfile_data_key, obj);
+      SET_TYPE_STORAGE_DATA (storage, typy_storage_data_key, obj);
     }
   else
     obj->next = NULL;
@@ -1097,10 +1098,10 @@ typy_dealloc (PyObject *obj)
   else if (type->type && TYPE_STORAGE (type->type))
     {
       /* Must reset head of list.  */
-      struct objfile *objfile = TYPE_STORAGE (type->type);
+      type_owner_type owner = TYPE_STORAGE (type->type);
 
-      if (objfile)
-	set_objfile_data (objfile, typy_objfile_data_key, type->next);
+      if (owner)
+	SET_TYPE_STORAGE_DATA (owner, typy_storage_data_key, type->next);
     }
   if (type->next)
     type->next->prev = type->prev;
@@ -1378,8 +1379,7 @@ gdbpy_initialize_types (void)
 {
   int i;
 
-  typy_objfile_data_key
-    = register_objfile_data_with_cleanup (save_objfile_types, NULL);
+  typy_storage_data_key = register_type_data_with_cleanup (save_types, NULL);
 
   if (PyType_Ready (&type_object_type) < 0)
     return -1;
