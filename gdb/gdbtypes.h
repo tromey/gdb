@@ -323,13 +323,17 @@ enum type_instance_flag_value
 
 #define TYPE_GNU_IFUNC(t)	(TYPE_MAIN_TYPE (t)->flag_gnu_ifunc)
 
+/* FIXME */
+
+typedef struct objfile *type_owner_type;
+
 /* * Type owner.  If TYPE_OWNED is true, the type is owned by
-   the objfile retrieved as TYPE_OBJFILE.  Otherweise, the type is
-   owned by an architecture; TYPE_OBJFILE is NULL in this case.  */
+   the objfile retrieved as TYPE_STORAGE.  Otherweise, the type is
+   owned by an architecture; TYPE_STORAGE is NULL in this case.  */
 
 #define TYPE_OWNED(t) (TYPE_MAIN_TYPE (t)->flag_owned)
 #define TYPE_OWNER(t) TYPE_MAIN_TYPE(t)->owner
-#define TYPE_OBJFILE(t) (TYPE_OWNED(t)? TYPE_OWNER(t).objfile : NULL)
+#define TYPE_STORAGE(t) (TYPE_OWNED(t) ? TYPE_OWNER(t).storage : NULL)
 
 /* * True if this type was declared using the "class" keyword.  This is
    only valid for C++ structure and enum types.  If false, a structure
@@ -560,7 +564,7 @@ struct main_type
 
   union type_owner
     {
-      struct objfile *objfile;
+      type_owner_type storage;
       struct gdbarch *gdbarch;
     } owner;
 
@@ -1541,7 +1545,7 @@ extern const struct floatformat *floatformats_ibm_long_double[BFD_ENDIAN_UNKNOWN
    the type structure.  */
 
 /* Only valid for owned types.  */
-#define TYPE_OBSTACK(t) (&TYPE_OBJFILE (t)->objfile_obstack)
+#define TYPE_OBSTACK(t) (&TYPE_STORAGE (t)->objfile_obstack)
 
 #define TYPE_ALLOC(t,size)  \
    (TYPE_OWNED (t) \

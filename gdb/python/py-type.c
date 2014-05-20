@@ -1074,9 +1074,9 @@ set_type (type_object *obj, struct type *type)
 {
   obj->type = type;
   obj->prev = NULL;
-  if (type && TYPE_OBJFILE (type))
+  if (type && TYPE_STORAGE (type))
     {
-      struct objfile *objfile = TYPE_OBJFILE (type);
+      struct objfile *objfile = TYPE_STORAGE (type);
 
       obj->next = objfile_data (objfile, typy_objfile_data_key);
       if (obj->next)
@@ -1094,10 +1094,10 @@ typy_dealloc (PyObject *obj)
 
   if (type->prev)
     type->prev->next = type->next;
-  else if (type->type && TYPE_OBJFILE (type->type))
+  else if (type->type && TYPE_STORAGE (type->type))
     {
       /* Must reset head of list.  */
-      struct objfile *objfile = TYPE_OBJFILE (type->type);
+      struct objfile *objfile = TYPE_STORAGE (type->type);
 
       if (objfile)
 	set_objfile_data (objfile, typy_objfile_data_key, type->next);

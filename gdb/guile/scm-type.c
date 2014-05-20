@@ -164,7 +164,7 @@ tyscm_eq_type_smob (const void *ap, const void *bp)
 static htab_t
 tyscm_type_map (struct type *type)
 {
-  struct objfile *objfile = TYPE_OBJFILE (type);
+  struct objfile *objfile = TYPE_STORAGE (type);
   htab_t htab;
 
   if (objfile == NULL)
@@ -362,7 +362,7 @@ tyscm_copy_type_recursive (void **slot, void *info)
 {
   type_smob *t_smob = (type_smob *) *slot;
   htab_t copied_types = info;
-  struct objfile *objfile = TYPE_OBJFILE (t_smob->type);
+  struct objfile *objfile = TYPE_STORAGE (t_smob->type);
   htab_t htab;
   eqable_gdb_smob **new_slot;
   type_smob t_smob_for_lookup;

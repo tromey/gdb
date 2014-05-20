@@ -13040,8 +13040,8 @@ ada_operator_check (struct expression *exp, int pos,
 
   /* Invoke callbacks for TYPE and OBJFILE if they were set as non-NULL.  */
 
-  if (type && TYPE_OBJFILE (type)
-      && (*objfile_func) (TYPE_OBJFILE (type), data))
+  if (type && TYPE_STORAGE (type)
+      && (*objfile_func) (TYPE_STORAGE (type), data))
     return 1;
 
   return 0;

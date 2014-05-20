@@ -178,7 +178,7 @@ alloc_type (struct objfile *objfile)
   OBJSTAT (objfile, n_types++);
 
   TYPE_OWNED (type) = 1;
-  TYPE_OWNER (type).objfile = objfile;
+  TYPE_OWNER (type).storage = objfile;
 
   /* Initialize the fields that might not be zero.  */
 
@@ -225,7 +225,7 @@ struct type *
 alloc_type_copy (const struct type *type)
 {
   if (TYPE_OWNED (type))
-    return alloc_type (TYPE_OWNER (type).objfile);
+    return alloc_type (TYPE_STORAGE (type));
   else
     return alloc_type_arch (TYPE_OWNER (type).gdbarch);
 }
@@ -237,7 +237,7 @@ struct gdbarch *
 get_type_arch (const struct type *type)
 {
   if (TYPE_OWNED (type))
-    return get_objfile_arch (TYPE_OWNER (type).objfile);
+    return get_objfile_arch (TYPE_STORAGE (type));
   else
     return TYPE_OWNER (type).gdbarch;
 }
@@ -590,7 +590,7 @@ make_qualified_type (struct type *type, int new_flags,
 	 as TYPE.  Otherwise, we can't link it into TYPE's cv chain:
 	 if one objfile is freed and the other kept, we'd have
 	 dangling pointers.  */
-      gdb_assert (TYPE_OBJFILE (type) == TYPE_OBJFILE (storage));
+      gdb_assert (TYPE_STORAGE (type) == TYPE_STORAGE (storage));
 
       ntype = storage;
       TYPE_MAIN_TYPE (ntype) = TYPE_MAIN_TYPE (type);
@@ -679,7 +679,7 @@ make_cv_type (int cnst, int voltl,
 	 can't have inter-objfile pointers.  The only thing to do is
 	 to leave stub types as stub types, and look them up afresh by
 	 name each time you encounter them.  */
-      gdb_assert (TYPE_OBJFILE (*typeptr) == TYPE_OBJFILE (type));
+      gdb_assert (TYPE_STORAGE (*typeptr) == TYPE_STORAGE (type));
     }
   
   ntype = make_qualified_type (type, new_flags, 
@@ -721,7 +721,7 @@ replace_type (struct type *ntype, struct type *type)
      the assignment of one type's main type structure to the other
      will produce a type with references to objects (names; field
      lists; etc.) allocated on an objfile other than its own.  */
-  gdb_assert (TYPE_OBJFILE (ntype) == TYPE_OBJFILE (ntype));
+  gdb_assert (TYPE_STORAGE (ntype) == TYPE_STORAGE (ntype));
 
   *TYPE_MAIN_TYPE (ntype) = *TYPE_MAIN_TYPE (type);
 
@@ -1267,7 +1267,7 @@ type_name_no_tag_or_error (struct type *type)
     return name;
 
   name = type_name_no_tag (saved_type);
-  objfile = TYPE_OBJFILE (saved_type);
+  objfile = TYPE_STORAGE (saved_type);
   error (_("Invalid anonymous type %s [in module %s], GCC PR debug/47510 bug?"),
 	 name ? name : "<anonymous>",
 	 objfile ? objfile_name (objfile) : "<arch>");
@@ -1579,7 +1579,7 @@ get_vptr_fieldno (struct type *type, struct type **basetypep)
 	    {
 	      /* If the type comes from a different objfile we can't cache
 		 it, it may have a different lifetime.  PR 2384 */
-	      if (TYPE_OBJFILE (type) == TYPE_OBJFILE (basetype))
+	      if (TYPE_STORAGE (type) == TYPE_STORAGE (basetype))
 		{
 		  TYPE_VPTR_FIELDNO (type) = fieldno;
 		  TYPE_VPTR_BASETYPE (type) = basetype;
@@ -1885,7 +1885,7 @@ check_typedef (struct type *type)
 	     TYPE's objfile is pointless, too, since you'll have to
 	     move over any other types NEWTYPE refers to, which could
 	     be an unbounded amount of stuff.  */
-	  if (TYPE_OBJFILE (newtype) == TYPE_OBJFILE (type))
+	  if (TYPE_STORAGE (newtype) == TYPE_STORAGE (type))
 	    type = make_qualified_type (newtype,
 					TYPE_INSTANCE_FLAGS (type),
 					type);
@@ -1915,7 +1915,7 @@ check_typedef (struct type *type)
           /* Same as above for opaque types, we can replace the stub
              with the complete type only if they are in the same
              objfile.  */
-	  if (TYPE_OBJFILE (SYMBOL_TYPE(sym)) == TYPE_OBJFILE (type))
+	  if (TYPE_STORAGE (SYMBOL_TYPE(sym)) == TYPE_STORAGE (type))
             type = make_qualified_type (SYMBOL_TYPE (sym),
 					TYPE_INSTANCE_FLAGS (type),
 					type);
@@ -3616,8 +3616,8 @@ recursive_dump_type (struct type *type, int spaces)
   printfi_filtered (spaces, "length %d\n", TYPE_LENGTH (type));
   if (TYPE_OWNED (type))
     {
-      printfi_filtered (spaces, "objfile ");
-      gdb_print_host_address (TYPE_OWNER (type).objfile, gdb_stdout);
+      printfi_filtered (spaces, "storage ");
+      gdb_print_host_address (TYPE_STORAGE (type), gdb_stdout);
     }
   else
     {
@@ -3880,7 +3880,7 @@ copy_type_recursive (struct objfile *objfile,
 
   /* This type shouldn't be pointing to any types in other objfiles;
      if it did, the type might disappear unexpectedly.  */
-  gdb_assert (TYPE_OBJFILE (type) == objfile);
+  gdb_assert (TYPE_STORAGE (type) == objfile);
 
   pair.old = type;
   slot = htab_find_slot (copied_types, &pair, INSERT);
