@@ -771,17 +771,17 @@ elf_gnu_ifunc_record_cache (const char *name, CORE_ADDR addr)
     {
       htab = htab_create_alloc_ex (1, elf_gnu_ifunc_cache_hash,
 				   elf_gnu_ifunc_cache_eq,
-				   NULL, &objfile->objfile_obstack,
+				   NULL, SYMBOL_OBSTACK (objfile),
 				   hashtab_obstack_allocate,
 				   dummy_obstack_deallocate);
       set_objfile_data (objfile, elf_objfile_gnu_ifunc_cache_data, htab);
     }
 
   entry_local.addr = addr;
-  obstack_grow (&objfile->objfile_obstack, &entry_local,
+  obstack_grow (SYMBOL_OBSTACK (objfile), &entry_local,
 		offsetof (struct elf_gnu_ifunc_cache, name));
-  obstack_grow_str0 (&objfile->objfile_obstack, name);
-  entry_p = obstack_finish (&objfile->objfile_obstack);
+  obstack_grow_str0 (SYMBOL_OBSTACK (objfile), name);
+  entry_p = obstack_finish (SYMBOL_OBSTACK (objfile));
 
   slot = htab_find_slot (htab, entry_p, INSERT);
   if (*slot != NULL)

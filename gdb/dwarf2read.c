@@ -1977,7 +1977,7 @@ dwarf2_has_info (struct objfile *objfile,
     {
       /* Initialize per-objfile state.  */
       struct dwarf2_per_objfile *data
-	= obstack_alloc (&objfile->objfile_obstack, sizeof (*data));
+	= obstack_alloc (SYMBOL_OBSTACK (objfile), sizeof (*data));
 
       memset (data, 0, sizeof (*data));
       set_objfile_data (objfile, dwarf2_objfile_data_key, data);
@@ -2253,7 +2253,7 @@ dwarf2_read_section (struct objfile *objfile, struct dwarf2_section_info *info)
       return;
     }
 
-  buf = obstack_alloc (&objfile->objfile_obstack, info->size);
+  buf = obstack_alloc (SYMBOL_OBSTACK (objfile), info->size);
   info->buffer = buf;
 
   /* When debugging .o files, we may need to apply relocations; see
@@ -2721,13 +2721,13 @@ create_cus_from_index_list (struct objfile *objfile,
       length = extract_unsigned_integer (cu_list + 8, 8, BFD_ENDIAN_LITTLE);
       cu_list += 2 * 8;
 
-      the_cu = OBSTACK_ZALLOC (&objfile->objfile_obstack,
+      the_cu = OBSTACK_ZALLOC (SYMBOL_OBSTACK (objfile),
 			       struct dwarf2_per_cu_data);
       the_cu->offset.sect_off = offset;
       the_cu->length = length;
       the_cu->objfile = objfile;
       the_cu->section = section;
-      the_cu->v.quick = OBSTACK_ZALLOC (&objfile->objfile_obstack,
+      the_cu->v.quick = OBSTACK_ZALLOC (SYMBOL_OBSTACK (objfile),
 					struct dwarf2_per_cu_quick_data);
       the_cu->is_dwz = is_dwz;
       dwarf2_per_objfile->all_comp_units[base_offset + i / 2] = the_cu;
@@ -2746,7 +2746,7 @@ create_cus_from_index (struct objfile *objfile,
 
   dwarf2_per_objfile->n_comp_units = (cu_list_elements + dwz_elements) / 2;
   dwarf2_per_objfile->all_comp_units
-    = obstack_alloc (&objfile->objfile_obstack,
+    = obstack_alloc (SYMBOL_OBSTACK (objfile),
 		     dwarf2_per_objfile->n_comp_units
 		     * sizeof (struct dwarf2_per_cu_data *));
 
@@ -2792,7 +2792,7 @@ create_signatured_type_table_from_index (struct objfile *objfile,
       signature = extract_unsigned_integer (bytes + 16, 8, BFD_ENDIAN_LITTLE);
       bytes += 3 * 8;
 
-      sig_type = OBSTACK_ZALLOC (&objfile->objfile_obstack,
+      sig_type = OBSTACK_ZALLOC (SYMBOL_OBSTACK (objfile),
 				 struct signatured_type);
       sig_type->signature = signature;
       sig_type->type_offset_in_tu.cu_off = type_offset_in_tu;
@@ -2801,7 +2801,7 @@ create_signatured_type_table_from_index (struct objfile *objfile,
       sig_type->per_cu.offset.sect_off = offset;
       sig_type->per_cu.objfile = objfile;
       sig_type->per_cu.v.quick
-	= OBSTACK_ZALLOC (&objfile->objfile_obstack,
+	= OBSTACK_ZALLOC (SYMBOL_OBSTACK (objfile),
 			  struct dwarf2_per_cu_quick_data);
 
       slot = htab_find_slot (sig_types_hash, sig_type, INSERT);
@@ -2865,7 +2865,7 @@ create_addrmap_from_index (struct objfile *objfile, struct mapped_index *index)
     }
 
   objfile->psymtabs_addrmap = addrmap_create_fixed (mutable_map,
-						    &objfile->objfile_obstack);
+						    SYMBOL_OBSTACK (objfile));
   do_cleanups (cleanup);
 }
 
@@ -3153,7 +3153,7 @@ dwarf2_read_index (struct objfile *objfile)
 
   create_addrmap_from_index (objfile, &local_map);
 
-  map = obstack_alloc (&objfile->objfile_obstack, sizeof (struct mapped_index));
+  map = obstack_alloc (SYMBOL_OBSTACK (objfile), sizeof (struct mapped_index));
   *map = local_map;
 
   dwarf2_per_objfile->index_table = map;
@@ -3237,7 +3237,7 @@ dw2_get_file_names_reader (const struct die_reader_specs *reader,
       return;
     }
 
-  qfn = obstack_alloc (&objfile->objfile_obstack, sizeof (*qfn));
+  qfn = obstack_alloc (SYMBOL_OBSTACK (objfile), sizeof (*qfn));
   qfn->hash.dwo_unit = cu->dwo_unit;
   qfn->hash.line_offset.sect_off = line_offset;
   gdb_assert (slot != NULL);
@@ -3246,7 +3246,7 @@ dw2_get_file_names_reader (const struct die_reader_specs *reader,
   find_file_and_directory (comp_unit_die, cu, &name, &comp_dir);
 
   qfn->num_file_names = lh->num_file_names;
-  qfn->file_names = obstack_alloc (&objfile->objfile_obstack,
+  qfn->file_names = obstack_alloc (SYMBOL_OBSTACK (objfile),
 				   lh->num_file_names * sizeof (char *));
   for (i = 0; i < lh->num_file_names; ++i)
     qfn->file_names[i] = file_full_name (i + 1, lh, comp_dir);
@@ -3289,7 +3289,7 @@ dw2_get_real_path (struct objfile *objfile,
 		   struct quick_file_names *qfn, int index)
 {
   if (qfn->real_names == NULL)
-    qfn->real_names = OBSTACK_CALLOC (&objfile->objfile_obstack,
+    qfn->real_names = OBSTACK_CALLOC (SYMBOL_OBSTACK (objfile),
 				      qfn->num_file_names, char *);
 
   if (qfn->real_names[index] == NULL)
@@ -4126,7 +4126,7 @@ dwarf2_initialize_objfile (struct objfile *objfile)
 	{
 	  struct dwarf2_per_cu_data *per_cu = dw2_get_cutu (i);
 
-	  per_cu->v.quick = OBSTACK_ZALLOC (&objfile->objfile_obstack,
+	  per_cu->v.quick = OBSTACK_ZALLOC (SYMBOL_OBSTACK (objfile),
 					    struct dwarf2_per_cu_quick_data);
 	}
 
@@ -4406,7 +4406,7 @@ dwarf2_create_include_psymtab (const char *name, struct partial_symtab *pst,
   subpst->texthigh = 0;
 
   subpst->dependencies = (struct partial_symtab **)
-    obstack_alloc (&objfile->objfile_obstack,
+    obstack_alloc (SYMBOL_OBSTACK (objfile),
                    sizeof (struct partial_symtab *));
   subpst->dependencies[0] = pst;
   subpst->number_of_dependencies = 1;
@@ -4476,7 +4476,7 @@ allocate_signatured_type_table (struct objfile *objfile)
 			       hash_signatured_type,
 			       eq_signatured_type,
 			       NULL,
-			       &objfile->objfile_obstack,
+			       SYMBOL_OBSTACK (objfile),
 			       hashtab_obstack_allocate,
 			       dummy_obstack_deallocate);
 }
@@ -4590,7 +4590,7 @@ create_debug_types_hash_table (struct dwo_file *dwo_file,
 	  if (dwo_file)
 	    {
 	      sig_type = NULL;
-	      dwo_tu = OBSTACK_ZALLOC (&objfile->objfile_obstack,
+	      dwo_tu = OBSTACK_ZALLOC (SYMBOL_OBSTACK (objfile),
 				       struct dwo_unit);
 	      dwo_tu->dwo_file = dwo_file;
 	      dwo_tu->signature = signature;
@@ -4604,7 +4604,7 @@ create_debug_types_hash_table (struct dwo_file *dwo_file,
 	      /* N.B.: type_offset is not usable if this type uses a DWO file.
 		 The real type_offset is in the DWO file.  */
 	      dwo_tu = NULL;
-	      sig_type = OBSTACK_ZALLOC (&objfile->objfile_obstack,
+	      sig_type = OBSTACK_ZALLOC (SYMBOL_OBSTACK (objfile),
 					 struct signatured_type);
 	      sig_type->signature = signature;
 	      sig_type->type_offset_in_tu = type_offset_in_tu;
@@ -4790,13 +4790,13 @@ add_type_unit (ULONGEST sig)
     xrealloc (dwarf2_per_objfile->all_type_units,
 	      n_type_units * sizeof (struct signatured_type *));
   dwarf2_per_objfile->n_type_units = n_type_units;
-  sig_type = OBSTACK_ZALLOC (&objfile->objfile_obstack,
+  sig_type = OBSTACK_ZALLOC (SYMBOL_OBSTACK (objfile),
 			     struct signatured_type);
   dwarf2_per_objfile->all_type_units[n_type_units - 1] = sig_type;
   sig_type->signature = sig;
   sig_type->per_cu.is_debug_types = 1;
   sig_type->per_cu.v.quick =
-    OBSTACK_ZALLOC (&objfile->objfile_obstack,
+    OBSTACK_ZALLOC (SYMBOL_OBSTACK (objfile),
 		    struct dwarf2_per_cu_quick_data);
   slot = htab_find_slot (dwarf2_per_objfile->signatured_types,
 			 sig_type, INSERT);
@@ -5637,14 +5637,14 @@ create_type_unit_group (struct dwarf2_cu *cu, sect_offset line_offset_struct)
   struct dwarf2_per_cu_data *per_cu;
   struct type_unit_group *tu_group;
 
-  tu_group = OBSTACK_ZALLOC (&objfile->objfile_obstack,
+  tu_group = OBSTACK_ZALLOC (SYMBOL_OBSTACK (objfile),
 			     struct type_unit_group);
   per_cu = &tu_group->per_cu;
   per_cu->objfile = objfile;
 
   if (dwarf2_per_objfile->using_index)
     {
-      per_cu->v.quick = OBSTACK_ZALLOC (&objfile->objfile_obstack,
+      per_cu->v.quick = OBSTACK_ZALLOC (SYMBOL_OBSTACK (objfile),
 					struct dwarf2_per_cu_quick_data);
     }
   else
@@ -5880,7 +5880,7 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
       /* Fill in 'dependencies' here; we fill in 'users' in a
 	 post-pass.  */
       pst->number_of_dependencies = len;
-      pst->dependencies = obstack_alloc (&objfile->objfile_obstack,
+      pst->dependencies = obstack_alloc (SYMBOL_OBSTACK (objfile),
 					 len * sizeof (struct symtab *));
       for (i = 0;
 	   VEC_iterate (dwarf2_per_cu_ptr, cu->per_cu->imported_symtabs,
@@ -6158,7 +6158,7 @@ build_type_psymtab_dependencies (void **slot, void *info)
   gdb_assert (IS_TYPE_UNIT_GROUP (per_cu));
 
   pst->number_of_dependencies = len;
-  pst->dependencies = obstack_alloc (&objfile->objfile_obstack,
+  pst->dependencies = obstack_alloc (SYMBOL_OBSTACK (objfile),
 				     len * sizeof (struct psymtab *));
   for (i = 0;
        VEC_iterate (sig_type_ptr, tu_group->tus, i, iter);
@@ -6270,7 +6270,7 @@ dwarf2_build_psymtabs_hard (struct objfile *objfile)
   set_partial_user (objfile);
 
   objfile->psymtabs_addrmap = addrmap_create_fixed (objfile->psymtabs_addrmap,
-						    &objfile->objfile_obstack);
+						    SYMBOL_OBSTACK (objfile));
   discard_cleanups (addrmap_cleanup);
 
   do_cleanups (back_to);
@@ -6343,7 +6343,7 @@ read_comp_units_from_section (struct objfile *objfile,
       length = read_initial_length (abfd, info_ptr, &initial_length_size);
 
       /* Save the compilation unit for later lookup.  */
-      this_cu = obstack_alloc (&objfile->objfile_obstack,
+      this_cu = obstack_alloc (SYMBOL_OBSTACK (objfile),
 			       sizeof (struct dwarf2_per_cu_data));
       memset (this_cu, 0, sizeof (*this_cu));
       this_cu->offset = offset;
@@ -6392,7 +6392,7 @@ create_all_comp_units (struct objfile *objfile)
 				  &all_comp_units);
 
   dwarf2_per_objfile->all_comp_units
-    = obstack_alloc (&objfile->objfile_obstack,
+    = obstack_alloc (SYMBOL_OBSTACK (objfile),
 		     n_comp_units * sizeof (struct dwarf2_per_cu_data *));
   memcpy (dwarf2_per_objfile->all_comp_units, all_comp_units,
 	  n_comp_units * sizeof (struct dwarf2_per_cu_data *));
@@ -7602,7 +7602,7 @@ fixup_go_packaging (struct dwarf2_cu *cu)
   if (package_name != NULL)
     {
       struct objfile *objfile = cu->objfile;
-      const char *saved_package_name = obstack_copy0 (&objfile->objfile_obstack,
+      const char *saved_package_name = obstack_copy0 (SYMBOL_OBSTACK (objfile),
 						      package_name,
 						      strlen (package_name));
       struct type *type = init_type (TYPE_CODE_MODULE, 0, 0,
@@ -7612,7 +7612,7 @@ fixup_go_packaging (struct dwarf2_cu *cu)
       TYPE_TAG_NAME (type) = TYPE_NAME (type);
 
       sym = allocate_symbol (objfile);
-      SYMBOL_SET_LANGUAGE (sym, language_go, &objfile->objfile_obstack);
+      SYMBOL_SET_LANGUAGE (sym, language_go, SYMBOL_OBSTACK (objfile));
       SYMBOL_SET_NAMES (sym, saved_package_name,
 			strlen (saved_package_name), 0, objfile);
       /* This is not VAR_DOMAIN because we want a way to ensure a lookup of,
@@ -8398,7 +8398,7 @@ dwarf2_compute_name (const char *name,
 		}
 	    }
 
-	  name = ui_file_obsavestring (buf, &objfile->objfile_obstack,
+	  name = ui_file_obsavestring (buf, SYMBOL_OBSTACK (objfile),
 				       &length);
 	  ui_file_delete (buf);
 
@@ -8406,7 +8406,7 @@ dwarf2_compute_name (const char *name,
 	    {
 	      const char *cname
 		= dwarf2_canonicalize_name (name, cu,
-					    &objfile->objfile_obstack);
+					    SYMBOL_OBSTACK (objfile));
 
 	      if (cname != NULL)
 		name = cname;
@@ -8534,7 +8534,7 @@ dwarf2_physname (const char *name, struct die_info *die, struct dwarf2_cu *cu)
     retval = canon;
 
   if (need_copy)
-    retval = obstack_copy0 (&objfile->objfile_obstack, retval, strlen (retval));
+    retval = obstack_copy0 (SYMBOL_OBSTACK (objfile), retval, strlen (retval));
 
   do_cleanups (back_to);
   return retval;
@@ -8683,7 +8683,7 @@ read_import_statement (struct die_info *die, struct dwarf2_cu *cu)
       canonical_name = imported_name_prefix;
     }
   else if (strlen (imported_name_prefix) > 0)
-    canonical_name = obconcat (&objfile->objfile_obstack,
+    canonical_name = obconcat (SYMBOL_OBSTACK (objfile),
 			       imported_name_prefix, "::", imported_name,
 			       (char *) NULL);
   else
@@ -8741,7 +8741,7 @@ read_import_statement (struct die_info *die, struct dwarf2_cu *cu)
                           imported_declaration,
 			  excludes,
 			  0,
-                          &objfile->objfile_obstack);
+                          SYMBOL_OBSTACK (objfile));
 
   do_cleanups (cleanups);
 }
@@ -9112,7 +9112,7 @@ allocate_dwo_file_hash_table (void)
 			       hash_dwo_file,
 			       eq_dwo_file,
 			       NULL,
-			       &objfile->objfile_obstack,
+			       SYMBOL_OBSTACK (objfile),
 			       hashtab_obstack_allocate,
 			       dummy_obstack_deallocate);
 }
@@ -9170,7 +9170,7 @@ allocate_dwo_unit_table (struct objfile *objfile)
 			       hash_dwo_unit,
 			       eq_dwo_unit,
 			       NULL,
-			       &objfile->objfile_obstack,
+			       SYMBOL_OBSTACK (objfile),
 			       hashtab_obstack_allocate,
 			       dummy_obstack_deallocate);
 }
@@ -9286,7 +9286,7 @@ create_dwo_cu (struct dwo_file *dwo_file)
 	      break;
 	    }
 
-	  dwo_unit = OBSTACK_ZALLOC (&objfile->objfile_obstack, struct dwo_unit);
+	  dwo_unit = OBSTACK_ZALLOC (SYMBOL_OBSTACK (objfile), struct dwo_unit);
 	  *dwo_unit = create_dwo_cu_data.dwo_unit;
 	}
 
@@ -9480,7 +9480,7 @@ create_dwp_hash_table (struct dwp_file *dwp_file, int is_debug_types)
 	     pulongest (nr_slots), dwp_file->name);
     }
 
-  htab = OBSTACK_ZALLOC (&objfile->objfile_obstack, struct dwp_hash_table);
+  htab = OBSTACK_ZALLOC (SYMBOL_OBSTACK (objfile), struct dwp_hash_table);
   htab->version = version;
   htab->nr_columns = nr_columns;
   htab->nr_units = nr_units;
@@ -9783,8 +9783,8 @@ create_dwo_unit_in_dwp_v1 (struct dwp_file *dwp_file,
 	  fprintf_unfiltered (gdb_stdlog, "Creating virtual DWO: %s\n",
 			      virtual_dwo_name);
 	}
-      dwo_file = OBSTACK_ZALLOC (&objfile->objfile_obstack, struct dwo_file);
-      dwo_file->dwo_name = obstack_copy0 (&objfile->objfile_obstack,
+      dwo_file = OBSTACK_ZALLOC (SYMBOL_OBSTACK (objfile), struct dwo_file);
+      dwo_file->dwo_name = obstack_copy0 (SYMBOL_OBSTACK (objfile),
 					  virtual_dwo_name,
 					  strlen (virtual_dwo_name));
       dwo_file->comp_dir = comp_dir;
@@ -9816,10 +9816,10 @@ create_dwo_unit_in_dwp_v1 (struct dwp_file *dwp_file,
     }
   do_cleanups (cleanups);
 
-  dwo_unit = OBSTACK_ZALLOC (&objfile->objfile_obstack, struct dwo_unit);
+  dwo_unit = OBSTACK_ZALLOC (SYMBOL_OBSTACK (objfile), struct dwo_unit);
   dwo_unit->dwo_file = dwo_file;
   dwo_unit->signature = signature;
-  dwo_unit->section = obstack_alloc (&objfile->objfile_obstack,
+  dwo_unit->section = obstack_alloc (SYMBOL_OBSTACK (objfile),
 				     sizeof (struct dwarf2_section_info));
   *dwo_unit->section = sections.info_or_types;
   /* dwo_unit->{offset,length,type_offset_in_tu} are set later.  */
@@ -9984,8 +9984,8 @@ create_dwo_unit_in_dwp_v2 (struct dwp_file *dwp_file,
 	  fprintf_unfiltered (gdb_stdlog, "Creating virtual DWO: %s\n",
 			      virtual_dwo_name);
 	}
-      dwo_file = OBSTACK_ZALLOC (&objfile->objfile_obstack, struct dwo_file);
-      dwo_file->dwo_name = obstack_copy0 (&objfile->objfile_obstack,
+      dwo_file = OBSTACK_ZALLOC (SYMBOL_OBSTACK (objfile), struct dwo_file);
+      dwo_file->dwo_name = obstack_copy0 (SYMBOL_OBSTACK (objfile),
 					  virtual_dwo_name,
 					  strlen (virtual_dwo_name));
       dwo_file->comp_dir = comp_dir;
@@ -10030,10 +10030,10 @@ create_dwo_unit_in_dwp_v2 (struct dwp_file *dwp_file,
     }
   do_cleanups (cleanups);
 
-  dwo_unit = OBSTACK_ZALLOC (&objfile->objfile_obstack, struct dwo_unit);
+  dwo_unit = OBSTACK_ZALLOC (SYMBOL_OBSTACK (objfile), struct dwo_unit);
   dwo_unit->dwo_file = dwo_file;
   dwo_unit->signature = signature;
-  dwo_unit->section = obstack_alloc (&objfile->objfile_obstack,
+  dwo_unit->section = obstack_alloc (SYMBOL_OBSTACK (objfile),
 				     sizeof (struct dwarf2_section_info));
   *dwo_unit->section = create_dwp_v2_section (is_debug_types
 					      ? &dwp_file->sections.types
@@ -10293,7 +10293,7 @@ open_and_init_dwo_file (struct dwarf2_per_cu_data *per_cu,
 	fprintf_unfiltered (gdb_stdlog, "DWO file not found: %s\n", dwo_name);
       return NULL;
     }
-  dwo_file = OBSTACK_ZALLOC (&objfile->objfile_obstack, struct dwo_file);
+  dwo_file = OBSTACK_ZALLOC (SYMBOL_OBSTACK (objfile), struct dwo_file);
   dwo_file->dwo_name = dwo_name;
   dwo_file->comp_dir = comp_dir;
   dwo_file->dbfd = dbfd;
@@ -10441,7 +10441,7 @@ allocate_dwp_loaded_cutus_table (struct objfile *objfile)
 			       hash_dwp_loaded_cutus,
 			       eq_dwp_loaded_cutus,
 			       NULL,
-			       &objfile->objfile_obstack,
+			       SYMBOL_OBSTACK (objfile),
 			       hashtab_obstack_allocate,
 			       dummy_obstack_deallocate);
 }
@@ -10516,7 +10516,7 @@ open_and_init_dwp_file (void)
       do_cleanups (cleanups);
       return NULL;
     }
-  dwp_file = OBSTACK_ZALLOC (&objfile->objfile_obstack, struct dwp_file);
+  dwp_file = OBSTACK_ZALLOC (SYMBOL_OBSTACK (objfile), struct dwp_file);
   dwp_file->name = bfd_get_filename (dbfd);
   dwp_file->dbfd = dbfd;
   do_cleanups (cleanups);
@@ -10524,7 +10524,7 @@ open_and_init_dwp_file (void)
   /* +1: section 0 is unused */
   dwp_file->num_sections = bfd_count_sections (dbfd) + 1;
   dwp_file->elf_sections =
-    OBSTACK_CALLOC (&objfile->objfile_obstack,
+    OBSTACK_CALLOC (SYMBOL_OBSTACK (objfile),
 		    dwp_file->num_sections, asection *);
 
   bfd_map_over_sections (dbfd, dwarf2_locate_common_dwp_sections, dwp_file);
@@ -11113,7 +11113,7 @@ read_func_scope (struct die_info *die, struct dwarf2_cu *cu)
   if ((cu->language == language_cplus || cu->language == language_fortran)
       && cu->processing_has_namespace_info)
     block_set_scope (block, determine_prefix (die, cu),
-		     &objfile->objfile_obstack);
+		     SYMBOL_OBSTACK (objfile));
 
   /* If we have address ranges, record them.  */
   dwarf2_record_block_ranges (die, block, baseaddr, cu);
@@ -11125,7 +11125,7 @@ read_func_scope (struct die_info *die, struct dwarf2_cu *cu)
 
       templ_func->n_template_arguments = VEC_length (symbolp, template_args);
       templ_func->template_arguments
-	= obstack_alloc (&objfile->objfile_obstack,
+	= obstack_alloc (SYMBOL_OBSTACK (objfile),
 			 (templ_func->n_template_arguments
 			  * sizeof (struct symbol *)));
       memcpy (templ_func->template_arguments,
@@ -11234,7 +11234,7 @@ read_call_site_scope (struct die_info *die, struct dwarf2_cu *cu)
 
   if (cu->call_site_htab == NULL)
     cu->call_site_htab = htab_create_alloc_ex (16, core_addr_hash, core_addr_eq,
-					       NULL, &objfile->objfile_obstack,
+					       NULL, SYMBOL_OBSTACK (objfile),
 					       hashtab_obstack_allocate, NULL);
   call_site_local.pc = pc;
   slot = htab_find_slot (cu->call_site_htab, &call_site_local, INSERT);
@@ -11267,7 +11267,7 @@ read_call_site_scope (struct die_info *die, struct dwarf2_cu *cu)
       nparams++;
     }
 
-  call_site = obstack_alloc (&objfile->objfile_obstack,
+  call_site = obstack_alloc (SYMBOL_OBSTACK (objfile),
 			     (sizeof (*call_site)
 			      + (sizeof (*call_site->parameter)
 				 * (nparams - 1))));
@@ -11332,7 +11332,7 @@ read_call_site_scope (struct die_info *die, struct dwarf2_cu *cu)
     {
       struct dwarf2_locexpr_baton *dlbaton;
 
-      dlbaton = obstack_alloc (&objfile->objfile_obstack, sizeof (*dlbaton));
+      dlbaton = obstack_alloc (SYMBOL_OBSTACK (objfile), sizeof (*dlbaton));
       dlbaton->data = DW_BLOCK (attr)->data;
       dlbaton->size = DW_BLOCK (attr)->size;
       dlbaton->per_cu = cu->per_cu;
@@ -12924,7 +12924,7 @@ process_structure_scope (struct die_info *die, struct dwarf2_cu *cu)
 	  TYPE_N_TEMPLATE_ARGUMENTS (type)
 	    = VEC_length (symbolp, template_args);
 	  TYPE_TEMPLATE_ARGUMENTS (type)
-	    = obstack_alloc (&objfile->objfile_obstack,
+	    = obstack_alloc (SYMBOL_OBSTACK (objfile),
 			     (TYPE_N_TEMPLATE_ARGUMENTS (type)
 			      * sizeof (struct symbol *)));
 	  memcpy (TYPE_TEMPLATE_ARGUMENTS (type),
@@ -13516,7 +13516,7 @@ mark_common_block_symbol_computed (struct symbol *sym,
   gdb_assert (attr_form_is_block (member_loc)
 	      || attr_form_is_constant (member_loc));
 
-  baton = obstack_alloc (&objfile->objfile_obstack,
+  baton = obstack_alloc (SYMBOL_OBSTACK (objfile),
 			 sizeof (struct dwarf2_locexpr_baton));
   baton->per_cu = cu->per_cu;
   gdb_assert (baton->per_cu);
@@ -13531,7 +13531,7 @@ mark_common_block_symbol_computed (struct symbol *sym,
   else
     baton->size += DW_BLOCK (member_loc)->size;
 
-  ptr = obstack_alloc (&objfile->objfile_obstack, baton->size);
+  ptr = obstack_alloc (SYMBOL_OBSTACK (objfile), baton->size);
   baton->data = ptr;
 
   *ptr++ = DW_OP_call4;
@@ -13607,7 +13607,7 @@ read_common_block (struct die_info *die, struct dwarf2_cu *cu)
 
       size = (sizeof (struct common_block)
 	      + (n_entries - 1) * sizeof (struct symbol *));
-      common_block = obstack_alloc (&objfile->objfile_obstack, size);
+      common_block = obstack_alloc (SYMBOL_OBSTACK (objfile), size);
       memset (common_block->contents, 0, n_entries * sizeof (struct symbol *));
       common_block->n_entries = 0;
 
@@ -13689,7 +13689,7 @@ read_namespace_type (struct die_info *die, struct dwarf2_cu *cu)
 
   previous_prefix = determine_prefix (die, cu);
   if (previous_prefix[0] != '\0')
-    name = typename_concat (&objfile->objfile_obstack,
+    name = typename_concat (SYMBOL_OBSTACK (objfile),
 			    previous_prefix, name, 0, cu);
 
   /* Create the type.  */
@@ -13726,7 +13726,7 @@ read_namespace (struct die_info *die, struct dwarf2_cu *cu)
 	  const char *previous_prefix = determine_prefix (die, cu);
 
 	  cp_add_using_directive (previous_prefix, TYPE_NAME (type), NULL,
-				  NULL, NULL, 0, &objfile->objfile_obstack);
+				  NULL, NULL, 0, SYMBOL_OBSTACK (objfile));
 	}
     }
 
@@ -15365,7 +15365,7 @@ read_partial_die (const struct die_reader_specs *reader,
 	    default:
 	      part_die->name
 		= dwarf2_canonicalize_name (DW_STRING (&attr), cu,
-					    &objfile->objfile_obstack);
+					    SYMBOL_OBSTACK (objfile));
 	      break;
 	    }
 	  break;
@@ -17548,7 +17548,7 @@ new_symbol_full (struct die_info *die, struct type *type, struct dwarf2_cu *cu,
       OBJSTAT (objfile, n_syms++);
 
       /* Cache this symbol's name and the name's demangled form (if any).  */
-      SYMBOL_SET_LANGUAGE (sym, cu->language, &objfile->objfile_obstack);
+      SYMBOL_SET_LANGUAGE (sym, cu->language, SYMBOL_OBSTACK (objfile));
       linkagename = dwarf2_physname (name, die, cu);
       SYMBOL_SET_NAMES (sym, linkagename, strlen (linkagename), 0, objfile);
 
@@ -18062,7 +18062,7 @@ dwarf2_const_value (const struct attribute *attr, struct symbol *sym,
 
   dwarf2_const_value_attr (attr, SYMBOL_TYPE (sym),
 			   SYMBOL_PRINT_NAME (sym),
-			   &objfile->objfile_obstack, cu,
+			   SYMBOL_OBSTACK (objfile), cu,
 			   &value, &bytes, &baton);
 
   if (baton != NULL)
@@ -18177,7 +18177,7 @@ build_error_marker_type (struct dwarf2_cu *cu, struct die_info *die)
 			objfile_name (objfile),
 			cu->header.offset.sect_off,
 			die->offset.sect_off);
-  saved = obstack_copy0 (&objfile->objfile_obstack,
+  saved = obstack_copy0 (SYMBOL_OBSTACK (objfile),
 			 message, strlen (message));
   xfree (message);
 
@@ -21059,7 +21059,7 @@ dwarf2_symbol_mark_computed (const struct attribute *attr, struct symbol *sym,
     {
       struct dwarf2_loclist_baton *baton;
 
-      baton = obstack_alloc (&objfile->objfile_obstack,
+      baton = obstack_alloc (SYMBOL_OBSTACK (objfile),
 			     sizeof (struct dwarf2_loclist_baton));
 
       fill_in_loclist_baton (cu, baton, attr);
@@ -21078,7 +21078,7 @@ dwarf2_symbol_mark_computed (const struct attribute *attr, struct symbol *sym,
     {
       struct dwarf2_locexpr_baton *baton;
 
-      baton = obstack_alloc (&objfile->objfile_obstack,
+      baton = obstack_alloc (SYMBOL_OBSTACK (objfile),
 			     sizeof (struct dwarf2_locexpr_baton));
       baton->per_cu = cu->per_cu;
       gdb_assert (baton->per_cu);
@@ -21520,7 +21520,7 @@ set_die_type (struct die_info *die, struct type *type, struct dwarf2_cu *cu)
 			      per_cu_offset_and_type_hash,
 			      per_cu_offset_and_type_eq,
 			      NULL,
-			      &objfile->objfile_obstack,
+			      SYMBOL_OBSTACK (objfile),
 			      hashtab_obstack_allocate,
 			      dummy_obstack_deallocate);
     }
@@ -21534,7 +21534,7 @@ set_die_type (struct die_info *die, struct type *type, struct dwarf2_cu *cu)
     complaint (&symfile_complaints,
 	       _("A problem internal to GDB: DIE 0x%x has type already set"),
 	       die->offset.sect_off);
-  *slot = obstack_alloc (&objfile->objfile_obstack, sizeof (**slot));
+  *slot = obstack_alloc (SYMBOL_OBSTACK (objfile), sizeof (**slot));
   **slot = ofs;
   return type;
 }

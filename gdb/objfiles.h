@@ -727,4 +727,6 @@ const char *objfile_name (const struct objfile *objfile);
 extern void set_objfile_main_name (struct objfile *objfile,
 				   const char *name, enum language lang);
 
+#define SYMBOL_OBSTACK(OBJF) (&(OBJF)->objfile_obstack)
+
 #endif /* !defined (OBJFILES_H) */

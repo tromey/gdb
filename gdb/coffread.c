@@ -1627,7 +1627,7 @@ process_coff_symbol (struct coff_symbol *cs,
   name = cs->c_name;
   name = EXTERNAL_NAME (name, objfile->obfd);
   SYMBOL_SET_LANGUAGE (sym, current_subfile->language,
-		       &objfile->objfile_obstack);
+		       SYMBOL_OBSTACK (objfile));
   SYMBOL_SET_NAMES (sym, name, strlen (name), 1, objfile);
 
   /* default assumptions */
@@ -2094,7 +2094,7 @@ coff_read_struct_type (int index, int length, int lastsym,
 	  list = new;
 
 	  /* Save the data.  */
-	  list->field.name = obstack_copy0 (&objfile->objfile_obstack,
+	  list->field.name = obstack_copy0 (SYMBOL_OBSTACK (objfile),
 					    name, strlen (name));
 	  FIELD_TYPE (list->field) = decode_type (ms, ms->c_type,
 						  &sub_aux, objfile);
@@ -2111,7 +2111,7 @@ coff_read_struct_type (int index, int length, int lastsym,
 	  list = new;
 
 	  /* Save the data.  */
-	  list->field.name = obstack_copy0 (&objfile->objfile_obstack,
+	  list->field.name = obstack_copy0 (SYMBOL_OBSTACK (objfile),
 					    name, strlen (name));
 	  FIELD_TYPE (list->field) = decode_type (ms, ms->c_type,
 						  &sub_aux, objfile);
@@ -2183,7 +2183,7 @@ coff_read_enum_type (int index, int length, int lastsym,
 	  sym = allocate_symbol (objfile);
 
 	  SYMBOL_SET_LINKAGE_NAME (sym,
-				   obstack_copy0 (&objfile->objfile_obstack,
+				   obstack_copy0 (SYMBOL_OBSTACK (objfile),
 						  name, strlen (name)));
 	  SYMBOL_ACLASS_INDEX (sym) = LOC_CONST;
 	  SYMBOL_DOMAIN (sym) = VAR_DOMAIN;

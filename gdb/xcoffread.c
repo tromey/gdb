@@ -1095,7 +1095,7 @@ read_xcoff_symtab (struct objfile *objfile, struct partial_symtab *pst)
 	      {
 		char *p;
 
-		p = obstack_alloc (&objfile->objfile_obstack, E_SYMNMLEN + 1);
+		p = obstack_alloc (SYMBOL_OBSTACK (objfile), E_SYMNMLEN + 1);
 		strncpy (p, cs->c_name, E_SYMNMLEN);
 		p[E_SYMNMLEN] = '\0';
 		cs->c_name = p;
@@ -1527,12 +1527,12 @@ read_xcoff_symtab (struct objfile *objfile, struct partial_symtab *pst)
 
 #define	SYMBOL_DUP(SYMBOL1, SYMBOL2)	\
   (SYMBOL2) = (struct symbol *)		\
-  	obstack_alloc (&objfile->objfile_obstack, sizeof (struct symbol)); \
+  	obstack_alloc (SYMBOL_OBSTACK (objfile), sizeof (struct symbol)); \
   *(SYMBOL2) = *(SYMBOL1);
 
 
 #define	SYMNAME_ALLOC(NAME, ALLOCED)	\
-  ((ALLOCED) ? (NAME) : obstack_copy0 (&objfile->objfile_obstack, \
+  ((ALLOCED) ? (NAME) : obstack_copy0 (SYMBOL_OBSTACK (objfile), \
 				       (NAME), strlen (NAME)))
 
 
@@ -1988,7 +1988,7 @@ init_stringtab (bfd *abfd, file_ptr offset, struct objfile *objfile)
   /* Allocate string table from objfile_obstack.  We will need this table
      as long as we have its symbol table around.  */
 
-  strtbl = (char *) obstack_alloc (&objfile->objfile_obstack, length);
+  strtbl = (char *) obstack_alloc (SYMBOL_OBSTACK (objfile), length);
   xcoff->strtbl = strtbl;
 
   /* Copy length buffer, the first byte is usually zero and is
@@ -2034,7 +2034,7 @@ xcoff_start_psymtab (struct objfile *objfile,
 			  0,
 			  global_syms, static_syms);
 
-  result->read_symtab_private = obstack_alloc (&objfile->objfile_obstack,
+  result->read_symtab_private = obstack_alloc (SYMBOL_OBSTACK (objfile),
 					       sizeof (struct symloc));
   ((struct symloc *) result->read_symtab_private)->first_symnum = first_symnum;
   result->read_symtab = xcoff_read_symtab;
@@ -2078,7 +2078,7 @@ xcoff_end_psymtab (struct objfile *objfile, struct partial_symtab *pst,
   if (number_dependencies)
     {
       pst->dependencies = (struct partial_symtab **)
-	obstack_alloc (&objfile->objfile_obstack,
+	obstack_alloc (SYMBOL_OBSTACK (objfile),
 		    number_dependencies * sizeof (struct partial_symtab *));
       memcpy (pst->dependencies, dependency_list,
 	      number_dependencies * sizeof (struct partial_symtab *));
@@ -2092,7 +2092,7 @@ xcoff_end_psymtab (struct objfile *objfile, struct partial_symtab *pst,
 	allocate_psymtab (include_list[i], objfile);
 
       subpst->section_offsets = pst->section_offsets;
-      subpst->read_symtab_private = obstack_alloc (&objfile->objfile_obstack,
+      subpst->read_symtab_private = obstack_alloc (SYMBOL_OBSTACK (objfile),
 						   sizeof (struct symloc));
       ((struct symloc *) subpst->read_symtab_private)->first_symnum = 0;
       ((struct symloc *) subpst->read_symtab_private)->numsyms = 0;
@@ -2102,7 +2102,7 @@ xcoff_end_psymtab (struct objfile *objfile, struct partial_symtab *pst,
       /* We could save slight bits of space by only making one of these,
          shared by the entire set of include files.  FIXME-someday.  */
       subpst->dependencies = (struct partial_symtab **)
-	obstack_alloc (&objfile->objfile_obstack,
+	obstack_alloc (SYMBOL_OBSTACK (objfile),
 		       sizeof (struct partial_symtab *));
       subpst->dependencies[0] = pst;
       subpst->number_of_dependencies = 1;
@@ -2157,7 +2157,7 @@ swap_sym (struct internal_syment *symbol, union internal_auxent *aux,
 	     into the minimal symbols.  */
 	  char *p;
 
-	  p = obstack_alloc (&objfile->objfile_obstack, E_SYMNMLEN + 1);
+	  p = obstack_alloc (SYMBOL_OBSTACK (objfile), E_SYMNMLEN + 1);
 	  strncpy (p, symbol->n_name, E_SYMNMLEN);
 	  p[E_SYMNMLEN] = '\0';
 	  *name = p;
@@ -2990,7 +2990,7 @@ xcoff_initial_scan (struct objfile *objfile, int symfile_flags)
 	    length = bfd_section_size (abfd, secp);
 	    if (length)
 	      {
-		debugsec = obstack_alloc (&objfile->objfile_obstack, length);
+		debugsec = obstack_alloc (SYMBOL_OBSTACK (objfile), length);
 
 		if (!bfd_get_full_section_contents (abfd, secp, &debugsec))
 		  {
@@ -3010,7 +3010,7 @@ xcoff_initial_scan (struct objfile *objfile, int symfile_flags)
     error (_("Error reading symbols from %s: %s"),
 	   name, bfd_errmsg (bfd_get_error ()));
   size = coff_data (abfd)->local_symesz * num_symbols;
-  info->symtbl = obstack_alloc (&objfile->objfile_obstack, size);
+  info->symtbl = obstack_alloc (SYMBOL_OBSTACK (objfile), size);
   info->symtbl_num_syms = num_symbols;
 
   val = bfd_bread (info->symtbl, size, abfd);
