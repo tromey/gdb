@@ -127,7 +127,7 @@ add_minsym_to_hash_table (struct minimal_symbol *sym,
    TABLE.  */
 static void
 add_minsym_to_demangled_hash_table (struct minimal_symbol *sym,
-                                  struct minimal_symbol **table)
+				    struct minimal_symbol **table)
 {
   if (sym->demangled_hash_next == NULL)
     {
@@ -201,17 +201,17 @@ lookup_minimal_symbol (const char *name, const char *sfile,
 	{
 	  /* Do two passes: the first over the ordinary hash table,
 	     and the second over the demangled hash table.  */
-        int pass;
+	  int pass;
 
-        for (pass = 1; pass <= 2 && found_symbol.minsym == NULL; pass++)
+	  for (pass = 1; pass <= 2 && found_symbol.minsym == NULL; pass++)
 	    {
-            /* Select hash list according to pass.  */
-            if (pass == 1)
-              msymbol = objfile->per_bfd->msymbol_hash[hash];
-            else
-              msymbol = objfile->per_bfd->msymbol_demangled_hash[dem_hash];
+	      /* Select hash list according to pass.  */
+	      if (pass == 1)
+		msymbol = objfile->per_bfd->msymbol_hash[hash];
+	      else
+		msymbol = objfile->per_bfd->msymbol_demangled_hash[dem_hash];
 
-            while (msymbol != NULL && found_symbol.minsym == NULL)
+	      while (msymbol != NULL && found_symbol.minsym == NULL)
 		{
 		  int match;
 
@@ -228,50 +228,50 @@ lookup_minimal_symbol (const char *name, const char *sfile,
 		    {
 		      /* The function respects CASE_SENSITIVITY.  */
 		      match = MSYMBOL_MATCHES_SEARCH_NAME (msymbol,
-							  modified_name);
+							   modified_name);
 		    }
 
 		  if (match)
 		    {
-                    switch (MSYMBOL_TYPE (msymbol))
-                      {
-                      case mst_file_text:
-                      case mst_file_data:
-                      case mst_file_bss:
-                        if (sfile == NULL
-			    || filename_cmp (msymbol->filename, sfile) == 0)
-			  {
-			    found_file_symbol.minsym = msymbol;
-			    found_file_symbol.objfile = objfile;
-			  }
-                        break;
+		      switch (MSYMBOL_TYPE (msymbol))
+			{
+			case mst_file_text:
+			case mst_file_data:
+			case mst_file_bss:
+			  if (sfile == NULL
+			      || filename_cmp (msymbol->filename, sfile) == 0)
+			    {
+			      found_file_symbol.minsym = msymbol;
+			      found_file_symbol.objfile = objfile;
+			    }
+			  break;
 
-                      case mst_solib_trampoline:
+			case mst_solib_trampoline:
 
-                        /* If a trampoline symbol is found, we prefer to
-                           keep looking for the *real* symbol.  If the
-                           actual symbol is not found, then we'll use the
-                           trampoline entry.  */
-                        if (trampoline_symbol.minsym == NULL)
-			  {
-			    trampoline_symbol.minsym = msymbol;
-			    trampoline_symbol.objfile = objfile;
-			  }
-                        break;
+			  /* If a trampoline symbol is found, we prefer to
+			     keep looking for the *real* symbol.  If the
+			     actual symbol is not found, then we'll use the
+			     trampoline entry.  */
+			  if (trampoline_symbol.minsym == NULL)
+			    {
+			      trampoline_symbol.minsym = msymbol;
+			      trampoline_symbol.objfile = objfile;
+			    }
+			  break;
 
-                      case mst_unknown:
-                      default:
-                        found_symbol.minsym = msymbol;
-			found_symbol.objfile = objfile;
-                        break;
-                      }
+			case mst_unknown:
+			default:
+			  found_symbol.minsym = msymbol;
+			  found_symbol.objfile = objfile;
+			  break;
+			}
 		    }
 
-                /* Find the next symbol on the hash chain.  */
-                if (pass == 1)
-                  msymbol = msymbol->hash_next;
-                else
-                  msymbol = msymbol->demangled_hash_next;
+		  /* Find the next symbol on the hash chain.  */
+		  if (pass == 1)
+		    msymbol = msymbol->hash_next;
+		  else
+		    msymbol = msymbol->demangled_hash_next;
 		}
 	    }
 	}
@@ -1228,7 +1228,7 @@ install_minimal_symbols (struct objfile *objfile)
 
       if (objfile->per_bfd->minimal_symbol_count)
 	memcpy ((char *) msymbols, (char *) objfile->per_bfd->msymbols,
-	    objfile->per_bfd->minimal_symbol_count * sizeof (struct minimal_symbol));
+		objfile->per_bfd->minimal_symbol_count * sizeof (struct minimal_symbol));
 
       /* Walk through the list of minimal symbol bunches, adding each symbol
          to the new contiguous array of symbols.  Note that we start with the
@@ -1256,7 +1256,7 @@ install_minimal_symbols (struct objfile *objfile)
       mcount = compact_minimal_symbols (msymbols, mcount, objfile);
 
       obstack_blank (&objfile->per_bfd->storage_obstack,
-	       (mcount + 1 - alloc_count) * sizeof (struct minimal_symbol));
+		     (mcount + 1 - alloc_count) * sizeof (struct minimal_symbol));
       msymbols = (struct minimal_symbol *)
 	obstack_finish (&objfile->per_bfd->storage_obstack);
 

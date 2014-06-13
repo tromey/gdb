@@ -1,5 +1,10 @@
 2014-06-20  Tom Tromey  <tromey@redhat.com>
 
+	* minsyms.c (add_minsym_to_demangled_hash_table)
+	(lookup_minimal_symbol, install_minimal_symbols): Reindent.
+
+2014-06-20  Tom Tromey  <tromey@redhat.com>
+
 	* dwarf2read.c (dw2_get_real_path): Use correct type in
 	OBSTACK_CALLOC.
 	* gdb_obstack.h (OBSTACK_ZALLOC, OBSTACK_CALLOC): Cast result.
