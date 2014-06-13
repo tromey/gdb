@@ -208,6 +208,8 @@ lookup_minimal_symbol (const char *name, const char *sfile,
 	      /* Select hash list according to pass.  */
 	      if (pass == 1)
 		msymbol = objfile->per_bfd->msymbol_hash[hash];
+	      else if (objfile->per_bfd->msymbol_demangled_hash == NULL)
+		msymbol = NULL;
 	      else
 		msymbol = objfile->per_bfd->msymbol_demangled_hash[dem_hash];
 
@@ -324,13 +326,16 @@ iterate_over_minimal_symbols (struct objfile *objf, const char *name,
     }
 
   /* The second pass is over the demangled table.  */
-  hash = msymbol_hash_iw (name) % MINIMAL_SYMBOL_HASH_SIZE;
-  iter = objf->per_bfd->msymbol_demangled_hash[hash];
-  while (iter)
+  if (objf->per_bfd->msymbol_demangled_hash != NULL)
     {
-      if (MSYMBOL_MATCHES_SEARCH_NAME (iter, name))
-	(*callback) (iter, user_data);
-      iter = iter->demangled_hash_next;
+      hash = msymbol_hash_iw (name) % MINIMAL_SYMBOL_HASH_SIZE;
+      iter = objf->per_bfd->msymbol_demangled_hash[hash];
+      while (iter)
+	{
+	  if (MSYMBOL_MATCHES_SEARCH_NAME (iter, name))
+	    (*callback) (iter, user_data);
+	  iter = iter->demangled_hash_next;
+	}
     }
 }
 
@@ -1147,11 +1152,11 @@ build_minimal_symbol_hash_tables (struct objfile *objfile)
   struct minimal_symbol *msym;
 
   /* Clear the hash tables.  */
-  for (i = 0; i < MINIMAL_SYMBOL_HASH_SIZE; i++)
-    {
-      objfile->per_bfd->msymbol_hash[i] = 0;
-      objfile->per_bfd->msymbol_demangled_hash[i] = 0;
-    }
+  memset (objfile->per_bfd->msymbol_hash, 0,
+	  MINIMAL_SYMBOL_HASH_SIZE * sizeof (struct minimal_symbol *));
+  if (objfile->per_bfd->msymbol_demangled_hash != NULL)
+    memset (objfile->per_bfd->msymbol_demangled_hash, 0,
+	    MINIMAL_SYMBOL_HASH_SIZE * sizeof (struct minimal_symbol *));
 
   /* Now, (re)insert the actual entries.  */
   for ((i = objfile->per_bfd->minimal_symbol_count,
@@ -1164,8 +1169,16 @@ build_minimal_symbol_hash_tables (struct objfile *objfile)
 
       msym->demangled_hash_next = 0;
       if (MSYMBOL_SEARCH_NAME (msym) != MSYMBOL_LINKAGE_NAME (msym))
-	add_minsym_to_demangled_hash_table (msym,
-                                            objfile->per_bfd->msymbol_demangled_hash);
+	{
+	  if (objfile->per_bfd->msymbol_demangled_hash == NULL)
+	    objfile->per_bfd->msymbol_demangled_hash
+	      = OBSTACK_CALLOC (&objfile->per_bfd->storage_obstack,
+				MINIMAL_SYMBOL_HASH_SIZE,
+				struct minimal_symbol *);
+
+	  add_minsym_to_demangled_hash_table (msym,
+					      objfile->per_bfd->msymbol_demangled_hash);
+	}
     }
 }
 

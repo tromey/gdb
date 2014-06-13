@@ -244,9 +244,10 @@ struct objfile_per_bfd_storage
   struct minimal_symbol *msymbol_hash[MINIMAL_SYMBOL_HASH_SIZE];
 
   /* This hash table is used to index the minimal symbols by their
-     demangled names.  */
+     demangled names.  This may be NULL if no minimal symbol has a
+     mangled name.  */
 
-  struct minimal_symbol *msymbol_demangled_hash[MINIMAL_SYMBOL_HASH_SIZE];
+  struct minimal_symbol **msymbol_demangled_hash;
 };
 
 /* Master structure for keeping track of each file from which

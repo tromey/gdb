@@ -1,5 +1,14 @@
 2014-06-20  Tom Tromey  <tromey@redhat.com>
 
+	* minsyms.c (lookup_minimal_symbol, iterate_over_minimal_symbols):
+	Handle case where demangled hash table is not allocated.
+	(build_minimal_symbol_hash_tables): Lazily create demangled hash
+	table.
+	* objfiles.h (struct objfile_per_bfd_storage)
+	<msymbol_demangled_hash>: Change type.
+
+2014-06-20  Tom Tromey  <tromey@redhat.com>
+
 	* minsyms.c (add_minsym_to_demangled_hash_table)
 	(lookup_minimal_symbol, install_minimal_symbols): Reindent.
 
