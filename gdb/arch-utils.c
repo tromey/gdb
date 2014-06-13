@@ -832,6 +832,12 @@ default_gcc_target_options (struct gdbarch *gdbarch)
 		     gdbarch_ptr_bit (gdbarch) == 64 ? " -mcmodel=large" : "");
 }
 
+const char *
+default_gnu_triplet_regexp (struct gdbarch *gdbarch)
+{
+  return gdbarch_bfd_arch_info (gdbarch)->arch_name;
+}
+
 /* */
 
 /* -Wmissing-prototypes */

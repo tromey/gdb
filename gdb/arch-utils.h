@@ -177,5 +177,6 @@ extern int default_insn_is_jump (struct gdbarch *, CORE_ADDR);
 
 extern CORE_ADDR default_infcall_mmap (CORE_ADDR size, unsigned prot);
 extern char *default_gcc_target_options (struct gdbarch *gdbarch);
+extern const char *default_gnu_triplet_regexp (struct gdbarch *gdbarch);
 
 #endif
