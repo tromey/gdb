@@ -27,10 +27,11 @@ AC_DEFUN([GDB_AC_COMMON], [
 
   AC_CHECK_HEADERS(linux/perf_event.h locale.h memory.h signal.h dnl
 		   sys/resource.h sys/socket.h sys/syscall.h dnl
-		   sys/un.h sys/wait.h dnl
+		   sys/uio.h sys/un.h sys/wait.h dnl
 		   thread_db.h wait.h)
 
-  AC_CHECK_FUNCS([fdwalk getrlimit pipe pipe2 socketpair])
+  AC_CHECK_FUNCS([fdwalk getrlimit pipe pipe2 socketpair \
+		  process_vm_readv process_vm_writev])
 
   AC_CHECK_DECLS([strerror, strstr])
 ])

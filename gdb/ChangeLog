@@ -1,5 +1,36 @@
 2014-07-24  Tom Tromey  <tromey@redhat.com>
 
+	* nat/linux-vm-io.h: New file.
+	* nat/linux-vm-io.c: New file.
+	* linux-nat.c (linux_xfer_partial): Use linux_process_vm_write and
+	linux_process_vm_read.
+	* config/xtensa/linux.mh (NATDEPFILES): Add linux-vm-io.o.
+	* config/tilegx/linux.mh (NATDEPFILES): Add linux-vm-io.o.
+	* config/sparc/linux64.mh (NATDEPFILES):Add linux-vm-io.o.
+	* config/sparc/linux.mh (NATDEPFILES): Add linux-vm-io.o.
+	* config/s390/linux.mh (NATDEPFILES): Add linux-vm-io.o.
+	* config/powerpc/spu-linux.mh (NATDEPFILES): Add linux-vm-io.o.
+	* config/powerpc/ppc64-linux.mh (NATDEPFILES): Add linux-vm-io.o.
+	* config/powerpc/linux.mh (NATDEPFILES): Add linux-vm-io.o.
+	* config/pa/linux.mh (NATDEPFILES): Add linux-vm-io.o.
+	* config/mips/linux.mh (NATDEPFILES): Add linux-vm-io.o.
+	* config/m68k/linux.mh (NATDEPFILES): Add linux-vm-io.o.
+	* config/m32r/linux.mh (NATDEPFILES): Add linux-vm-io.o.
+	* config/ia64/linux.mh (NATDEPFILES): Add linux-vm-io.o.
+	* config/i386/linux64.mh (NATDEPFILES): Add linux-vm-io.o.
+	* config/i386/linux.mh (NATDEPFILES): Add linux-vm-io.o.
+	* config/arm/linux.mh (NATDEPFILES): Add linux-vm-io.o.
+	* config/alpha/alpha-linux.mh (NATDEPFILES): Add linux-vm-io.o.
+	* config/aarch64/linux.mh (NATDEPFILES): Add linux-vm-io.o.
+	* configure: Rebuild.
+	* config.in: Rebuild.
+	* common/common.m4: Check for sys/uio.h, process_vm_readv,
+	process_vm_writev.
+	* Makefile.in (HFILES_NO_SRCDIR): Add nat/linux-vm-io.h.
+	(linux-vm-io.o): New target.
+
+2014-07-24  Tom Tromey  <tromey@redhat.com>
+
 	* monitor.c (compile_pattern): Update.
 	* target.h (struct target_ops) <to_shortname, to_longname,
 	to_doc>: Now const.

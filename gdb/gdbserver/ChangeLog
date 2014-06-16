@@ -1,4 +1,9 @@
 2014-07-24  Tom Tromey  <tromey@redhat.com>
+
+	* configure: Rebuild.
+	* config.in: Rebuild.
+
+2014-07-24  Tom Tromey  <tromey@redhat.com>
 	    Gary Benson  <gbenson@redhat.com>
 
 	* server.h (CORE_ADDR): Now unsigned.

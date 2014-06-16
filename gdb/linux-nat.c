@@ -69,6 +69,7 @@
 #include "target-descriptions.h"
 #include "filestuff.h"
 #include "objfiles.h"
+#include "nat/linux-vm-io.h"
 
 #ifndef SPUFS_MAGIC
 #define SPUFS_MAGIC 0x23c9b64e
@@ -4414,10 +4415,25 @@ linux_xfer_partial (struct target_ops *ops, enum target_object object,
 
   if (object == TARGET_OBJECT_MEMORY)
     {
+      int vm_result;
       int addr_bit = gdbarch_addr_bit (target_gdbarch ());
 
       if (addr_bit < (sizeof (ULONGEST) * HOST_CHAR_BIT))
 	offset &= ((ULONGEST) 1 << addr_bit) - 1;
+
+      if (readbuf == NULL)
+	vm_result = linux_process_vm_write (ptid_get_pid (inferior_ptid),
+					    offset, writebuf,
+					    len, xfered_len);
+      else
+	vm_result = linux_process_vm_read (ptid_get_pid (inferior_ptid),
+					   offset, readbuf,
+					   len, xfered_len);
+
+      if (vm_result != -1)
+	return *xfered_len == 0 ? TARGET_XFER_EOF : TARGET_XFER_OK;
+      if (errno != ENOTSUP)
+	return TARGET_XFER_E_IO;
     }
 
   xfer = linux_proc_xfer_partial (ops, object, annex, readbuf, writebuf,
