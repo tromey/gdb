@@ -459,9 +459,9 @@ ax_reg_mask (struct agent_expr *ax, int reg)
           /* It's not appropriate to double here.  This isn't a
 	     string buffer.  */
           int new_len = byte + 1;
-          unsigned char *new_reg_mask = xrealloc (ax->reg_mask,
-					          new_len
-					          * sizeof (ax->reg_mask[0]));
+          unsigned char *new_reg_mask = XRESIZEVEC (ax->reg_mask,
+						    new_len,
+						    unsigned char);
           memset (new_reg_mask + ax->reg_mask_len, 0,
 	          (new_len - ax->reg_mask_len) * sizeof (ax->reg_mask[0]));
           ax->reg_mask_len = new_len;

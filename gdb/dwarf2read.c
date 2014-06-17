@@ -5940,8 +5940,8 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
       /* Fill in 'dependencies' here; we fill in 'users' in a
 	 post-pass.  */
       pst->number_of_dependencies = len;
-      pst->dependencies = obstack_alloc (&objfile->objfile_obstack,
-					 len * sizeof (struct symtab *));
+      pst->dependencies = XOBNEWVEC (&objfile->objfile_obstack,
+				     len, struct symtab *);
       for (i = 0;
 	   VEC_iterate (dwarf2_per_cu_ptr, cu->per_cu->imported_symtabs,
 			i, iter);
@@ -6216,8 +6216,8 @@ build_type_psymtab_dependencies (void **slot, void *info)
   gdb_assert (IS_TYPE_UNIT_GROUP (per_cu));
 
   pst->number_of_dependencies = len;
-  pst->dependencies = obstack_alloc (&objfile->objfile_obstack,
-				     len * sizeof (struct psymtab *));
+  pst->dependencies = XOBNEWVEC (&objfile->objfile_obstack,
+				 len, struct psymtab *);
   for (i = 0;
        VEC_iterate (sig_type_ptr, tu_group->tus, i, iter);
        ++i)
@@ -6482,8 +6482,7 @@ read_comp_units_from_section (struct objfile *objfile,
       length = read_initial_length (abfd, info_ptr, &initial_length_size);
 
       /* Save the compilation unit for later lookup.  */
-      this_cu = obstack_alloc (&objfile->objfile_obstack,
-			       sizeof (struct dwarf2_per_cu_data));
+      this_cu = XOBNEW (&objfile->objfile_obstack, struct dwarf2_per_cu_data);
       memset (this_cu, 0, sizeof (*this_cu));
       this_cu->offset = offset;
       this_cu->length = length + initial_length_size;
@@ -6494,9 +6493,9 @@ read_comp_units_from_section (struct objfile *objfile,
       if (*n_comp_units == *n_allocated)
 	{
 	  *n_allocated *= 2;
-	  *all_comp_units = xrealloc (*all_comp_units,
-				      *n_allocated
-				      * sizeof (struct dwarf2_per_cu_data *));
+	  *all_comp_units = XRESIZEVEC (*all_comp_units,
+					*n_allocated,
+					struct dwarf2_per_cu_data *);
 	}
       (*all_comp_units)[*n_comp_units] = this_cu;
       ++*n_comp_units;
@@ -6518,8 +6517,7 @@ create_all_comp_units (struct objfile *objfile)
 
   n_comp_units = 0;
   n_allocated = 10;
-  all_comp_units = xmalloc (n_allocated
-			    * sizeof (struct dwarf2_per_cu_data *));
+  all_comp_units = XNEWVEC (n_allocated, struct dwarf2_per_cu_data *);
 
   read_comp_units_from_section (objfile, &dwarf2_per_objfile->info, 0,
 				&n_allocated, &n_comp_units, &all_comp_units);
@@ -6531,8 +6529,8 @@ create_all_comp_units (struct objfile *objfile)
 				  &all_comp_units);
 
   dwarf2_per_objfile->all_comp_units
-    = obstack_alloc (&objfile->objfile_obstack,
-		     n_comp_units * sizeof (struct dwarf2_per_cu_data *));
+    = XOBNEWVEC (&objfile->objfile_obstack,
+		 n_comp_units, struct dwarf2_per_cu_data *);
   memcpy (dwarf2_per_objfile->all_comp_units, all_comp_units,
 	  n_comp_units * sizeof (struct dwarf2_per_cu_data *));
   xfree (all_comp_units);
@@ -7872,8 +7870,8 @@ compute_symtab_includes (struct dwarf2_per_cu_data *per_cu)
       /* Now we have a transitive closure of all the included symtabs.  */
       len = VEC_length (symtab_ptr, result_symtabs);
       symtab->includes
-	= obstack_alloc (&dwarf2_per_objfile->objfile->objfile_obstack,
-			 (len + 1) * sizeof (struct symtab *));
+	= XOBNEWVEC (&dwarf2_per_objfile->objfile->objfile_obstack,
+		     len + 1, struct symtab *);
       for (ix = 0;
 	   VEC_iterate (symtab_ptr, result_symtabs, ix, symtab_iter);
 	   ++ix)
@@ -9958,8 +9956,8 @@ create_dwo_unit_in_dwp_v1 (struct dwp_file *dwp_file,
   dwo_unit = OBSTACK_ZALLOC (&objfile->objfile_obstack, struct dwo_unit);
   dwo_unit->dwo_file = dwo_file;
   dwo_unit->signature = signature;
-  dwo_unit->section = obstack_alloc (&objfile->objfile_obstack,
-				     sizeof (struct dwarf2_section_info));
+  dwo_unit->section = XOBNEW (&objfile->objfile_obstack,
+			      struct dwarf2_section_info);
   *dwo_unit->section = sections.info_or_types;
   /* dwo_unit->{offset,length,type_offset_in_tu} are set later.  */
 
@@ -10172,8 +10170,8 @@ create_dwo_unit_in_dwp_v2 (struct dwp_file *dwp_file,
   dwo_unit = OBSTACK_ZALLOC (&objfile->objfile_obstack, struct dwo_unit);
   dwo_unit->dwo_file = dwo_file;
   dwo_unit->signature = signature;
-  dwo_unit->section = obstack_alloc (&objfile->objfile_obstack,
-				     sizeof (struct dwarf2_section_info));
+  dwo_unit->section = XOBNEW (&objfile->objfile_obstack,
+			      struct dwarf2_section_info);
   *dwo_unit->section = create_dwp_v2_section (is_debug_types
 					      ? &dwp_file->sections.types
 					      : &dwp_file->sections.info,
@@ -11264,9 +11262,9 @@ read_func_scope (struct die_info *die, struct dwarf2_cu *cu)
 
       templ_func->n_template_arguments = VEC_length (symbolp, template_args);
       templ_func->template_arguments
-	= obstack_alloc (&objfile->objfile_obstack,
-			 (templ_func->n_template_arguments
-			  * sizeof (struct symbol *)));
+	= XOBNEWVEC (&objfile->objfile_obstack,
+		     templ_func->n_template_arguments,
+		     struct symbol *));
       memcpy (templ_func->template_arguments,
 	      VEC_address (symbolp, template_args),
 	      (templ_func->n_template_arguments * sizeof (struct symbol *)));
@@ -12234,9 +12232,8 @@ dwarf2_add_field (struct field_info *fip, struct die_info *die,
   const char *fieldname = "";
 
   /* Allocate a new field list entry and link it in.  */
-  new_field = (struct nextfield *) xmalloc (sizeof (struct nextfield));
+  new_field = XCNEW (struct nextfield);
   make_cleanup (xfree, new_field);
-  memset (new_field, 0, sizeof (struct nextfield));
 
   if (die->tag == DW_TAG_inheritance)
     {
@@ -12609,9 +12606,9 @@ dwarf2_add_member_fn (struct field_info *fip, struct die_info *die,
       if ((fip->nfnfields % DW_FIELD_ALLOC_CHUNK) == 0)
 	{
 	  fip->fnfieldlists = (struct fnfieldlist *)
-	    xrealloc (fip->fnfieldlists,
-		      (fip->nfnfields + DW_FIELD_ALLOC_CHUNK)
-		      * sizeof (struct fnfieldlist));
+	    XRESIZEVEC (fip->fnfieldlists,
+			fip->nfnfields + DW_FIELD_ALLOC_CHUNK,
+			struct fnfieldlist);
 	  if (fip->nfnfields == 0)
 	    make_cleanup (free_current_contents, &fip->fnfieldlists);
 	}
@@ -12624,9 +12621,8 @@ dwarf2_add_member_fn (struct field_info *fip, struct die_info *die,
 
   /* Create a new member function field and chain it to the field list
      entry.  */
-  new_fnfield = (struct nextfnfield *) xmalloc (sizeof (struct nextfnfield));
+  new_fnfield = XCNEW (struct nextfnfield);
   make_cleanup (xfree, new_fnfield);
-  memset (new_fnfield, 0, sizeof (struct nextfnfield));
   new_fnfield->next = flp->head;
   flp->head = new_fnfield;
   flp->length++;
@@ -13063,9 +13059,9 @@ process_structure_scope (struct die_info *die, struct dwarf2_cu *cu)
 	  TYPE_N_TEMPLATE_ARGUMENTS (type)
 	    = VEC_length (symbolp, template_args);
 	  TYPE_TEMPLATE_ARGUMENTS (type)
-	    = obstack_alloc (&objfile->objfile_obstack,
-			     (TYPE_N_TEMPLATE_ARGUMENTS (type)
-			      * sizeof (struct symbol *)));
+	    = XOBNEWVEC (&objfile->objfile_obstack,
+			 TYPE_N_TEMPLATE_ARGUMENTS (type),
+			 struct symbol *));
 	  memcpy (TYPE_TEMPLATE_ARGUMENTS (type),
 		  VEC_address (symbolp, template_args),
 		  (TYPE_N_TEMPLATE_ARGUMENTS (type)
@@ -13390,10 +13386,9 @@ process_enumeration_scope (struct die_info *die, struct dwarf2_cu *cu)
 
 		  if ((num_fields % DW_FIELD_ALLOC_CHUNK) == 0)
 		    {
-		      fields = (struct field *)
-			xrealloc (fields,
-				  (num_fields + DW_FIELD_ALLOC_CHUNK)
-				  * sizeof (struct field));
+		      fields = XRESIZEVEC (fields,
+					   num_fields + DW_FIELD_ALLOC_CHUNK,
+					   struct field);
 		    }
 
 		  FIELD_NAME (fields[num_fields]) = SYMBOL_LINKAGE_NAME (sym);
@@ -13499,9 +13494,9 @@ read_array_type (struct die_info *die, struct dwarf2_cu *cu)
                  array type creation.  */
               if ((ndim % DW_FIELD_ALLOC_CHUNK) == 0)
                 {
-                  range_types = (struct type **)
-                    xrealloc (range_types, (ndim + DW_FIELD_ALLOC_CHUNK)
-                              * sizeof (struct type *));
+                  range_types = XRESIZEVEC (range_types,
+					    ndim + DW_FIELD_ALLOC_CHUNK,
+					    struct type *);
                   if (ndim == 0)
                     make_cleanup (free_current_contents, &range_types);
 	        }
@@ -13655,8 +13650,7 @@ mark_common_block_symbol_computed (struct symbol *sym,
   gdb_assert (attr_form_is_block (member_loc)
 	      || attr_form_is_constant (member_loc));
 
-  baton = obstack_alloc (&objfile->objfile_obstack,
-			 sizeof (struct dwarf2_locexpr_baton));
+  baton = XOBNEW (&objfile->objfile_obstack, struct dwarf2_locexpr_baton);
   baton->per_cu = cu->per_cu;
   gdb_assert (baton->per_cu);
 
@@ -14956,8 +14950,7 @@ abbrev_table_alloc_abbrev (struct abbrev_table *abbrev_table)
 {
   struct abbrev_info *abbrev;
 
-  abbrev = (struct abbrev_info *)
-    obstack_alloc (&abbrev_table->abbrev_obstack, sizeof (struct abbrev_info));
+  abbrev = XOBNEW (&abbrev_table->abbrev_obstack, struct abbrev_info);
   memset (abbrev, 0, sizeof (struct abbrev_info));
   return abbrev;
 }
@@ -15017,9 +15010,9 @@ abbrev_table_read_table (struct dwarf2_section_info *section,
   abbrev_table = XNEW (struct abbrev_table);
   abbrev_table->offset = offset;
   obstack_init (&abbrev_table->abbrev_obstack);
-  abbrev_table->abbrevs = obstack_alloc (&abbrev_table->abbrev_obstack,
-					 (ABBREV_HASH_SIZE
-					  * sizeof (struct abbrev_info *)));
+  abbrev_table->abbrevs = XOBNEWVEC (&abbrev_table->abbrev_obstack,
+				     ABBREV_HASH_SIZE,
+				     struct abbrev_info *));
   memset (abbrev_table->abbrevs, 0,
 	  ABBREV_HASH_SIZE * sizeof (struct abbrev_info *));
 
@@ -15053,9 +15046,9 @@ abbrev_table_read_table (struct dwarf2_section_info *section,
 	  if (cur_abbrev->num_attrs == allocated_attrs)
 	    {
 	      allocated_attrs += ATTR_ALLOC_CHUNK;
-	      cur_attrs
-		= xrealloc (cur_attrs, (allocated_attrs
-					* sizeof (struct attr_abbrev)));
+	      cur_attrs = XRESIZEVEC (cur_attrs,
+				      allocated_attrs,
+				      struct attr_abbrev));
 	    }
 
 	  cur_attrs[cur_abbrev->num_attrs].name = abbrev_name;
@@ -15066,9 +15059,9 @@ abbrev_table_read_table (struct dwarf2_section_info *section,
 	  abbrev_ptr += bytes_read;
 	}
 
-      cur_abbrev->attrs = obstack_alloc (&abbrev_table->abbrev_obstack,
-					 (cur_abbrev->num_attrs
-					  * sizeof (struct attr_abbrev)));
+      cur_abbrev->attrs = XOBNEWVEC (&abbrev_table->abbrev_obstack,
+				     cur_abbrev->num_attrs,
+				     struct attr_abbrev));
       memcpy (cur_abbrev->attrs, cur_attrs,
 	      cur_abbrev->num_attrs * sizeof (struct attr_abbrev));
 
@@ -15204,8 +15197,7 @@ load_partial_dies (const struct die_reader_specs *reader,
 			    hashtab_obstack_allocate,
 			    dummy_obstack_deallocate);
 
-  part_die = obstack_alloc (&cu->comp_unit_obstack,
-			    sizeof (struct partial_die_info));
+  part_die = XOBNEW (&cu->comp_unit_obstack, struct partial_die_info);
 
   while (1)
     {
@@ -15405,8 +15397,7 @@ load_partial_dies (const struct die_reader_specs *reader,
 	  *slot = part_die;
 	}
 
-      part_die = obstack_alloc (&cu->comp_unit_obstack,
-				sizeof (struct partial_die_info));
+      part_die = XOBNEW (&cu->comp_unit_obstack, struct partial_die_info);
 
       /* For some DIEs we want to follow their children (if any).  For C
 	 we have no reason to follow the children of structures; for other
@@ -16838,15 +16829,14 @@ add_include_dir (struct line_header *lh, const char *include_dir)
   if (lh->include_dirs_size == 0)
     {
       lh->include_dirs_size = 1; /* for testing */
-      lh->include_dirs = xmalloc (lh->include_dirs_size
-                                  * sizeof (*lh->include_dirs));
+      lh->include_dirs = XNEWVEC (const char *, lh->include_dirs_size);
     }
   else if (lh->num_include_dirs >= lh->include_dirs_size)
     {
       lh->include_dirs_size *= 2;
-      lh->include_dirs = xrealloc (lh->include_dirs,
-                                   (lh->include_dirs_size
-                                    * sizeof (*lh->include_dirs)));
+      lh->include_dirs = XRESIZEVEC (lh->include_dirs,
+				     lh->include_dirs_size,
+				     const char *);
     }
 
   lh->include_dirs[lh->num_include_dirs++] = include_dir;
@@ -16867,15 +16857,14 @@ add_file_name (struct line_header *lh,
   if (lh->file_names_size == 0)
     {
       lh->file_names_size = 1; /* for testing */
-      lh->file_names = xmalloc (lh->file_names_size
-                                * sizeof (*lh->file_names));
+      lh->file_names = XNEWVEC (const char *, lh->file_names_size);
     }
   else if (lh->num_file_names >= lh->file_names_size)
     {
       lh->file_names_size *= 2;
-      lh->file_names = xrealloc (lh->file_names,
-                                 (lh->file_names_size
-                                  * sizeof (*lh->file_names)));
+      lh->file_names = XRESIZEVEC (lh->file_names,
+				   lh->file_names_size,
+				   const char *);
     }
 
   fe = &lh->file_names[lh->num_file_names++];
@@ -20131,8 +20120,7 @@ dwarf_alloc_block (struct dwarf2_cu *cu)
 {
   struct dwarf_block *blk;
 
-  blk = (struct dwarf_block *)
-    obstack_alloc (&cu->comp_unit_obstack, sizeof (struct dwarf_block));
+  blk = XOBNEW (&cu->comp_unit_obstack, struct dwarf_block);
   return (blk);
 }
 
@@ -20356,7 +20344,7 @@ parse_macro_definition (struct macro_source_file *file, int line,
               if (argc >= argv_size)
                 {
                   argv_size *= 2;
-                  argv = xrealloc (argv, argv_size * sizeof (*argv));
+                  argv = XRESIZEVEC (argv, argv_size, char *);
                 }
 
               argv[argc++] = copy_string (arg_start, p - arg_start);
@@ -21196,8 +21184,7 @@ dwarf2_symbol_mark_computed (const struct attribute *attr, struct symbol *sym,
     {
       struct dwarf2_loclist_baton *baton;
 
-      baton = obstack_alloc (&objfile->objfile_obstack,
-			     sizeof (struct dwarf2_loclist_baton));
+      baton = XOBNEW (&objfile->objfile_obstack, struct dwarf2_loclist_baton);
 
       fill_in_loclist_baton (cu, baton, attr);
 
@@ -21215,8 +21202,7 @@ dwarf2_symbol_mark_computed (const struct attribute *attr, struct symbol *sym,
     {
       struct dwarf2_locexpr_baton *baton;
 
-      baton = obstack_alloc (&objfile->objfile_obstack,
-			     sizeof (struct dwarf2_locexpr_baton));
+      baton = XOBNEW (&objfile->objfile_obstack, struct dwarf2_locexpr_baton);
       baton->per_cu = cu->per_cu;
       gdb_assert (baton->per_cu);
 
@@ -22589,9 +22575,8 @@ write_psymtabs_to_index (struct objfile *objfile, const char *dir)
 				     eq_psymtab_cu_index,
 				     NULL, xcalloc, xfree);
   make_cleanup_htab_delete (cu_index_htab);
-  psymtab_cu_index_map = (struct psymtab_cu_index_map *)
-    xmalloc (sizeof (struct psymtab_cu_index_map)
-	     * dwarf2_per_objfile->n_comp_units);
+  psymtab_cu_index_map = XNEWVEC (struct psymtab_cu_index_map,
+				  dwarf2_per_objfile->n_comp_units);
   make_cleanup (xfree, psymtab_cu_index_map);
 
   /* The CU list is already sorted, so we don't need to do additional

@@ -1737,8 +1737,8 @@ add_cie (struct dwarf2_cie_table *cie_table, struct dwarf2_cie *cie)
   gdb_assert (n < 1
               || cie_table->entries[n - 1]->cie_pointer < cie->cie_pointer);
 
-  cie_table->entries =
-      xrealloc (cie_table->entries, (n + 1) * sizeof (cie_table->entries[0]));
+  cie_table->entries = XRESIZEVEC (cie_table->entries, n + 1,
+				   struct dwarf2_cie *);
   cie_table->entries[n] = cie;
   cie_table->num_entries = n + 1;
 }

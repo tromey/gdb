@@ -851,8 +851,9 @@ string_exp:
 			     for convenience.  */
 			  char *p;
 			  ++$$.len;
-			  $$.tokens = realloc ($$.tokens,
-					       $$.len * sizeof (struct typed_stoken));
+			  $$.tokens = XRESIZEVEC ($$.tokens,
+						  $$.len,
+						  struct typed_stoken);
 
 			  p = malloc ($2.length + 1);
 			  memcpy (p, $2.ptr, $2.length + 1);
