@@ -37,4 +37,6 @@
   ps_pstop;
   ps_ptread;
   ps_ptwrite;
+
+  init_gdb;
 };
