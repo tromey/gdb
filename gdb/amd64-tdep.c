@@ -2957,6 +2957,12 @@ static const int amd64_record_regmap[] =
   AMD64_DS_REGNUM, AMD64_ES_REGNUM, AMD64_FS_REGNUM, AMD64_GS_REGNUM
 };
 
+static const char *
+amd64_gnu_triplet_regexp (struct gdbarch *gdbarch)
+{
+  return "x86_64";
+}
+
 void
 amd64_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 {
@@ -3110,6 +3116,8 @@ amd64_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   set_gdbarch_insn_is_call (gdbarch, amd64_insn_is_call);
   set_gdbarch_insn_is_ret (gdbarch, amd64_insn_is_ret);
   set_gdbarch_insn_is_jump (gdbarch, amd64_insn_is_jump);
+
+  set_gdbarch_gnu_triplet_regexp (gdbarch, amd64_gnu_triplet_regexp);
 }
 
 

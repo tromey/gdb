@@ -4337,6 +4337,14 @@ i386_stap_parse_special_token (struct gdbarch *gdbarch,
 
 
 
+static const char *
+i386_gnu_triplet_regexp (struct gdbarch *gdbarch)
+{
+  return "i.86";
+}
+
+
+
 /* Generic ELF.  */
 
 void
@@ -4363,6 +4371,8 @@ i386_elf_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 				      i386_stap_is_single_operand);
   set_gdbarch_stap_parse_special_token (gdbarch,
 					i386_stap_parse_special_token);
+
+  set_gdbarch_gnu_triplet_regexp (gdbarch, i386_gnu_triplet_regexp);
 }
 
 /* System V Release 4 (SVR4).  */
@@ -4410,6 +4420,8 @@ i386_go32_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   set_gdbarch_sdb_reg_to_regnum (gdbarch, i386_svr4_reg_to_regnum);
 
   set_gdbarch_has_dos_based_file_system (gdbarch, 1);
+
+  set_gdbarch_gnu_triplet_regexp (gdbarch, i386_gnu_triplet_regexp);
 }
 
 
@@ -8447,6 +8459,8 @@ i386_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
      floating-point registers and the SSE registers, we have to leave a
      gap for the upper AVX, MPX and AVX512 registers.  */
   set_gdbarch_num_regs (gdbarch, I386_AVX512_NUM_REGS);
+
+  set_gdbarch_gnu_triplet_regexp (gdbarch, i386_gnu_triplet_regexp);
 
   /* Get the x86 target description from INFO.  */
   tdesc = info.target_desc;
