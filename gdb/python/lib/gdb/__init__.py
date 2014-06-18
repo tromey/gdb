@@ -47,20 +47,21 @@ class GdbOutputFile (_GdbFile):
     def write(self, s):
         write(s, stream=STDOUT)
 
-sys.stdout = GdbOutputFile()
-
 class GdbOutputErrorFile (_GdbFile):
     def write(self, s):
         write(s, stream=STDERR)
 
-sys.stderr = GdbOutputErrorFile()
+if not IMPORTED:
+    sys.stdout = GdbOutputFile()
+    sys.stderr = GdbOutputErrorFile()
 
 # Default prompt hook does nothing.
 prompt_hook = None
 
 # Ensure that sys.argv is set to something.
 # We do not use PySys_SetArgvEx because it did not appear until 2.6.6.
-sys.argv = ['']
+if not IMPORTED:
+    sys.argv = ['']
 
 # Initial pretty printers.
 pretty_printers = []

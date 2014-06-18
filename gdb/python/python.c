@@ -34,6 +34,8 @@
 #include "python.h"
 #include "extension-priv.h"
 #include "cli/cli-utils.h"
+#include "main.h"
+#include "ui-file.h"
 #include <ctype.h>
 
 /* Declared constants and enum for python stack printing.  */
@@ -1528,6 +1530,79 @@ user_show_python (char *args, int from_tty)
 
 #ifdef HAVE_PYTHON
 
+static PyObject *
+gdbpy_event_loop (PyObject *unused, PyObject *unused2)
+{
+  start_event_loop ();
+  Py_RETURN_NONE;
+}
+
+static void *
+gdbpy_interp_init (struct interp *self, int top_level)
+{
+  struct ui_file *outfile = ui_file_new ();
+  struct ui_out *out = ui_out_new (&default_ui_out_impl, NULL, 0);
+
+  gdb_stdout = outfile;
+  gdb_stderr = outfile;
+  gdb_stdlog = outfile;
+  gdb_stdtarg = outfile;
+  gdb_stdtargerr = outfile;
+  current_uiout = out;
+
+  return out;
+}
+
+static struct ui_out *
+gdbpy_ui_out (struct interp *self)
+{
+  return interp_data (self);
+}
+
+static void
+gdbpy_command_loop (void *data)
+{
+  start_event_loop ();
+}
+
+static const struct interp_procs gdbpy_interp =
+{
+  gdbpy_interp_init,		    /* init_proc */
+  NULL,				    /* resume_proc */
+  NULL,				    /* suspend_proc */
+  NULL,				    /* exec_proc */
+  NULL,				    /* prompt_proc_p */
+  gdbpy_ui_out,			    /* ui_out_proc */
+  NULL,				    /* set_logging_proc */
+  gdbpy_command_loop		    /* command_loop_proc */
+};
+
+PyMODINIT_FUNC
+#if GCC_VERSION >= 4000
+  __attribute__ ((visibility ("default")))
+#endif
+ init_gdb (void);
+
+PyMODINIT_FUNC
+init_gdb (void)
+{
+  struct captured_main_args args;
+  char *argv[] = { "gdb", "-nx", "-silent", "-i=python", NULL };
+  struct interp *pyint;
+
+  pyint = interp_new ("python", &gdbpy_interp);
+  interp_add (pyint);
+
+  memset (&args, 0, sizeof args);
+  args.argc = ARRAY_SIZE (argv) - 1;
+  args.argv = argv;
+  args.interpreter_p = INTERP_CONSOLE;
+  args.inhibit_main_loop = 1;
+  gdb_main (&args);
+
+  current_uiout = interp_ui_out (pyint);
+}
+
 /* This is installed as a final cleanup and cleans up the
    interpreter.  This lets Python's 'atexit' work.  */
 
@@ -1554,6 +1629,7 @@ finalize_python (void *ignore)
 
   restore_active_ext_lang (previous_active);
 }
+
 #endif
 
 /* Provide a prototype to silence -Wmissing-prototypes.  */
@@ -1568,6 +1644,9 @@ _initialize_python (void)
   size_t progsize, count;
   char *oldloc;
   wchar_t *progname_copy;
+#endif
+#ifdef HAVE_PYTHON
+  int is_import = Py_IsInitialized ();
 #endif
 
   add_com ("python-interactive", class_obscure,
@@ -1642,48 +1721,54 @@ message == an error message without a stack will be printed."),
 
 #ifdef HAVE_PYTHON
 #ifdef WITH_PYTHON_PATH
-  /* Work around problem where python gets confused about where it is,
-     and then can't find its libraries, etc.
-     NOTE: Python assumes the following layout:
-     /foo/bin/python
-     /foo/lib/pythonX.Y/...
-     This must be done before calling Py_Initialize.  */
-  progname = concat (ldirname (python_libdir), SLASH_STRING, "bin",
-		     SLASH_STRING, "python", NULL);
+  if (!is_import)
+    {
+      /* Work around problem where python gets confused about where it is,
+	 and then can't find its libraries, etc.
+	 NOTE: Python assumes the following layout:
+	 /foo/bin/python
+	 /foo/lib/pythonX.Y/...
+	 This must be done before calling Py_Initialize.  */
+      progname = concat (ldirname (python_libdir), SLASH_STRING, "bin",
+			 SLASH_STRING, "python", NULL);
 #ifdef IS_PY3K
-  oldloc = setlocale (LC_ALL, NULL);
-  setlocale (LC_ALL, "");
-  progsize = strlen (progname);
-  if (progsize == (size_t) -1)
-    {
-      fprintf (stderr, "Could not convert python path to string\n");
-      return;
-    }
-  progname_copy = PyMem_Malloc ((progsize + 1) * sizeof (wchar_t));
-  if (!progname_copy)
-    {
-      fprintf (stderr, "out of memory\n");
-      return;
-    }
-  count = mbstowcs (progname_copy, progname, progsize + 1);
-  if (count == (size_t) -1)
-    {
-      fprintf (stderr, "Could not convert python path to string\n");
-      return;
-    }
-  setlocale (LC_ALL, oldloc);
+      oldloc = setlocale (LC_ALL, NULL);
+      setlocale (LC_ALL, "");
+      progsize = strlen (progname);
+      if (progsize == (size_t) -1)
+	{
+	  fprintf (stderr, "Could not convert python path to string\n");
+	  return;
+	}
+      progname_copy = PyMem_Malloc ((progsize + 1) * sizeof (wchar_t));
+      if (!progname_copy)
+	{
+	  fprintf (stderr, "out of memory\n");
+	  return;
+	}
+      count = mbstowcs (progname_copy, progname, progsize + 1);
+      if (count == (size_t) -1)
+	{
+	  fprintf (stderr, "Could not convert python path to string\n");
+	  return;
+	}
+      setlocale (LC_ALL, oldloc);
 
-  /* Note that Py_SetProgramName expects the string it is passed to
-     remain alive for the duration of the program's execution, so
-     it is not freed after this call.  */
-  Py_SetProgramName (progname_copy);
+      /* Note that Py_SetProgramName expects the string it is passed to
+	 remain alive for the duration of the program's execution, so
+	 it is not freed after this call.  */
+      Py_SetProgramName (progname_copy);
 #else
-  Py_SetProgramName (progname);
+      Py_SetProgramName (progname);
 #endif
+    }
 #endif
 
-  Py_Initialize ();
-  PyEval_InitThreads ();
+  if (!is_import)
+    {
+      Py_Initialize ();
+      PyEval_InitThreads ();
+    }
 
 #ifdef IS_PY3K
   gdb_module = PyModule_Create (&GdbModuleDef);
@@ -1709,6 +1794,14 @@ message == an error message without a stack will be printed."),
       || PyModule_AddIntConstant (gdb_module, "STDLOG", 2) < 0)
     goto fail;
 
+  {
+    PyObject *val = is_import ? Py_True : Py_False;
+
+    Py_INCREF (val);
+    if (PyModule_AddObject (gdb_module, "IMPORTED", val) < 0)
+      goto fail;
+  }
+
   gdbpy_gdb_error = PyErr_NewException ("gdb.error", PyExc_RuntimeError, NULL);
   if (gdbpy_gdb_error == NULL
       || gdb_pymodule_addobject (gdb_module, "error", gdbpy_gdb_error) < 0)
@@ -1727,7 +1820,8 @@ message == an error message without a stack will be printed."),
 				 gdbpy_gdberror_exc) < 0)
     goto fail;
 
-  gdbpy_initialize_gdb_readline ();
+  if (!is_import)
+    gdbpy_initialize_gdb_readline ();
 
   if (gdbpy_initialize_auto_load () < 0
       || gdbpy_initialize_values () < 0
@@ -1782,8 +1876,11 @@ message == an error message without a stack will be printed."),
     goto fail;
 
   /* Release the GIL while gdb runs.  */
-  PyThreadState_Swap (NULL);
-  PyEval_ReleaseLock ();
+  if (!is_import)
+    {
+      PyThreadState_Swap (NULL);
+      PyEval_ReleaseLock ();
+    }
 
   make_final_cleanup (finalize_python, NULL);
 
@@ -2001,6 +2098,9 @@ Return the selected inferior object." },
   { "inferiors", gdbpy_inferiors, METH_NOARGS,
     "inferiors () -> (gdb.Inferior, ...).\n\
 Return a tuple containing all inferiors." },
+  { "event_loop", gdbpy_event_loop, METH_NOARGS,
+    "event_loop () -> None\n\
+Start the gdb event loop." },
   {NULL, NULL, 0, NULL}
 };
 
