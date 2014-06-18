@@ -36,6 +36,7 @@
 #include "arch-utils.h"
 #include "filestuff.h"
 #include "target.h"
+#include "osabi.h"
 
 
 
@@ -311,13 +312,14 @@ get_selected_pc_producer_options (void)
    and then compile-args string GDB variable.  */
 
 static void
-get_args (const struct compile_instance *compiler, int *argcp, char ***argvp)
+get_args (const struct compile_instance *compiler, struct gdbarch *gdbarch,
+	  int *argcp, char ***argvp)
 {
   const char *cs_producer_options;
   int argc_compiler;
   char **argv_compiler;
 
-  build_argc_argv (gdbarch_gcc_target_options (target_gdbarch ()),
+  build_argc_argv (gdbarch_gcc_target_options (gdbarch),
 		   argcp, argvp);
 
   cs_producer_options = get_selected_pc_producer_options ();
@@ -388,6 +390,11 @@ compile_to_object (struct command_line *cmd, char *cmd_string,
   char **argv;
   int ok;
   FILE *src;
+  struct gdbarch *gdbarch = get_current_arch ();
+  const char *os_rx;
+  const char *arch_rx;
+  char *triplet_rx;
+  char *error_message;
 
   if (!target_has_execution)
     error (_("The program must be running for the compile command to "\
@@ -429,16 +436,29 @@ compile_to_object (struct command_line *cmd, char *cmd_string,
   else
     error (_("Neither a simple expression, or a multi-line specified."));
 
-  code = current_language->la_compute_program (compiler, code,
-					       get_current_arch (),
+  code = current_language->la_compute_program (compiler, code, gdbarch,
 					       expr_block, expr_pc);
   make_cleanup (xfree, code);
   if (compile_debug)
     fprintf_unfiltered (gdb_stdout, "debug output:\n\n%s", code);
 
+  os_rx = osabi_triplet_regexp (gdbarch_osabi (gdbarch));
+  arch_rx = gdbarch_gnu_triplet_regexp (gdbarch);
+  triplet_rx = concat (arch_rx, "-[^-]*-", os_rx, (char *) NULL);
+  make_cleanup (xfree, triplet_rx);
+
   /* Set compiler command-line arguments.  */
-  get_args (compiler, &argc, &argv);
-  compiler->fe->ops->set_arguments (compiler->fe, argc, argv);
+  get_args (compiler, gdbarch, &argc, &argv);
+  make_cleanup_freeargv (argv);
+
+  error_message = compiler->fe->ops->set_arguments (compiler->fe, triplet_rx,
+						    argc, argv);
+  if (error_message != NULL)
+    {
+      make_cleanup (xfree, error_message);
+      error ("%s", error_message);
+    }
+
   if (compile_debug)
     {
       int argi;
@@ -448,7 +468,6 @@ compile_to_object (struct command_line *cmd, char *cmd_string,
 	fprintf_unfiltered (gdb_stdout, "Compiler option %d: <%s>\n",
 			    argi, argv[argi]);
     }
-  freeargv (argv);
 
   get_new_file_names (&source_file, &object_file);
   inner_cleanup = make_cleanup (xfree, source_file);

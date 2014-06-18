@@ -65,12 +65,19 @@ struct gcc_base_vtable
   unsigned int version;
 
   /* Set the compiler's command-line options for the next compilation.
+     TRIPLET_REGEXP is a regular expression that is used to match the
+     configury triplet prefix to the compiler.
      The arguments are copied by GCC.  ARGV need not be
      NULL-terminated.  The arguments must be set separately for each
      compilation; that is, after a compile is requested, the
-     previously-set arguments cannot be reused.  */
+     previously-set arguments cannot be reused.
 
-  void (*set_arguments) (struct gcc_base_context *self, int argc, char **argv);
+     This returns NULL on success.  On failure, returns a malloc()d
+     error message.  The caller is responsible for freeing it.  */
+
+  char *(*set_arguments) (struct gcc_base_context *self,
+			  const char *triplet_regexp,
+			  int argc, char **argv);
 
   /* Set the file name of the program to compile.  The string is
      copied by the method implementation, but the caller must
