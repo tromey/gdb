@@ -264,15 +264,24 @@ static const struct bfd_link_callbacks link_callbacks =
   NULL, /* override_segment_assignment */
 };
 
+extern struct bfd_link_hash_table *_bfd_generic_link_hash_table_create (bfd *);
+extern void _bfd_generic_link_hash_table_free (bfd *);
+
+struct link_hash_table_cleanup_data
+{
+  bfd *abfd;
+  bfd *link_next;
+};
+
 /* Cleanup callback for struct bfd_link_info.  */
 
 static void
-link_hash_table_free (void *data)
+link_hash_table_free (void *d)
 {
-  struct bfd_link_info *link_info = data;
-  bfd *abfd = link_info->input_bfds;
+  struct link_hash_table_cleanup_data *data = d;
 
-  bfd_link_hash_table_free (abfd, link_info->hash);
+  _bfd_generic_link_hash_table_free (data->abfd);
+  data->abfd->link.next = data->link_next;
 }
 
 /* Relocate and store into inferior memory each section SECT of ABFD.  */
@@ -286,6 +295,7 @@ copy_sections (bfd *abfd, asection *sect, void *data)
   struct bfd_link_info link_info;
   struct bfd_link_order link_order;
   CORE_ADDR inferior_addr;
+  struct link_hash_table_cleanup_data cleanup_data;
 
   if ((bfd_get_section_flags (abfd, sect) & (SEC_ALLOC | SEC_LOAD))
       != (SEC_ALLOC | SEC_LOAD))
@@ -299,10 +309,17 @@ copy_sections (bfd *abfd, asection *sect, void *data)
   memset (&link_info, 0, sizeof (link_info));
   link_info.output_bfd = abfd;
   link_info.input_bfds = abfd;
-  link_info.input_bfds_tail = &abfd->link_next;
-  link_info.hash = bfd_link_hash_table_create (abfd);
-  cleanups = make_cleanup (link_hash_table_free, &link_info);
+  link_info.input_bfds_tail = &abfd->link.next;
+
+  cleanup_data.abfd = abfd;
+  cleanup_data.link_next = abfd->link.next;
+
+  abfd->link.next = NULL;
+  link_info.hash = _bfd_generic_link_hash_table_create (abfd);
+
+  cleanups = make_cleanup (link_hash_table_free, &cleanup_data);
   link_info.callbacks = &link_callbacks;
+
   memset (&link_order, 0, sizeof (link_order));
   link_order.next = NULL;
   link_order.type = bfd_indirect_link_order;
@@ -316,6 +333,7 @@ copy_sections (bfd *abfd, asection *sect, void *data)
   sect_data_got = bfd_get_relocated_section_contents (abfd, &link_info,
 						      &link_order, sect_data,
 						      FALSE, symbol_table);
+
   if (sect_data_got == NULL)
     error (_("Cannot map compiled module \"%s\" section \"%s\": %s"),
 	   bfd_get_filename (abfd), bfd_get_section_name (abfd, sect),
