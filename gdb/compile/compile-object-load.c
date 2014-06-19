@@ -264,9 +264,6 @@ static const struct bfd_link_callbacks link_callbacks =
   NULL, /* override_segment_assignment */
 };
 
-extern struct bfd_link_hash_table *_bfd_generic_link_hash_table_create (bfd *);
-extern void _bfd_generic_link_hash_table_free (bfd *);
-
 struct link_hash_table_cleanup_data
 {
   bfd *abfd;
@@ -280,7 +277,8 @@ link_hash_table_free (void *d)
 {
   struct link_hash_table_cleanup_data *data = d;
 
-  _bfd_generic_link_hash_table_free (data->abfd);
+  if (data->abfd->is_linker_output)
+    (*data->abfd->link.hash->hash_table_free) (data->abfd);
   data->abfd->link.next = data->link_next;
 }
 
@@ -315,7 +313,7 @@ copy_sections (bfd *abfd, asection *sect, void *data)
   cleanup_data.link_next = abfd->link.next;
 
   abfd->link.next = NULL;
-  link_info.hash = _bfd_generic_link_hash_table_create (abfd);
+  link_info.hash = bfd_link_hash_table_create (abfd);
 
   cleanups = make_cleanup (link_hash_table_free, &cleanup_data);
   link_info.callbacks = &link_callbacks;
