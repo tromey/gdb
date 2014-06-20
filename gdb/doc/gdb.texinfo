@@ -16311,7 +16311,7 @@ address, or even return prematurely from a function.
 * Returning::                   Returning from a function
 * Calling::                     Calling your program's functions
 * Patching::                    Patching your program
-* Compiling and Injecting Code:: Compiling and injecting code in GDB
+* Compiling and Injecting Code:: Compiling and injecting code in @value{GDBN}
 @end menu
 
 @node Assignment
@@ -16702,28 +16702,31 @@ as well as reading.
 @end table
 
 @node Compiling and Injecting Code
-@section Compiling and injecting code in GDB
+@section Compiling and injecting code in @value{GDBN}
 @cindex injecting code
 @cindex writing into executables
 @cindex compiling code
 
 @value{GDBN} supports on-demand compilation and code injection into
-programs running under GDB.  A suitable compiler must be installed for
-this functionality to be enabled.  This functionality is implemented
-with the following commands.
+programs running under @value{GDBN}.  A suitable compiler must be
+installed for this functionality to be enabled.  This functionality is
+implemented with the following commands.
 
 @table @code
 @kindex compile code
 @item compile code @var{source}
 @itemx compile code -@var{raw} @var{--} @var{source}
-Compile @var{source} using the language set in @value{GDBN}
-(@pxref{Languages}), as the compilation language type.  If compilation
-and injection is not supported with the current language specified in
+Compile @var{source} with the compiler language set as the current
+language in @value{GDBN} (@pxref{Languages}).  If compilation and
+injection is not supported with the current language specified in
 @value{GDBN}, or the compiler does not support this feature, an error
 message will be printed and the command will exit.  If @var{source}
-compiles and links successfully, @value{GDBN} will load the object-code
-emitted, and execute it within the context of the currently selected
-inferior.
+compiles and links successfully, @value{GDBN} will load the
+object-code emitted, and execute it within the context of the
+currently selected inferior.  It is important to note that the
+compiled code is executed immediately.  After execution, the compiled
+code is removed from @value{GDBN} and any new types or variables you
+have defined will be deleted.
 
 The command allows you to specify source code in two ways.  The simplest
 method is to provide a single line of code to the command.  E.g.:
@@ -16757,9 +16760,9 @@ compile code
 Specifying @samp{-@var{raw}}, prohibits @value{GDBN} from wrapping the
 provided @var{source} in a callable scope.  In this case, you must
 specify the entry point of the code by defining a function named
-@code{_gdb_expr_}.  @samp{-@var{raw}} code does not automatically access
-variables of the inferior, for their import you must use
-the @samp{#pragma} line first:
+@code{_gdb_expr_}.  The @samp{-@var{raw}} code does not automatically
+access variables of the inferior, for their import you must use the
+@samp{#pragma} line first:
 
 @smallexample
 #pragma GCC user_expression
@@ -16772,45 +16775,25 @@ should be taken when using it.
 @kindex compile file
 @item compile file @var{filename}
 @itemx compile file -@var{raw} @var{filename}
-Load source code from the file specified by @var{filename}, and compile
-it using the language set in @value{GDBN} (@pxref{Languages}), as the
-compilation language type.  If compilation and injection is not
-supported with the current language specified in @value{GDBN}, or the
-compiler does not support this feature, an error message will be printed
-and the command will exit.  If the source-code contained within
-@var{filename} compiles and links successfully, @value{GDBN} will load
-the object-code emitted, and execute it within the context of the
-currently selected inferior.
+Like @code{compile code}, but take the source code from @var{filename}.
 
 @smallexample
 compile file /home/user/example.c
 @end smallexample
 
-Specifying @samp{-@var{raw}}, prohibits @value{GDBN} from wrapping the
-provided @var{source} in a callable scope.  In this case, you must
-specify the entry point of the code by defining a function named
-@code{_gdb_expr_}.  @samp{-@var{raw}} code does not automatically access
-variables of the inferior, for their import you must use
-the @samp{#pragma} line first:
-
-@smallexample
-#pragma GCC user_expression
-@end smallexample
-
-@samp{#include} lines are better to be placed before the @samp{#pragma}
-line.  The use of @var{raw} is considered to be expert usage, and care
-should be taken when using it.
+If the filename/path contains whitespace it must be enclosed in
+quotes.
 @end table
 
-There are a few caveats to keep in mind when using the compile command.
-As the caveats are different per language, the table below highlights
-specific issues on a per language basis.
+There are a few caveats to keep in mind when using the @code{compile}
+command.  As the caveats are different per language, the table below
+highlights specific issues on a per language basis.
 
-@table @code
+@table @asis
 @item C code examples and caveats
 When the language in @value{GDBN} is set to @samp{C}, the compiler will
 attempt to compile the source code with a @samp{C} compiler.  The source
-code provided to the @samp{compile} command will have much the same
+code provided to the @code{compile} command will have much the same
 access to variables and types as it normally would if it were part of
 the program currently being debugged in @value{GDBN}.
 
@@ -16842,39 +16825,39 @@ int main(void)
 
 For the purposes of the examples in this section, the program above has
 been compiled, loaded into @value{GDBN}, stopped at the function
-@samp{main}, and @value{GDBN} is awaiting input from the user.
+@code{main}, and @value{GDBN} is awaiting input from the user.
 
 To access variables and types for any program in @value{GDBN}, the
 program must be compiled and packaged with debug information.  The
-@samp{compile} command is not an exception to this rule.  Without debug
-information, you can still use the @samp{compile} command, but you will
+@code{compile} command is not an exception to this rule.  Without debug
+information, you can still use the @code{compile} command, but you will
 be very limited in what variables and types you can access.
 
 So with that in mind, the example above has been compiled with debug
-information enabled.  The @samp{compile} command will have access to all
-variables and types (except those that may have been optimized out).
-Currently, as @value{GDBN} has stopped the program in the @samp{main}
-function, the @samp{compile} command would have access to the variable
-@var{k}.  You could invoke the @samp{compile} command and type some
-source code to set the value of @var{k}.  You can also read it, or do
-anything with that variable you would normally do in @samp{C}.  Be aware
-that changes to variables you make in the @samp{compile} command are
-persistent, so in the following example:
+information enabled.  The @code{compile} command will have access to
+all variables and types (except those that may have been optimized
+out).  Currently, as @value{GDBN} has stopped the program in the
+@code{main} function, the @code{compile} command would have access to
+the variable @code{k}.  You could invoke the @code{compile} command
+and type some source code to set the value of @code{k}.  You can also
+read it, or do anything with that variable you would normally do in
+@code{C}.  Be aware that changes to inferior variables in the
+@code{compile} command are persistent.  In the following example:
 
 @smallexample
 compile code k = 3;
 @end smallexample
 
-The variable @var{k} is now 3.  It will remain that value until
+The variable @code{k} is now 3.  It will remain that value until
 something else in the example program changes it, or another
-@samp{compile} command changes it.
+@code{compile} command changes it.
 
 Normal scope and access rules apply to source code compiled and injected
-by the @samp{compile} command.  In the example, the variables @var{j}
-and @var{k} are not accessible; subsequent execution will bring these
+by the @code{compile} command.  In the example, the variables @code{j}
+and @code{k} are not accessible; subsequent execution will bring these
 variables into scope, and later, code written and compiled with the
-@samp{compile} command will be able to access them.  At this point the
-program is stopped in the @samp{main} function so the following example:
+@code{compile} command will be able to access them.  At this point the
+program is stopped in the @code{main} function so the following example:
 
 @smallexample
 compile code j = 3;
@@ -16883,9 +16866,9 @@ compile code j = 3;
 would result in a compilation error, and @value{GDBN} would print that
 error to the console.
 
-You can create variables and types with the @samp{compile} command as
+You can create variables and types with the @code{compile} command as
 part of your source code.  Variables and types that are created as part
-of the @samp{compile} command are not persistent, and only exist as
+of the @code{compile} command are not persistent, and only exist as
 long as the injected object code exists.  This example is valid:
 
 @smallexample
@@ -16899,22 +16882,22 @@ command has completed:
 compile code printf ("ff is %d\n'', ff);
 @end smallexample
 
-A compiler error would be raised as the variable @var{ff} no longer
-exists.  Object code generated and injected by the @samp{compile}
+A compiler error would be raised as the variable @code{ff} no longer
+exists.  Object code generated and injected by the @code{compile}
 command is removed on completion of the command.  Caution is advised
 when assigning variables belonging to the program with variables created
-in the @samp{compile} command.  This example is valid:
+in the @code{compile} command.  This example is valid:
 
 @smallexample
 compile code int ff = 5; k = ff;
 @end smallexample
 
-The @var{k} variable is assigned to the value of @var{ff}.  The variable
-@var{k} does not require the existence of @var{ff} to maintain the value
+The @code{k} variable is assigned to the value of @code{ff}.  The variable
+@code{k} does not require the existence of @code{ff} to maintain the value
 it has been assigned.  Pointers and other types of references require
 particular care in assignment.  If the source code compiled with the
-@samp{compile} command changed the address of a pointer in the example
-program, perhaps to a variable created in the @samp{compile} command,
+@code{compile} command changed the address of a pointer in the example
+program, perhaps to a variable created in the @code{compile} command,
 that pointer would point to an invalid location when the command exits.
 The following example would likely cause issues with your debugged
 program:
@@ -16923,23 +16906,24 @@ program:
 compile code int ff = 5; p = &ff;
 @end smallexample
 
-In this example, @var{p} would point to @var{ff} when the @samp{compile}
-command is executing the source code provided to it.  However, as
-variables in the (example) program persist with their assigned values, the
-variable @samp{p} would point to an invalid location when the command
-exists.  A general rule should be followed in that you should either
-assign NULL to any assigned pointers, or restore a valid location to the
-pointer before the command exits.
+In this example, @code{p} would point to @code{ff} when the
+@code{compile} command is executing the source code provided to it.
+However, as variables in the (example) program persist with their
+assigned values, the variable @code{p} would point to an invalid
+location when the command exists.  A general rule should be followed
+in that you should either assign @code{NULL} to any assigned pointers,
+or restore a valid location to the pointer before the command exits.
 
 Similar caution must be exercised with any types defined in
-@samp{compile} command.  Types defined in the @samp{compile} are also
+@code{compile} command.  Types defined in the @code{compile} are also
 deleted when the command exits.  Therefore, if you cast a variable to a
-type defined in the @samp{compile} command, care must be taken to ensure
+type defined in the @code{compile} command, care must be taken to ensure
 that any future need to resolve the type can be achieved.
 
 Variables that have been optimized away by the compiler are not
-accessible to the @samp{compile} command.  Access to those variables
-will generate a compiler error which @value{GDBN} will print to the console.
+accessible to the @code{compile} command.  Access to those variables
+will generate a compiler error which @value{GDBN} will print to the
+console.
 @end table
 
 @node GDB Files
