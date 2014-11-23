@@ -1,3 +1,10 @@
+2014-10-07  Tom Tromey  <tromey@redhat.com>
+
+	* ui-file.h (ui_file_write_for_put): Declare.
+	* ui-file.c (ui_file_write_for_put): New function.
+	* mi/mi-out.c (do_write): Remove.
+	(mi_out_put): Use ui_file_write_for_put.
+
 2014-11-23  Patrick Palka  <patrick@parcs.ath.cx>
 
 	* MAINTAINERS (Write After Approval): Add myself.
