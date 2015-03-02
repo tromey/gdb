@@ -1515,7 +1515,7 @@ JIT compiled code.  The file is loaded from " JIT_READER_DIR ",\n\
 relocated relative to the GDB executable if required."));
       add_com ("jit-reader-unload", no_class, jit_reader_unload_command, _("\
 Unload the currently loaded JIT debug info reader.\n\
-Usage: jit-reader-unload FILE\n\n\
+Usage: jit-reader-unload\n\n\
 Do \"help jit-reader-load\" for info on loading debug info readers."));
     }
 }
