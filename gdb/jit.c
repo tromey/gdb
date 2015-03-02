@@ -224,6 +224,8 @@ jit_reader_load_command (char *args, int from_tty)
 
   loaded_jit_reader = jit_reader_load (so_name);
   do_cleanups (prev_cleanup);
+
+  reinit_frame_cache ();
 }
 
 /* Provides the jit-reader-unload command.  */
@@ -239,6 +241,8 @@ jit_reader_unload_command (char *args, int from_tty)
   gdb_dlclose (loaded_jit_reader->handle);
   xfree (loaded_jit_reader);
   loaded_jit_reader = NULL;
+
+  reinit_frame_cache ();
 }
 
 /* Per-program space structure recording which objfile has the JIT
