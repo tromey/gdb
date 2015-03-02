@@ -39,6 +39,7 @@
 #include "gdb-dlfcn.h"
 #include <sys/stat.h>
 #include "gdb_bfd.h"
+#include "readline/tilde.h"
 
 static const char *jit_reader_dir = NULL;
 
@@ -207,15 +208,19 @@ jit_reader_load_command (char *args, int from_tty)
 
   if (args == NULL)
     error (_("No reader name provided."));
+  args = tilde_expand (args);
+  prev_cleanup = make_cleanup (xfree, args);
 
   if (loaded_jit_reader != NULL)
     error (_("JIT reader already loaded.  Run jit-reader-unload first."));
 
   if (IS_ABSOLUTE_PATH (args))
-    so_name = xstrdup (args);
+    so_name = args;
   else
-    so_name = xstrprintf ("%s%s%s", jit_reader_dir, SLASH_STRING, args);
-  prev_cleanup = make_cleanup (xfree, so_name);
+    {
+      so_name = xstrprintf ("%s%s%s", jit_reader_dir, SLASH_STRING, args);
+      make_cleanup (xfree, so_name);
+    }
 
   loaded_jit_reader = jit_reader_load (so_name);
   do_cleanups (prev_cleanup);
