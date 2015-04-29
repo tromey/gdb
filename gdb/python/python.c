@@ -35,6 +35,7 @@
 #include "cli/cli-utils.h"
 #include <ctype.h>
 #include "location.h"
+#include "py-event.h"
 
 /* Declared constants and enum for python stack printing.  */
 static const char python_excp_none[] = "none";
@@ -1037,6 +1038,10 @@ gdbpy_before_prompt_hook (const struct extension_language_defn *extlang,
     return EXT_LANG_RC_NOP;
 
   cleanup = ensure_python_env (get_current_arch (), current_language);
+
+  if (!evregpy_no_listeners_p (gdb_py_events.before_prompt)
+      && evpy_emit_event (NULL, gdb_py_events.before_prompt) < 0)
+    goto fail;
 
   if (gdb_python_module
       && PyObject_HasAttrString (gdb_python_module, "prompt_hook"))
