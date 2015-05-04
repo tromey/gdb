@@ -387,10 +387,10 @@ get_set_value (char *args, int from_tty,
       set_doc_string  = get_doc_string (obj, set_doc_cst);
     }
 
-#if 0
   /* See https://sourceware.org/bugzilla/show_bug.cgi?id=14513.
      There's no reason to print anything here.  */
   make_cleanup (xfree, set_doc_string);
+#if 0
   fprintf_filtered (gdb_stdout, "%s\n", set_doc_string);
 #endif
 
