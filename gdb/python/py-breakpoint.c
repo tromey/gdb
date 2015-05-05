@@ -31,6 +31,7 @@
 #include "arch-utils.h"
 #include "language.h"
 #include "location.h"
+#include "py-event.h"
 
 /* Number of live breakpoints.  */
 static int bppy_live;
@@ -896,6 +897,16 @@ gdbpy_breakpoint_created (struct breakpoint *bp)
       gdbpy_print_stack ();
     }
 
+  if (!evregpy_no_listeners_p (gdb_py_events.breakpoint_created))
+    {
+      Py_INCREF (newbp);
+      /* Maybe should emit a real event here, but the breakpoint does
+	 nicely.  */
+      if (evpy_emit_event ((PyObject *) newbp,
+			   gdb_py_events.breakpoint_created) < 0)
+	gdbpy_print_stack ();
+    }
+
   PyGILState_Release (state);
 }
 
@@ -916,6 +927,18 @@ gdbpy_breakpoint_deleted (struct breakpoint *b)
       bp_obj = bp->py_bp_object;
       if (bp_obj)
 	{
+	  if (!evregpy_no_listeners_p (gdb_py_events.breakpoint_deleted))
+	    {
+	      PyObject *bp_obj_alias = (PyObject *) bp_obj;
+	      /* Absurd but necessary.  */
+	      Py_INCREF (bp_obj_alias);
+	      /* Maybe should emit a real event here, but the
+		 breakpoint does nicely.  */
+	      if (evpy_emit_event (bp_obj_alias,
+				   gdb_py_events.breakpoint_deleted) < 0)
+		gdbpy_print_stack ();
+	    }
+
 	  bp_obj->bp = NULL;
 	  --bppy_live;
 	  Py_DECREF (bp_obj);
