@@ -481,6 +481,24 @@ such as those used by readline for command input, and annotation
 related prompts are prohibited from being changed.
 @end defun
 
+@defun gdb.find_source_hook (source_file)
+@anchor{find_source_hook}
+
+If @var{find_source_hook} is callable, @value{GDBN} will call the method
+assigned to this operation when it cannot locate a requested source file.
+
+The parameter @code{source_file} contains the path to the source file
+that @value{GDBN} cannot locate, as provided by the debug information.
+This method must return a Python string or @code{None}.  If a string is
+returned, it must be an absolute path to the source file.  If @code{None}
+is returned, @value{GDBN} will proceed as usual without source. The path
+returned must have the same basename as @code{source_file} or GDB will not
+be able to match debug information to source.
+
+This hook may be used to fetch source on-demand from a version control system
+or other location.
+@end defun
+
 @node Exception Handling
 @subsubsection Exception Handling
 @cindex python exceptions

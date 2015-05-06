@@ -309,4 +309,6 @@ extern void get_matching_xmethod_workers
   (struct type *type, const char *method_name,
    std::vector<xmethod_worker_up> *workers);
 
+extern char *ext_lang_find_source (const char* filename);
+
 #endif /* EXTENSION_H */

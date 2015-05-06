@@ -242,6 +242,18 @@ struct extension_language_ops
   enum ext_lang_rc (*before_prompt) (const struct extension_language_defn *,
 				     const char *current_gdb_prompt);
 
+  /* Called when gdb cannot locate a source file, giving extension languages an
+     opportunity to locate the file and provide a path.
+     If successful the found path is stored in *FOUND_FILENAME, and the caller
+     must free it.
+     Returns EXT_LANG_RC_OK if a path was found, EXT_LANG_RC_NOP if no path
+     was found, and EXT_LANG_RC_ERROR if an error was encountered.
+     Extension languages are called in order, and once a path is returned
+     or an error occurs no further languages are called.  */
+  enum ext_lang_rc (*find_source) (const struct extension_language_defn *,
+				   const char *filename,
+				   char **found_filename);
+
   /* Return a vector of matching xmethod workers defined in this
      extension language.  The workers service methods with name
      METHOD_NAME on objects of type OBJ_TYPE.  The vector is returned

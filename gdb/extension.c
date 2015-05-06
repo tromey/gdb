@@ -931,6 +931,43 @@ ext_lang_before_prompt (const char *current_gdb_prompt)
     }
 }
 
+/* Iterate over the extension languages giving them a chance to
+   locate the source file in FILENAME.  The first one to return
+   a result wins, and no further languages are tried.
+   If there was an error, or if no extension succeeds, then NULL is returned.
+*/
+
+char *
+ext_lang_find_source (const char* filename)
+{
+  int i;
+  const struct extension_language_defn *extlang;
+
+  ALL_ENABLED_EXTENSION_LANGUAGES (i, extlang)
+    {
+      char *result = NULL;
+      enum ext_lang_rc rc;
+
+      if (extlang->ops->find_source == NULL)
+	continue;
+      rc = extlang->ops->find_source (extlang, filename, &result);
+      switch (rc)
+	{
+	case EXT_LANG_RC_OK:
+	  gdb_assert (result != NULL);
+	  return result;
+	case EXT_LANG_RC_ERROR:
+	  return NULL;
+	case EXT_LANG_RC_NOP:
+	  break;
+	default:
+	  gdb_assert_not_reached ("bad return from find_source");
+	}
+    }
+
+  return NULL;
+}
+
 void
 _initialize_extension (void)
 {
