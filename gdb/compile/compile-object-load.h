@@ -37,6 +37,14 @@ struct compile_module
 
   /* User data for SCOPE in use.  */
   void *scope_data;
+
+  /* Inferior parameter out value address or NULL if the inferior function does not
+     have one.  */
+  CORE_ADDR out_value_addr;
+
+  /* Inferior parameter out value type or NULL if the inferior function does not
+     have one.  */
+  struct type *out_value_type;
 };
 
 extern struct compile_module *compile_object_load
