@@ -17,6 +17,8 @@
 #ifndef GDB_COMPILE_OBJECT_LOAD_H
 #define GDB_COMPILE_OBJECT_LOAD_H
 
+struct munmap_list;
+
 struct compile_module
 {
   /* objfile for the compiled module.  */
@@ -45,10 +47,14 @@ struct compile_module
   /* Inferior parameter out value type or NULL if the inferior function does not
      have one.  */
   struct type *out_value_type;
+
+  /* Track inferior memory reserved by inferior mmap.  */
+  struct munmap_list *munmap_list_head;
 };
 
 extern struct compile_module *compile_object_load
   (const char *object_file, const char *source_file,
    enum compile_i_scope_types scope, void *scope_data);
+extern void munmap_list_free (struct munmap_list *head);
 
 #endif /* GDB_COMPILE_OBJECT_LOAD_H */
