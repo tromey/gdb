@@ -947,6 +947,36 @@ gdbpy_breakpoint_deleted (struct breakpoint *b)
   PyGILState_Release (state);
 }
 
+/* Callback that is used when a breakpoint is modified.  */
+static void
+gdbpy_breakpoint_modified (struct breakpoint *b)
+{
+  int num = b->number;
+  PyGILState_STATE state;
+  struct breakpoint *bp = NULL;
+  gdbpy_breakpoint_object *bp_obj;
+
+  state = PyGILState_Ensure ();
+  bp = get_breakpoint (num);
+  if (bp)
+    {
+      PyObject *bp_obj = (PyObject *) bp->py_bp_object;
+      if (bp_obj)
+	{
+	  if (!evregpy_no_listeners_p (gdb_py_events.breakpoint_modified))
+	    {
+	      Py_INCREF (bp_obj);
+	      /* Maybe should emit a real event here, but the
+		 breakpoint does nicely.  */
+	      if (evpy_emit_event (bp_obj,
+				   gdb_py_events.breakpoint_modified) < 0)
+		gdbpy_print_stack ();
+	    }
+	}
+    }
+  PyGILState_Release (state);
+}
+
 
 
 /* Initialize the Python breakpoint code.  */
@@ -965,6 +995,7 @@ gdbpy_initialize_breakpoints (void)
 
   observer_attach_breakpoint_created (gdbpy_breakpoint_created);
   observer_attach_breakpoint_deleted (gdbpy_breakpoint_deleted);
+  observer_attach_breakpoint_deleted (gdbpy_breakpoint_modified);
 
   /* Add breakpoint types constants.  */
   for (i = 0; pybp_codes[i].name; ++i)
