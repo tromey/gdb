@@ -717,6 +717,32 @@ gdbpy_solib_name (PyObject *self, PyObject *args)
   return str_obj;
 }
 
+static PyObject *
+gdbpy_text_address_claimed (PyObject *self, PyObject *args)
+{
+  gdb_py_ulongest pc;
+  struct objfile *objfile;
+  struct obj_section *osect;
+
+  if (!PyArg_ParseTuple (args, GDB_PY_LLU_ARG, &pc))
+    return NULL;
+
+  ALL_OBJSECTIONS (objfile, osect)
+  {
+    /* Only process each object file once, even if there's a separate
+       debug file.  */
+    if (objfile->separate_debug_objfile_backlink)
+      continue;
+
+    if (obj_section_addr (osect) <= pc && pc < obj_section_endaddr (osect))
+      {
+	Py_RETURN_TRUE;
+      }
+  }
+
+  Py_RETURN_FALSE;
+}
+
 /* A Python function which is a wrapper for decode_line_1.  */
 
 static PyObject *
@@ -2043,6 +2069,10 @@ as its build id." },
   { "solib_name", gdbpy_solib_name, METH_VARARGS,
     "solib_name (Long) -> String.\n\
 Return the name of the shared library holding a given address, or None." },
+
+  {"text_address_claimed", gdbpy_text_address_claimed, METH_VARARGS,
+   "text_address_claimed (Long) -> Boolean\n" },
+
   { "decode_line", gdbpy_decode_line, METH_VARARGS,
     "decode_line (String) -> Tuple.  Decode a string argument the way\n\
 that 'break' or 'edit' does.  Return a tuple containing two elements.\n\
