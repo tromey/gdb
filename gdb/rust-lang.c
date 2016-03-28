@@ -76,6 +76,39 @@ rust_printchar (int c, struct type *type, struct ui_file *stream)
   fputs_filtered ("'", stream);
 }
 
+/* la_printstr implementation for Rust.  */
+
+static void
+rust_printstr (struct ui_file *stream, struct type *type,
+	       const gdb_byte *string, unsigned int length,
+	       const char *user_encoding, int force_ellipses,
+	       const struct value_print_options *options)
+{
+  /* Rust always uses UTF-8, but let the caller override this if need
+     be.  */
+  const char *encoding = user_encoding;
+  if (user_encoding == NULL || !*user_encoding)
+    {
+      /* In Rust strings, characters are "u8".  */
+      if (TYPE_CODE (type) == TYPE_CODE_INT
+	  && TYPE_UNSIGNED (type)
+	  && TYPE_LENGTH (type) == 1)
+	encoding = "UTF-8";
+      else
+	{
+	  /* This is probably some C string, so let's let C deal with
+	     it.  */
+	  c_printstr (stream, type, string, length, user_encoding,
+		      force_ellipses, options);
+	  return;
+	}
+    }
+
+  /* FIXME this is not ideal as it doesn't use our character printer.  */
+  generic_printstr (stream, type, string, length, encoding, force_ellipses,
+		    '"', 1, options);
+}
+
 
 
 static const struct generic_val_print_decorations rust_decorations =
@@ -190,7 +223,7 @@ static const struct language_defn rust_language_defn =
   c_error,
   null_post_parser,
   rust_printchar,		/* Print a character constant */
-  c_printstr,			/* Function to print string constant */
+  rust_printstr,		/* Function to print string constant */
   rust_emitchar,		/* Print a single char */
   c_print_type,			/* Print a type using appropriate syntax */
   c_print_typedef,		/* Print a typedef using appropriate syntax */
