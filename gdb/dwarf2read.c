@@ -14965,6 +14965,7 @@ read_subrange_type (struct die_info *die, struct dwarf2_cu *cu)
     case language_d:
     case language_java:
     case language_objc:
+    case language_rust:
       low.data.const_val = 0;
       low_default_is_valid = (cu->header.version >= 4);
       break;
@@ -17059,6 +17060,10 @@ set_cu_language (unsigned int lang, struct dwarf2_cu *cu)
     case DW_LANG_Cobol85:
     default:
       cu->language = language_minimal;
+      break;
+    case DW_LANG_Rust:
+    case DW_LANG_Rust_old:
+      cu->language = language_rust;
       break;
     }
   cu->language_defn = language_def (cu->language);

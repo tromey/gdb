@@ -2874,6 +2874,7 @@ init_filename_language_table (void)
       add_filename_language (".a", language_ada);
       add_filename_language (".ada", language_ada);
       add_filename_language (".dg", language_ada);
+      add_filename_language (".rs", language_rust);
     }
 }
 
