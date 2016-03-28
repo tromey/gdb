@@ -19,9 +19,52 @@
 
 #include "defs.h"
 #include "c-lang.h"
+#include "valprint.h"
 #include "varobj.h"
 
 extern initialize_file_ftype _initialize_rust_language;
+
+static const struct generic_val_print_decorations rust_decorations =
+{
+  /* Complex isn't used in Rust, but we provide C-ish values just in
+     case.  */
+  "",
+  " + ",
+  " * I",
+  "true",
+  "false",
+  "void"
+};
+
+/* la_val_print implementation for Rust.  */
+
+static void
+rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
+		CORE_ADDR address, struct ui_file *stream, int recurse,
+		const struct value *val,
+		const struct value_print_options *options)
+{
+  type = check_typedef (type);
+  switch (TYPE_CODE (type))
+    {
+    case TYPE_CODE_ARRAY:
+    case TYPE_CODE_METHODPTR:
+    case TYPE_CODE_PTR:
+    case TYPE_CODE_UNION:
+    case TYPE_CODE_STRUCT:
+    case TYPE_CODE_MEMBERPTR:
+      c_val_print (type, valaddr, embedded_offset, address, stream,
+		   recurse, val, options);
+      break;
+
+    default:
+      /* Nothing special yet.  */
+      generic_val_print (type, valaddr, embedded_offset, address, stream,
+			 recurse, val, options, &rust_decorations);
+    }
+}
+
+
 
 static const struct language_defn rust_language_defn =
 {
@@ -41,7 +84,7 @@ static const struct language_defn rust_language_defn =
   c_emit_char,			/* Print a single char */
   c_print_type,			/* Print a type using appropriate syntax */
   c_print_typedef,		/* Print a typedef using appropriate syntax */
-  c_val_print,			/* Print a value using appropriate syntax */
+  rust_val_print,		/* Print a value using appropriate syntax */
   c_value_print,		/* Print a top-level value */
   default_read_var_value,	/* la_read_var_value */
   NULL,				/* Language specific skip_trampoline */
