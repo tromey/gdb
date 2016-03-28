@@ -23,6 +23,7 @@
 
 #include "c-lang.h"
 #include "charset.h"
+#include "cp-support.h"
 #include "valprint.h"
 #include "varobj.h"
 
@@ -143,7 +144,7 @@ static const struct language_defn rust_language_defn =
   NULL,				/* name_of_this */
   basic_lookup_symbol_nonlocal,	/* lookup_symbol_nonlocal */
   basic_lookup_transparent_type,/* lookup_transparent_type */
-  NULL,				/* Language specific symbol demangler */
+  gdb_demangle,			/* Language specific symbol demangler */
   NULL,				/* Language specific
 				   class_name_from_physname */
   c_op_print_tab,		/* expression operators for printing */
