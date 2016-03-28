@@ -18,11 +18,63 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "defs.h"
+
+#include <ctype.h>
+
 #include "c-lang.h"
+#include "charset.h"
 #include "valprint.h"
 #include "varobj.h"
 
 extern initialize_file_ftype _initialize_rust_language;
+
+/* Return true if TYPE is a Rust character type.  */
+
+static int
+rust_chartype_p (struct type *type)
+{
+  return (TYPE_CODE (type) == TYPE_CODE_CHAR
+	  && TYPE_LENGTH (type) == 4
+	  && TYPE_UNSIGNED (type));
+}
+
+/* la_emitchar implementation for Rust.  */
+
+static void
+rust_emitchar (int c, struct type *type, struct ui_file *stream, int quoter)
+{
+  if (!rust_chartype_p (type))
+    generic_emit_char (c, type, stream, quoter,
+		       target_charset (get_type_arch (type)));
+  else if (c == '\\' || c == quoter)
+    fprintf_filtered (stream, "\\%c", c);
+  else if (c == '\n')
+    fputs_filtered ("\\n", stream);
+  else if (c == '\r')
+    fputs_filtered ("\\r", stream);
+  else if (c == '\t')
+    fputs_filtered ("\\t", stream);
+  else if (c == '\0')
+    fputs_filtered ("\\", stream);
+  else if (c >= 32 && c <= 127 && isprint (c))
+    fputc_filtered (c, stream);
+  else if (c <= 255)
+    fprintf_filtered (stream, "\\x%02x", c);
+  else
+    fprintf_filtered (stream, "\\u{%06x}", c);
+}
+
+/* la_printchar implementation for Rust.  */
+
+static void
+rust_printchar (int c, struct type *type, struct ui_file *stream)
+{
+  fputs_filtered ("'", stream);
+  LA_EMIT_CHAR (c, type, stream, '\'');
+  fputs_filtered ("'", stream);
+}
+
+
 
 static const struct generic_val_print_decorations rust_decorations =
 {
@@ -79,9 +131,9 @@ static const struct language_defn rust_language_defn =
   c_parse,
   c_error,
   null_post_parser,
-  c_printchar,			/* Print a character constant */
+  rust_printchar,		/* Print a character constant */
   c_printstr,			/* Function to print string constant */
-  c_emit_char,			/* Print a single char */
+  rust_emitchar,		/* Print a single char */
   c_print_type,			/* Print a type using appropriate syntax */
   c_print_typedef,		/* Print a typedef using appropriate syntax */
   rust_val_print,		/* Print a value using appropriate syntax */
