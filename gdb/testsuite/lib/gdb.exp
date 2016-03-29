@@ -1733,6 +1733,12 @@ proc skip_d_tests {} {
     return 0
 }
 
+# Return 1 to skip Rust tests, 0 to try them.
+proc skip_rust_tests {} {
+    # FIXME could try rustc --target instead.
+    return [expr {![isnative]}]
+}
+
 # Return a 1 for configurations that do not support Python scripting.
 # PROMPT_REGEXP is the expected prompt.
 
