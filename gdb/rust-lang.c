@@ -153,6 +153,21 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
 
 
 
+/* la_print_typedef implementation for Rust.  */
+
+static void
+rust_print_typedef (struct type *type,
+		    struct symbol *new_symbol,
+		    struct ui_file *stream)
+{
+  type = check_typedef (type);
+  fprintf_filtered (stream, "type %s = ", SYMBOL_PRINT_NAME (new_symbol));
+  type_print (type, "", stream, 0);
+  fprintf_filtered (stream, ";\n");
+}
+
+
+
 enum rust_primitive_types
 {
   rust_primitive_bool,
@@ -226,7 +241,7 @@ static const struct language_defn rust_language_defn =
   rust_printstr,		/* Function to print string constant */
   rust_emitchar,		/* Print a single char */
   c_print_type,			/* Print a type using appropriate syntax */
-  c_print_typedef,		/* Print a typedef using appropriate syntax */
+  rust_print_typedef,		/* Print a typedef using appropriate syntax */
   rust_val_print,		/* Print a value using appropriate syntax */
   c_value_print,		/* Print a top-level value */
   default_read_var_value,	/* la_read_var_value */
