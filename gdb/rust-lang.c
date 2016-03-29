@@ -166,6 +166,41 @@ rust_print_typedef (struct type *type,
   fprintf_filtered (stream, ";\n");
 }
 
+/* la_print_type implementation for Rust.  */
+
+static void
+rust_print_type (struct type *type, const char *varstring,
+		 struct ui_file *stream, int show, int level,
+		 const struct type_print_options *flags)
+{
+  QUIT;
+  if (show <= 0
+      && TYPE_NAME (type) != NULL)
+    {
+      fputs_filtered (TYPE_NAME (type), stream);
+      return;
+    }
+
+  type = check_typedef (type);
+  if (TYPE_CODE (type) == TYPE_CODE_FUNC && !TYPE_VARARGS (type))
+    {
+      int i;
+
+      fputs_filtered ("fn (", stream);
+      for (i = 0; i < TYPE_NFIELDS (type); ++i)
+	{
+	  if (i > 0)
+	    fputs_filtered (", ", stream);
+	  rust_print_type (TYPE_FIELD_TYPE (type, i), "", stream, -1, 0,
+			   flags);
+	}
+      fputs_filtered (") -> ", stream);
+      rust_print_type (TYPE_TARGET_TYPE (type), "", stream, -1, 0, flags);
+    }
+  else
+    c_print_type (type, varstring, stream, show, level, flags);
+}
+
 
 
 enum rust_primitive_types
@@ -240,7 +275,7 @@ static const struct language_defn rust_language_defn =
   rust_printchar,		/* Print a character constant */
   rust_printstr,		/* Function to print string constant */
   rust_emitchar,		/* Print a single char */
-  c_print_type,			/* Print a type using appropriate syntax */
+  rust_print_type,		/* Print a type using appropriate syntax */
   rust_print_typedef,		/* Print a typedef using appropriate syntax */
   rust_val_print,		/* Print a value using appropriate syntax */
   c_value_print,		/* Print a top-level value */
