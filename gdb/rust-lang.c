@@ -25,6 +25,7 @@
 #include "charset.h"
 #include "cp-support.h"
 #include "gdbarch.h"
+#include "rust-lang.h"
 #include "valprint.h"
 #include "varobj.h"
 
@@ -269,8 +270,8 @@ static const struct language_defn rust_language_defn =
   array_row_major,
   macro_expansion_no,
   &exp_descriptor_c,
-  c_parse,
-  c_error,
+  rust_parse,
+  rusterror,
   null_post_parser,
   rust_printchar,		/* Print a character constant */
   rust_printstr,		/* Function to print string constant */
