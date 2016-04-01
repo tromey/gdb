@@ -22,10 +22,13 @@
 %{
 
 #include "defs.h"
+
+#include "block.h"
 #include "gdb_obstack.h"
 #include "gdb_regex.h"
 #include "rust-lang.h"
 #include "parser-defs.h"
+#include "value.h"
 #include "vec.h"
 
 #ifndef RUSTDEBUG
@@ -39,6 +42,7 @@ extern initialize_file_ftype _initialize_rust_exp;
 static int rustlex (void);
 static const char *rust_copy_name (const char *, int);
 static const char *rust_concat3 (const char *, const char *, const char *);
+static void update_innermost_block (struct block_symbol);
 
 /* The state of the parser, used internally when we are parsing the
    expression.  */
@@ -127,6 +131,7 @@ static struct obstack name_obstack;
 %token <voidval> KW_FALSE
 %token <voidval> KW_SUPER
 %token <voidval> KW_SELF
+%token <voidval> KW_MUT
 
 /* Operator tokens.  */
 %token <voidval> DOTDOT
@@ -256,7 +261,18 @@ unop_expr:
 		{ write_exp_elt_opcode (pstate, UNOP_NEG); }
 
 |	'!' expr
+	/* FIXME */
 		{ write_exp_elt_opcode (pstate, UNOP_LOGICAL_NOT); }
+
+|	'*' expr
+		{ write_exp_elt_opcode (pstate, UNOP_IND); }
+
+|	'&' expr
+		{ write_exp_elt_opcode (pstate, UNOP_ADDR); }
+
+|	'&' KW_MUT expr
+		{ write_exp_elt_opcode (pstate, UNOP_ADDR); }
+
 ;
 
 binop_expr:
@@ -377,7 +393,19 @@ call_expr:
 
 path_expr:
 	path
-		{ /* FIXME */ }
+		{
+		  struct block_symbol sym;
+
+		  sym = lookup_symbol ($1, expression_context_block,
+				       VAR_DOMAIN, NULL);
+		  if (sym.symbol == NULL)
+		    error (_("No symbol '%s' in current context"), $1);
+		  update_innermost_block (sym);
+		  write_exp_elt_opcode (pstate, OP_VAR_VALUE);
+		  write_exp_elt_block (pstate, sym.block);
+		  write_exp_elt_sym (pstate, sym.symbol);
+		  write_exp_elt_opcode (pstate, OP_VAR_VALUE);
+		}
 ;
 
 path:
@@ -433,12 +461,13 @@ struct token_info
 /* Identifier tokens.  */
 static const struct token_info identifier_tokens[] =
 {
-  { "if", 0, OP_NULL },
-  { "true", KW_TRUE, OP_NULL },
-  { "false", KW_FALSE, OP_NULL },
   { "as", KW_AS, OP_NULL },
+  { "false", KW_FALSE, OP_NULL },
+  { "if", 0, OP_NULL },
+  { "mut", KW_MUT, OP_NULL },
+  { "self", KW_SELF, OP_NULL },
   { "super", KW_SUPER, OP_NULL },
-  { "self", KW_SELF, OP_NULL }
+  { "true", KW_TRUE, OP_NULL },
 };
 
 /* Operator tokens, sorted longest first.  */
@@ -480,6 +509,16 @@ static const char *
 rust_concat3 (const char *s1, const char *s2, const char *s3)
 {
   return obconcat (&name_obstack, s1, s2, s3, (char *) NULL);
+}
+
+/* A helper that updates innermost_block as appropriate.  */
+static void
+update_innermost_block (struct block_symbol sym)
+{
+  if (symbol_read_needs_frame (sym.symbol)
+      && (innermost_block == NULL
+	  || contained_in (sym.block, innermost_block)))
+    innermost_block = sym.block;
 }
 
 /* Lex a hex number with at least MIN digits and at most MAX
