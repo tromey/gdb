@@ -130,6 +130,10 @@ static int unit_testing;
 %token <voidval> GTEQ
 %token <voidval> LSH RSH
 
+%token KW_SUPER
+%token KW_SELF
+%token COLONCOLON
+
 %type <type> type
 
 /* Precedence.  */
@@ -161,7 +165,8 @@ start:
 
 // FIXME
 expr:
-	literal /* | path | tuple_expr | unit_expr | struct_expr */
+	literal
+|	path /* | tuple_expr | unit_expr | struct_expr */
 |	method_call_expr
 |	field_expr /* | array_expr */
 |	idx_expr /* | range_expr */
@@ -355,6 +360,30 @@ call_expr:
 	expr paren_expr_list
 ;
 
+path:
+	identifier_path
+|	self_path
+		{ error (_("paths starting with self:: not supported yet")); }
+|	super_path
+		{ error (_("paths starting with super:: not supported yet")); }
+|	COLONCOLON identifier_path
+;
+
+identifier_path:
+	IDENT
+|	IDENT COLONCOLON identifier_path
+;
+
+self_path:
+	KW_SELF COLONCOLON identifier_path
+|	KW_SELF COLONCOLON super_path identifier_path
+;
+
+super_path:
+	KW_SUPER COLONCOLON
+|	KW_SUPER COLONCOLON super_path
+;
+
 type:
 	IDENT
 		{
@@ -379,12 +408,11 @@ struct token_info
 static const struct token_info identifier_tokens[] =
 {
   { "if", 0, OP_NULL },
-  /* box, self, super ? */
-  /* { "alignof", blah }, */
-  /* { "offsetof", blah }, */
   { "true", KW_TRUE, OP_NULL },
   { "false", KW_FALSE, OP_NULL },
-  { "as", KW_AS, OP_NULL }
+  { "as", KW_AS, OP_NULL },
+  { "super", KW_SUPER, OP_NULL },
+  { "self", KW_SELF, OP_NULL }
 };
 
 /* Operator tokens, sorted longest first.  */
@@ -408,7 +436,9 @@ static const struct token_info operator_tokens[] =
   { "%=", COMPOUND_ASSIGN, BINOP_REM },
   { "&=", COMPOUND_ASSIGN, BINOP_BITWISE_AND },
   { "|=", COMPOUND_ASSIGN, BINOP_BITWISE_IOR },
-  { "^=", COMPOUND_ASSIGN, BINOP_BITWISE_XOR }
+  { "^=", COMPOUND_ASSIGN, BINOP_BITWISE_XOR },
+
+  { "::", COLONCOLON, OP_NULL }
 };
 
 /* Lex a hex number with at least MIN digits and at most MAX
