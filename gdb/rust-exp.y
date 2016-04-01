@@ -920,6 +920,10 @@ rust_lex_tests (void)
   int i;
 
   rust_lex_test_one ("", 0);
+  rust_lex_test_one ("thread 23", 0);
+  rust_lex_test_one ("task 23", 0);
+  rust_lex_test_one ("th 104", 0);
+  rust_lex_test_one ("ta 97", 0);
 
   /* FIXME check error cases */
   rust_lex_int_test ("'z'", 'z');
@@ -947,6 +951,7 @@ rust_lex_tests (void)
 
   rust_lex_ident_test ("hibob", "hibob");
   rust_lex_ident_test ("hibob__93", "hibob__93");
+  rust_lex_ident_test ("thread", "thread");
 
   for (i = 0; i < ARRAY_SIZE (identifier_tokens); ++i)
     rust_lex_test_one (identifier_tokens[i].name, identifier_tokens[i].value);
