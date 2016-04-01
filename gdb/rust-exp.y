@@ -22,6 +22,7 @@
 %{
 
 #include "defs.h"
+#include "gdb_obstack.h"
 #include "gdb_regex.h"
 #include "rust-lang.h"
 #include "parser-defs.h"
@@ -36,6 +37,8 @@
 extern initialize_file_ftype _initialize_rust_exp;
 
 static int rustlex (void);
+static const char *rust_copy_name (const char *, int);
+static const char *rust_concat3 (const char *, const char *, const char *);
 
 /* The state of the parser, used internally when we are parsing the
    expression.  */
@@ -85,6 +88,9 @@ static regex_t number_regex;
 /* True if we're running unit tests.  */
 static int unit_testing;
 
+/* Obstack for names temporarily allocated during parsing.  */
+static struct obstack name_obstack;
+
 %}
 
 %union
@@ -101,7 +107,7 @@ static int unit_testing;
     struct type *type;
   } typed_val_float;
 
-  struct stoken sval;
+  const char *sval;
 
   enum exp_opcode opcode;
 
@@ -119,6 +125,8 @@ static int unit_testing;
 %token <voidval> KW_IF
 %token <voidval> KW_TRUE
 %token <voidval> KW_FALSE
+%token <voidval> KW_SUPER
+%token <voidval> KW_SELF
 
 /* Operator tokens.  */
 %token <voidval> DOTDOT
@@ -129,12 +137,14 @@ static int unit_testing;
 %token <voidval> LTEQ
 %token <voidval> GTEQ
 %token <voidval> LSH RSH
-
-%token KW_SUPER
-%token KW_SELF
-%token COLONCOLON
+%token <voidval> COLONCOLON
 
 %type <type> type
+
+%type <sval> path
+%type <sval> identifier_path
+%type <sval> self_path
+%type <sval> super_path
 
 /* Precedence.  */
 %right '='
@@ -166,7 +176,7 @@ start:
 // FIXME
 expr:
 	literal
-|	path /* | tuple_expr | unit_expr | struct_expr */
+|	path_expr /* | tuple_expr | unit_expr | struct_expr */
 |	method_call_expr
 |	field_expr /* | array_expr */
 |	idx_expr /* | range_expr */
@@ -218,8 +228,13 @@ literal:
 field_expr:
 	expr '.' IDENT
 		{
+		  /* gdb needs this.  */
+		  struct stoken st;
+
 		  write_exp_elt_opcode (pstate, STRUCTOP_STRUCT);
-		  write_exp_string (pstate, $3);
+		  st.ptr = $3;
+		  st.length = strlen (st.ptr);
+		  write_exp_string (pstate, st);
 		  write_exp_elt_opcode (pstate, STRUCTOP_STRUCT);
 		}
 ;
@@ -360,6 +375,11 @@ call_expr:
 	expr paren_expr_list
 ;
 
+path_expr:
+	path
+		{ /* FIXME */ }
+;
+
 path:
 	identifier_path
 |	self_path
@@ -367,21 +387,27 @@ path:
 |	super_path
 		{ error (_("paths starting with super:: not supported yet")); }
 |	COLONCOLON identifier_path
+		{ $$ = rust_concat3 ("::", $2, NULL); }
 ;
 
 identifier_path:
 	IDENT
 |	IDENT COLONCOLON identifier_path
+		{ $$ = rust_concat3 ($1, "::", $3); }
 ;
 
 self_path:
 	KW_SELF COLONCOLON identifier_path
+		{ $$ = rust_concat3 ("self::", $3, NULL); }
 |	KW_SELF COLONCOLON super_path identifier_path
+		{ $$ = rust_concat3 ("self::", $3, $4); }
 ;
 
 super_path:
 	KW_SUPER COLONCOLON
+		{ $$ = "super::"; }
 |	KW_SUPER COLONCOLON super_path
+		{ $$ = rust_concat3 ("super::", $3, NULL); }
 ;
 
 type:
@@ -389,7 +415,7 @@ type:
 		{
 		  $$ = lookup_typename (parse_language (pstate),
 					parse_gdbarch (pstate),
-					$1.ptr, NULL, 0);
+					$1, NULL, 0);
 		}
 ;
 
@@ -440,6 +466,21 @@ static const struct token_info operator_tokens[] =
 
   { "::", COLONCOLON, OP_NULL }
 };
+
+/* Helper function to copy to the name obstack.  */
+static const char *
+rust_copy_name (const char *name, int len)
+{
+  return obstack_copy0 (&name_obstack, name, len);
+}
+
+/* Helper function to concatenate three strings on the name
+   obstack.  */
+static const char *
+rust_concat3 (const char *s1, const char *s2, const char *s3)
+{
+  return obconcat (&name_obstack, s1, s2, s3, (char *) NULL);
+}
 
 /* Lex a hex number with at least MIN digits and at most MAX
    digits.  */
@@ -657,9 +698,7 @@ lex_identifier (void)
       return token->value;
     }
 
-  rustlval.sval.length = length;
-  rustlval.sval.ptr = start;
-  rustlval.sval.ptr = copy_name (rustlval.sval);
+  rustlval.sval = rust_copy_name (start, length);
 
   /* Slightly weird that we don't allow completion if the text happens
      to be a token.  */
@@ -857,8 +896,17 @@ rustlex (void)
 int
 rust_parse (struct parser_state *state)
 {
+  int result;
+  struct cleanup *cleanup;
+
+  obstack_init (&name_obstack);
+  cleanup = make_cleanup_obstack_free (&name_obstack);
+
   pstate = state;
-  return rustparse ();
+  result = rustparse ();
+
+  do_cleanups (cleanup);
+  return result;
 }
 
 /* The parser error handler.  */
@@ -910,7 +958,7 @@ static void
 rust_lex_ident_test (const char *input, const char *value)
 {
   RUSTSTYPE result = rust_lex_test_one (input, IDENT);
-  gdb_assert (strcmp (result.sval.ptr, value) == 0);
+  gdb_assert (strcmp (result.sval, value) == 0);
 }
 
 /* Unit test the lexer.  */
@@ -979,8 +1027,10 @@ _initialize_rust_exp (void)
      invoke them, barfing on exceptions or checking return
      results.  */
 #ifdef GDB_UNIT_TEST
+  obstack_init (&name_obstack);
   unit_testing = 1;
   rust_lex_tests ();
+  obstack_free (&name_obstack, NULL);
   unit_testing = 0;
 #endif
 }
