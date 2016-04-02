@@ -260,6 +260,43 @@ rust_language_arch_info (struct gdbarch *gdbarch,
 
 
 
+/* evaluate_exp implementation for Rust.  */
+static struct value *
+evaluate_subexp_rust (struct type *expect_type, struct expression *exp,
+		      int *pos, enum noside noside)
+{
+  int pc = (*pos)++;
+  if (exp->elts[pc].opcode == UNOP_COMPLEMENT)
+    {
+      struct value *value = evaluate_subexp (NULL_TYPE, exp, pos, noside);
+      if (noside == EVAL_SKIP)
+	{
+	  /* Preserving the type is enough.  */
+	  return value;
+	}
+      /* FIXME seems like a terrible test.  */
+      if (TYPE_NAME (value_type (value))
+	  && strcmp (TYPE_NAME (value_type (value)), "bool") == 0)
+	return value_from_longest (value_type (value),
+				   value_logical_not (value));
+      return value_complement (value);
+    }
+
+  return evaluate_subexp_standard (expect_type, exp, pos, noside);
+}
+
+
+
+static const struct exp_descriptor exp_descriptor_rust = 
+{
+  print_subexp_standard,
+  operator_length_standard,
+  operator_check_standard,
+  op_name_standard,
+  dump_subexp_body_standard,
+  evaluate_subexp_rust
+};
+
 static const struct language_defn rust_language_defn =
 {
   "rust",
@@ -269,7 +306,7 @@ static const struct language_defn rust_language_defn =
   case_sensitive_on,
   array_row_major,
   macro_expansion_no,
-  &exp_descriptor_c,
+  &exp_descriptor_rust,
   rust_parse,
   rusterror,
   null_post_parser,

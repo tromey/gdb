@@ -261,8 +261,13 @@ unop_expr:
 		{ write_exp_elt_opcode (pstate, UNOP_NEG); }
 
 |	'!' expr
-	/* FIXME */
-		{ write_exp_elt_opcode (pstate, UNOP_LOGICAL_NOT); }
+		{
+		  /* Note that we provide a Rust-specific evaluator
+		     override for UNOP_COMPLEMENT, so it can do the
+		     right thing for both bool and integral
+		     values.  */
+		  write_exp_elt_opcode (pstate, UNOP_COMPLEMENT);
+		}
 
 |	'*' expr
 		{ write_exp_elt_opcode (pstate, UNOP_IND); }
