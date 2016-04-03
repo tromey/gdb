@@ -164,7 +164,7 @@ static struct obstack name_obstack;
 %left '@'
 %left '+' '-'
 %left '*' '/' '%' '[' '.' '('
-%right UNARY
+%precedence UNARY
 %left KW_AS
 
 %%
