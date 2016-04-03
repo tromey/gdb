@@ -152,7 +152,7 @@ static struct obstack name_obstack;
 %type <sval> super_path
 
 /* Precedence.  */
-%right '='
+%right '=' COMPOUND_ASSIGN
 %left DOTDOT
 %left OROR
 %left ANDAND
@@ -163,7 +163,8 @@ static struct obstack name_obstack;
 %left LSH RSH
 %left '@'
 %left '+' '-'
-%left '*' '/' '%'
+%left '*' '/' '%' '[' '.' '('
+%right UNARY
 %left KW_AS
 
 %%
@@ -182,7 +183,6 @@ start:
 expr:
 	literal
 |	path_expr /* | tuple_expr | unit_expr | struct_expr */
-|	method_call_expr
 |	field_expr /* | array_expr */
 |	idx_expr /* | range_expr */
 |	unop_expr
@@ -244,23 +244,19 @@ field_expr:
 		}
 ;
 
-method_call_expr:
-	field_expr paren_expr_list
-;
-
 idx_expr:
 	expr '[' expr ']'
 		{ write_exp_elt_opcode (pstate, BINOP_SUBSCRIPT); }
 ;
 
 unop_expr:
-	'+' expr
+	'+' expr	%prec UNARY
 		{ write_exp_elt_opcode (pstate, UNOP_PLUS); }
 
-|	'-' expr
+|	'-' expr	%prec UNARY
 		{ write_exp_elt_opcode (pstate, UNOP_NEG); }
 
-|	'!' expr
+|	'!' expr	%prec UNARY
 		{
 		  /* Note that we provide a Rust-specific evaluator
 		     override for UNOP_COMPLEMENT, so it can do the
@@ -269,13 +265,13 @@ unop_expr:
 		  write_exp_elt_opcode (pstate, UNOP_COMPLEMENT);
 		}
 
-|	'*' expr
+|	'*' expr	%prec UNARY
 		{ write_exp_elt_opcode (pstate, UNOP_IND); }
 
-|	'&' expr
+|	'&' expr	%prec UNARY
 		{ write_exp_elt_opcode (pstate, UNOP_ADDR); }
 
-|	'&' KW_MUT expr
+|	'&' KW_MUT expr	%prec UNARY
 		{ write_exp_elt_opcode (pstate, UNOP_ADDR); }
 
 ;
