@@ -370,9 +370,8 @@ paren_expr:
 ;
 
 expr_list:
-	expr_list ',' expr
-		{ ++arglist_len; }
-|	expr
+	%empty
+|	expr_list ',' expr
 		{ ++arglist_len; }
 ;
 
