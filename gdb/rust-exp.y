@@ -92,18 +92,13 @@ static struct parser_state *pstate = NULL;
 static const char *number_regex_text =
   /* subexpression 1: allows use of alternation, otherwise uninteresting */
   "^("
-  /* First comes floating point.
-     "23." is a valid floating point number, but "23.e5" and
-     "23.f32" are not.  So, handle the trailing-. case
-     separately.  */
-  "[0-9_]+\\."
-  "|"
+  /* First comes floating point.  */
   /* Recognize number after the decimal point, with optional
      exponent and optional type suffix.
      subexpression 2: allows "?", otherwise uninteresting
      subexpression 3: if present, type suffix
   */
-  "[0-9]+\\.[0-9_]+([eE][-+]?[0-9_]+)?(f32|f64)?"
+  "[0-9][0-9_]*\\.[0-9][0-9_]*([eE][-+]?[0-9][0-9_]*)?(f32|f64)?"
 #define FLOAT_TYPE1 3
   "|"
   /* Recognize exponent without decimal point, with optional type
@@ -111,16 +106,21 @@ static const char *number_regex_text =
      subexpression 4: if present, type suffix
   */
 #define FLOAT_TYPE2 4
-  "[0-9]+[eE][-+]?[0-9_]+(f32|f64)?"
+  "[0-9][0-9_]*[eE][-+]?[0-9][0-9_]*(f32|f64)?"
   "|"
-  /* First come integers.
+  /* "23." is a valid floating point number, but "23.e5" and
+     "23.f32" are not.  So, handle the trailing-. case
+     separately.  */
+  "[0-9][0-9_]*\\."
+  "|"
+  /* Finally come integers.
      subexpression 5: text of integer
      subexpression 6: if present, type suffix
      subexpression 7: allows use of alternation, otherwise uninteresting
   */
 #define INT_TEXT 5
 #define INT_TYPE 6
-  "(0x[a-fA-F0-9_]+|0o[0-7_]+|0b[01_]+|[0-9_]+)"
+  "(0x[a-fA-F0-9_]+|0o[0-7_]+|0b[01_]+|[0-9][0-9_]*)"
   "([iu](size|8|16|32|64))?"
   ")";
 
@@ -529,6 +529,23 @@ update_innermost_block (struct block_symbol sym)
     innermost_block = sym.block;
 }
 
+/* A helper to look up a Rust type, or fail.  */
+static struct type *
+rust_type (const char *name)
+{
+  struct type *type;
+
+  if (unit_testing)
+    return NULL;
+
+  type = language_lookup_primitive_type (parse_language (pstate),
+					 parse_gdbarch (pstate),
+					 name);
+  if (type == NULL)
+    error (_("could not find Rust type %s"), name);
+  return type;
+}
+
 /* Lex a hex number with at least MIN digits and at most MAX
    digits.  */
 static uint32_t
@@ -592,24 +609,31 @@ lex_escape (int is_byte)
 
     case 'n':
       result = '\n';
+      ++lexptr;
       break;
     case 'r':
       result = '\r';
+      ++lexptr;
       break;
     case 't':
       result = '\t';
+      ++lexptr;
       break;
     case '\\':
       result = '\\';
+      ++lexptr;
       break;
     case '\0':
       result = '\0';
+      ++lexptr;
       break;
     case '\'':
       result = '\'';
+      ++lexptr;
       break;
     case '"':
       result = '"';
+      ++lexptr;
       break;
 
     default:
@@ -649,7 +673,7 @@ lex_character (void)
   ++lexptr;
 
   rustlval.typed_val_int.val = value;
-  rustlval.typed_val_int.type = NULL; /* FIXME */
+  rustlval.typed_val_int.type = rust_type (is_byte ? "u8" : "char");
 
   return INTEGER;
 }
@@ -840,16 +864,7 @@ lex_number (void)
     }
 
   /* Look up the type.  */
-  if (unit_testing)
-    type = NULL;
-  else
-    {
-      type = language_lookup_primitive_type (parse_language (pstate),
-					     parse_gdbarch (pstate),
-					     typename);
-      if (type == NULL)
-	error (_("could not find Rust type %s"), typename);
-    }
+  type = rust_type (typename);
 
   /* Copy the text of the number and remove the "_"s.  */
   number = xstrndup (lexptr, end_index);
@@ -1073,7 +1088,7 @@ convert_ast_to_expression (struct parser_state *state,
     case OP_DOUBLE:
       write_exp_elt_opcode (state, OP_DOUBLE);
       write_exp_elt_type (state, operation->left.typed_val_float.type);
-      write_exp_elt_longcst (state, operation->left.typed_val_float.dval);
+      write_exp_elt_dblcst (state, operation->left.typed_val_float.dval);
       write_exp_elt_opcode (state, OP_DOUBLE);
       break;
 
