@@ -265,10 +265,12 @@ static struct value *
 evaluate_subexp_rust (struct type *expect_type, struct expression *exp,
 		      int *pos, enum noside noside)
 {
-  int pc = (*pos)++;
-  if (exp->elts[pc].opcode == UNOP_COMPLEMENT)
+  if (exp->elts[*pos].opcode == UNOP_COMPLEMENT)
     {
-      struct value *value = evaluate_subexp (NULL_TYPE, exp, pos, noside);
+      struct value *value;
+
+      ++*pos;
+      value = evaluate_subexp (NULL_TYPE, exp, pos, noside);
       if (noside == EVAL_SKIP)
 	{
 	  /* Preserving the type is enough.  */
