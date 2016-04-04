@@ -44,6 +44,44 @@ static const char *rust_copy_name (const char *, int);
 static const char *rust_concat3 (const char *, const char *, const char *);
 static void update_innermost_block (struct block_symbol);
 
+struct rust_op;
+typedef const struct rust_op *rust_op_ptr;
+DEF_VEC_P (rust_op_ptr);
+
+struct typed_val_int
+{
+  LONGEST val;
+  struct type *type;
+};
+
+struct typed_val_float
+{
+  DOUBLEST dval;
+  struct type *type;
+};
+
+struct typed_val_int;
+struct typed_val_float;
+
+static const struct rust_op *make_operation (enum exp_opcode opcode,
+					     const struct rust_op *left,
+					     const struct rust_op *right);
+static const struct rust_op *make_compound_assignment
+  (enum exp_opcode opcode, const struct rust_op *left,
+   const struct rust_op *rust_op);
+static const struct rust_op *make_literal (struct typed_val_int val);
+static const struct rust_op *make_dliteral (struct typed_val_float val);
+static const struct rust_op *make_structop (const struct rust_op *left,
+					    const char *name);
+static const struct rust_op *make_unary (enum exp_opcode opcode,
+					 const struct rust_op *expr);
+static const struct rust_op *make_cast (const struct rust_op *expr,
+					struct type *type);
+static const struct rust_op *make_call (const struct rust_op *expr,
+					VEC (rust_op_ptr) *params);
+static const struct rust_op *make_path (const char *name);
+
+
 /* The state of the parser, used internally when we are parsing the
    expression.  */
 static struct parser_state *pstate = NULL;
@@ -95,27 +133,26 @@ static int unit_testing;
 /* Obstack for data temporarily allocated during parsing.  */
 static struct obstack work_obstack;
 
+/* Result of parsing.  Points into work_obstack.  */
+static const struct rust_op *rust_ast;
+
 %}
 
 %union
 {
-  struct
-  {
-    LONGEST val;
-    struct type *type;
-  } typed_val_int;
+  struct typed_val_int typed_val_int;
 
-  struct
-  {
-    DOUBLEST dval;
-    struct type *type;
-  } typed_val_float;
+  struct typed_val_float typed_val_float;
 
   const char *sval;
 
   enum exp_opcode opcode;
 
   struct type *type;
+
+  VEC (rust_op_ptr) *params;
+
+  const struct rust_op *op;
 }
 
 %token <sval> IDENT
@@ -151,6 +188,23 @@ static struct obstack work_obstack;
 %type <sval> self_path
 %type <sval> super_path
 
+%type <op> literal
+%type <op> expr
+%type <op> field_expr
+%type <op> idx_expr
+%type <op> unop_expr
+%type <op> binop_expr
+%type <op> binop_expr_expr
+%type <op> type_cast_expr
+%type <op> assignment_expr
+%type <op> compound_assignment_expr
+%type <op> paren_expr
+%type <op> call_expr
+%type <op> path_expr
+
+%type <params> expr_list
+%type <params> paren_expr_list
+
 /* Precedence.  */
 %right '=' COMPOUND_ASSIGN
 %left DOTDOT
@@ -171,12 +225,7 @@ static struct obstack work_obstack;
 
 start:
 	expr
-|	type
-		{
-		  write_exp_elt_opcode (pstate, OP_TYPE);
-		  write_exp_elt_type (pstate, $1);
-		  write_exp_elt_opcode (pstate, OP_TYPE);
-		}
+		{ rust_ast = $1; }
 ;
 
 // FIXME
@@ -193,68 +242,45 @@ expr:
 
 literal:
 	INTEGER
-		{
-		  write_exp_elt_opcode (pstate, OP_LONG);
-		  write_exp_elt_type (pstate, $1.type);
-		  write_exp_elt_longcst (pstate, $1.val);
-		  write_exp_elt_opcode (pstate, OP_LONG);
-		}
+		{ $$ = make_literal ($1); }
 |	FLOAT
-		{
-		  write_exp_elt_opcode (pstate, OP_DOUBLE);
-		  write_exp_elt_type (pstate, $1.type);
-		  write_exp_elt_dblcst (pstate, $1.dval);
-		  write_exp_elt_opcode (pstate, OP_DOUBLE);
-		}
+		{ $$ = make_dliteral ($1); }
 |	KW_TRUE
 		{
-		  struct type *bool_type
-		    = language_bool_type (parse_language (pstate),
-					  parse_gdbarch (pstate));
+		  struct typed_val_int val;
 
-		  write_exp_elt_opcode (pstate, OP_LONG);
-		  write_exp_elt_type (pstate, bool_type);
-		  write_exp_elt_longcst (pstate, 1);
-		  write_exp_elt_opcode (pstate, OP_LONG);
+		  val.type = language_bool_type (parse_language (pstate),
+						 parse_gdbarch (pstate));
+		  val.val = 1;
+		  $$ = make_literal (val);
 		}
 |	KW_FALSE
 		{
-		  struct type *bool_type
-		    = language_bool_type (parse_language (pstate),
-					  parse_gdbarch (pstate));
+		  struct typed_val_int val;
 
-		  write_exp_elt_opcode (pstate, OP_LONG);
-		  write_exp_elt_type (pstate, bool_type);
-		  write_exp_elt_longcst (pstate, 0);
-		  write_exp_elt_opcode (pstate, OP_LONG);
+		  val.type = language_bool_type (parse_language (pstate),
+						 parse_gdbarch (pstate));
+		  val.val = 0;
+		  $$ = make_literal (val);
 		}
 ;
 
 field_expr:
 	expr '.' IDENT
-		{
-		  /* gdb needs this.  */
-		  struct stoken st;
-
-		  write_exp_elt_opcode (pstate, STRUCTOP_STRUCT);
-		  st.ptr = $3;
-		  st.length = strlen (st.ptr);
-		  write_exp_string (pstate, st);
-		  write_exp_elt_opcode (pstate, STRUCTOP_STRUCT);
-		}
+		{ $$ = make_structop ($1, $3); }
 ;
 
 idx_expr:
 	expr '[' expr ']'
-		{ write_exp_elt_opcode (pstate, BINOP_SUBSCRIPT); }
+		{ $$ = make_operation (BINOP_SUBSCRIPT, $1, $3); }
 ;
 
 unop_expr:
 	'+' expr	%prec UNARY
-		{ write_exp_elt_opcode (pstate, UNOP_PLUS); }
+		{ $$ = make_unary (UNOP_PLUS, $2); }
 
 |	'-' expr	%prec UNARY
-		{ write_exp_elt_opcode (pstate, UNOP_NEG); }
+		{ $$ = make_unary (UNOP_NEG, $2); }
 
 |	'!' expr	%prec UNARY
 		{
@@ -262,17 +288,17 @@ unop_expr:
 		     override for UNOP_COMPLEMENT, so it can do the
 		     right thing for both bool and integral
 		     values.  */
-		  write_exp_elt_opcode (pstate, UNOP_COMPLEMENT);
+		  $$ = make_unary (UNOP_COMPLEMENT, $2);
 		}
 
 |	'*' expr	%prec UNARY
-		{ write_exp_elt_opcode (pstate, UNOP_IND); }
+		{ $$ = make_unary (UNOP_IND, $2); }
 
 |	'&' expr	%prec UNARY
-		{ write_exp_elt_opcode (pstate, UNOP_ADDR); }
+		{ $$ = make_unary (UNOP_ADDR, $2); }
 
 |	'&' KW_MUT expr	%prec UNARY
-		{ write_exp_elt_opcode (pstate, UNOP_ADDR); }
+		{ $$ = make_unary (UNOP_ADDR, $3); }
 
 ;
 
@@ -285,127 +311,109 @@ binop_expr:
 
 binop_expr_expr:
 	expr '*' expr
-		{ write_exp_elt_opcode (pstate, BINOP_MUL); }
+		{ $$ = make_operation (BINOP_MUL, $1, $3); }
 
 |	expr '@' expr
-		{ write_exp_elt_opcode (pstate, BINOP_REPEAT); }
+		{ $$ = make_operation (BINOP_REPEAT, $1, $3); }
 
 |	expr '/' expr
-		{ write_exp_elt_opcode (pstate, BINOP_DIV); }
+		{ $$ = make_operation (BINOP_DIV, $1, $3); }
 
 |	expr '%' expr
-		{ write_exp_elt_opcode (pstate, BINOP_REM); }
+		{ $$ = make_operation (BINOP_REM, $1, $3); }
 
 |	expr '<' expr
-		{ write_exp_elt_opcode (pstate, BINOP_LESS); }
+		{ $$ = make_operation (BINOP_LESS, $1, $3); }
 
 |	expr '>' expr
-		{ write_exp_elt_opcode (pstate, BINOP_GTR); }
+		{ $$ = make_operation (BINOP_GTR, $1, $3); }
 
 |	expr '&' expr
-		{ write_exp_elt_opcode (pstate, BINOP_BITWISE_AND); }
+		{ $$ = make_operation (BINOP_BITWISE_AND, $1, $3); }
 
 |	expr '|' expr
-		{ write_exp_elt_opcode (pstate, BINOP_BITWISE_IOR); }
+		{ $$ = make_operation (BINOP_BITWISE_IOR, $1, $3); }
 
 |	expr '^' expr
-		{ write_exp_elt_opcode (pstate, BINOP_BITWISE_XOR); }
+		{ $$ = make_operation (BINOP_BITWISE_XOR, $1, $3); }
 
 |	expr '+' expr
-		{ write_exp_elt_opcode (pstate, BINOP_ADD); }
+		{ $$ = make_operation (BINOP_ADD, $1, $3); }
 
 |	expr '-' expr
-		{ write_exp_elt_opcode (pstate, BINOP_SUB); }
+		{ $$ = make_operation (BINOP_SUB, $1, $3); }
 
 |	expr OROR expr
-		{ write_exp_elt_opcode (pstate, BINOP_LOGICAL_OR); }
+		{ $$ = make_operation (BINOP_LOGICAL_OR, $1, $3); }
 
 |	expr ANDAND expr
-		{ write_exp_elt_opcode (pstate, BINOP_LOGICAL_AND); }
+		{ $$ = make_operation (BINOP_LOGICAL_AND, $1, $3); }
 
 |	expr EQEQ expr
-		{ write_exp_elt_opcode (pstate, BINOP_EQUAL); }
+		{ $$ = make_operation (BINOP_EQUAL, $1, $3); }
 
 |	expr NOTEQ expr
-		{ write_exp_elt_opcode (pstate, BINOP_NOTEQUAL); }
+		{ $$ = make_operation (BINOP_NOTEQUAL, $1, $3); }
 
 |	expr LTEQ expr
-		{ write_exp_elt_opcode (pstate, BINOP_LEQ); }
+		{ $$ = make_operation (BINOP_LEQ, $1, $3); }
 
 |	expr GTEQ expr
-		{ write_exp_elt_opcode (pstate, BINOP_GEQ); }
+		{ $$ = make_operation (BINOP_GEQ, $1, $3); }
 
 |	expr LSH expr
-		{ write_exp_elt_opcode (pstate, BINOP_LSH); }
+		{ $$ = make_operation (BINOP_LSH, $1, $3); }
 
 |	expr RSH expr
-		{ write_exp_elt_opcode (pstate, BINOP_RSH); }
+		{ $$ = make_operation (BINOP_RSH, $1, $3); }
 ;
 
 type_cast_expr:
 	expr KW_AS type
-		{
-		  write_exp_elt_opcode (pstate, UNOP_CAST);
-		  write_exp_elt_type (pstate, $3);
-		  write_exp_elt_opcode (pstate, UNOP_CAST);
-		}
+		{ $$ = make_cast ($1, $3); }
 ;
 
 assignment_expr:
 	expr '=' expr
-		{ write_exp_elt_opcode (pstate, BINOP_ASSIGN); }
+		{ $$ = make_operation (BINOP_ASSIGN, $1, $3); }
 ;
 
 compound_assignment_expr:
 	expr COMPOUND_ASSIGN expr
-		{
-		  write_exp_elt_opcode (pstate, BINOP_ASSIGN_MODIFY);
-		  write_exp_elt_opcode (pstate, $2);
-		  write_exp_elt_opcode (pstate, BINOP_ASSIGN_MODIFY);
-		}
+		{ $$ = make_compound_assignment ($2, $1, $3); }
+
 ;
 
 paren_expr:
 	'(' expr ')'
+		{ $$ = $2; }
 ;
 
 expr_list:
 	%empty
+		{ $$ = NULL; }
 |	expr_list ',' expr
-		{ ++arglist_len; }
+		{
+		  VEC_safe_push (rust_op_ptr, $1, $3);
+		  $$ = $1;
+		}
 ;
 
 paren_expr_list:
 	'('
-		{ start_arglist (); }
 	expr_list
 	')'
-		{
-		  write_exp_elt_opcode (pstate, OP_FUNCALL);
-		  write_exp_elt_longcst (pstate, end_arglist ());
-		  write_exp_elt_longcst (pstate, OP_FUNCALL);
-		}
+		{ $$ = $2; }
 ;
 
 call_expr:
 	expr paren_expr_list
+		{ $$ = make_call ($1, $2); }
 ;
 
 path_expr:
 	path
-		{
-		  struct block_symbol sym;
-
-		  sym = lookup_symbol ($1, expression_context_block,
-				       VAR_DOMAIN, NULL);
-		  if (sym.symbol == NULL)
-		    error (_("No symbol '%s' in current context"), $1);
-		  update_innermost_block (sym);
-		  write_exp_elt_opcode (pstate, OP_VAR_VALUE);
-		  write_exp_elt_block (pstate, sym.block);
-		  write_exp_elt_sym (pstate, sym.symbol);
-		  write_exp_elt_opcode (pstate, OP_VAR_VALUE);
-		}
+		{ $$ = make_path ($1); }
 ;
 
 path:
@@ -439,7 +447,7 @@ super_path:
 ;
 
 type:
-	IDENT
+	path
 		{
 		  $$ = lookup_typename (parse_language (pstate),
 					parse_gdbarch (pstate),
@@ -931,6 +939,272 @@ rustlex (void)
   return lex_operator ();
 }
 
+
+
+/* Rust AST operations.  Our own mini-AST is the cleanest way to solve
+   the type/expr ambiguity.  Rust itself isn't ambiguous but gdb
+   pretty much requires that the parser accept a type as well as an
+   expression, and this introduces ambiguity.  */
+
+struct rust_op
+{
+  enum exp_opcode opcode;
+  unsigned int compound_assignment : 1;
+  RUSTSTYPE left;
+  RUSTSTYPE right;
+};
+
+static const struct rust_op *
+make_operation (enum exp_opcode opcode, const struct rust_op *left,
+		const struct rust_op *right)
+{
+  struct rust_op *result = OBSTACK_ZALLOC (&work_obstack, struct rust_op);
+
+  result->opcode = opcode;
+  result->left.op = left;
+  result->right.op = right;
+
+  return result;
+}
+
+static const struct rust_op *
+make_compound_assignment (enum exp_opcode opcode, const struct rust_op *left,
+			  const struct rust_op *right)
+{
+  struct rust_op *result = OBSTACK_ZALLOC (&work_obstack, struct rust_op);
+
+  result->opcode = opcode;
+  result->compound_assignment = 1;
+  result->left.op = left;
+  result->right.op = right;
+
+  return result;
+}
+
+static const struct rust_op *
+make_literal (struct typed_val_int val)
+{
+  struct rust_op *result = OBSTACK_ZALLOC (&work_obstack, struct rust_op);
+
+  result->opcode = OP_LONG;
+  result->left.typed_val_int = val;
+
+  return result;
+}
+
+static const struct rust_op *
+make_dliteral (struct typed_val_float val)
+{
+  struct rust_op *result = OBSTACK_ZALLOC (&work_obstack, struct rust_op);
+
+  result->opcode = OP_DOUBLE;
+  result->left.typed_val_float = val;
+
+  return result;
+}
+
+static const struct rust_op *
+make_unary (enum exp_opcode opcode, const struct rust_op *expr)
+{
+  return make_operation (opcode, expr, NULL);
+}
+
+static const struct rust_op *
+make_cast (const struct rust_op *expr, struct type *type)
+{
+  struct rust_op *result = OBSTACK_ZALLOC (&work_obstack, struct rust_op);
+
+  result->opcode = UNOP_CAST;
+  result->left.op = expr;
+  result->right.type = type;
+
+  return result;
+}
+
+static const struct rust_op *
+make_call (const struct rust_op *expr, VEC (rust_op_ptr) *params)
+{
+  struct rust_op *result = OBSTACK_ZALLOC (&work_obstack, struct rust_op);
+
+  result->opcode = OP_FUNCALL;
+  result->left.op = expr;
+  result->right.params = params;
+
+  return result;
+}
+
+static const struct rust_op *
+make_path (const char *path)
+{
+  struct rust_op *result = OBSTACK_ZALLOC (&work_obstack, struct rust_op);
+
+  result->opcode = OP_VAR_VALUE;
+  result->left.sval = path;
+
+  return result;
+}
+
+static const struct rust_op *
+make_structop (const struct rust_op *left, const char *name)
+{
+  struct rust_op *result = OBSTACK_ZALLOC (&work_obstack, struct rust_op);
+
+  result->opcode = STRUCTOP_STRUCT;
+  result->left.op = left;
+  result->right.sval = name;
+
+  return result;
+}
+
+static void
+convert_ast_to_expression (struct parser_state *state,
+			   const struct rust_op *operation,
+			   const struct rust_op *top)
+{
+  switch (operation->opcode)
+    {
+    case OP_LONG:
+      write_exp_elt_opcode (state, OP_LONG);
+      write_exp_elt_type (state, operation->left.typed_val_int.type);
+      write_exp_elt_longcst (state, operation->left.typed_val_int.val);
+      write_exp_elt_opcode (state, OP_LONG);
+      break;
+
+    case OP_DOUBLE:
+      write_exp_elt_opcode (state, OP_DOUBLE);
+      write_exp_elt_type (state, operation->left.typed_val_float.type);
+      write_exp_elt_longcst (state, operation->left.typed_val_float.dval);
+      write_exp_elt_opcode (state, OP_DOUBLE);
+      break;
+
+    case STRUCTOP_STRUCT:
+      {
+	struct stoken st;
+
+	convert_ast_to_expression (state, operation->left.op, top);
+
+	write_exp_elt_opcode (state, STRUCTOP_STRUCT);
+	st.ptr = operation->right.sval;
+	st.length = strlen (st.ptr);
+	write_exp_string (state, st);
+	write_exp_elt_opcode (state, STRUCTOP_STRUCT);
+      }
+      break;
+
+    case UNOP_PLUS:
+    case UNOP_NEG:
+    case UNOP_COMPLEMENT:
+    case UNOP_IND:
+    case UNOP_ADDR:
+      convert_ast_to_expression (state, operation->left.op, top);
+      write_exp_elt_opcode (state, operation->opcode);
+      break;
+
+    case BINOP_SUBSCRIPT:
+    case BINOP_MUL:
+    case BINOP_REPEAT:
+    case BINOP_DIV:
+    case BINOP_REM:
+    case BINOP_LESS:
+    case BINOP_GTR:
+    case BINOP_BITWISE_AND:
+    case BINOP_BITWISE_IOR:
+    case BINOP_BITWISE_XOR:
+    case BINOP_ADD:
+    case BINOP_SUB:
+    case BINOP_LOGICAL_OR:
+    case BINOP_LOGICAL_AND:
+    case BINOP_EQUAL:
+    case BINOP_NOTEQUAL:
+    case BINOP_LEQ:
+    case BINOP_GEQ:
+    case BINOP_LSH:
+    case BINOP_RSH:
+    case BINOP_ASSIGN:
+      convert_ast_to_expression (state, operation->left.op, top);
+      convert_ast_to_expression (state, operation->right.op, top);
+      if (operation->compound_assignment)
+	{
+	  write_exp_elt_opcode (state, BINOP_ASSIGN_MODIFY);
+	  write_exp_elt_opcode (state, operation->opcode);
+	  write_exp_elt_opcode (state, BINOP_ASSIGN_MODIFY);
+	}
+      else
+	write_exp_elt_opcode (state, operation->opcode);
+      break;
+
+    case UNOP_CAST:
+      convert_ast_to_expression (state, operation->left.op, top);
+      write_exp_elt_opcode (state, UNOP_CAST);
+      write_exp_elt_type (state, operation->right.type);
+      write_exp_elt_opcode (state, UNOP_CAST);
+      break;
+
+    case OP_FUNCALL:
+      {
+	int i;
+	const struct rust_op *arg;
+
+	convert_ast_to_expression (state, operation->left.op, top);
+
+	for (i = 0;
+	     VEC_iterate (rust_op_ptr, operation->right.params, i, arg);
+	     ++i)
+	  convert_ast_to_expression (state, arg, top);
+
+	write_exp_elt_opcode (state, OP_FUNCALL);
+	write_exp_elt_longcst (state, i);
+	write_exp_elt_longcst (state, OP_FUNCALL);
+      }
+      break;
+
+    case OP_VAR_VALUE:
+      {
+	struct block_symbol sym;
+
+	sym = lookup_symbol (operation->left.sval, expression_context_block,
+			     VAR_DOMAIN, NULL);
+	if (sym.symbol != NULL)
+	  {
+	    update_innermost_block (sym);
+	    write_exp_elt_opcode (state, OP_VAR_VALUE);
+	    write_exp_elt_block (state, sym.block);
+	    write_exp_elt_sym (state, sym.symbol);
+	    write_exp_elt_opcode (state, OP_VAR_VALUE);
+	  }
+	else
+	  {
+	    if (operation == top)
+	      {
+		/* If we didn't find a variable, and we're at the top
+		   level, then maybe we found a type instead.  */
+		struct type *type = lookup_typename (parse_language (state),
+						     parse_gdbarch (state),
+						     operation->left.sval,
+						     NULL, 0);
+
+		if (type != NULL)
+		  {
+		    write_exp_elt_opcode (state, OP_TYPE);
+		    write_exp_elt_type (state, type);
+		    write_exp_elt_opcode (state, OP_TYPE);
+		    break;
+		  }
+	      }
+
+	    error (_("No symbol '%s' in current context"),
+		   operation->left.sval);
+	  }
+      }
+      break;
+
+    default:
+      gdb_assert (0);
+    }
+}
+
+
+
 /* The parser as exposed to gdb.  */
 int
 rust_parse (struct parser_state *state)
@@ -940,9 +1214,19 @@ rust_parse (struct parser_state *state)
 
   obstack_init (&work_obstack);
   cleanup = make_cleanup_obstack_free (&work_obstack);
+  rust_ast = NULL;
 
   pstate = state;
   result = rustparse ();
+
+  if (!result)
+    {
+      const struct rust_op *ast = rust_ast;
+
+      rust_ast = NULL;
+      gdb_assert (ast);
+      convert_ast_to_expression (state, ast, ast);
+    }
 
   do_cleanups (cleanup);
   return result;
@@ -956,6 +1240,7 @@ rusterror (char *msg)
   error (_("A %s in expression, near `%s'."), (msg ? msg : "error"), where);
 }
 
+
 
 #define GDB_UNIT_TEST /* FIXME */
 #ifdef GDB_UNIT_TEST
