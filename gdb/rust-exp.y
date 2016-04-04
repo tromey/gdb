@@ -92,8 +92,8 @@ static regex_t number_regex;
 /* True if we're running unit tests.  */
 static int unit_testing;
 
-/* Obstack for names temporarily allocated during parsing.  */
-static struct obstack name_obstack;
+/* Obstack for data temporarily allocated during parsing.  */
+static struct obstack work_obstack;
 
 %}
 
@@ -500,7 +500,7 @@ static const struct token_info operator_tokens[] =
 static const char *
 rust_copy_name (const char *name, int len)
 {
-  return obstack_copy0 (&name_obstack, name, len);
+  return obstack_copy0 (&work_obstack, name, len);
 }
 
 /* Helper function to concatenate three strings on the name
@@ -508,7 +508,7 @@ rust_copy_name (const char *name, int len)
 static const char *
 rust_concat3 (const char *s1, const char *s2, const char *s3)
 {
-  return obconcat (&name_obstack, s1, s2, s3, (char *) NULL);
+  return obconcat (&work_obstack, s1, s2, s3, (char *) NULL);
 }
 
 /* A helper that updates innermost_block as appropriate.  */
@@ -938,8 +938,8 @@ rust_parse (struct parser_state *state)
   int result;
   struct cleanup *cleanup;
 
-  obstack_init (&name_obstack);
-  cleanup = make_cleanup_obstack_free (&name_obstack);
+  obstack_init (&work_obstack);
+  cleanup = make_cleanup_obstack_free (&work_obstack);
 
   pstate = state;
   result = rustparse ();
@@ -1066,10 +1066,10 @@ _initialize_rust_exp (void)
      invoke them, barfing on exceptions or checking return
      results.  */
 #ifdef GDB_UNIT_TEST
-  obstack_init (&name_obstack);
+  obstack_init (&work_obstack);
   unit_testing = 1;
   rust_lex_tests ();
-  obstack_free (&name_obstack, NULL);
+  obstack_free (&work_obstack, NULL);
   unit_testing = 0;
 #endif
 }
