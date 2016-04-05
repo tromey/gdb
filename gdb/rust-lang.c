@@ -276,9 +276,7 @@ evaluate_subexp_rust (struct type *expect_type, struct expression *exp,
 	  /* Preserving the type is enough.  */
 	  return value;
 	}
-      /* FIXME seems like a terrible test.  */
-      if (TYPE_NAME (value_type (value))
-	  && strcmp (TYPE_NAME (value_type (value)), "bool") == 0)
+      if (TYPE_CODE (value_type (value)) == TYPE_CODE_BOOL)
 	return value_from_longest (value_type (value),
 				   value_logical_not (value));
       return value_complement (value);
