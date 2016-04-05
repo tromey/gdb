@@ -228,7 +228,9 @@ start:
 		{ rust_ast = $1; }
 ;
 
-// FIXME
+/* Note that the Rust grammar includes a method_call_expr, but we
+   handle this differently, to avoid a shift/reduce conflict with
+   call_expr.  */
 expr:
 	literal
 |	path_expr /* | tuple_expr | unit_expr | struct_expr */
