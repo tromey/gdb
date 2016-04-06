@@ -168,6 +168,7 @@ static const struct rust_op *rust_ast;
 %token <sval> IDENT
 %token <sval> COMPLETE
 %token <typed_val_int> INTEGER
+%token <typed_val_int> DECIMAL_INTEGER
 %token <typed_val_float> FLOAT
 %token <opcode> COMPOUND_ASSIGN
 
@@ -382,6 +383,8 @@ array_elems:
 literal:
 	INTEGER
 		{ $$ = make_literal ($1); }
+|	DECIMAL_INTEGER
+		{ $$ = make_literal ($1); }
 |	FLOAT
 		{ $$ = make_dliteral ($1); }
 |	KW_TRUE
@@ -407,6 +410,16 @@ literal:
 field_expr:
 	expr '.' IDENT
 		{ $$ = make_structop ($1, $3); }
+|	expr '.' DECIMAL_INTEGER
+		{
+		  /* We should perhaps represent this at a higher
+		     level of abstraction, but for now we just bake in
+		     the naming scheme used by rustc for tuple
+		     fields.  */
+		  const char *value = rust_concat3 ("__", plongest ($3.val),
+						    NULL);
+		  $$ = make_structop ($1, value);
+		}
 ;
 
 idx_expr:
@@ -954,6 +967,7 @@ lex_number (void)
   regmatch_t subexps[8];
   int match;
   int is_integer = 0;
+  int could_be_decimal = 1;
   char *typename = NULL;
   struct type *type;
   int end_index;
@@ -974,7 +988,10 @@ lex_number (void)
       if (subexps[INT_TYPE].rm_so == -1)
 	typename = "i32";
       else
-	type_index = INT_TYPE;
+	{
+	  type_index = INT_TYPE;
+	  could_be_decimal = 0;
+	}
     }
   else if (subexps[FLOAT_TYPE1].rm_so != -1)
     {
@@ -1013,7 +1030,9 @@ lex_number (void)
   make_cleanup (xfree, number);
   for (i = out = 0; number[i]; ++i)
     {
-      if (number[i] != '_')
+      if (number[i] == '_')
+	could_be_decimal = 0;
+      else
 	number[out++] = number[i];
     }
   number[out] = '\0';
@@ -1034,7 +1053,10 @@ lex_number (void)
 	  else if (number[1] == 'b')
 	    radix = 2;
 	  if (radix != 10)
-	    number += 2;
+	    {
+	      number += 2;
+	      could_be_decimal = 0;
+	    }
 	}
       rustlval.typed_val_int.val = strtoul (number, NULL, radix);
       rustlval.typed_val_int.type = type;
@@ -1046,7 +1068,7 @@ lex_number (void)
     }
 
   do_cleanups (cleanup);
-  return is_integer ? INTEGER : FLOAT;
+  return is_integer ? (could_be_decimal ? DECIMAL_INTEGER : INTEGER) : FLOAT;
 }
 
 /* The lexer.  */
@@ -1450,9 +1472,9 @@ rust_lex_test_one (const char *input, int expected)
 
 /* Test that INPUT lexes as the integer VALUE.  */
 static void
-rust_lex_int_test (const char *input, int value)
+rust_lex_int_test (const char *input, int value, int kind)
 {
-  RUSTSTYPE result = rust_lex_test_one (input, INTEGER);
+  RUSTSTYPE result = rust_lex_test_one (input, kind);
   gdb_assert (result.typed_val_int.val == value);
 }
 
@@ -1477,20 +1499,20 @@ rust_lex_tests (void)
   rust_lex_test_one ("ta 97", 0);
 
   /* FIXME check error cases */
-  rust_lex_int_test ("'z'", 'z');
-  rust_lex_int_test ("'\\xff'", 0xff);
-  rust_lex_int_test ("'\\u{1016f}'", 0x1016f);
-  rust_lex_int_test ("b'z'", 'z');
-  rust_lex_int_test ("b'\\xfe'", 0xfe);
+  rust_lex_int_test ("'z'", 'z', INTEGER);
+  rust_lex_int_test ("'\\xff'", 0xff, INTEGER);
+  rust_lex_int_test ("'\\u{1016f}'", 0x1016f, INTEGER);
+  rust_lex_int_test ("b'z'", 'z', INTEGER);
+  rust_lex_int_test ("b'\\xfe'", 0xfe, INTEGER);
 
-  rust_lex_int_test ("23", 23);
-  rust_lex_int_test ("2_344__29", 234429);
-  rust_lex_int_test ("0x1f", 0x1f);
-  rust_lex_int_test ("23usize", 23);
-  rust_lex_int_test ("23i32", 23);
-  rust_lex_int_test ("0x1_f", 0x1f);
-  rust_lex_int_test ("0b1_101011__", 0x6b);
-  rust_lex_int_test ("0o001177i64", 639);
+  rust_lex_int_test ("23", 23, DECIMAL_INTEGER);
+  rust_lex_int_test ("2_344__29", 234429, INTEGER);
+  rust_lex_int_test ("0x1f", 0x1f, INTEGER);
+  rust_lex_int_test ("23usize", 23, INTEGER);
+  rust_lex_int_test ("23i32", 23, INTEGER);
+  rust_lex_int_test ("0x1_f", 0x1f, INTEGER);
+  rust_lex_int_test ("0b1_101011__", 0x6b, INTEGER);
+  rust_lex_int_test ("0o001177i64", 639, INTEGER);
 
   rust_lex_test_one ("23.", FLOAT);
   rust_lex_test_one ("23.99f32", FLOAT);
