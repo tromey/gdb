@@ -229,7 +229,7 @@ static const struct rust_op *rust_ast;
 %right '=' COMPOUND_ASSIGN
 %left OROR
 %left ANDAND
-%left EQEQ NOTEQ '<' '>' LTEQ GTEQ
+%nonassoc EQEQ NOTEQ '<' '>' LTEQ GTEQ
 %left '|'
 %left '^'
 %left '&'
