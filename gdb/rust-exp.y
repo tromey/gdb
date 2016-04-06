@@ -60,8 +60,15 @@ struct typed_val_float
   struct type *type;
 };
 
-struct typed_val_int;
-struct typed_val_float;
+struct set_field
+{
+  const char *name;
+  const struct rust_op *init;
+};
+
+typedef struct set_field set_field;
+
+DEF_VEC_O (set_field);
 
 static const struct rust_op *make_operation (enum exp_opcode opcode,
 					     const struct rust_op *left,
@@ -77,8 +84,9 @@ static const struct rust_op *make_unary (enum exp_opcode opcode,
 					 const struct rust_op *expr);
 static const struct rust_op *make_cast (const struct rust_op *expr,
 					struct type *type);
-static const struct rust_op *make_call (const struct rust_op *expr,
-					VEC (rust_op_ptr) *params);
+static const struct rust_op *make_call_ish (enum exp_opcode opcode,
+					    const struct rust_op *expr,
+					    VEC (rust_op_ptr) *params);
 static const struct rust_op *make_path (const char *name);
 
 
@@ -152,6 +160,8 @@ static const struct rust_op *rust_ast;
 
   VEC (rust_op_ptr) *params;
 
+  VEC (set_field) *field_inits;
+
   const struct rust_op *op;
 }
 
@@ -201,13 +211,21 @@ static const struct rust_op *rust_ast;
 %type <op> paren_expr
 %type <op> call_expr
 %type <op> path_expr
+%type <op> tuple_expr
+%type <op> unit_expr
+%type <op> struct_expr
+%type <op> array_expr
+/* %type <op> range_expr */
 
 %type <params> expr_list
 %type <params> paren_expr_list
+%type <params> array_elems
+
+%type <field_inits> struct_expr_contents
 
 /* Precedence.  */
+%nonassoc DOTDOT
 %right '=' COMPOUND_ASSIGN
-%left DOTDOT
 %left OROR
 %left ANDAND
 %left EQEQ NOTEQ '<' '>' LTEQ GTEQ
@@ -233,14 +251,133 @@ start:
    call_expr.  */
 expr:
 	literal
-|	path_expr /* | tuple_expr | unit_expr | struct_expr */
-|	field_expr /* | array_expr */
-|	idx_expr /* | range_expr */
+|	path_expr
+|	tuple_expr
+|	unit_expr
+|	struct_expr
+|	field_expr
+|	array_expr
+|	idx_expr
+/* |	range_expr */
 |	unop_expr
 |	binop_expr
 |	paren_expr
 |	call_expr
 ;
+
+/* Note that the rightmost element of the array ends up at index 0.
+   This is compensated for when lowering from the AST.  */
+tuple_expr:
+	'(' expr ',' expr_list ')'
+		{
+		  VEC_safe_push (rust_op_ptr, $4, $2);
+		  error (_("tuple struct expressions not supported yet"));
+		}
+;
+
+unit_expr:
+	'(' ')'
+		{
+		  error (_("unit expr () not supported yet"));
+		}
+;
+
+/* To avoid a shift/reduce conflict with call_expr, we don't handle
+   tuple struct expressions here, but instead when examining the
+   AST.  */
+struct_expr:
+	path '{' struct_expr_contents '}'
+		{
+		  error (_("struct expr not supported yet"));
+		}
+|	path '{' DOTDOT expr '}'
+		{
+		  error (_("struct expr not supported yet"));
+		}
+;
+
+/* The form S{.. expr} is handled directly in struct_expr, not here.
+   S{} is documented as valid but seems to be an unstable feature, so
+   it is left out here.
+
+   Note that the rightmost element of the array ends up at index 0.
+   This is compensated for when lowering from the AST.  */
+struct_expr_contents:
+	',' IDENT ':' expr
+		{
+		  struct set_field sf;
+
+		  VEC (set_field) *result = NULL;
+		  sf.name = $2;
+		  sf.init = $4;
+		  VEC_safe_push (set_field, result, &sf);
+		  $$ = result;
+		}
+|	',' DOTDOT expr
+		{
+		  struct set_field sf;
+
+		  VEC (set_field) *result = NULL;
+		  sf.name = NULL;
+		  sf.init = $3;
+		  VEC_safe_push (set_field, result, &sf);
+		  $$ = result;
+		}
+|	IDENT ':' expr struct_expr_contents
+		{
+		  struct set_field sf;
+
+		  sf.name = $1;
+		  sf.init = $3;
+		  VEC_safe_push (set_field, $4, &sf);
+		  $$ = $4;
+		}
+;
+
+array_expr:
+	'[' KW_MUT array_elems ']'
+		{ $$ = make_call_ish (OP_ARRAY, NULL, $3); }
+|	'[' array_elems ']'
+		{ $$ = make_call_ish (OP_ARRAY, NULL, $2); }
+|	'[' KW_MUT expr ';' expr ']'
+		{
+		  error (_("[expr;expr] form of array not supported yet"));
+		}
+|	'[' expr ';' expr ']'
+		{
+		  error (_("[expr;expr] form of array not supported yet"));
+		}
+;
+
+/* Note that the rightmost element of the array ends up at index 0.
+   This is compensated for when lowering from the AST.  */
+array_elems:
+	expr
+		{
+		  VEC (rust_op_ptr) *result = NULL;
+
+		  VEC_safe_push (rust_op_ptr, result, $1);
+		  $$ = result;
+		}
+|	expr ',' array_elems
+		{
+		  VEC_safe_push (rust_op_ptr, $3, $1);
+		  $$ = $3;
+		}
+;
+
+/* FIXME - this causes a shift/reduce conflict that I'd like to
+   understand before implementing it.  */
+/* range_expr: */
+/* 	expr DOTDOT */
+/* 		{ $$ = fixme; } */
+/* |	expr DOTDOT expr */
+/* 		{ $$ = fixme; } */
+/* |	DOTDOT expr */
+/* 		{ $$ = fixme; } */
+/* |	DOTDOT */
+/* 		{ $$ = fixme; } */
+/* ; */
 
 literal:
 	INTEGER
@@ -391,6 +528,8 @@ paren_expr:
 		{ $$ = $2; }
 ;
 
+/* Note that the rightmost element of the array ends up at index 0.
+   This is compensated for when lowering from the AST.  */
 expr_list:
 	%empty
 		{ $$ = NULL; }
@@ -410,7 +549,7 @@ paren_expr_list:
 
 call_expr:
 	expr paren_expr_list
-		{ $$ = make_call ($1, $2); }
+		{ $$ = make_call_ish (OP_FUNCALL, $1, $2); }
 ;
 
 path_expr:
@@ -503,7 +642,8 @@ static const struct token_info operator_tokens[] =
   { "|=", COMPOUND_ASSIGN, BINOP_BITWISE_IOR },
   { "^=", COMPOUND_ASSIGN, BINOP_BITWISE_XOR },
 
-  { "::", COLONCOLON, OP_NULL }
+  { "::", COLONCOLON, OP_NULL },
+  { "..", DOTDOT, OP_NULL }
 };
 
 /* Helper function to copy to the name obstack.  */
@@ -1039,11 +1179,12 @@ make_cast (const struct rust_op *expr, struct type *type)
 }
 
 static const struct rust_op *
-make_call (const struct rust_op *expr, VEC (rust_op_ptr) *params)
+make_call_ish (enum exp_opcode opcode, const struct rust_op *expr,
+	       VEC (rust_op_ptr) *params)
 {
   struct rust_op *result = OBSTACK_ZALLOC (&work_obstack, struct rust_op);
 
-  result->opcode = OP_FUNCALL;
+  result->opcode = opcode;
   result->left.op = expr;
   result->right.params = params;
 
@@ -1071,6 +1212,26 @@ make_structop (const struct rust_op *left, const char *name)
   result->right.sval = name;
 
   return result;
+}
+
+static void convert_ast_to_expression (struct parser_state *state,
+				       const struct rust_op *operation,
+				       const struct rust_op *top);
+
+static void
+convert_params_to_expression (struct parser_state *state,
+			      VEC (rust_op_ptr) *params,
+			      const struct rust_op *top)
+{
+  int i;
+
+  /* We built the vec with the rightmost element at position 0, so
+     walk in reverse to get the correct result.  */
+  for (i = VEC_length (rust_op_ptr, params) - 1;
+       i >= 0;
+       --i)
+    convert_ast_to_expression (state, VEC_index (rust_op_ptr, params, i),
+			       top);
 }
 
 static void
@@ -1158,21 +1319,22 @@ convert_ast_to_expression (struct parser_state *state,
       break;
 
     case OP_FUNCALL:
-      {
-	int i;
-	const struct rust_op *arg;
+      write_exp_elt_opcode (state, OP_FUNCALL);
+      write_exp_elt_longcst (state, VEC_length (rust_op_ptr,
+						operation->right.params));
+      write_exp_elt_longcst (state, OP_FUNCALL);
+      convert_ast_to_expression (state, operation->left.op, top);
+      convert_params_to_expression (state, operation->right.params, top);
+      break;
 
-	convert_ast_to_expression (state, operation->left.op, top);
-
-	for (i = 0;
-	     VEC_iterate (rust_op_ptr, operation->right.params, i, arg);
-	     ++i)
-	  convert_ast_to_expression (state, arg, top);
-
-	write_exp_elt_opcode (state, OP_FUNCALL);
-	write_exp_elt_longcst (state, i);
-	write_exp_elt_longcst (state, OP_FUNCALL);
-      }
+    case OP_ARRAY:
+      write_exp_elt_opcode (state, OP_ARRAY);
+      write_exp_elt_longcst (state, 0);
+      write_exp_elt_longcst (state, VEC_length (rust_op_ptr,
+						operation->right.params));
+      write_exp_elt_longcst (state, OP_ARRAY);
+      gdb_assert (operation->left.op == NULL);
+      convert_params_to_expression (state, operation->right.params, top);
       break;
 
     case OP_VAR_VALUE:
