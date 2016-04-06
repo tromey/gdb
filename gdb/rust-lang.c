@@ -174,6 +174,8 @@ rust_print_type (struct type *type, const char *varstring,
 		 struct ui_file *stream, int show, int level,
 		 const struct type_print_options *flags)
 {
+  int i;
+
   QUIT;
   if (show <= 0
       && TYPE_NAME (type) != NULL)
@@ -183,9 +185,13 @@ rust_print_type (struct type *type, const char *varstring,
     }
 
   type = check_typedef (type);
-  if (TYPE_CODE (type) == TYPE_CODE_FUNC && !TYPE_VARARGS (type))
+  switch (TYPE_CODE (type))
     {
-      int i;
+    case TYPE_CODE_FUNC:
+      /* Delegate varargs to the C printer.  Not totally sure this
+	 is correct.  */
+      if (TYPE_VARARGS (type))
+	goto c_printer;
 
       fputs_filtered ("fn (", stream);
       for (i = 0; i < TYPE_NFIELDS (type); ++i)
@@ -197,9 +203,94 @@ rust_print_type (struct type *type, const char *varstring,
 	}
       fputs_filtered (") -> ", stream);
       rust_print_type (TYPE_TARGET_TYPE (type), "", stream, -1, 0, flags);
+      break;
+
+    case TYPE_CODE_ARRAY:
+      {
+	LONGEST low_bound, high_bound;
+
+	fputs_filtered ("[", stream);
+	rust_print_type (TYPE_TARGET_TYPE (type), NULL,
+			 stream, show - 1, level, flags);
+	fputs_filtered ("; ", stream);
+
+	if (TYPE_HIGH_BOUND_KIND (TYPE_INDEX_TYPE (type)) == PROP_LOCEXPR
+	    || TYPE_HIGH_BOUND_KIND (TYPE_INDEX_TYPE (type)) == PROP_LOCLIST)
+	  fprintf_filtered (stream, "variable length");
+	else if (get_array_bounds (type, &low_bound, &high_bound))
+	  fprintf_filtered (stream, "%s", 
+			    plongest (high_bound - low_bound + 1));
+	fputs_filtered ("]", stream);
+      }
+      break;
+
+    case TYPE_CODE_STRUCT:
+      {
+	int first_field, is_tuple_struct;
+
+	/* Print a tuple type simply.  Tuples currently are recognized
+	   by name.  */
+	if (TYPE_TAG_NAME (type) != NULL && TYPE_TAG_NAME (type)[0] == '(')
+	  {
+	    fputs_filtered (TYPE_TAG_NAME (type), stream);
+	    break;
+	  }
+
+	/* If we see a base class, delegate to C.  */
+	if (TYPE_N_BASECLASSES (type) > 0)
+	  goto c_printer;
+
+	fputs_filtered ("struct ", stream);
+	if (TYPE_TAG_NAME (type) != NULL)
+	  fputs_filtered (TYPE_TAG_NAME (type), stream);
+
+	first_field = 1;
+	is_tuple_struct = 0;
+	for (i = 0; i < TYPE_NFIELDS (type); ++i)
+	  {
+	    const char *name;
+
+	    if (field_is_static (&TYPE_FIELD (type, i)))
+	      continue;
+
+	    if (first_field)
+	      {
+		/* See if this looks like a tuple struct.  It would be
+		   nice if there were a better way.  */
+		if (strcmp (TYPE_FIELD_NAME (type, i), "__0") == 0)
+		  {
+		    is_tuple_struct = 1;
+		    fputs_filtered (" (\n", stream);
+		  }
+		else
+		  fputs_filtered (" {\n", stream);
+		first_field = 0;
+	      }
+
+	    /* FIXME could try to print "pub", but (1) rustc doesn't
+	       emit the debuginfo, and (2) it relies on c++-specific
+	       stuff anyway.  */
+
+	    /* For a tuple struct we print the type but nothing
+	       else.  */
+	    print_spaces_filtered (level + 2, stream);
+	    if (!is_tuple_struct)
+	      fprintf_filtered (stream, "%s: ", TYPE_FIELD_NAME (type, i));
+
+	    rust_print_type (TYPE_FIELD_TYPE (type, i), NULL,
+			     stream, show - 1, level + 2,
+			     flags);
+	    fputs_filtered (",\n", stream);
+	  }
+
+	fprintfi_filtered (level, stream, is_tuple_struct ? ")" : "}");
+      }
+      break;
+
+    default:
+    c_printer:
+      c_print_type (type, varstring, stream, show, level, flags);
     }
-  else
-    c_print_type (type, varstring, stream, show, level, flags);
 }
 
 
