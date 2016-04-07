@@ -284,8 +284,7 @@ rust_print_type (struct type *type, const char *varstring,
       {
 	int is_tuple_struct;
 
-	/* Print a tuple type simply.  Tuples currently are recognized
-	   by name.  */
+	/* Print a tuple type simply.  */
 	if (rust_tuple_type_p (type))
 	  {
 	    fputs_filtered (TYPE_TAG_NAME (type), stream);
