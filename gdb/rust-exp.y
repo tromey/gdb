@@ -88,7 +88,8 @@ static const struct rust_op *make_call_ish (enum exp_opcode opcode,
 					    const struct rust_op *expr,
 					    VEC (rust_op_ptr) *params);
 static const struct rust_op *make_path (const char *name);
-
+static const struct rust_op *make_struct (const char *name,
+					  VEC (set_field) *fields);
 
 /* The state of the parser, used internally when we are parsing the
    expression.  */
@@ -295,12 +296,17 @@ unit_expr:
    AST.  */
 struct_expr:
 	path '{' struct_expr_contents '}'
-		{
-		  error (_("struct expr not supported yet"));
-		}
+		{ $$ = make_struct ($1, $3); }
 |	path '{' DOTDOT expr '}'
 		{
-		  error (_("struct expr not supported yet"));
+		  VEC (set_field) *result = NULL;
+		  struct set_field sf;
+
+		  sf.name = NULL;
+		  sf.init = $4;
+		  VEC_safe_push (set_field, result, &sf);
+
+		  $$ = make_struct ($1, result);
 		}
 ;
 
@@ -1221,6 +1227,19 @@ make_call_ish (enum exp_opcode opcode, const struct rust_op *expr,
 }
 
 static const struct rust_op *
+make_struct (const char *name, VEC (set_field) *fields)
+{
+  struct rust_op *result = OBSTACK_ZALLOC (&work_obstack, struct rust_op);
+
+  /* We treat this differently than Ada.  */
+  result->opcode = OP_AGGREGATE;
+  result->left.sval = name;
+  result->right.field_inits = fields;
+
+  return result;
+}
+
+static const struct rust_op *
 make_path (const char *path)
 {
   struct rust_op *result = OBSTACK_ZALLOC (&work_obstack, struct rust_op);
@@ -1403,6 +1422,60 @@ convert_ast_to_expression (struct parser_state *state,
 	    error (_("No symbol '%s' in current context"),
 		   operation->left.sval);
 	  }
+      }
+      break;
+
+    case OP_AGGREGATE:
+      {
+	int i;
+	int length;
+	const struct set_field *init;
+	VEC (set_field) *fields = operation->right.field_inits;
+	struct stoken token;
+
+	/* We constructed the initializers in reverse order; but if
+	   the final one is a copy initializer, then we want to
+	   process it first.  */
+	length = VEC_length (set_field, fields);
+	if (!VEC_empty (set_field, fields))
+	  {
+	    init = VEC_index (set_field, fields, 0);
+	    if (init->name == NULL)
+	      {
+		struct stoken empty;
+
+		empty.ptr = "";
+		empty.length = 0;
+		write_exp_string (state, empty);
+		convert_ast_to_expression (state, init->init, top);
+
+		VEC_ordered_remove (set_field, fields, 0);
+	      }
+	  }
+
+	for (i = VEC_length (set_field, fields) - 1;
+	     i >= 0;
+	     --i)
+	  {
+	    init = VEC_index (set_field, fields, i);
+
+	    /* FIXME this doesn't work */
+	    token.ptr = init->name;
+	    token.length = strlen (token.ptr);
+	    write_exp_elt_opcode (state, OP_AGGREGATE);
+
+	    convert_ast_to_expression (state, init->init, top);
+	  }
+
+	token.ptr = operation->left.sval;
+	token.length = strlen (token.ptr);
+
+	write_exp_elt_opcode (state, OP_AGGREGATE);
+	write_exp_string (state, token);
+	write_exp_elt_longcst (state, length - 1);
+	write_exp_elt_longcst (state, OP_AGGREGATE);
+
+	error (_("aggregate evaluation not supported yet"));
       }
       break;
 
