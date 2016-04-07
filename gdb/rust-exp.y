@@ -1347,16 +1347,31 @@ convert_ast_to_expression (struct parser_state *state,
     case BINOP_LSH:
     case BINOP_RSH:
     case BINOP_ASSIGN:
-      convert_ast_to_expression (state, operation->left.op, top);
-      convert_ast_to_expression (state, operation->right.op, top);
-      if (operation->compound_assignment)
-	{
-	  write_exp_elt_opcode (state, BINOP_ASSIGN_MODIFY);
+      {
+	struct type *type;
+
+	convert_ast_to_expression (state, operation->left.op, top);
+	convert_ast_to_expression (state, operation->right.op, top);
+	if (operation->compound_assignment)
+	  {
+	    write_exp_elt_opcode (state, BINOP_ASSIGN_MODIFY);
+	    write_exp_elt_opcode (state, operation->opcode);
+	    write_exp_elt_opcode (state, BINOP_ASSIGN_MODIFY);
+	  }
+	else
 	  write_exp_elt_opcode (state, operation->opcode);
-	  write_exp_elt_opcode (state, BINOP_ASSIGN_MODIFY);
-	}
-      else
-	write_exp_elt_opcode (state, operation->opcode);
+
+	type = language_lookup_primitive_type (parse_language (state),
+					       parse_gdbarch (state),
+					       "()");
+
+	write_exp_elt_opcode (state, OP_LONG);
+	write_exp_elt_type (state, type);
+	write_exp_elt_longcst (state, 0);
+	write_exp_elt_opcode (state, OP_LONG);
+
+	write_exp_elt_opcode (state, BINOP_COMMA);
+      }
       break;
 
     case UNOP_CAST:
