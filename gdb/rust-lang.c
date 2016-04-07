@@ -55,7 +55,7 @@ rust_tuple_struct_type_p (struct type *type)
   gdb_assert (TYPE_CODE (type) == TYPE_CODE_STRUCT);
   for (i = 0; i < TYPE_NFIELDS (type); ++i)
     {
-      if (field_is_static (&TYPE_FIELD (type, i)))
+      if (!field_is_static (&TYPE_FIELD (type, i)))
 	return strcmp (TYPE_FIELD_NAME (type, i), "__0") == 0;
     }
   return 0;
