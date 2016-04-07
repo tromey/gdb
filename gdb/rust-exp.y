@@ -1420,10 +1420,22 @@ convert_ast_to_expression (struct parser_state *state,
 	      {
 		/* If we didn't find a variable, and we're at the top
 		   level, then maybe we found a type instead.  */
-		struct type *type = lookup_typename (parse_language (state),
-						     parse_gdbarch (state),
-						     operation->left.sval,
-						     NULL, 0);
+		struct type *type;
+
+		/* First try a type tag.  */
+		sym = lookup_symbol (operation->left.sval,
+				     expression_context_block,
+				     STRUCT_DOMAIN, NULL);
+		if (sym.symbol != NULL)
+		  {
+		    update_innermost_block (sym);
+		    type = SYMBOL_TYPE (sym.symbol);
+		  }
+		else
+		  type = lookup_typename (parse_language (state),
+					  parse_gdbarch (state),
+					  operation->left.sval,
+					  NULL, 0);
 
 		if (type != NULL)
 		  {
