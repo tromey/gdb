@@ -121,7 +121,9 @@ static const struct generic_val_print_decorations rust_decorations =
   " * I",
   "true",
   "false",
-  "void"
+  "void",
+  "[",
+  "]"
 };
 
 /* la_val_print implementation for Rust.  */
@@ -135,7 +137,6 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
   type = check_typedef (type);
   switch (TYPE_CODE (type))
     {
-    case TYPE_CODE_ARRAY:
     case TYPE_CODE_METHODPTR:
     case TYPE_CODE_PTR:
     case TYPE_CODE_UNION:
@@ -153,9 +154,22 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
 	  fputs_filtered ("()", stream);
 	  break;
 	}
-      /* Fallthrough.  */
+      goto generic_print;
+
+    case TYPE_CODE_ARRAY:
+      {
+	LONGEST low_bound, high_bound;
+
+	if (get_array_bounds (type, &low_bound, &high_bound)
+	    && high_bound - low_bound + 1 == 0)
+	  fputs_filtered ("[]", stream);
+	else
+	  goto generic_print;
+      }
+      break;
 
     default:
+    generic_print:
       /* Nothing special yet.  */
       generic_val_print (type, valaddr, embedded_offset, address, stream,
 			 recurse, val, options, &rust_decorations);
