@@ -31,6 +31,38 @@
 
 extern initialize_file_ftype _initialize_rust_language;
 
+
+
+/* Return true if the struct TYPE is a tuple type; otherwise
+   false.  */
+static int
+rust_tuple_type_p (struct type *type)
+{
+  /* The current implementation is a bit of a hack, but there's
+     nothing else in the debuginfo to distinguish a tuple from a
+     struct.  */
+  gdb_assert (TYPE_CODE (type) == TYPE_CODE_STRUCT);
+  return TYPE_TAG_NAME (type) != NULL && TYPE_TAG_NAME (type)[0] == '(';
+}
+
+/* Return true if the struct TYPE is a tuple struct type; otherwise
+   false.  */
+static int
+rust_tuple_struct_type_p (struct type *type)
+{
+  int i;
+
+  gdb_assert (TYPE_CODE (type) == TYPE_CODE_STRUCT);
+  for (i = 0; i < TYPE_NFIELDS (type); ++i)
+    {
+      if (field_is_static (&TYPE_FIELD (type, i)))
+	return strcmp (TYPE_FIELD_NAME (type, i), "__0") == 0;
+    }
+  return 0;
+}
+
+
+
 /* Return true if TYPE is a Rust character type.  */
 
 static int
@@ -250,11 +282,11 @@ rust_print_type (struct type *type, const char *varstring,
 
     case TYPE_CODE_STRUCT:
       {
-	int first_field, is_tuple_struct;
+	int is_tuple_struct;
 
 	/* Print a tuple type simply.  Tuples currently are recognized
 	   by name.  */
-	if (TYPE_TAG_NAME (type) != NULL && TYPE_TAG_NAME (type)[0] == '(')
+	if (rust_tuple_type_p (type))
 	  {
 	    fputs_filtered (TYPE_TAG_NAME (type), stream);
 	    break;
@@ -268,28 +300,15 @@ rust_print_type (struct type *type, const char *varstring,
 	if (TYPE_TAG_NAME (type) != NULL)
 	  fputs_filtered (TYPE_TAG_NAME (type), stream);
 
-	first_field = 1;
-	is_tuple_struct = 0;
+	is_tuple_struct = rust_tuple_struct_type_p (type);
+	fputs_filtered (is_tuple_struct ? " (\n" : " {\n", stream);
+
 	for (i = 0; i < TYPE_NFIELDS (type); ++i)
 	  {
 	    const char *name;
 
 	    if (field_is_static (&TYPE_FIELD (type, i)))
 	      continue;
-
-	    if (first_field)
-	      {
-		/* See if this looks like a tuple struct.  It would be
-		   nice if there were a better way.  */
-		if (strcmp (TYPE_FIELD_NAME (type, i), "__0") == 0)
-		  {
-		    is_tuple_struct = 1;
-		    fputs_filtered (" (\n", stream);
-		  }
-		else
-		  fputs_filtered (" {\n", stream);
-		first_field = 0;
-	      }
 
 	    /* FIXME could try to print "pub", but (1) rustc doesn't
 	       emit the debuginfo, and (2) it relies on c++-specific
