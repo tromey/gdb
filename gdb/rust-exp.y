@@ -1350,20 +1350,20 @@ convert_ast_to_expression (struct parser_state *state,
     case OP_FUNCALL:
       write_exp_elt_opcode (state, OP_FUNCALL);
       write_exp_elt_longcst (state, VEC_length (rust_op_ptr,
-						operation->right.params));
+						operation->right.params) - 1);
       write_exp_elt_longcst (state, OP_FUNCALL);
       convert_ast_to_expression (state, operation->left.op, top);
       convert_params_to_expression (state, operation->right.params, top);
       break;
 
     case OP_ARRAY:
+      gdb_assert (operation->left.op == NULL);
+      convert_params_to_expression (state, operation->right.params, top);
       write_exp_elt_opcode (state, OP_ARRAY);
       write_exp_elt_longcst (state, 0);
       write_exp_elt_longcst (state, VEC_length (rust_op_ptr,
-						operation->right.params));
+						operation->right.params) - 1);
       write_exp_elt_longcst (state, OP_ARRAY);
-      gdb_assert (operation->left.op == NULL);
-      convert_params_to_expression (state, operation->right.params, top);
       break;
 
     case OP_VAR_VALUE:

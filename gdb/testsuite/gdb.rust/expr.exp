@@ -83,3 +83,6 @@ gdb_test "print 32usize >> 5" " = 1"
 gdb_test "ptype 32i32 as f64" "type = f64"
 
 gdb_test "print ()" " = \\(\\)"
+
+gdb_test "print \[1,2,3,4\]" " = \\\[1, 2, 3, 4\\\]"
+gdb_test "ptype \[1,2,3,4\]" "type = \\\[i32; 4\\\]"
