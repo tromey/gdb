@@ -335,6 +335,7 @@ enum rust_primitive_types
   rust_primitive_usize,
   rust_primitive_f32,
   rust_primitive_f64,
+  rust_primitive_unit,
   nr_rust_primitive_types
 };
 
@@ -369,6 +370,8 @@ rust_language_arch_info (struct gdbarch *gdbarch,
 
   types[rust_primitive_f32] = arch_float_type (gdbarch, 32, "f32", NULL);
   types[rust_primitive_f64] = arch_float_type (gdbarch, 64, "f64", NULL);
+
+  types[rust_primitive_unit] = arch_integer_type (gdbarch, 0, 1, "()");
 
   lai->bool_type_default = types[rust_primitive_bool];
 }

@@ -279,7 +279,14 @@ tuple_expr:
 unit_expr:
 	'(' ')'
 		{
-		  error (_("unit expr () not supported yet"));
+		  struct typed_val_int val;
+
+		  val.type
+		    = language_lookup_primitive_type (parse_language (pstate),
+						      parse_gdbarch (pstate),
+						      "()");
+		  val.val = 0;
+		  $$ = make_literal (val);
 		}
 ;
 
