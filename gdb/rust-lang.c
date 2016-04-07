@@ -145,6 +145,16 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
 		   recurse, val, options);
       break;
 
+    case TYPE_CODE_INT:
+      /* Recognize the unit type.  */
+      if (TYPE_UNSIGNED (type) && TYPE_LENGTH (type) == 0
+	  && TYPE_NAME (type) != NULL && strcmp (TYPE_NAME (type), "()") == 0)
+	{
+	  fputs_filtered ("()", stream);
+	  break;
+	}
+      /* Fallthrough.  */
+
     default:
       /* Nothing special yet.  */
       generic_val_print (type, valaddr, embedded_offset, address, stream,
