@@ -1457,12 +1457,11 @@ convert_ast_to_expression (struct parser_state *state,
 	    init = VEC_index (set_field, fields, 0);
 	    if (init->name == NULL)
 	      {
-		struct stoken empty;
-
-		empty.ptr = "";
-		empty.length = 0;
-		write_exp_string (state, empty);
 		convert_ast_to_expression (state, init->init, top);
+
+		/* This is handled differently from Ada in our
+		   evaluator.  */
+		write_exp_elt_opcode (state, OP_OTHERS);
 
 		VEC_ordered_remove (set_field, fields, 0);
 	      }
@@ -1474,10 +1473,11 @@ convert_ast_to_expression (struct parser_state *state,
 	  {
 	    init = VEC_index (set_field, fields, i);
 
-	    /* FIXME this doesn't work */
 	    token.ptr = init->name;
 	    token.length = strlen (token.ptr);
-	    write_exp_elt_opcode (state, OP_AGGREGATE);
+	    write_exp_elt_opcode (state, OP_NAME);
+	    write_exp_string (state, token);
+	    write_exp_elt_opcode (state, OP_NAME);
 
 	    convert_ast_to_expression (state, init->init, top);
 	  }
