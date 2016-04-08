@@ -418,6 +418,7 @@ enum rust_primitive_types
   rust_primitive_f32,
   rust_primitive_f64,
   rust_primitive_unit,
+  rust_primitive_str,
   nr_rust_primitive_types
 };
 
@@ -428,6 +429,7 @@ rust_language_arch_info (struct gdbarch *gdbarch,
 			 struct language_arch_info *lai)
 {
   const struct builtin_type *builtin = builtin_type (gdbarch);
+  struct type *str;
   struct type **types;
   unsigned int length;
 
@@ -454,6 +456,18 @@ rust_language_arch_info (struct gdbarch *gdbarch,
   types[rust_primitive_f64] = arch_float_type (gdbarch, 64, "f64", NULL);
 
   types[rust_primitive_unit] = arch_integer_type (gdbarch, 0, 1, "()");
+
+  str = arch_composite_type (gdbarch, "&str", TYPE_CODE_STRUCT);
+  /* The type here isn't strictly correct; instead we want
+     "*const u8".  */
+  append_composite_type_field_aligned
+    (str, "data_ptr",
+     lookup_pointer_type (types[rust_primitive_u8]),
+     0);
+  append_composite_type_field_aligned (str, "length",
+				       types[rust_primitive_usize],
+				       length);
+  types[rust_primitive_str] = str;
 
   lai->bool_type_default = types[rust_primitive_bool];
 }
