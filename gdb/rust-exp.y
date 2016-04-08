@@ -734,9 +734,10 @@ lex_hex (int min, int max)
   uint32_t result = 0;
   int len = 0;
 
-  while ((lexptr[0] >= 'a' && lexptr[0] <= 'f')
-	 || (lexptr[0] >= 'A' && lexptr[0] <= 'F')
-	 || (lexptr[0] >= '0' && lexptr[0] <= '9'))
+  while (len <= max
+	 && ((lexptr[0] >= 'a' && lexptr[0] <= 'f')
+	     || (lexptr[0] >= 'A' && lexptr[0] <= 'F')
+	     || (lexptr[0] >= '0' && lexptr[0] <= '9')))
     {
       result *= 16;
       if (lexptr[0] >= 'a' && lexptr[0] <= 'f')
@@ -896,7 +897,6 @@ lex_string (void)
   int is_byte = lexptr[0] == 'b';
   int raw_length;
   int len_in_chars = 0;
-  void *utf32;
 
   if (is_byte)
     ++lexptr;
@@ -939,15 +939,25 @@ lex_string (void)
 	  ++lexptr;
 	}
 
-      obstack_grow (&work_obstack, &value, sizeof (value));
+      if (is_byte)
+	{
+	  gdb_byte byte = value;
+
+	  obstack_grow (&work_obstack, &byte, 1);
+	}
+      else
+	obstack_grow (&work_obstack, &value, sizeof (value));
       ++len_in_chars;
     }
 
-  utf32 = obstack_finish (&work_obstack);
-  convert_between_encodings ("UTF-32", "UTF-8",
-			     utf32, len_in_chars * sizeof (uint32_t),
-			     sizeof (uint32_t), &work_obstack,
-			     translit_none);
+  if (!is_byte)
+    {
+      void *utf32 = obstack_finish (&work_obstack);
+      convert_between_encodings ("UTF-32", "UTF-8",
+				 utf32, len_in_chars * sizeof (uint32_t),
+				 sizeof (uint32_t), &work_obstack,
+				 translit_none);
+    }
 
   rustlval.sval = obstack_finish (&work_obstack);
   return is_byte ? BYTESTRING : STRING;

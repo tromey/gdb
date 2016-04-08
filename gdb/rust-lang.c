@@ -139,7 +139,7 @@ rust_printstr (struct ui_file *stream, struct type *type,
 
   /* FIXME this is not ideal as it doesn't use our character printer.  */
   generic_printstr (stream, type, string, length, encoding, force_ellipses,
-		    '"', 1, options);
+		    '"', 0, options);
 }
 
 
@@ -196,10 +196,12 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
 	if (!get_array_bounds (type, &low_bound, &high_bound))
 	  error (_("Could not determine the array bounds"));
 
-	/* FIXME perhaps we should print a "b" before the string.  */
-	LA_PRINT_STRING (stream, TYPE_TARGET_TYPE (type),
-			 valaddr + embedded_offset * unit_size,
-			 high_bound - low_bound + 1, NULL, 0, options);
+	/* If we see a plain TYPE_CODE_STRING, then we're printing a
+	   byte string, hence the choice of "ASCII" as the encoding.
+	   FIXME perhaps we should print a "b" before the string.  */
+	rust_printstr (stream, TYPE_TARGET_TYPE (type),
+		       valaddr + embedded_offset * unit_size,
+		       high_bound - low_bound + 1, "ASCII", 0, options);
       }
       break;
 
