@@ -166,6 +166,7 @@ static const struct rust_op *rust_ast;
   const struct rust_op *op;
 }
 
+%token <sval> GDBVAR
 %token <sval> IDENT
 %token <sval> COMPLETE
 %token <typed_val_int> INTEGER
@@ -581,6 +582,8 @@ call_expr:
 path_expr:
 	path
 		{ $$ = make_path ($1); }
+|	GDBVAR
+		{ $$ = make_path ($1); }
 ;
 
 path:
@@ -887,10 +890,11 @@ lex_identifier (void)
   unsigned int length;
   const struct token_info *token;
   int i;
+  int is_gdb_var = lexptr[0] == '$';
 
   gdb_assert ((lexptr[0] >= 'a' && lexptr[0] <= 'z')
 	      || (lexptr[0] >= 'A' && lexptr[0] <= 'Z')
-	      || lexptr[0] == '_');
+	      || lexptr[0] == '_' || lexptr[0] == '$');
 
   ++lexptr;
 
@@ -898,6 +902,7 @@ lex_identifier (void)
   while ((lexptr[0] >= 'a' && lexptr[0] <= 'z')
 	 || (lexptr[0] >= 'A' && lexptr[0] <= 'Z')
 	 || lexptr[0] == '_'
+	 || (is_gdb_var && lexptr[0] == '$')
 	 || (lexptr[0] >= '0' && lexptr[0] <= '9'))
     ++lexptr;
 
@@ -940,7 +945,10 @@ lex_identifier (void)
   rustlval.sval = rust_copy_name (start, length);
 
   /* Slightly weird that we don't allow completion if the text happens
-     to be a token.  */
+     to be a token or a convenience variable.  FIXME - we need a
+     slightly better completion scheme perhaps.  */
+  if (is_gdb_var)
+    return GDBVAR;
   if (parse_completion && lexptr[0] == '\0')
     return COMPLETE;
   return IDENT;
@@ -1109,7 +1117,7 @@ rustlex (void)
     return lex_string ();
   else if ((lexptr[0] >= 'a' && lexptr[0] <= 'z')
 	   || (lexptr[0] >= 'A' && lexptr[0] <= 'Z')
-	   || lexptr[0] == '_')
+	   || lexptr[0] == '_' || lexptr[0] == '$')
     return lex_identifier ();
   else if (lexptr[0] == '"')
     return lex_string ();
@@ -1403,6 +1411,16 @@ convert_ast_to_expression (struct parser_state *state,
     case OP_VAR_VALUE:
       {
 	struct block_symbol sym;
+
+	if (operation->left.sval[0] == '$')
+	  {
+	    struct stoken token;
+
+	    token.ptr = operation->left.sval;
+	    token.length = strlen (token.ptr);
+	    write_dollar_variable (state, token);
+	    break;
+	  }
 
 	sym = lookup_symbol (operation->left.sval, expression_context_block,
 			     VAR_DOMAIN, NULL);
