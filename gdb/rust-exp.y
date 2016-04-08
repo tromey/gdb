@@ -708,7 +708,8 @@ update_innermost_block (struct block_symbol sym)
     innermost_block = sym.block;
 }
 
-/* A helper to look up a Rust type, or fail.  */
+/* A helper to look up a Rust type, or fail.  This only works for
+   types defined by rust_language_arch_info.  */
 static struct type *
 rust_type (const char *name)
 {
