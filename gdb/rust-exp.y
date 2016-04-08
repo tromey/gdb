@@ -24,6 +24,7 @@
 #include "defs.h"
 
 #include "block.h"
+#include "charset.h"
 #include "gdb_obstack.h"
 #include "gdb_regex.h"
 #include "rust-lang.h"
@@ -88,6 +89,7 @@ static const struct rust_op *make_call_ish (enum exp_opcode opcode,
 					    const struct rust_op *expr,
 					    VEC (rust_op_ptr) *params);
 static const struct rust_op *make_path (const char *name);
+static const struct rust_op *make_string (int is_byte, const char *str);
 static const struct rust_op *make_struct (const char *name,
 					  VEC (set_field) *fields);
 
@@ -171,6 +173,8 @@ static const struct rust_op *rust_ast;
 %token <sval> COMPLETE
 %token <typed_val_int> INTEGER
 %token <typed_val_int> DECIMAL_INTEGER
+%token <sval> STRING
+%token <sval> BYTESTRING
 %token <typed_val_float> FLOAT
 %token <opcode> COMPOUND_ASSIGN
 
@@ -401,6 +405,10 @@ literal:
 		{ $$ = make_literal ($1); }
 |	FLOAT
 		{ $$ = make_dliteral ($1); }
+|	STRING
+		{ $$ = make_string (0, $1); }
+|	BYTESTRING
+		{ $$ = make_string (1, $1); }
 |	KW_TRUE
 		{
 		  struct typed_val_int val;
@@ -835,7 +843,7 @@ lex_character (void)
     value = lex_escape (is_byte);
   else
     {
-      value = lexptr[0];
+      value = lexptr[0] & 0xff;
       ++lexptr;
     }
 
@@ -849,23 +857,99 @@ lex_character (void)
   return INTEGER;
 }
 
-/* Return true if STR looks like the start of a raw string.  */
+/* Return the offset of the double quote if STR looks like the start
+   of a raw string, or 0 if STR does not start a raw string..  */
 static int
 starts_raw_string (const char *str)
 {
+  const char *save = str;
+
   if (str[0] != 'r')
     return 0;
   ++str;
   while (str[0] == '#')
     ++str;
-  return str[0] == '"';
+  if (str[0] == '"')
+    return str - save;
+  return 0;
+}
+
+/* Return true if STR looks like the end of a raw string that had N
+   hashes at the start.  */
+static int
+ends_raw_string (const char *str, int n)
+{
+  int i;
+
+  gdb_assert (str[0] == '"');
+  for (i = 0; i < n; ++i)
+    if (str[i + 1] != '#')
+      return 0;
+  return 1;
 }
 
 /* Lex a string constant.  */
 static int
 lex_string (void)
 {
-  error (_("string lexing unimplemented"));
+  int is_byte = lexptr[0] == 'b';
+  int raw_length;
+  int len_in_chars = 0;
+  void *utf32;
+
+  if (is_byte)
+    ++lexptr;
+  raw_length = starts_raw_string (lexptr);
+  lexptr += raw_length;
+  gdb_assert (lexptr[0] == '"');
+  ++lexptr;
+
+  while (1)
+    {
+      uint32_t value;
+
+      if (raw_length > 0)
+	{
+	  if (lexptr[0] == '"' && ends_raw_string (lexptr, raw_length - 1))
+	    {
+	      /* Exit with lexptr pointing after the final "#".  */
+	      lexptr += raw_length;
+	      break;
+	    }
+
+	  value = lexptr[0] & 0xff;
+	  if (is_byte && value > 127)
+	    error (_("non-ASCII value in raw byte string"));
+	  ++lexptr;
+	}
+      else if (lexptr[0] == '"')
+	{
+	  /* Make sure to skip the quote.  */
+	  ++lexptr;
+	  break;
+	}
+      else if (lexptr[0] == '\\')
+	value = lex_escape (is_byte);
+      else
+	{
+	  value = lexptr[0] & 0xff;
+	  if (is_byte && value > 127)
+	    error (_("non-ASCII value in raw byte string"));
+	  ++lexptr;
+	}
+
+      obstack_grow (&work_obstack, &value, sizeof (value));
+      ++len_in_chars;
+    }
+
+  utf32 = obstack_finish (&work_obstack);
+  convert_between_encodings ("UTF-32", "UTF-8",
+			     utf32, len_in_chars * sizeof (uint32_t),
+			     sizeof (uint32_t), &work_obstack,
+			     translit_none);
+
+  rustlval.sval = obstack_finish (&work_obstack);
+  return is_byte ? BYTESTRING : STRING;
 }
 
 /* Return true if STRING starts with whitespace followed by a digit.  */
@@ -1150,6 +1234,7 @@ struct rust_op
 {
   enum exp_opcode opcode;
   unsigned int compound_assignment : 1;
+  unsigned int byte_string : 1;
   RUSTSTYPE left;
   RUSTSTYPE right;
 };
@@ -1254,6 +1339,18 @@ make_path (const char *path)
 
   result->opcode = OP_VAR_VALUE;
   result->left.sval = path;
+
+  return result;
+}
+
+static const struct rust_op *
+make_string (int is_byte, const char *str)
+{
+  struct rust_op *result = OBSTACK_ZALLOC (&work_obstack, struct rust_op);
+
+  result->opcode = OP_STRING;
+  result->byte_string = is_byte;
+  result->left.sval = str;
 
   return result;
 }
@@ -1524,6 +1621,21 @@ convert_ast_to_expression (struct parser_state *state,
       }
       break;
 
+    case OP_STRING:
+      {
+	struct stoken token;
+
+	if (!operation->byte_string)
+	  error (_("make_string still unimplemented for rust strings"));
+
+	write_exp_elt_opcode (state, OP_STRING);
+	token.ptr = operation->left.sval;
+	token.length = strlen (token.ptr);
+	write_exp_string (state, token);
+	write_exp_elt_opcode (state, OP_STRING);
+      }
+      break;
+
     default:
       gdb_assert (0);
     }
@@ -1603,11 +1715,12 @@ rust_lex_int_test (const char *input, int value, int kind)
   gdb_assert (result.typed_val_int.val == value);
 }
 
-/* Test that INPUT lexes as the identifier VALUE.  */
+/* Test that INPUT lexes as the identifier, string, or byte-string
+   VALUE.  KIND holds the expected token kind.  */
 static void
-rust_lex_ident_test (const char *input, const char *value)
+rust_lex_stringish_test (const char *input, const char *value, int kind)
 {
-  RUSTSTYPE result = rust_lex_test_one (input, IDENT);
+  RUSTSTYPE result = rust_lex_test_one (input, kind);
   gdb_assert (strcmp (result.sval, value) == 0);
 }
 
@@ -1647,9 +1760,22 @@ rust_lex_tests (void)
   rust_lex_test_one ("23.99e+7f64", FLOAT);
   rust_lex_test_one ("23.82f32", FLOAT);
 
-  rust_lex_ident_test ("hibob", "hibob");
-  rust_lex_ident_test ("hibob__93", "hibob__93");
-  rust_lex_ident_test ("thread", "thread");
+  rust_lex_stringish_test ("hibob", "hibob", IDENT);
+  rust_lex_stringish_test ("hibob__93", "hibob__93", IDENT);
+  rust_lex_stringish_test ("thread", "thread", IDENT);
+
+  rust_lex_stringish_test ("\"string\"", "string", STRING);
+  rust_lex_stringish_test ("\"str\\ting\"", "str\ting", STRING);
+  rust_lex_stringish_test ("\"str\\\"ing\"", "str\"ing", STRING);
+  rust_lex_stringish_test ("r\"str\\ing\"", "str\\ing", STRING);
+  rust_lex_stringish_test ("r#\"str\\ting\"#", "str\\ting", STRING);
+  rust_lex_stringish_test ("r###\"str\\\"ing\"###", "str\\\"ing", STRING);
+
+  rust_lex_stringish_test ("b\"string\"", "string", BYTESTRING);
+  rust_lex_stringish_test ("b\"\x73tring\"", "string", BYTESTRING);
+  rust_lex_stringish_test ("b\"str\\\"ing\"", "str\"ing", BYTESTRING);
+  rust_lex_stringish_test ("br####\"\\x73tring\"####", "\\x73tring",
+			   BYTESTRING);
 
   for (i = 0; i < ARRAY_SIZE (identifier_tokens); ++i)
     rust_lex_test_one (identifier_tokens[i].name, identifier_tokens[i].value);

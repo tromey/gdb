@@ -187,6 +187,22 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
 	}
       goto generic_print;
 
+    case TYPE_CODE_STRING:
+      {
+	struct gdbarch *arch = get_type_arch (type);
+	int unit_size = gdbarch_addressable_memory_unit_size (arch);
+	LONGEST low_bound, high_bound;
+
+	if (!get_array_bounds (type, &low_bound, &high_bound))
+	  error (_("Could not determine the array bounds"));
+
+	/* FIXME perhaps we should print a "b" before the string.  */
+	LA_PRINT_STRING (stream, TYPE_TARGET_TYPE (type),
+			 valaddr + embedded_offset * unit_size,
+			 high_bound - low_bound + 1, NULL, 0, options);
+      }
+      break;
+
     case TYPE_CODE_ARRAY:
       {
 	LONGEST low_bound, high_bound;
@@ -503,33 +519,33 @@ evaluate_subexp_rust (struct type *expect_type, struct expression *exp,
       }
       break;
 
-    case OP_STRING:
-      {
-	/* We use the generic machinery to construct the basic string
-	   for us.  */
-	struct value *str = evaluate_subexp_rust (expect_type, exp, pos,
-						  noside);
-	struct type *rust_strtype;
-	struct value *v;
+    /* case OP_STRING: */
+    /*   { */
+    /* 	/\* We use the generic machinery to construct the basic string */
+    /* 	   for us.  *\/ */
+    /* 	struct value *str = evaluate_subexp_rust (expect_type, exp, pos, */
+    /* 						  noside); */
+    /* 	struct type *rust_strtype; */
+    /* 	struct value *v; */
 
-	if (noside == EVAL_SKIP)
-	  {
-	    result = str;
-	    break;
-	  }
+    /* 	if (noside == EVAL_SKIP) */
+    /* 	  { */
+    /* 	    result = str; */
+    /* 	    break; */
+    /* 	  } */
 
-	rust_strtype = language_lookup_primitive_type (exp->language_defn,
-						       exp->gdbarch,
-						       "&str");
-	result = allocate_value (rust_strtype);
+    /* 	rust_strtype = language_lookup_primitive_type (exp->language_defn, */
+    /* 						       exp->gdbarch, */
+    /* 						       "&str"); */
+    /* 	result = allocate_value (rust_strtype); */
 
-	/* This also knows the layout of &str.  */
-	value_assign (value_field (result, 1), value_addr (str));
-	v = value_from_longest (TYPE_FIELD_TYPE (rust_strtype, 1),
-				TYPE_LENGTH (value_type (str)));
-	value_assign (value_field (result, 1), v);
-      }
-      break;
+    /* 	/\* This also knows the layout of &str.  *\/ */
+    /* 	value_assign (value_field (result, 1), value_addr (str)); */
+    /* 	v = value_from_longest (TYPE_FIELD_TYPE (rust_strtype, 1), */
+    /* 				TYPE_LENGTH (value_type (str))); */
+    /* 	value_assign (value_field (result, 1), v); */
+    /*   } */
+    /*   break; */
 
     default:
       result = evaluate_subexp_standard (expect_type, exp, pos, noside);
