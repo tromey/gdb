@@ -21,6 +21,8 @@ if {[skip_rust_tests]} { continue }
 
 gdb_start
 
+gdb_test_no_output "set var \$something = 27"
+
 if {![set_lang_rust]} {
     warning "Rust expression tests suppressed."
     continue
@@ -88,3 +90,5 @@ gdb_test "print \[1,2,3,4\]" " = \\\[1, 2, 3, 4\\\]"
 gdb_test "ptype \[1,2,3,4\]" "type = \\\[i32; 4\\\]"
 
 gdb_test "print b\"hi rust\"" " = \"hi rust\""
+
+gdb_test "print \$something" " = 27"
