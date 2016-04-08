@@ -172,7 +172,6 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
     case TYPE_CODE_METHODPTR:
     case TYPE_CODE_PTR:
     case TYPE_CODE_UNION:
-    case TYPE_CODE_STRUCT:
     case TYPE_CODE_MEMBERPTR:
       c_val_print (type, valaddr, embedded_offset, address, stream,
 		   recurse, val, options);
@@ -197,6 +196,71 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
 	  fputs_filtered ("[]", stream);
 	else
 	  goto generic_print;
+      }
+      break;
+
+    case TYPE_CODE_STRUCT:
+      {
+	int i;
+	int first_field;
+	int is_tuple = rust_tuple_type_p (type);
+	int is_tuple_struct = !is_tuple && rust_tuple_struct_type_p (type);
+	struct value_print_options opts;
+
+	if (!is_tuple && TYPE_TAG_NAME (type))
+	  fprintf_filtered (stream, "%s ", TYPE_TAG_NAME (type));
+
+	if (is_tuple || is_tuple_struct)
+	  fputs_filtered ("(", stream);
+	else
+	  fputs_filtered ("{", stream);
+
+	opts = *options;
+	opts.deref_ref = 0;
+
+	first_field = 1;
+	for (i = 0; i < TYPE_NFIELDS (type); ++i)
+	  {
+	    if (field_is_static (&TYPE_FIELD (type, i)))
+	      continue;
+
+	    if (!first_field)
+	      fputs_filtered (",", stream);
+
+	    if (options->prettyformat)
+	      {
+		fputs_filtered ("\n", stream);
+		print_spaces_filtered (2 + 2 * recurse, stream);
+	      }
+	    else if (!first_field)
+	      fputs_filtered (" ", stream);
+
+	    first_field = 0;
+
+	    if (!is_tuple && !is_tuple_struct)
+	      {
+		fputs_filtered (TYPE_FIELD_NAME (type, i), stream);
+		fputs_filtered (": ", stream);
+	      }
+
+	    val_print (TYPE_FIELD_TYPE (type, i),
+		       valaddr,
+		       embedded_offset + TYPE_FIELD_BITPOS (type, i) / 8,
+		       address,
+		       stream, recurse + 1, val, &opts,
+		       current_language);
+	  }
+
+	if (options->prettyformat)
+	  {
+	    fputs_filtered ("\n", stream);
+	    print_spaces_filtered (2 * recurse, stream);
+	  }
+
+	if (is_tuple || is_tuple_struct)
+	  fputs_filtered (")", stream);
+	else
+	  fputs_filtered ("}", stream);
       }
       break;
 
