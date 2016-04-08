@@ -435,7 +435,6 @@ rust_language_arch_info (struct gdbarch *gdbarch,
 
   types = GDBARCH_OBSTACK_CALLOC (gdbarch, nr_rust_primitive_types + 1,
 				  struct type *);
-  lai->primitive_type_vector = types;
 
   types[rust_primitive_bool] = arch_boolean_type (gdbarch, 8, 1, "bool");
   types[rust_primitive_char] = arch_character_type (gdbarch, 32, 1, "char");
@@ -469,7 +468,9 @@ rust_language_arch_info (struct gdbarch *gdbarch,
 				       length);
   types[rust_primitive_str] = str;
 
+  lai->primitive_type_vector = types;
   lai->bool_type_default = types[rust_primitive_bool];
+  lai->string_char_type = types[rust_primitive_u8];
 }
 
 
@@ -479,24 +480,63 @@ static struct value *
 evaluate_subexp_rust (struct type *expect_type, struct expression *exp,
 		      int *pos, enum noside noside)
 {
-  if (exp->elts[*pos].opcode == UNOP_COMPLEMENT)
-    {
-      struct value *value;
+  struct value *result;
 
-      ++*pos;
-      value = evaluate_subexp (NULL_TYPE, exp, pos, noside);
-      if (noside == EVAL_SKIP)
-	{
-	  /* Preserving the type is enough.  */
-	  return value;
-	}
-      if (TYPE_CODE (value_type (value)) == TYPE_CODE_BOOL)
-	return value_from_longest (value_type (value),
-				   value_logical_not (value));
-      return value_complement (value);
+  switch (exp->elts[*pos].opcode)
+    {
+    case UNOP_COMPLEMENT:
+      {
+	struct value *value;
+
+	++*pos;
+	value = evaluate_subexp (NULL_TYPE, exp, pos, noside);
+	if (noside == EVAL_SKIP)
+	  {
+	    /* Preserving the type is enough.  */
+	    return value;
+	  }
+	if (TYPE_CODE (value_type (value)) == TYPE_CODE_BOOL)
+	  result = value_from_longest (value_type (value),
+				       value_logical_not (value));
+	else
+	  result = value_complement (value);
+      }
+      break;
+
+    case OP_STRING:
+      {
+	/* We use the generic machinery to construct the basic string
+	   for us.  */
+	struct value *str = evaluate_subexp_rust (expect_type, exp, pos,
+						  noside);
+	struct type *rust_strtype;
+	struct value *v;
+
+	if (noside == EVAL_SKIP)
+	  {
+	    result = str;
+	    break;
+	  }
+
+	rust_strtype = language_lookup_primitive_type (exp->language_defn,
+						       exp->gdbarch,
+						       "&str");
+	result = allocate_value (rust_strtype);
+
+	/* This also knows the layout of &str.  */
+	value_assign (value_field (result, 1), value_addr (str));
+	v = value_from_longest (TYPE_FIELD_TYPE (rust_strtype, 1),
+				TYPE_LENGTH (value_type (str)));
+	value_assign (value_field (result, 1), v);
+      }
+      break;
+
+    default:
+      result = evaluate_subexp_standard (expect_type, exp, pos, noside);
+      break;
     }
 
-  return evaluate_subexp_standard (expect_type, exp, pos, noside);
+  return result;
 }
 
 
