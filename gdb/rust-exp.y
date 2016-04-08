@@ -921,6 +921,8 @@ lex_string (void)
 	  value = lexptr[0] & 0xff;
 	  if (is_byte && value > 127)
 	    error (_("non-ASCII value in raw byte string"));
+	  obstack_1grow (&work_obstack, value);
+
 	  ++lexptr;
 	}
       else if (lexptr[0] == '"')
@@ -930,33 +932,24 @@ lex_string (void)
 	  break;
 	}
       else if (lexptr[0] == '\\')
-	value = lex_escape (is_byte);
+	{
+	  value = lex_escape (is_byte);
+
+	  if (is_byte)
+	    obstack_1grow (&work_obstack, value);
+	  else
+	    convert_between_encodings ("UTF-32", "UTF-8", (gdb_byte *) &value,
+				       sizeof (value), sizeof (value),
+				       &work_obstack, translit_none);
+	}
       else
 	{
 	  value = lexptr[0] & 0xff;
 	  if (is_byte && value > 127)
 	    error (_("non-ASCII value in raw byte string"));
+	  obstack_1grow (&work_obstack, value);
 	  ++lexptr;
 	}
-
-      if (is_byte)
-	{
-	  gdb_byte byte = value;
-
-	  obstack_grow (&work_obstack, &byte, 1);
-	}
-      else
-	obstack_grow (&work_obstack, &value, sizeof (value));
-      ++len_in_chars;
-    }
-
-  if (!is_byte)
-    {
-      void *utf32 = obstack_finish (&work_obstack);
-      convert_between_encodings ("UTF-32", "UTF-8",
-				 utf32, len_in_chars * sizeof (uint32_t),
-				 sizeof (uint32_t), &work_obstack,
-				 translit_none);
     }
 
   rustlval.sval = obstack_finish (&work_obstack);
