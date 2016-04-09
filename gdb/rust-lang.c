@@ -475,6 +475,9 @@ rust_language_arch_info (struct gdbarch *gdbarch,
   types[rust_primitive_unit] = arch_integer_type (gdbarch, 0, 1, "()");
 
   str = arch_composite_type (gdbarch, "&str", TYPE_CODE_STRUCT);
+  /* For some reason gdb doesn't set this, but then later does require
+     it.  */
+  TYPE_NAME (str) = "&str";
   /* The type here isn't strictly correct; instead we want
      "*const u8".  */
   append_composite_type_field_aligned
@@ -521,33 +524,43 @@ evaluate_subexp_rust (struct type *expect_type, struct expression *exp,
       }
       break;
 
-    /* case OP_STRING: */
-    /*   { */
-    /* 	/\* We use the generic machinery to construct the basic string */
-    /* 	   for us.  *\/ */
-    /* 	struct value *str = evaluate_subexp_rust (expect_type, exp, pos, */
-    /* 						  noside); */
-    /* 	struct type *rust_strtype; */
-    /* 	struct value *v; */
+    case OP_RUST_STRING:
+      {
+    	struct value *str;
+    	struct type *strtype;
+	struct type *fieldtype;
+    	struct value *v;
+	gdb_byte *contents;
+	struct gdbarch *arch;
 
-    /* 	if (noside == EVAL_SKIP) */
-    /* 	  { */
-    /* 	    result = str; */
-    /* 	    break; */
-    /* 	  } */
+	++*pos;
+	str = evaluate_subexp_rust (expect_type, exp, pos, noside);
+    	if (noside == EVAL_SKIP)
+    	  {
+    	    result = str;
+    	    break;
+    	  }
+	str = value_coerce_to_target (str);
 
-    /* 	rust_strtype = language_lookup_primitive_type (exp->language_defn, */
-    /* 						       exp->gdbarch, */
-    /* 						       "&str"); */
-    /* 	result = allocate_value (rust_strtype); */
+    	strtype = language_lookup_primitive_type (exp->language_defn,
+    						       exp->gdbarch,
+    						       "&str");
+	arch = get_type_arch (strtype);
 
-    /* 	/\* This also knows the layout of &str.  *\/ */
-    /* 	value_assign (value_field (result, 1), value_addr (str)); */
-    /* 	v = value_from_longest (TYPE_FIELD_TYPE (rust_strtype, 1), */
-    /* 				TYPE_LENGTH (value_type (str))); */
-    /* 	value_assign (value_field (result, 1), v); */
-    /*   } */
-    /*   break; */
+    	result = allocate_value (strtype);
+	contents = value_contents_raw (result);
+
+	gdb_assert (strcmp (TYPE_FIELD_NAME (strtype, 0), "data_ptr") == 0);
+	store_typed_address (contents, TYPE_FIELD_TYPE (strtype, 0),
+			     value_address (str));
+	gdb_assert (strcmp (TYPE_FIELD_NAME (strtype, 1), "length") == 0);
+	fieldtype = TYPE_FIELD_TYPE (strtype, 1);
+	store_unsigned_integer (contents + TYPE_FIELD_BITPOS (strtype, 1) / 8,
+				TYPE_LENGTH (fieldtype),
+				gdbarch_byte_order (arch),
+				TYPE_LENGTH (value_type (str)));
+      }
+      break;
 
     default:
       result = evaluate_subexp_standard (expect_type, exp, pos, noside);

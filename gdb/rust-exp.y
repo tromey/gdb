@@ -1631,14 +1631,14 @@ convert_ast_to_expression (struct parser_state *state,
       {
 	struct stoken token;
 
-	if (!operation->byte_string)
-	  error (_("make_string still unimplemented for rust strings"));
-
 	write_exp_elt_opcode (state, OP_STRING);
 	token.ptr = operation->left.sval;
 	token.length = strlen (token.ptr);
 	write_exp_string (state, token);
 	write_exp_elt_opcode (state, OP_STRING);
+
+	if (!operation->byte_string)
+	  write_exp_elt_opcode (state, OP_RUST_STRING);
       }
       break;
 
