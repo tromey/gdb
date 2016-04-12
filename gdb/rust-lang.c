@@ -336,6 +336,7 @@ rust_print_type (struct type *type, const char *varstring,
       fputs_filtered ("fn (", stream);
       for (i = 0; i < TYPE_NFIELDS (type); ++i)
 	{
+	  QUIT;
 	  if (i > 0)
 	    fputs_filtered (", ", stream);
 	  rust_print_type (TYPE_FIELD_TYPE (type, i), "", stream, -1, 0,
@@ -390,6 +391,7 @@ rust_print_type (struct type *type, const char *varstring,
 	  {
 	    const char *name;
 
+	    QUIT;
 	    if (field_is_static (&TYPE_FIELD (type, i)))
 	      continue;
 
@@ -410,6 +412,37 @@ rust_print_type (struct type *type, const char *varstring,
 	  }
 
 	fprintfi_filtered (level, stream, is_tuple_struct ? ")" : "}");
+      }
+      break;
+
+    case TYPE_CODE_ENUM:
+      {
+	int i, len = 0;
+
+	fputs_filtered ("enum ", stream);
+	if (TYPE_TAG_NAME (type) != NULL)
+	  {
+	    fputs_filtered (TYPE_TAG_NAME (type), stream);
+	    fputs_filtered (" ", stream);
+	    len = strlen (TYPE_TAG_NAME (type));
+	  }
+	fputs_filtered ("{\n", stream);      
+
+	for (i = 0; i < TYPE_NFIELDS (type); ++i)
+	  {
+	    const char *name = TYPE_FIELD_NAME (type, i);
+
+	    QUIT;
+
+	    if (len > 0
+		&& strncmp (name, TYPE_TAG_NAME (type), len) == 0
+		&& name[len] == ':'
+		&& name[len + 1] == ':')
+	      name += len + 2;
+	    fprintfi_filtered (level + 2, stream, "%s,\n", name);
+	  }
+
+	fputs_filtered ("}\n", stream);
       }
       break;
 
