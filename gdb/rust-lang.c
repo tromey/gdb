@@ -35,6 +35,7 @@ extern initialize_file_ftype _initialize_rust_language;
 
 /* Return true if the struct TYPE is a tuple type; otherwise
    false.  */
+
 static int
 rust_tuple_type_p (struct type *type)
 {
@@ -47,6 +48,7 @@ rust_tuple_type_p (struct type *type)
 
 /* Return true if the struct TYPE is a tuple struct type; otherwise
    false.  */
+
 static int
 rust_tuple_struct_type_p (struct type *type)
 {
@@ -497,6 +499,7 @@ rust_language_arch_info (struct gdbarch *gdbarch,
 
 
 /* evaluate_exp implementation for Rust.  */
+
 static struct value *
 rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
 		      int *pos, enum noside noside)
@@ -598,6 +601,7 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
 }
 
 /* operator_length implementation for Rust.  */
+
 static void
 rust_operator_length (const struct expression *exp, int pc, int *oplenp,
 		      int *argsp)
@@ -630,6 +634,7 @@ rust_operator_length (const struct expression *exp, int pc, int *oplenp,
 }
 
 /* op_name implementation for Rust.  */
+
 static char *
 rust_op_name (enum exp_opcode opcode)
 {
@@ -647,6 +652,7 @@ rust_op_name (enum exp_opcode opcode)
 }
 
 /* dump_subexp_body implementation for Rust.  */
+
 static int
 rust_dump_subexp_body (struct expression *exp, struct ui_file *stream,
 		       int elt)
@@ -696,6 +702,7 @@ rust_dump_subexp_body (struct expression *exp, struct ui_file *stream,
 }
 
 /* print_subexp implementation for Rust.  */
+
 static void
 rust_print_subexp (struct expression *exp, int *pos, struct ui_file *stream,
 		   enum precedence prec)
@@ -745,6 +752,7 @@ rust_print_subexp (struct expression *exp, int *pos, struct ui_file *stream,
 }
 
 /* operator_check implementation for Rust.  */
+
 static int
 rust_operator_check (struct expression *exp, int pos,
 		     int (*objfile_func) (struct objfile *objfile,
