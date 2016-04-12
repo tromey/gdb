@@ -744,13 +744,43 @@ rust_print_subexp (struct expression *exp, int *pos, struct ui_file *stream,
     }
 }
 
+/* operator_check implementation for Rust.  */
+static int
+rust_operator_check (struct expression *exp, int pos,
+		     int (*objfile_func) (struct objfile *objfile,
+					  void *data),
+		     void *data)
+{
+  switch (exp->elts[pos].opcode)
+    {
+    case OP_AGGREGATE:
+      {
+	struct type *type = exp->elts[pos + 1].type;
+	struct objfile *objfile = TYPE_OBJFILE (type);
+
+	if (objfile != NULL && (*objfile_func) (objfile, data))
+	  return 1;
+      }
+      break;
+
+    case OP_OTHERS:
+    case OP_NAME:
+      break;
+
+    default:
+      return operator_check_standard (exp, pos, objfile_func, data);
+    }
+
+  return 0;
+}
+
 
 
 static const struct exp_descriptor exp_descriptor_rust = 
 {
   rust_print_subexp,
   rust_operator_length,
-  operator_check_standard,
+  rust_operator_check,
   rust_op_name,
   rust_dump_subexp_body,
   rust_evaluate_subexp
