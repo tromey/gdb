@@ -533,15 +533,17 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
 	struct type *type = exp->elts[pc + 1].type;
 	int arglen = longest_to_int (exp->elts[pc + 2].longconst);
 	int i;
-	CORE_ADDR addr;
-	struct value *addrval;
+	CORE_ADDR addr = 0;
+	struct value *addrval = NULL;
 
 	*pos += 3;
 
-	/* FXME noside */
-	addrval = value_allocate_space_in_inferior (TYPE_LENGTH (type));
-	addr = value_as_long (addrval);
-	result = value_at_lazy (type, addr);
+	if (noside == EVAL_NORMAL)
+	  {
+	    addrval = value_allocate_space_in_inferior (TYPE_LENGTH (type));
+	    addr = value_as_long (addrval);
+	    result = value_at_lazy (type, addr);
+	  }
 
 	if (arglen > 0 && exp->elts[*pos].opcode == OP_OTHERS)
 	  {
