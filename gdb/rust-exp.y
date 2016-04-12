@@ -42,7 +42,8 @@ extern initialize_file_ftype _initialize_rust_exp;
 
 static int rustlex (void);
 static const char *rust_copy_name (const char *, int);
-static const char *rust_concat3 (const char *, const char *, const char *);
+static struct stoken rust_concat3 (const char *, const char *, const char *);
+static struct stoken make_stoken (const char *);
 static void update_innermost_block (struct block_symbol);
 
 struct rust_op;
@@ -63,7 +64,7 @@ struct typed_val_float
 
 struct set_field
 {
-  const char *name;
+  struct stoken name;
   const struct rust_op *init;
 };
 
@@ -90,9 +91,9 @@ static const struct rust_op *make_cast (const struct rust_op *expr,
 static const struct rust_op *make_call_ish (enum exp_opcode opcode,
 					    const struct rust_op *expr,
 					    VEC (rust_op_ptr) *params);
-static const struct rust_op *make_path (const char *name);
-static const struct rust_op *make_string (const char *str);
-static const struct rust_op *make_struct (const char *name,
+static const struct rust_op *make_path (struct stoken name);
+static const struct rust_op *make_string (struct stoken str);
+static const struct rust_op *make_struct (struct stoken name,
 					  VEC (set_field) *fields);
 
 /* The state of the parser, used internally when we are parsing the
@@ -157,7 +158,7 @@ static const struct rust_op *rust_ast;
 
   struct typed_val_float typed_val_float;
 
-  const char *sval;
+  struct stoken sval;
 
   enum exp_opcode opcode;
 
@@ -309,7 +310,8 @@ struct_expr:
 		  VEC (set_field) *result = NULL;
 		  struct set_field sf;
 
-		  sf.name = NULL;
+		  sf.name.ptr = NULL;
+		  sf.name.length = 0;
 		  sf.init = $4;
 		  VEC_safe_push (set_field, result, &sf);
 
@@ -339,7 +341,8 @@ struct_expr_contents:
 		  struct set_field sf;
 
 		  VEC (set_field) *result = NULL;
-		  sf.name = NULL;
+		  sf.name.ptr = NULL;
+		  sf.name.length = 0;
 		  sf.init = $3;
 		  VEC_safe_push (set_field, result, &sf);
 		  $$ = result;
@@ -413,21 +416,25 @@ literal:
 		  VEC (set_field) *fields = NULL;
 		  struct set_field field;
 		  struct typed_val_int val;
+		  struct stoken token;
 
 		  /* Wrap the raw string in the &str struct.  */
-		  field.name = "data_ptr";
+		  field.name.ptr = "data_ptr";
+		  field.name.length = strlen (field.name.ptr);
 		  field.init = make_unary (UNOP_ADDR, make_string ($1));
 		  VEC_safe_push (set_field, fields, &field);
 
 		  val.type = rust_type ("usize");
-		  /* FIXME - embedded \0 */
-		  val.val = strlen ($1);
+		  val.val = $1.length;
 
-		  field.name = "length";
+		  field.name.ptr = "length";
+		  field.name.length = strlen (field.name.ptr);
 		  field.init = make_literal (val);
 		  VEC_safe_push (set_field, fields, &field);
 
-		  $$ = make_struct ("&str", fields);
+		  token.ptr = "&str";
+		  token.length = strlen (token.ptr);
+		  $$ = make_struct (token, fields);
 		}
 |	BYTESTRING
 		{ $$ = make_string ($1); }
@@ -453,16 +460,16 @@ literal:
 
 field_expr:
 	expr '.' IDENT
-		{ $$ = make_structop ($1, $3); }
+		{ $$ = make_structop ($1, $3.ptr); }
 |	expr '.' DECIMAL_INTEGER
 		{
 		  /* We should perhaps represent this at a higher
 		     level of abstraction, but for now we just bake in
 		     the naming scheme used by rustc for tuple
 		     fields.  */
-		  const char *value = rust_concat3 ("__", plongest ($3.val),
-						    NULL);
-		  $$ = make_structop ($1, value);
+		  struct stoken value = rust_concat3 ("__", plongest ($3.val),
+						      NULL);
+		  $$ = make_structop ($1, value.ptr);
 		}
 ;
 
@@ -623,27 +630,27 @@ path:
 |	super_path
 		{ error (_("paths starting with super:: not supported yet")); }
 |	COLONCOLON identifier_path
-		{ $$ = rust_concat3 ("::", $2, NULL); }
+		{ $$ = rust_concat3 ("::", $2.ptr, NULL); }
 ;
 
 identifier_path:
 	IDENT
 |	IDENT COLONCOLON identifier_path
-		{ $$ = rust_concat3 ($1, "::", $3); }
+		{ $$ = rust_concat3 ($1.ptr, "::", $3.ptr); }
 ;
 
 self_path:
 	KW_SELF COLONCOLON identifier_path
-		{ $$ = rust_concat3 ("self::", $3, NULL); }
+		{ $$ = rust_concat3 ("self::", $3.ptr, NULL); }
 |	KW_SELF COLONCOLON super_path identifier_path
-		{ $$ = rust_concat3 ("self::", $3, $4); }
+		{ $$ = rust_concat3 ("self::", $3.ptr, $4.ptr); }
 ;
 
 super_path:
 	KW_SUPER COLONCOLON
-		{ $$ = "super::"; }
+		{ $$ = make_stoken ("super::"); }
 |	KW_SUPER COLONCOLON super_path
-		{ $$ = rust_concat3 ("super::", $3, NULL); }
+		{ $$ = rust_concat3 ("super::", $3.ptr, NULL); }
 ;
 
 type:
@@ -651,7 +658,7 @@ type:
 		{
 		  $$ = lookup_typename (parse_language (pstate),
 					parse_gdbarch (pstate),
-					$1, NULL, 0);
+					$1.ptr, NULL, 0);
 		}
 ;
 
@@ -712,12 +719,23 @@ rust_copy_name (const char *name, int len)
   return obstack_copy0 (&work_obstack, name, len);
 }
 
+/* Helper function to make an stoken from a C string.  */
+static struct stoken
+make_stoken (const char *p)
+{
+  struct stoken result;
+
+  result.ptr = p;
+  result.length = strlen (result.ptr);
+  return result;
+}
+
 /* Helper function to concatenate three strings on the name
    obstack.  */
-static const char *
+static struct stoken
 rust_concat3 (const char *s1, const char *s2, const char *s3)
 {
-  return obconcat (&work_obstack, s1, s2, s3, (char *) NULL);
+  return make_stoken (obconcat (&work_obstack, s1, s2, s3, (char *) NULL));
 }
 
 /* A helper that updates innermost_block as appropriate.  */
@@ -826,7 +844,7 @@ lex_escape (int is_byte)
       result = '\\';
       ++lexptr;
       break;
-    case '\0':
+    case '0':
       result = '\0';
       ++lexptr;
       break;
@@ -974,7 +992,8 @@ lex_string (void)
 	}
     }
 
-  rustlval.sval = obstack_finish (&work_obstack);
+  rustlval.sval.length = obstack_object_size (&work_obstack);
+  rustlval.sval.ptr = obstack_finish (&work_obstack);
   return is_byte ? BYTESTRING : STRING;
 }
 
@@ -1052,7 +1071,7 @@ lex_identifier (void)
       return token->value;
     }
 
-  rustlval.sval = rust_copy_name (start, length);
+  rustlval.sval = make_stoken (rust_copy_name (start, length));
 
   /* Slightly weird that we don't allow completion if the text happens
      to be a token or a convenience variable.  FIXME - we need a
@@ -1345,7 +1364,7 @@ make_call_ish (enum exp_opcode opcode, const struct rust_op *expr,
 }
 
 static const struct rust_op *
-make_struct (const char *name, VEC (set_field) *fields)
+make_struct (struct stoken name, VEC (set_field) *fields)
 {
   struct rust_op *result = OBSTACK_ZALLOC (&work_obstack, struct rust_op);
 
@@ -1358,7 +1377,7 @@ make_struct (const char *name, VEC (set_field) *fields)
 }
 
 static const struct rust_op *
-make_path (const char *path)
+make_path (struct stoken path)
 {
   struct rust_op *result = OBSTACK_ZALLOC (&work_obstack, struct rust_op);
 
@@ -1369,7 +1388,7 @@ make_path (const char *path)
 }
 
 static const struct rust_op *
-make_string (const char *str)
+make_string (struct stoken str)
 {
   struct rust_op *result = OBSTACK_ZALLOC (&work_obstack, struct rust_op);
 
@@ -1386,7 +1405,7 @@ make_structop (const struct rust_op *left, const char *name)
 
   result->opcode = STRUCTOP_STRUCT;
   result->left.op = left;
-  result->right.sval = name;
+  result->right.sval = make_stoken (name);
 
   return result;
 }
@@ -1434,14 +1453,10 @@ convert_ast_to_expression (struct parser_state *state,
 
     case STRUCTOP_STRUCT:
       {
-	struct stoken st;
-
 	convert_ast_to_expression (state, operation->left.op, top);
 
 	write_exp_elt_opcode (state, STRUCTOP_STRUCT);
-	st.ptr = operation->right.sval;
-	st.length = strlen (st.ptr);
-	write_exp_string (state, st);
+	write_exp_string (state, operation->right.sval);
 	write_exp_elt_opcode (state, STRUCTOP_STRUCT);
       }
       break;
@@ -1535,17 +1550,13 @@ convert_ast_to_expression (struct parser_state *state,
       {
 	struct block_symbol sym;
 
-	if (operation->left.sval[0] == '$')
+	if (operation->left.sval.ptr[0] == '$')
 	  {
-	    struct stoken token;
-
-	    token.ptr = operation->left.sval;
-	    token.length = strlen (token.ptr);
-	    write_dollar_variable (state, token);
+	    write_dollar_variable (state, operation->left.sval);
 	    break;
 	  }
 
-	sym = lookup_symbol (operation->left.sval, expression_context_block,
+	sym = lookup_symbol (operation->left.sval.ptr, expression_context_block,
 			     VAR_DOMAIN, NULL);
 	if (sym.symbol != NULL)
 	  {
@@ -1564,7 +1575,7 @@ convert_ast_to_expression (struct parser_state *state,
 		struct type *type;
 
 		/* First try a type tag.  */
-		sym = lookup_symbol (operation->left.sval,
+		sym = lookup_symbol (operation->left.sval.ptr,
 				     expression_context_block,
 				     STRUCT_DOMAIN, NULL);
 		if (sym.symbol != NULL)
@@ -1575,7 +1586,7 @@ convert_ast_to_expression (struct parser_state *state,
 		else
 		  type = lookup_typename (parse_language (state),
 					  parse_gdbarch (state),
-					  operation->left.sval,
+					  operation->left.sval.ptr,
 					  NULL, 0);
 
 		if (type != NULL)
@@ -1588,7 +1599,7 @@ convert_ast_to_expression (struct parser_state *state,
 	      }
 
 	    error (_("No symbol '%s' in current context"),
-		   operation->left.sval);
+		   operation->left.sval.ptr);
 	  }
       }
       break;
@@ -1609,16 +1620,12 @@ convert_ast_to_expression (struct parser_state *state,
 	     i >= 0;
 	     --i)
 	  {
-	    struct stoken token;
-
 	    init = VEC_index (set_field, fields, i);
 
-	    if (init->name != NULL)
+	    if (init->name.ptr != NULL)
 	      {
-		token.ptr = init->name;
-		token.length = strlen (token.ptr);
 		write_exp_elt_opcode (state, OP_NAME);
-		write_exp_string (state, token);
+		write_exp_string (state, init->name);
 		write_exp_elt_opcode (state, OP_NAME);
 		++length;
 	      }
@@ -1626,7 +1633,7 @@ convert_ast_to_expression (struct parser_state *state,
 	    convert_ast_to_expression (state, init->init, top);
 	    ++length;
 
-	    if (init->name == NULL)
+	    if (init->name.ptr == NULL)
 	      {
 		/* This is handled differently from Ada in our
 		   evaluator.  */
@@ -1636,7 +1643,7 @@ convert_ast_to_expression (struct parser_state *state,
 
 	type = lookup_typename (parse_language (state),
 				parse_gdbarch (state),
-				operation->left.sval,
+				operation->left.sval.ptr,
 				NULL, 0);
 
 	write_exp_elt_opcode (state, OP_AGGREGATE);
@@ -1648,12 +1655,8 @@ convert_ast_to_expression (struct parser_state *state,
 
     case OP_STRING:
       {
-	struct stoken token;
-
 	write_exp_elt_opcode (state, OP_STRING);
-	token.ptr = operation->left.sval;
-	token.length = strlen (token.ptr);
-	write_exp_string (state, token);
+	write_exp_string (state, operation->left.sval);
 	write_exp_elt_opcode (state, OP_STRING);
       }
       break;
@@ -1743,7 +1746,7 @@ static void
 rust_lex_stringish_test (const char *input, const char *value, int kind)
 {
   RUSTSTYPE result = rust_lex_test_one (input, kind);
-  gdb_assert (strcmp (result.sval, value) == 0);
+  gdb_assert (strcmp (result.sval.ptr, value) == 0);
 }
 
 /* Unit test the lexer.  */
