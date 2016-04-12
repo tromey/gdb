@@ -228,8 +228,8 @@ static const struct rust_op *rust_ast;
 /* %type <op> range_expr */
 
 %type <params> expr_list
+%type <params> maybe_expr_list
 %type <params> paren_expr_list
-%type <params> array_elems
 
 %type <field_inits> struct_expr_contents
 
@@ -275,12 +275,10 @@ expr:
 |	call_expr
 ;
 
-/* Note that the rightmost element of the array ends up at index 0.
-   This is compensated for when lowering from the AST.  */
 tuple_expr:
-	'(' expr ',' expr_list ')'
+	'(' expr ',' maybe_expr_list ')'
 		{
-		  VEC_safe_push (rust_op_ptr, $4, $2);
+		  VEC_safe_insert (rust_op_ptr, $4, 0, $2);
 		  error (_("tuple expressions not supported yet"));
 		}
 ;
@@ -359,9 +357,9 @@ struct_expr_contents:
 ;
 
 array_expr:
-	'[' KW_MUT array_elems ']'
+	'[' KW_MUT expr_list ']'
 		{ $$ = make_call_ish (OP_ARRAY, NULL, $3); }
-|	'[' array_elems ']'
+|	'[' expr_list ']'
 		{ $$ = make_call_ish (OP_ARRAY, NULL, $2); }
 |	'[' KW_MUT expr ';' expr ']'
 		{
@@ -370,23 +368,6 @@ array_expr:
 |	'[' expr ';' expr ']'
 		{
 		  error (_("[expr;expr] form of array not supported yet"));
-		}
-;
-
-/* Note that the rightmost element of the array ends up at index 0.
-   This is compensated for when lowering from the AST.  */
-array_elems:
-	expr
-		{
-		  VEC (rust_op_ptr) *result = NULL;
-
-		  VEC_safe_push (rust_op_ptr, result, $1);
-		  $$ = result;
-		}
-|	expr ',' array_elems
-		{
-		  VEC_safe_push (rust_op_ptr, $3, $1);
-		  $$ = $3;
 		}
 ;
 
@@ -592,11 +573,12 @@ paren_expr:
 		{ $$ = $2; }
 ;
 
-/* Note that the rightmost element of the array ends up at index 0.
-   This is compensated for when lowering from the AST.  */
 expr_list:
-	%empty
-		{ $$ = NULL; }
+	expr
+		{
+		  $$ = NULL;
+		  VEC_safe_push (rust_op_ptr, $$, $1);
+		}
 |	expr_list ',' expr
 		{
 		  VEC_safe_push (rust_op_ptr, $1, $3);
@@ -604,9 +586,16 @@ expr_list:
 		}
 ;
 
+maybe_expr_list:
+	%empty
+		{ $$ = NULL; }
+|	expr_list
+		{ $$ = $1; }
+;
+
 paren_expr_list:
 	'('
-	expr_list
+	maybe_expr_list
 	')'
 		{ $$ = $2; }
 ;
@@ -1420,14 +1409,10 @@ convert_params_to_expression (struct parser_state *state,
 			      const struct rust_op *top)
 {
   int i;
+  rust_op_ptr elem;
 
-  /* We built the vec with the rightmost element at position 0, so
-     walk in reverse to get the correct result.  */
-  for (i = VEC_length (rust_op_ptr, params) - 1;
-       i >= 0;
-       --i)
-    convert_ast_to_expression (state, VEC_index (rust_op_ptr, params, i),
-			       top);
+  for (i = 0; VEC_iterate (rust_op_ptr, params, i, elem); ++i)
+    convert_ast_to_expression (state, elem, top);
 }
 
 static void
