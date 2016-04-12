@@ -71,6 +71,8 @@ typedef struct set_field set_field;
 
 DEF_VEC_O (set_field);
 
+static struct type *rust_type (const char *name);
+
 static const struct rust_op *make_operation (enum exp_opcode opcode,
 					     const struct rust_op *left,
 					     const struct rust_op *right);
@@ -89,7 +91,7 @@ static const struct rust_op *make_call_ish (enum exp_opcode opcode,
 					    const struct rust_op *expr,
 					    VEC (rust_op_ptr) *params);
 static const struct rust_op *make_path (const char *name);
-static const struct rust_op *make_string (int is_byte, const char *str);
+static const struct rust_op *make_string (const char *str);
 static const struct rust_op *make_struct (const char *name,
 					  VEC (set_field) *fields);
 
@@ -406,9 +408,29 @@ literal:
 |	FLOAT
 		{ $$ = make_dliteral ($1); }
 |	STRING
-		{ $$ = make_string (0, $1); }
+		{
+		  const struct rust_op *str = make_string ($1);
+		  VEC (set_field) *fields = NULL;
+		  struct set_field field;
+		  struct typed_val_int val;
+
+		  /* Wrap the raw string in the &str struct.  */
+		  field.name = "data_ptr";
+		  field.init = make_unary (UNOP_ADDR, make_string ($1));
+		  VEC_safe_push (set_field, fields, &field);
+
+		  val.type = rust_type ("usize");
+		  /* FIXME - embedded \0 */
+		  val.val = strlen ($1);
+
+		  field.name = "length";
+		  field.init = make_literal (val);
+		  VEC_safe_push (set_field, fields, &field);
+
+		  $$ = make_struct ("&str", fields);
+		}
 |	BYTESTRING
-		{ $$ = make_string (1, $1); }
+		{ $$ = make_string ($1); }
 |	KW_TRUE
 		{
 		  struct typed_val_int val;
@@ -1238,7 +1260,6 @@ struct rust_op
 {
   enum exp_opcode opcode;
   unsigned int compound_assignment : 1;
-  unsigned int byte_string : 1;
   RUSTSTYPE left;
   RUSTSTYPE right;
 };
@@ -1348,12 +1369,11 @@ make_path (const char *path)
 }
 
 static const struct rust_op *
-make_string (int is_byte, const char *str)
+make_string (const char *str)
 {
   struct rust_op *result = OBSTACK_ZALLOC (&work_obstack, struct rust_op);
 
   result->opcode = OP_STRING;
-  result->byte_string = is_byte;
   result->left.sval = str;
 
   return result;
@@ -1579,51 +1599,50 @@ convert_ast_to_expression (struct parser_state *state,
 	int length;
 	const struct set_field *init;
 	VEC (set_field) *fields = operation->right.field_inits;
-	struct stoken token;
+	struct type *type;
 
 	/* We constructed the initializers in reverse order; but if
 	   the final one is a copy initializer, then we want to
 	   process it first.  */
-	length = VEC_length (set_field, fields);
-	if (!VEC_empty (set_field, fields))
-	  {
-	    init = VEC_index (set_field, fields, 0);
-	    if (init->name == NULL)
-	      {
-		convert_ast_to_expression (state, init->init, top);
-
-		/* This is handled differently from Ada in our
-		   evaluator.  */
-		write_exp_elt_opcode (state, OP_OTHERS);
-
-		VEC_ordered_remove (set_field, fields, 0);
-	      }
-	  }
-
+	length = 0;
 	for (i = VEC_length (set_field, fields) - 1;
 	     i >= 0;
 	     --i)
 	  {
+	    struct stoken token;
+
 	    init = VEC_index (set_field, fields, i);
 
-	    token.ptr = init->name;
-	    token.length = strlen (token.ptr);
-	    write_exp_elt_opcode (state, OP_NAME);
-	    write_exp_string (state, token);
-	    write_exp_elt_opcode (state, OP_NAME);
+	    if (init->name != NULL)
+	      {
+		token.ptr = init->name;
+		token.length = strlen (token.ptr);
+		write_exp_elt_opcode (state, OP_NAME);
+		write_exp_string (state, token);
+		write_exp_elt_opcode (state, OP_NAME);
+		++length;
+	      }
 
 	    convert_ast_to_expression (state, init->init, top);
+	    ++length;
+
+	    if (init->name == NULL)
+	      {
+		/* This is handled differently from Ada in our
+		   evaluator.  */
+		write_exp_elt_opcode (state, OP_OTHERS);
+	      }
 	  }
 
-	token.ptr = operation->left.sval;
-	token.length = strlen (token.ptr);
+	type = lookup_typename (parse_language (state),
+				parse_gdbarch (state),
+				operation->left.sval,
+				NULL, 0);
 
 	write_exp_elt_opcode (state, OP_AGGREGATE);
-	write_exp_string (state, token);
-	write_exp_elt_longcst (state, length - 1);
-	write_exp_elt_longcst (state, OP_AGGREGATE);
-
-	error (_("aggregate evaluation not supported yet"));
+	write_exp_elt_type (state, type);
+	write_exp_elt_longcst (state, length);
+	write_exp_elt_opcode (state, OP_AGGREGATE);
       }
       break;
 
@@ -1636,9 +1655,6 @@ convert_ast_to_expression (struct parser_state *state,
 	token.length = strlen (token.ptr);
 	write_exp_string (state, token);
 	write_exp_elt_opcode (state, OP_STRING);
-
-	if (!operation->byte_string)
-	  write_exp_elt_opcode (state, OP_RUST_STRING);
       }
       break;
 

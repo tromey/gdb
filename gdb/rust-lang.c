@@ -498,7 +498,7 @@ rust_language_arch_info (struct gdbarch *gdbarch,
 
 /* evaluate_exp implementation for Rust.  */
 static struct value *
-evaluate_subexp_rust (struct type *expect_type, struct expression *exp,
+rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
 		      int *pos, enum noside noside)
 {
   struct value *result;
@@ -524,41 +524,68 @@ evaluate_subexp_rust (struct type *expect_type, struct expression *exp,
       }
       break;
 
-    case OP_RUST_STRING:
+    case OP_AGGREGATE:
       {
-    	struct value *str;
-    	struct type *strtype;
-	struct type *fieldtype;
-    	struct value *v;
-	gdb_byte *contents;
-	struct gdbarch *arch;
+	int pc = (*pos)++;
+	struct type *type = exp->elts[pc + 1].type;
+	int arglen = longest_to_int (exp->elts[pc + 2].longconst);
+	int i;
+	CORE_ADDR addr;
+	struct value *addrval;
 
-	++*pos;
-	str = evaluate_subexp_rust (expect_type, exp, pos, noside);
-    	if (noside == EVAL_SKIP)
-    	  {
-    	    result = str;
-    	    break;
-    	  }
-	str = value_coerce_to_target (str);
+	*pos += 3;
 
-    	strtype = language_lookup_primitive_type (exp->language_defn,
-    						       exp->gdbarch,
-    						       "&str");
-	arch = get_type_arch (strtype);
+	/* FXME noside */
+	addrval = value_allocate_space_in_inferior (TYPE_LENGTH (type));
+	addr = value_as_long (addrval);
+	result = value_at_lazy (type, addr);
 
-    	result = allocate_value (strtype);
-	contents = value_contents_raw (result);
+	if (arglen > 0 && exp->elts[*pos].opcode == OP_OTHERS)
+	  {
+	    struct value *init;
 
-	gdb_assert (strcmp (TYPE_FIELD_NAME (strtype, 0), "data_ptr") == 0);
-	store_typed_address (contents, TYPE_FIELD_TYPE (strtype, 0),
-			     value_address (str));
-	gdb_assert (strcmp (TYPE_FIELD_NAME (strtype, 1), "length") == 0);
-	fieldtype = TYPE_FIELD_TYPE (strtype, 1);
-	store_unsigned_integer (contents + TYPE_FIELD_BITPOS (strtype, 1) / 8,
-				TYPE_LENGTH (fieldtype),
-				gdbarch_byte_order (arch),
-				TYPE_LENGTH (value_type (str)));
+	    ++*pos;
+	    init = rust_evaluate_subexp (NULL, exp, pos, noside);
+	    if (noside == EVAL_NORMAL)
+	      {
+		/* FIXME compare types */
+		/* FIXME this is bogus */
+		value_assign (result, init);
+	      }
+
+	    --arglen;
+	  }
+
+	gdb_assert (arglen % 2 == 0);
+	for (i = 0; i < arglen; i += 2)
+	  {
+	    int len;
+	    const char *fieldname;
+	    struct value *value, *field;
+
+	    gdb_assert (exp->elts[*pos].opcode == OP_NAME);
+	    ++*pos;
+	    len = longest_to_int (exp->elts[*pos].longconst);
+	    ++*pos;
+	    fieldname = &exp->elts[*pos].string;
+	    *pos += 2 + BYTES_TO_EXP_ELEM (len + 1);
+
+	    value = rust_evaluate_subexp (NULL, exp, pos, noside);
+	    if (noside == EVAL_NORMAL)
+	      {
+		field = value_struct_elt (&result, NULL, fieldname, NULL,
+					  "structure");
+		value_assign (field, value);
+	      }
+	  }
+
+	if (noside == EVAL_SKIP)
+	  return value_from_longest (builtin_type (exp->gdbarch)->builtin_int,
+				     1);
+	else if (noside == EVAL_AVOID_SIDE_EFFECTS)
+	  result = allocate_value (type);
+	else
+	  result = value_at_lazy (type, addr);
       }
       break;
 
@@ -570,16 +597,163 @@ evaluate_subexp_rust (struct type *expect_type, struct expression *exp,
   return result;
 }
 
+/* operator_length implementation for Rust.  */
+static void
+rust_operator_length (const struct expression *exp, int pc, int *oplenp,
+		      int *argsp)
+{
+  int oplen = 1;
+  int args = 0;
+
+  switch (exp->elts[pc - 1].opcode)
+    {
+    case OP_AGGREGATE:
+      /* We handle aggregate as a type and argument count.  The first
+	 argument might be OP_OTHERS.  After that the arguments
+	 alternate: first an OP_NAME, then an expression.  */
+      oplen = 4;
+      args = longest_to_int (exp->elts[pc - 2].longconst);
+      break;
+
+    case OP_OTHERS:
+      oplen = 1;
+      args = 1;
+      break;
+
+    default:
+      operator_length_standard (exp, pc, oplenp, argsp);
+      return;
+    }
+
+  *oplenp = oplen;
+  *argsp = args;
+}
+
+/* op_name implementation for Rust.  */
+static char *
+rust_op_name (enum exp_opcode opcode)
+{
+  switch (opcode)
+    {
+    case OP_AGGREGATE:
+      return "OP_AGGREGATE";
+    case OP_NAME:
+      return "OP_NAME";
+    case OP_OTHERS:
+      return "OP_OTHERS";
+    default:
+      return op_name_standard (opcode);
+    }
+}
+
+/* dump_subexp_body implementation for Rust.  */
+static int
+rust_dump_subexp_body (struct expression *exp, struct ui_file *stream,
+		       int elt)
+{
+  switch (exp->elts[elt].opcode)
+    {
+    case OP_AGGREGATE:
+      {
+	int length = longest_to_int (exp->elts[elt + 2].longconst);
+	int i;
+
+	fprintf_filtered (stream, "Type @");
+	gdb_print_host_address (exp->elts[elt + 1].type, stream);
+	fprintf_filtered (stream, " (");
+	type_print (exp->elts[elt + 1].type, NULL, stream, 0);
+	fprintf_filtered (stream, "), length %d", length);
+
+	elt += 4;
+	for (i = 0; i < length; ++i)
+	  elt = dump_subexp (exp, stream, elt);
+      }
+      break;
+
+    case OP_STRING:
+    case OP_NAME:
+      {
+	LONGEST len = exp->elts[elt + 1].longconst;
+
+	fprintf_filtered (stream, "%s: %s",
+			  (exp->elts[elt].opcode == OP_STRING
+			   ? "string" : "name"),
+			  &exp->elts[elt + 2].string);
+	elt += 4 + BYTES_TO_EXP_ELEM (len + 1);
+      }
+      break;
+
+    case OP_OTHERS:
+      elt = dump_subexp (exp, stream, elt + 1);
+      break;
+
+    default:
+      elt = dump_subexp_body_standard (exp, stream, elt);
+      break;
+    }
+
+  return elt;
+}
+
+/* print_subexp implementation for Rust.  */
+static void
+rust_print_subexp (struct expression *exp, int *pos, struct ui_file *stream,
+		   enum precedence prec)
+{
+  switch (exp->elts[*pos].opcode)
+    {
+    case OP_AGGREGATE:
+      {
+	int length = longest_to_int (exp->elts[*pos + 2].longconst);
+	int i;
+
+	type_print (exp->elts[*pos + 1].type, "", stream, 0);
+	fputs_filtered (" { ", stream);
+
+	*pos += 4;
+	for (i = 0; i < length; ++i)
+	  {
+	    rust_print_subexp (exp, pos, stream, prec);
+	    fputs_filtered (", ", stream);
+	  }
+	fputs_filtered (" }", stream);
+      }
+      break;
+
+    case OP_NAME:
+      {
+	LONGEST len = exp->elts[*pos + 1].longconst;
+
+	fputs_filtered (&exp->elts[*pos + 2].string, stream);
+	*pos += 4 + BYTES_TO_EXP_ELEM (len + 1);
+      }
+      break;
+
+    case OP_OTHERS:
+      {
+	fputs_filtered ("<<others>> (", stream);
+	++*pos;
+	rust_print_subexp (exp, pos, stream, prec);
+	fputs_filtered (")", stream);
+      }
+      break;
+
+    default:
+      print_subexp_standard (exp, pos, stream, prec);
+      break;
+    }
+}
+
 
 
 static const struct exp_descriptor exp_descriptor_rust = 
 {
-  print_subexp_standard,
-  operator_length_standard,
+  rust_print_subexp,
+  rust_operator_length,
   operator_check_standard,
-  op_name_standard,
-  dump_subexp_body_standard,
-  evaluate_subexp_rust
+  rust_op_name,
+  rust_dump_subexp_body,
+  rust_evaluate_subexp
 };
 
 static const struct language_defn rust_language_defn =

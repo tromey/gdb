@@ -312,7 +312,3 @@ OP (OP_DECLTYPE)
 
 /* The typeid operator.  This has one expression argument.  */
 OP (OP_TYPEID)
-
-/* This takes one expression argument, an OP_STRING, and converts the
-   result to a Rust string.  */
-OP (OP_RUST_STRING)
