@@ -281,7 +281,7 @@ tuple_expr:
 	'(' expr ',' expr_list ')'
 		{
 		  VEC_safe_push (rust_op_ptr, $4, $2);
-		  error (_("tuple struct expressions not supported yet"));
+		  error (_("tuple expressions not supported yet"));
 		}
 ;
 
