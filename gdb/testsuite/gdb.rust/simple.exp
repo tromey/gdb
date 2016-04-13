@@ -1,0 +1,86 @@
+# Copyright (C) 2016 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Test expression parsing and evaluation that requires Rust compiler.
+
+load_lib rust-support.exp
+if {[skip_rust_tests]} {
+    continue
+}
+
+standard_testfile .rs
+if {[prepare_for_testing ${testfile}.exp $testfile $srcfile {debug rust}]} {
+    return -1
+}
+
+if {![set_lang_rust]} {
+    warning "Rust expression tests suppressed."
+    continue
+}
+
+set line [gdb_get_line_number "set breakpoint here"]
+if {![runto ${srcfile}:$line]} {
+    untested $testfile
+    return -1
+}
+
+gdb_test "print a" " = \\(\\)"
+gdb_test "ptype a" " = \\(\\)"
+
+gdb_test "print b" " = \\\[\\\]"
+gdb_test "ptype b" " = \\\[i32; 0\\\]"
+
+gdb_test "print c" " = 99"
+gdb_test "ptype c" " = i32"
+
+# FIXME
+# gdb_test "print g" " = \"hi bob\""
+# gdb_test "ptype g" " = const\\* u8"
+
+gdb_test "print v" " = simple::Something::Three"
+gdb_test_sequence "ptype v" "" \
+    [list " = enum simple::Something \\{" \
+	 "  One," \
+	 "  Two," \
+	 "  Three," \
+	 "\\}"]
+
+gdb_test "print w" " = \\\[1, 2, 3, 4\\\]"
+gdb_test "ptype w" " = \\\[i32; 4\\\]"
+
+gdb_test "print y" " = simple::HiBob \\{field1: 7, field2: 8\\}"
+gdb_test_sequence "ptype y" "" \
+    [list " = struct simple::HiBob \\{" \
+	 "  field1: i32," \
+	 "  field2: u64," \
+	 "\\}"]
+
+gdb_test "print z" " = simple::ByeBob \\(7, 8\\)"
+gdb_test_sequence "ptype z" "" \
+    [list " = struct simple::ByeBob \\(" \
+	 "  i32," \
+	 "  u64," \
+	 "\\)"]
+
+
+# FIXME - can't find the name
+# gdb_test "print diff2(3, 7)" " = -4"
+gdb_test "print self::diff2(8, 9)" " = -1"
+gdb_test "print ::simple::diff2(23, -23)" " = 46"
+
+# FIXME we need the ".*" because currently we don't extract the length
+# and use it to intelligently print the string data.
+gdb_test "print \"hello rust\"" \
+    " = &str \\{data_ptr: $hex \"hello rust.*\", length: 10\\}"

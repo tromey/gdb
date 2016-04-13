@@ -106,10 +106,17 @@ proc gdb_find_go_linker {} {
 }
 
 proc gdb_find_rustc {} {
+    global tool_root_dir
     if {![is_remote host]} {
 	set rustc [lookfor_file $tool_root_dir rustc]
+	if {$rustc == ""} {
+	    set rustc rustc
+	}
     } else {
 	set rustc ""
+    }
+    if {$rustc != ""} {
+	append rustc " --color never"
     }
     return $rustc
 }
@@ -392,7 +399,7 @@ proc gdb_default_target_compile {source destfile type options} {
 	}
     }
 
-    if {[info exists F90_FOR_TARGET]} {
+    if {[info exists RUSTC_FOR_TARGET]} {
 	if {$compiler_type == "rust"} {
 	    set compiler $RUSTC_FOR_TARGET
 	}
@@ -416,7 +423,11 @@ proc gdb_default_target_compile {source destfile type options} {
     }
 
     if {$type == "object"} {
-	append add_flags " -c"
+	if {$compiler_type == "rust"} {
+	    append add_flags "--emit obj"
+	} else {
+	    append add_flags " -c"
+	}
     }
 
     if { $type == "preprocess" } {

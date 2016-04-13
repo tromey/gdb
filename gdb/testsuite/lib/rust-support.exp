@@ -25,3 +25,13 @@ proc set_lang_rust {} {
     }
     return 1
 }
+
+proc gdb_compile_rust {sources dest options} {
+    if {[llength $sources] > 1} {
+	error "gdb rust setup can only compile one source file at a time"
+    }
+    if {[gdb_compile [lindex $sources 0] $dest executable $options] != ""} {
+	return -1
+    }
+    return ""
+}
