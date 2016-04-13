@@ -47,7 +47,9 @@ static int rustlex (void);
 static const char *rust_copy_name (const char *, int);
 static struct stoken rust_concat3 (const char *, const char *, const char *);
 static struct stoken make_stoken (const char *);
-static void update_innermost_block (struct block_symbol);
+static struct block_symbol rust_lookup_symbol (const char *name,
+					       const struct block *block,
+					       const domain_enum domain);
 
 struct rust_op;
 typedef const struct rust_op *rust_op_ptr;
@@ -170,6 +172,7 @@ static const struct rust_op *rust_ast;
   VEC (rust_op_ptr) **params;
 
   VEC (set_field) **field_inits;
+  struct set_field one_field_init;
 
   const struct rust_op *op;
 
@@ -237,7 +240,8 @@ static const struct rust_op *rust_ast;
 %type <params> maybe_expr_list
 %type <params> paren_expr_list
 
-%type <field_inits> struct_expr_contents
+%type <field_inits> struct_expr_list
+%type <one_field_init> struct_expr_tail
 
 /* Precedence.  */
 %nonassoc DOTDOT
@@ -307,61 +311,52 @@ unit_expr:
    tuple struct expressions here, but instead when examining the
    AST.  */
 struct_expr:
-	path '{' struct_expr_contents '}'
+	path '{' struct_expr_list '}'
 		{ $$ = make_struct ($1, $3); }
-|	path '{' DOTDOT expr '}'
-		{
-		  struct set_field sf;
-		  VEC (set_field) **result
-		    = OBSTACK_ZALLOC (&work_obstack, VEC (set_field) *);
-		  make_cleanup (VEC_cleanup (set_field), result);
-
-		  sf.name.ptr = NULL;
-		  sf.name.length = 0;
-		  sf.init = $4;
-		  VEC_safe_push (set_field, *result, &sf);
-
-		  $$ = make_struct ($1, result);
-		}
 ;
 
-/* The form S{.. expr} is handled directly in struct_expr, not here.
-   S{} is documented as valid but seems to be an unstable feature, so
-   it is left out here.  */
-struct_expr_contents:
-	',' IDENT ':' expr
+struct_expr_tail:
+	DOTDOT expr
 		{
 		  struct set_field sf;
-		  VEC (set_field) **result
-		    = OBSTACK_ZALLOC (&work_obstack, VEC (set_field) *);
 
-		  make_cleanup (VEC_cleanup (set_field), result);
-		  sf.name = $2;
-		  sf.init = $4;
-		  VEC_safe_push (set_field, *result, &sf);
-		  $$ = result;
-		}
-|	',' DOTDOT expr
-		{
-		  struct set_field sf;
-		  VEC (set_field) **result
-		    = OBSTACK_ZALLOC (&work_obstack, VEC (set_field) *);
-
-		  make_cleanup (VEC_cleanup (set_field), result);
 		  sf.name.ptr = NULL;
 		  sf.name.length = 0;
-		  sf.init = $3;
-		  VEC_safe_push (set_field, *result, &sf);
-		  $$ = result;
+		  sf.init = $2;
+
+		  $$ = sf;
 		}
-|	IDENT ':' expr struct_expr_contents
+|	IDENT ':' expr
 		{
 		  struct set_field sf;
 
 		  sf.name = $1;
 		  sf.init = $3;
-		  VEC_safe_push (set_field, *$4, &sf);
-		  $$ = $4;
+		  $$ = sf;
+		}
+;
+
+/* S{} is documented as valid but seems to be an unstable feature, so
+   it is left out here.  */
+struct_expr_list:
+	struct_expr_tail
+		{
+		  VEC (set_field) **result
+		    = OBSTACK_ZALLOC (&work_obstack, VEC (set_field) *);
+
+		  make_cleanup (VEC_cleanup (set_field), result);
+		  VEC_safe_push (set_field, *result, &$1);
+
+		  $$ = result;
+		}
+|	IDENT ':' expr ',' struct_expr_list
+		{
+		  struct set_field sf;
+
+		  sf.name = $1;
+		  sf.init = $3;
+		  VEC_safe_push (set_field, *$5, &sf);
+		  $$ = $5;
 		}
 ;
 
@@ -692,9 +687,15 @@ super_path:
 type:
 	path
 		{
-		  $$ = lookup_typename (parse_language (pstate),
-					parse_gdbarch (pstate),
-					$1.ptr, NULL, 0);
+		  struct block_symbol typesym;
+
+		  typesym = rust_lookup_symbol ($1.ptr,
+						expression_context_block,
+						STRUCT_DOMAIN);
+		  if (typesym.symbol == NULL)
+		    error (_("no type named '%s'"), $1.ptr);
+
+		  $$ = SYMBOL_TYPE (typesym.symbol);
 		}
 ;
 
@@ -1469,6 +1470,8 @@ static struct block_symbol
 rust_lookup_symbol (const char *name, const struct block *block,
 		    const domain_enum domain)
 {
+  struct block_symbol result;
+
   /* FIXME this approach is rather bad and instead we want to
      construct an AST for paths as well, so we can be intelligent
      about lookups and canonicalization.  */
@@ -1478,7 +1481,10 @@ rust_lookup_symbol (const char *name, const struct block *block,
       block = block_static_block (block);
     }
 
-  return lookup_symbol (name, block, domain, NULL);
+  result = lookup_symbol (name, block, domain, NULL);
+  if (result.symbol != NULL)
+    update_innermost_block (result);
+  return result;
 }
 
 static void
@@ -1613,7 +1619,6 @@ convert_ast_to_expression (struct parser_state *state,
 				  VAR_DOMAIN);
 	if (sym.symbol != NULL)
 	  {
-	    update_innermost_block (sym);
 	    write_exp_elt_opcode (state, OP_VAR_VALUE);
 	    write_exp_elt_block (state, sym.block);
 	    write_exp_elt_sym (state, sym.symbol);
@@ -1632,10 +1637,7 @@ convert_ast_to_expression (struct parser_state *state,
 					  expression_context_block,
 					  STRUCT_DOMAIN);
 		if (sym.symbol != NULL)
-		  {
-		    update_innermost_block (sym);
-		    type = SYMBOL_TYPE (sym.symbol);
-		  }
+		  type = SYMBOL_TYPE (sym.symbol);
 		else
 		  type = lookup_typename (parse_language (state),
 					  parse_gdbarch (state),
@@ -1663,7 +1665,7 @@ convert_ast_to_expression (struct parser_state *state,
 	int length;
 	struct set_field *init;
 	VEC (set_field) *fields = *operation->right.field_inits;
-	struct type *type;
+	struct block_symbol typesym;
 
 	length = 0;
 	for (i = 0; VEC_iterate (set_field, fields, i, init); ++i)
@@ -1687,13 +1689,15 @@ convert_ast_to_expression (struct parser_state *state,
 	      }
 	  }
 
-	type = lookup_typename (parse_language (state),
-				parse_gdbarch (state),
-				operation->left.sval.ptr,
-				NULL, 0);
+	typesym = rust_lookup_symbol (operation->left.sval.ptr,
+				      expression_context_block,
+				      STRUCT_DOMAIN);
+	if (typesym.symbol == NULL)
+	  error (_("could not find type '%s'"), operation->left.sval.ptr);
+	/* FIXME check if the type is a struct here.  */
 
 	write_exp_elt_opcode (state, OP_AGGREGATE);
-	write_exp_elt_type (state, type);
+	write_exp_elt_type (state, SYMBOL_TYPE (typesym.symbol));
 	write_exp_elt_longcst (state, length);
 	write_exp_elt_opcode (state, OP_AGGREGATE);
       }

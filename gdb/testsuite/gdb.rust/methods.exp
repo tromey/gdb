@@ -33,6 +33,13 @@ if {![runto ${srcfile}:$line]} {
 
 gdb_test "print x" " = methods::HasMethods \\{value: 0\\}"
 
+gdb_test "print methods::HasMethods{value: 73}" \
+    " = methods::HasMethods \\{value: 73\\}"
+gdb_test "print methods::HasMethods{..x}" \
+    " = methods::HasMethods \\{value: 0\\}"
+gdb_test "print methods::HasMethods{value:19, ..x}" \
+    " = methods::HasMethods \\{value: 19\\}"
+
 # FIXME this doesn't work yet - probably need to handle OP_FUNCALL
 # ourselves.
 # gdb_test "print x.incr()" " = methods::HasMethods \\{value: 1\\}"
