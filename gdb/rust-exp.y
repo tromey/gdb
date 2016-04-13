@@ -1582,12 +1582,12 @@ convert_ast_to_expression (struct parser_state *state,
       break;
 
     case OP_FUNCALL:
-      write_exp_elt_opcode (state, OP_FUNCALL);
-      write_exp_elt_longcst (state, VEC_length (rust_op_ptr,
-						*operation->right.params) - 1);
-      write_exp_elt_longcst (state, OP_FUNCALL);
       convert_ast_to_expression (state, operation->left.op, top);
       convert_params_to_expression (state, *operation->right.params, top);
+      write_exp_elt_opcode (state, OP_FUNCALL);
+      write_exp_elt_longcst (state, VEC_length (rust_op_ptr,
+						*operation->right.params));
+      write_exp_elt_longcst (state, OP_FUNCALL);
       break;
 
     case OP_ARRAY:
@@ -1663,20 +1663,13 @@ convert_ast_to_expression (struct parser_state *state,
       {
 	int i;
 	int length;
-	const struct set_field *init;
+	struct set_field *init;
 	VEC (set_field) *fields = *operation->right.field_inits;
 	struct type *type;
 
-	/* We constructed the initializers in reverse order; but if
-	   the final one is a copy initializer, then we want to
-	   process it first.  */
 	length = 0;
-	for (i = VEC_length (set_field, fields) - 1;
-	     i >= 0;
-	     --i)
+	for (i = 0; VEC_iterate (set_field, fields, i, init); ++i)
 	  {
-	    init = VEC_index (set_field, fields, i);
-
 	    if (init->name.ptr != NULL)
 	      {
 		write_exp_elt_opcode (state, OP_NAME);
