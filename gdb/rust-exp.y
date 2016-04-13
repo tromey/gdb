@@ -25,6 +25,7 @@
 
 #include "block.h"
 #include "charset.h"
+#include "cp-support.h"
 #include "gdb_obstack.h"
 #include "gdb_regex.h"
 #include "rust-lang.h"
@@ -169,6 +170,8 @@ static const struct rust_op *rust_ast;
   VEC (set_field) *field_inits;
 
   const struct rust_op *op;
+
+  int depth;
 }
 
 %token <sval> GDBVAR
@@ -205,8 +208,9 @@ static const struct rust_op *rust_ast;
 
 %type <sval> path
 %type <sval> identifier_path
-%type <sval> self_path
-%type <sval> super_path
+%type <sval> self_or_super_path
+
+%type <depth> super_path
 
 %type <op> literal
 %type <op> expr
@@ -614,10 +618,7 @@ path_expr:
 
 path:
 	identifier_path
-|	self_path
-		{ error (_("paths starting with self:: not supported yet")); }
-|	super_path
-		{ error (_("paths starting with super:: not supported yet")); }
+|	self_or_super_path
 |	COLONCOLON identifier_path
 		{ $$ = rust_concat3 ("::", $2.ptr, NULL); }
 ;
@@ -628,18 +629,52 @@ identifier_path:
 		{ $$ = rust_concat3 ($1.ptr, "::", $3.ptr); }
 ;
 
-self_path:
-	KW_SELF COLONCOLON identifier_path
-		{ $$ = rust_concat3 ("self::", $3.ptr, NULL); }
-|	KW_SELF COLONCOLON super_path identifier_path
-		{ $$ = rust_concat3 ("self::", $3.ptr, $4.ptr); }
+maybe_self_path:
+	%empty
+|	KW_SELF COLONCOLON
+;
+
+self_or_super_path:
+	maybe_self_path identifier_path
+		{
+		  const char *scope = block_scope (expression_context_block);
+
+		  if (scope[0] == '\0')
+		    error (_("couldn't find namespace scope for self::"));
+
+		  $$ = rust_concat3 (scope, "::", $2.ptr);
+		}
+|	maybe_self_path super_path identifier_path
+		{
+		  const char *scope = block_scope (expression_context_block);
+		  int i;
+		  unsigned int len, offset;
+
+		  if (scope[0] == '\0')
+		    error (_("couldn't find namespace scope for self::"));
+
+		  len = cp_entire_prefix_len (scope);
+		  if ($2 >= len)
+		    error (_("too many super:: uses from '%s'"), scope);
+
+		  for (i = offset = 0; i < $2; ++i)
+		    {
+		      offset = cp_find_first_component (&scope[offset]);
+		      /* The "+ 2" is for the "::".  */
+		      offset += 2;
+		    }
+
+		  obstack_grow (&work_obstack, scope, offset);
+		  obstack_grow0 (&work_obstack, $3.ptr, $3.length);
+		  $$ = make_stoken (obstack_finish (&work_obstack));
+		}
 ;
 
 super_path:
 	KW_SUPER COLONCOLON
-		{ $$ = make_stoken ("super::"); }
+		{ $$ = 1; }
 |	KW_SUPER COLONCOLON super_path
-		{ $$ = rust_concat3 ("super::", $3.ptr, NULL); }
+		{ $$ = $3 + 1; }
 ;
 
 type:
@@ -1415,6 +1450,25 @@ convert_params_to_expression (struct parser_state *state,
     convert_ast_to_expression (state, elem, top);
 }
 
+/* Like lookup_symbol, but handles Rust namespace conventions, and
+   doesn't require field_of_this_result.  */
+
+static struct block_symbol
+rust_lookup_symbol (const char *name, const struct block *block,
+		    const domain_enum domain)
+{
+  /* FIXME this approach is rather bad and instead we want to
+     construct an AST for paths as well, so we can be intelligent
+     about lookups and canonicalization.  */
+  if (strncmp (name, "::", 2) == 0)
+    {
+      name += 2;
+      block = block_static_block (block);
+    }
+
+  return lookup_symbol (name, block, domain, NULL);
+}
+
 static void
 convert_ast_to_expression (struct parser_state *state,
 			   const struct rust_op *operation,
@@ -1541,8 +1595,9 @@ convert_ast_to_expression (struct parser_state *state,
 	    break;
 	  }
 
-	sym = lookup_symbol (operation->left.sval.ptr, expression_context_block,
-			     VAR_DOMAIN, NULL);
+	sym = rust_lookup_symbol (operation->left.sval.ptr,
+				  expression_context_block,
+				  VAR_DOMAIN);
 	if (sym.symbol != NULL)
 	  {
 	    update_innermost_block (sym);
@@ -1560,9 +1615,9 @@ convert_ast_to_expression (struct parser_state *state,
 		struct type *type;
 
 		/* First try a type tag.  */
-		sym = lookup_symbol (operation->left.sval.ptr,
-				     expression_context_block,
-				     STRUCT_DOMAIN, NULL);
+		sym = rust_lookup_symbol (operation->left.sval.ptr,
+					  expression_context_block,
+					  STRUCT_DOMAIN);
 		if (sym.symbol != NULL)
 		  {
 		    update_innermost_block (sym);
