@@ -327,10 +327,7 @@ struct_expr:
 
 /* The form S{.. expr} is handled directly in struct_expr, not here.
    S{} is documented as valid but seems to be an unstable feature, so
-   it is left out here.
-
-   Note that the rightmost element of the array ends up at index 0.
-   This is compensated for when lowering from the AST.  */
+   it is left out here.  */
 struct_expr_contents:
 	',' IDENT ':' expr
 		{
