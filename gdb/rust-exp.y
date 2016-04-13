@@ -600,7 +600,11 @@ expr_list:
 
 maybe_expr_list:
 	%empty
-		{ $$ = NULL; }
+		{
+		  /* The result can't be NULL.  */
+		  $$ = OBSTACK_ZALLOC (&work_obstack, VEC (rust_op_ptr) *);
+		  make_cleanup (VEC_cleanup (rust_op_ptr), $$);
+		}
 |	expr_list
 		{ $$ = $1; }
 ;
