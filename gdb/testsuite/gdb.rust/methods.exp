@@ -1,0 +1,42 @@
+# Copyright (C) 2016 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Test expression parsing and evaluation that requires Rust compiler.
+
+load_lib rust-support.exp
+if {[skip_rust_tests]} {
+    continue
+}
+
+standard_testfile .rs
+if {[prepare_for_testing ${testfile}.exp $testfile $srcfile {debug rust}]} {
+    return -1
+}
+
+set line [gdb_get_line_number "set breakpoint here"]
+if {![runto ${srcfile}:$line]} {
+    untested $testfile
+    return -1
+}
+
+gdb_test "print x" " = methods::HasMethods \\{value: 0\\}"
+
+# FIXME this doesn't work yet - probably need to handle OP_FUNCALL
+# ourselves.
+# gdb_test "print x.incr()" " = methods::HasMethods \\{value: 1\\}"
+
+# FIXME these don't work because we don't have the needed info from rustc.
+# gdb_test "print 23i32.whatever()" " = 23"
+# gdb_test "print x.whatever()" " = 1"
