@@ -633,7 +633,7 @@ path:
 
 identifier_path:
 	IDENT
-|	IDENT COLONCOLON identifier_path
+|	identifier_path COLONCOLON IDENT
 		{ $$ = rust_concat3 ($1.ptr, "::", $3.ptr); }
 ;
 
@@ -684,8 +684,8 @@ self_or_super_path:
 super_path:
 	KW_SUPER COLONCOLON
 		{ $$ = 1; }
-|	KW_SUPER COLONCOLON super_path
-		{ $$ = $3 + 1; }
+|	super_path KW_SUPER COLONCOLON
+		{ $$ = $1 + 1; }
 ;
 
 type:
