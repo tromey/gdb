@@ -93,11 +93,11 @@ static const struct rust_op *make_cast (const struct rust_op *expr,
 					struct type *type);
 static const struct rust_op *make_call_ish (enum exp_opcode opcode,
 					    const struct rust_op *expr,
-					    VEC (rust_op_ptr) *params);
+					    VEC (rust_op_ptr) **params);
 static const struct rust_op *make_path (struct stoken name);
 static const struct rust_op *make_string (struct stoken str);
 static const struct rust_op *make_struct (struct stoken name,
-					  VEC (set_field) *fields);
+					  VEC (set_field) **fields);
 
 /* The state of the parser, used internally when we are parsing the
    expression.  */
@@ -167,9 +167,9 @@ static const struct rust_op *rust_ast;
 
   struct type *type;
 
-  VEC (rust_op_ptr) *params;
+  VEC (rust_op_ptr) **params;
 
-  VEC (set_field) *field_inits;
+  VEC (set_field) **field_inits;
 
   const struct rust_op *op;
 
@@ -284,7 +284,7 @@ expr:
 tuple_expr:
 	'(' expr ',' maybe_expr_list ')'
 		{
-		  VEC_safe_insert (rust_op_ptr, $4, 0, $2);
+		  VEC_safe_insert (rust_op_ptr, *$4, 0, $2);
 		  error (_("tuple expressions not supported yet"));
 		}
 ;
@@ -311,13 +311,15 @@ struct_expr:
 		{ $$ = make_struct ($1, $3); }
 |	path '{' DOTDOT expr '}'
 		{
-		  VEC (set_field) *result = NULL;
 		  struct set_field sf;
+		  VEC (set_field) **result
+		    = OBSTACK_ZALLOC (&work_obstack, VEC (set_field) *);
+		  make_cleanup (VEC_cleanup (set_field), result);
 
 		  sf.name.ptr = NULL;
 		  sf.name.length = 0;
 		  sf.init = $4;
-		  VEC_safe_push (set_field, result, &sf);
+		  VEC_safe_push (set_field, *result, &sf);
 
 		  $$ = make_struct ($1, result);
 		}
@@ -333,22 +335,26 @@ struct_expr_contents:
 	',' IDENT ':' expr
 		{
 		  struct set_field sf;
+		  VEC (set_field) **result
+		    = OBSTACK_ZALLOC (&work_obstack, VEC (set_field) *);
 
-		  VEC (set_field) *result = NULL;
+		  make_cleanup (VEC_cleanup (set_field), result);
 		  sf.name = $2;
 		  sf.init = $4;
-		  VEC_safe_push (set_field, result, &sf);
+		  VEC_safe_push (set_field, *result, &sf);
 		  $$ = result;
 		}
 |	',' DOTDOT expr
 		{
 		  struct set_field sf;
+		  VEC (set_field) **result
+		    = OBSTACK_ZALLOC (&work_obstack, VEC (set_field) *);
 
-		  VEC (set_field) *result = NULL;
+		  make_cleanup (VEC_cleanup (set_field), result);
 		  sf.name.ptr = NULL;
 		  sf.name.length = 0;
 		  sf.init = $3;
-		  VEC_safe_push (set_field, result, &sf);
+		  VEC_safe_push (set_field, *result, &sf);
 		  $$ = result;
 		}
 |	IDENT ':' expr struct_expr_contents
@@ -357,7 +363,7 @@ struct_expr_contents:
 
 		  sf.name = $1;
 		  sf.init = $3;
-		  VEC_safe_push (set_field, $4, &sf);
+		  VEC_safe_push (set_field, *$4, &sf);
 		  $$ = $4;
 		}
 ;
@@ -400,16 +406,19 @@ literal:
 |	STRING
 		{
 		  const struct rust_op *str = make_string ($1);
-		  VEC (set_field) *fields = NULL;
+		  VEC (set_field) **fields;
 		  struct set_field field;
 		  struct typed_val_int val;
 		  struct stoken token;
+
+		  fields = OBSTACK_ZALLOC (&work_obstack, VEC (set_field) *);
+		  make_cleanup (VEC_cleanup (set_field), fields);
 
 		  /* Wrap the raw string in the &str struct.  */
 		  field.name.ptr = "data_ptr";
 		  field.name.length = strlen (field.name.ptr);
 		  field.init = make_unary (UNOP_ADDR, make_string ($1));
-		  VEC_safe_push (set_field, fields, &field);
+		  VEC_safe_push (set_field, *fields, &field);
 
 		  val.type = rust_type ("usize");
 		  val.val = $1.length;
@@ -417,7 +426,7 @@ literal:
 		  field.name.ptr = "length";
 		  field.name.length = strlen (field.name.ptr);
 		  field.init = make_literal (val);
-		  VEC_safe_push (set_field, fields, &field);
+		  VEC_safe_push (set_field, *fields, &field);
 
 		  token.ptr = "&str";
 		  token.length = strlen (token.ptr);
@@ -582,12 +591,13 @@ paren_expr:
 expr_list:
 	expr
 		{
-		  $$ = NULL;
-		  VEC_safe_push (rust_op_ptr, $$, $1);
+		  $$ = OBSTACK_ZALLOC (&work_obstack, VEC (rust_op_ptr) *);
+		  make_cleanup (VEC_cleanup (rust_op_ptr), $$);
+		  VEC_safe_push (rust_op_ptr, *$$, $1);
 		}
 |	expr_list ',' expr
 		{
-		  VEC_safe_push (rust_op_ptr, $1, $3);
+		  VEC_safe_push (rust_op_ptr, *$1, $3);
 		  $$ = $1;
 		}
 ;
@@ -1381,7 +1391,7 @@ make_cast (const struct rust_op *expr, struct type *type)
 
 static const struct rust_op *
 make_call_ish (enum exp_opcode opcode, const struct rust_op *expr,
-	       VEC (rust_op_ptr) *params)
+	       VEC (rust_op_ptr) **params)
 {
   struct rust_op *result = OBSTACK_ZALLOC (&work_obstack, struct rust_op);
 
@@ -1393,7 +1403,7 @@ make_call_ish (enum exp_opcode opcode, const struct rust_op *expr,
 }
 
 static const struct rust_op *
-make_struct (struct stoken name, VEC (set_field) *fields)
+make_struct (struct stoken name, VEC (set_field) **fields)
 {
   struct rust_op *result = OBSTACK_ZALLOC (&work_obstack, struct rust_op);
 
@@ -1574,19 +1584,19 @@ convert_ast_to_expression (struct parser_state *state,
     case OP_FUNCALL:
       write_exp_elt_opcode (state, OP_FUNCALL);
       write_exp_elt_longcst (state, VEC_length (rust_op_ptr,
-						operation->right.params) - 1);
+						*operation->right.params) - 1);
       write_exp_elt_longcst (state, OP_FUNCALL);
       convert_ast_to_expression (state, operation->left.op, top);
-      convert_params_to_expression (state, operation->right.params, top);
+      convert_params_to_expression (state, *operation->right.params, top);
       break;
 
     case OP_ARRAY:
       gdb_assert (operation->left.op == NULL);
-      convert_params_to_expression (state, operation->right.params, top);
+      convert_params_to_expression (state, *operation->right.params, top);
       write_exp_elt_opcode (state, OP_ARRAY);
       write_exp_elt_longcst (state, 0);
       write_exp_elt_longcst (state, VEC_length (rust_op_ptr,
-						operation->right.params) - 1);
+						*operation->right.params) - 1);
       write_exp_elt_longcst (state, OP_ARRAY);
       break;
 
@@ -1654,7 +1664,7 @@ convert_ast_to_expression (struct parser_state *state,
 	int i;
 	int length;
 	const struct set_field *init;
-	VEC (set_field) *fields = operation->right.field_inits;
+	VEC (set_field) *fields = *operation->right.field_inits;
 	struct type *type;
 
 	/* We constructed the initializers in reverse order; but if
