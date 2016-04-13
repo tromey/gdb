@@ -19,6 +19,8 @@
 /* Bison is way nicer than the old #define approach.  */
 %define api.prefix {rust}
 
+%expect 0
+
 %{
 
 #include "defs.h"
@@ -635,14 +637,16 @@ maybe_self_path:
 ;
 
 self_or_super_path:
-	maybe_self_path identifier_path
+	KW_SELF COLONCOLON identifier_path
 		{
 		  const char *scope = block_scope (expression_context_block);
 
 		  if (scope[0] == '\0')
 		    error (_("couldn't find namespace scope for self::"));
 
-		  $$ = rust_concat3 (scope, "::", $2.ptr);
+		  $$ = make_stoken (obconcat (&work_obstack, "::", scope,
+					      "::", $3.ptr,
+					      (char *) NULL));
 		}
 |	maybe_self_path super_path identifier_path
 		{
@@ -664,6 +668,7 @@ self_or_super_path:
 		      offset += 2;
 		    }
 
+		  obstack_grow (&work_obstack, "::", 2);
 		  obstack_grow (&work_obstack, scope, offset);
 		  obstack_grow0 (&work_obstack, $3.ptr, $3.length);
 		  $$ = make_stoken (obstack_finish (&work_obstack));
