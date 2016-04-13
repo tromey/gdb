@@ -59,6 +59,7 @@ gdb_test_sequence "ptype v" "" \
 
 gdb_test "print w" " = \\\[1, 2, 3, 4\\\]"
 gdb_test "ptype w" " = \\\[i32; 4\\\]"
+gdb_test "print w\[2\]" " = 3"
 
 gdb_test "print y" " = simple::HiBob \\{field1: 7, field2: 8\\}"
 gdb_test_sequence "ptype y" "" \
@@ -66,6 +67,7 @@ gdb_test_sequence "ptype y" "" \
 	 "  field1: i32," \
 	 "  field2: u64," \
 	 "\\}"]
+gdb_test "print y.field2" " = 8"
 
 gdb_test "print z" " = simple::ByeBob \\(7, 8\\)"
 gdb_test_sequence "ptype z" "" \
@@ -73,7 +75,7 @@ gdb_test_sequence "ptype z" "" \
 	 "  i32," \
 	 "  u64," \
 	 "\\)"]
-
+gdb_test "print z.1" " = 8"
 
 # FIXME - can't find the name
 # gdb_test "print diff2(3, 7)" " = -4"
