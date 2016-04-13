@@ -25,11 +25,6 @@ if {[prepare_for_testing ${testfile}.exp $testfile $srcfile {debug rust}]} {
     return -1
 }
 
-if {![set_lang_rust]} {
-    warning "Rust expression tests suppressed."
-    continue
-}
-
 set line [gdb_get_line_number "set breakpoint here"]
 if {![runto ${srcfile}:$line]} {
     untested $testfile
