@@ -442,7 +442,7 @@ rust_print_type (struct type *type, const char *varstring,
 	    fprintfi_filtered (level + 2, stream, "%s,\n", name);
 	  }
 
-	fputs_filtered ("}\n", stream);
+	fputs_filtered ("}", stream);
       }
       break;
 
