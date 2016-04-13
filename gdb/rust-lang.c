@@ -627,6 +627,41 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
       }
       break;
 
+    case OP_RUST_ARRAY:
+      {
+	int pc = (*pos)++;
+	int copies;
+	struct value *elt;
+	struct value *ncopies;
+
+	elt = rust_evaluate_subexp (NULL, exp, pos, noside);
+	ncopies = rust_evaluate_subexp (NULL, exp, pos, noside);
+	copies = value_as_long (ncopies);
+	if (copies < 0)
+	  error (_("array with negative number of elements"));
+
+	if (noside == EVAL_NORMAL)
+	  {
+	    CORE_ADDR addr;
+	    int i;
+	    struct value **eltvec = XNEWVEC (struct value *, copies);
+	    struct cleanup *cleanup = make_cleanup (xfree, eltvec);
+
+	    for (i = 0; i < copies; ++i)
+	      eltvec[i] = elt;
+	    result = value_array (0, copies - 1, eltvec);
+
+	    do_cleanups (cleanup);
+	  }
+	else
+	  {
+	    struct type *arraytype
+	      = lookup_array_range_type (value_type (elt), 0, copies - 1);
+	    result = allocate_value (arraytype);
+	  }
+      }
+      break;
+
     default:
       result = evaluate_subexp_standard (expect_type, exp, pos, noside);
       break;
@@ -659,6 +694,11 @@ rust_operator_length (const struct expression *exp, int pc, int *oplenp,
       args = 1;
       break;
 
+    case OP_RUST_ARRAY:
+      oplen = 1;
+      args = 2;
+      break;
+
     default:
       operator_length_standard (exp, pc, oplenp, argsp);
       return;
@@ -681,6 +721,8 @@ rust_op_name (enum exp_opcode opcode)
       return "OP_NAME";
     case OP_OTHERS:
       return "OP_OTHERS";
+    case OP_RUST_ARRAY:
+      return "OP_RUST_ARRAY";
     default:
       return op_name_standard (opcode);
     }
@@ -726,6 +768,9 @@ rust_dump_subexp_body (struct expression *exp, struct ui_file *stream,
 
     case OP_OTHERS:
       elt = dump_subexp (exp, stream, elt + 1);
+      break;
+
+    case OP_RUST_ARRAY:
       break;
 
     default:
@@ -780,6 +825,15 @@ rust_print_subexp (struct expression *exp, int *pos, struct ui_file *stream,
       }
       break;
 
+    case OP_RUST_ARRAY:
+      ++*pos;
+      fprintf_filtered (stream, "[");
+      rust_print_subexp (exp, pos, stream, prec);
+      fprintf_filtered (stream, "; ");
+      rust_print_subexp (exp, pos, stream, prec);
+      fprintf_filtered (stream, "]");
+      break;
+
     default:
       print_subexp_standard (exp, pos, stream, prec);
       break;
@@ -808,6 +862,7 @@ rust_operator_check (struct expression *exp, int pos,
 
     case OP_OTHERS:
     case OP_NAME:
+    case OP_RUST_ARRAY:
       break;
 
     default:

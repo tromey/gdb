@@ -374,13 +374,9 @@ array_expr:
 |	'[' expr_list ']'
 		{ $$ = make_call_ish (OP_ARRAY, NULL, $2); }
 |	'[' KW_MUT expr ';' expr ']'
-		{
-		  error (_("[expr;expr] form of array not supported yet"));
-		}
+		{ $$ = make_operation (OP_RUST_ARRAY, $3, $5); }
 |	'[' expr ';' expr ']'
-		{
-		  error (_("[expr;expr] form of array not supported yet"));
-		}
+		{ $$ = make_operation (OP_RUST_ARRAY, $2, $4); }
 ;
 
 /* FIXME - this causes a shift/reduce conflict that I'd like to
@@ -1545,6 +1541,7 @@ convert_ast_to_expression (struct parser_state *state,
     case BINOP_LSH:
     case BINOP_RSH:
     case BINOP_ASSIGN:
+    case OP_RUST_ARRAY:
       convert_ast_to_expression (state, operation->left.op, top);
       convert_ast_to_expression (state, operation->right.op, top);
       if (operation->compound_assignment)

@@ -312,3 +312,7 @@ OP (OP_DECLTYPE)
 
 /* The typeid operator.  This has one expression argument.  */
 OP (OP_TYPEID)
+
+/* This is used for the Rust [expr; N] form of array construction.  It
+   takes two expression arguments.  */
+OP (OP_RUST_ARRAY)

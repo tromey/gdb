@@ -96,3 +96,6 @@ gdb_test "print b\"\\xddhi bob\"" " = \"\\\\335hi bob\""
 gdb_test "print b\"has\\0nul\"" " = \"has\\\\000nul\""
 
 gdb_test "print \$something" " = 27"
+
+gdb_test "print \[23usize; 4\]" " = \\\[23, 23, 23, 23\\\]"
+gdb_test "ptype \[23usize; 4\]" " = \\\[usize; 4\\\]"
