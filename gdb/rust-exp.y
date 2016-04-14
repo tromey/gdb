@@ -1447,22 +1447,6 @@ make_structop (const struct rust_op *left, const char *name)
   return result;
 }
 
-static void convert_ast_to_expression (struct parser_state *state,
-				       const struct rust_op *operation,
-				       const struct rust_op *top);
-
-static void
-convert_params_to_expression (struct parser_state *state,
-			      VEC (rust_op_ptr) *params,
-			      const struct rust_op *top)
-{
-  int i;
-  rust_op_ptr elem;
-
-  for (i = 0; VEC_iterate (rust_op_ptr, params, i, elem); ++i)
-    convert_ast_to_expression (state, elem, top);
-}
-
 /* Like lookup_symbol, but handles Rust namespace conventions, and
    doesn't require field_of_this_result.  */
 
@@ -1485,6 +1469,22 @@ rust_lookup_symbol (const char *name, const struct block *block,
   if (result.symbol != NULL)
     update_innermost_block (result);
   return result;
+}
+
+static void convert_ast_to_expression (struct parser_state *state,
+				       const struct rust_op *operation,
+				       const struct rust_op *top);
+
+static void
+convert_params_to_expression (struct parser_state *state,
+			      VEC (rust_op_ptr) *params,
+			      const struct rust_op *top)
+{
+  int i;
+  rust_op_ptr elem;
+
+  for (i = 0; VEC_iterate (rust_op_ptr, params, i, elem); ++i)
+    convert_ast_to_expression (state, elem, top);
 }
 
 static void
@@ -1586,12 +1586,56 @@ convert_ast_to_expression (struct parser_state *state,
       break;
 
     case OP_FUNCALL:
-      convert_ast_to_expression (state, operation->left.op, top);
-      convert_params_to_expression (state, *operation->right.params, top);
-      write_exp_elt_opcode (state, OP_FUNCALL);
-      write_exp_elt_longcst (state, VEC_length (rust_op_ptr,
-						*operation->right.params));
-      write_exp_elt_longcst (state, OP_FUNCALL);
+      {
+	if (operation->left.op->opcode == OP_VAR_VALUE)
+	  {
+	    struct block_symbol sym;
+	    const char *varname = operation->left.op->left.sval.ptr;
+
+	    sym = rust_lookup_symbol (varname, expression_context_block,
+				      STRUCT_DOMAIN);
+	    if (sym.symbol != NULL)
+	      {
+		/* This is actually a tuple struct expression, not a
+		   call expression.  */
+		struct type *type = SYMBOL_TYPE (sym.symbol);
+		rust_op_ptr elem;
+		int i;
+		VEC (rust_op_ptr) *params = *operation->right.params;
+
+		if (!rust_tuple_struct_type_p (type))
+		  error (_("type %s is not a tuple struct"),
+			 SYMBOL_PRINT_NAME (sym.symbol));
+
+		for (i = 0;
+		     VEC_iterate (rust_op_ptr, params, i, elem);
+		     ++i)
+		  {
+		    char *cell = get_print_cell ();
+
+		    xsnprintf (cell, PRINT_CELL_SIZE, "__%d", i);
+		    write_exp_elt_opcode (state, OP_NAME);
+		    write_exp_string (state, make_stoken (cell));
+		    write_exp_elt_opcode (state, OP_NAME);
+
+		    convert_ast_to_expression (state, elem, top);
+		  }
+
+		write_exp_elt_opcode (state, OP_AGGREGATE);
+		write_exp_elt_type (state, type);
+		write_exp_elt_longcst (state,
+				       2 * VEC_length (rust_op_ptr, params));
+		write_exp_elt_opcode (state, OP_AGGREGATE);
+		break;
+	      }
+	  }
+	convert_ast_to_expression (state, operation->left.op, top);
+	convert_params_to_expression (state, *operation->right.params, top);
+	write_exp_elt_opcode (state, OP_FUNCALL);
+	write_exp_elt_longcst (state, VEC_length (rust_op_ptr,
+						  *operation->right.params));
+	write_exp_elt_longcst (state, OP_FUNCALL);
+      }
       break;
 
     case OP_ARRAY:

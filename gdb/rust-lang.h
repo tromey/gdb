@@ -21,9 +21,14 @@
 #define RUST_LANG_H
 
 struct parser_state;
+struct type;
 
 extern int rust_parse (struct parser_state *);
 
 extern void rusterror (char *);
+
+/* Return true if the struct TYPE is a tuple struct type; otherwise
+   false.  */
+extern int rust_tuple_struct_type_p (struct type *type);
 
 #endif /* RUST_LANG_H */

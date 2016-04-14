@@ -46,10 +46,9 @@ rust_tuple_type_p (struct type *type)
   return TYPE_TAG_NAME (type) != NULL && TYPE_TAG_NAME (type)[0] == '(';
 }
 
-/* Return true if the struct TYPE is a tuple struct type; otherwise
-   false.  */
+/* See rust-lang.h.  */
 
-static int
+int
 rust_tuple_struct_type_p (struct type *type)
 {
   int i;
