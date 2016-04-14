@@ -481,7 +481,7 @@ rust_language_arch_info (struct gdbarch *gdbarch,
 			 struct language_arch_info *lai)
 {
   const struct builtin_type *builtin = builtin_type (gdbarch);
-  struct type *str;
+  struct type *str, *tem;
   struct type **types;
   unsigned int length;
 
@@ -512,12 +512,9 @@ rust_language_arch_info (struct gdbarch *gdbarch,
   /* For some reason gdb doesn't set this, but then later does require
      it.  */
   TYPE_NAME (str) = "&str";
-  /* The type here isn't strictly correct; instead we want
-     "*const u8".  */
-  append_composite_type_field_aligned
-    (str, "data_ptr",
-     lookup_pointer_type (types[rust_primitive_u8]),
-     0);
+  tem = make_cv_type (1, 0, types[rust_primitive_u8], NULL);
+  tem = lookup_pointer_type (tem);
+  append_composite_type_field_aligned (str, "data_ptr", tem, 0);
   append_composite_type_field_aligned (str, "length",
 				       types[rust_primitive_usize],
 				       length);
