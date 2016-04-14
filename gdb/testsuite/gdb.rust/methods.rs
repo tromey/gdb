@@ -20,7 +20,7 @@ pub trait Whatever {
 
 impl Whatever for i32 {
     fn whatever(&self) -> i32 {
-        *self
+        *self                   // set breakpoint 2 here
     }
 
     fn static_i32(x: i32) -> i32 {
@@ -55,7 +55,7 @@ impl Whatever for HasMethods {
 
 fn main() {
     let mut x = HasMethods::new();
-    x.incr();               // set breakpoint here
+    x.incr();               // set breakpoint 1 here
     let y = 23i32.whatever();
     println!("{}", y);
 }

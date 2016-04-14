@@ -618,6 +618,8 @@ path_expr:
 		{ $$ = make_path ($1); }
 |	GDBVAR
 		{ $$ = make_path ($1); }
+|	KW_SELF
+		{ $$ = make_path (make_stoken ("self")); }
 ;
 
 path:

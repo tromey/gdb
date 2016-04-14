@@ -25,7 +25,7 @@ if {[prepare_for_testing ${testfile}.exp $testfile $srcfile {debug rust}]} {
     return -1
 }
 
-set line [gdb_get_line_number "set breakpoint here"]
+set line [gdb_get_line_number "set breakpoint 1 here"]
 if {![runto ${srcfile}:$line]} {
     untested $testfile
     return -1
@@ -39,6 +39,12 @@ gdb_test "print methods::HasMethods{..x}" \
     " = methods::HasMethods \\{value: 0\\}"
 gdb_test "print methods::HasMethods{value:19, ..x}" \
     " = methods::HasMethods \\{value: 19\\}"
+
+set line [gdb_get_line_number "set breakpoint 2 here"]
+gdb_breakpoint ${srcfile}:$line
+gdb_continue_to_breakpoint "second breakpoint"
+
+gdb_test "print *self" " = 23"
 
 # FIXME this doesn't work yet - probably need to handle OP_FUNCALL
 # ourselves.
