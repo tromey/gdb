@@ -50,6 +50,8 @@ static struct stoken make_stoken (const char *);
 static struct block_symbol rust_lookup_symbol (const char *name,
 					       const struct block *block,
 					       const domain_enum domain);
+static struct type *rust_lookup_type (const char *name,
+				      const struct block *block);
 
 struct rust_op;
 typedef const struct rust_op *rust_op_ptr;
@@ -689,15 +691,13 @@ super_path:
 type:
 	path
 		{
-		  struct block_symbol typesym;
+		  struct type *type;
 
-		  typesym = rust_lookup_symbol ($1.ptr,
-						expression_context_block,
-						STRUCT_DOMAIN);
-		  if (typesym.symbol == NULL)
+		  type = rust_lookup_type ($1.ptr, expression_context_block);
+		  if (type == NULL)
 		    error (_("no type named '%s'"), $1.ptr);
 
-		  $$ = SYMBOL_TYPE (typesym.symbol);
+		  $$ = type;
 		}
 ;
 
@@ -1449,6 +1449,22 @@ make_structop (const struct rust_op *left, const char *name)
   return result;
 }
 
+/* A helper to appropriately munge NAME and BLOCK depending on the
+   presence of a leading "::".  */
+
+static void
+munge_name_and_block (const char **name, const struct block **block)
+{
+  /* FIXME this approach is rather bad and instead we want to
+     construct an AST for paths as well, so we can be intelligent
+     about lookups and canonicalization.  */
+  if (strncmp (*name, "::", 2) == 0)
+    {
+      *name += 2;
+      *block = block_static_block (*block);
+    }
+}
+
 /* Like lookup_symbol, but handles Rust namespace conventions, and
    doesn't require field_of_this_result.  */
 
@@ -1458,19 +1474,32 @@ rust_lookup_symbol (const char *name, const struct block *block,
 {
   struct block_symbol result;
 
-  /* FIXME this approach is rather bad and instead we want to
-     construct an AST for paths as well, so we can be intelligent
-     about lookups and canonicalization.  */
-  if (strncmp (name, "::", 2) == 0)
-    {
-      name += 2;
-      block = block_static_block (block);
-    }
+  munge_name_and_block (&name, &block);
 
   result = lookup_symbol (name, block, domain, NULL);
   if (result.symbol != NULL)
     update_innermost_block (result);
   return result;
+}
+
+/* Look up a type.  */
+
+static struct type *
+rust_lookup_type (const char *name, const struct block *block)
+{
+  struct block_symbol result;
+
+  munge_name_and_block (&name, &block);
+
+  result = lookup_symbol (name, block, STRUCT_DOMAIN, NULL);
+  if (result.symbol != NULL)
+    {
+      update_innermost_block (result);
+      return SYMBOL_TYPE (result.symbol);
+    }
+
+  return lookup_typename (parse_language (pstate), parse_gdbarch (pstate),
+			  name, NULL, 1);
 }
 
 static void convert_ast_to_expression (struct parser_state *state,
@@ -1591,23 +1620,20 @@ convert_ast_to_expression (struct parser_state *state,
       {
 	if (operation->left.op->opcode == OP_VAR_VALUE)
 	  {
-	    struct block_symbol sym;
+	    struct type *type;
 	    const char *varname = operation->left.op->left.sval.ptr;
 
-	    sym = rust_lookup_symbol (varname, expression_context_block,
-				      STRUCT_DOMAIN);
-	    if (sym.symbol != NULL)
+	    type = rust_lookup_type (varname, expression_context_block);
+	    if (type != NULL)
 	      {
 		/* This is actually a tuple struct expression, not a
 		   call expression.  */
-		struct type *type = SYMBOL_TYPE (sym.symbol);
 		rust_op_ptr elem;
 		int i;
 		VEC (rust_op_ptr) *params = *operation->right.params;
 
 		if (!rust_tuple_struct_type_p (type))
-		  error (_("type %s is not a tuple struct"),
-			 SYMBOL_PRINT_NAME (sym.symbol));
+		  error (_("type %s is not a tuple struct"), varname);
 
 		for (i = 0;
 		     VEC_iterate (rust_op_ptr, params, i, elem);
@@ -1678,18 +1704,8 @@ convert_ast_to_expression (struct parser_state *state,
 		   level, then maybe we found a type instead.  */
 		struct type *type;
 
-		/* First try a type tag.  */
-		sym = rust_lookup_symbol (operation->left.sval.ptr,
-					  expression_context_block,
-					  STRUCT_DOMAIN);
-		if (sym.symbol != NULL)
-		  type = SYMBOL_TYPE (sym.symbol);
-		else
-		  type = lookup_typename (parse_language (state),
-					  parse_gdbarch (state),
-					  operation->left.sval.ptr,
-					  NULL, 0);
-
+		type = rust_lookup_type (operation->left.sval.ptr,
+					 expression_context_block);
 		if (type != NULL)
 		  {
 		    write_exp_elt_opcode (state, OP_TYPE);
@@ -1711,7 +1727,7 @@ convert_ast_to_expression (struct parser_state *state,
 	int length;
 	struct set_field *init;
 	VEC (set_field) *fields = *operation->right.field_inits;
-	struct block_symbol typesym;
+	struct type *type;
 
 	length = 0;
 	for (i = 0; VEC_iterate (set_field, fields, i, init); ++i)
@@ -1735,15 +1751,14 @@ convert_ast_to_expression (struct parser_state *state,
 	      }
 	  }
 
-	typesym = rust_lookup_symbol (operation->left.sval.ptr,
-				      expression_context_block,
-				      STRUCT_DOMAIN);
-	if (typesym.symbol == NULL)
+	type = rust_lookup_type (operation->left.sval.ptr,
+				 expression_context_block);
+	if (type == NULL)
 	  error (_("could not find type '%s'"), operation->left.sval.ptr);
 	/* FIXME check if the type is a struct here.  */
 
 	write_exp_elt_opcode (state, OP_AGGREGATE);
-	write_exp_elt_type (state, SYMBOL_TYPE (typesym.symbol));
+	write_exp_elt_type (state, type);
 	write_exp_elt_longcst (state, length);
 	write_exp_elt_opcode (state, OP_AGGREGATE);
       }
