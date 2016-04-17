@@ -42,8 +42,9 @@ rust_tuple_type_p (struct type *type)
   /* The current implementation is a bit of a hack, but there's
      nothing else in the debuginfo to distinguish a tuple from a
      struct.  */
-  gdb_assert (TYPE_CODE (type) == TYPE_CODE_STRUCT);
-  return TYPE_TAG_NAME (type) != NULL && TYPE_TAG_NAME (type)[0] == '(';
+  return (TYPE_CODE (type) == TYPE_CODE_STRUCT
+	  && TYPE_TAG_NAME (type) != NULL
+	  && TYPE_TAG_NAME (type)[0] == '(');
 }
 
 /* See rust-lang.h.  */
@@ -53,7 +54,8 @@ rust_tuple_struct_type_p (struct type *type)
 {
   int i;
 
-  gdb_assert (TYPE_CODE (type) == TYPE_CODE_STRUCT);
+  if (TYPE_CODE (type) != TYPE_CODE_STRUCT)
+    return 0;
   for (i = 0; i < TYPE_NFIELDS (type); ++i)
     {
       if (!field_is_static (&TYPE_FIELD (type, i)))
