@@ -1050,6 +1050,17 @@ space_then_number (const char *string)
   return *p >= '0' && *p <= '9';
 }
 
+/* Return true if C can start an identifier.  */
+
+static int
+rust_identifier_start_p (char c)
+{
+  return ((c >= 'a' && c <= 'z')
+	  || (c >= 'A' && c <= 'Z')
+	  || c == '_'
+	  || c == '$');
+}
+
 /* Lex an identifier.  */
 static int
 lex_identifier (void)
@@ -1060,9 +1071,7 @@ lex_identifier (void)
   int i;
   int is_gdb_var = lexptr[0] == '$';
 
-  gdb_assert ((lexptr[0] >= 'a' && lexptr[0] <= 'z')
-	      || (lexptr[0] >= 'A' && lexptr[0] <= 'Z')
-	      || lexptr[0] == '_' || lexptr[0] == '$');
+  gdb_assert (rust_identifier_start_p (lexptr[0]));
 
   ++lexptr;
 
@@ -1201,6 +1210,25 @@ lex_number (void)
       typename = "f64";
     }
 
+  /* We need a special case if the final character is ".".  In this
+     case we might need to parse an integer.  For example, "23.f()" is
+     a request for a trait method call, not a syntax error involving
+     the floating point number "23.".  */
+  gdb_assert (subexps[0].rm_eo > 0);
+  if (lexptr[subexps[0].rm_eo - 1] == '.')
+    {
+      const char *next = skip_spaces_const (&lexptr[subexps[0].rm_eo]);
+
+      if (rust_identifier_start_p (*next))
+	{
+	  --subexps[0].rm_eo;
+	  is_integer = 1;
+	  end_index = subexps[0].rm_eo;
+	  typename = "i32";
+	  could_be_decimal = 1;
+	}
+    }
+
   /* Compute the type name if we haven't already.  */
   if (typename == NULL)
     {
@@ -1283,9 +1311,7 @@ rustlex (void)
     return lex_string ();
   else if (starts_raw_string (lexptr))
     return lex_string ();
-  else if ((lexptr[0] >= 'a' && lexptr[0] <= 'z')
-	   || (lexptr[0] >= 'A' && lexptr[0] <= 'Z')
-	   || lexptr[0] == '_' || lexptr[0] == '$')
+  else if (rust_identifier_start_p (lexptr[0]))
     return lex_identifier ();
   else if (lexptr[0] == '"')
     return lex_string ();
@@ -1865,6 +1891,38 @@ rust_lex_stringish_test (const char *input, const char *value, int kind)
   gdb_assert (strcmp (result.sval.ptr, value) == 0);
 }
 
+/* Helper to test that a string parses as a given token sequence.  */
+
+static void
+rust_lex_test_sequence (const char *input, int len, const int expected[])
+{
+  int i;
+
+  lexptr = input;
+  paren_depth = 0;
+
+  for (i = 0; i < len; ++i)
+    {
+      int token = rustlex ();
+
+      gdb_assert (token == expected[i]);
+    }
+}
+
+/* Tests for an integer-parsing corner case.  */
+
+static void
+rust_lex_test_trailing_dot (void)
+{
+  const int expected1[] = { DECIMAL_INTEGER, '.', IDENT, '(', ')', 0 };
+  const int expected2[] = { INTEGER, '.', IDENT, '(', ')', 0 };
+  const int expected3[] = { FLOAT, EQEQ, '(', ')', 0 };
+
+  rust_lex_test_sequence ("23.g()", ARRAY_SIZE (expected1), expected1);
+  rust_lex_test_sequence ("23_0.g()", ARRAY_SIZE (expected2), expected2);
+  rust_lex_test_sequence ("23.==()", ARRAY_SIZE (expected3), expected3);
+}
+
 /* Unit test the lexer.  */
 static void
 rust_lex_tests (void)
@@ -1892,6 +1950,8 @@ rust_lex_tests (void)
   rust_lex_int_test ("0x1_f", 0x1f, INTEGER);
   rust_lex_int_test ("0b1_101011__", 0x6b, INTEGER);
   rust_lex_int_test ("0o001177i64", 639, INTEGER);
+
+  rust_lex_test_trailing_dot ();
 
   rust_lex_test_one ("23.", FLOAT);
   rust_lex_test_one ("23.99f32", FLOAT);
