@@ -714,6 +714,52 @@ rust_range (struct expression *exp, int *pos, enum noside noside)
   return result;
 }
 
+/* A helper for rust_evaluate_subexp that handles BINOP_SUBSCRIPT.  */
+
+static struct value *
+rust_subscript (struct expression *exp, int *pos, enum noside noside)
+{
+  struct value *lhs, *rhs, *result;
+
+  ++*pos;
+  lhs = evaluate_subexp (NULL_TYPE, exp, pos, noside);
+  rhs = evaluate_subexp (NULL_TYPE, exp, pos, noside);
+  if (noside == EVAL_SKIP)
+    result = lhs;
+  else if (noside == EVAL_AVOID_SIDE_EFFECTS)
+    {
+      struct type *type = check_typedef (value_type (lhs));
+
+      result = value_zero (TYPE_TARGET_TYPE (type), VALUE_LVAL (lhs));
+    }
+  else
+    {
+      struct type *type = check_typedef (value_type (lhs));
+
+      /* It's maybe dubious to allow pointers here.  */
+      if (TYPE_CODE (type) == TYPE_CODE_ARRAY
+	  || TYPE_CODE (type) == TYPE_CODE_PTR)
+	result = value_subscript (lhs, value_as_long (rhs));
+      else if (rust_slice_type_p (type))
+	{
+	  struct value *len, *data_ptr;
+	  LONGEST ndx = value_as_long (rhs);
+
+	  if (ndx < 0)
+	    error (_("index into slice less than zero"));
+	  len = value_struct_elt (&lhs, NULL, "length", NULL, "slice");
+	  if (ndx >= value_as_long (len))
+	    error (_("index greater than slice length"));
+	  data_ptr = value_struct_elt (&lhs, NULL, "data_ptr", NULL, "slice");
+	  result = value_subscript (data_ptr, ndx);
+	}
+      else
+	error (_("cannot subscript non-array type"));
+    }
+
+  return result;
+}
+
 /* evaluate_exp implementation for Rust.  */
 
 static struct value *
@@ -744,46 +790,7 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
       break;
 
     case BINOP_SUBSCRIPT:
-      {
-	struct value *lhs, *rhs;
-
-	++*pos;
-	lhs = evaluate_subexp (NULL_TYPE, exp, pos, noside);
-	rhs = evaluate_subexp (NULL_TYPE, exp, pos, noside);
-	if (noside == EVAL_SKIP)
-	  result = lhs;
-	else if (noside == EVAL_AVOID_SIDE_EFFECTS)
-	  {
-	    struct type *type = check_typedef (value_type (lhs));
-
-	    result = value_zero (TYPE_TARGET_TYPE (type), VALUE_LVAL (lhs));
-	  }
-	else
-	  {
-	    struct type *type = check_typedef (value_type (lhs));
-
-	    /* It's maybe dubious to allow pointers here.  */
-	    if (TYPE_CODE (type) == TYPE_CODE_ARRAY
-		|| TYPE_CODE (type) == TYPE_CODE_PTR)
-	      result = value_subscript (lhs, value_as_long (rhs));
-	    else if (rust_slice_type_p (type))
-	      {
-		struct value *len, *data_ptr;
-		LONGEST ndx = value_as_long (rhs);
-
-		if (ndx < 0)
-		  error (_("index into slice less than zero"));
-		len = value_struct_elt (&lhs, NULL, "length", NULL, "slice");
-		if (ndx >= value_as_long (len))
-		  error (_("index greater than slice length"));
-		data_ptr = value_struct_elt (&lhs, NULL, "data_ptr", NULL,
-					     "slice");
-		result = value_subscript (data_ptr, ndx);
-	      }
-	    else
-	      error (_("cannot subscript non-array type"));
-	  }
-      }
+      result = rust_subscript (exp, pos, noside);
       break;
 
     case OP_FUNCALL:
