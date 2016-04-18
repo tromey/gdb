@@ -1698,25 +1698,30 @@ convert_ast_to_expression (struct parser_state *state,
 	  }
 	else
 	  {
-	    if (operation == top)
+	    struct type *type;
+
+	    type = rust_lookup_type (operation->left.sval.ptr,
+				     expression_context_block);
+	    if (type == NULL)
+	      error (_("No symbol '%s' in current context"),
+		     operation->left.sval.ptr);
+
+	    if (TYPE_CODE (type) == TYPE_CODE_STRUCT
+		&& TYPE_NFIELDS (type) == 0)
 	      {
-		/* If we didn't find a variable, and we're at the top
-		   level, then maybe we found a type instead.  */
-		struct type *type;
-
-		type = rust_lookup_type (operation->left.sval.ptr,
-					 expression_context_block);
-		if (type != NULL)
-		  {
-		    write_exp_elt_opcode (state, OP_TYPE);
-		    write_exp_elt_type (state, type);
-		    write_exp_elt_opcode (state, OP_TYPE);
-		    break;
-		  }
+		/* A unit-like struct.  */
+		write_exp_elt_opcode (state, OP_AGGREGATE);
+		write_exp_elt_type (state, type);
+		write_exp_elt_longcst (state, 0);
+		write_exp_elt_opcode (state, OP_AGGREGATE);
 	      }
-
-	    error (_("No symbol '%s' in current context"),
-		   operation->left.sval.ptr);
+	    else if (operation == top)
+	      {
+		write_exp_elt_opcode (state, OP_TYPE);
+		write_exp_elt_type (state, type);
+		write_exp_elt_opcode (state, OP_TYPE);
+		break;
+	      }
 	  }
       }
       break;

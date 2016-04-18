@@ -40,6 +40,12 @@ gdb_test "ptype b" " = \\\[i32; 0\\\]"
 gdb_test "print c" " = 99"
 gdb_test "ptype c" " = i32"
 
+gdb_test "print j" " = simple::Unit \\{\\}"
+gdb_test_sequence "ptype j" "" \
+    [list " = struct simple::Unit \\{" \
+	 "\\}"]
+gdb_test "print simple::Unit" " = simple::Unit \\{\\}"
+
 # FIXME
 # gdb_test "print g" " = \"hi bob\""
 # gdb_test "ptype g" " = const\\* u8"

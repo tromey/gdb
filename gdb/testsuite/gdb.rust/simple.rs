@@ -41,6 +41,8 @@ fn diff2(x: i32, y: i32) -> i32 {
     x - y
 }
 
+pub struct Unit;
+
 fn main () {
     let a = ();
     let b : [i32; 0] = [];
@@ -55,6 +57,8 @@ fn main () {
     let h = b'9';
 
     let i = ["whatever"; 8];
+
+    let j = Unit;
 
     let v = Something::Three;
     let w = [1,2,3,4];
