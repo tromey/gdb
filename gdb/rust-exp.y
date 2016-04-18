@@ -705,6 +705,7 @@ type:
 %%
 
 /* A struct of this type is used to describe a token.  */
+
 struct token_info
 {
   const char *name;
@@ -713,6 +714,7 @@ struct token_info
 };
 
 /* Identifier tokens.  */
+
 static const struct token_info identifier_tokens[] =
 {
   { "as", KW_AS, OP_NULL },
@@ -725,6 +727,7 @@ static const struct token_info identifier_tokens[] =
 };
 
 /* Operator tokens, sorted longest first.  */
+
 static const struct token_info operator_tokens[] =
 {
   { ">>=", COMPOUND_ASSIGN, BINOP_RSH },
@@ -752,6 +755,7 @@ static const struct token_info operator_tokens[] =
 };
 
 /* Helper function to copy to the name obstack.  */
+
 static const char *
 rust_copy_name (const char *name, int len)
 {
@@ -759,6 +763,7 @@ rust_copy_name (const char *name, int len)
 }
 
 /* Helper function to make an stoken from a C string.  */
+
 static struct stoken
 make_stoken (const char *p)
 {
@@ -771,6 +776,7 @@ make_stoken (const char *p)
 
 /* Helper function to concatenate three strings on the name
    obstack.  */
+
 static struct stoken
 rust_concat3 (const char *s1, const char *s2, const char *s3)
 {
@@ -778,6 +784,7 @@ rust_concat3 (const char *s1, const char *s2, const char *s3)
 }
 
 /* A helper that updates innermost_block as appropriate.  */
+
 static void
 update_innermost_block (struct block_symbol sym)
 {
@@ -789,6 +796,7 @@ update_innermost_block (struct block_symbol sym)
 
 /* A helper to look up a Rust type, or fail.  This only works for
    types defined by rust_language_arch_info.  */
+
 static struct type *
 rust_type (const char *name)
 {
@@ -807,6 +815,7 @@ rust_type (const char *name)
 
 /* Lex a hex number with at least MIN digits and at most MAX
    digits.  */
+
 static uint32_t
 lex_hex (int min, int max)
 {
@@ -839,6 +848,7 @@ lex_hex (int min, int max)
 
 /* Lex an escape.  IS_BYTE is true if we're lexing a byte escape;
    otherwise we're lexing a character escape.  */
+
 static uint32_t
 lex_escape (int is_byte)
 {
@@ -904,6 +914,7 @@ lex_escape (int is_byte)
 }
 
 /* Lex a character constant.  */
+
 static int
 lex_character (void)
 {
@@ -940,6 +951,7 @@ lex_character (void)
 
 /* Return the offset of the double quote if STR looks like the start
    of a raw string, or 0 if STR does not start a raw string..  */
+
 static int
 starts_raw_string (const char *str)
 {
@@ -957,6 +969,7 @@ starts_raw_string (const char *str)
 
 /* Return true if STR looks like the end of a raw string that had N
    hashes at the start.  */
+
 static int
 ends_raw_string (const char *str, int n)
 {
@@ -970,6 +983,7 @@ ends_raw_string (const char *str, int n)
 }
 
 /* Lex a string constant.  */
+
 static int
 lex_string (void)
 {
@@ -1037,6 +1051,7 @@ lex_string (void)
 }
 
 /* Return true if STRING starts with whitespace followed by a digit.  */
+
 static int
 space_then_number (const char *string)
 {
@@ -1062,6 +1077,7 @@ rust_identifier_start_p (char c)
 }
 
 /* Lex an identifier.  */
+
 static int
 lex_identifier (void)
 {
@@ -1132,6 +1148,7 @@ lex_identifier (void)
 }
 
 /* Lex an operator.  */
+
 static int
 lex_operator (void)
 {
@@ -1159,6 +1176,7 @@ lex_operator (void)
 }
 
 /* Lex a number.  */
+
 static int
 lex_number (void)
 {
@@ -1289,6 +1307,7 @@ lex_number (void)
 }
 
 /* The lexer.  */
+
 static int
 rustlex (void)
 {
@@ -1811,6 +1830,7 @@ convert_ast_to_expression (struct parser_state *state,
 
 
 /* The parser as exposed to gdb.  */
+
 int
 rust_parse (struct parser_state *state)
 {
@@ -1838,6 +1858,7 @@ rust_parse (struct parser_state *state)
 }
 
 /* The parser error handler.  */
+
 void
 rusterror (char *msg)
 {
@@ -1852,6 +1873,7 @@ rusterror (char *msg)
 
 /* A test helper that lexes a string, expecting a single token.  It
    returns the lexer data for this token.  */
+
 static RUSTSTYPE
 rust_lex_test_one (const char *input, int expected)
 {
@@ -1875,6 +1897,7 @@ rust_lex_test_one (const char *input, int expected)
 }
 
 /* Test that INPUT lexes as the integer VALUE.  */
+
 static void
 rust_lex_int_test (const char *input, int value, int kind)
 {
@@ -1884,6 +1907,7 @@ rust_lex_int_test (const char *input, int value, int kind)
 
 /* Test that INPUT lexes as the identifier, string, or byte-string
    VALUE.  KIND holds the expected token kind.  */
+
 static void
 rust_lex_stringish_test (const char *input, const char *value, int kind)
 {
@@ -1924,6 +1948,7 @@ rust_lex_test_trailing_dot (void)
 }
 
 /* Unit test the lexer.  */
+
 static void
 rust_lex_tests (void)
 {
