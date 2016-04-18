@@ -14398,7 +14398,7 @@ being set automatically by @value{GDBN}.
 @section Supported Languages
 
 @value{GDBN} supports C, C@t{++}, D, Go, Objective-C, Fortran, Java,
-OpenCL C, Pascal, assembly, Modula-2, and Ada.
+OpenCL C, Pascal, Rust, assembly, Modula-2, and Ada.
 @c This is false ...
 Some @value{GDBN} features may be used in expressions regardless of the
 language you use: the @value{GDBN} @code{@@} and @code{::} operators,
@@ -14422,6 +14422,7 @@ language reference or tutorial.
 * OpenCL C::                    OpenCL C
 * Fortran::                     Fortran
 * Pascal::                      Pascal
+* Rust::                        Rust
 * Modula-2::                    Modula-2
 * Ada::                         Ada
 @end menu
@@ -15226,6 +15227,45 @@ syntax.
 The Pascal-specific command @code{set print pascal_static-members}
 controls whether static members of Pascal objects are displayed.
 @xref{Print Settings, pascal_static-members}.
+
+@node Rust
+@subsection Rust
+
+@value{GDBN} supports the @url{https://www.rust-lang.org/, Rust
+Programming Language}.  Type- and value-printing, and expression
+parsing, are reasonably complete.  However, there are a few holes to
+be aware of.
+
+@itemize @bullet
+@item
+Method calls cannot be made via traits.  As of this writing, the Rust
+compiler doesn't emit the debugging information needed to implement
+this.
+
+@item
+Trait objects cannot be created or inspected.  As of this writing, the
+Rust compiler doesn't emit the debugging information needed to
+implement this.
+
+@item
+Operator overloading is not implemented.  As of this writing, the Rust
+compiler doesn't emit the debugging information needed to implement
+this.
+
+@item
+Linespecs (@pxref{Specify Location}) cannot refer to items using
+@samp{self::} or @samp{super::}.
+
+@item
+The Rust expression evaluator does not support ``statement-like''
+expressions such as @code{if}.  Only a C-like subset of the expression
+language is implemented.
+
+@item
+The Rust expression evaluator does not current implement the
+@code{Drop} trait.  Objects that may be created by the evaluator will
+never be destroyed.
+@end itemize
 
 @node Modula-2
 @subsection Modula-2
