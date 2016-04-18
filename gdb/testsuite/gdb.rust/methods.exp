@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Test expression parsing and evaluation that requires Rust compiler.
+# Test method calls.
 
 load_lib rust-support.exp
 if {[skip_rust_tests]} {
@@ -40,16 +40,12 @@ gdb_test "print methods::HasMethods{..x}" \
 gdb_test "print methods::HasMethods{value:19, ..x}" \
     " = methods::HasMethods \\{value: 19\\}"
 
+gdb_test "print x.take()" " = methods::HasMethods \\{value: 0\\}"
+gdb_test "print *(x.incr())" " = methods::HasMethods \\{value: 1\\}"
+gdb_test "print *((&mut x).incr())" " = methods::HasMethods \\{value: 2\\}"
+
 set line [gdb_get_line_number "set breakpoint 2 here"]
 gdb_breakpoint ${srcfile}:$line
 gdb_continue_to_breakpoint "second breakpoint"
 
 gdb_test "print *self" " = 23"
-
-# FIXME this doesn't work yet - probably need to handle OP_FUNCALL
-# ourselves.
-# gdb_test "print x.incr()" " = methods::HasMethods \\{value: 1\\}"
-
-# FIXME these don't work because we don't have the needed info from rustc.
-# gdb_test "print 23i32.whatever()" " = 23"
-# gdb_test "print x.whatever()" " = 1"

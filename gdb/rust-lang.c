@@ -25,6 +25,7 @@
 #include "charset.h"
 #include "cp-support.h"
 #include "gdbarch.h"
+#include "infcall.h"
 #include "rust-lang.h"
 #include "valprint.h"
 #include "varobj.h"
@@ -529,6 +530,73 @@ rust_language_arch_info (struct gdbarch *gdbarch,
 
 
 
+/* A helper for rust_evaluate_subexp that handles OP_FUNCALL.  */
+static struct value *
+rust_evaluate_funcall (struct expression *exp, int *pos, enum noside noside)
+{
+  int i;
+  int num_args = exp->elts[*pos + 1].longconst;
+  const char *method;
+  char *name;
+  struct value *function, *result;
+  struct value **args;
+  struct cleanup *cleanup;
+  struct type *type, *fn_type;
+  const struct block *block;
+  struct block_symbol sym;
+
+  /* For an ordinary function call we can simply defer to the
+     generic implementation.  */
+  if (exp->elts[*pos + 3].opcode != STRUCTOP_STRUCT)
+    return evaluate_subexp_standard (NULL, exp, pos, noside);
+
+  /* Skip over the OP_FUNCALL and the STRUCTOP_STRUCT.  */
+  *pos += 4;
+  method = &exp->elts[*pos + 1].string;
+  *pos += 3 + BYTES_TO_EXP_ELEM (exp->elts[*pos].longconst + 1);
+
+  args = XNEWVEC (struct value *, num_args + 1);
+  cleanup = make_cleanup (xfree, args);
+
+  /* Evaluate the argument to STRUCTOP_STRUCT, then find its
+     type in order to look up the method.  */
+  args[0] = evaluate_subexp (NULL_TYPE, exp, pos, noside);
+
+  /* We don't yet implement real Deref semantics.  */
+  while (TYPE_CODE (value_type (args[0])) == TYPE_CODE_PTR)
+    args[0] = value_ind (args[0]);
+
+  type = value_type (args[0]);
+  if (TYPE_CODE (type) != TYPE_CODE_STRUCT || rust_tuple_type_p (type))
+    error (_("method calls only supported on struct types"));
+  if (TYPE_TAG_NAME (type) == NULL)
+    error (_("method call on nameless type"));
+
+  name = concat (TYPE_TAG_NAME (type), "::", method, (char *) NULL);
+  make_cleanup (xfree, name);
+
+  block = get_selected_block (0);
+  sym = lookup_symbol (name, block, VAR_DOMAIN, NULL);
+  if (sym.symbol == NULL)
+    error (_("could not find function named '%s'"), name);
+
+  fn_type = SYMBOL_TYPE (sym.symbol);
+  if (TYPE_NFIELDS (fn_type) == 0)
+    error (_("function '%s' takes no arguments"), name);
+
+  if (TYPE_CODE (TYPE_FIELD_TYPE (fn_type, 0)) == TYPE_CODE_PTR)
+    args[0] = value_addr (args[0]);
+
+  function = address_of_variable (sym.symbol, block);
+
+  for (i = 0; i < num_args; ++i)
+    args[i + 1] = evaluate_subexp (NULL_TYPE, exp, pos, noside);
+
+  result = call_function_by_hand (function, num_args + 1, args);
+  do_cleanups (cleanup);
+  return result;
+}
+
 /* evaluate_exp implementation for Rust.  */
 
 static struct value *
@@ -556,6 +624,10 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
 	else
 	  result = value_complement (value);
       }
+      break;
+
+    case OP_FUNCALL:
+      result = rust_evaluate_funcall (exp, pos, noside);
       break;
 
     case OP_AGGREGATE:

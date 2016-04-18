@@ -13,6 +13,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#![allow(dead_code)]
+#![allow(unused_variables)]
+#![allow(unused_assignments)]
+
+
 pub trait Whatever {
     fn whatever(&self) -> i32;
     fn static_i32(x: i32) -> Self;
@@ -41,6 +46,10 @@ impl HasMethods {
         self.value += 1;
         self
     }
+
+    pub fn take(self) -> HasMethods {
+        self
+    }
 }
 
 impl Whatever for HasMethods {
@@ -56,6 +65,8 @@ impl Whatever for HasMethods {
 fn main() {
     let mut x = HasMethods::new();
     x.incr();               // set breakpoint 1 here
+    (&mut x).incr();
     let y = 23i32.whatever();
     println!("{}", y);
+    let z = x.take();
 }
