@@ -634,9 +634,7 @@ rust_range (struct expression *exp, int *pos, enum noside noside)
   struct type *range_type;
   struct type *index_type;
   const char *name;
-  struct cleanup *cleanup;
-  const struct block *block;
-  struct block_symbol sym;
+  int alignment;
 
   kind = (enum f90_range_type) longest_to_int (exp->elts[*pos + 1].longconst);
   *pos += 3;
@@ -649,19 +647,17 @@ rust_range (struct expression *exp, int *pos, enum noside noside)
   if (noside == EVAL_SKIP)
     return value_from_longest (builtin_type (exp->gdbarch)->builtin_int, 1);
 
-  /* Note we use core::ops for now.  It is generally used as std::ops
-     but this gets stripped in the debuginfo.  */
   if (low == NULL)
     {
       if (high == NULL)
 	{
 	  index_type = NULL;
-	  name = "core::ops::RangeFull";
+	  name = "std::ops::RangeFull";
 	}
       else
 	{
 	  index_type = value_type (high);
-	  name = "core::ops::RangeTo";
+	  name = "std::ops::RangeTo";
 	}
     }
   else
@@ -669,40 +665,27 @@ rust_range (struct expression *exp, int *pos, enum noside noside)
       if (high == NULL)
 	{
 	  index_type = value_type (low);
-	  name = "core::ops::RangeFrom";
+	  name = "std::ops::RangeFrom";
 	}
       else
 	{
 	  if (!types_equal (value_type (low), value_type (high)))
 	    error (_("range expression with different types"));
 	  index_type = value_type (low);
-	  name = "core::ops::Range";
+	  name = "std::ops::Range";
 	}
     }
 
-  /* Until we support traits there doesn't seem to be much point.  */
-  if (index_type != NULL && TYPE_CODE (index_type) != TYPE_CODE_INT)
-    error (_("range argument not integral type"));
+  range_type = arch_composite_type (exp->gdbarch, name, TYPE_CODE_STRUCT);
 
-  cleanup = make_cleanup (null_cleanup, NULL);
-  if (index_type != NULL)
-    {
-      char *typename;
-
-      typename = type_to_string (index_type);
-      make_cleanup (xfree, typename);
-
-      typename = concat (name, "<", typename, ">", (char *) NULL);
-      make_cleanup (xfree, typename);
-
-      name = typename;
-    }
-
-  block = get_selected_block (0);
-  sym = lookup_symbol (name, block, STRUCT_DOMAIN, NULL);
-  if (sym.symbol == NULL)
-    error (_("could not find type '%s' for range expression"), name);
-  range_type = SYMBOL_TYPE (sym.symbol);
+  alignment = index_type == NULL ? 0 : arch_type_alignment (exp->gdbarch,
+							    index_type);
+  if (low != NULL)
+    append_composite_type_field_aligned (range_type, "start", index_type,
+					 alignment);
+  if (high != NULL)
+    append_composite_type_field_aligned (range_type, "end", index_type,
+					 alignment);
 
   if (noside == EVAL_AVOID_SIDE_EFFECTS)
     return value_zero (range_type, lval_memory);
@@ -728,7 +711,6 @@ rust_range (struct expression *exp, int *pos, enum noside noside)
     }
 
   result = value_at_lazy (range_type, addr);
-  do_cleanups (cleanup);
   return result;
 }
 
