@@ -24,6 +24,7 @@
 #include "c-lang.h"
 #include "charset.h"
 #include "cp-support.h"
+#include "f-lang.h"
 #include "gdbarch.h"
 #include "infcall.h"
 #include "rust-lang.h"
@@ -543,6 +544,7 @@ rust_language_arch_info (struct gdbarch *gdbarch,
 
 
 /* A helper for rust_evaluate_subexp that handles OP_FUNCALL.  */
+
 static struct value *
 rust_evaluate_funcall (struct expression *exp, int *pos, enum noside noside)
 {
@@ -616,6 +618,116 @@ rust_evaluate_funcall (struct expression *exp, int *pos, enum noside noside)
     result = value_zero (TYPE_TARGET_TYPE (fn_type), not_lval);
   else
     result = call_function_by_hand (function, num_args + 1, args);
+  do_cleanups (cleanup);
+  return result;
+}
+
+/* A helper for rust_evaluate_subexp that handles OP_F90_RANGE.  */
+
+static struct value *
+rust_range (struct expression *exp, int *pos, enum noside noside)
+{
+  enum f90_range_type kind;
+  struct value *low = NULL, *high = NULL;
+  struct value *addrval, *result;
+  CORE_ADDR addr;
+  struct type *range_type;
+  struct type *index_type;
+  const char *name;
+  struct cleanup *cleanup;
+  const struct block *block;
+  struct block_symbol sym;
+
+  kind = (enum f90_range_type) longest_to_int (exp->elts[*pos + 1].longconst);
+  *pos += 3;
+
+  if (kind == HIGH_BOUND_DEFAULT || kind == NONE_BOUND_DEFAULT)
+    low = evaluate_subexp (NULL_TYPE, exp, pos, noside);
+  if (kind == LOW_BOUND_DEFAULT || kind == NONE_BOUND_DEFAULT)
+    high = evaluate_subexp (NULL_TYPE, exp, pos, noside);
+
+  if (noside == EVAL_SKIP)
+    return value_from_longest (builtin_type (exp->gdbarch)->builtin_int, 1);
+
+  /* Note we use core::ops for now.  It is generally used as std::ops
+     but this gets stripped in the debuginfo.  */
+  if (low == NULL)
+    {
+      if (high == NULL)
+	{
+	  index_type = NULL;
+	  name = "core::ops::RangeFull";
+	}
+      else
+	{
+	  index_type = value_type (high);
+	  name = "core::ops::RangeTo";
+	}
+    }
+  else
+    {
+      if (high == NULL)
+	{
+	  index_type = value_type (low);
+	  name = "core::ops::RangeFrom";
+	}
+      else
+	{
+	  if (!types_equal (value_type (low), value_type (high)))
+	    error (_("range expression with different types"));
+	  index_type = value_type (low);
+	  name = "core::ops::Range";
+	}
+    }
+
+  /* Until we support traits there doesn't seem to be much point.  */
+  if (index_type != NULL && TYPE_CODE (index_type) != TYPE_CODE_INT)
+    error (_("range argument not integral type"));
+
+  cleanup = make_cleanup (null_cleanup, NULL);
+  if (index_type != NULL)
+    {
+      char *typename;
+
+      typename = type_to_string (index_type);
+      make_cleanup (xfree, typename);
+
+      typename = concat (name, "<", typename, ">", (char *) NULL);
+      make_cleanup (xfree, typename);
+
+      name = typename;
+    }
+
+  block = get_selected_block (0);
+  sym = lookup_symbol (name, block, STRUCT_DOMAIN, NULL);
+  if (sym.symbol == NULL)
+    error (_("could not find type '%s' for range expression"), name);
+  range_type = SYMBOL_TYPE (sym.symbol);
+
+  if (noside == EVAL_AVOID_SIDE_EFFECTS)
+    return value_zero (range_type, lval_memory);
+
+  addrval = value_allocate_space_in_inferior (TYPE_LENGTH (range_type));
+  addr = value_as_long (addrval);
+  result = value_at_lazy (range_type, addr);
+
+  if (low != NULL)
+    {
+      struct value *start = value_struct_elt (&result, NULL, "start", NULL,
+					      "range");
+
+      value_assign (start, low);
+    }
+
+  if (high != NULL)
+    {
+      struct value *end = value_struct_elt (&result, NULL, "end", NULL,
+					    "range");
+
+      value_assign (end, high);
+    }
+
+  result = value_at_lazy (range_type, addr);
   do_cleanups (cleanup);
   return result;
 }
@@ -796,6 +908,10 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
 	    result = allocate_value (arraytype);
 	  }
       }
+      break;
+
+    case OP_F90_RANGE:
+      result = rust_range (exp, pos, noside);
       break;
 
     default:

@@ -28,6 +28,7 @@
 #include "block.h"
 #include "charset.h"
 #include "cp-support.h"
+#include "f-lang.h"
 #include "gdb_obstack.h"
 #include "gdb_regex.h"
 #include "rust-lang.h"
@@ -102,6 +103,8 @@ static const struct rust_op *make_path (struct stoken name);
 static const struct rust_op *make_string (struct stoken str);
 static const struct rust_op *make_struct (struct stoken name,
 					  VEC (set_field) **fields);
+static const struct rust_op *make_range (const struct rust_op *lhs,
+					 const struct rust_op *rhs);
 
 /* The state of the parser, used internally when we are parsing the
    expression.  */
@@ -236,7 +239,7 @@ static const struct rust_op *rust_ast;
 %type <op> unit_expr
 %type <op> struct_expr
 %type <op> array_expr
-/* %type <op> range_expr */
+%type <op> range_expr
 
 %type <params> expr_list
 %type <params> maybe_expr_list
@@ -280,7 +283,7 @@ expr:
 |	field_expr
 |	array_expr
 |	idx_expr
-/* |	range_expr */
+|	range_expr
 |	unop_expr
 |	binop_expr
 |	paren_expr
@@ -373,18 +376,16 @@ array_expr:
 		{ $$ = make_operation (OP_RUST_ARRAY, $2, $4); }
 ;
 
-/* FIXME - this causes a shift/reduce conflict that I'd like to
-   understand before implementing it.  */
-/* range_expr: */
-/* 	expr DOTDOT */
-/* 		{ $$ = fixme; } */
-/* |	expr DOTDOT expr */
-/* 		{ $$ = fixme; } */
-/* |	DOTDOT expr */
-/* 		{ $$ = fixme; } */
-/* |	DOTDOT */
-/* 		{ $$ = fixme; } */
-/* ; */
+range_expr:
+	expr DOTDOT
+		{ $$ = make_range ($1, NULL); }
+|	expr DOTDOT expr
+		{ $$ = make_range ($1, $3); }
+|	DOTDOT expr
+		{ $$ = make_range (NULL, $2); }
+|	DOTDOT
+		{ $$ = make_range (NULL, NULL); }
+;
 
 literal:
 	INTEGER
@@ -1237,7 +1238,7 @@ lex_number (void)
     {
       const char *next = skip_spaces_const (&lexptr[subexps[0].rm_eo]);
 
-      if (rust_identifier_start_p (*next))
+      if (rust_identifier_start_p (*next) || *next == '.')
 	{
 	  --subexps[0].rm_eo;
 	  is_integer = 1;
@@ -1490,6 +1491,18 @@ make_structop (const struct rust_op *left, const char *name)
   result->opcode = STRUCTOP_STRUCT;
   result->left.op = left;
   result->right.sval = make_stoken (name);
+
+  return result;
+}
+
+static const struct rust_op *
+make_range (const struct rust_op *lhs, const struct rust_op *rhs)
+{
+  struct rust_op *result = OBSTACK_ZALLOC (&work_obstack, struct rust_op);
+
+  result->opcode = OP_F90_RANGE;
+  result->left.op = lhs;
+  result->right.op = rhs;
 
   return result;
 }
@@ -1822,6 +1835,32 @@ convert_ast_to_expression (struct parser_state *state,
       }
       break;
 
+    case OP_F90_RANGE:
+      {
+	enum f90_range_type kind = BOTH_BOUND_DEFAULT;
+
+	if (operation->left.op != NULL)
+	  {
+	    convert_ast_to_expression (state, operation->left.op, top);
+	    kind = HIGH_BOUND_DEFAULT;
+	  }
+	if (operation->right.op != NULL)
+	  {
+	    convert_ast_to_expression (state, operation->right.op, top);
+	    if (kind == BOTH_BOUND_DEFAULT)
+	      kind = LOW_BOUND_DEFAULT;
+	    else
+	      {
+		gdb_assert (kind == HIGH_BOUND_DEFAULT);
+		kind = NONE_BOUND_DEFAULT;
+	      }
+	  }
+	write_exp_elt_opcode (state, OP_F90_RANGE);
+	write_exp_elt_longcst (state, kind);
+	write_exp_elt_opcode (state, OP_F90_RANGE);
+      }
+      break;
+
     default:
       gdb_assert (0);
     }
@@ -1941,10 +1980,12 @@ rust_lex_test_trailing_dot (void)
   const int expected1[] = { DECIMAL_INTEGER, '.', IDENT, '(', ')', 0 };
   const int expected2[] = { INTEGER, '.', IDENT, '(', ')', 0 };
   const int expected3[] = { FLOAT, EQEQ, '(', ')', 0 };
+  const int expected4[] = { DECIMAL_INTEGER, DOTDOT, DECIMAL_INTEGER, 0 };
 
   rust_lex_test_sequence ("23.g()", ARRAY_SIZE (expected1), expected1);
   rust_lex_test_sequence ("23_0.g()", ARRAY_SIZE (expected2), expected2);
   rust_lex_test_sequence ("23.==()", ARRAY_SIZE (expected3), expected3);
+  rust_lex_test_sequence ("23..25", ARRAY_SIZE (expected4), expected4);
 }
 
 /* Unit test the lexer.  */

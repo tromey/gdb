@@ -92,3 +92,8 @@ gdb_test "print ::simple::diff2(23, -23)" " = 46"
 # and use it to intelligently print the string data.
 gdb_test "print \"hello rust\"" \
     " = &str \\{data_ptr: $hex \"hello rust.*\", length: 10\\}"
+
+gdb_test "print 0..5" " = core::ops::Range<i32> \\{start: 0, end: 5\\}"
+gdb_test "print ..5" " = core::ops::RangeTo<i32> \\{end: 5\\}"
+gdb_test "print 0.." " = core::ops::RangeFrom<i32> \\{start: 0\\}"
+gdb_test "print .." " = core::ops::RangeFull \\{\\}"
