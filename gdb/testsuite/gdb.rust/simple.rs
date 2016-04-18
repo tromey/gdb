@@ -66,6 +66,9 @@ fn main () {
     let y = HiBob {field1: 7, field2: 8};
     let z = ByeBob(7, 8);
 
+    let slice = &w[2..3];
+    let fromslice = slice[0];
+
     println!("{}, {}", x.0, x.1);        // set breakpoint here
     println!("{}", diff2(92, 45));
 }

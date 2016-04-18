@@ -61,6 +61,8 @@ gdb_test_sequence "ptype v" "" \
 gdb_test "print w" " = \\\[1, 2, 3, 4\\\]"
 gdb_test "ptype w" " = \\\[i32; 4\\\]"
 gdb_test "print w\[2\]" " = 3"
+gdb_test "print fromslice" " = 3"
+gdb_test "print slice\[0\]" " = 3"
 
 gdb_test "print y" " = simple::HiBob \\{field1: 7, field2: 8\\}"
 gdb_test_sequence "ptype y" "" \
