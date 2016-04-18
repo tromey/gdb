@@ -335,7 +335,10 @@ rust_print_type (struct type *type, const char *varstring,
       if (TYPE_VARARGS (type))
 	goto c_printer;
 
-      fputs_filtered ("fn (", stream);
+      fputs_filtered ("fn ", stream);
+      if (varstring != NULL)
+	fputs_filtered (varstring, stream);
+      fputs_filtered ("(", stream);
       for (i = 0; i < TYPE_NFIELDS (type); ++i)
 	{
 	  QUIT;

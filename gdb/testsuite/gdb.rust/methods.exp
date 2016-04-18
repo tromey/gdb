@@ -49,3 +49,8 @@ gdb_breakpoint ${srcfile}:$line
 gdb_continue_to_breakpoint "second breakpoint"
 
 gdb_test "print *self" " = 23"
+
+
+gdb_test "info functions HasMethods::new" \
+    "fn methods::HasMethods::new\\(\\) -> methods::HasMethods;"
+
