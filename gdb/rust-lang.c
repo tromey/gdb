@@ -541,7 +541,7 @@ rust_evaluate_funcall (struct expression *exp, int *pos, enum noside noside)
   int num_args = exp->elts[*pos + 1].longconst;
   const char *method;
   char *name;
-  struct value *function, *result;
+  struct value *function, *result, *arg0;
   struct value **args;
   struct cleanup *cleanup;
   struct type *type, *fn_type;
@@ -558,12 +558,20 @@ rust_evaluate_funcall (struct expression *exp, int *pos, enum noside noside)
   method = &exp->elts[*pos + 1].string;
   *pos += 3 + BYTES_TO_EXP_ELEM (exp->elts[*pos].longconst + 1);
 
-  args = XNEWVEC (struct value *, num_args + 1);
-  cleanup = make_cleanup (xfree, args);
-
   /* Evaluate the argument to STRUCTOP_STRUCT, then find its
      type in order to look up the method.  */
-  args[0] = evaluate_subexp (NULL_TYPE, exp, pos, noside);
+  arg0 = evaluate_subexp (NULL_TYPE, exp, pos, noside);
+
+  if (noside == EVAL_SKIP)
+    {
+      for (i = 0; i < num_args; ++i)
+	evaluate_subexp (NULL_TYPE, exp, pos, noside);
+      return arg0;
+    }
+
+  args = XNEWVEC (struct value *, num_args + 1);
+  cleanup = make_cleanup (xfree, args);
+  args[0] = arg0;
 
   /* We don't yet implement real Deref semantics.  */
   while (TYPE_CODE (value_type (args[0])) == TYPE_CODE_PTR)
@@ -595,7 +603,10 @@ rust_evaluate_funcall (struct expression *exp, int *pos, enum noside noside)
   for (i = 0; i < num_args; ++i)
     args[i + 1] = evaluate_subexp (NULL_TYPE, exp, pos, noside);
 
-  result = call_function_by_hand (function, num_args + 1, args);
+  if (noside == EVAL_AVOID_SIDE_EFFECTS)
+    result = value_zero (TYPE_TARGET_TYPE (fn_type), not_lval);
+  else
+    result = call_function_by_hand (function, num_args + 1, args);
   do_cleanups (cleanup);
   return result;
 }
