@@ -186,7 +186,6 @@ static const struct rust_op *rust_ast;
 
 %token <sval> GDBVAR
 %token <sval> IDENT
-%token <sval> COMPLETE
 %token <typed_val_int> INTEGER
 %token <typed_val_int> DECIMAL_INTEGER
 %token <sval> STRING
@@ -1138,13 +1137,8 @@ lex_identifier (void)
 
   rustlval.sval = make_stoken (rust_copy_name (start, length));
 
-  /* Slightly weird that we don't allow completion if the text happens
-     to be a token or a convenience variable.  FIXME - we need a
-     slightly better completion scheme perhaps.  */
   if (is_gdb_var)
     return GDBVAR;
-  if (parse_completion && lexptr[0] == '\0')
-    return COMPLETE;
   return IDENT;
 }
 
