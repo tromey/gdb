@@ -27,6 +27,7 @@
 #include "f-lang.h"
 #include "gdbarch.h"
 #include "infcall.h"
+#include "objfiles.h"
 #include "rust-lang.h"
 #include "valprint.h"
 #include "varobj.h"
@@ -543,6 +544,111 @@ rust_language_arch_info (struct gdbarch *gdbarch,
 
 
 
+/* Compute the alignment of the type T.  */
+
+static int
+rust_type_alignment (struct type *t)
+{
+  t = check_typedef (t);
+  switch (TYPE_CODE (t))
+    {
+    default:
+      error (_("could not compute alignment of type"));
+
+    case TYPE_CODE_PTR:
+    case TYPE_CODE_ENUM:
+    case TYPE_CODE_INT:
+    case TYPE_CODE_FLT:
+    case TYPE_CODE_REF:
+    case TYPE_CODE_CHAR:
+    case TYPE_CODE_BOOL:
+      return TYPE_LENGTH (t);
+
+    case TYPE_CODE_ARRAY:
+    case TYPE_CODE_COMPLEX:
+      return rust_type_alignment (TYPE_TARGET_TYPE (t));
+
+    case TYPE_CODE_STRUCT:
+    case TYPE_CODE_UNION:
+      {
+	int i;
+	int align = 1;
+
+	for (i = 0; i < TYPE_NFIELDS (t); ++i)
+	  {
+	    int a = rust_type_alignment (TYPE_FIELD_TYPE (t, i));
+	    if (a > align)
+	      align = a;
+	  }
+	return align;
+      }
+    }
+}
+
+/* Like arch_composite_type, but uses TYPE to decide how to allocate
+   -- either on an obstack or on a gdbarch.  */
+
+static struct type *
+rust_composite_type (struct type *original,
+		     const char *name,
+		     const char *field1, struct type *type1,
+		     const char *field2, struct type *type2)
+{
+  struct type *result = alloc_type_copy (original);
+  int i, nfields, bitpos;
+
+  nfields = 0;
+  if (field1 != NULL)
+    ++nfields;
+  if (field2 != NULL)
+    ++nfields;
+
+  TYPE_CODE (result) = TYPE_CODE_STRUCT;
+  TYPE_NAME (result) = name;
+  TYPE_TAG_NAME (result) = name;
+
+  TYPE_NFIELDS (result) = nfields;
+  TYPE_FIELDS (result)
+    = (struct field *) TYPE_ZALLOC (result, nfields * sizeof (struct field));
+
+  i = 0;
+  bitpos = 0;
+  if (field1 != NULL)
+    {
+      struct field *field = &TYPE_FIELD (result, i);
+
+      SET_FIELD_BITPOS (*field, bitpos);
+      bitpos += TYPE_LENGTH (type1) * TARGET_CHAR_BIT;
+
+      FIELD_NAME (*field) = field1;
+      FIELD_TYPE (*field) = type1;
+      ++i;
+    }
+  if (field2 != NULL)
+    {
+      struct field *field = &TYPE_FIELD (result, i);
+      int align = rust_type_alignment (type2);
+
+      if (align != 0)
+	{
+	  int delta;
+
+	  align *= TARGET_CHAR_BIT;
+	  delta = bitpos % align;
+	  if (delta != 0)
+	    bitpos += align - delta;
+	}
+      SET_FIELD_BITPOS (*field, bitpos);
+
+      FIELD_NAME (*field) = field2;
+      FIELD_TYPE (*field) = type2;
+    }
+
+  return result;
+}
+
+
+
 /* A helper for rust_evaluate_subexp that handles OP_FUNCALL.  */
 
 static struct value *
@@ -633,8 +739,8 @@ rust_range (struct expression *exp, int *pos, enum noside noside)
   CORE_ADDR addr;
   struct type *range_type;
   struct type *index_type;
+  struct type *temp_type;
   const char *name;
-  int alignment;
 
   kind = (enum f90_range_type) longest_to_int (exp->elts[*pos + 1].longconst);
   *pos += 3;
@@ -676,16 +782,15 @@ rust_range (struct expression *exp, int *pos, enum noside noside)
 	}
     }
 
-  range_type = arch_composite_type (exp->gdbarch, name, TYPE_CODE_STRUCT);
-
-  alignment = index_type == NULL ? 0 : arch_type_alignment (exp->gdbarch,
-							    index_type);
-  if (low != NULL)
-    append_composite_type_field_aligned (range_type, "start", index_type,
-					 alignment);
-  if (high != NULL)
-    append_composite_type_field_aligned (range_type, "end", index_type,
-					 alignment);
+  /* If we don't have an index type, just allocate this on the
+     arch.  Here any type will do.  */
+  temp_type = (index_type == NULL
+	       ? language_bool_type (exp->language_defn, exp->gdbarch)
+	       : index_type);
+  /* It would be nicer to cache the range type.  */
+  range_type = rust_composite_type (temp_type, name,
+				    low == NULL ? NULL : "start", index_type,
+				    high == NULL ? NULL : "end", index_type);
 
   if (noside == EVAL_AVOID_SIDE_EFFECTS)
     return value_zero (range_type, lval_memory);
