@@ -657,6 +657,7 @@ self_or_super_path:
 |	maybe_self_path super_path identifier_path
 		{
 		  const char *scope = block_scope (expression_context_block);
+		  const char *name;
 		  int i;
 		  unsigned int len, offset;
 
@@ -677,7 +678,8 @@ self_or_super_path:
 		  obstack_grow (&work_obstack, "::", 2);
 		  obstack_grow (&work_obstack, scope, offset);
 		  obstack_grow0 (&work_obstack, $3.ptr, $3.length);
-		  $$ = make_stoken (obstack_finish (&work_obstack));
+		  name = (const char *) obstack_finish (&work_obstack);
+		  $$ = make_stoken (name);
 		}
 ;
 
@@ -759,7 +761,7 @@ static const struct token_info operator_tokens[] =
 static const char *
 rust_copy_name (const char *name, int len)
 {
-  return obstack_copy0 (&work_obstack, name, len);
+  return (const char *) obstack_copy0 (&work_obstack, name, len);
 }
 
 /* Helper function to make an stoken from a C string.  */
@@ -1046,7 +1048,7 @@ lex_string (void)
     }
 
   rustlval.sval.length = obstack_object_size (&work_obstack);
-  rustlval.sval.ptr = obstack_finish (&work_obstack);
+  rustlval.sval.ptr = (const char *) obstack_finish (&work_obstack);
   return is_byte ? BYTESTRING : STRING;
 }
 
@@ -1179,7 +1181,7 @@ lex_number (void)
   int match;
   int is_integer = 0;
   int could_be_decimal = 1;
-  char *typename = NULL;
+  char *type_name = NULL;
   struct type *type;
   int end_index;
   int type_index = -1;
@@ -1197,7 +1199,7 @@ lex_number (void)
       is_integer = 1;
       end_index = subexps[INT_TEXT].rm_eo;
       if (subexps[INT_TYPE].rm_so == -1)
-	typename = "i32";
+	type_name = "i32";
       else
 	{
 	  type_index = INT_TYPE;
@@ -1220,7 +1222,7 @@ lex_number (void)
     {
       /* Any other floating point match.  */
       end_index = subexps[0].rm_eo;
-      typename = "f64";
+      type_name = "f64";
     }
 
   /* We need a special case if the final character is ".".  In this
@@ -1237,23 +1239,23 @@ lex_number (void)
 	  --subexps[0].rm_eo;
 	  is_integer = 1;
 	  end_index = subexps[0].rm_eo;
-	  typename = "i32";
+	  type_name = "i32";
 	  could_be_decimal = 1;
 	}
     }
 
   /* Compute the type name if we haven't already.  */
-  if (typename == NULL)
+  if (type_name == NULL)
     {
       gdb_assert (type_index != -1);
-      typename = xstrndup (lexptr + subexps[type_index].rm_so,
+      type_name = xstrndup (lexptr + subexps[type_index].rm_so,
 			   (subexps[type_index].rm_eo
 			    - subexps[type_index].rm_so));
-      make_cleanup (xfree, typename);
+      make_cleanup (xfree, type_name);
     }
 
   /* Look up the type.  */
-  type = rust_type (typename);
+  type = rust_type (type_name);
 
   /* Copy the text of the number and remove the "_"s.  */
   number = xstrndup (lexptr, end_index);
