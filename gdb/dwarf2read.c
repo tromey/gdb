@@ -9226,6 +9226,11 @@ read_file_scope (struct die_info *die, struct dwarf2_cu *cu)
   if (cu->producer && strstr (cu->producer, "GNU Go ") != NULL)
     set_cu_language (DW_LANG_Go, cu);
 
+  /* Rust does not emit DW_LANG_Rust due to an lldb bug.  See
+     https://github.com/rust-lang/rust/pull/33097.  */
+  if (cu->producer && strstr (cu->producer, "rustc ") != NULL)
+    set_cu_language (DW_LANG_Rust, cu);
+
   dwarf2_start_symtab (cu, name, comp_dir, lowpc);
 
   /* Decode line number information if present.  We do this before
