@@ -15258,8 +15258,11 @@ Linespecs (@pxref{Specify Location}) cannot refer to items using
 
 @item
 The Rust expression evaluator does not support ``statement-like''
-expressions such as @code{if}.  Only a C-like subset of the expression
-language is implemented.
+expressions such as @code{if} or @code{match}.  Only a C-like subset
+of the expression language is implemented.
+
+@item
+You cannot create a new tuple using a tuple expression.
 
 @item
 The Rust expression evaluator does not current implement the
