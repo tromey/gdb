@@ -36,6 +36,16 @@
 extern initialize_file_ftype _initialize_rust_language;
 
 
+/* Returns the last segment of a Rust path like foo::bar::baz.
+   Will not handle cases where the last segment contains generics */
+
+static char*
+rust_last_path_segment(const char* path)
+{
+  // todo: use strtok or something
+  // todo: sanity checks and memory safety
+  return strrchr(path, ':') + 1;
+}
 
 /* Find the Rust crate for BLOCK.  If no crate can be found, returns
    NULL.  Otherwise, returns a newly allocated string that the caller
@@ -282,7 +292,6 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
       /* Fall through.  */
 
     case TYPE_CODE_METHODPTR:
-    case TYPE_CODE_UNION:
     case TYPE_CODE_MEMBERPTR:
       c_val_print (type, valaddr, embedded_offset, address, stream,
 		   recurse, val, options);
@@ -328,7 +337,82 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
 	  goto generic_print;
       }
       break;
+    case TYPE_CODE_UNION:
+    {
+      int i, j, nfields, first_field;
+      char* disr;
+      struct type *disr_type, *variant_type;
+      struct ui_file * temp_file;
+      struct value_print_options opts;
 
+      opts = *options;
+      opts.deref_ref = 0;
+
+      opts = *options;
+      opts.deref_ref = 0;
+      disr_type = TYPE_FIELD_TYPE (type, 0);
+
+      temp_file = mem_fileopen ();
+
+      // The first value of the first field (or any field) is the discriminant value
+      c_val_print (TYPE_FIELD_TYPE (disr_type, 0), valaddr,
+                  embedded_offset + TYPE_FIELD_BITPOS (type, 0) / 8
+                                  + TYPE_FIELD_BITPOS (disr_type, 0) / 8,
+                  address, temp_file,
+      recurse, val, options);
+
+      disr = ui_file_xstrdup (temp_file, NULL);
+
+      ui_file_delete (temp_file);
+
+
+      for (i = 0; i < TYPE_NFIELDS (type); ++i) {
+
+        // Sadly, the discriminant value paths do not match the type field name paths
+        // (`core::option::Option::Some` vs `core::option::Some`)
+        // However, enum variant names are unique in the last path segment
+        // and the generics are not part of this path, so we can just compare those
+        // This is hackish and would be better fixed by improving rustc's
+        // metadata for enums
+        if(strcmp(rust_last_path_segment (disr),
+                  rust_last_path_segment (TYPE_NAME (TYPE_FIELD_TYPE (type, i)))) == 0) {
+
+            first_field = 1;
+            variant_type = TYPE_FIELD_TYPE (type, i);
+            nfields = TYPE_NFIELDS (variant_type);
+
+            if (nfields > 1) {
+              // In case of a non-nullary variant, we output `Foo(x,y,z)`
+              fprintf_filtered (stream, "%s(", disr);
+            } else {
+              // In case of a nullary variant like `None`, just output the name
+              fprintf_filtered (stream, "%s", disr);
+              break;
+            }
+
+            for (j = 1; j < TYPE_NFIELDS (variant_type); j++) {
+
+              if (!first_field) {
+                fputs_filtered (", ", stream);
+              }
+              first_field = 0;
+
+              val_print (TYPE_FIELD_TYPE (variant_type, j),
+                         valaddr,
+                         embedded_offset + TYPE_FIELD_BITPOS (type, i) / 8
+                                         + TYPE_FIELD_BITPOS (variant_type, j) / 8,
+                         address,
+                         stream, recurse + 1, val, &opts,
+                         current_language);
+            }
+
+            fputs_filtered (")", stream);
+            break;
+        }
+      }
+      free (disr);
+    }
+      break;
     case TYPE_CODE_STRUCT:
       {
 	int i;
