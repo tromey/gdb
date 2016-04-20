@@ -46,6 +46,17 @@ rust_last_path_segment(const char* path)
   return strrchr(path, ':') + 1;
 }
 
+/* Extract a numbered anonymous field formatted as "__%d".
+   Returns negative if it cannot parse */
+static int
+rust_extract_field_number(char* name) {
+  int number;
+  if(sscanf (name, "__%d", &number) == 1) {
+    return number;
+  }
+  return -1;
+}
+
 /* Find the Rust crate for BLOCK.  If no crate can be found, returns
    NULL.  Otherwise, returns a newly allocated string that the caller
    is responsible for freeing.  */
@@ -93,6 +104,9 @@ rust_get_disr_info (struct type *type, const gdb_byte *valaddr, int embedded_off
   ret.field_no = -1;
 
   disr_type = TYPE_FIELD_TYPE (type, 0);
+
+  // todo: add some checking to ensure that we don't go out of bounds here
+  // todo: ensure that the field name is indeed RUST$ENUM$DISR
 
   temp_file = mem_fileopen ();
 
@@ -1325,6 +1339,54 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
 	      = lookup_array_range_type (value_type (elt), 0, copies - 1);
 	    result = allocate_value (arraytype);
 	  }
+      }
+      break;
+    case STRUCTOP_STRUCT:
+      {
+        struct value *lhs;
+        int tem, pc, field_number, nfields;
+        struct type *type, *variant_type;
+        struct disr_info disr;
+
+        pc = (*pos)++;
+        tem = longest_to_int (exp->elts[pc + 1].longconst);
+        (*pos) += 3 + BYTES_TO_EXP_ELEM (tem + 1);
+        lhs = evaluate_subexp (NULL_TYPE, exp, pos, noside);
+
+        type = value_type (lhs);
+        if (TYPE_CODE (type) == TYPE_CODE_UNION) {
+          field_number = rust_extract_field_number(&exp->elts[pc + 2].string);
+
+          if (field_number < 0) {
+            error(_("Currently does not support struct variant fields"));
+          }
+
+          disr = rust_get_disr_info(type, value_contents(lhs),
+                                    value_embedded_offset(lhs), value_address(lhs), lhs);
+
+
+          if (disr.field_no < 0) {
+            error (_("Could not determine variant of enum value"));
+          }
+
+          variant_type = TYPE_FIELD_TYPE(type, disr.field_no);
+          nfields = TYPE_NFIELDS(variant_type);
+
+          // note that there is the extra discriminant field as well,
+          // so the actual field number is field_number + 1
+          if (field_number >= nfields - 1) {
+            // todo: register cleanup for disr.name
+            // unsure how to call error with a cleanup
+            error(_("Cannot access field %d of variant %s, there are only %d fields"),
+                  field_number, disr.name, nfields - 1);
+          }
+
+          result = value_primitive_field(lhs, 0, field_number + 1, variant_type);
+          break;
+        }
+        // not an enum, evaluate the regular way
+        *pos = pc;
+        result = evaluate_subexp_standard (expect_type, exp, pos, noside);
       }
       break;
 
