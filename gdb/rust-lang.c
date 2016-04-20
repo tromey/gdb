@@ -72,8 +72,40 @@ static int
 rust_slice_type_p (struct type *type)
 {
   return (TYPE_CODE (type) == TYPE_CODE_STRUCT
-	  || TYPE_TAG_NAME (type) != NULL
-	  || strncmp (TYPE_TAG_NAME (type), "&[", 2) == 0);
+	  && TYPE_TAG_NAME (type) != NULL
+	  && strncmp (TYPE_TAG_NAME (type), "&[", 2) == 0);
+}
+
+/* Return true if TYPE is a range type, otherwise false.  */
+
+static int
+rust_range_type_p (struct type *type)
+{
+  int i;
+
+  if (TYPE_CODE (type) != TYPE_CODE_STRUCT
+      || TYPE_NFIELDS (type) > 2
+      || TYPE_TAG_NAME (type) == NULL
+      || strstr (TYPE_TAG_NAME (type), "::Range") == NULL)
+    return 0;
+
+  if (TYPE_NFIELDS (type) == 0)
+    return 1;
+
+  i = 0;
+  if (strcmp (TYPE_FIELD_NAME (type, 0), "start") == 0)
+    {
+      if (TYPE_NFIELDS (type) == 1)
+	return 1;
+      i = 1;
+    }
+  else if (TYPE_NFIELDS (type) == 2)
+    {
+      /* First field had to be "start".  */
+      return 0;
+    }
+
+  return strcmp (TYPE_FIELD_NAME (type, i), "end") == 0;
 }
 
 
@@ -470,80 +502,6 @@ rust_print_type (struct type *type, const char *varstring,
 
 
 
-enum rust_primitive_types
-{
-  rust_primitive_bool,
-  rust_primitive_char,
-  rust_primitive_i8,
-  rust_primitive_u8,
-  rust_primitive_i16,
-  rust_primitive_u16,
-  rust_primitive_i32,
-  rust_primitive_u32,
-  rust_primitive_i64,
-  rust_primitive_u64,
-  rust_primitive_isize,
-  rust_primitive_usize,
-  rust_primitive_f32,
-  rust_primitive_f64,
-  rust_primitive_unit,
-  rust_primitive_str,
-  nr_rust_primitive_types
-};
-
-/* la_language_arch_info implementation for Rust.  */
-
-static void
-rust_language_arch_info (struct gdbarch *gdbarch,
-			 struct language_arch_info *lai)
-{
-  const struct builtin_type *builtin = builtin_type (gdbarch);
-  struct type *str, *tem;
-  struct type **types;
-  unsigned int length;
-
-  types = GDBARCH_OBSTACK_CALLOC (gdbarch, nr_rust_primitive_types + 1,
-				  struct type *);
-
-  types[rust_primitive_bool] = arch_boolean_type (gdbarch, 8, 1, "bool");
-  types[rust_primitive_char] = arch_character_type (gdbarch, 32, 1, "char");
-  types[rust_primitive_i8] = arch_integer_type (gdbarch, 8, 0, "i8");
-  types[rust_primitive_u8] = arch_integer_type (gdbarch, 8, 1, "u8");
-  types[rust_primitive_i16] = arch_integer_type (gdbarch, 16, 0, "i16");
-  types[rust_primitive_u16] = arch_integer_type (gdbarch, 16, 1, "u16");
-  types[rust_primitive_i32] = arch_integer_type (gdbarch, 32, 0, "i32");
-  types[rust_primitive_u32] = arch_integer_type (gdbarch, 32, 1, "u32");
-  types[rust_primitive_i64] = arch_integer_type (gdbarch, 64, 0, "i64");
-  types[rust_primitive_u64] = arch_integer_type (gdbarch, 64, 1, "u64");
-
-  length = 8 * TYPE_LENGTH (builtin->builtin_data_ptr);
-  types[rust_primitive_isize] = arch_integer_type (gdbarch, length, 0, "isize");
-  types[rust_primitive_usize] = arch_integer_type (gdbarch, length, 1, "usize");
-
-  types[rust_primitive_f32] = arch_float_type (gdbarch, 32, "f32", NULL);
-  types[rust_primitive_f64] = arch_float_type (gdbarch, 64, "f64", NULL);
-
-  types[rust_primitive_unit] = arch_integer_type (gdbarch, 0, 1, "()");
-
-  str = arch_composite_type (gdbarch, "&str", TYPE_CODE_STRUCT);
-  /* For some reason gdb doesn't set this, but then later does require
-     it.  */
-  TYPE_NAME (str) = "&str";
-  tem = make_cv_type (1, 0, types[rust_primitive_u8], NULL);
-  tem = lookup_pointer_type (tem);
-  append_composite_type_field_aligned (str, "data_ptr", tem, 0);
-  append_composite_type_field_aligned (str, "length",
-				       types[rust_primitive_usize],
-				       length);
-  types[rust_primitive_str] = str;
-
-  lai->primitive_type_vector = types;
-  lai->bool_type_default = types[rust_primitive_bool];
-  lai->string_char_type = types[rust_primitive_u8];
-}
-
-
-
 /* Compute the alignment of the type T.  */
 
 static int
@@ -642,9 +600,92 @@ rust_composite_type (struct type *original,
 
       FIELD_NAME (*field) = field2;
       FIELD_TYPE (*field) = type2;
+      ++i;
     }
 
+  if (i > 0)
+    TYPE_LENGTH (result)
+      = (TYPE_FIELD_BITPOS (result, i - 1) / TARGET_CHAR_BIT +
+	 TYPE_LENGTH (TYPE_FIELD_TYPE (result, i - 1)));
   return result;
+}
+
+static struct type *
+rust_slice_type (const char *name, struct type *elt_type,
+		 struct type *usize_type)
+{
+  struct type *type;
+
+  elt_type = lookup_pointer_type (elt_type);
+  type = rust_composite_type (elt_type, name,
+			      "data_ptr", elt_type,
+			      "length", usize_type);
+
+  return type;
+}
+
+enum rust_primitive_types
+{
+  rust_primitive_bool,
+  rust_primitive_char,
+  rust_primitive_i8,
+  rust_primitive_u8,
+  rust_primitive_i16,
+  rust_primitive_u16,
+  rust_primitive_i32,
+  rust_primitive_u32,
+  rust_primitive_i64,
+  rust_primitive_u64,
+  rust_primitive_isize,
+  rust_primitive_usize,
+  rust_primitive_f32,
+  rust_primitive_f64,
+  rust_primitive_unit,
+  rust_primitive_str,
+  nr_rust_primitive_types
+};
+
+/* la_language_arch_info implementation for Rust.  */
+
+static void
+rust_language_arch_info (struct gdbarch *gdbarch,
+			 struct language_arch_info *lai)
+{
+  const struct builtin_type *builtin = builtin_type (gdbarch);
+  struct type *tem;
+  struct type **types;
+  unsigned int length;
+
+  types = GDBARCH_OBSTACK_CALLOC (gdbarch, nr_rust_primitive_types + 1,
+				  struct type *);
+
+  types[rust_primitive_bool] = arch_boolean_type (gdbarch, 8, 1, "bool");
+  types[rust_primitive_char] = arch_character_type (gdbarch, 32, 1, "char");
+  types[rust_primitive_i8] = arch_integer_type (gdbarch, 8, 0, "i8");
+  types[rust_primitive_u8] = arch_integer_type (gdbarch, 8, 1, "u8");
+  types[rust_primitive_i16] = arch_integer_type (gdbarch, 16, 0, "i16");
+  types[rust_primitive_u16] = arch_integer_type (gdbarch, 16, 1, "u16");
+  types[rust_primitive_i32] = arch_integer_type (gdbarch, 32, 0, "i32");
+  types[rust_primitive_u32] = arch_integer_type (gdbarch, 32, 1, "u32");
+  types[rust_primitive_i64] = arch_integer_type (gdbarch, 64, 0, "i64");
+  types[rust_primitive_u64] = arch_integer_type (gdbarch, 64, 1, "u64");
+
+  length = 8 * TYPE_LENGTH (builtin->builtin_data_ptr);
+  types[rust_primitive_isize] = arch_integer_type (gdbarch, length, 0, "isize");
+  types[rust_primitive_usize] = arch_integer_type (gdbarch, length, 1, "usize");
+
+  types[rust_primitive_f32] = arch_float_type (gdbarch, 32, "f32", NULL);
+  types[rust_primitive_f64] = arch_float_type (gdbarch, 64, "f64", NULL);
+
+  types[rust_primitive_unit] = arch_integer_type (gdbarch, 0, 1, "()");
+
+  tem = make_cv_type (1, 0, types[rust_primitive_u8], NULL);
+  types[rust_primitive_str] = rust_slice_type ("&str", tem,
+					       types[rust_primitive_usize]);
+
+  lai->primitive_type_vector = types;
+  lai->bool_type_default = types[rust_primitive_bool];
+  lai->string_char_type = types[rust_primitive_u8];
 }
 
 
@@ -819,19 +860,67 @@ rust_range (struct expression *exp, int *pos, enum noside noside)
   return result;
 }
 
+static void
+rust_compute_range (struct type *type, struct value *range,
+		    LONGEST *low, LONGEST *high,
+		    enum f90_range_type *kind)
+{
+  int i;
+
+  *low = 0;
+  *high = 0;
+  *kind = BOTH_BOUND_DEFAULT;
+
+  if (TYPE_NFIELDS (type) == 0)
+    return;
+
+  i = 0;
+  if (strcmp (TYPE_FIELD_NAME (type, 0), "start") == 0)
+    {
+      *kind = HIGH_BOUND_DEFAULT;
+      *low = value_as_long (value_field (range, 0));
+      ++i;
+    }
+  if (TYPE_NFIELDS (type) > i
+      && strcmp (TYPE_FIELD_NAME (type, i), "end") == 0)
+    {
+      *kind = (*kind == BOTH_BOUND_DEFAULT
+	       ? LOW_BOUND_DEFAULT : NONE_BOUND_DEFAULT);
+      *high = value_as_long (value_field (range, i));
+    }
+}
+
 /* A helper for rust_evaluate_subexp that handles BINOP_SUBSCRIPT.  */
 
 static struct value *
-rust_subscript (struct expression *exp, int *pos, enum noside noside)
+rust_subscript (struct expression *exp, int *pos, enum noside noside,
+		int for_addr)
 {
   struct value *lhs, *rhs, *result;
+  struct type *rhstype;
+  LONGEST low, high, high_bound;
+  enum f90_range_type kind;
+  int want_slice = 0;
 
   ++*pos;
   lhs = evaluate_subexp (NULL_TYPE, exp, pos, noside);
   rhs = evaluate_subexp (NULL_TYPE, exp, pos, noside);
+
   if (noside == EVAL_SKIP)
-    result = lhs;
-  else if (noside == EVAL_AVOID_SIDE_EFFECTS)
+    return lhs;
+
+  rhstype = check_typedef (value_type (rhs));
+  if (rust_range_type_p (rhstype))
+    {
+      if (!for_addr)
+	error (_("can't take slice of array without '&'"));
+      rust_compute_range (rhstype, rhs, &low, &high, &kind);
+      want_slice = 1;
+    }
+  else
+    low = value_as_long (rhs);
+
+  if (noside == EVAL_AVOID_SIDE_EFFECTS)
     {
       struct type *type = check_typedef (value_type (lhs));
 
@@ -839,27 +928,78 @@ rust_subscript (struct expression *exp, int *pos, enum noside noside)
     }
   else
     {
+      LONGEST low_bound;
+      struct value *base;
       struct type *type = check_typedef (value_type (lhs));
 
-      /* It's maybe dubious to allow pointers here.  */
-      if (TYPE_CODE (type) == TYPE_CODE_ARRAY
-	  || TYPE_CODE (type) == TYPE_CODE_PTR)
-	result = value_subscript (lhs, value_as_long (rhs));
+      if (TYPE_CODE (type) == TYPE_CODE_ARRAY)
+	{
+	  base = lhs;
+	  if (!get_array_bounds (type, &low_bound, &high_bound))
+	    error (_("can't compute array bounds"));
+	  if (low_bound != 0)
+	    error (_("found array with non-zero lower bound"));
+	  ++high_bound;
+	    // result = value_subscript (lhs, low);
+	}
       else if (rust_slice_type_p (type))
 	{
-	  struct value *len, *data_ptr;
-	  LONGEST ndx = value_as_long (rhs);
+	  struct value *len;
 
-	  if (ndx < 0)
-	    error (_("index into slice less than zero"));
+	  base = value_struct_elt (&lhs, NULL, "data_ptr", NULL, "slice");
 	  len = value_struct_elt (&lhs, NULL, "length", NULL, "slice");
-	  if (ndx >= value_as_long (len))
-	    error (_("index greater than slice length"));
-	  data_ptr = value_struct_elt (&lhs, NULL, "data_ptr", NULL, "slice");
-	  result = value_subscript (data_ptr, ndx);
+	  low_bound = 0;
+	  high_bound = value_as_long (len);
 	}
       else
 	error (_("cannot subscript non-array type"));
+
+      if (want_slice
+	  && (kind == BOTH_BOUND_DEFAULT || kind == LOW_BOUND_DEFAULT))
+	low = low_bound;
+      if (low < 0)
+	error (_("index less than zero"));
+      if (low > high_bound)
+	error (_("index greater than length"));
+
+      result = value_subscript (base, low);
+    }
+
+  if (for_addr)
+    {
+      if (want_slice)
+	{
+	  struct type *usize, *slice;
+	  CORE_ADDR addr;
+	  struct value *addrval, *tem;
+
+	  if (kind == BOTH_BOUND_DEFAULT || kind == HIGH_BOUND_DEFAULT)
+	    high = high_bound;
+	  if (high < 0)
+	    error (_("high index less than zero"));
+	  if (low > high)
+	    error (_("low index greater than high index"));
+	  if (high > high_bound)
+	    error (_("high index greater than length"));
+
+	  usize = language_lookup_primitive_type (exp->language_defn,
+						  exp->gdbarch,
+						  "usize");
+	  slice = rust_slice_type ("&[*gdb*]", value_type (result),
+				   usize);
+
+	  addrval = value_allocate_space_in_inferior (TYPE_LENGTH (slice));
+	  addr = value_as_long (addrval);
+	  tem = value_at_lazy (slice, addr);
+
+	  value_assign (value_field (tem, 0), value_addr (result));
+	  value_assign (value_field (tem, 1),
+			value_from_longest (usize, high - low));
+
+	  result = value_at_lazy (slice, addr);
+	}
+      else
+	result = value_addr (result);
     }
 
   return result;
@@ -895,7 +1035,7 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
       break;
 
     case BINOP_SUBSCRIPT:
-      result = rust_subscript (exp, pos, noside);
+      result = rust_subscript (exp, pos, noside, 0);
       break;
 
     case OP_FUNCALL:
@@ -1008,6 +1148,16 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
       result = rust_range (exp, pos, noside);
       break;
 
+    case UNOP_ADDR:
+      /* We might have &array[range], in which case we need to make a
+	 slice.  */
+      if (exp->elts[*pos + 1].opcode == BINOP_SUBSCRIPT)
+	{
+	  ++*pos;
+	  result = rust_subscript (exp, pos, noside, 1);
+	  break;
+	}
+      /* Fall through.  */
     default:
       result = evaluate_subexp_standard (expect_type, exp, pos, noside);
       break;

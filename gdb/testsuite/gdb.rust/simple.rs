@@ -68,11 +68,16 @@ fn main () {
 
     let slice = &w[2..3];
     let fromslice = slice[0];
+    let slice2 = &slice[0..1];
 
-    let range1 = 0..50;
-    let range2 = 0..;
-    let range3 = ..50;
-    let range4 = ..;
+    let all1 = &w[..];
+    let all2 = &slice[..];
+
+    let from1 = &w[1..];
+    let from2 = &slice[1..];
+
+    let to1 = &w[..3];
+    let to2 = &slice[..1];
 
     println!("{}, {}", x.0, x.1);        // set breakpoint here
     println!("{}", diff2(92, 45));

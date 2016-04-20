@@ -259,8 +259,9 @@ static const struct rust_op *rust_ast;
 %left LSH RSH
 %left '@'
 %left '+' '-'
-%left '*' '/' '%' '[' '.' '('
+%left '*' '/' '%'
 %precedence UNARY
+%left '[' '.' '('
 %left KW_AS
 
 %%
