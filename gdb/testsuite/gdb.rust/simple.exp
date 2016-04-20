@@ -119,3 +119,9 @@ test_one_slice from2 0 slice 1..
 
 test_one_slice to1 3 w ..3
 test_one_slice to2 1 slice ..1
+
+
+gdb_test_sequence "complete print y.f" "" \
+    {"print y.field1" "print y.field2"}
+gdb_test_sequence "complete print y." "" \
+    {"print y.field1" "print y.field2"}

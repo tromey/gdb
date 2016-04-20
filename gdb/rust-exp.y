@@ -92,7 +92,8 @@ static const struct rust_op *make_compound_assignment
 static const struct rust_op *make_literal (struct typed_val_int val);
 static const struct rust_op *make_dliteral (struct typed_val_float val);
 static const struct rust_op *make_structop (const struct rust_op *left,
-					    const char *name);
+					    const char *name,
+					    int completing);
 static const struct rust_op *make_unary (enum exp_opcode opcode,
 					 const struct rust_op *expr);
 static const struct rust_op *make_cast (const struct rust_op *expr,
@@ -187,6 +188,7 @@ static const struct rust_op *rust_ast;
 
 %token <sval> GDBVAR
 %token <sval> IDENT
+%token <sval> COMPLETE
 %token <typed_val_int> INTEGER
 %token <typed_val_int> DECIMAL_INTEGER
 %token <sval> STRING
@@ -269,7 +271,12 @@ static const struct rust_op *rust_ast;
 
 start:
 	expr
-		{ rust_ast = $1; }
+		{
+		  /* If we are completing and see a valid parse,
+		     rust_ast will already have been set.  */
+		  if (rust_ast == NULL)
+		    rust_ast = $1;
+		}
 ;
 
 /* Note that the Rust grammar includes a method_call_expr, but we
@@ -448,7 +455,12 @@ literal:
 
 field_expr:
 	expr '.' IDENT
-		{ $$ = make_structop ($1, $3.ptr); }
+		{ $$ = make_structop ($1, $3.ptr, 0); }
+|	expr '.' COMPLETE
+		{
+		  $$ = make_structop ($1, $3.ptr, 1);
+		  rust_ast = $$;
+		}
 |	expr '.' DECIMAL_INTEGER
 		{
 		  /* We should perhaps represent this at a higher
@@ -457,7 +469,7 @@ field_expr:
 		     fields.  */
 		  struct stoken value = rust_concat3 ("__", plongest ($3.val),
 						      NULL);
-		  $$ = make_structop ($1, value.ptr);
+		  $$ = make_structop ($1, value.ptr, 0);
 		}
 ;
 
@@ -1116,31 +1128,38 @@ lex_identifier (void)
 	}
     }
 
-  if (token == NULL)
-    {
-      if ((strncmp (start, "thread", length) == 0
-	   || strncmp (start, "task", length) == 0)
-	  && space_then_number (lexptr))
-	{
-	  /* "task" or "thread" followed by a number terminates the
-	     parse, per gdb rules.  */
-	  lexptr = start;
-	  return 0;
-	}
-    }
-  else
+  if (token != NULL)
     {
       if (token->value == 0)
 	{
 	  /* Leave the terminating token alone.  */
 	  lexptr = start;
+	  return 0;
 	}
-
-      return token->value;
+    }
+  else if (token == NULL
+	   && (strncmp (start, "thread", length) == 0
+	       || strncmp (start, "task", length) == 0)
+	   && space_then_number (lexptr))
+    {
+      /* "task" or "thread" followed by a number terminates the
+	 parse, per gdb rules.  */
+      lexptr = start;
+      return 0;
     }
 
-  rustlval.sval = make_stoken (rust_copy_name (start, length));
+  if (token == NULL || (parse_completion && lexptr[0] == '\0'))
+    rustlval.sval = make_stoken (rust_copy_name (start, length));
 
+  if (parse_completion && lexptr[0] == '\0')
+    {
+      /* Prevent rustlex from returning two COMPLETE tokens.  */
+      prev_lexptr = lexptr;
+      return COMPLETE;
+    }
+
+  if (token != NULL)
+    return token->value;
   if (is_gdb_var)
     return GDBVAR;
   return IDENT;
@@ -1315,9 +1334,21 @@ rustlex (void)
 	 || lexptr[0] == '\n')
     ++lexptr;
 
-  prev_lexptr = lexptr;
-  if (lexptr[0] == 0)
+  /* If we hit EOF and we're completing, then return COMPLETE -- maybe
+     we're completing an empty string at the end of a field_expr.
+     But, we don't want to return two COMPLETE tokens in a row.  */
+  if (lexptr[0] == '\0' && lexptr == prev_lexptr)
     return 0;
+  prev_lexptr = lexptr;
+  if (lexptr[0] == '\0')
+    {
+      if (parse_completion)
+	{
+	  rustlval.sval = make_stoken ("");
+	  return COMPLETE;
+	}
+      return 0;
+    }
 
   if (lexptr[0] >= '0' && lexptr[0] <= '9')
     return lex_number ();
@@ -1362,6 +1393,7 @@ struct rust_op
 {
   enum exp_opcode opcode;
   unsigned int compound_assignment : 1;
+  unsigned int completing : 1;
   RUSTSTYPE left;
   RUSTSTYPE right;
 };
@@ -1482,11 +1514,12 @@ make_string (struct stoken str)
 }
 
 static const struct rust_op *
-make_structop (const struct rust_op *left, const char *name)
+make_structop (const struct rust_op *left, const char *name, int completing)
 {
   struct rust_op *result = OBSTACK_ZALLOC (&work_obstack, struct rust_op);
 
   result->opcode = STRUCTOP_STRUCT;
+  result->completing = completing;
   result->left.op = left;
   result->right.sval = make_stoken (name);
 
@@ -1599,6 +1632,8 @@ convert_ast_to_expression (struct parser_state *state,
       {
 	convert_ast_to_expression (state, operation->left.op, top);
 
+	if (operation->completing)
+	  mark_struct_expression (state);
 	write_exp_elt_opcode (state, STRUCTOP_STRUCT);
 	write_exp_string (state, operation->right.sval);
 	write_exp_elt_opcode (state, STRUCTOP_STRUCT);
@@ -1881,12 +1916,12 @@ rust_parse (struct parser_state *state)
   pstate = state;
   result = rustparse ();
 
-  if (!result)
+  if (!result || (parse_completion && rust_ast != NULL))
     {
       const struct rust_op *ast = rust_ast;
 
       rust_ast = NULL;
-      gdb_assert (ast);
+      gdb_assert (ast != NULL);
       convert_ast_to_expression (state, ast, ast);
     }
 
@@ -1986,6 +2021,21 @@ rust_lex_test_trailing_dot (void)
   rust_lex_test_sequence ("23..25", ARRAY_SIZE (expected4), expected4);
 }
 
+/* Tests of completion.  */
+
+static void
+rust_lex_test_completion (void)
+{
+  const int expected[] = { IDENT, '.', COMPLETE, 0 };
+
+  parse_completion = 1;
+
+  rust_lex_test_sequence ("something.wha", ARRAY_SIZE (expected), expected);
+  rust_lex_test_sequence ("something.", ARRAY_SIZE (expected), expected);
+
+  parse_completion = 0;
+}
+
 /* Unit test the lexer.  */
 
 static void
@@ -2050,6 +2100,8 @@ rust_lex_tests (void)
 
   for (i = 0; i < ARRAY_SIZE (operator_tokens); ++i)
     rust_lex_test_one (operator_tokens[i].name, operator_tokens[i].value);
+
+  rust_lex_test_completion ();
 
   obstack_free (&work_obstack, NULL);
   unit_testing = 0;
