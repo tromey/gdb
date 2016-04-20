@@ -33,6 +33,7 @@
 #include "gdb_regex.h"
 #include "rust-lang.h"
 #include "parser-defs.h"
+#include "selftest.h"
 #include "value.h"
 #include "vec.h"
 
@@ -1904,8 +1905,7 @@ rusterror (char *msg)
 
 
 
-#define GDB_UNIT_TEST /* FIXME */
-#ifdef GDB_UNIT_TEST
+#if GDB_SELF_TEST
 
 /* A test helper that lexes a string, expecting a single token.  It
    returns the lexer data for this token.  */
@@ -1948,7 +1948,8 @@ static void
 rust_lex_stringish_test (const char *input, const char *value, int kind)
 {
   RUSTSTYPE result = rust_lex_test_one (input, kind);
-  gdb_assert (strcmp (result.sval.ptr, value) == 0);
+  gdb_assert (result.sval.length == strlen (value));
+  gdb_assert (strncmp (result.sval.ptr, value, result.sval.length) == 0);
 }
 
 /* Helper to test that a string parses as a given token sequence.  */
@@ -1991,6 +1992,9 @@ static void
 rust_lex_tests (void)
 {
   int i;
+
+  obstack_init (&work_obstack);
+  unit_testing = 1;
 
   rust_lex_test_one ("", 0);
   rust_lex_test_one ("thread 23", 0);
@@ -2046,9 +2050,12 @@ rust_lex_tests (void)
 
   for (i = 0; i < ARRAY_SIZE (operator_tokens); ++i)
     rust_lex_test_one (operator_tokens[i].name, operator_tokens[i].value);
+
+  obstack_free (&work_obstack, NULL);
+  unit_testing = 0;
 }
 
-#endif
+#endif /* GDB_SELF_TEST */
 
 void
 _initialize_rust_exp (void)
@@ -2062,15 +2069,7 @@ _initialize_rust_exp (void)
       error (_("_initialize_rust_exp: could not compile regex: %s"), err);
     }
 
-  /* It would be great if gdb had a "maint selftest" command; modules
-     could register unit test functions and this command would simply
-     invoke them, barfing on exceptions or checking return
-     results.  */
-#ifdef GDB_UNIT_TEST
-  obstack_init (&work_obstack);
-  unit_testing = 1;
-  rust_lex_tests ();
-  obstack_free (&work_obstack, NULL);
-  unit_testing = 0;
+#if GDB_SELF_TEST
+  register_self_test (rust_lex_tests);
 #endif
 }
