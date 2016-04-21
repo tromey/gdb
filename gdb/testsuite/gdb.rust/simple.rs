@@ -34,7 +34,8 @@ enum Something {
 enum MoreComplicated {
     One,
     Two(i32),
-    Three(HiBob)
+    Three(HiBob),
+    Four{this: bool, is: u8, a: char, struct_: u64, variant: u32},
 }
 
 fn diff2(x: i32, y: i32) -> i32 {
@@ -51,6 +52,7 @@ fn main () {
     let d = c = 99;
 
     let e = MoreComplicated::Two(73);
+    let e2 = MoreComplicated::Four {this: true, is: 8, a: 'm', struct_: 100, variant: 10};
 
     let f = "hi bob";
     let g = b"hi bob";
