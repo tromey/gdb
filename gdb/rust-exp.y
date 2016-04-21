@@ -45,16 +45,6 @@
 
 extern initialize_file_ftype _initialize_rust_exp;
 
-static int rustlex (void);
-static const char *rust_copy_name (const char *, int);
-static struct stoken rust_concat3 (const char *, const char *, const char *);
-static struct stoken make_stoken (const char *);
-static struct block_symbol rust_lookup_symbol (const char *name,
-					       const struct block *block,
-					       const domain_enum domain);
-static struct type *rust_lookup_type (const char *name,
-				      const struct block *block);
-
 struct rust_op;
 typedef const struct rust_op *rust_op_ptr;
 DEF_VEC_P (rust_op_ptr);
@@ -81,6 +71,16 @@ typedef struct set_field set_field;
 
 DEF_VEC_O (set_field);
 
+
+static int rustlex (void);
+static const char *rust_copy_name (const char *, int);
+static struct stoken rust_concat3 (const char *, const char *, const char *);
+static struct stoken make_stoken (const char *);
+static struct block_symbol rust_lookup_symbol (const char *name,
+					       const struct block *block,
+					       const domain_enum domain);
+static struct type *rust_lookup_type (const char *name,
+				      const struct block *block);
 static struct type *rust_type (const char *name);
 
 static const struct rust_op *make_operation (enum exp_opcode opcode,
