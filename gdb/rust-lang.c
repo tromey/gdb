@@ -82,7 +82,8 @@ rust_crate_for_block (const struct block *block)
 
 /* Information about the discriminant/variant of an enum */
 
-struct disr_info {
+struct disr_info
+{
   char* name; // needs to be freed
   int field_no; // Field number in union. negative if error
 };
@@ -444,7 +445,7 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
       }
 
       fputs_filtered (")", stream);
-      free (disr.name);
+      xfree (disr.name);
     }
       break;
     case TYPE_CODE_STRUCT:
@@ -1355,6 +1356,7 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
 
         type = value_type (lhs);
         if (TYPE_CODE (type) == TYPE_CODE_UNION) {
+          struct cleanup *cleanup;
           field_number = rust_extract_field_number(&exp->elts[pc + 2].string);
 
           if (field_number < 0) {
@@ -1369,6 +1371,8 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
             error (_("Could not determine variant of enum value"));
           }
 
+          cleanup = make_cleanup (xfree, disr.name);
+
           variant_type = TYPE_FIELD_TYPE(type, disr.field_no);
           nfields = TYPE_NFIELDS(variant_type);
 
@@ -1382,6 +1386,7 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
           }
 
           result = value_primitive_field(lhs, 0, field_number + 1, variant_type);
+          do_cleanups (cleanup);
           break;
         }
         // not an enum, evaluate the regular way
