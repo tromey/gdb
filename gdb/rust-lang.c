@@ -37,6 +37,10 @@ extern initialize_file_ftype _initialize_rust_language;
 
 
 
+/* Find the Rust crate for BLOCK.  If no crate can be found, returns
+   NULL.  Otherwise, returns a newly allocated string that the caller
+   is responsible for freeing.  */
+
 char *
 rust_crate_for_block (const struct block *block)
 {
@@ -632,6 +636,11 @@ rust_composite_type (struct type *original,
   return result;
 }
 
+/* Create a new slice type.  NAME is the name of the type.  ELT_TYPE
+   is the type of the elements of the slice.  USIZE_TYPE is the Rust
+   "usize" type to use.  The new type is allocated whereever ELT_TYPE
+   is allocated.  */
+
 static struct type *
 rust_slice_type (const char *name, struct type *elt_type,
 		 struct type *usize_type)
@@ -881,6 +890,14 @@ rust_range (struct expression *exp, int *pos, enum noside noside)
   result = value_at_lazy (range_type, addr);
   return result;
 }
+
+/* A helper function to compute the range and kind given a range
+   value.  TYPE is the type of the range value.  RANGE is the range
+   value.  LOW, HIGH, and KIND are out parameters.  The LOW and HIGH
+   parameters might be filled in, or might not be, depending on the
+   kind of range this is.  KIND will always be set to the appropriate
+   value describing the kind of range, and this can be used to
+   determine whether LOW or HIGH are valid.  */
 
 static void
 rust_compute_range (struct type *type, struct value *range,

@@ -49,17 +49,24 @@ struct rust_op;
 typedef const struct rust_op *rust_op_ptr;
 DEF_VEC_P (rust_op_ptr);
 
+/* A typed integer constant.  */
+
 struct typed_val_int
 {
   LONGEST val;
   struct type *type;
 };
 
+/* A typed floating point constant.  */
+
 struct typed_val_float
 {
   DOUBLEST dval;
   struct type *type;
 };
+
+/* An identifier and an expression.  This is used to represent one
+   element of a struct initializer.  */
 
 struct set_field
 {
@@ -110,11 +117,13 @@ static const struct rust_op *make_range (const struct rust_op *lhs,
 
 /* The state of the parser, used internally when we are parsing the
    expression.  */
+
 static struct parser_state *pstate = NULL;
 
 /* A regular expression for matching Rust numbers.  This is split up
    since it is very long and this gives us a way to comment the
    sections.  */
+
 static const char *number_regex_text =
   /* subexpression 1: allows use of alternation, otherwise uninteresting */
   "^("
@@ -151,38 +160,55 @@ static const char *number_regex_text =
   ")";
 
 /* The compiled number-matching regex.  */
+
 static regex_t number_regex;
 
 /* True if we're running unit tests.  */
+
 static int unit_testing;
 
 /* Obstack for data temporarily allocated during parsing.  */
+
 static struct obstack work_obstack;
 
 /* Result of parsing.  Points into work_obstack.  */
+
 static const struct rust_op *rust_ast;
 
 %}
 
 %union
 {
+  /* A typed integer constant.  */
   struct typed_val_int typed_val_int;
 
+  /* A typed floating point constant.  */
   struct typed_val_float typed_val_float;
 
+  /* An identifier or string.  */
   struct stoken sval;
 
+  /* A token representing an opcode, like "==".  */
   enum exp_opcode opcode;
 
+  /* A type.  */
   struct type *type;
 
+  /* A list of expressions; for example, the arguments to a function
+     call.  */
   VEC (rust_op_ptr) **params;
 
+  /* A list of field initializers.  */
   VEC (set_field) **field_inits;
+
+  /* A single field initializer.  */
   struct set_field one_field_init;
 
+  /* An expression.  */
   const struct rust_op *op;
 
+  /* A plain integer, for example used to count the number of
+     "super::" prefixes on a path.  */
   int depth;
 }
 
@@ -1421,12 +1447,25 @@ rustlex (void)
 
 struct rust_op
 {
+  /* The opcode.  */
   enum exp_opcode opcode;
+  /* Indicates whether OPCODE actually represents a compound
+     assignment.  For example, if OPCODE is GTGT and this is false,
+     then this rust_op represents an ordinary ">>"; but if this is
+     true, then this rust_op represents ">>=".  Unused in other
+     cases.  */
   unsigned int compound_assignment : 1;
+  /* Only used by a field expression; if set, indicates that the field
+     name occurred at the end of the expression and is eligible for
+     completion.  */
   unsigned int completing : 1;
+  /* Operands of expression.  Which one is used and how depends on the
+     particular opcode.  */
   RUSTSTYPE left;
   RUSTSTYPE right;
 };
+
+/* Make an arbitrary operation and fill in the fields.  */
 
 static const struct rust_op *
 make_operation (enum exp_opcode opcode, const struct rust_op *left,
@@ -1440,6 +1479,8 @@ make_operation (enum exp_opcode opcode, const struct rust_op *left,
 
   return result;
 }
+
+/* Make a compound assignment operation.  */
 
 static const struct rust_op *
 make_compound_assignment (enum exp_opcode opcode, const struct rust_op *left,
@@ -1455,6 +1496,8 @@ make_compound_assignment (enum exp_opcode opcode, const struct rust_op *left,
   return result;
 }
 
+/* Make a typed integer literal operation.  */
+
 static const struct rust_op *
 make_literal (struct typed_val_int val)
 {
@@ -1465,6 +1508,8 @@ make_literal (struct typed_val_int val)
 
   return result;
 }
+
+/* Make a typed floating point literal operation.  */
 
 static const struct rust_op *
 make_dliteral (struct typed_val_float val)
@@ -1477,11 +1522,15 @@ make_dliteral (struct typed_val_float val)
   return result;
 }
 
+/* Make a unary operation.  */
+
 static const struct rust_op *
 make_unary (enum exp_opcode opcode, const struct rust_op *expr)
 {
   return make_operation (opcode, expr, NULL);
 }
+
+/* Make a cast operation.  */
 
 static const struct rust_op *
 make_cast (const struct rust_op *expr, struct type *type)
@@ -1494,6 +1543,10 @@ make_cast (const struct rust_op *expr, struct type *type)
 
   return result;
 }
+
+/* Make a call-like operation.  This is nominally a function call, but
+   when lowering we may discover that it actually represents the
+   creation of a tuple struct.  */
 
 static const struct rust_op *
 make_call_ish (enum exp_opcode opcode, const struct rust_op *expr,
@@ -1508,6 +1561,8 @@ make_call_ish (enum exp_opcode opcode, const struct rust_op *expr,
   return result;
 }
 
+/* Make a structure creation operation.  */
+
 static const struct rust_op *
 make_struct (struct stoken name, VEC (set_field) **fields)
 {
@@ -1521,6 +1576,8 @@ make_struct (struct stoken name, VEC (set_field) **fields)
   return result;
 }
 
+/* Make an identifier path.  */
+
 static const struct rust_op *
 make_path (struct stoken path)
 {
@@ -1532,6 +1589,8 @@ make_path (struct stoken path)
   return result;
 }
 
+/* Make a string constant operation.  */
+
 static const struct rust_op *
 make_string (struct stoken str)
 {
@@ -1542,6 +1601,8 @@ make_string (struct stoken str)
 
   return result;
 }
+
+/* Make a field expression.  */
 
 static const struct rust_op *
 make_structop (const struct rust_op *left, const char *name, int completing)
@@ -1555,6 +1616,8 @@ make_structop (const struct rust_op *left, const char *name, int completing)
 
   return result;
 }
+
+/* Make a range operation.  */
 
 static const struct rust_op *
 make_range (const struct rust_op *lhs, const struct rust_op *rhs)
@@ -1601,7 +1664,7 @@ rust_lookup_symbol (const char *name, const struct block *block,
   return result;
 }
 
-/* Look up a type.  */
+/* Look up a type, following Rust namespace conventions.  */
 
 static struct type *
 rust_lookup_type (const char *name, const struct block *block)
@@ -1633,6 +1696,9 @@ static void convert_ast_to_expression (struct parser_state *state,
 				       const struct rust_op *operation,
 				       const struct rust_op *top);
 
+/* A helper function that converts a vec of rust_ops to a gdb
+   expression.  */
+
 static void
 convert_params_to_expression (struct parser_state *state,
 			      VEC (rust_op_ptr) *params,
@@ -1644,6 +1710,12 @@ convert_params_to_expression (struct parser_state *state,
   for (i = 0; VEC_iterate (rust_op_ptr, params, i, elem); ++i)
     convert_ast_to_expression (state, elem, top);
 }
+
+/* Lower a rust_op to a gdb expression.  STATE is the parser state.
+   OPERATION is the operation to lower.  TOP is a pointer to the
+   top-most operation; it is used to handle the special case where the
+   top-most expression is an identifier and can be optionally lowered
+   to OP_TYPE.  */
 
 static void
 convert_ast_to_expression (struct parser_state *state,

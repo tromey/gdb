@@ -23,8 +23,10 @@
 struct parser_state;
 struct type;
 
+/* The la_parser implementation for Rust.  */
 extern int rust_parse (struct parser_state *);
 
+/* The la_error implementation for Rust.  */
 extern void rusterror (char *);
 
 /* Return true if TYPE is a tuple struct type; otherwise false.  */
