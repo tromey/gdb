@@ -696,7 +696,7 @@ rust_print_type (struct type *type, const char *varstring,
 	    fputs_filtered (" ", stream);
 	    len = strlen (TYPE_TAG_NAME (type));
 	  }
-	fputs_filtered ("{\n", stream);      
+	fputs_filtered ("{\n", stream);
 
 	for (i = 0; i < TYPE_NFIELDS (type); ++i)
 	  {
@@ -713,6 +713,57 @@ rust_print_type (struct type *type, const char *varstring,
 	  }
 
 	fputs_filtered ("}", stream);
+      }
+      break;
+
+    case TYPE_CODE_UNION:
+      {
+  /* ADT enums */
+  int i, len = 0;
+
+  fputs_filtered ("enum ", stream);
+  if (TYPE_TAG_NAME (type) != NULL)
+    {
+      fputs_filtered (TYPE_TAG_NAME (type), stream);
+      fputs_filtered (" ", stream);
+      len = strlen (TYPE_TAG_NAME (type));
+    }
+  fputs_filtered ("{\n", stream);      
+
+  for (i = 0; i < TYPE_NFIELDS (type); ++i)
+    {
+      struct type *variant_type = TYPE_FIELD_TYPE (type, i);
+      const char *name = rust_last_path_segment (TYPE_NAME (variant_type));
+
+      fprintfi_filtered (level + 2, stream, "%s", name);
+
+      if (TYPE_NFIELDS (variant_type) > 1) {
+        int first = 1;
+        int is_tuple = rust_tuple_variant_type_p (variant_type);
+        int j;
+        fputs_filtered (is_tuple ? "(" : "{", stream);
+        for (j = 1; j < TYPE_NFIELDS (variant_type); j++) {
+          if (first) {
+            first = 0;
+          } else {
+            fputs_filtered (", ", stream);
+          }
+          if (!is_tuple) {
+            fprintf_filtered (stream, "%s: ",
+                              TYPE_FIELD_NAME (variant_type, j));
+          }
+
+          rust_print_type (TYPE_FIELD_TYPE (variant_type, j), NULL,
+               stream, show - 1, level + 2,
+               flags);
+        }
+        fputs_filtered (is_tuple ? ")" : "}", stream);
+      }
+
+      fputs_filtered (",\n", stream);
+    }
+
+  fputs_filtered ("}", stream);
       }
       break;
 
