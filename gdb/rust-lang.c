@@ -1392,6 +1392,47 @@ rust_operator_check (struct expression *exp, int pos,
 
 
 
+/* Implementation of la_lookup_symbol_nonlocal for Rust.  */
+
+struct block_symbol
+rust_lookup_symbol_nonlocal (const struct language_defn *langdef,
+			     const char *name,
+			     const struct block *block,
+			     const domain_enum domain)
+{
+  struct block_symbol result = {NULL, NULL};
+
+  if (symbol_lookup_debug)
+    {
+      fprintf_unfiltered (gdb_stdlog,
+			  "rust_lookup_symbol_non_local"
+			  " (%s, %s (scope %s), %s)\n",
+			  name, host_address_to_string (block),
+			  block_scope (block), domain_name (domain));
+    }
+
+  /* Look up bare names in the block's scope.  */
+  if (strstr (name, "::") == NULL)
+    {
+      const char *scope = block_scope (block);
+
+      if (scope[0] != '\0')
+	{
+	  char *scopedname = concat (scope, "::", name, (char *) NULL);
+	  struct cleanup *cleanup = make_cleanup (xfree, scopedname);
+
+	  result = lookup_symbol_in_static_block (scopedname, block,
+						  domain);
+	  if (result.symbol == NULL)
+	    result = lookup_global_symbol (scopedname, block, domain);
+	  do_cleanups (cleanup);
+	}
+    }
+  return result;
+}
+
+
+
 static const struct exp_descriptor exp_descriptor_rust = 
 {
   rust_print_subexp,
@@ -1425,7 +1466,7 @@ static const struct language_defn rust_language_defn =
   default_read_var_value,	/* la_read_var_value */
   NULL,				/* Language specific skip_trampoline */
   NULL,				/* name_of_this */
-  basic_lookup_symbol_nonlocal,	/* lookup_symbol_nonlocal */
+  rust_lookup_symbol_nonlocal,	/* lookup_symbol_nonlocal */
   basic_lookup_transparent_type,/* lookup_transparent_type */
   gdb_demangle,			/* Language specific symbol demangler */
   NULL,				/* Language specific

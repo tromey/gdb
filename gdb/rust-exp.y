@@ -1602,6 +1602,7 @@ static struct type *
 rust_lookup_type (const char *name, const struct block *block)
 {
   struct block_symbol result;
+  struct type *type;
 
   munge_name_and_block (&name, &block);
 
@@ -1612,8 +1613,15 @@ rust_lookup_type (const char *name, const struct block *block)
       return SYMBOL_TYPE (result.symbol);
     }
 
-  return lookup_typename (parse_language (pstate), parse_gdbarch (pstate),
+  type = lookup_typename (parse_language (pstate), parse_gdbarch (pstate),
 			  name, NULL, 1);
+  if (type != NULL)
+    return type;
+
+  /* Last chance, try a built-in type.  */
+  return language_lookup_primitive_type (parse_language (pstate),
+					 parse_gdbarch (pstate),
+					 name);
 }
 
 static void convert_ast_to_expression (struct parser_state *state,

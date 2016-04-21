@@ -83,8 +83,7 @@ gdb_test "print z.1" " = 8"
 gdb_test "print simple::ByeBob(0xff, 5)" \
     " = simple::ByeBob \\(255, 5\\)"
 
-# FIXME - can't find the name
-# gdb_test "print diff2(3, 7)" " = -4"
+gdb_test "print diff2(3, 7)" " = -4"
 gdb_test "print self::diff2(8, 9)" " = -1"
 gdb_test "print ::diff2(23, -23)" " = 46"
 
