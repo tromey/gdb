@@ -1553,7 +1553,7 @@ not a tuple, tuple struct, or tuple-like variant"),
 
           variant_type = TYPE_FIELD_TYPE (type, disr.field_no);
 
-          if (rust_tuple_struct_type_p (variant_type)) {
+          if (rust_tuple_variant_type_p (variant_type)) {
             error(_("Attempting to access named field %s of tuple variant %s, \
 which has only anonymous fields"),
                   field_name, disr.name);
