@@ -1384,7 +1384,7 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
       {
         /* Anonymous field access, i.e. foo.1 */
         struct value *lhs;
-        int tem, pc, field_number, nfields;
+        int pc, field_number, nfields;
         struct type *type, *variant_type;
         struct disr_info disr;
 
@@ -1402,9 +1402,9 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
             error(_("Currently does not support struct variant fields"));
           }
 
-          disr = rust_get_disr_info(type, value_contents(lhs),
-                                    value_embedded_offset(lhs),
-                                    value_address(lhs), lhs);
+          disr = rust_get_disr_info (type, value_contents(lhs),
+                                     value_embedded_offset(lhs),
+                                     value_address(lhs), lhs);
 
 
           if (disr.field_no < 0) {
@@ -1448,7 +1448,7 @@ there are only %d fields"),
           if (!rust_tuple_struct_type_p (type)) {
             error(_("Attempting to access anonymous field %d of %s, which is \
 not a tuple, tuple struct, or tuple-like variant"),
-                  field_number, TYPE_TAG_NAME (type));
+                  field_number, disr.name);
           }
 
           result = value_primitive_field(lhs, 0, field_number, type);
@@ -1458,7 +1458,67 @@ not a tuple, tuple struct, or tuple-like variant"),
         error(_("Only enums support anonymous field access for now"));
       }
       break;
+    case STRUCTOP_STRUCT:
+      {
+        struct value* lhs;
+        struct type *type;
+        int tem, pc;
 
+        pc = (*pos)++;
+        tem = longest_to_int (exp->elts[pc + 1].longconst);
+        (*pos) += 3 + BYTES_TO_EXP_ELEM (tem + 1);
+        lhs = evaluate_subexp (NULL_TYPE, exp, pos, noside);
+
+        type = value_type (lhs);
+
+        if (TYPE_CODE (type) == TYPE_CODE_UNION) {
+
+          int i;
+          struct disr_info disr;
+          struct cleanup* cleanup;
+          struct type* variant_type;
+          char* field_name;
+
+          field_name = &exp->elts[pc + 2].string;
+
+          disr = rust_get_disr_info (type, value_contents(lhs),
+                                     value_embedded_offset(lhs),
+                                     value_address(lhs), lhs);
+
+
+          if (disr.field_no < 0) {
+            error (_("Could not determine variant of enum value"));
+          }
+
+          cleanup = make_cleanup (xfree, disr.name);
+
+          variant_type = TYPE_FIELD_TYPE (type, disr.field_no);
+
+          if (rust_tuple_struct_type_p (variant_type)) {
+            error(_("Attempting to access named field %s of tuple variant %s, \
+which has only anonymous fields"),
+                  field_name, disr.name);
+          }
+
+          for (i = 1; i < TYPE_NFIELDS (variant_type); i++) {
+            if (strcmp (TYPE_FIELD_NAME (variant_type, i), field_name) == 0) {
+              result = value_primitive_field (lhs, 0, i, variant_type);
+              break;
+            }
+          }
+
+          if (i == TYPE_NFIELDS (variant_type)) {
+            /* we didn't find it */
+            error(_("Could not find field %s of struct variant %s"),
+                  field_name, disr.name);
+          }
+
+        } else {
+          *pos = pc;
+          result = evaluate_subexp_standard (expect_type, exp, pos, noside);
+        }
+      }
+      break;
     case OP_F90_RANGE:
       result = rust_range (exp, pos, noside);
       break;
