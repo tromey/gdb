@@ -46,16 +46,6 @@ rust_last_path_segment(const char* path)
   return strrchr(path, ':') + 1;
 }
 
-/* Extract a numbered anonymous field formatted as "__%d".
-   Returns negative if it cannot parse */
-static int
-rust_extract_field_number(char* name) {
-  int number;
-  if(sscanf (name, "__%d", &number) == 1) {
-    return number;
-  }
-  return -1;
-}
 
 /* Find the Rust crate for BLOCK.  If no crate can be found, returns
    NULL.  Otherwise, returns a newly allocated string that the caller
@@ -1342,7 +1332,7 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
 	  }
       }
       break;
-    case STRUCTOP_STRUCT:
+    case STRUCTOP_ANONYMOUS:
       {
         struct value *lhs;
         int tem, pc, field_number, nfields;
@@ -1350,16 +1340,16 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
         struct disr_info disr;
 
         pc = (*pos)++;
-        tem = longest_to_int (exp->elts[pc + 1].longconst);
-        (*pos) += 3 + BYTES_TO_EXP_ELEM (tem + 1);
+        field_number = longest_to_int (exp->elts[pc + 1].longconst);
+        (*pos) += 2;
         lhs = evaluate_subexp (NULL_TYPE, exp, pos, noside);
 
         type = value_type (lhs);
         if (TYPE_CODE (type) == TYPE_CODE_UNION) {
           struct cleanup *cleanup;
-          field_number = rust_extract_field_number(&exp->elts[pc + 2].string);
 
           if (field_number < 0) {
+            // todo: fix this
             error(_("Currently does not support struct variant fields"));
           }
 
@@ -1389,9 +1379,8 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
           do_cleanups (cleanup);
           break;
         }
-        // not an enum, evaluate the regular way
-        *pos = pc;
-        result = evaluate_subexp_standard (expect_type, exp, pos, noside);
+        // todo: support structs
+        error(_("Only enums support anonymous field access for now"));
       }
       break;
 
