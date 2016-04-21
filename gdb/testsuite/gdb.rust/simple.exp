@@ -41,9 +41,10 @@ gdb_test "print c" " = 99"
 gdb_test "ptype c" " = i32"
 
 gdb_test "print j" " = simple::Unit \\{\\}"
-gdb_test_sequence "ptype j" "" \
-    [list " = struct simple::Unit \\{" \
-	 "\\}"]
+gdb_test_sequence "ptype j" "" {
+    " = struct simple::Unit \\{"
+    "\\}"
+}
 gdb_test "print simple::Unit" " = simple::Unit \\{\\}"
 
 # FIXME
@@ -51,12 +52,13 @@ gdb_test "print simple::Unit" " = simple::Unit \\{\\}"
 # gdb_test "ptype g" " = const\\* u8"
 
 gdb_test "print v" " = simple::Something::Three"
-gdb_test_sequence "ptype v" "" \
-    [list " = enum simple::Something \\{" \
-	 "  One," \
-	 "  Two," \
-	 "  Three," \
-	 "\\}"]
+gdb_test_sequence "ptype v" "" {
+    " = enum simple::Something \\{"
+    "  One,"
+    "  Two,"
+    "  Three,"
+    "\\}"
+}
 
 gdb_test "print w" " = \\\[1, 2, 3, 4\\\]"
 gdb_test "ptype w" " = \\\[i32; 4\\\]"
@@ -65,19 +67,21 @@ gdb_test "print fromslice" " = 3"
 gdb_test "print slice\[0\]" " = 3"
 
 gdb_test "print y" " = simple::HiBob \\{field1: 7, field2: 8\\}"
-gdb_test_sequence "ptype y" "" \
-    [list " = struct simple::HiBob \\{" \
-	 "  field1: i32," \
-	 "  field2: u64," \
-	 "\\}"]
+gdb_test_sequence "ptype y" "" {
+    " = struct simple::HiBob \\{"
+    "  field1: i32,"
+    "  field2: u64,"
+    "\\}"
+}
 gdb_test "print y.field2" " = 8"
 
 gdb_test "print z" " = simple::ByeBob \\(7, 8\\)"
-gdb_test_sequence "ptype z" "" \
-    [list " = struct simple::ByeBob \\(" \
-	 "  i32," \
-	 "  u64," \
-	 "\\)"]
+gdb_test_sequence "ptype z" "" {
+    " = struct simple::ByeBob \\("
+    "  i32,"
+    "  u64,"
+    "\\)"
+}
 gdb_test "print z.1" " = 8"
 
 gdb_test "print simple::ByeBob(0xff, 5)" \
