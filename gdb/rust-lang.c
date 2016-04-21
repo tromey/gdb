@@ -142,21 +142,53 @@ rust_tuple_type_p (struct type *type)
 	  && TYPE_TAG_NAME (type)[0] == '(');
 }
 
-/* See rust-lang.h.  */
 
-int
-rust_tuple_struct_type_p (struct type *type)
+/* Return true if all non-static fields of a structlike
+   type are in a sequence like __0, __1, __2. OFFSET
+   lets us skip fields.   */
+
+static int
+rust_underscore_fields (struct type *type, int offset)
 {
-  int i;
+  int i, field_number;
+  char buf[20];
+
+  field_number = 0;
 
   if (TYPE_CODE (type) != TYPE_CODE_STRUCT)
     return 0;
   for (i = 0; i < TYPE_NFIELDS (type); ++i)
     {
-      if (!field_is_static (&TYPE_FIELD (type, i)))
-	return strcmp (TYPE_FIELD_NAME (type, i), "__0") == 0;
+      if (!field_is_static (&TYPE_FIELD (type, i))) {
+        if(offset > 0) {
+          offset--;
+        } else {
+          snprintf (buf, 20, "__%d", field_number);
+          if (strcmp (buf, TYPE_FIELD_NAME (type, i)) != 0) {
+            return 0;
+          }
+          field_number++;
+        }
+      }
     }
-  return 0;
+  return 1;
+}
+
+/* See rust-lang.h.  */
+
+int
+rust_tuple_struct_type_p (struct type *type)
+{
+  return rust_underscore_fields(type, 0);
+}
+
+/* Return true if a variant TYPE is a tuple variant, false otherwise.  */
+
+static int
+rust_tuple_variant_type_p (struct type *type)
+{
+  /* First field is discriminant */
+  return rust_underscore_fields(type, 1);
 }
 
 /* Return true if TYPE is a slice type, otherwise false.  */
@@ -396,7 +428,7 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
       break;
     case TYPE_CODE_UNION:
     {
-      int j, nfields, first_field;
+      int j, nfields, first_field, is_tuple;
       struct type *variant_type;
       struct disr_info disr;
       struct value_print_options opts;
@@ -410,9 +442,17 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
       variant_type = TYPE_FIELD_TYPE (type, disr.field_no);
       nfields = TYPE_NFIELDS (variant_type);
 
+      is_tuple = rust_tuple_variant_type_p (variant_type);
+
       if (nfields > 1) {
         // In case of a non-nullary variant, we output `Foo(x,y,z)`
-        fprintf_filtered (stream, "%s(", disr.name);
+        if (is_tuple) {
+          fprintf_filtered (stream, "%s(", disr.name);
+        } else {
+          /* struct variant */
+          fprintf_filtered (stream, "%s{", disr.name);
+        }
+
       } else {
         // In case of a nullary variant like `None`, just output the name
         fprintf_filtered (stream, "%s", disr.name);
@@ -426,6 +466,10 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
         }
         first_field = 0;
 
+        if (!is_tuple) {
+          fprintf_filtered(stream, "%s: ", TYPE_FIELD_NAME (variant_type, j));
+        }
+
         val_print (TYPE_FIELD_TYPE (variant_type, j),
                    valaddr,
                    embedded_offset + TYPE_FIELD_BITPOS (type, disr.field_no) / 8
@@ -434,8 +478,11 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
                    stream, recurse + 1, val, &opts,
                    current_language);
       }
-
-      fputs_filtered (")", stream);
+      if (is_tuple) {
+        fputs_filtered (")", stream);
+      } else {
+        fputs_filtered ("}", stream);
+      }
       xfree (disr.name);
     }
       break;
@@ -1335,6 +1382,7 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
       break;
     case STRUCTOP_ANONYMOUS:
       {
+        /* Anonymous field access, i.e. foo.1 */
         struct value *lhs;
         int tem, pc, field_number, nfields;
         struct type *type, *variant_type;
@@ -1366,7 +1414,7 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
           cleanup = make_cleanup (xfree, disr.name);
 
           variant_type = TYPE_FIELD_TYPE(type, disr.field_no);
-          nfields = TYPE_NFIELDS(variant_type);
+          nfields = TYPE_NFIELDS (variant_type);
 
           // note that there is the extra discriminant field as well,
           // so the actual field number is field_number + 1
@@ -1376,6 +1424,11 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
             error(_("Cannot access field %d of variant %s, \
 there are only %d fields"),
                   field_number, disr.name, nfields - 1);
+          }
+
+          if (!rust_tuple_variant_type_p (variant_type)) {
+            error(_("Variant %s is not a tuple variant"),
+                  disr.name);
           }
 
           result = value_primitive_field(lhs, 0,
