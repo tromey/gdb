@@ -495,12 +495,16 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
 	struct value_print_options opts;
 
 	if (!is_tuple && TYPE_TAG_NAME (type))
-	  fprintf_filtered (stream, "%s ", TYPE_TAG_NAME (type));
+	  fprintf_filtered (stream, "%s", TYPE_TAG_NAME (type));
+
+	if (TYPE_NFIELDS (type) == 0 && !is_tuple) {
+	  break;
+	}
 
 	if (is_tuple || is_tuple_struct)
-	  fputs_filtered ("(", stream);
+	  fputs_filtered (" (", stream);
 	else
-	  fputs_filtered ("{", stream);
+	  fputs_filtered (" {", stream);
 
 	opts = *options;
 	opts.deref_ref = 0;
@@ -655,6 +659,10 @@ rust_print_type (struct type *type, const char *varstring,
 	  fputs_filtered (TYPE_TAG_NAME (type), stream);
 
 	is_tuple_struct = rust_tuple_struct_type_p (type);
+
+	if (TYPE_NFIELDS (type) == 0 && !rust_tuple_type_p (type)) {
+	  break;
+	}
 	fputs_filtered (is_tuple_struct ? " (\n" : " {\n", stream);
 
 	for (i = 0; i < TYPE_NFIELDS (type); ++i)
