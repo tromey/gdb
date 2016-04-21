@@ -62,9 +62,9 @@ rust_crate_for_block (const struct block *block)
 
 
 
-/* Return true if TYPE is a tuple type; otherwise false.  */
+/* See rust-lang.h.  */
 
-static int
+int
 rust_tuple_type_p (struct type *type)
 {
   /* The current implementation is a bit of a hack, but there's
@@ -210,7 +210,7 @@ rust_printstr (struct ui_file *stream, struct type *type,
 	}
     }
 
-  /* FIXME this is not ideal as it doesn't use our character printer.  */
+  /* This is not ideal as it doesn't use our character printer.  */
   generic_printstr (stream, type, string, length, encoding, force_ellipses,
 		    '"', 0, options);
 }
@@ -270,8 +270,9 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
 	  error (_("Could not determine the array bounds"));
 
 	/* If we see a plain TYPE_CODE_STRING, then we're printing a
-	   byte string, hence the choice of "ASCII" as the encoding.
-	   FIXME perhaps we should print a "b" before the string.  */
+	   byte string, hence the choice of "ASCII" as the
+	   encoding.  */
+	fputs_filtered ("b", stream);
 	rust_printstr (stream, TYPE_TARGET_TYPE (type),
 		       valaddr + embedded_offset * unit_size,
 		       high_bound - low_bound + 1, "ASCII", 0, options);
@@ -469,9 +470,9 @@ rust_print_type (struct type *type, const char *varstring,
 	    if (field_is_static (&TYPE_FIELD (type, i)))
 	      continue;
 
-	    /* FIXME could try to print "pub", but (1) rustc doesn't
-	       emit the debuginfo, and (2) it relies on c++-specific
-	       stuff anyway.  */
+	    /* We'd like to print "pub" here as needed, but rustc
+	       doesn't emit the debuginfo, and our types don't have
+	       cplus_struct_type attached.  */
 
 	    /* For a tuple struct we print the type but nothing
 	       else.  */

@@ -1965,7 +1965,11 @@ convert_ast_to_expression (struct parser_state *state,
 				 expression_context_block);
 	if (type == NULL)
 	  error (_("could not find type '%s'"), operation->left.sval.ptr);
-	/* FIXME check if the type is a struct here.  */
+
+	if (TYPE_CODE (type) != TYPE_CODE_STRUCT
+	    || rust_tuple_type_p (type)
+	    || rust_tuple_struct_type_p (type))
+	  error (_("struct expression applied to non-struct type"));
 
 	write_exp_elt_opcode (state, OP_AGGREGATE);
 	write_exp_elt_type (state, type);
