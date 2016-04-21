@@ -35,14 +35,14 @@
 
 extern initialize_file_ftype _initialize_rust_language;
 
-/* Returns the last segment of a Rust path like foo::bar::baz.
-   Will not handle cases where the last segment contains generics */
+/* Returns the last segment of a Rust path like foo::bar::baz.  
+   Will not handle cases where the last segment contains generics.  */
 
 static char*
 rust_last_path_segment(const char* path)
 {
-  // todo: use strtok or something
-  // todo: sanity checks and memory safety
+  /* This could perhaps be improved to use strtok,
+     but is good enough for our purposes.  */
   return strrchr(path, ':') + 1;
 }
 
@@ -78,7 +78,8 @@ struct disr_info
   int field_no; // Field number in union. negative if error
 };
 
-/* Utility function to get discriminant info for a given value */
+/* Utility function to get discriminant info for a given value.  */
+
 static struct disr_info
 rust_get_disr_info (struct type *type, const gdb_byte *valaddr,
                     int embedded_offset, CORE_ADDR address,
@@ -95,14 +96,29 @@ rust_get_disr_info (struct type *type, const gdb_byte *valaddr,
 
   ret.field_no = -1;
 
+  if (TYPE_NFIELDS (type) == 0) {
+    /* void enums should never exist as values */
+    return ret;
+  }
+
   disr_type = TYPE_FIELD_TYPE (type, 0);
 
-  // todo: add some checking to ensure that we don't go out of bounds here
-  // todo: ensure that the field name is indeed RUST$ENUM$DISR
+  if (TYPE_NFIELDS (disr_type) == 0) {
+    /* This is a bounds check and should never
+       be hit unless Rust has changed its debuginfo
+       format */
+    return ret;
+  }
+
+  if (strcmp (TYPE_FIELD_NAME (disr_type, 0), "RUST$ENUM$DISR") != 0) {
+    /* debuginfo format has changed */
+    return ret;
+  }
 
   temp_file = mem_fileopen ();
 
-  // The first value of the first field (or any field) is the discriminant value
+  /* The first value of the first field (or any field)
+     is the discriminant value.  */
   c_val_print (TYPE_FIELD_TYPE (disr_type, 0), valaddr,
               embedded_offset + TYPE_FIELD_BITPOS (type, 0) / 8
                               + TYPE_FIELD_BITPOS (disr_type, 0) / 8,
@@ -114,12 +130,12 @@ rust_get_disr_info (struct type *type, const gdb_byte *valaddr,
 
   for (i = 0; i < TYPE_NFIELDS (type); ++i) {
 
-    // Sadly, the discriminant value paths do not match the type field
-    // name paths (`core::option::Option::Some` vs `core::option::Some`)
-    // However, enum variant names are unique in the last path segment
-    // and the generics are not part of this path, so we can just compare those
-    // This is hackish and would be better fixed by improving rustc's
-    // metadata for enums
+    /* Sadly, the discriminant value paths do not match the type field
+       name paths (`core::option::Option::Some` vs `core::option::Some`)
+       However, enum variant names are unique in the last path segment and
+       the generics are not part of this path, so we can just compare those.
+       This is hackish and would be better fixed by improving rustc's
+       metadata for enums.  */
     if(strcmp (rust_last_path_segment (ret.name),
                rust_last_path_segment (TYPE_NAME (TYPE_FIELD_TYPE (type, i)))) == 0) {
       ret.field_no = i;
@@ -445,7 +461,7 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
       is_tuple = rust_tuple_variant_type_p (variant_type);
 
       if (nfields > 1) {
-        // In case of a non-nullary variant, we output `Foo(x,y,z)`
+        /* In case of a non-nullary variant, we output `Foo(x,y,z)`. */
         if (is_tuple) {
           fprintf_filtered (stream, "%s(", disr.name);
         } else {
@@ -454,7 +470,7 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
         }
 
       } else {
-        // In case of a nullary variant like `None`, just output the name
+        /* In case of a nullary variant like `None`, just output the name. */
         fprintf_filtered (stream, "%s", disr.name);
         break;
       }
@@ -1456,11 +1472,6 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
         if (TYPE_CODE (type) == TYPE_CODE_UNION) {
           struct cleanup *cleanup;
 
-          if (field_number < 0) {
-            // todo: fix this
-            error(_("Currently does not support struct variant fields"));
-          }
-
           disr = rust_get_disr_info (type, value_contents(lhs),
                                      value_embedded_offset(lhs),
                                      value_address(lhs), lhs);
@@ -1478,7 +1489,6 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
           // note that there is the extra discriminant field as well,
           // so the actual field number is field_number + 1
           if (field_number >= nfields - 1 || field_number < 0) {
-            // todo: register cleanup for disr.name
             // unsure how to call error with a cleanup
             error(_("Cannot access field %d of variant %s, \
 there are only %d fields"),
@@ -1513,8 +1523,8 @@ not a tuple, tuple struct, or tuple-like variant"),
           result = value_primitive_field(lhs, 0, field_number, type);
           break;
         }
-        // todo: support structs
-        error(_("Only enums support anonymous field access for now"));
+        error(_("Anonymous field access is only allowed on tuples, \
+tuple structs, and tuple-like enum variants"));
       }
       break;
     case STRUCTOP_STRUCT:
