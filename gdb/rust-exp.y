@@ -642,7 +642,17 @@ path:
 	identifier_path
 |	self_or_super_path
 |	COLONCOLON identifier_path
-		{ $$ = rust_concat3 ("::", $2.ptr, NULL); }
+		{
+		  char *crate = rust_crate_for_block (expression_context_block);
+		  const char *name;
+
+		  if (crate == NULL)
+		    error (_("could not find crate for current location"));
+		  name = obconcat (&work_obstack, "::", crate, "::",
+				   $2.ptr, (char *) NULL);
+		  $$ = make_stoken (name);
+		  xfree (crate);
+		}
 ;
 
 identifier_path:
@@ -673,27 +683,42 @@ self_or_super_path:
 		  const char *scope = block_scope (expression_context_block);
 		  const char *name;
 		  int i;
-		  unsigned int len, offset;
+		  int len, offset;
+		  int n_supers = $2;
+		  VEC (int) *offsets = NULL;
+		  unsigned int current_len, previous_len;
+		  struct cleanup *cleanup;
 
 		  if (scope[0] == '\0')
 		    error (_("couldn't find namespace scope for self::"));
 
-		  len = cp_entire_prefix_len (scope);
-		  if ($2 >= len)
-		    error (_("too many super:: uses from '%s'"), scope);
-
-		  for (i = offset = 0; i < $2; ++i)
+		  cleanup = make_cleanup (VEC_cleanup (int), &offsets);
+		  current_len = cp_find_first_component (scope);
+		  previous_len = 0;
+		  while (scope[current_len] != '\0')
 		    {
-		      offset = cp_find_first_component (&scope[offset]);
-		      /* The "+ 2" is for the "::".  */
-		      offset += 2;
+		      VEC_safe_push (int, offsets, current_len);
+		      gdb_assert (scope[current_len] == ':');
+		      previous_len = current_len;
+		      /* The "::".  */
+		      current_len += 2;
+		      current_len += cp_find_first_component (scope
+							      + current_len);
 		    }
 
+		  len = VEC_length (int, offsets);
+		  if (n_supers >= len)
+		    error (_("too many super:: uses from '%s'"), scope);
+
+		  offset = VEC_index (int, offsets, len - n_supers);
 		  obstack_grow (&work_obstack, "::", 2);
 		  obstack_grow (&work_obstack, scope, offset);
+		  obstack_grow (&work_obstack, "::", 2);
 		  obstack_grow0 (&work_obstack, $3.ptr, $3.length);
 		  name = (const char *) obstack_finish (&work_obstack);
 		  $$ = make_stoken (name);
+
+		  do_cleanups (cleanup);
 		}
 ;
 
@@ -1723,6 +1748,9 @@ convert_ast_to_expression (struct parser_state *state,
 		int i;
 		VEC (rust_op_ptr) *params = *operation->right.params;
 
+		if (TYPE_CODE (type) == TYPE_CODE_NAMESPACE)
+		  goto got_ns;
+
 		if (!rust_tuple_struct_type_p (type))
 		  error (_("type %s is not a tuple struct"), varname);
 
@@ -1748,6 +1776,7 @@ convert_ast_to_expression (struct parser_state *state,
 		break;
 	      }
 	  }
+      got_ns:
 	convert_ast_to_expression (state, operation->left.op, top);
 	convert_params_to_expression (state, *operation->right.params, top);
 	write_exp_elt_opcode (state, OP_FUNCALL);

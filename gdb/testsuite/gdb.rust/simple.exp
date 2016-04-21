@@ -86,7 +86,7 @@ gdb_test "print simple::ByeBob(0xff, 5)" \
 # FIXME - can't find the name
 # gdb_test "print diff2(3, 7)" " = -4"
 gdb_test "print self::diff2(8, 9)" " = -1"
-gdb_test "print ::simple::diff2(23, -23)" " = 46"
+gdb_test "print ::diff2(23, -23)" " = 46"
 
 # FIXME we need the ".*" because currently we don't extract the length
 # and use it to intelligently print the string data.

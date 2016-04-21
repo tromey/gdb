@@ -21,6 +21,7 @@
 
 #include <ctype.h>
 
+#include "block.h"
 #include "c-lang.h"
 #include "charset.h"
 #include "cp-support.h"
@@ -33,6 +34,27 @@
 #include "varobj.h"
 
 extern initialize_file_ftype _initialize_rust_language;
+
+
+
+char *
+rust_crate_for_block (const struct block *block)
+{
+  const char *scope = block_scope (block);
+  unsigned int len;
+
+  if (scope[0] == '\0')
+    return NULL;
+
+  len = cp_find_first_component (scope);
+  /* If we're in a top-level function, like "crate::fn", then SCOPE
+     will be "crate", and we'll have LEN == 0.  If we're in a function
+     in a module, like "crate::mod::fn", then SCOPE will be
+     "crate::mod" and we'll have LEN != 0.  */
+  if (len == 0)
+    return xstrdup (scope);
+  return xstrndup (scope, len);
+}
 
 
 

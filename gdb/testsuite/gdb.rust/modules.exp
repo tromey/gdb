@@ -1,0 +1,44 @@
+# Copyright (C) 2016 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Test name lookup.
+
+load_lib rust-support.exp
+if {[skip_rust_tests]} {
+    continue
+}
+
+standard_testfile .rs
+if {[prepare_for_testing ${testfile}.exp $testfile $srcfile {debug rust}]} {
+    return -1
+}
+
+set line [gdb_get_line_number "set breakpoint here"]
+if {![runto ${srcfile}:$line]} {
+    untested $testfile
+    return -1
+}
+
+# Currently a closure type is not described by rustc.
+# https://github.com/rust-lang/rust/issues/33121
+# gdb_test "call f2()" "lambda f2"
+
+# gdb_test "call f3()" "mod1::inner::innest::f3"
+gdb_test "call self::f2()" "mod1::inner::innest::f2"
+gdb_test "call self::super::f2()" "mod1::inner::f2"
+gdb_test "call super::f2()" "mod1::inner::f2"
+gdb_test "call self::super::super::f2()" "mod1::f2"
+gdb_test "call super::super::f2()" "mod1::f2"
+gdb_test "call ::f2()" "::f2"

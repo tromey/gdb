@@ -30,4 +30,9 @@ extern void rusterror (char *);
 /* Return true if TYPE is a tuple struct type; otherwise false.  */
 extern int rust_tuple_struct_type_p (struct type *type);
 
+/* Given a block, find the name of the block's crate.  The name must
+   be freed by the caller.  Returns NULL if no crate name can be
+   found.  */
+extern char *rust_crate_for_block (const struct block *block);
+
 #endif /* RUST_LANG_H */
