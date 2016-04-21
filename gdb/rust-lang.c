@@ -938,7 +938,8 @@ rust_subscript (struct expression *exp, int *pos, enum noside noside,
   struct value *lhs, *rhs, *result;
   struct type *rhstype;
   LONGEST low, high, high_bound;
-  enum f90_range_type kind;
+  /* Initialized to appease the compiler.  */
+  enum f90_range_type kind = BOTH_BOUND_DEFAULT;
   int want_slice = 0;
 
   ++*pos;
@@ -1411,7 +1412,7 @@ rust_operator_check (struct expression *exp, int pos,
 
 /* Implementation of la_lookup_symbol_nonlocal for Rust.  */
 
-struct block_symbol
+static struct block_symbol
 rust_lookup_symbol_nonlocal (const struct language_defn *langdef,
 			     const char *name,
 			     const struct block *block,
