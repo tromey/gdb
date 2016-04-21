@@ -862,8 +862,10 @@ lex_hex (int min, int max)
 {
   uint32_t result = 0;
   int len = 0;
+  /* We only want to stop at MAX if we're lexing a byte escape.  */
+  int check_max = min == max;
 
-  while (len <= max
+  while ((check_max ? len <= max : 1)
 	 && ((lexptr[0] >= 'a' && lexptr[0] <= 'f')
 	     || (lexptr[0] >= 'A' && lexptr[0] <= 'F')
 	     || (lexptr[0] >= '0' && lexptr[0] <= '9')))
@@ -882,7 +884,10 @@ lex_hex (int min, int max)
   if (len < min)
     error (_("Not enough hex digits seen"));
   if (len > max)
-    error (_("Overlong hex number"));
+    {
+      gdb_assert (min != max);
+      error (_("Overlong hex escape"));
+    }
 
   return result;
 }
@@ -2013,6 +2018,24 @@ rust_lex_int_test (const char *input, int value, int kind)
   gdb_assert (result.typed_val_int.val == value);
 }
 
+/* Test that INPUT throws an exception with text ERR.  */
+
+static void
+rust_lex_exception_test (const char *input, const char *err)
+{
+  TRY
+    {
+      /* The "kind" doesn't matter.  */
+      rust_lex_test_one (input, DECIMAL_INTEGER);
+      gdb_assert_not_reached ("rust_lex_exception_test failed");
+    }
+  CATCH (except, RETURN_MASK_ERROR)
+    {
+      gdb_assert (strcmp (except.message, err) == 0);
+    }
+  END_CATCH
+}
+
 /* Test that INPUT lexes as the identifier, string, or byte-string
    VALUE.  KIND holds the expected token kind.  */
 
@@ -2084,17 +2107,47 @@ rust_lex_tests (void)
   unit_testing = 1;
 
   rust_lex_test_one ("", 0);
+  rust_lex_test_one ("    \t  \n \r  ", 0);
   rust_lex_test_one ("thread 23", 0);
   rust_lex_test_one ("task 23", 0);
   rust_lex_test_one ("th 104", 0);
   rust_lex_test_one ("ta 97", 0);
 
-  /* FIXME check error cases */
   rust_lex_int_test ("'z'", 'z', INTEGER);
   rust_lex_int_test ("'\\xff'", 0xff, INTEGER);
   rust_lex_int_test ("'\\u{1016f}'", 0x1016f, INTEGER);
   rust_lex_int_test ("b'z'", 'z', INTEGER);
   rust_lex_int_test ("b'\\xfe'", 0xfe, INTEGER);
+  rust_lex_int_test ("b'\\xFE'", 0xfe, INTEGER);
+  rust_lex_int_test ("b'\\xfE'", 0xfe, INTEGER);
+
+  /* Test all escapes in both modes.  */
+  rust_lex_int_test ("'\\n'", '\n', INTEGER);
+  rust_lex_int_test ("'\\r'", '\r', INTEGER);
+  rust_lex_int_test ("'\\t'", '\t', INTEGER);
+  rust_lex_int_test ("'\\\\'", '\\', INTEGER);
+  rust_lex_int_test ("'\\0'", '\0', INTEGER);
+  rust_lex_int_test ("'\\''", '\'', INTEGER);
+  rust_lex_int_test ("'\\\"'", '"', INTEGER);
+
+  rust_lex_int_test ("b'\\n'", '\n', INTEGER);
+  rust_lex_int_test ("b'\\r'", '\r', INTEGER);
+  rust_lex_int_test ("b'\\t'", '\t', INTEGER);
+  rust_lex_int_test ("b'\\\\'", '\\', INTEGER);
+  rust_lex_int_test ("b'\\0'", '\0', INTEGER);
+  rust_lex_int_test ("b'\\''", '\'', INTEGER);
+  rust_lex_int_test ("b'\\\"'", '"', INTEGER);
+
+  rust_lex_exception_test ("'z", "Unterminated character literal");
+  rust_lex_exception_test ("b'\\x0'", "Not enough hex digits seen");
+  rust_lex_exception_test ("b'\\u{0}'", "Unicode escape in byte literal");
+  rust_lex_exception_test ("'\\x0'", "Not enough hex digits seen");
+  rust_lex_exception_test ("'\\u0'", "Missing '{' in Unicode escape");
+  rust_lex_exception_test ("'\\u{0", "Missing '}' in Unicode escape");
+  rust_lex_exception_test ("'\\u{0000007}", "Overlong hex escape");
+  rust_lex_exception_test ("'\\u{}", "Not enough hex digits seen");
+  rust_lex_exception_test ("'\\Q'", "Invalid escape \\Q in literal");
+  rust_lex_exception_test ("b'\\Q'", "Invalid escape \\Q in literal");
 
   rust_lex_int_test ("23", 23, DECIMAL_INTEGER);
   rust_lex_int_test ("2_344__29", 234429, INTEGER);
