@@ -80,8 +80,9 @@ struct disr_info
 
 /* Utility function to get discriminant info for a given value */
 static struct disr_info
-rust_get_disr_info (struct type *type, const gdb_byte *valaddr, int embedded_offset,
-                    CORE_ADDR address, const struct value *val) {
+rust_get_disr_info (struct type *type, const gdb_byte *valaddr,
+                    int embedded_offset, CORE_ADDR address,
+                    const struct value *val) {
 
   int i;
   struct disr_info ret;
@@ -113,8 +114,8 @@ rust_get_disr_info (struct type *type, const gdb_byte *valaddr, int embedded_off
 
   for (i = 0; i < TYPE_NFIELDS (type); ++i) {
 
-    // Sadly, the discriminant value paths do not match the type field name paths
-    // (`core::option::Option::Some` vs `core::option::Some`)
+    // Sadly, the discriminant value paths do not match the type field
+    // name paths (`core::option::Option::Some` vs `core::option::Some`)
     // However, enum variant names are unique in the last path segment
     // and the generics are not part of this path, so we can just compare those
     // This is hackish and would be better fixed by improving rustc's
@@ -1354,7 +1355,8 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
           }
 
           disr = rust_get_disr_info(type, value_contents(lhs),
-                                    value_embedded_offset(lhs), value_address(lhs), lhs);
+                                    value_embedded_offset(lhs),
+                                    value_address(lhs), lhs);
 
 
           if (disr.field_no < 0) {
@@ -1368,15 +1370,35 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
 
           // note that there is the extra discriminant field as well,
           // so the actual field number is field_number + 1
-          if (field_number >= nfields - 1) {
+          if (field_number >= nfields - 1 || field_number < 0) {
             // todo: register cleanup for disr.name
             // unsure how to call error with a cleanup
-            error(_("Cannot access field %d of variant %s, there are only %d fields"),
+            error(_("Cannot access field %d of variant %s, \
+there are only %d fields"),
                   field_number, disr.name, nfields - 1);
           }
 
-          result = value_primitive_field(lhs, 0, field_number + 1, variant_type);
+          result = value_primitive_field(lhs, 0,
+                                         field_number + 1, variant_type);
           do_cleanups (cleanup);
+          break;
+        } else if (TYPE_CODE (type) == TYPE_CODE_STRUCT) {
+          /* Tuples and tuple structs */
+          nfields = TYPE_NFIELDS(type);
+
+          if (field_number >= nfields || field_number < 0) {
+            error(_("Cannot access field %d of %s, there are only %d fields"),
+                  field_number, TYPE_TAG_NAME (type), nfields);
+          }
+
+          /* tuples are tuple structs too */
+          if (!rust_tuple_struct_type_p (type)) {
+            error(_("Attempting to access anonymous field %d of %s, which is \
+not a tuple, tuple struct, or tuple-like variant"),
+                  field_number, TYPE_TAG_NAME (type));
+          }
+
+          result = value_primitive_field(lhs, 0, field_number, type);
           break;
         }
         // todo: support structs
