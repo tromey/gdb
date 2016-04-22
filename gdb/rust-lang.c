@@ -1147,8 +1147,9 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
 	    init = rust_evaluate_subexp (NULL, exp, pos, noside);
 	    if (noside == EVAL_NORMAL)
 	      {
-		/* FIXME compare types */
-		/* FIXME this is bogus */
+		/* This isn't quite right but will do for the time
+		   being, seeing that we can't implement the Copy
+		   trait anyway.  */
 		value_assign (result, init);
 	      }
 
