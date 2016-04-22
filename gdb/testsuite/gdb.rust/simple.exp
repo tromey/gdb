@@ -87,13 +87,14 @@ gdb_test "print e" " = simple::MoreComplicated::Two\\(73\\)"
 gdb_test "print e2" \
          " = simple::MoreComplicated::Four\\{this: true, is: 8, a: 109 'm', struct_: 100, variant: 10\\}"
 
-gdb_test_sequence "ptype e" "" \
-    [list " = enum simple::MoreComplicated \\{" \
+gdb_test_sequence "ptype e" "" {
+    " = enum simple::MoreComplicated \\{" \
      "  One," \
      "  Two\\(i32\\)," \
      "  Three\\(simple::HiBob\\)," \
      "  Four\\{this: bool, is: u8, a: char, struct_: u64, variant: u32\\}," \
-     "\\}"]
+     "\\}"
+}
 
 gdb_test "print e.0" " = 73"
 gdb_test "print e.1" \

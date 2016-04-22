@@ -38,11 +38,9 @@ extern initialize_file_ftype _initialize_rust_language;
 /* Returns the last segment of a Rust path like foo::bar::baz.  
    Will not handle cases where the last segment contains generics.  */
 
-static char*
+static const char*
 rust_last_path_segment(const char* path)
 {
-  /* This could perhaps be improved to use strtok,
-     but is good enough for our purposes.  */
   return strrchr(path, ':') + 1;
 }
 
@@ -91,14 +89,14 @@ rust_get_disr_info (struct type *type, const gdb_byte *valaddr,
   struct ui_file * temp_file;
 
   struct value_print_options opts;
+  struct cleanup* cleanup;
 
   get_no_prettyformat_print_options (&opts);
 
   ret.field_no = -1;
 
   if (TYPE_NFIELDS (type) == 0) {
-    /* void enums should never exist as values */
-    return ret;
+    error (_("Encountered void enum value"));
   }
 
   disr_type = TYPE_FIELD_TYPE (type, 0);
@@ -106,17 +104,17 @@ rust_get_disr_info (struct type *type, const gdb_byte *valaddr,
   if (TYPE_NFIELDS (disr_type) == 0) {
     /* This is a bounds check and should never
        be hit unless Rust has changed its debuginfo
-       format */
-    return ret;
+       format.   */
+    error (_("Could not find enum discriminant field"));
   }
 
   if (strcmp (TYPE_FIELD_NAME (disr_type, 0), "RUST$ENUM$DISR") != 0) {
-    /* debuginfo format has changed */
+    error (_("Rust debug format has changed"));
     return ret;
   }
 
   temp_file = mem_fileopen ();
-
+  cleanup = make_cleanup_ui_file_delete(temp_file);
   /* The first value of the first field (or any field)
      is the discriminant value.  */
   c_val_print (TYPE_FIELD_TYPE (disr_type, 0), valaddr,
@@ -126,7 +124,6 @@ rust_get_disr_info (struct type *type, const gdb_byte *valaddr,
               0, val, &opts);
 
   ret.name = ui_file_xstrdup (temp_file, NULL);
-  ui_file_delete (temp_file);
 
   for (i = 0; i < TYPE_NFIELDS (type); ++i) {
 
@@ -141,6 +138,14 @@ rust_get_disr_info (struct type *type, const gdb_byte *valaddr,
       ret.field_no = i;
     }
   }
+
+  if (ret.field_no == -1 && ret.name != NULL) {
+    /* Somehow the discriminant wasn't found.  */
+    error (_("Could not find variant of %s with discriminant %s"),
+           TYPE_TAG_NAME (type), ret.name);
+  }
+
+  do_cleanups (cleanup);
   return ret;
 
 }
@@ -179,7 +184,7 @@ rust_underscore_fields (struct type *type, int offset)
         if(offset > 0) {
           offset--;
         } else {
-          snprintf (buf, 20, "__%d", field_number);
+          xsnprintf (buf, 20, "__%d", field_number);
           if (strcmp (buf, TYPE_FIELD_NAME (type, i)) != 0) {
             return 0;
           }
@@ -1476,11 +1481,6 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
                                      value_embedded_offset(lhs),
                                      value_address(lhs), lhs);
 
-
-          if (disr.field_no < 0) {
-            error (_("Could not determine variant of enum value"));
-          }
-
           cleanup = make_cleanup (xfree, disr.name);
 
           variant_type = TYPE_FIELD_TYPE(type, disr.field_no);
@@ -1489,7 +1489,6 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
           // note that there is the extra discriminant field as well,
           // so the actual field number is field_number + 1
           if (field_number >= nfields - 1 || field_number < 0) {
-            // unsure how to call error with a cleanup
             error(_("Cannot access field %d of variant %s, \
 there are only %d fields"),
                   field_number, disr.name, nfields - 1);
@@ -1517,7 +1516,7 @@ there are only %d fields"),
           if (!rust_tuple_struct_type_p (type)) {
             error(_("Attempting to access anonymous field %d of %s, which is \
 not a tuple, tuple struct, or tuple-like variant"),
-                  field_number, disr.name);
+                  field_number, TYPE_TAG_NAME (type));
           }
 
           result = value_primitive_field(lhs, 0, field_number, type);
@@ -1554,10 +1553,6 @@ tuple structs, and tuple-like enum variants"));
                                      value_embedded_offset(lhs),
                                      value_address(lhs), lhs);
 
-
-          if (disr.field_no < 0) {
-            error (_("Could not determine variant of enum value"));
-          }
 
           cleanup = make_cleanup (xfree, disr.name);
 
