@@ -15233,36 +15233,45 @@ controls whether static members of Pascal objects are displayed.
 
 @value{GDBN} supports the @url{https://www.rust-lang.org/, Rust
 Programming Language}.  Type- and value-printing, and expression
-parsing, are reasonably complete.  However, there are a few holes to
-be aware of.
+parsing, are reasonably complete.  However, there are a few
+peculiarities and holes to be aware of.
 
 @itemize @bullet
 @item
-Method calls cannot be made via traits.  As of this writing, the Rust
-compiler doesn't emit the debugging information needed to implement
-this.
+Linespecs are never relative to the current crate.  Instead, they act
+as if there were a global namespace of crates, somewhat similar to the
+way @code{extern crate} behaves.
+
+That is, if @value{GDBN} is stopped at a breakpoint in a function in
+crate @samp{A}, module @samp{B}, then @code{break B::f} will attempt
+to set a breakpoint in a function named @samp{f} in a crate named
+@samp{B}.
+
+As a consequence of this approach, linespecs also cannot refer to
+items using @samp{self::} or @samp{super::}.
 
 @item
-Trait objects cannot be created or inspected.  As of this writing, the
-Rust compiler doesn't emit the debugging information needed to
-implement this.
+As of this writing, the Rust compiler has a few holes in the debugging
+information it generates.  These holes prevent certain features from
+being implemented by @value{GDBN}:
+@itemize @bullet
 
 @item
-Operator overloading is not implemented.  As of this writing, the Rust
-compiler doesn't emit the debugging information needed to implement
-this.
+Method calls cannot be made via traits.
 
 @item
-Linespecs (@pxref{Specify Location}) cannot refer to items using
-@samp{self::} or @samp{super::}.
+Trait objects cannot be created or inspected.
+
+@item
+Operator overloading is not implemented.
+@end itemize
 
 @item
 The Rust expression evaluator does not support ``statement-like''
-expressions such as @code{if} or @code{match}.  Only a C-like subset
-of the expression language is implemented.
+expressions such as @code{if} or @code{match}, or lambda expressions.
 
 @item
-You cannot create a new tuple using a tuple expression.
+Tuple expressions are not implemented.
 
 @item
 The Rust expression evaluator does not currently implement the
