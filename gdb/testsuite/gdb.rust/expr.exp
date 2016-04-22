@@ -95,7 +95,12 @@ gdb_test "print b\"hi rust\"" " = b\"hi rust\""
 gdb_test "print b\"\\xddhi bob\"" " = b\"\\\\335hi bob\""
 gdb_test "print b\"has\\0nul\"" " = b\"has\\\\000nul\""
 
+# Test that convenience variables and functions work with the Rust
+# parser.
 gdb_test "print \$something" " = 27"
+gdb_test "print \$_isvoid(\$nosuchvariable)" " = 1"
+gdb_test "print \$_isvoid(\$something)" " = 0"
 
 gdb_test "print \[23usize; 4\]" " = \\\[23, 23, 23, 23\\\]"
 gdb_test "ptype \[23usize; 4\]" " = \\\[usize; 4\\\]"
+
