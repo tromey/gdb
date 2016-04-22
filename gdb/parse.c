@@ -930,6 +930,7 @@ operator_length_standard (const struct expression *expr, int endpos,
     case BINOP_VAL:
     case UNOP_CAST:
     case UNOP_MEMVAL:
+    case STRUCTOP_ANONYMOUS:
       oplen = 3;
       args = 1;
       break;

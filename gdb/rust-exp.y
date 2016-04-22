@@ -101,6 +101,8 @@ static const struct rust_op *make_dliteral (struct typed_val_float val);
 static const struct rust_op *make_structop (const struct rust_op *left,
 					    const char *name,
 					    int completing);
+static const struct rust_op *make_structop_anonymous (const struct rust_op *left,
+                        struct typed_val_int number);
 static const struct rust_op *make_unary (enum exp_opcode opcode,
 					 const struct rust_op *expr);
 static const struct rust_op *make_cast (const struct rust_op *expr,
@@ -489,13 +491,7 @@ field_expr:
 		}
 |	expr '.' DECIMAL_INTEGER
 		{
-		  /* We should perhaps represent this at a higher
-		     level of abstraction, but for now we just bake in
-		     the naming scheme used by rustc for tuple
-		     fields.  */
-		  struct stoken value = rust_concat3 ("__", plongest ($3.val),
-						      NULL);
-		  $$ = make_structop ($1, value.ptr, 0);
+		  $$ = make_structop_anonymous ($1, $3);
 		}
 ;
 
@@ -1617,6 +1613,18 @@ make_structop (const struct rust_op *left, const char *name, int completing)
   return result;
 }
 
+static const struct rust_op *
+make_structop_anonymous (const struct rust_op *left, struct typed_val_int number)
+{
+  struct rust_op *result = OBSTACK_ZALLOC (&work_obstack, struct rust_op);
+
+  result->opcode = STRUCTOP_ANONYMOUS;
+  result->left.op = left;
+  result->right.typed_val_int = number;
+
+  return result;
+}
+
 /* Make a range operation.  */
 
 static const struct rust_op *
@@ -1747,6 +1755,16 @@ convert_ast_to_expression (struct parser_state *state,
 	write_exp_elt_opcode (state, STRUCTOP_STRUCT);
 	write_exp_string (state, operation->right.sval);
 	write_exp_elt_opcode (state, STRUCTOP_STRUCT);
+      }
+      break;
+
+    case STRUCTOP_ANONYMOUS:
+      {
+    convert_ast_to_expression (state, operation->left.op, top);
+
+    write_exp_elt_opcode (state, STRUCTOP_ANONYMOUS);
+    write_exp_elt_longcst (state, operation->right.typed_val_int.val);
+    write_exp_elt_opcode (state, STRUCTOP_ANONYMOUS);
       }
       break;
 
