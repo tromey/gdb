@@ -38,12 +38,11 @@ extern initialize_file_ftype _initialize_rust_language;
 /* Returns the last segment of a Rust path like foo::bar::baz.  
    Will not handle cases where the last segment contains generics.  */
 
-static const char*
-rust_last_path_segment(const char* path)
+static const char *
+rust_last_path_segment(const char * path)
 {
   return strrchr(path, ':') + 1;
 }
-
 
 /* Find the Rust crate for BLOCK.  If no crate can be found, returns
    NULL.  Otherwise, returns a newly allocated string that the caller
@@ -72,8 +71,10 @@ rust_crate_for_block (const struct block *block)
 
 struct disr_info
 {
-  char* name; // needs to be freed
-  int field_no; // Field number in union. negative if error
+  /* Name of field.  Must be freed by caller.  */
+  char *name;
+  /* Field number in union.  Negative on error.  */
+  int field_no;
 };
 
 /* Utility function to get discriminant info for a given value.  */
@@ -81,73 +82,75 @@ struct disr_info
 static struct disr_info
 rust_get_disr_info (struct type *type, const gdb_byte *valaddr,
                     int embedded_offset, CORE_ADDR address,
-                    const struct value *val) {
-
+                    const struct value *val)
+{
   int i;
   struct disr_info ret;
   struct type *disr_type;
-  struct ui_file * temp_file;
-
+  struct ui_file *temp_file;
   struct value_print_options opts;
-  struct cleanup* cleanup;
+  struct cleanup *cleanup;
+  const char *name_segment;
 
   get_no_prettyformat_print_options (&opts);
 
   ret.field_no = -1;
 
-  if (TYPE_NFIELDS (type) == 0) {
+  if (TYPE_NFIELDS (type) == 0)
     error (_("Encountered void enum value"));
-  }
 
   disr_type = TYPE_FIELD_TYPE (type, 0);
 
-  if (TYPE_NFIELDS (disr_type) == 0) {
-    /* This is a bounds check and should never
-       be hit unless Rust has changed its debuginfo
-       format.   */
-    error (_("Could not find enum discriminant field"));
-  }
+  if (TYPE_NFIELDS (disr_type) == 0)
+    {
+      /* This is a bounds check and should never be hit unless Rust
+	 has changed its debuginfo format.  */
+      error (_("Could not find enum discriminant field"));
+    }
 
-  if (strcmp (TYPE_FIELD_NAME (disr_type, 0), "RUST$ENUM$DISR") != 0) {
+  if (strcmp (TYPE_FIELD_NAME (disr_type, 0), "RUST$ENUM$DISR") != 0)
     error (_("Rust debug format has changed"));
-    return ret;
-  }
 
   temp_file = mem_fileopen ();
   cleanup = make_cleanup_ui_file_delete(temp_file);
   /* The first value of the first field (or any field)
      is the discriminant value.  */
   c_val_print (TYPE_FIELD_TYPE (disr_type, 0), valaddr,
-              embedded_offset + TYPE_FIELD_BITPOS (type, 0) / 8
-                              + TYPE_FIELD_BITPOS (disr_type, 0) / 8,
-              address, temp_file,
-              0, val, &opts);
+	       (embedded_offset + TYPE_FIELD_BITPOS (type, 0) / 8
+		+ TYPE_FIELD_BITPOS (disr_type, 0) / 8),
+	       address, temp_file,
+	       0, val, &opts);
 
   ret.name = ui_file_xstrdup (temp_file, NULL);
+  name_segment = rust_last_path_segment (ret.name);
 
-  for (i = 0; i < TYPE_NFIELDS (type); ++i) {
+  for (i = 0; i < TYPE_NFIELDS (type); ++i)
+    {
+      /* Sadly, the discriminant value paths do not match the type field
+	 name paths ('core::option::Option::Some' vs 'core::option::Some')
+	 However, enum variant names are unique in the last path segment and
+	 the generics are not part of this path, so we can just compare those.
+	 This is hackish and would be better fixed by improving rustc's
+	 metadata for enums.  */
+      const char *field_type_name = TYPE_NAME (TYPE_FIELD_TYPE (type, i));
 
-    /* Sadly, the discriminant value paths do not match the type field
-       name paths (`core::option::Option::Some` vs `core::option::Some`)
-       However, enum variant names are unique in the last path segment and
-       the generics are not part of this path, so we can just compare those.
-       This is hackish and would be better fixed by improving rustc's
-       metadata for enums.  */
-    if(strcmp (rust_last_path_segment (ret.name),
-               rust_last_path_segment (TYPE_NAME (TYPE_FIELD_TYPE (type, i)))) == 0) {
-      ret.field_no = i;
+      if (strcmp (rust_last_path_segment (ret.name),
+		  rust_last_path_segment (field_type_name)) == 0)
+	{
+	  ret.field_no = i;
+	  break;
+	}
     }
-  }
 
-  if (ret.field_no == -1 && ret.name != NULL) {
-    /* Somehow the discriminant wasn't found.  */
-    error (_("Could not find variant of %s with discriminant %s"),
-           TYPE_TAG_NAME (type), ret.name);
-  }
+  if (ret.field_no == -1 && ret.name != NULL)
+    {
+      /* Somehow the discriminant wasn't found.  */
+      error (_("Could not find variant of %s with discriminant %s"),
+	     TYPE_TAG_NAME (type), ret.name);
+    }
 
   do_cleanups (cleanup);
   return ret;
-
 }
 
 /* See rust-lang.h.  */
@@ -164,15 +167,13 @@ rust_tuple_type_p (struct type *type)
 }
 
 
-/* Return true if all non-static fields of a structlike
-   type are in a sequence like __0, __1, __2. OFFSET
-   lets us skip fields.   */
+/* Return true if all non-static fields of a structlike type are in a
+   sequence like __0, __1, __2.  OFFSET lets us skip fields.  */
 
 static int
 rust_underscore_fields (struct type *type, int offset)
 {
   int i, field_number;
-  char buf[20];
 
   field_number = 0;
 
@@ -180,17 +181,20 @@ rust_underscore_fields (struct type *type, int offset)
     return 0;
   for (i = 0; i < TYPE_NFIELDS (type); ++i)
     {
-      if (!field_is_static (&TYPE_FIELD (type, i))) {
-        if(offset > 0) {
-          offset--;
-        } else {
-          xsnprintf (buf, 20, "__%d", field_number);
-          if (strcmp (buf, TYPE_FIELD_NAME (type, i)) != 0) {
-            return 0;
-          }
-          field_number++;
-        }
-      }
+      if (!field_is_static (&TYPE_FIELD (type, i)))
+	{
+	  if (offset > 0)
+	    offset--;
+	  else
+	    {
+	      char buf[20];
+
+	      xsnprintf (buf, 20, "__%d", field_number);
+	      if (strcmp (buf, TYPE_FIELD_NAME (type, i)) != 0)
+		return 0;
+	      field_number++;
+	    }
+	}
     }
   return 1;
 }
@@ -200,7 +204,7 @@ rust_underscore_fields (struct type *type, int offset)
 int
 rust_tuple_struct_type_p (struct type *type)
 {
-  return rust_underscore_fields(type, 0);
+  return rust_underscore_fields (type, 0);
 }
 
 /* Return true if a variant TYPE is a tuple variant, false otherwise.  */
@@ -209,7 +213,7 @@ static int
 rust_tuple_variant_type_p (struct type *type)
 {
   /* First field is discriminant */
-  return rust_underscore_fields(type, 1);
+  return rust_underscore_fields (type, 1);
 }
 
 /* Return true if TYPE is a slice type, otherwise false.  */
@@ -448,65 +452,74 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
       }
       break;
     case TYPE_CODE_UNION:
-    {
-      int j, nfields, first_field, is_tuple;
-      struct type *variant_type;
-      struct disr_info disr;
-      struct value_print_options opts;
+      {
+	int j, nfields, first_field, is_tuple;
+	struct type *variant_type;
+	struct disr_info disr;
+	struct value_print_options opts;
+	struct cleanup *cleanup;
 
-      opts = *options;
-      opts.deref_ref = 0;
+	opts = *options;
+	opts.deref_ref = 0;
 
-      disr = rust_get_disr_info(type, valaddr, embedded_offset, address, val);
+	disr = rust_get_disr_info (type, valaddr, embedded_offset, address,
+				   val);
+	cleanup = make_cleanup (xfree, disr.name);
 
-      first_field = 1;
-      variant_type = TYPE_FIELD_TYPE (type, disr.field_no);
-      nfields = TYPE_NFIELDS (variant_type);
+	first_field = 1;
+	variant_type = TYPE_FIELD_TYPE (type, disr.field_no);
+	nfields = TYPE_NFIELDS (variant_type);
 
-      is_tuple = rust_tuple_variant_type_p (variant_type);
+	is_tuple = rust_tuple_variant_type_p (variant_type);
 
-      if (nfields > 1) {
-        /* In case of a non-nullary variant, we output `Foo(x,y,z)`. */
-        if (is_tuple) {
-          fprintf_filtered (stream, "%s(", disr.name);
-        } else {
-          /* struct variant */
-          fprintf_filtered (stream, "%s{", disr.name);
-        }
+	if (nfields > 1)
+	  {
+	    /* In case of a non-nullary variant, we output 'Foo(x,y,z)'. */
+	    if (is_tuple)
+	      fprintf_filtered (stream, "%s(", disr.name);
+	    else
+	      {
+		/* struct variant.  */
+		fprintf_filtered (stream, "%s{", disr.name);
+	      }
+	  }
+	else
+	  {
+	    /* In case of a nullary variant like 'None', just output
+	       the name. */
+	    fprintf_filtered (stream, "%s", disr.name);
+	    break;
+	  }
 
-      } else {
-        /* In case of a nullary variant like `None`, just output the name. */
-        fprintf_filtered (stream, "%s", disr.name);
-        break;
+	for (j = 1; j < TYPE_NFIELDS (variant_type); j++)
+	  {
+	    if (!first_field)
+	      fputs_filtered (", ", stream);
+	    first_field = 0;
+
+	    if (!is_tuple)
+	      fprintf_filtered (stream, "%s: ",
+				TYPE_FIELD_NAME (variant_type, j));
+
+	    val_print (TYPE_FIELD_TYPE (variant_type, j),
+		       valaddr,
+		       (embedded_offset
+			+ TYPE_FIELD_BITPOS (type, disr.field_no) / 8
+			+ TYPE_FIELD_BITPOS (variant_type, j) / 8),
+		       address,
+		       stream, recurse + 1, val, &opts,
+		       current_language);
+	  }
+
+	if (is_tuple)
+	  fputs_filtered (")", stream);
+	else
+	  fputs_filtered ("}", stream);
+
+	do_cleanups (cleanup);
       }
-
-      for (j = 1; j < TYPE_NFIELDS (variant_type); j++) {
-
-        if (!first_field) {
-          fputs_filtered (", ", stream);
-        }
-        first_field = 0;
-
-        if (!is_tuple) {
-          fprintf_filtered(stream, "%s: ", TYPE_FIELD_NAME (variant_type, j));
-        }
-
-        val_print (TYPE_FIELD_TYPE (variant_type, j),
-                   valaddr,
-                   embedded_offset + TYPE_FIELD_BITPOS (type, disr.field_no) / 8
-                                   + TYPE_FIELD_BITPOS (variant_type, j) / 8,
-                   address,
-                   stream, recurse + 1, val, &opts,
-                   current_language);
-      }
-      if (is_tuple) {
-        fputs_filtered (")", stream);
-      } else {
-        fputs_filtered ("}", stream);
-      }
-      xfree (disr.name);
-    }
       break;
+
     case TYPE_CODE_STRUCT:
       {
 	int i;
@@ -518,9 +531,8 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
 	if (!is_tuple && TYPE_TAG_NAME (type))
 	  fprintf_filtered (stream, "%s", TYPE_TAG_NAME (type));
 
-	if (TYPE_NFIELDS (type) == 0 && !is_tuple) {
+	if (TYPE_NFIELDS (type) == 0 && !is_tuple)
 	  break;
-	}
 
 	if (is_tuple || is_tuple_struct)
 	  fputs_filtered (" (", stream);
@@ -681,9 +693,8 @@ rust_print_type (struct type *type, const char *varstring,
 
 	is_tuple_struct = rust_tuple_struct_type_p (type);
 
-	if (TYPE_NFIELDS (type) == 0 && !rust_tuple_type_p (type)) {
+	if (TYPE_NFIELDS (type) == 0 && !rust_tuple_type_p (type))
 	  break;
-	}
 	fputs_filtered (is_tuple_struct ? " (\n" : " {\n", stream);
 
 	for (i = 0; i < TYPE_NFIELDS (type); ++i)
@@ -747,52 +758,55 @@ rust_print_type (struct type *type, const char *varstring,
 
     case TYPE_CODE_UNION:
       {
-  /* ADT enums */
-  int i, len = 0;
+	/* ADT enums */
+	int i, len = 0;
 
-  fputs_filtered ("enum ", stream);
-  if (TYPE_TAG_NAME (type) != NULL)
-    {
-      fputs_filtered (TYPE_TAG_NAME (type), stream);
-      fputs_filtered (" ", stream);
-      len = strlen (TYPE_TAG_NAME (type));
-    }
-  fputs_filtered ("{\n", stream);      
+	fputs_filtered ("enum ", stream);
+	if (TYPE_TAG_NAME (type) != NULL)
+	  {
+	    fputs_filtered (TYPE_TAG_NAME (type), stream);
+	    fputs_filtered (" ", stream);
+	    len = strlen (TYPE_TAG_NAME (type));
+	  }
+	fputs_filtered ("{\n", stream);      
 
-  for (i = 0; i < TYPE_NFIELDS (type); ++i)
-    {
-      struct type *variant_type = TYPE_FIELD_TYPE (type, i);
-      const char *name = rust_last_path_segment (TYPE_NAME (variant_type));
+	for (i = 0; i < TYPE_NFIELDS (type); ++i)
+	  {
+	    struct type *variant_type = TYPE_FIELD_TYPE (type, i);
+	    const char *name
+	      = rust_last_path_segment (TYPE_NAME (variant_type));
 
-      fprintfi_filtered (level + 2, stream, "%s", name);
+	    fprintfi_filtered (level + 2, stream, "%s", name);
 
-      if (TYPE_NFIELDS (variant_type) > 1) {
-        int first = 1;
-        int is_tuple = rust_tuple_variant_type_p (variant_type);
-        int j;
-        fputs_filtered (is_tuple ? "(" : "{", stream);
-        for (j = 1; j < TYPE_NFIELDS (variant_type); j++) {
-          if (first) {
-            first = 0;
-          } else {
-            fputs_filtered (", ", stream);
-          }
-          if (!is_tuple) {
-            fprintf_filtered (stream, "%s: ",
-                              TYPE_FIELD_NAME (variant_type, j));
-          }
+	    if (TYPE_NFIELDS (variant_type) > 1)
+	      {
+		int first = 1;
+		int is_tuple = rust_tuple_variant_type_p (variant_type);
+		int j;
 
-          rust_print_type (TYPE_FIELD_TYPE (variant_type, j), NULL,
-               stream, show - 1, level + 2,
-               flags);
-        }
-        fputs_filtered (is_tuple ? ")" : "}", stream);
-      }
+		fputs_filtered (is_tuple ? "(" : "{", stream);
+		for (j = 1; j < TYPE_NFIELDS (variant_type); j++)
+		  {
+		    if (first)
+		      first = 0;
+		    else
+		      fputs_filtered (", ", stream);
 
-      fputs_filtered (",\n", stream);
-    }
+		    if (!is_tuple)
+		      fprintf_filtered (stream, "%s: ",
+					TYPE_FIELD_NAME (variant_type, j));
 
-  fputs_filtered ("}", stream);
+		    rust_print_type (TYPE_FIELD_TYPE (variant_type, j), NULL,
+				     stream, show - 1, level + 2,
+				     flags);
+		  }
+		fputs_filtered (is_tuple ? ")" : "}", stream);
+	      }
+
+	    fputs_filtered (",\n", stream);
+	  }
+
+	fputs_filtered ("}", stream);
       }
       break;
 
@@ -1256,7 +1270,6 @@ rust_subscript (struct expression *exp, int *pos, enum noside noside,
 	  if (low_bound != 0)
 	    error (_("found array with non-zero lower bound"));
 	  ++high_bound;
-	    // result = value_subscript (lhs, low);
 	}
       else if (rust_slice_type_p (type))
 	{
@@ -1462,7 +1475,7 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
       break;
     case STRUCTOP_ANONYMOUS:
       {
-        /* Anonymous field access, i.e. foo.1 */
+        /* Anonymous field access, i.e. foo.1.  */
         struct value *lhs;
         int pc, field_number, nfields;
         struct type *type, *variant_type;
@@ -1474,58 +1487,56 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
         lhs = evaluate_subexp (NULL_TYPE, exp, pos, noside);
 
         type = value_type (lhs);
-        if (TYPE_CODE (type) == TYPE_CODE_UNION) {
-          struct cleanup *cleanup;
+        if (TYPE_CODE (type) == TYPE_CODE_UNION)
+	  {
+	    struct cleanup *cleanup;
 
-          disr = rust_get_disr_info (type, value_contents(lhs),
-                                     value_embedded_offset(lhs),
-                                     value_address(lhs), lhs);
+	    disr = rust_get_disr_info (type, value_contents (lhs),
+				       value_embedded_offset (lhs),
+				       value_address (lhs), lhs);
 
-          cleanup = make_cleanup (xfree, disr.name);
+	    cleanup = make_cleanup (xfree, disr.name);
 
-          variant_type = TYPE_FIELD_TYPE(type, disr.field_no);
-          nfields = TYPE_NFIELDS (variant_type);
+	    variant_type = TYPE_FIELD_TYPE (type, disr.field_no);
+	    nfields = TYPE_NFIELDS (variant_type);
 
-          // note that there is the extra discriminant field as well,
-          // so the actual field number is field_number + 1
-          if (field_number >= nfields - 1 || field_number < 0) {
-            error(_("Cannot access field %d of variant %s, \
+	    /* Note that there is the extra discriminant field as
+	       well, so the actual field number is FIELD_NUMBER+1.  */
+	    if (field_number >= nfields - 1 || field_number < 0)
+	      error(_("Cannot access field %d of variant %s, \
 there are only %d fields"),
-                  field_number, disr.name, nfields - 1);
-          }
+		    field_number, disr.name, nfields - 1);
 
-          if (!rust_tuple_variant_type_p (variant_type)) {
-            error(_("Variant %s is not a tuple variant"),
-                  disr.name);
-          }
+	    if (!rust_tuple_variant_type_p (variant_type))
+	      error(_("Variant %s is not a tuple variant"), disr.name);
 
-          result = value_primitive_field(lhs, 0,
-                                         field_number + 1, variant_type);
-          do_cleanups (cleanup);
-          break;
-        } else if (TYPE_CODE (type) == TYPE_CODE_STRUCT) {
-          /* Tuples and tuple structs */
-          nfields = TYPE_NFIELDS(type);
+	    result = value_primitive_field (lhs, 0, field_number + 1,
+					    variant_type);
+	    do_cleanups (cleanup);
+	  }
+	else if (TYPE_CODE (type) == TYPE_CODE_STRUCT)
+	  {
+	    /* Tuples and tuple structs */
+	    nfields = TYPE_NFIELDS(type);
 
-          if (field_number >= nfields || field_number < 0) {
-            error(_("Cannot access field %d of %s, there are only %d fields"),
-                  field_number, TYPE_TAG_NAME (type), nfields);
-          }
+	    if (field_number >= nfields || field_number < 0)
+	      error(_("Cannot access field %d of %s, there are only %d fields"),
+		    field_number, TYPE_TAG_NAME (type), nfields);
 
-          /* tuples are tuple structs too */
-          if (!rust_tuple_struct_type_p (type)) {
-            error(_("Attempting to access anonymous field %d of %s, which is \
+	    /* Tuples are tuple structs too.  */
+	    if (!rust_tuple_struct_type_p (type))
+	      error(_("Attempting to access anonymous field %d of %s, which is \
 not a tuple, tuple struct, or tuple-like variant"),
-                  field_number, TYPE_TAG_NAME (type));
-          }
+		    field_number, TYPE_TAG_NAME (type));
 
-          result = value_primitive_field(lhs, 0, field_number, type);
-          break;
-        }
-        error(_("Anonymous field access is only allowed on tuples, \
+	    result = value_primitive_field (lhs, 0, field_number, type);
+	  }
+	else
+	  error(_("Anonymous field access is only allowed on tuples, \
 tuple structs, and tuple-like enum variants"));
       }
       break;
+
     case STRUCTOP_STRUCT:
       {
         struct value* lhs;
@@ -1539,50 +1550,51 @@ tuple structs, and tuple-like enum variants"));
 
         type = value_type (lhs);
 
-        if (TYPE_CODE (type) == TYPE_CODE_UNION) {
+        if (TYPE_CODE (type) == TYPE_CODE_UNION)
+	  {
+	    int i;
+	    struct disr_info disr;
+	    struct cleanup* cleanup;
+	    struct type* variant_type;
+	    char* field_name;
 
-          int i;
-          struct disr_info disr;
-          struct cleanup* cleanup;
-          struct type* variant_type;
-          char* field_name;
+	    field_name = &exp->elts[pc + 2].string;
 
-          field_name = &exp->elts[pc + 2].string;
+	    disr = rust_get_disr_info (type, value_contents (lhs),
+				       value_embedded_offset (lhs),
+				       value_address (lhs), lhs);
 
-          disr = rust_get_disr_info (type, value_contents(lhs),
-                                     value_embedded_offset(lhs),
-                                     value_address(lhs), lhs);
+	    cleanup = make_cleanup (xfree, disr.name);
 
+	    variant_type = TYPE_FIELD_TYPE (type, disr.field_no);
 
-          cleanup = make_cleanup (xfree, disr.name);
-
-          variant_type = TYPE_FIELD_TYPE (type, disr.field_no);
-
-          if (rust_tuple_variant_type_p (variant_type)) {
-            error(_("Attempting to access named field %s of tuple variant %s, \
+	    if (rust_tuple_variant_type_p (variant_type))
+	      error(_("Attempting to access named field %s of tuple variant %s, \
 which has only anonymous fields"),
-                  field_name, disr.name);
-          }
+		    field_name, disr.name);
 
-          for (i = 1; i < TYPE_NFIELDS (variant_type); i++) {
-            if (strcmp (TYPE_FIELD_NAME (variant_type, i), field_name) == 0) {
-              result = value_primitive_field (lhs, 0, i, variant_type);
-              break;
-            }
-          }
+	    for (i = 1; i < TYPE_NFIELDS (variant_type); i++)
+	      {
+		if (strcmp (TYPE_FIELD_NAME (variant_type, i),
+			    field_name) == 0) {
+		  result = value_primitive_field (lhs, 0, i, variant_type);
+		  break;
+		}
+	      }
 
-          if (i == TYPE_NFIELDS (variant_type)) {
-            /* we didn't find it */
-            error(_("Could not find field %s of struct variant %s"),
-                  field_name, disr.name);
-          }
-
-        } else {
-          *pos = pc;
-          result = evaluate_subexp_standard (expect_type, exp, pos, noside);
-        }
+	    if (i == TYPE_NFIELDS (variant_type))
+	      /* We didn't find it.  */
+	      error(_("Could not find field %s of struct variant %s"),
+		    field_name, disr.name);
+	  }
+	else
+	  {
+	    *pos = pc;
+	    result = evaluate_subexp_standard (expect_type, exp, pos, noside);
+	  }
       }
       break;
+
     case OP_F90_RANGE:
       result = rust_range (exp, pos, noside);
       break;

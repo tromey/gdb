@@ -266,7 +266,7 @@ OP (OP_M2_STRING)		/* Modula-2 string constants */
 OP (STRUCTOP_STRUCT)
 OP (STRUCTOP_PTR)
 
-/* Anonymous field access, e.g. foo.3 . Used in Rust. */
+/* Anonymous field access, e.g. "foo.3".  Used in Rust.  */
 OP (STRUCTOP_ANONYMOUS)
 
 /* C++: OP_THIS is just a placeholder for the class instance variable.

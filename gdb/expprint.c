@@ -997,12 +997,12 @@ dump_subexp_body_standard (struct expression *exp,
       break;
     case STRUCTOP_ANONYMOUS:
       {
-  int field_number;
+	int field_number;
 
-  field_number = longest_to_int (exp->elts[elt].longconst);
+	field_number = longest_to_int (exp->elts[elt].longconst);
 
-  fprintf_filtered (stream, "Field number: %d", field_number);
-  elt = dump_subexp (exp, stream, elt + 2);
+	fprintf_filtered (stream, "Field number: %d", field_number);
+	elt = dump_subexp (exp, stream, elt + 2);
       }
       break;
     case OP_SCOPE:

@@ -52,7 +52,8 @@ fn main () {
     let d = c = 99;
 
     let e = MoreComplicated::Two(73);
-    let e2 = MoreComplicated::Four {this: true, is: 8, a: 'm', struct_: 100, variant: 10};
+    let e2 = MoreComplicated::Four {this: true, is: 8, a: 'm',
+                                    struct_: 100, variant: 10};
 
     let f = "hi bob";
     let g = b"hi bob";

@@ -85,28 +85,28 @@ gdb_test "print simple::ByeBob(0xff, 5)" \
 
 gdb_test "print e" " = simple::MoreComplicated::Two\\(73\\)"
 gdb_test "print e2" \
-         " = simple::MoreComplicated::Four\\{this: true, is: 8, a: 109 'm', struct_: 100, variant: 10\\}"
+    " = simple::MoreComplicated::Four\\{this: true, is: 8, a: 109 'm', struct_: 100, variant: 10\\}"
 
 gdb_test_sequence "ptype e" "" {
-    " = enum simple::MoreComplicated \\{" \
-     "  One," \
-     "  Two\\(i32\\)," \
-     "  Three\\(simple::HiBob\\)," \
-     "  Four\\{this: bool, is: u8, a: char, struct_: u64, variant: u32\\}," \
-     "\\}"
+    " = enum simple::MoreComplicated \\{"
+    "  One,"
+    "  Two\\(i32\\),"
+    "  Three\\(simple::HiBob\\),"
+    "  Four\\{this: bool, is: u8, a: char, struct_: u64, variant: u32\\},"
+    "\\}"
 }
 
 gdb_test "print e.0" " = 73"
 gdb_test "print e.1" \
-         "Cannot access field 1 of variant simple::MoreComplicated::Two, there are only 1 fields"
+    "Cannot access field 1 of variant simple::MoreComplicated::Two, there are only 1 fields"
 gdb_test "print e.foo" \
-         "Attempting to access named field foo of tuple variant simple::MoreComplicated::Two, which has only anonymous fields"
+    "Attempting to access named field foo of tuple variant simple::MoreComplicated::Two, which has only anonymous fields"
 
 gdb_test "print e2.variant" " = 10"
 gdb_test "print e2.notexist" \
-         "Could not find field notexist of struct variant simple::MoreComplicated::Four"
+    "Could not find field notexist of struct variant simple::MoreComplicated::Four"
 gdb_test "print e2.0" \
-         "Variant simple::MoreComplicated::Four is not a tuple variant"
+    "Variant simple::MoreComplicated::Four is not a tuple variant"
 
 gdb_test "print diff2(3, 7)" " = -4"
 gdb_test "print self::diff2(8, 9)" " = -1"

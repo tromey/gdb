@@ -101,8 +101,8 @@ static const struct rust_op *make_dliteral (struct typed_val_float val);
 static const struct rust_op *make_structop (const struct rust_op *left,
 					    const char *name,
 					    int completing);
-static const struct rust_op *make_structop_anonymous (const struct rust_op *left,
-                        struct typed_val_int number);
+static const struct rust_op *make_structop_anonymous
+  (const struct rust_op *left, struct typed_val_int number);
 static const struct rust_op *make_unary (enum exp_opcode opcode,
 					 const struct rust_op *expr);
 static const struct rust_op *make_cast (const struct rust_op *expr,
@@ -490,9 +490,7 @@ field_expr:
 		  rust_ast = $$;
 		}
 |	expr '.' DECIMAL_INTEGER
-		{
-		  $$ = make_structop_anonymous ($1, $3);
-		}
+		{ $$ = make_structop_anonymous ($1, $3); }
 ;
 
 idx_expr:
@@ -1614,7 +1612,8 @@ make_structop (const struct rust_op *left, const char *name, int completing)
 }
 
 static const struct rust_op *
-make_structop_anonymous (const struct rust_op *left, struct typed_val_int number)
+make_structop_anonymous (const struct rust_op *left,
+			 struct typed_val_int number)
 {
   struct rust_op *result = OBSTACK_ZALLOC (&work_obstack, struct rust_op);
 
@@ -1760,11 +1759,11 @@ convert_ast_to_expression (struct parser_state *state,
 
     case STRUCTOP_ANONYMOUS:
       {
-    convert_ast_to_expression (state, operation->left.op, top);
+	convert_ast_to_expression (state, operation->left.op, top);
 
-    write_exp_elt_opcode (state, STRUCTOP_ANONYMOUS);
-    write_exp_elt_longcst (state, operation->right.typed_val_int.val);
-    write_exp_elt_opcode (state, STRUCTOP_ANONYMOUS);
+	write_exp_elt_opcode (state, STRUCTOP_ANONYMOUS);
+	write_exp_elt_longcst (state, operation->right.typed_val_int.val);
+	write_exp_elt_opcode (state, STRUCTOP_ANONYMOUS);
       }
       break;
 
