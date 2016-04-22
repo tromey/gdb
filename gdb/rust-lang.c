@@ -134,6 +134,16 @@ rust_range_type_p (struct type *type)
   return strcmp (TYPE_FIELD_NAME (type, i), "end") == 0;
 }
 
+/* Return true if TYPE seems to be the type "u8", otherwise false.  */
+
+static int
+rust_u8_type_p (struct type *type)
+{
+  return (TYPE_CODE (type) == TYPE_CODE_INT
+	  && TYPE_UNSIGNED (type)
+	  && TYPE_LENGTH (type) == 1);
+}
+
 
 
 /* Return true if TYPE is a Rust character type.  */
@@ -196,9 +206,7 @@ rust_printstr (struct ui_file *stream, struct type *type,
   if (user_encoding == NULL || !*user_encoding)
     {
       /* In Rust strings, characters are "u8".  */
-      if (TYPE_CODE (type) == TYPE_CODE_INT
-	  && TYPE_UNSIGNED (type)
-	  && TYPE_LENGTH (type) == 1)
+      if (rust_u8_type_p (type))
 	encoding = "UTF-8";
       else
 	{
@@ -242,8 +250,38 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
   type = check_typedef (type);
   switch (TYPE_CODE (type))
     {
-    case TYPE_CODE_METHODPTR:
     case TYPE_CODE_PTR:
+      {
+	LONGEST low_bound, high_bound;
+	
+	if (TYPE_CODE (TYPE_TARGET_TYPE (type)) == TYPE_CODE_ARRAY
+	    && rust_u8_type_p (TYPE_TARGET_TYPE (TYPE_TARGET_TYPE (type)))
+	    && get_array_bounds (TYPE_TARGET_TYPE (type), &low_bound,
+				 &high_bound)) {
+	  /* We have a pointer to a byte string, so just print
+	     that.  */
+	  struct type *elttype = check_typedef (TYPE_TARGET_TYPE (type));
+	  CORE_ADDR addr;
+	  struct gdbarch *arch = get_type_arch (type);
+	  int unit_size = gdbarch_addressable_memory_unit_size (arch);
+
+	  addr = unpack_pointer (type, valaddr + embedded_offset * unit_size);
+	  if (options->addressprint)
+	    {
+	      fputs_filtered (paddress (arch, addr), stream);
+	      fputs_filtered (" ", stream);
+	    }
+
+	  fputs_filtered ("b", stream);
+	  val_print_string (TYPE_TARGET_TYPE (elttype), "ASCII", addr,
+			    high_bound - low_bound + 1, stream,
+			    options);
+	  break;
+	}
+      }
+      /* Fall through.  */
+
+    case TYPE_CODE_METHODPTR:
     case TYPE_CODE_UNION:
     case TYPE_CODE_MEMBERPTR:
       c_val_print (type, valaddr, embedded_offset, address, stream,
