@@ -368,6 +368,13 @@ print_subexp_standard (struct expression *exp, int *pos,
       fputs_filtered (&exp->elts[pc + 2].string, stream);
       return;
 
+    case STRUCTOP_ANONYMOUS:
+      tem = longest_to_int (exp->elts[pc + 1].longconst);
+      (*pos) += 2;
+      print_subexp (exp, pos, stream, PREC_SUFFIX);
+      fprintf_filtered (stream, ".%d", tem);
+      return;
+
     case STRUCTOP_MEMBER:
       print_subexp (exp, pos, stream, PREC_SUFFIX);
       fputs_filtered (".*", stream);
@@ -986,6 +993,16 @@ dump_subexp_body_standard (struct expression *exp,
 
 	fprintf_filtered (stream, "Element name: `%.*s'", len, elem_name);
 	elt = dump_subexp (exp, stream, elt + 3 + BYTES_TO_EXP_ELEM (len + 1));
+      }
+      break;
+    case STRUCTOP_ANONYMOUS:
+      {
+  int field_number;
+
+  field_number = longest_to_int (exp->elts[elt].longconst);
+
+  fprintf_filtered (stream, "Field number: %d", field_number);
+  elt = dump_subexp (exp, stream, elt + 2);
       }
       break;
     case OP_SCOPE:
