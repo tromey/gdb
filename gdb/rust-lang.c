@@ -1069,7 +1069,8 @@ rust_evaluate_funcall (struct expression *exp, int *pos, enum noside noside)
 
   type = value_type (args[0]);
   if ((TYPE_CODE (type) != TYPE_CODE_STRUCT
-       && TYPE_CODE (type) != TYPE_CODE_UNION)
+       && TYPE_CODE (type) != TYPE_CODE_UNION
+       && TYPE_CODE (type) != TYPE_CODE_ENUM)
       || rust_tuple_type_p (type))
     error (_("Method calls only supported on struct or enum types"));
   if (TYPE_TAG_NAME (type) == NULL)

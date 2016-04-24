@@ -95,6 +95,22 @@ impl SomeEnum {
     }
 }
 
+enum SimpleEnum {
+    One,
+    Two,
+    Three
+}
+
+impl SimpleEnum {
+    fn value(&self) -> i32 {
+        match *self {
+            SimpleEnum::One => 1,
+            SimpleEnum::Two => 2,
+            SimpleEnum::Three => 452,
+        }
+    }
+}
+
 fn main() {
     let mut a = SomeEnum::Three(23);
     let av = a.value();
@@ -102,6 +118,8 @@ fn main() {
     let atv = a.take_value();
     let b = SomeEnum::Four{x: 24};
     let bv = b.value();
+    let c = SimpleEnum::Three;
+    let d = c.value();
     let mut x = HasMethods::new();
     x.incr();               // set breakpoint 1 here
     (&mut x).incr();

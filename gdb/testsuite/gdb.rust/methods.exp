@@ -50,6 +50,8 @@ gdb_test "print (&mut a).value()" " = 23"
 # gdb_test "print a.take_value().0" " = 23"
 gdb_test "print b.value()" " = 24"
 
+gdb_test "print c.value()" " = 452"
+
 set line [gdb_get_line_number "set breakpoint 2 here"]
 gdb_breakpoint ${srcfile}:$line
 gdb_continue_to_breakpoint "second breakpoint"
