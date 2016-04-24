@@ -451,6 +451,7 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
 	  goto generic_print;
       }
       break;
+
     case TYPE_CODE_UNION:
       {
 	int j, nfields, first_field, is_tuple;
@@ -1473,6 +1474,7 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
 	  }
       }
       break;
+
     case STRUCTOP_ANONYMOUS:
       {
         /* Anonymous field access, i.e. foo.1.  */
