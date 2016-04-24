@@ -35,13 +35,18 @@
 
 extern initialize_file_ftype _initialize_rust_language;
 
-/* Returns the last segment of a Rust path like foo::bar::baz.  
-   Will not handle cases where the last segment contains generics.  */
+/* Returns the last segment of a Rust path like foo::bar::baz.  Will
+   not handle cases where the last segment contains generics.  This
+   will return NULL if the last segment cannot be found.  */
 
 static const char *
-rust_last_path_segment(const char * path)
+rust_last_path_segment (const char * path)
 {
-  return strrchr(path, ':') + 1;
+  const char *result = strrchr (path, ':');
+
+  if (result == NULL)
+    return NULL;
+  return result + 1;
 }
 
 /* Find the Rust crate for BLOCK.  If no crate can be found, returns
@@ -112,7 +117,7 @@ rust_get_disr_info (struct type *type, const gdb_byte *valaddr,
     error (_("Rust debug format has changed"));
 
   temp_file = mem_fileopen ();
-  cleanup = make_cleanup_ui_file_delete(temp_file);
+  cleanup = make_cleanup_ui_file_delete (temp_file);
   /* The first value of the first field (or any field)
      is the discriminant value.  */
   c_val_print (TYPE_FIELD_TYPE (disr_type, 0), valaddr,
@@ -123,28 +128,33 @@ rust_get_disr_info (struct type *type, const gdb_byte *valaddr,
 
   ret.name = ui_file_xstrdup (temp_file, NULL);
   name_segment = rust_last_path_segment (ret.name);
-
-  for (i = 0; i < TYPE_NFIELDS (type); ++i)
+  if (name_segment != NULL)
     {
-      /* Sadly, the discriminant value paths do not match the type field
-	 name paths ('core::option::Option::Some' vs 'core::option::Some')
-	 However, enum variant names are unique in the last path segment and
-	 the generics are not part of this path, so we can just compare those.
-	 This is hackish and would be better fixed by improving rustc's
-	 metadata for enums.  */
-      const char *field_type_name = TYPE_NAME (TYPE_FIELD_TYPE (type, i));
-
-      if (strcmp (rust_last_path_segment (ret.name),
-		  rust_last_path_segment (field_type_name)) == 0)
+      for (i = 0; i < TYPE_NFIELDS (type); ++i)
 	{
-	  ret.field_no = i;
-	  break;
+	  /* Sadly, the discriminant value paths do not match the type
+	     field name paths ('core::option::Option::Some' vs
+	     'core::option::Some') However, enum variant names are
+	     unique in the last path segment and the generics are not
+	     part of this path, so we can just compare those.  This is
+	     hackish and would be better fixed by improving rustc's
+	     metadata for enums.  */
+	  const char *field_type = TYPE_NAME (TYPE_FIELD_TYPE (type, i));
+
+	  if (field_type != NULL
+	      && strcmp (name_segment,
+			 rust_last_path_segment (field_type)) == 0)
+	    {
+	      ret.field_no = i;
+	      break;
+	    }
 	}
     }
 
   if (ret.field_no == -1 && ret.name != NULL)
     {
       /* Somehow the discriminant wasn't found.  */
+      make_cleanup (xfree, ret.name);
       error (_("Could not find variant of %s with discriminant %s"),
 	     TYPE_TAG_NAME (type), ret.name);
     }
@@ -1058,8 +1068,10 @@ rust_evaluate_funcall (struct expression *exp, int *pos, enum noside noside)
     args[0] = value_ind (args[0]);
 
   type = value_type (args[0]);
-  if (TYPE_CODE (type) != TYPE_CODE_STRUCT || rust_tuple_type_p (type))
-    error (_("Method calls only supported on struct types"));
+  if ((TYPE_CODE (type) != TYPE_CODE_STRUCT
+       && TYPE_CODE (type) != TYPE_CODE_UNION)
+      || rust_tuple_type_p (type))
+    error (_("Method calls only supported on struct or enum types"));
   if (TYPE_TAG_NAME (type) == NULL)
     error (_("Method call on nameless type"));
 

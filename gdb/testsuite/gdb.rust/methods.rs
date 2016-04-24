@@ -62,7 +62,46 @@ impl Whatever for HasMethods {
     }
 }
 
+enum SomeEnum {
+    One,
+    Two,
+    Three(i32),
+    Four{x: i32}
+}
+
+impl SomeEnum {
+    fn value(&self) -> i32 {
+        match *self {
+            SomeEnum::Three(x) => x,
+            SomeEnum::Four{x} => x,
+            _ => 0
+        }
+    }
+
+    fn mut_value(&mut self) -> i32 {
+        match *self {
+            SomeEnum::Three(x) => x,
+            SomeEnum::Four{x} => x,
+            _ => 0
+        }
+    }
+
+    fn take_value(self) -> (i32, SomeEnum) {
+        (match self {
+            SomeEnum::Three(x) => x,
+            SomeEnum::Four{x} => x,
+            _ => 0
+        }, self)
+    }
+}
+
 fn main() {
+    let mut a = SomeEnum::Three(23);
+    let av = a.value();
+    let amv = (&mut a).mut_value();
+    let atv = a.take_value();
+    let b = SomeEnum::Four{x: 24};
+    let bv = b.value();
     let mut x = HasMethods::new();
     x.incr();               // set breakpoint 1 here
     (&mut x).incr();
