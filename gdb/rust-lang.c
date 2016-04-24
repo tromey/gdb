@@ -827,7 +827,7 @@ rust_type_alignment (struct type *t)
   switch (TYPE_CODE (t))
     {
     default:
-      error (_("could not compute alignment of type"));
+      error (_("Could not compute alignment of type"));
 
     case TYPE_CODE_PTR:
     case TYPE_CODE_ENUM:
@@ -1058,9 +1058,9 @@ rust_evaluate_funcall (struct expression *exp, int *pos, enum noside noside)
 
   type = value_type (args[0]);
   if (TYPE_CODE (type) != TYPE_CODE_STRUCT || rust_tuple_type_p (type))
-    error (_("method calls only supported on struct types"));
+    error (_("Method calls only supported on struct types"));
   if (TYPE_TAG_NAME (type) == NULL)
-    error (_("method call on nameless type"));
+    error (_("Method call on nameless type"));
 
   name = concat (TYPE_TAG_NAME (type), "::", method, (char *) NULL);
   make_cleanup (xfree, name);
@@ -1068,11 +1068,11 @@ rust_evaluate_funcall (struct expression *exp, int *pos, enum noside noside)
   block = get_selected_block (0);
   sym = lookup_symbol (name, block, VAR_DOMAIN, NULL);
   if (sym.symbol == NULL)
-    error (_("could not find function named '%s'"), name);
+    error (_("Could not find function named '%s'"), name);
 
   fn_type = SYMBOL_TYPE (sym.symbol);
   if (TYPE_NFIELDS (fn_type) == 0)
-    error (_("function '%s' takes no arguments"), name);
+    error (_("Function '%s' takes no arguments"), name);
 
   if (TYPE_CODE (TYPE_FIELD_TYPE (fn_type, 0)) == TYPE_CODE_PTR)
     args[0] = value_addr (args[0]);
@@ -1138,7 +1138,7 @@ rust_range (struct expression *exp, int *pos, enum noside noside)
       else
 	{
 	  if (!types_equal (value_type (low), value_type (high)))
-	    error (_("range expression with different types"));
+	    error (_("Range expression with different types"));
 	  index_type = value_type (low);
 	  name = "std::ops::Range";
 	}
@@ -1243,7 +1243,7 @@ rust_subscript (struct expression *exp, int *pos, enum noside noside,
   if (rust_range_type_p (rhstype))
     {
       if (!for_addr)
-	error (_("can't take slice of array without '&'"));
+	error (_("Can't take slice of array without '&'"));
       rust_compute_range (rhstype, rhs, &low, &high, &kind);
       want_slice = 1;
     }
@@ -1266,9 +1266,9 @@ rust_subscript (struct expression *exp, int *pos, enum noside noside,
 	{
 	  base = lhs;
 	  if (!get_array_bounds (type, &low_bound, &high_bound))
-	    error (_("can't compute array bounds"));
+	    error (_("Can't compute array bounds"));
 	  if (low_bound != 0)
-	    error (_("found array with non-zero lower bound"));
+	    error (_("Found array with non-zero lower bound"));
 	  ++high_bound;
 	}
       else if (rust_slice_type_p (type))
@@ -1281,15 +1281,15 @@ rust_subscript (struct expression *exp, int *pos, enum noside noside,
 	  high_bound = value_as_long (len);
 	}
       else
-	error (_("cannot subscript non-array type"));
+	error (_("Cannot subscript non-array type"));
 
       if (want_slice
 	  && (kind == BOTH_BOUND_DEFAULT || kind == LOW_BOUND_DEFAULT))
 	low = low_bound;
       if (low < 0)
-	error (_("index less than zero"));
+	error (_("Index less than zero"));
       if (low > high_bound)
-	error (_("index greater than length"));
+	error (_("Index greater than length"));
 
       result = value_subscript (base, low);
     }
@@ -1305,11 +1305,11 @@ rust_subscript (struct expression *exp, int *pos, enum noside noside,
 	  if (kind == BOTH_BOUND_DEFAULT || kind == HIGH_BOUND_DEFAULT)
 	    high = high_bound;
 	  if (high < 0)
-	    error (_("high index less than zero"));
+	    error (_("High index less than zero"));
 	  if (low > high)
-	    error (_("low index greater than high index"));
+	    error (_("Low index greater than high index"));
 	  if (high > high_bound)
-	    error (_("high index greater than length"));
+	    error (_("High index greater than length"));
 
 	  usize = language_lookup_primitive_type (exp->language_defn,
 						  exp->gdbarch,
@@ -1450,7 +1450,7 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
 	ncopies = rust_evaluate_subexp (NULL, exp, pos, noside);
 	copies = value_as_long (ncopies);
 	if (copies < 0)
-	  error (_("array with negative number of elements"));
+	  error (_("Array with negative number of elements"));
 
 	if (noside == EVAL_NORMAL)
 	  {

@@ -330,7 +330,7 @@ tuple_expr:
 	'(' expr ',' maybe_expr_list ')'
 		{
 		  VEC_safe_insert (rust_op_ptr, *$4, 0, $2);
-		  error (_("tuple expressions not supported yet"));
+		  error (_("Tuple expressions not supported yet"));
 		}
 ;
 
@@ -667,7 +667,7 @@ path:
 		  const char *name;
 
 		  if (crate == NULL)
-		    error (_("could not find crate for current location"));
+		    error (_("Could not find crate for current location"));
 		  name = obconcat (&work_obstack, "::", crate, "::",
 				   $2.ptr, (char *) NULL);
 		  $$ = make_stoken (name);
@@ -692,7 +692,7 @@ self_or_super_path:
 		  const char *scope = block_scope (expression_context_block);
 
 		  if (scope[0] == '\0')
-		    error (_("couldn't find namespace scope for self::"));
+		    error (_("Couldn't find namespace scope for self::"));
 
 		  $$ = make_stoken (obconcat (&work_obstack, "::", scope,
 					      "::", $3.ptr,
@@ -710,7 +710,7 @@ self_or_super_path:
 		  struct cleanup *cleanup;
 
 		  if (scope[0] == '\0')
-		    error (_("couldn't find namespace scope for self::"));
+		    error (_("Couldn't find namespace scope for self::"));
 
 		  cleanup = make_cleanup (VEC_cleanup (int), &offsets);
 		  current_len = cp_find_first_component (scope);
@@ -728,7 +728,7 @@ self_or_super_path:
 
 		  len = VEC_length (int, offsets);
 		  if (n_supers >= len)
-		    error (_("too many super:: uses from '%s'"), scope);
+		    error (_("Too many super:: uses from '%s'"), scope);
 
 		  offset = VEC_index (int, offsets, len - n_supers);
 		  obstack_grow (&work_obstack, "::", 2);
@@ -756,7 +756,7 @@ type:
 
 		  type = rust_lookup_type ($1.ptr, expression_context_block);
 		  if (type == NULL)
-		    error (_("no type named '%s'"), $1.ptr);
+		    error (_("No type named '%s'"), $1.ptr);
 
 		  $$ = type;
 		}
@@ -870,7 +870,7 @@ rust_type (const char *name)
 					 parse_gdbarch (pstate),
 					 name);
   if (type == NULL)
-    error (_("could not find Rust type %s"), name);
+    error (_("Could not find Rust type %s"), name);
   return type;
 }
 
@@ -1079,7 +1079,7 @@ lex_string (void)
 
 	  value = lexptr[0] & 0xff;
 	  if (is_byte && value > 127)
-	    error (_("non-ASCII value in raw byte string"));
+	    error (_("Non-ASCII value in raw byte string"));
 	  obstack_1grow (&work_obstack, value);
 
 	  ++lexptr;
@@ -1105,7 +1105,7 @@ lex_string (void)
 	{
 	  value = lexptr[0] & 0xff;
 	  if (is_byte && value > 127)
-	    error (_("non-ASCII value in raw byte string"));
+	    error (_("Non-ASCII value in raw byte string"));
 	  obstack_1grow (&work_obstack, value);
 	  ++lexptr;
 	}
@@ -1854,7 +1854,7 @@ convert_ast_to_expression (struct parser_state *state,
 		  goto got_ns;
 
 		if (!rust_tuple_struct_type_p (type))
-		  error (_("type %s is not a tuple struct"), varname);
+		  error (_("Type %s is not a tuple struct"), varname);
 
 		for (i = 0;
 		     VEC_iterate (rust_op_ptr, params, i, elem);
@@ -1981,12 +1981,12 @@ convert_ast_to_expression (struct parser_state *state,
 	type = rust_lookup_type (operation->left.sval.ptr,
 				 expression_context_block);
 	if (type == NULL)
-	  error (_("could not find type '%s'"), operation->left.sval.ptr);
+	  error (_("Could not find type '%s'"), operation->left.sval.ptr);
 
 	if (TYPE_CODE (type) != TYPE_CODE_STRUCT
 	    || rust_tuple_type_p (type)
 	    || rust_tuple_struct_type_p (type))
-	  error (_("struct expression applied to non-struct type"));
+	  error (_("Struct expression applied to non-struct type"));
 
 	write_exp_elt_opcode (state, OP_AGGREGATE);
 	write_exp_elt_type (state, type);
