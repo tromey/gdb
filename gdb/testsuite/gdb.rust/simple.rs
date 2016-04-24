@@ -44,6 +44,13 @@ fn diff2(x: i32, y: i32) -> i32 {
 
 pub struct Unit;
 
+// This triggers the non-zero optimization that yields a different
+// enum representation in the debug info.
+enum SpaceSaver {
+    Thebox(u8, Box<i32>),
+    Nothing,
+}
+
 fn main () {
     let a = ();
     let b : [i32; 0] = [];
@@ -62,6 +69,9 @@ fn main () {
     let i = ["whatever"; 8];
 
     let j = Unit;
+
+    let k = SpaceSaver::Nothing;
+    let l = SpaceSaver::Thebox(9, Box::new(1729));
 
     let v = Something::Three;
     let w = [1,2,3,4];

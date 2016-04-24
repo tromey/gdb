@@ -108,6 +108,10 @@ gdb_test "print e2.notexist" \
 gdb_test "print e2.0" \
     "Variant simple::MoreComplicated::Four is not a tuple variant"
 
+gdb_test "print k" " = simple::SpaceSaver::Nothing"
+gdb_test "print l" " = simple::SpaceSaver::Thebox\\(9, $hex\\)"
+gdb_test "print *l.1" " = 1729"
+
 gdb_test "print diff2(3, 7)" " = -4"
 gdb_test "print self::diff2(8, 9)" " = -1"
 gdb_test "print ::diff2(23, -23)" " = 46"

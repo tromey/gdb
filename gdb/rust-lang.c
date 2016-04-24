@@ -78,9 +78,26 @@ struct disr_info
 {
   /* Name of field.  Must be freed by caller.  */
   char *name;
-  /* Field number in union.  Negative on error.  */
+  /* Field number in union.  Negative on error.  For an encoded enum,
+     the "hidden" member will always be field 1, and the "real" member
+     will always be field 0.  */
   int field_no;
+  /* True if this is an encoded enum that has a single "real" member
+     and a single "hidden" member.  */
+  unsigned int is_encoded : 1;
 };
+
+/* The prefix of a specially-encoded enum.  */
+
+#define RUST_ENUM_PREFIX "RUST$ENCODED$ENUM$"
+
+/* The number of the real field.  */
+
+#define RUST_ENCODED_ENUM_REAL 0
+
+/* The number of the hidden field.  */
+
+#define RUST_ENCODED_ENUM_HIDDEN 1
 
 /* Utility function to get discriminant info for a given value.  */
 
@@ -100,9 +117,55 @@ rust_get_disr_info (struct type *type, const gdb_byte *valaddr,
   get_no_prettyformat_print_options (&opts);
 
   ret.field_no = -1;
+  ret.is_encoded = 0;
 
   if (TYPE_NFIELDS (type) == 0)
     error (_("Encountered void enum value"));
+
+  /* If an enum has two values wher one is empty and the other holds a
+     pointer that cannot be zero; then the rust compiler optimizes
+     away the discriminant and instead uses a zero value in the
+     pointer field to indicate the empty variant.  */
+  if (strncmp (TYPE_FIELD_NAME (type, 0), RUST_ENUM_PREFIX,
+	       strlen (RUST_ENUM_PREFIX)) == 0)
+    {
+      char *tail;
+      unsigned long fieldno;
+      struct type *member_type;
+      LONGEST value;
+
+      ret.is_encoded = 1;
+
+      if (TYPE_NFIELDS (type) != 1)
+	error (_("Only expected one field in " RUST_ENUM_PREFIX " type"));
+
+      fieldno = strtoul (TYPE_FIELD_NAME (type, 0) + strlen (RUST_ENUM_PREFIX),
+			 &tail, 10);
+      if (*tail != '$')
+	error (_("Invalid form for " RUST_ENUM_PREFIX));
+
+      member_type = TYPE_FIELD_TYPE (type, 0);
+      if (fieldno >= TYPE_NFIELDS (member_type))
+	error (_(RUST_ENUM_PREFIX " refers to field after end of member type"));
+
+      embedded_offset += TYPE_FIELD_BITPOS (member_type, fieldno) / 8;
+      value = unpack_long (TYPE_FIELD_TYPE (member_type, fieldno),
+			   valaddr + embedded_offset);
+      if (value == 0)
+	{
+	  ret.field_no = RUST_ENCODED_ENUM_HIDDEN;
+	  ret.name = concat (TYPE_NAME (type), "::", tail + 1, (char *) NULL);
+	}
+      else
+	{
+	  ret.field_no = RUST_ENCODED_ENUM_REAL;
+	  ret.name = concat (TYPE_NAME (type), "::",
+			     rust_last_path_segment (TYPE_NAME (member_type)),
+			     (char *) NULL);
+	}
+
+      return ret;
+    }
 
   disr_type = TYPE_FIELD_TYPE (type, 0);
 
@@ -464,7 +527,7 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
 
     case TYPE_CODE_UNION:
       {
-	int j, nfields, first_field, is_tuple;
+	int j, nfields, first_field, is_tuple, start;
 	struct type *variant_type;
 	struct disr_info disr;
 	struct value_print_options opts;
@@ -477,13 +540,22 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
 				   val);
 	cleanup = make_cleanup (xfree, disr.name);
 
+	if (disr.is_encoded && disr.field_no == RUST_ENCODED_ENUM_HIDDEN)
+	  {
+	    fprintf_filtered (stream, "%s", disr.name);
+	    goto cleanup;
+	  }
+
 	first_field = 1;
 	variant_type = TYPE_FIELD_TYPE (type, disr.field_no);
 	nfields = TYPE_NFIELDS (variant_type);
 
-	is_tuple = rust_tuple_variant_type_p (variant_type);
+	is_tuple = (disr.is_encoded
+		    ? rust_tuple_struct_type_p (variant_type)
+		    : rust_tuple_variant_type_p (variant_type));
+	start = disr.is_encoded ? 0 : 1;
 
-	if (nfields > 1)
+	if (nfields > start)
 	  {
 	    /* In case of a non-nullary variant, we output 'Foo(x,y,z)'. */
 	    if (is_tuple)
@@ -499,10 +571,10 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
 	    /* In case of a nullary variant like 'None', just output
 	       the name. */
 	    fprintf_filtered (stream, "%s", disr.name);
-	    break;
+	    goto cleanup;
 	  }
 
-	for (j = 1; j < TYPE_NFIELDS (variant_type); j++)
+	for (j = start; j < TYPE_NFIELDS (variant_type); j++)
 	  {
 	    if (!first_field)
 	      fputs_filtered (", ", stream);
@@ -527,6 +599,7 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
 	else
 	  fputs_filtered ("}", stream);
 
+      cleanup:
 	do_cleanups (cleanup);
       }
       break;
@@ -1512,20 +1585,33 @@ rust_evaluate_subexp (struct type *expect_type, struct expression *exp,
 
 	    cleanup = make_cleanup (xfree, disr.name);
 
-	    variant_type = TYPE_FIELD_TYPE (type, disr.field_no);
-	    nfields = TYPE_NFIELDS (variant_type);
+	    if (disr.is_encoded && disr.field_no == RUST_ENCODED_ENUM_HIDDEN)
+	      {
+		variant_type = NULL;
+		nfields = 0;
+	      }
+	    else
+	      {
+		variant_type = TYPE_FIELD_TYPE (type, disr.field_no);
+		nfields = TYPE_NFIELDS (variant_type);
+	      }
 
-	    /* Note that there is the extra discriminant field as
-	       well, so the actual field number is FIELD_NUMBER+1.  */
-	    if (field_number >= nfields - 1 || field_number < 0)
+	    if (!disr.is_encoded)
+	      ++field_number;
+
+	    if (field_number >= nfields || field_number < 0)
 	      error(_("Cannot access field %d of variant %s, \
 there are only %d fields"),
-		    field_number, disr.name, nfields - 1);
+		    disr.is_encoded ? field_number : field_number - 1,
+		    disr.name,
+		    disr.is_encoded ? nfields : nfields - 1);
 
-	    if (!rust_tuple_variant_type_p (variant_type))
+	    if (!(disr.is_encoded
+		  ? rust_tuple_struct_type_p (variant_type)
+		  : rust_tuple_variant_type_p (variant_type)))
 	      error(_("Variant %s is not a tuple variant"), disr.name);
 
-	    result = value_primitive_field (lhs, 0, field_number + 1,
+	    result = value_primitive_field (lhs, 0, field_number,
 					    variant_type);
 	    do_cleanups (cleanup);
 	  }
@@ -1567,7 +1653,7 @@ tuple structs, and tuple-like enum variants"));
 
         if (TYPE_CODE (type) == TYPE_CODE_UNION)
 	  {
-	    int i;
+	    int i, start;
 	    struct disr_info disr;
 	    struct cleanup* cleanup;
 	    struct type* variant_type;
@@ -1581,14 +1667,20 @@ tuple structs, and tuple-like enum variants"));
 
 	    cleanup = make_cleanup (xfree, disr.name);
 
+	    if (disr.is_encoded && disr.field_no == RUST_ENCODED_ENUM_HIDDEN)
+	      error(_("Could not find field %s of struct variant %s"),
+		    field_name, disr.name);
+
 	    variant_type = TYPE_FIELD_TYPE (type, disr.field_no);
 
-	    if (rust_tuple_variant_type_p (variant_type))
+	    if (variant_type == NULL
+		|| rust_tuple_variant_type_p (variant_type))
 	      error(_("Attempting to access named field %s of tuple variant %s, \
 which has only anonymous fields"),
 		    field_name, disr.name);
 
-	    for (i = 1; i < TYPE_NFIELDS (variant_type); i++)
+	    start = disr.is_encoded ? 0 : 1;
+	    for (i = start; i < TYPE_NFIELDS (variant_type); i++)
 	      {
 		if (strcmp (TYPE_FIELD_NAME (variant_type, i),
 			    field_name) == 0) {
@@ -1601,6 +1693,8 @@ which has only anonymous fields"),
 	      /* We didn't find it.  */
 	      error(_("Could not find field %s of struct variant %s"),
 		    field_name, disr.name);
+
+	    do_cleanups (cleanup);
 	  }
 	else
 	  {
