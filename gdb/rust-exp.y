@@ -80,6 +80,7 @@ DEF_VEC_O (set_field);
 
 
 static int rustlex (void);
+static void rust_push_back (char c);
 static const char *rust_copy_name (const char *, int);
 static struct stoken rust_concat3 (const char *, const char *, const char *);
 static struct stoken make_stoken (const char *);
@@ -1442,6 +1443,18 @@ rustlex (void)
   return lex_operator ();
 }
 
+/* Push back a single character to be re-lexed.  */
+
+static void
+rust_push_back (char c)
+{
+  /* Can't be called before any lexing.  */
+  gdb_assert (prev_lexptr != NULL);
+
+  --lexptr;
+  gdb_assert (*lexptr == c);
+}
+
 
 
 /* Rust AST operations.  Our own mini-AST is the cleanest way to solve
@@ -2087,6 +2100,16 @@ rusterror (char *msg)
 
 #if GDB_SELF_TEST
 
+/* Initialize the lexer for testing.  */
+
+static void
+rust_lex_test_init (const char *input)
+{
+  prev_lexptr = NULL;
+  lexptr = input;
+  paren_depth = 0;
+}
+
 /* A test helper that lexes a string, expecting a single token.  It
    returns the lexer data for this token.  */
 
@@ -2096,12 +2119,11 @@ rust_lex_test_one (const char *input, int expected)
   int token;
   RUSTSTYPE result;
 
-  lexptr = input;
-  paren_depth = 0;
+  rust_lex_test_init (input);
 
   token = rustlex ();
   gdb_assert (token == expected);
-  result = yylval;
+  result = rustlval;
 
   if (token)
     {
@@ -2197,6 +2219,28 @@ rust_lex_test_completion (void)
   rust_lex_test_sequence ("something.", ARRAY_SIZE (expected), expected);
 
   parse_completion = 0;
+}
+
+/* Test pushback.  */
+
+static void
+rust_lex_test_push_back (void)
+{
+  int token;
+
+  rust_lex_test_init (">>=");
+
+  token = rustlex ();
+  gdb_assert (token == COMPOUND_ASSIGN);
+  gdb_assert (rustlval.opcode == BINOP_RSH);
+
+  rust_push_back ('=');
+
+  token = rustlex ();
+  gdb_assert (token == '=');
+
+  token = rustlex ();
+  gdb_assert (token == 0);
 }
 
 /* Unit test the lexer.  */
@@ -2295,6 +2339,7 @@ rust_lex_tests (void)
     rust_lex_test_one (operator_tokens[i].name, operator_tokens[i].value);
 
   rust_lex_test_completion ();
+  rust_lex_test_push_back ();
 
   obstack_free (&work_obstack, NULL);
   unit_testing = 0;
