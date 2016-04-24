@@ -15264,6 +15264,13 @@ Trait objects cannot be created or inspected.
 
 @item
 Operator overloading is not implemented.
+
+@item
+When debugging in a monomorphized function, you cannot use the generic
+type names.
+
+@item
+The type @code{Self} is not available.
 @end itemize
 
 @item
