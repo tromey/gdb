@@ -232,6 +232,7 @@ static const struct rust_op *rust_ast;
 %token <voidval> KW_SUPER
 %token <voidval> KW_SELF
 %token <voidval> KW_MUT
+%token <voidval> KW_EXTERN
 
 /* Operator tokens.  */
 %token <voidval> DOTDOT
@@ -673,6 +674,14 @@ path:
 		  $$ = make_stoken (name);
 		  xfree (crate);
 		}
+|	KW_EXTERN identifier_path
+		{
+		  /* This is a gdb extension to make it possible to
+		     refer to items in other crates.  It just bypasses
+		     adding the current crate to the front of the
+		     name.  */
+		  $$ = rust_concat3 ("::", $2.ptr, NULL);
+		}
 ;
 
 identifier_path:
@@ -785,6 +794,7 @@ static const struct token_info identifier_tokens[] =
   { "self", KW_SELF, OP_NULL },
   { "super", KW_SUPER, OP_NULL },
   { "true", KW_TRUE, OP_NULL },
+  { "extern", KW_EXTERN, OP_NULL },
 };
 
 /* Operator tokens, sorted longest first.  */

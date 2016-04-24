@@ -15251,6 +15251,22 @@ As a consequence of this approach, linespecs also cannot refer to
 items using @samp{self::} or @samp{super::}.
 
 @item
+Because @value{GDBN} implements Rust name-lookup semantics in
+expressions, it will sometimes prepend the current crate to a name.
+For example, if @value{GDBN} is stopped at a breakpoint in the crate
+@samp{K}, then @code{print ::x::y} will try to find the symbol
+@samp{K::x::y}.
+
+However, since it is useful to be able to refer to other crates when
+debugging, @value{GDBN} provides the @code{extern} extension to
+circumvent this.  To use the extension, just put @code{extern} before
+a path expression to refer to the otherwise unavailable ``global''
+scope.
+
+In the above example, if you wanted to refer to the symbol @samp{y} in
+the crate @samp{x}, you would use @code{print extern x::y}.
+
+@item
 As of this writing, the Rust compiler has a few holes in the debugging
 information it generates.  These holes prevent certain features from
 being implemented by @value{GDBN}:
@@ -15271,6 +15287,10 @@ type names.
 
 @item
 The type @code{Self} is not available.
+
+@item
+@code{use} statements are not available, so some names may not be
+available in the crate.
 @end itemize
 
 @item
