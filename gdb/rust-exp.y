@@ -265,7 +265,6 @@ static const struct rust_op *rust_ast;
 
 %type <sval> path
 %type <sval> identifier_path
-%type <sval> self_or_super_path
 
 %type <depth> super_path
 
@@ -685,7 +684,10 @@ path_expr:
 
 path:
 	identifier_path
-|	self_or_super_path
+|	KW_SELF COLONCOLON identifier_path
+		{ $$ = super_name ($3, 0); }
+|	maybe_self_path super_path identifier_path
+		{ $$ = super_name ($3, $2); }
 |	COLONCOLON identifier_path
 		{ $$ = crate_name ($2.ptr); }
 |	KW_EXTERN identifier_path
@@ -707,13 +709,6 @@ identifier_path:
 maybe_self_path:
 	%empty
 |	KW_SELF COLONCOLON
-;
-
-self_or_super_path:
-	KW_SELF COLONCOLON identifier_path
-		{ $$ = super_name ($3, 0); }
-|	maybe_self_path super_path identifier_path
-		{ $$ = super_name ($3, $2); }
 ;
 
 super_path:
