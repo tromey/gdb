@@ -15267,6 +15267,23 @@ In the above example, if you wanted to refer to the symbol @samp{y} in
 the crate @samp{x}, you would use @code{print extern x::y}.
 
 @item
+The Rust expression evaluator does not support ``statement-like''
+expressions such as @code{if} or @code{match}, or lambda expressions.
+
+@item
+Tuple expressions are not implemented.
+
+@item
+The Rust expression evaluator does not currently implement the
+@code{Drop} trait.  Objects that may be created by the evaluator will
+never be destroyed.
+
+@item
+@value{GDBN} does not implment type inference for generics.  In order
+to call generic functions or otherwise refer to generic items, you
+will have to specify the type parameters manually.
+
+@item
 As of this writing, the Rust compiler has a few holes in the debugging
 information it generates.  These holes prevent certain features from
 being implemented by @value{GDBN}:
@@ -15292,18 +15309,6 @@ The type @code{Self} is not available.
 @code{use} statements are not available, so some names may not be
 available in the crate.
 @end itemize
-
-@item
-The Rust expression evaluator does not support ``statement-like''
-expressions such as @code{if} or @code{match}, or lambda expressions.
-
-@item
-Tuple expressions are not implemented.
-
-@item
-The Rust expression evaluator does not currently implement the
-@code{Drop} trait.  Objects that may be created by the evaluator will
-never be destroyed.
 @end itemize
 
 @node Modula-2
