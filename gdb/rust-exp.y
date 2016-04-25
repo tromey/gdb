@@ -83,7 +83,7 @@ static int rustlex (void);
 static void rust_push_back (char c);
 static const char *rust_copy_name (const char *, int);
 static struct stoken rust_concat3 (const char *, const char *, const char *);
-static struct stoken ast_stoken (const char *);
+static struct stoken make_stoken (const char *);
 static struct block_symbol rust_lookup_symbol (const char *name,
 					       const struct block *block,
 					       const domain_enum domain);
@@ -678,7 +678,7 @@ path_expr:
 |	GDBVAR
 		{ $$ = ast_path ($1, NULL); }
 |	KW_SELF
-		{ $$ = ast_path (ast_stoken ("self"), NULL); }
+		{ $$ = ast_path (make_stoken ("self"), NULL); }
 ;
 
 path:
@@ -693,7 +693,7 @@ path:
 		    error (_("Could not find crate for current location"));
 		  name = obconcat (&work_obstack, "::", crate, "::",
 				   $2.ptr, (char *) NULL);
-		  $$ = ast_stoken (name);
+		  $$ = make_stoken (name);
 		  xfree (crate);
 		}
 |	KW_EXTERN identifier_path
@@ -725,7 +725,7 @@ self_or_super_path:
 		  if (scope[0] == '\0')
 		    error (_("Couldn't find namespace scope for self::"));
 
-		  $$ = ast_stoken (obconcat (&work_obstack, "::", scope,
+		  $$ = make_stoken (obconcat (&work_obstack, "::", scope,
 					      "::", $3.ptr,
 					      (char *) NULL));
 		}
@@ -767,7 +767,7 @@ self_or_super_path:
 		  obstack_grow (&work_obstack, "::", 2);
 		  obstack_grow0 (&work_obstack, $3.ptr, $3.length);
 		  name = (const char *) obstack_finish (&work_obstack);
-		  $$ = ast_stoken (name);
+		  $$ = make_stoken (name);
 
 		  do_cleanups (cleanup);
 		}
@@ -901,7 +901,7 @@ rust_copy_name (const char *name, int len)
 /* Helper function to make an stoken from a C string.  */
 
 static struct stoken
-ast_stoken (const char *p)
+make_stoken (const char *p)
 {
   struct stoken result;
 
@@ -916,7 +916,7 @@ ast_stoken (const char *p)
 static struct stoken
 rust_concat3 (const char *s1, const char *s2, const char *s3)
 {
-  return ast_stoken (obconcat (&work_obstack, s1, s2, s3, (char *) NULL));
+  return make_stoken (obconcat (&work_obstack, s1, s2, s3, (char *) NULL));
 }
 
 /* A helper that updates innermost_block as appropriate.  */
@@ -1274,7 +1274,7 @@ lex_identifier (void)
     }
 
   if (token == NULL || (parse_completion && lexptr[0] == '\0'))
-    rustlval.sval = ast_stoken (rust_copy_name (start, length));
+    rustlval.sval = make_stoken (rust_copy_name (start, length));
 
   if (parse_completion && lexptr[0] == '\0')
     {
@@ -1469,7 +1469,7 @@ rustlex (void)
     {
       if (parse_completion)
 	{
-	  rustlval.sval = ast_stoken ("");
+	  rustlval.sval = make_stoken ("");
 	  return COMPLETE;
 	}
       return 0;
@@ -1697,7 +1697,7 @@ ast_structop (const struct rust_op *left, const char *name, int completing)
   result->opcode = STRUCTOP_STRUCT;
   result->completing = completing;
   result->left.op = left;
-  result->right.sval = ast_stoken (name);
+  result->right.sval = make_stoken (name);
 
   return result;
 }
@@ -2160,7 +2160,7 @@ convert_ast_to_expression (struct parser_state *state,
 
 		    xsnprintf (cell, PRINT_CELL_SIZE, "__%d", i);
 		    write_exp_elt_opcode (state, OP_NAME);
-		    write_exp_string (state, ast_stoken (cell));
+		    write_exp_string (state, make_stoken (cell));
 		    write_exp_elt_opcode (state, OP_NAME);
 
 		    convert_ast_to_expression (state, elem, top);
