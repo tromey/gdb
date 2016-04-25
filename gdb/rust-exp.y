@@ -90,6 +90,8 @@ static struct block_symbol rust_lookup_symbol (const char *name,
 static struct type *rust_lookup_type (const char *name,
 				      const struct block *block);
 static struct type *rust_type (const char *name);
+static struct stoken crate_name (const char *name);
+static struct stoken super_name (struct stoken ident, int n_supers);
 
 static const struct rust_op *ast_operation (enum exp_opcode opcode,
 					    const struct rust_op *left,
@@ -685,17 +687,7 @@ path:
 	identifier_path
 |	self_or_super_path
 |	COLONCOLON identifier_path
-		{
-		  char *crate = rust_crate_for_block (expression_context_block);
-		  const char *name;
-
-		  if (crate == NULL)
-		    error (_("Could not find crate for current location"));
-		  name = obconcat (&work_obstack, "::", crate, "::",
-				   $2.ptr, (char *) NULL);
-		  $$ = make_stoken (name);
-		  xfree (crate);
-		}
+		{ $$ = crate_name ($2.ptr); }
 |	KW_EXTERN identifier_path
 		{
 		  /* This is a gdb extension to make it possible to
@@ -719,58 +711,9 @@ maybe_self_path:
 
 self_or_super_path:
 	KW_SELF COLONCOLON identifier_path
-		{
-		  const char *scope = block_scope (expression_context_block);
-
-		  if (scope[0] == '\0')
-		    error (_("Couldn't find namespace scope for self::"));
-
-		  $$ = make_stoken (obconcat (&work_obstack, "::", scope,
-					      "::", $3.ptr,
-					      (char *) NULL));
-		}
+		{ $$ = super_name ($3, 0); }
 |	maybe_self_path super_path identifier_path
-		{
-		  const char *scope = block_scope (expression_context_block);
-		  const char *name;
-		  int i;
-		  int len, offset;
-		  int n_supers = $2;
-		  VEC (int) *offsets = NULL;
-		  unsigned int current_len, previous_len;
-		  struct cleanup *cleanup;
-
-		  if (scope[0] == '\0')
-		    error (_("Couldn't find namespace scope for self::"));
-
-		  cleanup = make_cleanup (VEC_cleanup (int), &offsets);
-		  current_len = cp_find_first_component (scope);
-		  previous_len = 0;
-		  while (scope[current_len] != '\0')
-		    {
-		      VEC_safe_push (int, offsets, current_len);
-		      gdb_assert (scope[current_len] == ':');
-		      previous_len = current_len;
-		      /* The "::".  */
-		      current_len += 2;
-		      current_len += cp_find_first_component (scope
-							      + current_len);
-		    }
-
-		  len = VEC_length (int, offsets);
-		  if (n_supers >= len)
-		    error (_("Too many super:: uses from '%s'"), scope);
-
-		  offset = VEC_index (int, offsets, len - n_supers);
-		  obstack_grow (&work_obstack, "::", 2);
-		  obstack_grow (&work_obstack, scope, offset);
-		  obstack_grow (&work_obstack, "::", 2);
-		  obstack_grow0 (&work_obstack, $3.ptr, $3.length);
-		  name = (const char *) obstack_finish (&work_obstack);
-		  $$ = make_stoken (name);
-
-		  do_cleanups (cleanup);
-		}
+		{ $$ = super_name ($3, $2); }
 ;
 
 super_path:
@@ -917,6 +860,74 @@ static struct stoken
 rust_concat3 (const char *s1, const char *s2, const char *s3)
 {
   return make_stoken (obconcat (&work_obstack, s1, s2, s3, (char *) NULL));
+}
+
+static struct stoken
+crate_name (const char *name)
+{
+  char *crate = rust_crate_for_block (expression_context_block);
+  struct stoken result;
+
+  if (crate == NULL)
+    error (_("Could not find crate for current location"));
+  result = make_stoken (obconcat (&work_obstack, "::", crate, "::",
+				  name, (char *) NULL));
+  xfree (crate);
+
+  return result;
+}
+
+static struct stoken
+super_name (struct stoken ident, int n_supers)
+{
+  const char *scope = block_scope (expression_context_block);
+  int offset;
+
+  if (scope[0] == '\0')
+    error (_("Couldn't find namespace scope for self::"));
+
+  if (n_supers > 0)
+    {
+      int i;
+      int len;
+      VEC (int) *offsets = NULL;
+      unsigned int current_len, previous_len;
+      struct cleanup *cleanup;
+
+      cleanup = make_cleanup (VEC_cleanup (int), &offsets);
+      current_len = cp_find_first_component (scope);
+      previous_len = 0;
+      while (scope[current_len] != '\0')
+	{
+	  VEC_safe_push (int, offsets, current_len);
+	  gdb_assert (scope[current_len] == ':');
+	  previous_len = current_len;
+	  /* The "::".  */
+	  current_len += 2;
+	  current_len += cp_find_first_component (scope
+						  + current_len);
+	}
+
+      len = VEC_length (int, offsets);
+      if (n_supers >= len)
+	error (_("Too many super:: uses from '%s'"), scope);
+
+      offset = VEC_index (int, offsets, len - n_supers);
+
+      do_cleanups (cleanup);
+    }
+  else
+    {
+      gdb_assert (n_supers == 0);
+      offset = strlen (scope);
+    }
+
+  obstack_grow (&work_obstack, "::", 2);
+  obstack_grow (&work_obstack, scope, offset);
+  obstack_grow (&work_obstack, "::", 2);
+  obstack_grow0 (&work_obstack, ident.ptr, ident.length);
+
+  return make_stoken((const char *) obstack_finish (&work_obstack));
 }
 
 /* A helper that updates innermost_block as appropriate.  */
