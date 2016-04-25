@@ -307,8 +307,8 @@ static const struct rust_op *rust_ast;
 %left '+' '-'
 %left '*' '/' '%'
 %precedence UNARY
-%left '[' '.' '('
-%left KW_AS
+%precedence '[' '.' '('
+%precedence KW_AS
 %left COLONCOLON
 
 %%
