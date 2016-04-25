@@ -40,4 +40,11 @@ extern int rust_tuple_struct_type_p (struct type *type);
    found.  */
 extern char *rust_crate_for_block (const struct block *block);
 
+/* Create a new slice type.  NAME is the name of the type.  ELT_TYPE
+   is the type of the elements of the slice.  USIZE_TYPE is the Rust
+   "usize" type to use.  The new type is allocated whereever ELT_TYPE
+   is allocated.  */
+struct type *rust_slice_type (const char *name, struct type *elt_type,
+			      struct type *usize_type);
+
 #endif /* RUST_LANG_H */
