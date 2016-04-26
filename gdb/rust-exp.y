@@ -751,6 +751,11 @@ identifier_path_for_expr:
 		}
 |	identifier_path_for_expr COLONCOLON '<' type_list '>'
 		{ $$ = ast_path ($1->left.sval, $4); }
+|	identifier_path_for_expr COLONCOLON '<' type_list RSH
+		{
+		  $$ = ast_path ($1->left.sval, $4);
+		  rust_push_back ('>');
+		}
 ;
 
 path_for_type:
@@ -783,6 +788,11 @@ identifier_path_for_type:
 		}
 |	identifier_path_for_type '<' type_list '>'
 		{ $$ = ast_path ($1->left.sval, $3); }
+|	identifier_path_for_type '<' type_list RSH
+		{
+		  $$ = ast_path ($1->left.sval, $3);
+		  rust_push_back ('>');
+		}
 ;
 
 type:

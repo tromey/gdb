@@ -40,3 +40,6 @@ gdb_test "print e" " = generics::Hold<i32> \\(7\\)"
 gdb_test "print generics::Hold::<i32> (7)" " = generics::Hold<i32> \\(7\\)"
 gdb_test "print Hold::<i32> (7)" " = generics::Hold<i32> \\(7\\)"
 gdb_test "print identity::< Hold<i32> >(e)" " = generics::Hold<i32> \\(7\\)"
+gdb_test "print identity::<generics::Hold<i32> >(e)" \
+    " = generics::Hold<i32> \\(7\\)"
+gdb_test "print identity::<Hold<i32>>(e)" " = generics::Hold<i32> \\(7\\)"
