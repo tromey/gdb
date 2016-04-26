@@ -21,10 +21,39 @@ fn f2() {
     println!("::f2");
 }
 
+pub struct Generic<T>(T);
+
+pub struct Type;
+
 pub mod mod1 {
+    pub struct Type(usize, isize);
+
     pub mod inner {
+        pub struct Type(f64);
+
         pub mod innest {
+            pub struct Type {pub x : u32}
+
+            fn wrap<T> (x: T) -> ::Generic<::Generic<T>> {
+                ::Generic(::Generic(x))
+            }
+
             pub fn f1 () {
+                struct Type(i8);
+
+                let x: u8 = 0;
+
+                let ct = ::Type;
+                let ctg = wrap(ct);
+                let m1t = ::mod1::Type(23, 97);
+                let m1tg = wrap(m1t);
+                let innert = super::Type(10101.5);
+                let innertg = wrap(innert);
+                let innestt = self::Type{x: 0xfff};
+                let innesttg = wrap(innestt);
+                let f1t = Type(9);
+                let f1tg = wrap(f1t);
+
                 let f2 = || println!("lambda f2");
 
                 f2();           // set breakpoint here

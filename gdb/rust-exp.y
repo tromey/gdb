@@ -19,8 +19,8 @@
 /* Bison is way nicer than the old #define approach.  */
 %define api.prefix {rust}
 
-/* Removing the last three conflicts seems difficult.  */
-%expect 3
+/* Removing the last conflict seems difficult.  */
+%expect 1
 
 %{
 
@@ -296,6 +296,7 @@ struct rust_op
 %type <op> identifier_path_for_expr
 %type <op> path_for_type
 %type <op> identifier_path_for_type
+%type <op> just_identifiers_for_type
 
 %type <params> maybe_type_list
 %type <params> type_list
@@ -777,18 +778,22 @@ path_for_type:
 		}
 ;
 
-identifier_path_for_type:
+just_identifiers_for_type:
 	IDENT
 	  	{ $$ = ast_path ($1, NULL); }
-|	identifier_path_for_type COLONCOLON IDENT
+|	just_identifiers_for_type COLONCOLON IDENT
 		{
 		  $$ = ast_path (rust_concat3 ($1->left.sval.ptr, "::",
 					       $3.ptr),
 				 NULL);
 		}
-|	identifier_path_for_type '<' type_list '>'
+;
+
+identifier_path_for_type:
+	just_identifiers_for_type
+|	just_identifiers_for_type '<' type_list '>'
 		{ $$ = ast_path ($1->left.sval, $3); }
-|	identifier_path_for_type '<' type_list RSH
+|	just_identifiers_for_type '<' type_list RSH
 		{
 		  $$ = ast_path ($1->left.sval, $3);
 		  rust_push_back ('>');
