@@ -341,8 +341,6 @@ rust_u8_type_p (struct type *type)
 	  && TYPE_LENGTH (type) == 1);
 }
 
-
-
 /* Return true if TYPE is a Rust character type.  */
 
 static int
@@ -352,6 +350,8 @@ rust_chartype_p (struct type *type)
 	  && TYPE_LENGTH (type) == 4
 	  && TYPE_UNSIGNED (type));
 }
+
+
 
 /* la_emitchar implementation for Rust.  */
 
