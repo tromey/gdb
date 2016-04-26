@@ -19,7 +19,8 @@
 /* Bison is way nicer than the old #define approach.  */
 %define api.prefix {rust}
 
-/* %expect 0 */
+/* Removing the last three conflicts seems difficult.  */
+%expect 3
 
 %{
 
@@ -90,8 +91,10 @@ static struct block_symbol rust_lookup_symbol (const char *name,
 static struct type *rust_lookup_type (const char *name,
 				      const struct block *block);
 static struct type *rust_type (const char *name);
-static struct stoken crate_name (const char *name);
-static struct stoken super_name (struct stoken ident, int n_supers);
+
+static const struct rust_op *crate_name (const struct rust_op *name);
+static const struct rust_op *super_name (const struct rust_op *name,
+					 unsigned int n_supers);
 
 static const struct rust_op *ast_operation (enum exp_opcode opcode,
 					    const struct rust_op *left,
@@ -116,7 +119,7 @@ static const struct rust_op *ast_call_ish (enum exp_opcode opcode,
 static const struct rust_op *ast_path (struct stoken name,
 				       VEC (rust_op_ptr) **params);
 static const struct rust_op *ast_string (struct stoken str);
-static const struct rust_op *ast_struct (struct stoken name,
+static const struct rust_op *ast_struct (const struct rust_op *name,
 					 VEC (set_field) **fields);
 static const struct rust_op *ast_range (const struct rust_op *lhs,
 					const struct rust_op *rhs);
@@ -221,8 +224,38 @@ static const struct rust_op *rust_ast;
 
   /* A plain integer, for example used to count the number of
      "super::" prefixes on a path.  */
-  int depth;
+  unsigned int depth;
 }
+
+%{
+
+  /* Rust AST operations.  We build a tree of these; then lower them
+     to gdb expressions when parsing has completed.  */
+
+struct rust_op
+{
+  /* The opcode.  */
+  enum exp_opcode opcode;
+  /* If OPCODE is OP_TYPE, then this holds information about what type
+     is described by this node.  */
+  enum type_code typecode;
+  /* Indicates whether OPCODE actually represents a compound
+     assignment.  For example, if OPCODE is GTGT and this is false,
+     then this rust_op represents an ordinary ">>"; but if this is
+     true, then this rust_op represents ">>=".  Unused in other
+     cases.  */
+  unsigned int compound_assignment : 1;
+  /* Only used by a field expression; if set, indicates that the field
+     name occurred at the end of the expression and is eligible for
+     completion.  */
+  unsigned int completing : 1;
+  /* Operands of expression.  Which one is used and how depends on the
+     particular opcode.  */
+  RUSTSTYPE left;
+  RUSTSTYPE right;
+};
+
+%}
 
 %token <sval> GDBVAR
 %token <sval> IDENT
@@ -259,12 +292,13 @@ static const struct rust_op *rust_ast;
 %token <voidval> ARROW
 
 %type <op> type
+%type <op> path_for_expr
+%type <op> identifier_path_for_expr
 %type <op> path_for_type
+%type <op> identifier_path_for_type
+
 %type <params> maybe_type_list
 %type <params> type_list
-
-%type <sval> path
-%type <sval> identifier_path
 
 %type <depth> super_path
 
@@ -310,7 +344,7 @@ static const struct rust_op *rust_ast;
 %precedence UNARY
 %precedence '[' '.' '('
 %precedence KW_AS
-%left COLONCOLON
+%precedence COLONCOLON
 
 %%
 
@@ -369,7 +403,7 @@ unit_expr:
    tuple struct expressions here, but instead when examining the
    AST.  */
 struct_expr:
-	path '{' struct_expr_list '}'
+	path_for_expr '{' struct_expr_list '}'
 		{ $$ = ast_struct ($1, $3); }
 ;
 
@@ -474,7 +508,7 @@ literal:
 
 		  token.ptr = "&str";
 		  token.length = strlen (token.ptr);
-		  $$ = ast_struct (token, fields);
+		  $$ = ast_struct (ast_path (token, NULL), fields);
 		}
 |	BYTESTRING
 		{ $$ = ast_string ($1); }
@@ -666,46 +700,6 @@ call_expr:
 		{ $$ = ast_call_ish (OP_FUNCALL, $1, $2); }
 ;
 
-path_expr:
-	path
-		{ $$ = ast_path ($1, NULL); }
-|	path COLONCOLON '<' type_list '>'
-		{ $$ = ast_path ($1, $4); }
-|	path COLONCOLON '<' type_list RSH
-		{
-		  $$ = ast_path ($1, $4);
-		  rust_push_back ('>');
-		}
-|	GDBVAR
-		{ $$ = ast_path ($1, NULL); }
-|	KW_SELF
-		{ $$ = ast_path (make_stoken ("self"), NULL); }
-;
-
-path:
-	identifier_path
-|	KW_SELF COLONCOLON identifier_path
-		{ $$ = super_name ($3, 0); }
-|	maybe_self_path super_path identifier_path
-		{ $$ = super_name ($3, $2); }
-|	COLONCOLON identifier_path
-		{ $$ = crate_name ($2.ptr); }
-|	KW_EXTERN identifier_path
-		{
-		  /* This is a gdb extension to make it possible to
-		     refer to items in other crates.  It just bypasses
-		     adding the current crate to the front of the
-		     name.  */
-		  $$ = rust_concat3 ("::", $2.ptr, NULL);
-		}
-;
-
-identifier_path:
-	IDENT
-|	identifier_path COLONCOLON IDENT
-		{ $$ = rust_concat3 ($1.ptr, "::", $3.ptr); }
-;
-
 maybe_self_path:
 	%empty
 |	KW_SELF COLONCOLON
@@ -718,16 +712,77 @@ super_path:
 		{ $$ = $1 + 1; }
 ;
 
-path_for_type:
-	path
+path_expr:
+	path_for_expr
+		{ $$ = $1; }
+|	GDBVAR
 		{ $$ = ast_path ($1, NULL); }
-|	path '<' type_list '>'
-		{ $$ = ast_path ($1, $3); }
-|	path '<' type_list RSH
+|	KW_SELF
+		{ $$ = ast_path (make_stoken ("self"), NULL); }
+;
+
+path_for_expr:
+	identifier_path_for_expr
+|	KW_SELF COLONCOLON identifier_path_for_expr
+		{ $$ = super_name ($3, 0); }
+|	maybe_self_path super_path identifier_path_for_expr
+		{ $$ = super_name ($3, $2); }
+|	COLONCOLON identifier_path_for_expr
+		{ $$ = crate_name ($2); }
+|	KW_EXTERN identifier_path_for_expr
 		{
-		  $$ = ast_path ($1, $3);
-		  rust_push_back ('>');
+		  /* This is a gdb extension to make it possible to
+		     refer to items in other crates.  It just bypasses
+		     adding the current crate to the front of the
+		     name.  */
+		  $$ = ast_path (rust_concat3 ("::", $2->left.sval.ptr, NULL),
+				 $2->right.params);
 		}
+;
+
+identifier_path_for_expr:
+	IDENT
+		{ $$ = ast_path ($1, NULL); }
+|	identifier_path_for_expr COLONCOLON IDENT
+		{
+		  $$ = ast_path (rust_concat3 ($1->left.sval.ptr, "::",
+					       $3.ptr),
+				 NULL);
+		}
+|	identifier_path_for_expr COLONCOLON '<' type_list '>'
+		{ $$ = ast_path ($1->left.sval, $4); }
+;
+
+path_for_type:
+	identifier_path_for_type
+|	KW_SELF COLONCOLON identifier_path_for_type
+		{ $$ = super_name ($3, 0); }
+|	maybe_self_path super_path identifier_path_for_type
+		{ $$ = super_name ($3, $2); }
+|	COLONCOLON identifier_path_for_type
+		{ $$ = crate_name ($2); }
+|	KW_EXTERN identifier_path_for_type
+		{
+		  /* This is a gdb extension to make it possible to
+		     refer to items in other crates.  It just bypasses
+		     adding the current crate to the front of the
+		     name.  */
+		  $$ = ast_path (rust_concat3 ("::", $2->left.sval.ptr, NULL),
+				 $2->right.params);
+		}
+;
+
+identifier_path_for_type:
+	IDENT
+	  	{ $$ = ast_path ($1, NULL); }
+|	identifier_path_for_type COLONCOLON IDENT
+		{
+		  $$ = ast_path (rust_concat3 ($1->left.sval.ptr, "::",
+					       $3.ptr),
+				 NULL);
+		}
+|	identifier_path_for_type '<' type_list '>'
+		{ $$ = ast_path ($1->left.sval, $3); }
 ;
 
 type:
@@ -857,26 +912,30 @@ rust_concat3 (const char *s1, const char *s2, const char *s3)
   return make_stoken (obconcat (&work_obstack, s1, s2, s3, (char *) NULL));
 }
 
-static struct stoken
-crate_name (const char *name)
+static const struct rust_op *
+crate_name (const struct rust_op *name)
 {
   char *crate = rust_crate_for_block (expression_context_block);
   struct stoken result;
 
+  gdb_assert (name->opcode == OP_VAR_VALUE);
+
   if (crate == NULL)
     error (_("Could not find crate for current location"));
   result = make_stoken (obconcat (&work_obstack, "::", crate, "::",
-				  name, (char *) NULL));
+				  name->left.sval.ptr, (char *) NULL));
   xfree (crate);
 
-  return result;
+  return ast_path (result, name->right.params);
 }
 
-static struct stoken
-super_name (struct stoken ident, int n_supers)
+static const struct rust_op *
+super_name (const struct rust_op *ident, unsigned int n_supers)
 {
   const char *scope = block_scope (expression_context_block);
   int offset;
+
+  gdb_assert (ident->opcode == OP_VAR_VALUE);
 
   if (scope[0] == '\0')
     error (_("Couldn't find namespace scope for self::"));
@@ -912,17 +971,15 @@ super_name (struct stoken ident, int n_supers)
       do_cleanups (cleanup);
     }
   else
-    {
-      gdb_assert (n_supers == 0);
-      offset = strlen (scope);
-    }
+    offset = strlen (scope);
 
   obstack_grow (&work_obstack, "::", 2);
   obstack_grow (&work_obstack, scope, offset);
   obstack_grow (&work_obstack, "::", 2);
-  obstack_grow0 (&work_obstack, ident.ptr, ident.length);
+  obstack_grow0 (&work_obstack, ident->left.sval.ptr, ident->left.sval.length);
 
-  return make_stoken((const char *) obstack_finish (&work_obstack));
+  return ast_path (make_stoken ((const char *) obstack_finish (&work_obstack)),
+		   ident->right.params);
 }
 
 /* A helper that updates innermost_block as appropriate.  */
@@ -1527,34 +1584,6 @@ rust_push_back (char c)
 
 
 
-/* Rust AST operations.  Our own mini-AST is the cleanest way to solve
-   the type/expr ambiguity.  Rust itself isn't ambiguous but gdb
-   pretty much requires that the parser accept a type as well as an
-   expression, and this introduces ambiguity.  */
-
-struct rust_op
-{
-  /* The opcode.  */
-  enum exp_opcode opcode;
-  /* If OPCODE is OP_TYPE, then this holds information about what type
-     is described by this node.  */
-  enum type_code typecode;
-  /* Indicates whether OPCODE actually represents a compound
-     assignment.  For example, if OPCODE is GTGT and this is false,
-     then this rust_op represents an ordinary ">>"; but if this is
-     true, then this rust_op represents ">>=".  Unused in other
-     cases.  */
-  unsigned int compound_assignment : 1;
-  /* Only used by a field expression; if set, indicates that the field
-     name occurred at the end of the expression and is eligible for
-     completion.  */
-  unsigned int completing : 1;
-  /* Operands of expression.  Which one is used and how depends on the
-     particular opcode.  */
-  RUSTSTYPE left;
-  RUSTSTYPE right;
-};
-
 /* Make an arbitrary operation and fill in the fields.  */
 
 static const struct rust_op *
@@ -1654,13 +1683,13 @@ ast_call_ish (enum exp_opcode opcode, const struct rust_op *expr,
 /* Make a structure creation operation.  */
 
 static const struct rust_op *
-ast_struct (struct stoken name, VEC (set_field) **fields)
+ast_struct (const struct rust_op *name, VEC (set_field) **fields)
 {
   struct rust_op *result = OBSTACK_ZALLOC (&work_obstack, struct rust_op);
 
   /* We treat this differently than Ada.  */
   result->opcode = OP_AGGREGATE;
-  result->left.sval = name;
+  result->left.op = name;
   result->right.field_inits = fields;
 
   return result;
@@ -1982,7 +2011,7 @@ convert_name (struct parser_state *state, const struct rust_op *operation)
     return operation->left.sval.ptr;
 
   types = convert_params_to_types (state, *operation->right.params);
-  make_cleanup (VEC_cleanup (type_ptr), &types);
+  cleanup = make_cleanup (VEC_cleanup (type_ptr), &types);
 
   obstack_grow_str (&work_obstack, operation->left.sval.ptr);
   obstack_1grow (&work_obstack, '<');
@@ -1994,6 +2023,9 @@ convert_name (struct parser_state *state, const struct rust_op *operation)
       xfree (type_name);
     }
   obstack_grow_str0 (&work_obstack, ">");
+
+  do_cleanups (cleanup);
+
   return (const char *) obstack_finish (&work_obstack);
 }
 
@@ -2256,6 +2288,7 @@ convert_ast_to_expression (struct parser_state *state,
 	struct set_field *init;
 	VEC (set_field) *fields = *operation->right.field_inits;
 	struct type *type;
+	const char *name;
 
 	length = 0;
 	for (i = 0; VEC_iterate (set_field, fields, i, init); ++i)
@@ -2279,8 +2312,8 @@ convert_ast_to_expression (struct parser_state *state,
 	      }
 	  }
 
-	type = rust_lookup_type (operation->left.sval.ptr,
-				 expression_context_block);
+	name = convert_name (state, operation->left.op);
+	type = rust_lookup_type (name, expression_context_block);
 	if (type == NULL)
 	  error (_("Could not find type '%s'"), operation->left.sval.ptr);
 

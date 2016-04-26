@@ -15284,6 +15284,16 @@ to call generic functions or otherwise refer to generic items, you
 will have to specify the type parameters manually.
 
 @item
+@value{GDBN} currently uses the C@t{++} demangler for Rust.  In most
+cases this does not cause any problems.  However, in an expression
+context, completing a generic function name will give syntactically
+invalid results.  This happens because Rust requires the @samp{::}
+operator between the function name and its generic arguments.  For
+example, @value{GDBN} might provide a completion like
+@code{crate::f<u32>}, where the parser would require
+@code{crate::f::<u32>}.
+
+@item
 As of this writing, the Rust compiler has a few holes in the debugging
 information it generates.  These holes prevent certain features from
 being implemented by @value{GDBN}:
