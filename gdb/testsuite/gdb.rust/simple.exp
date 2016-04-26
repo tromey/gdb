@@ -40,6 +40,13 @@ gdb_test "ptype b" " = \\\[i32; 0\\\]"
 gdb_test "print c" " = 99"
 gdb_test "ptype c" " = i32"
 
+gdb_test "print c = 87" " = \\(\\)"
+gdb_test "print c" " = 87"
+gdb_test "print c += 3" " = \\(\\)"
+gdb_test "print c" " = 90"
+gdb_test "print c -= 90" " = \\(\\)"
+gdb_test "print c" " = 0"
+
 gdb_test "print j" " = simple::Unit"
 gdb_test "ptype j" " = struct simple::Unit"
 gdb_test "print simple::Unit" " = simple::Unit"
@@ -62,6 +69,9 @@ gdb_test "print w\[2\]" " = 3"
 gdb_test "print fromslice" " = 3"
 gdb_test "print slice\[0\]" " = 3"
 
+gdb_test "print x" " = \\(23, 25\\.5\\)"
+gdb_test "ptype x" " = \\(i32, f64\\)"
+
 gdb_test "print y" " = simple::HiBob \\{field1: 7, field2: 8\\}"
 gdb_test_sequence "ptype y" "" {
     " = struct simple::HiBob \\{"
@@ -80,8 +90,18 @@ gdb_test_sequence "ptype z" "" {
 }
 gdb_test "print z.1" " = 8"
 
+gdb_test_sequence "ptype simple::ByeBob" "" {
+    " = struct simple::ByeBob \\("
+    "  i32,"
+    "  u64,"
+    "\\)"
+}
 gdb_test "print simple::ByeBob(0xff, 5)" \
     " = simple::ByeBob \\(255, 5\\)"
+gdb_test "print simple::HiBob(0xff, 5)" \
+    "Type simple::HiBob is not a tuple struct"
+gdb_test "print nosuchsymbol" \
+    "No symbol 'nosuchsymbol' in current context"
 
 gdb_test "print e" " = simple::MoreComplicated::Two\\(73\\)"
 gdb_test "print e2" \
@@ -116,16 +136,24 @@ gdb_test "print diff2(3, 7)" " = -4"
 gdb_test "print self::diff2(8, 9)" " = -1"
 gdb_test "print ::diff2(23, -23)" " = 46"
 
+gdb_test "ptype diff2" "fn \\(i32, i32\\) -> i32"
+
 # FIXME we need the ".*" because currently we don't extract the length
 # and use it to intelligently print the string data.
 gdb_test "print \"hello rust\"" \
     " = &str \\{data_ptr: $hex \"hello rust.*\", length: 10\\}"
+gdb_test "print \"hello" "Unexpected EOF in string"
+gdb_test "print r##\"hello \" rust\"##" \
+    " = &str \\{data_ptr: $hex \"hello \\\\\" rust.*\", length: 12\\}"
+gdb_test "print r\"hello" "Unexpected EOF in string"
+gdb_test "print r###\"###hello\"" "Unexpected EOF in string"
+gdb_test "print r###\"###hello\"##" "Unexpected EOF in string"
+gdb_test "print r###\"hello###" "Unexpected EOF in string"
 
 gdb_test "print 0..5" " = .*::ops::Range.* \\{start: 0, end: 5\\}"
 gdb_test "print ..5" " = .*::ops::RangeTo.* \\{end: 5\\}"
 gdb_test "print 5.." " = .*::ops::RangeFrom.* \\{start: 5\\}"
 gdb_test "print .." " = .*::ops::RangeFull"
-
 
 proc test_one_slice {svar length base range} {
     global hex
@@ -153,3 +181,8 @@ gdb_test_sequence "complete print y.f" "" \
     {"print y.field1" "print y.field2"}
 gdb_test_sequence "complete print y." "" \
     {"print y.field1" "print y.field2"}
+
+# Unimplemented, but we can at least test the parser productions.
+gdb_test "print (1,2,3)" "Tuple expressions not supported yet"
+gdb_test "print (1,)" "Tuple expressions not supported yet"
+gdb_test "print (1)" " = 1"

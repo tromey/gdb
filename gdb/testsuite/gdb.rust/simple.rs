@@ -75,7 +75,7 @@ fn main () {
 
     let v = Something::Three;
     let w = [1,2,3,4];
-    let x = (23, "hi");
+    let x = (23, 25.5);
     let y = HiBob {field1: 7, field2: 8};
     let z = ByeBob(7, 8);
 

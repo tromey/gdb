@@ -42,6 +42,9 @@ gdb_test "call super::f2()" "mod1::inner::f2"
 gdb_test "call self::super::super::f2()" "mod1::f2"
 gdb_test "call super::super::f2()" "mod1::f2"
 gdb_test "call ::f2()" "::f2"
+gdb_test "call super::super::super::f2()" \
+    "Too many super:: uses from 'modules::mod1::inner::innest'"
+gdb_test "call extern modules::mod1::f2()" "mod1::f2"
 
 # Some basic linespec tests.
 foreach mod {mod1::inner::innest mod1::inner mod1 {}} {

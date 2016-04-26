@@ -30,6 +30,8 @@ if {![set_lang_rust]} {
 
 gdb_test "print 9__97" " = 997"
 gdb_test "print -5" " = -5"
+gdb_test "print +5" " = 5"
+gdb_test "print +-+-5" " = 5"
 gdb_test "print 3_2i32" " = 32"
 gdb_test "print 32i64" " = 32"
 gdb_test "print 8u8" " = 8"
@@ -42,9 +44,26 @@ gdb_test "print 0x_4" " = 4"
 
 gdb_test "print 'z'" " = 122 'z'"
 gdb_test "print '\\t'" " = 9 '\\\\t'"
+gdb_test "print '\\n'" " = 10 '\\\\n'"
+gdb_test "print '\\r'" " = 13 '\\\\r'"
+gdb_test "print '\\\\'" " = 92 '\\\\\\\\'"
+gdb_test "print '\\0'" " = 0 '\\\\0'"
+gdb_test "print '\\''" " = 39 '\\\\''"
+gdb_test "print '\\\"'" " = 34 '\"'"
+gdb_test "print '\\xff'" " = 255 '\\\\xff'"
+gdb_test "print '\\xFF'" " = 255 '\\\\xff'"
+gdb_test "print '\\u\{F0eF\}'" " = 61679 '\\\\u\\{00f0ef\\}'"
+
 gdb_test "print b'z'" " = 122"
 gdb_test "print b'\\xfe'" " = 254"
 gdb_test "print b'\\t'" " = 9"
+gdb_test "print b'\\n'" " = 10"
+gdb_test "print b'\\r'" " = 13"
+gdb_test "print b'\\\\'" " = 92"
+gdb_test "print b'\\0'" " = 0"
+gdb_test "print b'\\''" " = 39"
+gdb_test "print b'\\\"'" " = 34"
+gdb_test "print b'\\xff'" " = 255"
 
 gdb_test "print 23.5" " = 23.5"
 gdb_test "print 23.5e1" " = 235"
@@ -65,6 +84,7 @@ gdb_test "print !0u8" " = 255"
 gdb_test "print 7 * 7" " = 49"
 gdb_test "print 7usize * 7usize" " = 49"
 gdb_test "print 42 / 7" " = 6"
+gdb_test "print 42 % 7" " = 0"
 gdb_test "print 1.0 / 2.0" " = 0.5"
 gdb_test "print 1 < 2" " = true"
 gdb_test "print !(1 < 2)" " = false"
@@ -88,12 +108,18 @@ gdb_test "print ()" " = \\(\\)"
 
 gdb_test "print \[1,2,3,4\]" " = \\\[1, 2, 3, 4\\\]"
 gdb_test "ptype \[1,2,3,4\]" "type = \\\[i32; 4\\\]"
+gdb_test "print \[mut 1,2,3,4\]" " = \\\[1, 2, 3, 4\\\]"
 
 gdb_test "print b\"hi rust\"" " = b\"hi rust\""
 # This isn't rusty syntax yet, but that's another bug -- this is just
 # testing that byte escapes work properly.
 gdb_test "print b\"\\xddhi bob\"" " = b\"\\\\335hi bob\""
 gdb_test "print b\"has\\0nul\"" " = b\"has\\\\000nul\""
+
+gdb_test "print br##\"hi\"##" " = b\"hi\""
+gdb_test "print br##\"hi" "Unexpected EOF in string"
+gdb_test "print br##\"hi\"" "Unexpected EOF in string"
+gdb_test "print br##\"hi\"#" "Unexpected EOF in string"
 
 # Test that convenience variables and functions work with the Rust
 # parser.
@@ -103,4 +129,9 @@ gdb_test "print \$_isvoid(\$something)" " = 0"
 
 gdb_test "print \[23usize; 4\]" " = \\\[23, 23, 23, 23\\\]"
 gdb_test "ptype \[23usize; 4\]" " = \\\[usize; 4\\\]"
+gdb_test "print \[mut 23usize; 4\]" " = \\\[23, 23, 23, 23\\\]"
 
+# Test a lexer corner case.
+gdb_test "print r#" "A syntax error in expression, near `#'\\."
+
+gdb_test "printf \"%d %d\\n\", 23+1, 23-1" "24 22"

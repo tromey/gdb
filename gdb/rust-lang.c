@@ -57,19 +57,11 @@ char *
 rust_crate_for_block (const struct block *block)
 {
   const char *scope = block_scope (block);
-  unsigned int len;
 
   if (scope[0] == '\0')
     return NULL;
 
-  len = cp_find_first_component (scope);
-  /* If we're in a top-level function, like "crate::fn", then SCOPE
-     will be "crate", and we'll have LEN == 0.  If we're in a function
-     in a module, like "crate::mod::fn", then SCOPE will be
-     "crate::mod" and we'll have LEN != 0.  */
-  if (len == 0)
-    return xstrdup (scope);
-  return xstrndup (scope, len);
+  return xstrndup (scope, cp_find_first_component (scope));
 }
 
 /* Information about the discriminant/variant of an enum */
@@ -370,7 +362,7 @@ rust_emitchar (int c, struct type *type, struct ui_file *stream, int quoter)
   else if (c == '\t')
     fputs_filtered ("\\t", stream);
   else if (c == '\0')
-    fputs_filtered ("\\", stream);
+    fputs_filtered ("\\0", stream);
   else if (c >= 32 && c <= 127 && isprint (c))
     fputc_filtered (c, stream);
   else if (c <= 255)
@@ -612,16 +604,22 @@ rust_val_print (struct type *type, const gdb_byte *valaddr, int embedded_offset,
 	int is_tuple_struct = !is_tuple && rust_tuple_struct_type_p (type);
 	struct value_print_options opts;
 
-	if (!is_tuple && TYPE_TAG_NAME (type))
-	  fprintf_filtered (stream, "%s", TYPE_TAG_NAME (type));
+	if (!is_tuple)
+	  {
+	    if (TYPE_TAG_NAME (type) != NULL)
+	      fprintf_filtered (stream, "%s", TYPE_TAG_NAME (type));
 
-	if (TYPE_NFIELDS (type) == 0 && !is_tuple)
-	  break;
+	    if (TYPE_NFIELDS (type) == 0)
+	      break;
+
+	    if (TYPE_TAG_NAME (type) != NULL)
+	      fputs_filtered (" ", stream);
+	  }
 
 	if (is_tuple || is_tuple_struct)
-	  fputs_filtered (" (", stream);
+	  fputs_filtered ("(", stream);
 	else
-	  fputs_filtered (" {", stream);
+	  fputs_filtered ("{", stream);
 
 	opts = *options;
 	opts.deref_ref = 0;
@@ -716,8 +714,7 @@ rust_print_type (struct type *type, const char *varstring,
   switch (TYPE_CODE (type))
     {
     case TYPE_CODE_FUNC:
-      /* Delegate varargs to the C printer.  Not totally sure this
-	 is correct.  */
+      /* Delegate varargs to the C printer.  */
       if (TYPE_VARARGS (type))
 	goto c_printer;
 

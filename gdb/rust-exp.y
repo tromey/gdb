@@ -1231,6 +1231,8 @@ lex_string (void)
 	      lexptr += raw_length;
 	      break;
 	    }
+	  else if (lexptr[0] == '\0')
+	    error (_("Unexpected EOF in string"));
 
 	  value = lexptr[0] & 0xff;
 	  if (is_byte && value > 127)
@@ -1256,11 +1258,13 @@ lex_string (void)
 				       sizeof (value), sizeof (value),
 				       &work_obstack, translit_none);
 	}
+      else if (lexptr[0] == '\0')
+	error (_("Unexpected EOF in string"));
       else
 	{
 	  value = lexptr[0] & 0xff;
 	  if (is_byte && value > 127)
-	    error (_("Non-ASCII value in raw byte string"));
+	    error (_("Non-ASCII value in byte string"));
 	  obstack_1grow (&work_obstack, value);
 	  ++lexptr;
 	}
