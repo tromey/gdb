@@ -1972,7 +1972,8 @@ convert_ast_to_type (struct parser_state *state,
     {
     case TYPE_CODE_ARRAY:
       type = convert_ast_to_type (state, operation->left.op);
-      /* FIXME range sanity */
+      if (operation->right.typed_val_int.sval < 0)
+	error (_("Negative array length"));
       result = lookup_array_range_type (type, 0,
 					operation->right.typed_val_int.val - 1);
       break;
