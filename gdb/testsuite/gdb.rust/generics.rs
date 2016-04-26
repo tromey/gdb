@@ -18,27 +18,27 @@
 #![allow(unused_assignments)]
 
 
-struct GenericStruct<T> {
-    one: T,
-    two: T
-}
+#[derive(Clone, Copy)]
+struct Hold<T>(T);
 
 pub fn identity<T>(x: T) -> T { x }
 
-pub fn tupleize<T, U>(x: T, y: U) -> (U,T) { (y, x) }
+fn dowhatever() { () }
 
 pub fn main() {
     let a = identity(23u32);
     let b = identity(23.0f64);
 
-    let c = tupleize(b,a);
     let d = identity::<u32>(7);
 
-    let e = GenericStruct{one: 7, two: 9};
-    let f = GenericStruct::<u8>{one: 7, two: 9};
+    let e = Hold(7);
+    let f = Hold::<u8>(7);
 
-    let g = tupleize(d, e);
-    let h = tupleize(d, f);
+    let g = identity(e);
 
-    ()                          // set breakpoint here
+    let h = Hold(e);
+    let i = identity(h);
+
+    let z = ();                          // set breakpoint here
+    dowhatever()
 }

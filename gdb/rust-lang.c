@@ -1947,7 +1947,7 @@ rust_lookup_symbol_nonlocal (const struct language_defn *langdef,
     }
 
   /* Look up bare names in the block's scope.  */
-  if (strstr (name, "::") == NULL)
+  if (name[cp_find_first_component (name)] == '\0')
     {
       const char *scope = block_scope (block);
 
