@@ -186,3 +186,5 @@ gdb_test_sequence "complete print y." "" \
 gdb_test "print (1,2,3)" "Tuple expressions not supported yet"
 gdb_test "print (1,)" "Tuple expressions not supported yet"
 gdb_test "print (1)" " = 1"
+
+gdb_test "print 23..97.0" "Range expression with different types"
