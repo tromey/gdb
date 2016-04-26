@@ -912,6 +912,9 @@ rust_concat3 (const char *s1, const char *s2, const char *s3)
   return make_stoken (obconcat (&work_obstack, s1, s2, s3, (char *) NULL));
 }
 
+/* Return an AST node referring to NAME, but relative to the crate's
+   name.  */
+
 static const struct rust_op *
 crate_name (const struct rust_op *name)
 {
@@ -928,6 +931,10 @@ crate_name (const struct rust_op *name)
 
   return ast_path (result, name->right.params);
 }
+
+/* Create an AST node referring to a "super::" qualified name.  IDENT
+   is the base name and N_SUPERS is how many "super::"s were
+   provided.  N_SUPERS can be zero.  */
 
 static const struct rust_op *
 super_name (const struct rust_op *ident, unsigned int n_supers)
@@ -1737,6 +1744,8 @@ ast_structop (const struct rust_op *left, const char *name, int completing)
   return result;
 }
 
+/* Make an anonymous struct operation, like 'x.0'.  */
+
 static const struct rust_op *
 ast_structop_anonymous (const struct rust_op *left,
 			 struct typed_val_int number)
@@ -1764,6 +1773,8 @@ ast_range (const struct rust_op *lhs, const struct rust_op *rhs)
   return result;
 }
 
+/* A helper function to make a type-related AST node.  */
+
 static struct rust_op *
 ast_basic_type (enum type_code typecode)
 {
@@ -1773,6 +1784,8 @@ ast_basic_type (enum type_code typecode)
   result->typecode = typecode;
   return result;
 }
+
+/* Create an AST node describing an array type.  */
 
 static const struct rust_op *
 ast_array_type (const struct rust_op *lhs, struct typed_val_int val)
@@ -1784,14 +1797,19 @@ ast_array_type (const struct rust_op *lhs, struct typed_val_int val)
   return result;
 }
 
+/* Create an AST node describing a reference type.  */
+
 static const struct rust_op *
 ast_slice_type (const struct rust_op *type)
 {
+  /* Use TYPE_CODE_COMPLEX just because it is handy.  */
   struct rust_op *result = ast_basic_type (TYPE_CODE_COMPLEX);
 
   result->left.op = type;
   return result;
 }
+
+/* Create an AST node describing a reference type.  */
 
 static const struct rust_op *
 ast_reference_type (const struct rust_op *type)
@@ -1801,6 +1819,8 @@ ast_reference_type (const struct rust_op *type)
   result->left.op = type;
   return result;
 }
+
+/* Create an AST node describing a pointer type.  */
 
 static const struct rust_op *
 ast_pointer_type (const struct rust_op *type, int is_mut)
@@ -1812,6 +1832,8 @@ ast_pointer_type (const struct rust_op *type, int is_mut)
   return result;
 }
 
+/* Create an AST node describing a function type.  */
+
 static const struct rust_op *
 ast_function_type (const struct rust_op *rtype, VEC (rust_op_ptr) **params)
 {
@@ -1821,6 +1843,8 @@ ast_function_type (const struct rust_op *rtype, VEC (rust_op_ptr) **params)
   result->right.params = params;
   return result;
 }
+
+/* Create an AST node describing a tuple type.  */
 
 static const struct rust_op *
 ast_tuple_type (VEC (rust_op_ptr) **params)
