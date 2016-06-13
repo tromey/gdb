@@ -657,6 +657,34 @@ gdbpy_solib_name (PyObject *self, PyObject *args)
   return str_obj;
 }
 
+/* Implementation of gdb.objfile_for_address (Long) -> Objfile.
+   Returns the Objfile holding the given address, or None.  */
+
+static PyObject *
+gdbpy_objfile_for_address (PyObject *self, PyObject *args)
+{
+  char *soname;
+  PyObject *str_obj;
+  gdb_py_ulongest pc;
+  struct objfile *objfile;
+
+  if (!PyArg_ParseTuple (args, GDB_PY_LLU_ARG, &pc))
+    return NULL;
+
+  ALL_OBJFILES (objfile)
+  {
+    if (is_addr_in_objfile (pc, objfile))
+      {
+	PyObject *result = objfile_to_objfile_object (objfile);
+
+	Py_XINCREF (result);
+	return result;
+      }
+  }
+
+  Py_RETURN_NONE;
+}
+
 /* Implementation of Python rbreak command.  Take a REGEX and
    optionally a MINSYMS, THROTTLE and SYMTABS keyword and return a
    Python list that contains newly set breakpoints that match that
@@ -669,6 +697,7 @@ gdbpy_solib_name (PyObject *self, PyObject *args)
    breakpoints will be set and a runtime error returned); SYMTABS is
    an optional Python iterable that contains a set of gdb.Symtabs to
    constrain the search within.  */
+/* A Python function which is a wrapper for decode_line_1.  */
 
 static PyObject *
 gdbpy_rbreak (PyObject *self, PyObject *args, PyObject *kw)
@@ -2081,6 +2110,9 @@ as its build id." },
   { "solib_name", gdbpy_solib_name, METH_VARARGS,
     "solib_name (Long) -> String.\n\
 Return the name of the shared library holding a given address, or None." },
+  { "objfile_for_address", gdbpy_objfile_for_address, METH_VARARGS,
+    "objfile_for_address (Long) -> gdb.Objfile.\n\
+Return the Objfile holding a given address, or None." },
   { "decode_line", gdbpy_decode_line, METH_VARARGS,
     "decode_line (String) -> Tuple.  Decode a string argument the way\n\
 that 'break' or 'edit' does.  Return a tuple containing two elements.\n\
