@@ -543,19 +543,31 @@ _initialize_break_catch_throw (void)
 
   /* Add catch and tcatch sub-commands.  */
   add_catch_command ("catch", _("\
-Catch an exception, when caught."),
+Catch an exception, when caught.\n\
+Usage: catch catch [REGEXP]\n\
+Stop the inferior at the point at which an exception is caught.\n\
+If REGEXP is given, then stop only for exceptions whose type matches the\n\
+regular expression."),
 		     catch_catch_command,
                      NULL,
 		     CATCH_PERMANENT,
 		     CATCH_TEMPORARY);
   add_catch_command ("throw", _("\
-Catch an exception, when thrown."),
+Catch an exception, when thrown.\n\
+Usage: catch throw [REGEXP]\n\
+Stop the inferior at the point at which an exception is thrown.\n\
+If REGEXP is given, then stop only for exceptions whose type matches the\n\
+regular expression."),
 		     catch_throw_command,
                      NULL,
 		     CATCH_PERMANENT,
 		     CATCH_TEMPORARY);
   add_catch_command ("rethrow", _("\
-Catch an exception, when rethrown."),
+Catch an exception, when rethrown.\n\
+Usage: catch rethrow [REGEXP]\n\
+Stop the inferior at the point at which an exception is rethrown.\n\
+If REGEXP is given, then stop only for exceptions whose type matches the\n\
+regular expression."),
 		     catch_rethrow_command,
                      NULL,
 		     CATCH_PERMANENT,

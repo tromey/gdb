@@ -1,5 +1,13 @@
 2016-06-12  Tom Tromey  <tom@tromey.com>
 
+	* break-catch-throw.c (_initialize_break_catch_throw): Add Usage
+	lines to help.
+	* break-catch-syscall.c (_initialize_break_catch_syscall): Add
+	Usage lines to help.
+	* stack.c (_initialize_stack): Add Usage lines to help.
+
+2016-06-12  Tom Tromey  <tom@tromey.com>
+
 	* python/lib/gdb/FrameDecorator.py (FrameDecorator.function): Fix
 	documentation.
 

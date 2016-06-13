@@ -638,7 +638,8 @@ _initialize_break_catch_syscall (void)
 					   catch_syscall_inferior_data_cleanup);
 
   add_catch_command ("syscall", _("\
-Catch system calls by their names, groups and/or numbers.\n\
+Catch system calls by their names, groups and/or numbers.\n \
+Usage: catch syscall [NAME | NUMBER]...\n\
 Arguments say which system calls to catch.  If no arguments are given,\n\
 every system call will be caught.  Arguments, if given, should be one\n\
 or more system call names (if your system supports that), system call\n\

@@ -2499,12 +2499,14 @@ _initialize_stack (void)
 {
   add_com ("return", class_stack, return_command, _("\
 Make selected stack frame return to its caller.\n\
+Usage: return [EXPRESSION]\n\
 Control remains in the debugger, but when you continue\n\
 execution will resume in the frame above the one now selected.\n\
 If an argument is given, it is an expression for the value to return."));
 
   add_com ("up", class_stack, up_command, _("\
 Select and print stack frame that called this one.\n\
+Usage: up [N]\n\
 An argument says how many frames up to go."));
   add_com ("up-silently", class_support, up_silently_command, _("\
 Same as the `up' command, but does not print anything.\n\
@@ -2512,6 +2514,7 @@ This is useful in command scripts."));
 
   add_com ("down", class_stack, down_command, _("\
 Select and print stack frame called by this one.\n\
+Usage: down [N]\n\
 An argument says how many frames down to go."));
   add_com_alias ("do", "down", class_stack, 1);
   add_com_alias ("dow", "down", class_stack, 1);
@@ -2520,8 +2523,9 @@ Same as the `down' command, but does not print anything.\n\
 This is useful in command scripts."));
 
   add_com ("frame", class_stack, frame_command, _("\
-Select and print a stack frame.\nWith no argument, \
-print the selected stack frame.  (See also \"info frame\").\n\
+Select and print a stack frame.\n\
+Usage: frame [N | STACK-ADDR [ PC-ADDR ] ]\n\
+With no argument, print the selected stack frame.  (See also \"info frame\").\n\
 An argument specifies the frame to select.\n\
 It can be a stack frame number or the address of the frame."));
 
@@ -2529,6 +2533,7 @@ It can be a stack frame number or the address of the frame."));
 
   add_com_suppress_notification ("select-frame", class_stack, select_frame_command, _("\
 Select a stack frame without printing anything.\n\
+Usage: frame [N | STACK-ADDR [ PC-ADDR ] ]\n\
 An argument specifies the frame to select.\n\
 It can be a stack frame number or the address of the frame."),
 		 &cli_suppress_notification.user_selected_context);
@@ -2556,8 +2561,8 @@ on this backtrace."));
 
   if (dbx_commands)
     add_com ("func", class_stack, func_command, _("\
-Select the stack frame that contains <func>.\n\
-Usage: func <name>"));
+Select the stack frame that contains the named function.\n\
+Usage: func NAME\n"));
 
   add_setshow_enum_cmd ("frame-arguments", class_stack,
 			print_frame_arguments_choices, &print_frame_arguments,
