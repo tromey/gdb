@@ -85,9 +85,9 @@ class FrameDecorator(object):
     def function(self):
         """ Return the name of the frame's function or an address of
         the function of the frame.  First determine if this is a
-        special frame.  If not, try to determine filename from GDB's
+        special frame.  If not, try to determine function from GDB's
         frame internal function API.  Finally, if a name cannot be
-        determined return the address.  If this function returns an
+        determined, return the address.  If this function returns an
         address, GDB will attempt to determine the function name from
         its internal minimal symbols store (for example, for inferiors
         without debug-info)."""
