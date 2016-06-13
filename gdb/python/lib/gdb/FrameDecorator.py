@@ -83,14 +83,22 @@ class FrameDecorator(object):
         return None
 
     def function(self):
-        """ Return the name of the frame's function or an address of
-        the function of the frame.  First determine if this is a
-        special frame.  If not, try to determine filename from GDB's
-        frame internal function API.  Finally, if a name cannot be
-        determined return the address.  If this function returns an
-        address, GDB will attempt to determine the function name from
-        its internal minimal symbols store (for example, for inferiors
-        without debug-info)."""
+        """Return the name of the frame's function or an address of the
+        function of the frame.  A name is printed directly in a stack
+        trace.  If an address is returned, GDB will attempt to find a
+        corresponding symbol, whose name will be printed.
+
+        The default behavior of this function is:
+
+        If this instance wraps another 'FrameDecorator', the wrapped
+        object's 'function' method is called and that result is
+        returned.
+
+        Otherwise, if this instance wraps a 'gdb.Frame', then that
+        object's 'function' method is called, and that result is
+        returned.
+
+        Finally, if the frame has a PC, return the PC."""
 
         # Both gdb.Frame, and FrameDecorator have a method called
         # "function", so determine which object this is.

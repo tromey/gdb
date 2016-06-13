@@ -1,3 +1,8 @@
+2016-06-20  Tom Tromey  <tom@tromey.com>
+
+	* python/lib/gdb/FrameDecorator.py (FrameDecorator.function): Fix
+	documentation.
+
 2018-03-27  Tom Tromey  <tom@tromey.com>
 
 	* utils.c (prompt_for_continue): Use unique_xmalloc_ptr.
