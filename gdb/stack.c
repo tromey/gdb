@@ -172,8 +172,19 @@ print_stack_frame (int print_level, enum print_what print_what,
 
   TRY
     {
-      print_frame_info (frame, print_level, print_what, 1 /* print_args */,
-			set_current_sal);
+      int flags = PRINT_ARGS;
+      enum ext_lang_bt_status bt_status;
+
+      if (print_level)
+	flags |= PRINT_LEVEL;
+      // print_frame_info??
+      // ....
+
+      bt_status = apply_ext_lang_frame_filter (frame, flags, FIXME,
+					       current_uiout, 0, 0);
+      if (bt_status == EXT_LANG_BT_NO_FILTERS)
+	print_frame_info (frame, print_level, print_what, 1 /* print_args */,
+			  set_current_sal);
       if (set_current_sal)
 	set_current_sal_from_frame (frame);
     }
