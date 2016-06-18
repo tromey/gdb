@@ -742,7 +742,7 @@ inferior_command (char *args, int from_tty)
       switch_to_thread (null_ptid);
       set_current_program_space (inf->pspace);
 
-      observer_notify_user_selected_context_changed (USER_SELECTED_INFERIOR);
+n      observer_notify_user_selected_context_changed (USER_SELECTED_INFERIOR);
     }
 }
 

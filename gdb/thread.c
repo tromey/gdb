@@ -1366,8 +1366,7 @@ print_thread_info_1 (struct ui_out *uiout, char *requested_threads,
 	  /* The switch below puts us at the top of the stack (leaf
 	     frame).  */
 	  switch_to_thread (tp->ptid);
-	  print_stack_frame (get_selected_frame (NULL),
-			     /* For MI output, print frame level.  */
+	  print_stack_frame (/* For MI output, print frame level.  */
 			     uiout->is_mi_like_p (),
 			     LOCATION, 0);
 	}
@@ -1555,7 +1554,7 @@ restore_selected_frame (struct frame_id a_frame_id, int frame_level)
       /* For MI, we should probably have a notification about
 	 current frame change.  But this error is not very
 	 likely, so don't bother for now.  */
-      print_stack_frame (get_selected_frame (NULL), 1, SRC_AND_LOC, 1);
+      print_stack_frame (1, SRC_AND_LOC, 1);
     }
 }
 

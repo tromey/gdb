@@ -727,7 +727,7 @@ extern void print_stack_frame_to_uiout (struct ui_out *uiout,
 					enum print_what print_what,
 					int set_current_sal);
 
-extern void print_stack_frame (struct frame_info *, int print_level,
+extern void print_stack_frame (int print_level,
 			       enum print_what print_what,
 			       int set_current_sal);
 

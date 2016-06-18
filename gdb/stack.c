@@ -154,17 +154,17 @@ print_stack_frame_to_uiout (struct ui_out *uiout, struct frame_info *frame,
   print_stack_frame (frame, print_level, print_what, set_current_sal);
 }
 
-/* Show or print a stack frame FRAME briefly.  The output is formatted
+/* Show or print the selected frame briefly.  The output is formatted
    according to PRINT_LEVEL and PRINT_WHAT printing the frame's
    relative level, function name, argument list, and file name and
    line number.  If the frame's PC is not at the beginning of the
    source line, the actual PC is printed at the beginning.  */
 
 void
-print_stack_frame (struct frame_info *frame, int print_level,
-		   enum print_what print_what,
+print_stack_frame (int print_level, enum print_what print_what,
 		   int set_current_sal)
 {
+  struct frame_info *frame = get_selected_frame (NULL);
 
   /* For mi, alway print location and address.  */
   if (current_uiout->is_mi_like_p ())
@@ -2227,7 +2227,7 @@ select_and_print_frame (struct frame_info *frame)
 {
   select_frame (frame);
   if (frame)
-    print_stack_frame (frame, 1, SRC_AND_LOC, 1);
+    print_stack_frame (1, SRC_AND_LOC, 1);
 }
 
 /* Return the symbol-block in which the selected frame is executing.
@@ -2511,7 +2511,7 @@ return_command (char *retval_exp, int from_tty)
   select_frame (get_current_frame ());
   /* If interactive, print the frame that is now current.  */
   if (from_tty)
-    print_stack_frame (get_selected_frame (NULL), 1, SRC_AND_LOC, 1);
+    print_stack_frame (1, SRC_AND_LOC, 1);
 }
 
 /* Sets the scope to input function name, provided that the function
