@@ -1998,6 +1998,7 @@ nios2_frame_base_address (struct frame_info *this_frame, void **this_cache)
 
 static const struct frame_unwind nios2_frame_unwind =
 {
+  "Nios II",
   NORMAL_FRAME,
   default_frame_unwind_stop_reason,
   nios2_frame_this_id,
@@ -2098,6 +2099,7 @@ nios2_stub_frame_sniffer (const struct frame_unwind *self,
 
 static const struct frame_unwind nios2_stub_frame_unwind =
 {
+  "Nios II stub",
   NORMAL_FRAME,
   default_frame_unwind_stop_reason,
   nios2_stub_frame_this_id,

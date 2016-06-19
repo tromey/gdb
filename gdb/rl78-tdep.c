@@ -1191,6 +1191,7 @@ rl78_prev_register (struct frame_info *this_frame,
 
 static const struct frame_unwind rl78_unwind =
 {
+  "RL78",
   NORMAL_FRAME,
   default_frame_unwind_stop_reason,
   rl78_this_id,

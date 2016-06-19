@@ -1957,7 +1957,8 @@ arm_prologue_prev_register (struct frame_info *this_frame,
 				       prev_regnum);
 }
 
-struct frame_unwind arm_prologue_unwind = {
+static const struct frame_unwind arm_prologue_unwind = {
+  "ARM prologue",
   NORMAL_FRAME,
   arm_prologue_unwind_stop_reason,
   arm_prologue_this_id,
@@ -2690,7 +2691,8 @@ arm_exidx_unwind_sniffer (const struct frame_unwind *self,
   return 1;
 }
 
-struct frame_unwind arm_exidx_unwind = {
+static const struct frame_unwind arm_exidx_unwind = {
+  "ARM exidx",
   NORMAL_FRAME,
   default_frame_unwind_stop_reason,
   arm_prologue_this_id,
@@ -2793,6 +2795,7 @@ arm_epilogue_frame_sniffer (const struct frame_unwind *self,
 
 static const struct frame_unwind arm_epilogue_frame_unwind =
 {
+  "ARM epilogue",
   NORMAL_FRAME,
   default_frame_unwind_stop_reason,
   arm_epilogue_frame_this_id,
@@ -2913,7 +2916,8 @@ arm_stub_unwind_sniffer (const struct frame_unwind *self,
   return 0;
 }
 
-struct frame_unwind arm_stub_unwind = {
+static const struct frame_unwind arm_stub_unwind = {
+  "ARM stub",
   NORMAL_FRAME,
   default_frame_unwind_stop_reason,
   arm_stub_this_id,
@@ -3026,8 +3030,9 @@ arm_m_exception_unwind_sniffer (const struct frame_unwind *self,
 
 /* Frame unwinder for M-profile exceptions.  */
 
-struct frame_unwind arm_m_exception_unwind =
+static const struct frame_unwind arm_m_exception_unwind =
 {
+  "ARM M-profile exception",
   SIGTRAMP_FRAME,
   default_frame_unwind_stop_reason,
   arm_m_exception_this_id,

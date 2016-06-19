@@ -491,6 +491,7 @@ microblaze_frame_prev_register (struct frame_info *this_frame,
 
 static const struct frame_unwind microblaze_frame_unwind =
 {
+  "MicroBlaze",
   NORMAL_FRAME,
   default_frame_unwind_stop_reason,
   microblaze_frame_this_id,

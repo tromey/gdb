@@ -519,6 +519,7 @@ h8300_frame_prev_register (struct frame_info *this_frame, void **this_cache,
 }
 
 static const struct frame_unwind h8300_frame_unwind = {
+  "H8300",
   NORMAL_FRAME,
   default_frame_unwind_stop_reason,
   h8300_frame_this_id,

@@ -2162,6 +2162,7 @@ ia64_frame_prev_register (struct frame_info *this_frame, void **this_cache,
  
 static const struct frame_unwind ia64_frame_unwind =
 {
+  "ia64",
   NORMAL_FRAME,
   default_frame_unwind_stop_reason,
   &ia64_frame_this_id,
@@ -2349,6 +2350,7 @@ ia64_sigtramp_frame_sniffer (const struct frame_unwind *self,
 
 static const struct frame_unwind ia64_sigtramp_frame_unwind =
 {
+  "ia64 sigtramp",
   SIGTRAMP_FRAME,
   default_frame_unwind_stop_reason,
   ia64_sigtramp_frame_this_id,
@@ -3019,6 +3021,7 @@ ia64_libunwind_frame_sniffer (const struct frame_unwind *self,
 
 static const struct frame_unwind ia64_libunwind_frame_unwind =
 {
+  "ia64 libunwind",
   NORMAL_FRAME,
   default_frame_unwind_stop_reason,
   ia64_libunwind_frame_this_id,
@@ -3108,6 +3111,7 @@ ia64_libunwind_sigtramp_frame_sniffer (const struct frame_unwind *self,
 
 static const struct frame_unwind ia64_libunwind_sigtramp_frame_unwind =
 {
+  "ia64 libunwind sigtramp",
   SIGTRAMP_FRAME,
   default_frame_unwind_stop_reason,
   ia64_libunwind_sigtramp_frame_this_id,

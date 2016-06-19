@@ -1519,6 +1519,7 @@ xtensa_frame_prev_register (struct frame_info *this_frame,
 static const struct frame_unwind
 xtensa_unwind =
 {
+  "Xtensa",
   NORMAL_FRAME,
   default_frame_unwind_stop_reason,
   xtensa_frame_this_id,

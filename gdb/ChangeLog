@@ -1,3 +1,41 @@
+2016-06-19  Tom Tromey  <tom@tromey.com>
+
+	PR cli/18054:
+	* tramp-frame.c (tramp_frame_prepend_unwinder): Set name of new
+	unwinder.
+	* stack.c (frame_info): Print name of unwinder.
+	* python/py-unwind.c (pyuw_on_new_gdbarch): Set name of new
+	unwinder.
+	* frame.h (get_frame_unwinder_name): Declare.
+	* frame.c (fprint_frame): Print name of unwinder.
+	(get_frame_unwinder_name): New function.
+	* frame-unwind.h (struct frame_unwind) <name>: New field.
+	* arm-tdep.c (arm_prologue_unwind): Now static.
+	(arm_exidx_unwind): Now static.
+	(arm_stub_unwind): Now static.
+	(arm_m_exception_unwind): Now static.
+	* aarch64-tdep.c (aarch64_prologue_unwind): Now static.
+	(aarch64_stub_unwind): Now static.
+	* aarch64-tdep.c, alpha-mdebug-tdep.c, alpha-tdep.c, amd64-tdep.c,
+	amd64-windows-tdep.c, amd64obsd-tdep.c, arm-tdep.c, avr-tdep.c,
+	bfin-tdep.c, cris-tdep.c, dummy-frame.c, dwarf2-frame-tailcall.c,
+	dwarf2-frame.c, frv-linux-tdep.c, frv-tdep.c, ft32-tdep.c,
+	h8300-tdep.c, hppa-linux-tdep.c, hppa-tdep.c, i386-tdep.c,
+	i386obsd-tdep.c, ia64-tdep.c, inline-frame.c, iq2000-tdep.c,
+	jit.c, lm32-tdep.c, m32c-tdep.c, m32r-linux-tdep.c, m32r-tdep.c,
+	m68hc11-tdep.c, m68k-tdep.c, m68klinux-tdep.c, m88k-tdep.c,
+	mep-tdep.c, microblaze-tdep.c, mips-sde-tdep.c, mips-tdep.c,
+	mn10300-tdep.c, moxie-tdep.c, msp430-tdep.c, mt-tdep.c,
+	nds32-tdep.c, nios2-tdep.c, ppc-linux-tdep.c, ppcfbsd-tdep.c,
+	ppcobsd-tdep.c, record-btrace.c, rl78-tdep.c, rs6000-tdep.c,
+	rx-tdep.c, s390-linux-tdep.c, score-tdep.c, sentinel-frame.c,
+	sh-tdep.c, sh64-tdep.c, sparc-sol2-tdep.c, sparc-tdep.c,
+	sparc64-sol2-tdep.c, sparc64-tdep.c, sparc64fbsd-tdep.c,
+	sparc64nbsd-tdep.c, sparc64obsd-tdep.c, sparcnbsd-tdep.c,
+	sparcobsd-tdep.c, spu-tdep.c, tic6x-tdep.c, tilegx-tdep.c,
+	v850-tdep.c, vax-tdep.c, vaxobsd-tdep.c, xstormy16-tdep.c,
+	xtensa-tdep.c: Give name to unwinders.
+
 2016-06-12  Tom Tromey  <tom@tromey.com>
 
 	* break-catch-throw.c (_initialize_break_catch_throw): Add Usage

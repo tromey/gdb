@@ -503,6 +503,11 @@ extern CORE_ADDR get_frame_args_address (struct frame_info *);
    for an invalid frame).  */
 extern int frame_relative_level (struct frame_info *fi);
 
+/* Return the name of the unwinder that was used to construct this
+   frame.  */
+
+extern const char *get_frame_unwinder_name (struct frame_info *);
+
 /* Return the frame's type.  */
 
 extern enum frame_type get_frame_type (struct frame_info *);

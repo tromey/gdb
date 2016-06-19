@@ -1685,6 +1685,10 @@ info_frame_command (const char *addr_exp, int from_tty)
     if (count || need_nl)
       puts_filtered ("\n");
   }
+
+  /* Print the name of the unwinder.  */
+  printf_filtered (_(" Unwinder used for this frame: %s\n"),
+		   get_frame_unwinder_name (fi));
 }
 
 /* Print briefly all stack frames or just the innermost COUNT_EXP

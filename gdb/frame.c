@@ -442,6 +442,8 @@ fprint_frame (struct ui_file *file, struct frame_info *fi)
     fprintf_unfiltered (file, "%s", hex_string (fi->next->prev_func.addr));
   else
     fprintf_unfiltered (file, "<unknown>");
+  fprintf_unfiltered (file, ",");
+  fprintf_unfiltered (file, "unwinder=%s", fi->unwind->name);
   fprintf_unfiltered (file, "}");
 }
 
@@ -2611,6 +2613,14 @@ frame_relative_level (struct frame_info *fi)
     return -1;
   else
     return fi->level;
+}
+
+/* See frame.h.  */
+
+const char *
+get_frame_unwinder_name (struct frame_info *frame)
+{
+  return frame->unwind->name;
 }
 
 enum frame_type

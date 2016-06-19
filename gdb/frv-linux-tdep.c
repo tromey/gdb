@@ -333,6 +333,7 @@ frv_linux_sigtramp_frame_sniffer (const struct frame_unwind *self,
 
 static const struct frame_unwind frv_linux_sigtramp_frame_unwind =
 {
+  "FRV sigtramp",
   SIGTRAMP_FRAME,
   default_frame_unwind_stop_reason,
   frv_linux_sigtramp_frame_this_id,

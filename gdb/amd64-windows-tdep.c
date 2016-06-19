@@ -1116,6 +1116,7 @@ amd64_windows_frame_this_id (struct frame_info *this_frame, void **this_cache,
 
 static const struct frame_unwind amd64_windows_frame_unwind =
 {
+  "x86-64 Windows SEH",
   NORMAL_FRAME,
   default_frame_unwind_stop_reason,
   &amd64_windows_frame_this_id,

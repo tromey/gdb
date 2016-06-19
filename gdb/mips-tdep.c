@@ -2874,6 +2874,7 @@ mips_insn16_frame_sniffer (const struct frame_unwind *self,
 
 static const struct frame_unwind mips_insn16_frame_unwind =
 {
+  "MIPS16",
   NORMAL_FRAME,
   default_frame_unwind_stop_reason,
   mips_insn16_frame_this_id,
@@ -3310,6 +3311,7 @@ mips_micro_frame_sniffer (const struct frame_unwind *self,
 
 static const struct frame_unwind mips_micro_frame_unwind =
 {
+  "MIPS Micro",
   NORMAL_FRAME,
   default_frame_unwind_stop_reason,
   mips_micro_frame_this_id,
@@ -3686,6 +3688,7 @@ mips_insn32_frame_sniffer (const struct frame_unwind *self,
 
 static const struct frame_unwind mips_insn32_frame_unwind =
 {
+  "MIPS32",
   NORMAL_FRAME,
   default_frame_unwind_stop_reason,
   mips_insn32_frame_this_id,
@@ -3802,6 +3805,7 @@ mips_stub_frame_sniffer (const struct frame_unwind *self,
 
 static const struct frame_unwind mips_stub_frame_unwind =
 {
+  "MIPS stub",
   NORMAL_FRAME,
   default_frame_unwind_stop_reason,
   mips_stub_frame_this_id,

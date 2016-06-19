@@ -1135,6 +1135,7 @@ spu_frame_prev_register (struct frame_info *this_frame,
 }
 
 static const struct frame_unwind spu_frame_unwind = {
+  "SPU",
   NORMAL_FRAME,
   default_frame_unwind_stop_reason,
   spu_frame_this_id,
@@ -1292,6 +1293,7 @@ spu2ppu_dealloc_cache (struct frame_info *self, void *this_cache)
 }
 
 static const struct frame_unwind spu2ppu_unwind = {
+  "SPU2PPU arch",
   ARCH_FRAME,
   default_frame_unwind_stop_reason,
   spu2ppu_this_id,

@@ -1356,6 +1356,7 @@ dwarf2_frame_sniffer (const struct frame_unwind *self,
 
 static const struct frame_unwind dwarf2_frame_unwind =
 {
+  "DWARF-2",
   NORMAL_FRAME,
   dwarf2_frame_unwind_stop_reason,
   dwarf2_frame_this_id,
@@ -1367,6 +1368,7 @@ static const struct frame_unwind dwarf2_frame_unwind =
 
 static const struct frame_unwind dwarf2_signal_frame_unwind =
 {
+  "DWARF-2 sigtramp",
   SIGTRAMP_FRAME,
   dwarf2_frame_unwind_stop_reason,
   dwarf2_frame_this_id,

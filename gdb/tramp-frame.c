@@ -163,6 +163,7 @@ tramp_frame_prepend_unwinder (struct gdbarch *gdbarch,
   unwinder = GDBARCH_OBSTACK_ZALLOC (gdbarch, struct frame_unwind);
 
   data->tramp_frame = tramp_frame;
+  unwinder->name = "Tramp";
   unwinder->type = tramp_frame->frame_type;
   unwinder->unwind_data = data;
   unwinder->sniffer = tramp_frame_sniffer;
