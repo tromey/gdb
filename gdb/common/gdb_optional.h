@@ -38,6 +38,8 @@ public:
     : m_dummy (),
       m_instantiated (false)
   {
+    // Hack to work around gcc uninitialized warning.
+    memset (&m_item, 0, sizeof (m_item));
   }
 
   ~optional ()
