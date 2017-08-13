@@ -5109,8 +5109,34 @@ Cannot fill $_exitsignal with the correct signal number.\n"));
 
       gdb_flush (gdb_stdout);
       target_mourn_inferior (inferior_ptid);
-      stop_print_frame = 0;
-      stop_waiting (ecs);
+      /* In multi-inferior, there might still be other processes
+	 running.  Only stop waiting if everything has exited.  */
+      if (have_live_inferiors ())
+	{
+	  if (!switch_back_to_stepped_thread (ecs))
+	    {
+	      struct inferior *inf;
+
+	      ALL_NON_EXITED_INFERIORS (inf)
+	      {
+		thread_info *tp = any_live_thread_of_process (inf->pid);
+
+		switch_to_thread (tp->ptid);
+		ecs->event_thread = inferior_thread ();
+		ecs->ptid = inferior_ptid;
+		break;
+	      }
+	      if (!target_is_non_stop_p ())
+		keep_going (ecs);
+	      else
+		prepare_to_wait (ecs);
+	    }
+	}
+      else
+	{
+	  stop_print_frame = 0;
+	  stop_waiting (ecs);
+	}
       return;
 
       /* The following are the only cases in which we keep going;

@@ -1,3 +1,9 @@
+2017-08-19  Tom Tromey  <tom@tromey.com>
+
+	PR threads/19471:
+	* infrun.c (handle_inferior_event_1) <TARGET_WAITKIND_EXITED>:
+	Resume other inferiors.
+
 2017-09-11  Tom Tromey  <tom@tromey.com>
 
 	* breakpoint.c (program_breakpoint_here_p): Update.
