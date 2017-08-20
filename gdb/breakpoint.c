@@ -8475,6 +8475,9 @@ add_solib_catchpoint (const char *arg, int is_load, int is_temp, int enabled)
   init_catchpoint (c.get (), gdbarch, is_temp, NULL,
 		   &catch_solib_breakpoint_ops);
 
+  /* init_catchpoint sets the pspace, but "catch load" and
+     "catch unload" should not be pspace-dependent.  */
+  c->pspace = NULL;
   c->enable_state = enabled ? bp_enabled : bp_disabled;
 
   install_breakpoint (0, std::move (c), 1);

@@ -1,3 +1,9 @@
+2017-08-20  Tom Tromey  <tom@tromey.com>
+
+	PR breakpoints/17549:
+	* breakpoint.c (add_solib_catchpoint): Clear the new catchpoint's
+	"pspace".
+
 2017-08-19  Tom Tromey  <tom@tromey.com>
 
 	PR threads/19471:
