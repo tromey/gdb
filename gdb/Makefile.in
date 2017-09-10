@@ -1044,6 +1044,7 @@ SFILES = \
 	bfd-target.c \
 	block.c \
 	blockframe.c \
+	break-catch-exit.c \
 	break-catch-sig.c \
 	break-catch-syscall.c \
 	break-catch-throw.c \
@@ -1657,6 +1658,7 @@ COMMON_OBS = $(DEPFILES) $(CONFIG_OBS) $(YYOBJ) \
 	bfd-target.o \
 	block.o \
 	blockframe.o \
+	break-catch-exit.o \
 	break-catch-sig.o \
 	break-catch-syscall.o \
 	break-catch-throw.o \
