@@ -468,12 +468,11 @@ dict_create_linear_from_expandable (struct obstack *obstack,
 
   gdb_assert (DICT_VECTOR (expandable) == &dict_linear_expandable_vector);
 
-  retval = obstack_alloc (obstack, sizeof (struct dictionary));
+  retval = XOBNEW (obstack, struct dictionary);
   DICT_VECTOR (retval) = &dict_linear_vector;
 
   DICT_LINEAR_NSYMS (retval) = DICT_LINEAR_NSYMS (expandable);
-  syms = obstack_alloc (obstack,
-			DICT_LINEAR_NSYMS (retval) * sizeof (struct symbol *));
+  syms = XOBNEWVEC (obstack, struct symbol *, DICT_LINEAR_NSYMS (retval));
   memcpy (syms, DICT_LINEAR_SYMS (expandable),
 	  DICT_LINEAR_NSYMS (retval) * sizeof (struct symbol *));
   DICT_LINEAR_SYMS (retval) = syms;

@@ -580,7 +580,7 @@ finish_block_for_symbol (struct symbol *symbol, struct pending **listhead,
 
   gdb_assert (SYMBOL_BODILESS (symbol));
 
-  block = SYMBOL_BLOCK_VALUE (symbol);
+  block = const_cast<struct block *> (SYMBOL_BLOCK_VALUE (symbol));
 
   expandable = BLOCK_DICT (block);
   add_pending_symbols_to_dict (expandable, listhead);
@@ -590,9 +590,10 @@ finish_block_for_symbol (struct symbol *symbol, struct pending **listhead,
   dict_free (expandable);
   free_struct_pendings (listhead);
 
-  set_symbol_symtabs (block, SYMBOL_SYMTAB (symbol));
+  set_symbol_symtabs (block, symbol_symtab (symbol));
 
-  bv = BLOCKVECTOR (SYMBOL_SYMTAB (symbol));
+  bv = const_cast<struct blockvector *>
+    (SYMTAB_BLOCKVECTOR (symbol_symtab (symbol)));
 
   /* Count the number of new blocks to insert.  */
   for (iter = pending_blocks, n_new_blocks = 0;
@@ -637,7 +638,7 @@ finish_block_for_symbol (struct symbol *symbol, struct pending **listhead,
 	  if (BLOCK_SUPERBLOCK (iter->block) == NULL)
 	    BLOCK_SUPERBLOCK (iter->block) = parent;
 	  new_blocks[n_new_blocks + --idx] = iter->block;
-	  set_symbol_symtabs (iter->block, SYMBOL_SYMTAB (symbol));
+	  set_symbol_symtabs (iter->block, symbol_symtab (symbol));
 	}
 
       BLOCKVECTOR_NBLOCKS (bv) = n_blocks + n_new_blocks;
@@ -1332,13 +1333,13 @@ set_symbol_symtabs (struct block *block, struct symtab *symtab)
      static symbol lists.  */
   if (BLOCK_RAW_FUNCTION (block) != NULL)
     if (symbol_symtab (BLOCK_RAW_FUNCTION (block)) == NULL)
-      symbol_symtab (BLOCK_RAW_FUNCTION (block)) = symtab;
+      symbol_set_symtab (BLOCK_RAW_FUNCTION (block), symtab);
 
   for (sym = dict_iterator_first (BLOCK_DICT (block), &iter);
        sym != NULL;
        sym = dict_iterator_next (&iter))
     if (symbol_symtab (sym) == NULL)
-      symbol_symtab (sym) = symtab;
+      symbol_set_symtab (sym, symtab);
 }
 
 /* Implementation of the first part of end_symtab.  It allows modifying

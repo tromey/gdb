@@ -4596,9 +4596,9 @@ add_block (struct block *b, struct symtab *s)
   struct blockvector *bv = (struct blockvector *) SYMTAB_BLOCKVECTOR (s);
 
   bv->block
-    = xrealloc ((void *) bv->block,
-		(BLOCKVECTOR_NBLOCKS (bv) + 1)
-		* sizeof (struct block *));
+    = (block **) xrealloc ((void *) bv->block,
+			   (BLOCKVECTOR_NBLOCKS (bv) + 1)
+			   * sizeof (struct block *));
 
   BLOCKVECTOR_BLOCK (bv, BLOCKVECTOR_NBLOCKS (bv)++) = b;
 }
@@ -4799,7 +4799,7 @@ new_bvect (int nblocks)
   struct blockvector *bv;
 
   bv = XCNEW (struct blockvector);
-  bv->block = XCALLOC (nblocks, struct block *);
+  bv->block = XCNEWVEC (struct block *, nblocks);
 
   BLOCKVECTOR_NBLOCKS (bv) = nblocks;
 

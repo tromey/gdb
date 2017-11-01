@@ -1696,10 +1696,12 @@ static struct symbol *new_symbol (struct die_info *, struct type *,
 static struct symbol *new_symbol_full (struct die_info *, struct type *,
 				       struct dwarf2_cu *, struct symbol *);
 
-static void dwarf2_const_value (const struct attribute *, struct symbol *,
+static void dwarf2_const_value (sect_offset die_offset,
+				const struct attribute *, struct symbol *,
 				struct dwarf2_cu *);
 
-static void dwarf2_const_value_attr (const struct attribute *attr,
+static void dwarf2_const_value_attr (sect_offset die_offset,
+				     const struct attribute *attr,
 				     struct type *type,
 				     const char *name,
 				     struct obstack *obstack,
@@ -1928,9 +1930,11 @@ static int attr_form_is_ref (const struct attribute *);
 
 static void fill_in_loclist_baton (struct dwarf2_cu *cu,
 				   struct dwarf2_loclist_baton *baton,
+				   sect_offset die_offset,
 				   const struct attribute *attr);
 
-static void dwarf2_symbol_mark_computed (const struct attribute *attr,
+static void dwarf2_symbol_mark_computed (sect_offset die_offset,
+					 const struct attribute *attr,
 					 struct symbol *sym,
 					 struct dwarf2_cu *cu,
 					 int is_block);
@@ -8892,7 +8896,7 @@ dwarf2_compute_name (const char *name,
 		      continue;
 		    }
 
-		  dwarf2_const_value_attr (child->offset, attr, type, name,
+		  dwarf2_const_value_attr (child->sect_off, attr, type, name,
 					   &cu->comp_unit_obstack, cu,
 					   &value, &bytes, &baton);
 
@@ -11608,14 +11612,14 @@ void
 dwarf2_fill_in_symbol_body (struct symbol *symbol)
 {
   sect_offset die_offset = *(sect_offset *) SYMBOL_LOCATION_BATON (symbol);
-  struct symtab *symtab = SYMBOL_SYMTAB (symbol);
-  struct objfile *objfile = symtab->objfile;
+  struct symtab *symtab = symbol_symtab (symbol);
+  struct objfile *objfile = SYMTAB_OBJFILE (symtab);
   struct dwarf2_per_cu_data *per_cu;
   struct dwarf2_cu *cu;
   struct cleanup *back_to;
-  CORE_ADDR baseaddr;
+  /* CORE_ADDR baseaddr; */
   struct die_info *die;
-  struct context_stack *new;
+  /* struct context_stack *newobj; */
 
   dw2_setup (objfile);
   per_cu = dwarf2_find_containing_comp_unit (die_offset, /* FIXME */ 0,
@@ -11625,14 +11629,14 @@ dwarf2_fill_in_symbol_body (struct symbol *symbol)
     load_cu (per_cu);
   cu = per_cu->cu;
 
-  baseaddr = ANOFFSET (objfile->section_offsets, SECT_OFF_TEXT (objfile));
+  /* baseaddr = ANOFFSET (objfile->section_offsets, SECT_OFF_TEXT (objfile)); */
 
   back_to = make_cleanup (really_free_pendings, NULL);
   /* FIXME: delayed list cleanup stuff?  */
 
   cu->list_in_scope = &local_symbols;
 
-  new = push_context (0, 0);
+  /* newobj = push_context (0, 0); */
   die = follow_die_offset (die_offset, /* FIXME */ 0, &cu);
 
   if (die->child != NULL)
@@ -11650,7 +11654,7 @@ dwarf2_fill_in_symbol_body (struct symbol *symbol)
 	}
     }
 
-  new = pop_context ();
+  /* newobj = pop_context (); */
   
   finish_block_for_symbol (symbol, &local_symbols, objfile);
 			   
@@ -11747,7 +11751,7 @@ read_func_scope (struct die_info *die, struct dwarf2_cu *cu)
      it.  */
   attr = dwarf2_attr (die, DW_AT_frame_base, cu);
   if (attr)
-    dwarf2_symbol_mark_computed (attr, newobj->name, cu, 1);
+    dwarf2_symbol_mark_computed (die->sect_off, attr, newobj->name, cu, 1);
 
   /* If there is a location for the static link, record it.  */
   newobj->static_link = NULL;
@@ -12076,7 +12080,7 @@ read_call_site_scope (struct die_info *die, struct dwarf2_cu *cu)
       struct dwarf2_locexpr_baton *dlbaton;
 
       dlbaton = XOBNEW (&objfile->objfile_obstack, struct dwarf2_locexpr_baton);
-      dlbaton->die_offset = die->offset;
+      dlbaton->die_offset = die->sect_off;
       dlbaton->data = DW_BLOCK (attr)->data;
       dlbaton->size = DW_BLOCK (attr)->size;
       dlbaton->per_cu = cu->per_cu;
@@ -14030,7 +14034,8 @@ update_enumeration_type_from_children (struct die_info *die,
       if (name == NULL)
 	name = "<anonymous enumerator>";
 
-      dwarf2_const_value_attr (attr, type, name, &obstack, cu,
+      dwarf2_const_value_attr (child_die->sect_off,
+			       attr, type, name, &obstack, cu,
 			       &value, &bytes, &baton);
       if (value < 0)
 	{
@@ -15395,7 +15400,8 @@ attr_to_dynamic_prop (const struct attribute *attr, struct die_info *die,
 	      {
 		baton = XOBNEW (obstack, struct dwarf2_property_baton);
 		baton->referenced_type = die_type (target_die, target_cu);
-		fill_in_loclist_baton (cu, &baton->loclist, target_attr);
+		fill_in_loclist_baton (cu, &baton->loclist,
+				       target_die->sect_off, target_attr);
 		prop->data.baton = baton;
 		prop->kind = PROP_LOCLIST;
 		gdb_assert (prop->data.baton != NULL);
@@ -19073,7 +19079,7 @@ var_decode_location (sect_offset die_offset,
      or memory numbers show me otherwise.  */
 
   dwarf2_symbol_mark_computed (die_offset, attr, sym, cu, 0);
-  SYMBOL_CLASS (sym) = LOC_COMPUTED;
+  /* SYMBOL_CLASS (sym) = LOC_COMPUTED; */
 
   if (SYMBOL_COMPUTED_OPS (sym)->location_has_loclist)
     cu->has_loclist = 1;
@@ -19234,7 +19240,7 @@ new_symbol_full (struct die_info *die, struct type *type, struct dwarf2_cu *cu,
 	    }
 	  if (attr)
 	    {
-	      dwarf2_const_value (die->offset, attr, sym, cu);
+	      dwarf2_const_value (die->sect_off, attr, sym, cu);
 	      attr2 = dwarf2_attr (die, DW_AT_external, cu);
 	      if (!suppress_add)
 		{
@@ -19248,7 +19254,7 @@ new_symbol_full (struct die_info *die, struct type *type, struct dwarf2_cu *cu,
 	  attr = dwarf2_attr (die, DW_AT_location, cu);
 	  if (attr)
 	    {
-	      var_decode_location (die->offset, attr, sym, cu);
+	      var_decode_location (die->sect_off, attr, sym, cu);
 	      attr2 = dwarf2_attr (die, DW_AT_external, cu);
 
 	      /* Fortran explicitly imports any global symbols to the local
@@ -19341,12 +19347,12 @@ new_symbol_full (struct die_info *die, struct type *type, struct dwarf2_cu *cu,
 	  attr = dwarf2_attr (die, DW_AT_location, cu);
 	  if (attr)
 	    {
-	      var_decode_location (die->offset, attr, sym, cu);
+	      var_decode_location (die->sect_off, attr, sym, cu);
 	    }
 	  attr = dwarf2_attr (die, DW_AT_const_value, cu);
 	  if (attr)
 	    {
-	      dwarf2_const_value (die->offset, attr, sym, cu);
+	      dwarf2_const_value (die->sect_off, attr, sym, cu);
 	    }
 
 	  list_to_add = cu->list_in_scope;
@@ -19414,7 +19420,7 @@ new_symbol_full (struct die_info *die, struct type *type, struct dwarf2_cu *cu,
 	  attr = dwarf2_attr (die, DW_AT_const_value, cu);
 	  if (attr)
 	    {
-	      dwarf2_const_value (die->offset, attr, sym, cu);
+	      dwarf2_const_value (die->sect_off, attr, sym, cu);
 	    }
 	  {
 	    /* NOTE: carlton/2003-11-10: See comment above in the
@@ -20852,7 +20858,7 @@ dwarf2_fetch_die_loc_sect_off (sect_offset sect_off,
       CORE_ADDR pc = (*get_frame_pc) (baton);
       size_t size;
 
-      fill_in_loclist_baton (cu, &loclist_baton, die->offset, attr);
+      fill_in_loclist_baton (cu, &loclist_baton, die->sect_off, attr);
 
       retval.data = dwarf2_find_location_expression (&loclist_baton,
 						     &size, pc);

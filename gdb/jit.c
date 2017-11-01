@@ -648,7 +648,6 @@ finalize_symtab (struct gdb_symtab *stab, struct objfile *objfile)
   struct gdb_block *gdb_block_iter, *gdb_block_iter_tmp;
   struct block *block_iter;
   int actual_nblocks, i;
-  size_t blockvector_size;
   CORE_ADDR begin, end;
   struct blockvector *bv;
 
@@ -673,11 +672,11 @@ finalize_symtab (struct gdb_symtab *stab, struct objfile *objfile)
 	      size);
     }
 
-  blockvector_size = actual_nblocks * sizeof (struct block *);
-  bv = symtab->blockvector = OBSTACK_ZALLOC (&objfile->objfile_obstack,
-					     struct blockvector);
-  symtab->blockvector->block
-    = obstack_alloc (&objfile->objfile_obstack, blockvector_size);
+  bv = OBSTACK_ZALLOC (&objfile->objfile_obstack, struct blockvector);
+  COMPUNIT_BLOCKVECTOR (cust) = bv;
+
+  bv->block = XOBNEWVEC (&objfile->objfile_obstack, struct block *,
+			 actual_nblocks);
 
   /* (begin, end) will contain the PC range this entire blockvector
      spans.  */

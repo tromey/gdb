@@ -4435,7 +4435,7 @@ const struct symbol_computed_ops dwarf2_locexpr_funcs = {
   locexpr_describe_location,
   0,	/* location_has_loclist */
   locexpr_tracepoint_var_ref,
-  locexpr_generate_c_location
+  locexpr_generate_c_location,
   dwarf2_fill_in_symbol_body
 };
 
@@ -4649,7 +4649,7 @@ const struct symbol_computed_ops dwarf2_loclist_funcs = {
   loclist_describe_location,
   1,	/* location_has_loclist */
   loclist_tracepoint_var_ref,
-  loclist_generate_c_location
+  loclist_generate_c_location,
   dwarf2_fill_in_symbol_body
 };
 
