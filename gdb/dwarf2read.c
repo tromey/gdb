@@ -2140,7 +2140,7 @@ static void create_all_comp_units (struct objfile *);
 
 static int create_all_type_units (struct objfile *);
 
-static void load_full_comp_unit (struct dwarf2_per_cu_data *,
+static void load_full_comp_unit (struct dwarf2_per_cu_data *, bool,
 				 enum language);
 
 static void process_full_comp_unit (struct dwarf2_per_cu_data *,
@@ -2204,7 +2204,7 @@ static const gdb_byte *read_and_check_comp_unit_head
 
 static void init_cutu_and_read_dies
   (struct dwarf2_per_cu_data *this_cu, struct abbrev_table *abbrev_table,
-   int use_existing_cu, int keep,
+   int use_existing_cu, int keep, bool skip_partial,
    die_reader_func_ftype *die_reader_func, void *data);
 
 static void init_cutu_and_read_dies_simple
@@ -3055,12 +3055,12 @@ create_quick_file_names_table (unsigned int nr_initial_entries)
    processing PER_CU->CU.  dw2_setup must have been already called.  */
 
 static void
-load_cu (struct dwarf2_per_cu_data *per_cu)
+load_cu (struct dwarf2_per_cu_data *per_cu, bool skip_partial)
 {
   if (per_cu->is_debug_types)
     load_full_type_unit (per_cu);
   else
-    load_full_comp_unit (per_cu, language_minimal);
+    load_full_comp_unit (per_cu, skip_partial, language_minimal);
 
   if (per_cu->cu == NULL)
     return;  /* Dummy CU.  */
@@ -3071,7 +3071,7 @@ load_cu (struct dwarf2_per_cu_data *per_cu)
 /* Read in the symbols for PER_CU.  */
 
 static void
-dw2_do_instantiate_symtab (struct dwarf2_per_cu_data *per_cu)
+dw2_do_instantiate_symtab (struct dwarf2_per_cu_data *per_cu, bool skip_partial)
 {
   struct cleanup *back_to;
 
@@ -3087,7 +3087,7 @@ dw2_do_instantiate_symtab (struct dwarf2_per_cu_data *per_cu)
       : (per_cu->v.psymtab == NULL || !per_cu->v.psymtab->readin))
     {
       queue_comp_unit (per_cu, language_minimal);
-      load_cu (per_cu);
+      load_cu (per_cu, skip_partial);
 
       /* If we just loaded a CU from a DWO, and we're working with an index
 	 that may badly handle TUs, load all the TUs in that DWO as well.
@@ -3116,14 +3116,14 @@ dw2_do_instantiate_symtab (struct dwarf2_per_cu_data *per_cu)
    table.  */
 
 static struct compunit_symtab *
-dw2_instantiate_symtab (struct dwarf2_per_cu_data *per_cu)
+dw2_instantiate_symtab (struct dwarf2_per_cu_data *per_cu, bool skip_partial)
 {
   gdb_assert (dwarf2_per_objfile->using_index);
   if (!per_cu->v.quick->compunit_symtab)
     {
       struct cleanup *back_to = make_cleanup (free_cached_comp_units, NULL);
       scoped_restore decrementer = increment_reading_symtab ();
-      dw2_do_instantiate_symtab (per_cu);
+      dw2_do_instantiate_symtab (per_cu, skip_partial);
       process_cu_includes ();
       do_cleanups (back_to);
     }
@@ -4002,7 +4002,7 @@ dw2_find_last_source_symtab (struct objfile *objfile)
 
   dw2_setup (objfile);
   index = dwarf2_per_objfile->n_comp_units - 1;
-  cust = dw2_instantiate_symtab (dw2_get_cutu (index));
+  cust = dw2_instantiate_symtab (dw2_get_cutu (index), false);
   if (cust == NULL)
     return NULL;
   return compunit_primary_filetab (cust);
@@ -4055,7 +4055,7 @@ dw2_map_expand_apply (struct objfile *objfile,
 
   /* This may expand more than one symtab, and we want to iterate over
      all of them.  */
-  dw2_instantiate_symtab (per_cu);
+  dw2_instantiate_symtab (per_cu, false);
 
   return iterate_over_some_symtabs (name, real_path, objfile->compunit_symtabs,
 				    last_made, callback);
@@ -4302,7 +4302,8 @@ dw2_lookup_symbol (struct objfile *objfile, int block_index,
       while ((per_cu = dw2_symtab_iter_next (&iter)) != NULL)
 	{
 	  struct symbol *sym, *with_opaque = NULL;
-	  struct compunit_symtab *stab = dw2_instantiate_symtab (per_cu);
+	  struct compunit_symtab *stab = dw2_instantiate_symtab (per_cu,
+								 false);
 	  const struct blockvector *bv = COMPUNIT_BLOCKVECTOR (stab);
 	  struct block *block = BLOCKVECTOR_BLOCK (bv, block_index);
 
@@ -4397,7 +4398,7 @@ dw2_expand_symtabs_for_function (struct objfile *objfile,
 			    func_name);
 
       while ((per_cu = dw2_symtab_iter_next (&iter)) != NULL)
-	dw2_instantiate_symtab (per_cu);
+	dw2_instantiate_symtab (per_cu, false);
     }
 }
 
@@ -4413,7 +4414,12 @@ dw2_expand_all_symtabs (struct objfile *objfile)
     {
       struct dwarf2_per_cu_data *per_cu = dw2_get_cutu (i);
 
-      dw2_instantiate_symtab (per_cu);
+      /* We don't want to directly expand a partial CU, because if we
+	 read it with the wrong language, then assertion failures can
+	 be triggered later on.  See PR symtab/23010.  So, tell
+	 dw2_instantiate_symtab to skip partial CUs -- any important
+	 partial CU will be read via DW_TAG_imported_unit anyway.  */
+      dw2_instantiate_symtab (per_cu, true);
     }
 }
 
@@ -4450,7 +4456,7 @@ dw2_expand_symtabs_with_fullname (struct objfile *objfile,
 
 	  if (filename_cmp (this_fullname, fullname) == 0)
 	    {
-	      dw2_instantiate_symtab (per_cu);
+	      dw2_instantiate_symtab (per_cu, false);
 	      break;
 	    }
 	}
@@ -5274,7 +5280,7 @@ dw2_expand_symtabs_matching_one
       bool symtab_was_null
 	= (per_cu->v.quick->compunit_symtab == NULL);
 
-      dw2_instantiate_symtab (per_cu);
+      dw2_instantiate_symtab (per_cu, false);
 
       if (expansion_notify != NULL
 	  && symtab_was_null
@@ -5529,7 +5535,8 @@ dw2_find_pc_sect_compunit_symtab (struct objfile *objfile,
 	     paddress (get_objfile_arch (objfile), pc));
 
   result
-    = recursively_find_pc_sect_compunit_symtab (dw2_instantiate_symtab (data),
+    = recursively_find_pc_sect_compunit_symtab (dw2_instantiate_symtab (data,
+									false),
 						pc);
   gdb_assert (result != NULL);
   return result;
@@ -6345,7 +6352,7 @@ dw2_debug_names_lookup_symbol (struct objfile *objfile, int block_index_int,
   while ((per_cu = iter.next ()) != NULL)
     {
       struct symbol *sym, *with_opaque = NULL;
-      struct compunit_symtab *stab = dw2_instantiate_symtab (per_cu);
+      struct compunit_symtab *stab = dw2_instantiate_symtab (per_cu, false);
       const struct blockvector *bv = COMPUNIT_BLOCKVECTOR (stab);
       struct block *block = BLOCKVECTOR_BLOCK (bv, block_index);
 
@@ -6404,7 +6411,7 @@ dw2_debug_names_expand_symtabs_for_function (struct objfile *objfile,
 
       struct dwarf2_per_cu_data *per_cu;
       while ((per_cu = iter.next ()) != NULL)
-	dw2_instantiate_symtab (per_cu);
+	dw2_instantiate_symtab (per_cu, false);
     }
 }
 
@@ -7725,6 +7732,7 @@ static void
 init_cutu_and_read_dies (struct dwarf2_per_cu_data *this_cu,
 			 struct abbrev_table *abbrev_table,
 			 int use_existing_cu, int keep,
+			 bool skip_partial,
 			 die_reader_func_ftype *die_reader_func,
 			 void *data)
 {
@@ -7874,6 +7882,9 @@ init_cutu_and_read_dies (struct dwarf2_per_cu_data *this_cu,
   /* Read the top level CU/TU die.  */
   init_cu_die_reader (&reader, cu, section, NULL);
   info_ptr = read_full_die (&reader, &comp_unit_die, info_ptr, &has_children);
+
+  if (skip_partial && comp_unit_die->tag == DW_TAG_partial_unit)
+    return;
 
   /* If we are in a DWO stub, process it and then read in the "real" CU/TU
      from the DWO file.
@@ -8379,14 +8390,14 @@ process_psymtab_comp_unit (struct dwarf2_per_cu_data *this_cu,
     free_one_cached_comp_unit (this_cu);
 
   if (this_cu->is_debug_types)
-    init_cutu_and_read_dies (this_cu, NULL, 0, 0, build_type_psymtabs_reader,
-			     NULL);
+    init_cutu_and_read_dies (this_cu, NULL, 0, 0, false,
+			     build_type_psymtabs_reader, NULL);
   else
     {
       process_psymtab_comp_unit_data info;
       info.want_partial_unit = want_partial_unit;
       info.pretend_language = pretend_language;
-      init_cutu_and_read_dies (this_cu, NULL, 0, 0,
+      init_cutu_and_read_dies (this_cu, NULL, 0, 0, false,
 			       process_psymtab_comp_unit_reader, &info);
     }
 
@@ -8562,7 +8573,7 @@ build_type_psymtabs_1 (void)
 	}
 
       init_cutu_and_read_dies (&tu->sig_type->per_cu, abbrev_table, 0, 0,
-			       build_type_psymtabs_reader, NULL);
+			       false, build_type_psymtabs_reader, NULL);
     }
 
   do_cleanups (cleanups);
@@ -8668,7 +8679,7 @@ process_skeletonless_type_unit (void **slot, void *info)
   *slot = entry;
 
   /* This does the job that build_type_psymtabs_1 would have done.  */
-  init_cutu_and_read_dies (&entry->per_cu, NULL, 0, 0,
+  init_cutu_and_read_dies (&entry->per_cu, NULL, 0, 0, false,
 			   build_type_psymtabs_reader, NULL);
 
   return 1;
@@ -8827,7 +8838,7 @@ load_partial_comp_unit_reader (const struct die_reader_specs *reader,
 static void
 load_partial_comp_unit (struct dwarf2_per_cu_data *this_cu)
 {
-  init_cutu_and_read_dies (this_cu, NULL, 1, 1,
+  init_cutu_and_read_dies (this_cu, NULL, 1, 1, false,
 			   load_partial_comp_unit_reader, NULL);
 }
 
@@ -9974,7 +9985,7 @@ psymtab_to_symtab_1 (struct partial_symtab *pst)
       return;
     }
 
-  dw2_do_instantiate_symtab (per_cu);
+  dw2_do_instantiate_symtab (per_cu, false);
 }
 
 /* Trivial hash function for die_info: the hash value of a DIE
@@ -10043,11 +10054,12 @@ load_full_comp_unit_reader (const struct die_reader_specs *reader,
 
 static void
 load_full_comp_unit (struct dwarf2_per_cu_data *this_cu,
+		     bool skip_partial,
 		     enum language pretend_language)
 {
   gdb_assert (! this_cu->is_debug_types);
 
-  init_cutu_and_read_dies (this_cu, NULL, 1, 1,
+  init_cutu_and_read_dies (this_cu, NULL, 1, 1, skip_partial,
 			   load_full_comp_unit_reader, &pretend_language);
 }
 
@@ -10568,7 +10580,7 @@ process_imported_unit_die (struct die_info *die, struct dwarf2_cu *cu)
 
       /* If necessary, add it to the queue and load its DIEs.  */
       if (maybe_queue_comp_unit (cu, per_cu, cu->language))
-	load_full_comp_unit (per_cu, cu->language);
+	load_full_comp_unit (per_cu, false, cu->language);
 
       VEC_safe_push (dwarf2_per_cu_ptr, cu->per_cu->imported_symtabs,
 		     per_cu);
@@ -19654,7 +19666,7 @@ dwarf2_read_addr_index (struct dwarf2_per_cu_data *per_cu,
 
       /* Note: We can't use init_cutu_and_read_dies_simple here,
 	 we need addr_base.  */
-      init_cutu_and_read_dies (per_cu, NULL, 0, 0,
+      init_cutu_and_read_dies (per_cu, NULL, 0, 0, false,
 			       dwarf2_read_addr_index_reader, &aidata);
       addr_base = aidata.addr_base;
       addr_size = aidata.addr_size;
@@ -22852,7 +22864,7 @@ follow_die_offset (sect_offset sect_off, int offset_in_dwz,
 
       /* If necessary, add it to the queue and load its DIEs.  */
       if (maybe_queue_comp_unit (cu, per_cu, cu->language))
-	load_full_comp_unit (per_cu, cu->language);
+	load_full_comp_unit (per_cu, false, cu->language);
 
       target_cu = per_cu->cu;
     }
@@ -22860,7 +22872,7 @@ follow_die_offset (sect_offset sect_off, int offset_in_dwz,
     {
       /* We're loading full DIEs during partial symbol reading.  */
       gdb_assert (dwarf2_per_objfile->reading_partial_symbols);
-      load_full_comp_unit (cu->per_cu, language_minimal);
+      load_full_comp_unit (cu->per_cu, false, language_minimal);
     }
 
   *ref_cu = target_cu;
@@ -22913,7 +22925,7 @@ dwarf2_fetch_die_loc_sect_off (sect_offset sect_off,
   dw2_setup (per_cu->objfile);
 
   if (per_cu->cu == NULL)
-    load_cu (per_cu);
+    load_cu (per_cu, false);
   cu = per_cu->cu;
   if (cu == NULL)
     {
@@ -23021,7 +23033,7 @@ dwarf2_fetch_constant_bytes (sect_offset sect_off,
   dw2_setup (per_cu->objfile);
 
   if (per_cu->cu == NULL)
-    load_cu (per_cu);
+    load_cu (per_cu, false);
   cu = per_cu->cu;
   if (cu == NULL)
     {
@@ -23146,7 +23158,7 @@ dwarf2_fetch_die_type_sect_off (sect_offset sect_off,
   dw2_setup (per_cu->objfile);
 
   if (per_cu->cu == NULL)
-    load_cu (per_cu);
+    load_cu (per_cu, false);
   cu = per_cu->cu;
   if (!cu)
     return NULL;
@@ -23421,7 +23433,7 @@ read_signatured_type (struct signatured_type *sig_type)
   gdb_assert (per_cu->is_debug_types);
   gdb_assert (per_cu->cu == NULL);
 
-  init_cutu_and_read_dies (per_cu, NULL, 0, 1,
+  init_cutu_and_read_dies (per_cu, NULL, 0, 1, false,
 			   read_signatured_type_reader, NULL);
   sig_type->per_cu.tu_read = 1;
 }
