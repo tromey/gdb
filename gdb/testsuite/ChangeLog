@@ -1,3 +1,10 @@
+2018-04-23  Tom Tromey  <tom@tromey.com>
+
+	PR exp/17095:
+	* gdb.dwarf2/dw2-align.exp: New file.
+	* gdb.cp/align.exp: New file.
+	* gdb.base/align.exp: New file.
+
 2018-04-19  Richard Bunt  <richard.bunt@arm.com>
 
 	* gdb.threads/multiple-successive-infcall.c: New test.
