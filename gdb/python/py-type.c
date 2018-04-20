@@ -1410,15 +1410,15 @@ gdbpy_initialize_types (void)
 
 static gdb_PyGetSetDef type_object_getset[] =
 {
-  { "code", typy_get_code, NULL,
-    "The code for this type.", NULL },
-  { "name", typy_get_name, NULL,
-    "The name for this type, or None.", NULL },
-  { "sizeof", typy_get_sizeof, NULL,
-    "The size of this type, in bytes.", NULL },
-  { "tag", typy_get_tag, NULL,
-    "The tag name for this type, or None.", NULL },
-  { NULL }
+ { "code", typy_get_code, NULL,
+   "The code for this type.", NULL },
+ { "name", typy_get_name, NULL,
+   "The name for this type, or None.", NULL },
+ { "sizeof", typy_get_sizeof, NULL,
+   "The size of this type, in bytes.", NULL },
+ { "tag", typy_get_tag, NULL,
+   "The tag name for this type, or None.", NULL },
+ { NULL }
 };
 
 static PyMethodDef type_object_methods[] =

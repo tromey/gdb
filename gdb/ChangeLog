@@ -1,5 +1,9 @@
 2018-04-23  Tom Tromey  <tom@tromey.com>
 
+	* python/py-type.c (type_object_getset): Reindent.
+
+2018-04-23  Tom Tromey  <tom@tromey.com>
+
 	PR exp/17095:
 	* NEWS: Update.
 	* std-operator.def (UNOP_ALIGNOF): New operator.
