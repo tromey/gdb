@@ -1075,7 +1075,7 @@ parse_symbol (SYMR *sh, union aux_ext *ax, char *ext_sh, int bigend,
 		SET_FIELD_ENUMVAL (*f, tsym.value);
 		FIELD_TYPE (*f) = t;
 		FIELD_NAME (*f) = debug_info->ss + cur_fdr->issBase + tsym.iss;
-		FIELD_BITSIZE (*f) = 0;
+		CLEAR_FIELD_BITSIZE (*f);
 
 		enum_sym = allocate_symbol (mdebugread_objfile);
 		SYMBOL_SET_LINKAGE_NAME
@@ -1263,7 +1263,7 @@ parse_symbol (SYMR *sh, union aux_ext *ax, char *ext_sh, int bigend,
       bitsize = 0;
       FIELD_TYPE (*f) = parse_type (cur_fd, ax, sh->index,
 				    &bitsize, bigend, name);
-      FIELD_BITSIZE (*f) = bitsize;
+      SET_FIELD_BITSIZE (*f, bitsize);
       break;
 
     case stIndirect:		/* forward declaration on Irix5 */

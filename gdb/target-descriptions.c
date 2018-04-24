@@ -225,7 +225,7 @@ make_gdb_type (struct gdbarch *gdbarch, struct tdesc_type *ttype)
 		SET_FIELD_BITPOS (fld[0], total_size - f.start - bitsize);
 	      else
 		SET_FIELD_BITPOS (fld[0], f.start);
-	      FIELD_BITSIZE (fld[0]) = bitsize;
+	      SET_FIELD_BITSIZE (fld[0], bitsize);
 	    }
 	  else
 	    {

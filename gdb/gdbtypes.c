@@ -1206,7 +1206,7 @@ create_array_type_with_stride (struct type *result_type,
   if (byte_stride_prop != NULL)
     add_dyn_prop (DYN_PROP_BYTE_STRIDE, *byte_stride_prop, result_type);
   else if (bit_stride > 0)
-    TYPE_FIELD_BITSIZE (result_type, 0) = bit_stride;
+    SET_FIELD_BITSIZE (TYPE_FIELD (result_type, 0), bit_stride);
 
   /* TYPE_TARGET_STUB will take care of zero length arrays.  */
   if (TYPE_LENGTH (result_type) == 0)
@@ -3063,7 +3063,20 @@ type_align (struct type *type)
       {
 	for (unsigned i = 0; i < TYPE_NFIELDS (type); ++i)
 	  {
-	    ULONGEST f_align = type_align (TYPE_FIELD_TYPE (type, i));
+	    ULONGEST f_align;
+
+	    /* Handle bitfields separately.  */
+	    if (TYPE_FIELD_PACKED (type, i))
+	      f_align = 1;
+	    else
+	      f_align = type_align (TYPE_FIELD_TYPE (type, i));
+	    /* If we couldn't find the alignment of a field, just
+	       propagate our ignorance.  */
+	    if (f_align == 0)
+	      {
+		align = 0;
+		break;
+	      }
 	    if (f_align > align)
 	      align = f_align;
 	  }
@@ -3073,7 +3086,8 @@ type_align (struct type *type)
     case TYPE_CODE_SET:
     case TYPE_CODE_RANGE:
     case TYPE_CODE_STRING:
-      /* FIXME */
+      /* Not sure what to do here, and these don't appear directly in
+	 C or C++.  */
       break;
 
     case TYPE_CODE_METHODPTR:
@@ -3093,8 +3107,6 @@ type_align (struct type *type)
       /* Not a power of 2, so pass.  */
       align = 0;
     }
-  if (align != 0 && !set_type_align (type, align))
-    align = 0;
 
   return align;
 }
@@ -4931,7 +4943,8 @@ copy_type_recursive (struct objfile *objfile,
 	{
 	  TYPE_FIELD_ARTIFICIAL (new_type, i) = 
 	    TYPE_FIELD_ARTIFICIAL (type, i);
-	  TYPE_FIELD_BITSIZE (new_type, i) = TYPE_FIELD_BITSIZE (type, i);
+	  SET_FIELD_BITSIZE (TYPE_FIELD (new_type, i),
+			     TYPE_FIELD_BITSIZE (type, i));
 	  if (TYPE_FIELD_TYPE (type, i))
 	    TYPE_FIELD_TYPE (new_type, i)
 	      = copy_type_recursive (objfile, TYPE_FIELD_TYPE (type, i),
@@ -5224,7 +5237,7 @@ append_flags_type_field (struct type *type, int start_bitpos, int nr_bits,
   TYPE_FIELD_NAME (type, field_nr) = xstrdup (name);
   TYPE_FIELD_TYPE (type, field_nr) = field_type;
   SET_FIELD_BITPOS (TYPE_FIELD (type, field_nr), start_bitpos);
-  TYPE_FIELD_BITSIZE (type, field_nr) = nr_bits;
+  SET_FIELD_BITSIZE (TYPE_FIELD (type, field_nr), nr_bits);
   ++TYPE_NFIELDS (type);
 }
 

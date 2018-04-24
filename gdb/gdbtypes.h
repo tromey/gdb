@@ -581,9 +581,11 @@ struct field
 
   ENUM_BITFIELD(field_loc_kind) loc_kind : 3;
 
-  /* * Size of this field, in bits, or zero if not packed.
+  /* * Size of this field plus one, in bits, or zero if not packed.
      If non-zero in an array type, indicates the element size in
      bits (used only in Ada at the moment).
+     Note that this is biased, so that a value of 1 indicates a
+     zero-length bitfield.  FIELD_BITSIZE un-offsets this.
      For an unpacked field, the field's type's length
      says how many bytes the field occupies.  */
 
@@ -1456,7 +1458,9 @@ extern void set_type_vptr_basetype (struct type *, struct type *);
   (FIELD_LOC_KIND (thisfld) = FIELD_LOC_KIND_DWARF_BLOCK,	\
    FIELD_DWARF_BLOCK (thisfld) = (addr))
 #define FIELD_ARTIFICIAL(thisfld) ((thisfld).artificial)
-#define FIELD_BITSIZE(thisfld) ((thisfld).bitsize)
+#define FIELD_BITSIZE(thisfld) (((thisfld).bitsize) - 1)
+#define SET_FIELD_BITSIZE(thisfld, bits) (((thisfld).bitsize) = ((bits) + 1))
+#define CLEAR_FIELD_BITSIZE(thisfld) (((thisfld).bitsize) = 0)
 
 #define TYPE_FIELD(thistype, n) TYPE_MAIN_TYPE(thistype)->flds_bnds.fields[n]
 #define TYPE_FIELD_TYPE(thistype, n) FIELD_TYPE(TYPE_FIELD(thistype, n))
@@ -1469,7 +1473,8 @@ extern void set_type_vptr_basetype (struct type *, struct type *);
 #define TYPE_FIELD_DWARF_BLOCK(thistype, n) FIELD_DWARF_BLOCK (TYPE_FIELD (thistype, n))
 #define TYPE_FIELD_ARTIFICIAL(thistype, n) FIELD_ARTIFICIAL(TYPE_FIELD(thistype,n))
 #define TYPE_FIELD_BITSIZE(thistype, n) FIELD_BITSIZE(TYPE_FIELD(thistype,n))
-#define TYPE_FIELD_PACKED(thistype, n) (FIELD_BITSIZE(TYPE_FIELD(thistype,n))!=0)
+#define TYPE_FIELD_PACKED(thistype, n) \
+  ((TYPE_FIELD (thistype, n)).bitsize != 0)
 
 #define TYPE_FIELD_PRIVATE_BITS(thistype) \
   TYPE_CPLUS_SPECIFIC(thistype)->private_field_bits

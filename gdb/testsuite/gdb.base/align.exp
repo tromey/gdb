@@ -36,6 +36,9 @@ set outfile [open $filename w]
 puts -nonewline $outfile "#define DEF(T,U) struct align_pair_ ## T ## _x_ ## U "
 puts $outfile "{ T one; U two; }"
 
+puts $outfile "struct shack { unsigned fld\[0\]; } item_shack;"
+puts $outfile "unsigned a_shack = _Alignof (struct shack);"
+
 # First emit single items.
 foreach type $typelist {
     set utype [join [split $type] _]
@@ -92,3 +95,6 @@ foreach type $typelist {
 	    " = $expected"
     }
 }
+
+set expected [get_integer_valueof a_shack 0]
+gdb_test "print _Alignof(struct shack)" " = $expected"

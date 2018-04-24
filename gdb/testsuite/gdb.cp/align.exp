@@ -52,6 +52,14 @@ puts $outfile {
     };
 
     enum bigenum { VALUE = 0xffffffffull };
+
+    struct bf1 { unsigned nothing : 0; };
+    bf1 item_bf1;
+    unsigned a_bf1 = alignof (bf1);
+
+    struct bf2 { char c; unsigned : 3; };
+    bf2 item_bf2;
+    unsigned a_bf2 = alignof (bf2);
 }
 
 # First emit single items.
@@ -119,4 +127,9 @@ foreach type $typelist {
 	set expected [get_integer_valueof a_${utype}_u_${uinner} 0]
 	gdb_test "print alignof(align_union<${type},${inner}>)" " = $expected"
     }
+}
+
+foreach name {bf1 bf2} {
+    set expected [get_integer_valueof a_$name 0]
+    gdb_test "print alignof($name)" " = $expected"
 }

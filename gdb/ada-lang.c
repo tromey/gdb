@@ -1987,9 +1987,9 @@ ada_type_of_array (struct value *arr, int bounds)
 	ada_check_typedef (desc_data_target_type (value_type (arr)));
 
       if (ada_is_unconstrained_packed_array_type (value_type (arr)))
-	TYPE_FIELD_BITSIZE (array_type, 0) =
-	  decode_packed_array_bitsize (value_type (arr));
-      
+	SET_FIELD_BITSIZE (TYPE_FIELD (array_type, 0),
+			   decode_packed_array_bitsize (value_type (arr)));
+
       return array_type;
     }
   else
@@ -2028,8 +2028,9 @@ ada_type_of_array (struct value *arr, int bounds)
 	      LONGEST lo = value_as_long (low);
 	      LONGEST hi = value_as_long (high);
 
-	      TYPE_FIELD_BITSIZE (elt_type, 0) =
-		decode_packed_array_bitsize (value_type (arr));
+	      SET_FIELD_BITSIZE
+		(TYPE_FIELD (elt_type, 0),
+		 decode_packed_array_bitsize (value_type (arr)));
 	      /* If the array has no element, then the size is already
 	         zero, and does not need to be recomputed.  */
 	      if (lo < hi)
@@ -2218,7 +2219,7 @@ constrained_packed_array_type (struct type *type, long *elt_bits)
     constrained_packed_array_type (ada_check_typedef (TYPE_TARGET_TYPE (type)),
 				   elt_bits);
   create_array_type (new_type, new_elt_type, index_type);
-  TYPE_FIELD_BITSIZE (new_type, 0) = *elt_bits;
+  SET_FIELD_BITSIZE (TYPE_FIELD (new_type, 0), *elt_bits);
   TYPE_NAME (new_type) = ada_type_name (type);
 
   if ((TYPE_CODE (check_typedef (index_type)) == TYPE_CODE_RANGE
@@ -8387,7 +8388,7 @@ ada_template_to_fixed_record_type_1 (struct type *type,
       off = align_value (off, field_alignment (type, f))
 	+ TYPE_FIELD_BITPOS (type, f);
       SET_FIELD_BITPOS (TYPE_FIELD (rtype, f), off);
-      TYPE_FIELD_BITSIZE (rtype, f) = 0;
+      CLEAR_FIELD_BITSIZE (TYPE_FIELD (rtype, f));
 
       if (ada_is_variant_part (type, f))
         {
@@ -8484,8 +8485,10 @@ ada_template_to_fixed_record_type_1 (struct type *type,
           TYPE_FIELD_TYPE (rtype, f) = TYPE_FIELD_TYPE (type, f);
           TYPE_FIELD_NAME (rtype, f) = TYPE_FIELD_NAME (type, f);
           if (TYPE_FIELD_BITSIZE (type, f) > 0)
-            fld_bit_len =
-              TYPE_FIELD_BITSIZE (rtype, f) = TYPE_FIELD_BITSIZE (type, f);
+	    {
+	      fld_bit_len = TYPE_FIELD_BITSIZE (type, f);
+	      SET_FIELD_BITPOS (TYPE_FIELD (rtype, f), fld_bit_len);
+	    }
           else
 	    {
 	      struct type *field_type = TYPE_FIELD_TYPE (type, f);
@@ -8726,7 +8729,7 @@ to_record_with_fixed_variant_part (struct type *type, const gdb_byte *valaddr,
     {
       TYPE_FIELD_TYPE (rtype, variant_field) = branch_type;
       TYPE_FIELD_NAME (rtype, variant_field) = "S";
-      TYPE_FIELD_BITSIZE (rtype, variant_field) = 0;
+      CLEAR_FIELD_BITSIZE (TYPE_FIELD (rtype, variant_field));
       TYPE_LENGTH (rtype) += TYPE_LENGTH (branch_type);
     }
   TYPE_LENGTH (rtype) -= TYPE_LENGTH (TYPE_FIELD_TYPE (type, variant_field));
@@ -9037,7 +9040,8 @@ to_fixed_array_type (struct type *type0, struct value *dval,
       int len = TYPE_LENGTH (result) / TYPE_LENGTH (TYPE_TARGET_TYPE (result));
       int elt_bitsize = TYPE_FIELD_BITSIZE (type0, 0);
 
-      TYPE_FIELD_BITSIZE (result, 0) = TYPE_FIELD_BITSIZE (type0, 0);
+      SET_FIELD_BITSIZE (TYPE_FIELD (result, 0),
+			 TYPE_FIELD_BITSIZE (type0, 0));
       TYPE_LENGTH (result) = len * elt_bitsize / HOST_CHAR_BIT;
       if (TYPE_LENGTH (result) * HOST_CHAR_BIT < len * elt_bitsize)
         TYPE_LENGTH (result)++;

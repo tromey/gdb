@@ -2105,7 +2105,7 @@ coff_read_struct_type (int index, int length, int lastsym,
 	  FIELD_TYPE (list->field) = decode_type (ms, ms->c_type,
 						  &sub_aux, objfile);
 	  SET_FIELD_BITPOS (list->field, 8 * ms->c_value);
-	  FIELD_BITSIZE (list->field) = 0;
+	  CLEAR_FIELD_BITSIZE (list->field);
 	  nfields++;
 	  break;
 
@@ -2123,7 +2123,7 @@ coff_read_struct_type (int index, int length, int lastsym,
 	  FIELD_TYPE (list->field) = decode_type (ms, ms->c_type,
 						  &sub_aux, objfile);
 	  SET_FIELD_BITPOS (list->field, ms->c_value);
-	  FIELD_BITSIZE (list->field) = sub_aux.x_sym.x_misc.x_lnsz.x_size;
+	  SET_FIELD_BITSIZE (list->field, sub_aux.x_sym.x_misc.x_lnsz.x_size);
 	  nfields++;
 	  break;
 
@@ -2242,7 +2242,7 @@ coff_read_enum_type (int index, int length, int lastsym,
 	  SET_FIELD_ENUMVAL (TYPE_FIELD (type, n), SYMBOL_VALUE (xsym));
 	  if (SYMBOL_VALUE (xsym) < 0)
 	    unsigned_enum = 0;
-	  TYPE_FIELD_BITSIZE (type, n) = 0;
+	  CLEAR_FIELD_BITSIZE (TYPE_FIELD (type, n));
 	}
       if (syms == osyms)
 	break;

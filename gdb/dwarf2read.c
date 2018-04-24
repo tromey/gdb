@@ -14958,11 +14958,11 @@ dwarf2_add_field (struct field_info *fip, struct die_info *die,
       attr = dwarf2_attr (die, DW_AT_bit_size, cu);
       if (attr)
 	{
-	  FIELD_BITSIZE (*fp) = DW_UNSND (attr);
+	  SET_FIELD_BITSIZE (*fp, DW_UNSND (attr));
 	}
       else
 	{
-	  FIELD_BITSIZE (*fp) = 0;
+	  CLEAR_FIELD_BITSIZE (*fp);
 	}
 
       /* Get bit offset of field.  */
@@ -15081,7 +15081,7 @@ dwarf2_add_field (struct field_info *fip, struct die_info *die,
       /* C++ base class field.  */
       if (handle_data_member_location (die, cu, &offset))
 	SET_FIELD_BITPOS (*fp, offset * bits_per_byte);
-      FIELD_BITSIZE (*fp) = 0;
+      CLEAR_FIELD_BITSIZE (*fp);
       FIELD_TYPE (*fp) = die_type (die, cu);
       FIELD_NAME (*fp) = type_name_no_tag (fp->type);
     }
@@ -16298,7 +16298,7 @@ process_enumeration_scope (struct die_info *die, struct dwarf2_cu *cu)
 		  FIELD_NAME (fields[num_fields]) = SYMBOL_LINKAGE_NAME (sym);
 		  FIELD_TYPE (fields[num_fields]) = NULL;
 		  SET_FIELD_ENUMVAL (fields[num_fields], SYMBOL_VALUE (sym));
-		  FIELD_BITSIZE (fields[num_fields]) = 0;
+		  CLEAR_FIELD_BITSIZE (fields[num_fields]);
 
 		  num_fields++;
 		}
