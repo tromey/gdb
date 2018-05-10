@@ -27,6 +27,7 @@
 #include "progspace.h"
 #include "registry.h"
 #include "gdb_bfd.h"
+#include "psymtab.h"
 #include <vector>
 
 struct bcache;
@@ -319,22 +320,9 @@ struct objfile
 
   struct compunit_symtab *compunit_symtabs = nullptr;
 
-  /* Each objfile points to a linked list of partial symtabs derived from
-     this file, one partial symtab structure for each compilation unit
-     (source file).  */
+  /* The partial symbol tables.  */
 
-  struct partial_symtab *psymtabs = nullptr;
-
-  /* Map addresses to the entries of PSYMTABS.  It would be more efficient to
-     have a map per the whole process but ADDRMAP cannot selectively remove
-     its items during FREE_OBJFILE.  This mapping is already present even for
-     PARTIAL_SYMTABs which still have no corresponding full SYMTABs read.  */
-
-  struct addrmap *psymtabs_addrmap = nullptr;
-
-  /* List of freed partial symtabs, available for re-use.  */
-
-  struct partial_symtab *free_psymtabs = nullptr;
+  std::shared_ptr<psymtab_storage> partial_symtabs;
 
   /* The object file's BFD.  Can be null if the objfile contains only
      minimal symbols, e.g. the run time common symbols for SunOS4.  */
@@ -356,21 +344,10 @@ struct objfile
 
   struct obstack objfile_obstack {};
 
-  /* A byte cache where we can stash arbitrary "chunks" of bytes that
-     will not change.  */
-
-  struct psymbol_bcache *psymbol_cache;
-
   /* Map symbol addresses to the partial symtab that defines the
      object at that address.  */
 
   std::vector<std::pair<CORE_ADDR, partial_symtab *>> psymbol_map;
-
-  /* Vectors of all partial symbols read in from file.  The actual data
-     is stored in the objfile_obstack.  */
-
-  std::vector<partial_symbol *> global_psymbols;
-  std::vector<partial_symbol *> static_psymbols;
 
   /* Structure which keeps track of functions that manipulate objfile's
      of the same type as this objfile.  I.e. the function to read partial
