@@ -365,24 +365,24 @@ struct comp_unit_head
   unsigned int length;
   short version;
   unsigned char addr_size;
-  unsigned char signed_addr_p;
+  bool signed_addr_p;
   sect_offset abbrev_sect_off;
 
   /* Size of file offsets; either 4 or 8.  */
-  unsigned int offset_size;
+  unsigned char offset_size;
 
   /* Size of the length field; either 4 or 12.  */
-  unsigned int initial_length_size;
+  unsigned char initial_length_size;
 
-  enum dwarf_unit_type unit_type;
-
-  /* Offset to the first byte of this compilation unit header in the
-     .debug_info section, for resolving relative reference dies.  */
-  sect_offset sect_off;
+  ENUM_BITFIELD (dwarf_unit_type) unit_type : 8;
 
   /* Offset to first die in this cu from the start of the cu.
      This will be the first byte following the compilation unit header.  */
   cu_offset first_die_cu_offset;
+
+  /* Offset to the first byte of this compilation unit header in the
+     .debug_info section, for resolving relative reference dies.  */
+  sect_offset sect_off;
 
   /* 64-bit signature of this type unit - it is valid only for
      UNIT_TYPE DW_UT_type.  */
