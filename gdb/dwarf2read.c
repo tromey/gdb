@@ -426,11 +426,38 @@ struct dwarf2_cu
   /* Base address of this compilation unit.  */
   CORE_ADDR base_address = 0;
 
-  /* Non-zero if base_address has been set.  */
-  int base_known = 0;
+  /* How many compilation units ago was this CU last referenced?  */
+  int last_used = 0;
+
+  /* True if base_address has been set.  */
+  bool base_known : 1;
+
+  /* Mark used when releasing cached dies.  */
+  unsigned int mark : 1;
+
+  /* This CU references .debug_loc.  See the symtab->locations_valid field.
+     This test is imperfect as there may exist optimized debug code not using
+     any location list and still facing inlining issues if handled as
+     unoptimized code.  For a future better test see GCC PR other/32998.  */
+  unsigned int has_loclist : 1;
+
+  /* These cache the results for producer_is_* fields.  CHECKED_PRODUCER is set
+     if all the producer_is_* fields are valid.  This information is cached
+     because profiling CU expansion showed excessive time spent in
+     producer_is_gxx_lt_4_6.  */
+  unsigned int checked_producer : 1;
+  unsigned int producer_is_gxx_lt_4_6 : 1;
+  unsigned int producer_is_gcc_lt_4_3 : 1;
+  unsigned int producer_is_icc_lt_14 : 1;
+
+  /* When set, the file that we're processing is known to have
+     debugging info for C++ namespaces.  GCC 3.3.x did not produce
+     this information, but later versions do.  */
+
+  unsigned int processing_has_namespace_info : 1;
 
   /* The language we are debugging.  */
-  enum language language = language_unknown;
+  ENUM_BITFIELD(language) language : LANGUAGE_BITS;
   const struct language_defn *language_defn = nullptr;
 
   const char *producer = nullptr;
@@ -462,9 +489,6 @@ struct dwarf2_cu
 
   /* Backlink to our per_cu entry.  */
   struct dwarf2_per_cu_data *per_cu;
-
-  /* How many compilation units ago was this CU last referenced?  */
-  int last_used = 0;
 
   /* A hash table of DIE cu_offset for following references with
      die_info->offset.sect_off as hash.  */
@@ -529,30 +553,6 @@ struct dwarf2_cu
      type might not have been fully processed.  So, we keep a list of
      all such types here and process them after expansion.  */
   std::vector<struct type *> rust_unions;
-
-  /* Mark used when releasing cached dies.  */
-  unsigned int mark : 1;
-
-  /* This CU references .debug_loc.  See the symtab->locations_valid field.
-     This test is imperfect as there may exist optimized debug code not using
-     any location list and still facing inlining issues if handled as
-     unoptimized code.  For a future better test see GCC PR other/32998.  */
-  unsigned int has_loclist : 1;
-
-  /* These cache the results for producer_is_* fields.  CHECKED_PRODUCER is set
-     if all the producer_is_* fields are valid.  This information is cached
-     because profiling CU expansion showed excessive time spent in
-     producer_is_gxx_lt_4_6.  */
-  unsigned int checked_producer : 1;
-  unsigned int producer_is_gxx_lt_4_6 : 1;
-  unsigned int producer_is_gcc_lt_4_3 : 1;
-  unsigned int producer_is_icc_lt_14 : 1;
-
-  /* When set, the file that we're processing is known to have
-     debugging info for C++ namespaces.  GCC 3.3.x did not produce
-     this information, but later versions do.  */
-
-  unsigned int processing_has_namespace_info : 1;
 
   struct partial_die_info *find_partial_die (sect_offset sect_off);
 };
@@ -25017,14 +25017,16 @@ dwarf2_find_containing_comp_unit (sect_offset sect_off,
 /* Initialize dwarf2_cu CU, owned by PER_CU.  */
 
 dwarf2_cu::dwarf2_cu (struct dwarf2_per_cu_data *per_cu_)
-  : per_cu (per_cu_),
+  : base_known (false),
     mark (0),
     has_loclist (0),
     checked_producer (0),
     producer_is_gxx_lt_4_6 (0),
     producer_is_gcc_lt_4_3 (0),
     producer_is_icc_lt_14 (0),
-    processing_has_namespace_info (0)
+    processing_has_namespace_info (0),
+    language (language_unknown),
+    per_cu (per_cu_)
 {
   per_cu->cu = this;
 }
