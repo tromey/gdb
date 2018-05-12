@@ -473,9 +473,16 @@ struct dwarf2_cu
      distinguish these in buildsym.c.  */
   struct pending **list_in_scope = nullptr;
 
-  /* Hash table holding all the loaded partial DIEs
-     with partial_die->offset.SECT_OFF as hash.  */
-  htab_t partial_dies = nullptr;
+  union
+  {
+    /* Hash table holding all the loaded partial DIEs
+       with partial_die->offset.SECT_OFF as hash.  */
+    htab_t partial_dies;
+
+    /* A hash table of DIE cu_offset for following references with
+       die_info->offset.sect_off as hash.  */
+    htab_t die_hash;
+  } h {};
 
   /* Storage for things with the same lifetime as this read-in compilation
      unit, including partial DIEs.  */
@@ -489,10 +496,6 @@ struct dwarf2_cu
 
   /* Backlink to our per_cu entry.  */
   struct dwarf2_per_cu_data *per_cu;
-
-  /* A hash table of DIE cu_offset for following references with
-     die_info->offset.sect_off as hash.  */
-  htab_t die_hash = nullptr;
 
   /* Full DIEs if read in.  */
   struct die_info *dies = nullptr;
@@ -9598,8 +9601,8 @@ load_full_comp_unit_reader (const struct die_reader_specs *reader,
   struct dwarf2_cu *cu = reader->cu;
   enum language *language_ptr = (enum language *) data;
 
-  gdb_assert (cu->die_hash == NULL);
-  cu->die_hash =
+  gdb_assert (cu->h.die_hash == NULL);
+  cu->h.die_hash =
     htab_create_alloc_ex (cu->header.length / 12,
 			  die_hash,
 			  die_eq,
@@ -18189,7 +18192,7 @@ load_partial_dies (const struct die_reader_specs *reader,
   if (cu->per_cu->load_all_dies)
     load_all = 1;
 
-  cu->partial_dies
+  cu->h.partial_dies
     = htab_create_alloc_ex (cu->header.length / 12,
 			    partial_die_hash,
 			    partial_die_eq,
@@ -18389,7 +18392,7 @@ load_partial_dies (const struct die_reader_specs *reader,
 	{
 	  void **slot;
 
-	  slot = htab_find_slot_with_hash (cu->partial_dies, part_die,
+	  slot = htab_find_slot_with_hash (cu->h.partial_dies, part_die,
 					   to_underlying (part_die->sect_off),
 					   INSERT);
 	  *slot = part_die;
@@ -18670,7 +18673,7 @@ dwarf2_cu::find_partial_die (sect_offset sect_off)
   struct partial_die_info part_die (sect_off);
 
   lookup_die = ((struct partial_die_info *)
-		htab_find_with_hash (partial_dies, &part_die,
+		htab_find_with_hash (h.partial_dies, &part_die,
 				     to_underlying (sect_off)));
 
   return lookup_die;
@@ -18713,7 +18716,7 @@ find_partial_die (sect_offset sect_off, int offset_in_dwz, struct dwarf2_cu *cu)
       per_cu = dwarf2_find_containing_comp_unit (sect_off, offset_in_dwz,
 						 dwarf2_per_objfile);
 
-      if (per_cu->cu == NULL || per_cu->cu->partial_dies == NULL)
+      if (per_cu->cu == NULL || per_cu->cu->h.partial_dies == NULL)
 	load_partial_comp_unit (per_cu);
 
       per_cu->cu->last_used = 0;
@@ -22778,7 +22781,7 @@ store_in_ref_table (struct die_info *die, struct dwarf2_cu *cu)
 {
   void **slot;
 
-  slot = htab_find_slot_with_hash (cu->die_hash, die,
+  slot = htab_find_slot_with_hash (cu->h.die_hash, die,
 				   to_underlying (die->sect_off),
 				   INSERT);
 
@@ -22897,7 +22900,7 @@ follow_die_offset (sect_offset sect_off, int offset_in_dwz,
 
   *ref_cu = target_cu;
   temp_die.sect_off = sect_off;
-  return (struct die_info *) htab_find_with_hash (target_cu->die_hash,
+  return (struct die_info *) htab_find_with_hash (target_cu->h.die_hash,
 						  &temp_die,
 						  to_underlying (sect_off));
 }
@@ -23224,7 +23227,7 @@ follow_die_sig_1 (struct die_info *src_die, struct signatured_type *sig_type,
   gdb_assert (sig_cu != NULL);
   gdb_assert (to_underlying (sig_type->type_offset_in_section) != 0);
   temp_die.sect_off = sig_type->type_offset_in_section;
-  die = (struct die_info *) htab_find_with_hash (sig_cu->die_hash, &temp_die,
+  die = (struct die_info *) htab_find_with_hash (sig_cu->h.die_hash, &temp_die,
 						 to_underlying (temp_die.sect_off));
   if (die)
     {
@@ -23419,8 +23422,8 @@ read_signatured_type_reader (const struct die_reader_specs *reader,
 {
   struct dwarf2_cu *cu = reader->cu;
 
-  gdb_assert (cu->die_hash == NULL);
-  cu->die_hash =
+  gdb_assert (cu->h.die_hash == NULL);
+  cu->h.die_hash =
     htab_create_alloc_ex (cu->header.length / 12,
 			  die_hash,
 			  die_eq,
