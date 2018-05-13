@@ -700,7 +700,11 @@ eq_demangled_name_entry (const void *a, const void *b)
   const struct demangled_name_entry *db
     = (const struct demangled_name_entry *) b;
 
-  return strcmp (da->mangled, db->mangled) == 0;
+  /* It's often the case that the mangled names are equal, because the
+     values may come directly from the debug info section data.  The
+     equality test here saves a few cycles as measured with
+     callgrind.  */
+  return da->mangled == db->mangled || strcmp (da->mangled, db->mangled) == 0;
 }
 
 /* Create the hash table used for demangled names.  Each hash entry is
