@@ -1713,8 +1713,8 @@ static const gdb_byte *read_full_die (const struct die_reader_specs *,
 
 static void process_die (struct die_info *, struct dwarf2_cu *);
 
-static const char *dwarf2_canonicalize_name (const char *, struct dwarf2_cu *,
-					     struct obstack *);
+static const char *dwarf2_canonicalize_name (struct dwarf2_per_objfile *,
+					     const char *, struct dwarf2_cu *);
 
 static const char *dwarf2_name (struct die_info *die, struct dwarf2_cu *);
 
@@ -10923,8 +10923,8 @@ dwarf2_compute_name (const char *name,
 
 	  if (cu->language == language_cplus)
 	    canonical_name
-	      = dwarf2_canonicalize_name (intermediate_name.c_str (), cu,
-					  &objfile->per_bfd->storage_obstack);
+	      = dwarf2_canonicalize_name (cu->per_cu->dwarf2_per_objfile,
+					  intermediate_name.c_str (), cu);
 
 	  /* If we only computed INTERMEDIATE_NAME, or if
 	     INTERMEDIATE_NAME is already canonical, then we need to
@@ -18490,8 +18490,8 @@ partial_die_info::read (const struct die_reader_specs *reader,
 		struct objfile *objfile = dwarf2_per_objfile->objfile;
 
 		name
-		  = dwarf2_canonicalize_name (DW_STRING (&attr), cu,
-					      &objfile->per_bfd->storage_obstack);
+		  = dwarf2_canonicalize_name (dwarf2_per_objfile,
+					      DW_STRING (&attr), cu);
 	      }
 	      break;
 	    }
@@ -22398,19 +22398,30 @@ sibling_die (struct die_info *die)
 /* Get name of a die, return NULL if not found.  */
 
 static const char *
-dwarf2_canonicalize_name (const char *name, struct dwarf2_cu *cu,
-			  struct obstack *obstack)
+dwarf2_canonicalize_name (struct dwarf2_per_objfile *dwarf2_per_objfile,
+			  const char *name, struct dwarf2_cu *cu)
 {
   if (name && cu->language == language_cplus)
     {
+      auto iter = dwarf2_per_objfile->canon_map.find (name);
+      if (iter != dwarf2_per_objfile->canon_map.end ())
+	return iter->second;
+
       std::string canon_name = cp_canonicalize_string (name);
 
       if (!canon_name.empty ())
 	{
 	  if (canon_name != name)
-	    name = (const char *) obstack_copy0 (obstack,
-						 canon_name.c_str (),
-						 canon_name.length ());
+	    {
+	      struct obstack *obstack
+		= &dwarf2_per_objfile->objfile->per_bfd->storage_obstack;
+	      const char *result
+		= (const char *) obstack_copy0 (obstack,
+						canon_name.c_str (),
+						canon_name.length ());
+	      dwarf2_per_objfile->canon_map[name] = result;
+	      name = result;
+	    }
 	}
     }
 
@@ -22510,8 +22521,8 @@ dwarf2_name (struct die_info *die, struct dwarf2_cu *cu)
   if (!DW_STRING_IS_CANONICAL (attr))
     {
       DW_STRING (attr)
-	= dwarf2_canonicalize_name (DW_STRING (attr), cu,
-				    &objfile->per_bfd->storage_obstack);
+	= dwarf2_canonicalize_name (cu->per_cu->dwarf2_per_objfile,
+				    DW_STRING (attr), cu);
       DW_STRING_IS_CANONICAL (attr) = 1;
     }
   return DW_STRING (attr);

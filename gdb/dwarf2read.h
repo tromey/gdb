@@ -22,6 +22,7 @@
 
 #include "filename-seen-cache.h"
 #include "gdb_obstack.h"
+#include <unordered_map>
 
 typedef struct dwarf2_per_cu_data *dwarf2_per_cu_ptr;
 DEF_VEC_P (dwarf2_per_cu_ptr);
@@ -241,6 +242,8 @@ public:
   /* Table containing all filenames.  This is an optional because the
      table is lazily constructed on first access.  */
   gdb::optional<filename_seen_cache> filenames_cache;
+
+  std::unordered_map<const char *, const char *> canon_map;
 };
 
 /* Get the dwarf2_per_objfile associated to OBJFILE.  */
