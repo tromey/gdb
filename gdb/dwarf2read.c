@@ -18899,7 +18899,6 @@ read_attribute_value (const struct die_reader_specs *reader,
     = cu->per_cu->dwarf2_per_objfile;
   struct objfile *objfile = dwarf2_per_objfile->objfile;
   bfd *abfd = reader->abfd;
-  struct comp_unit_head *cu_header = &cu->header;
   unsigned int bytes_read;
   struct dwarf_block *blk;
 
@@ -18974,7 +18973,7 @@ read_attribute_value (const struct die_reader_specs *reader,
       if (!cu->per_cu->is_dwz)
 	{
 	  DW_STRING (attr) = read_indirect_string (dwarf2_per_objfile,
-						   abfd, info_ptr, cu_header,
+						   abfd, info_ptr, &cu->header,
 						   &bytes_read);
 	  DW_STRING_IS_CANONICAL (attr) = 0;
 	  info_ptr += bytes_read;
@@ -18986,7 +18985,7 @@ read_attribute_value (const struct die_reader_specs *reader,
 	{
 	  DW_STRING (attr) = read_indirect_line_string (dwarf2_per_objfile,
 							abfd, info_ptr,
-							cu_header, &bytes_read);
+							&cu->header, &bytes_read);
 	  DW_STRING_IS_CANONICAL (attr) = 0;
 	  info_ptr += bytes_read;
 	  break;
@@ -18995,7 +18994,7 @@ read_attribute_value (const struct die_reader_specs *reader,
     case DW_FORM_GNU_strp_alt:
       {
 	struct dwz_file *dwz = dwarf2_get_dwz_file (dwarf2_per_objfile);
-	LONGEST str_offset = read_offset (abfd, info_ptr, cu_header,
+	LONGEST str_offset = read_offset (abfd, info_ptr, &cu->header,
 					  &bytes_read);
 
 	DW_STRING (attr) = read_indirect_string_from_dwz (objfile,
