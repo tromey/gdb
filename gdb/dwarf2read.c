@@ -1175,6 +1175,8 @@ struct abbrev_info
     enum dwarf_tag tag;		/* dwarf tag */
     unsigned short has_children;		/* boolean */
     unsigned short num_attrs;	/* number of attributes */
+    /* If -1, then the length is variable.  */
+    short length;
     struct attr_abbrev *attrs;	/* an array of attribute descriptions */
     struct abbrev_info *next;	/* next in chain */
   };
@@ -9187,6 +9189,12 @@ skip_one_die (const struct die_reader_specs *reader, const gdb_byte *info_ptr,
   const gdb_byte *buffer_end = reader->buffer_end;
   unsigned int form, i;
 
+  if (abbrev->length != -1)
+    {
+      info_ptr += abbrev->length;
+      goto done;
+    }
+
   for (i = 0; i < abbrev->num_attrs; i++)
     {
       /* The only abbrev we care about is DW_AT_sibling.  */
@@ -9299,6 +9307,7 @@ skip_one_die (const struct die_reader_specs *reader, const gdb_byte *info_ptr,
 	}
     }
 
+ done:
   if (abbrev->has_children)
     return skip_children (reader, info_ptr);
   else
@@ -18035,6 +18044,61 @@ abbrev_table::lookup_abbrev (unsigned int abbrev_number)
   return NULL;
 }
 
+static int
+form_length (dwarf_form form)
+{
+  switch (form)
+    {
+    case DW_FORM_ref_addr:
+    case DW_FORM_GNU_ref_alt:
+    case DW_FORM_addr:
+    case DW_FORM_string:
+    case DW_FORM_sec_offset:
+    case DW_FORM_strp:
+    case DW_FORM_GNU_strp_alt:
+    case DW_FORM_exprloc:
+    case DW_FORM_block:
+    case DW_FORM_block1:
+    case DW_FORM_block2:
+    case DW_FORM_block4:
+    case DW_FORM_sdata:
+    case DW_FORM_udata:
+    case DW_FORM_ref_udata:
+    case DW_FORM_GNU_addr_index:
+    case DW_FORM_GNU_str_index:
+    case DW_FORM_indirect:
+      return -1;
+
+    case DW_FORM_data1:
+    case DW_FORM_ref1:
+    case DW_FORM_flag:
+      return 1;
+
+    case DW_FORM_flag_present:
+    case DW_FORM_implicit_const:
+      return 0;
+
+    case DW_FORM_data2:
+    case DW_FORM_ref2:
+      return 2;
+
+    case DW_FORM_data4:
+    case DW_FORM_ref4:
+      return 4;
+
+    case DW_FORM_data8:
+    case DW_FORM_ref8:
+    case DW_FORM_ref_sig8:
+      return 8;
+
+    case DW_FORM_data16:
+      return 16;
+
+    default:
+      return -1;
+    }
+}
+
 /* Read in an abbrev table.  */
 
 static abbrev_table_up
@@ -18097,6 +18161,17 @@ abbrev_table_read_table (struct dwarf2_per_objfile *dwarf2_per_objfile,
 
 	  if (abbrev_name == 0)
 	    break;
+
+	  if (abbrev_name == DW_AT_sibling)
+	    cur_abbrev->length = -1;
+	  else if (cur_abbrev->length != -1)
+	    {
+	      short this_len = form_length ((enum dwarf_form) abbrev_form);
+	      if (this_len == -1)
+		cur_abbrev->length = -1;
+	      else
+		cur_abbrev->length += this_len;
+	    }
 
 	  if (cur_abbrev->num_attrs == allocated_attrs)
 	    {
