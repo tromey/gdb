@@ -18897,7 +18897,6 @@ read_attribute_value (const struct die_reader_specs *reader,
   struct dwarf2_cu *cu = reader->cu;
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = cu->per_cu->dwarf2_per_objfile;
-  struct objfile *objfile = dwarf2_per_objfile->objfile;
   bfd *abfd = reader->abfd;
   unsigned int bytes_read;
   struct dwarf_block *blk;
@@ -18919,6 +18918,7 @@ read_attribute_value (const struct die_reader_specs *reader,
       break;
     case DW_FORM_addr:
       {
+	struct objfile *objfile = dwarf2_per_objfile->objfile;
 	struct gdbarch *gdbarch = get_objfile_arch (objfile);
 	DW_ADDR (attr) = read_address (abfd, info_ptr, cu, &bytes_read);
 	DW_ADDR (attr) = gdbarch_adjust_dwarf2_addr (gdbarch, DW_ADDR (attr));
@@ -18997,6 +18997,7 @@ read_attribute_value (const struct die_reader_specs *reader,
 	LONGEST str_offset = read_offset (abfd, info_ptr, &cu->header,
 					  &bytes_read);
 
+	struct objfile *objfile = dwarf2_per_objfile->objfile;
 	DW_STRING (attr) = read_indirect_string_from_dwz (objfile,
 							  dwz, str_offset);
 	DW_STRING_IS_CANONICAL (attr) = 0;
