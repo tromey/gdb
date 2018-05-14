@@ -18898,7 +18898,6 @@ read_attribute_value (const struct die_reader_specs *reader,
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = cu->per_cu->dwarf2_per_objfile;
   struct objfile *objfile = dwarf2_per_objfile->objfile;
-  struct gdbarch *gdbarch = get_objfile_arch (objfile);
   bfd *abfd = reader->abfd;
   struct comp_unit_head *cu_header = &cu->header;
   unsigned int bytes_read;
@@ -18920,9 +18919,12 @@ read_attribute_value (const struct die_reader_specs *reader,
       info_ptr += bytes_read;
       break;
     case DW_FORM_addr:
-      DW_ADDR (attr) = read_address (abfd, info_ptr, cu, &bytes_read);
-      DW_ADDR (attr) = gdbarch_adjust_dwarf2_addr (gdbarch, DW_ADDR (attr));
-      info_ptr += bytes_read;
+      {
+	struct gdbarch *gdbarch = get_objfile_arch (objfile);
+	DW_ADDR (attr) = read_address (abfd, info_ptr, cu, &bytes_read);
+	DW_ADDR (attr) = gdbarch_adjust_dwarf2_addr (gdbarch, DW_ADDR (attr));
+	info_ptr += bytes_read;
+      }
       break;
     case DW_FORM_block2:
       blk = dwarf_alloc_block (cu);
