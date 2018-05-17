@@ -1,3 +1,10 @@
+2018-05-29  Tom Tromey  <tom@tromey.com>
+
+	PR cli/22234:
+	* gdb.dwarf2/dw2-stack-boundary.exp: Update expected output.
+	* gdb.gdb/complaints.exp (test_short_complaints): Update expected
+	output.
+
 2018-06-14  Pedro Alves  <palves@redhat.com>
 
 	* gdb.base/fork-running-state.c: Include <errno.h>.
