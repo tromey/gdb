@@ -1,5 +1,20 @@
 2018-05-18  Tom Tromey  <tom@tromey.com>
 
+	* dwarf2read.c (dwarf2_per_cu_data::dwarf2_per_cu_data)
+	(dwarf2_per_cu_data::~dwarf2_per_cu_data): Define.
+	(~dwarf2_per_objfile): Update.
+	(create_cu_from_index_list): Use new.
+	(create_signatured_type_table_from_index)
+	(create_signatured_type_table_from_debug_names, add_type_unit)
+	(read_comp_units_from_section): Use new.
+	(create_cus_hash_table): Update.
+	* dwarf2read.h (struct dwarf2_per_cu_data): Add constructor,
+	destructor, initializers.
+	(struct signatured_type): Likewise.
+	(struct dwarf2_per_cu_data) <is_sig_type>: New member.
+
+2018-05-18  Tom Tromey  <tom@tromey.com>
+
 	* dwarf2read.c (struct dwz_file): Add constructor, initializers.
 	<dwz_bfd>: Now a gdb_bfd_ref_ptr.
 	(~dwarf2_per_objfile): Update

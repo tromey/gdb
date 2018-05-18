@@ -253,16 +253,21 @@ dwarf2_per_objfile *get_dwarf2_per_objfile (struct objfile *objfile);
 
 struct dwarf2_per_cu_data
 {
+  dwarf2_per_cu_data ();
+  ~dwarf2_per_cu_data ();
+
+  DISABLE_COPY_AND_ASSIGN (dwarf2_per_cu_data);
+
   /* The start offset and length of this compilation unit.
      NOTE: Unlike comp_unit_head.length, this length includes
      initial_length_size.
      If the DIE refers to a DWO file, this is always of the original die,
      not the DWO file.  */
-  sect_offset sect_off;
-  unsigned int length;
+  sect_offset sect_off {};
+  unsigned int length = 0;
 
   /* DWARF standard version this data has been read from (such as 4 or 5).  */
-  short dwarf_version;
+  short dwarf_version = 0;
 
   /* Flag indicating this compilation unit will be read in before
      any of the current compilation units are processed.  */
@@ -298,18 +303,22 @@ struct dwarf2_per_cu_data
      This flag is only valid if is_debug_types is true.  */
   unsigned int tu_read : 1;
 
+  /* Non-zero if this is actually a signatured_type, below.  This
+     allows for safe downcasting.  */
+  unsigned int is_sig_type : 1;
+
   /* The section this CU/TU lives in.
      If the DIE refers to a DWO file, this is always the original die,
      not the DWO file.  */
-  struct dwarf2_section_info *section;
+  struct dwarf2_section_info *section = nullptr;
 
   /* Set to non-NULL iff this CU is currently loaded.  When it gets freed out
      of the CU cache it gets reset to NULL again.  This is left as NULL for
      dummy CUs (a CU header, but nothing else).  */
-  struct dwarf2_cu *cu;
+  struct dwarf2_cu *cu = nullptr;
 
   /* The corresponding dwarf2_per_objfile.  */
-  struct dwarf2_per_objfile *dwarf2_per_objfile;
+  struct dwarf2_per_objfile *dwarf2_per_objfile = nullptr;
 
   /* When dwarf2_per_objfile->using_index is true, the 'quick' field
      is active.  Otherwise, the 'psymtab' field is active.  */
@@ -321,7 +330,7 @@ struct dwarf2_per_cu_data
 
     /* Data needed by the "quick" functions.  */
     struct dwarf2_per_cu_quick_data *quick;
-  } v;
+  } v {};
 
   /* The CUs we import using DW_TAG_imported_unit.  This is filled in
      while reading psymtabs, used to compute the psymtab dependencies,
@@ -341,13 +350,23 @@ struct dwarf2_per_cu_data
      to.  Concurrently with this change gdb was modified to emit version 8
      indices so we only pay a price for gold generated indices.
      http://sourceware.org/bugzilla/show_bug.cgi?id=15021.  */
-  VEC (dwarf2_per_cu_ptr) *imported_symtabs;
+  VEC (dwarf2_per_cu_ptr) *imported_symtabs = nullptr;
 };
 
 /* Entry in the signatured_types hash table.  */
 
 struct signatured_type
 {
+  signatured_type ()
+  {
+  }
+
+  ~signatured_type ()
+  {
+  }
+
+  DISABLE_COPY_AND_ASSIGN (signatured_type);
+
   /* The "per_cu" object of this type.
      This struct is used iff per_cu.is_debug_types.
      N.B.: This is the first member so that it's easy to convert pointers
@@ -355,32 +374,32 @@ struct signatured_type
   struct dwarf2_per_cu_data per_cu;
 
   /* The type's signature.  */
-  ULONGEST signature;
+  ULONGEST signature = 0;
 
   /* Offset in the TU of the type's DIE, as read from the TU header.
      If this TU is a DWO stub and the definition lives in a DWO file
      (specified by DW_AT_GNU_dwo_name), this value is unusable.  */
-  cu_offset type_offset_in_tu;
+  cu_offset type_offset_in_tu {};
 
   /* Offset in the section of the type's DIE.
      If the definition lives in a DWO file, this is the offset in the
      .debug_types.dwo section.
      The value is zero until the actual value is known.
      Zero is otherwise not a valid section offset.  */
-  sect_offset type_offset_in_section;
+  sect_offset type_offset_in_section {};
 
   /* Type units are grouped by their DW_AT_stmt_list entry so that they
      can share them.  This points to the containing symtab.  */
-  struct type_unit_group *type_unit_group;
+  struct type_unit_group *type_unit_group = nullptr;
 
   /* The type.
      The first time we encounter this type we fully read it in and install it
      in the symbol tables.  Subsequent times we only need the type.  */
-  struct type *type;
+  struct type *type = nullptr;
 
   /* Containing DWO unit.
      This field is valid iff per_cu.reading_dwo_directly.  */
-  struct dwo_unit *dwo_unit;
+  struct dwo_unit *dwo_unit = nullptr;
 };
 
 typedef struct signatured_type *sig_type_ptr;
