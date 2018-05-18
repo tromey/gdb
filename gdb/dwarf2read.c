@@ -2130,7 +2130,6 @@ dwarf2_per_cu_data::dwarf2_per_cu_data ()
 
 dwarf2_per_cu_data::~dwarf2_per_cu_data ()
 {
-  VEC_free (dwarf2_per_cu_ptr, imported_symtabs);
 }
 
 /* See declaration.  */
@@ -8010,24 +8009,20 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
 
   end_psymtab_common (objfile, pst);
 
-  if (!VEC_empty (dwarf2_per_cu_ptr, cu->per_cu->imported_symtabs))
+  if (!cu->per_cu->imported_symtabs.empty ())
     {
       int i;
-      int len = VEC_length (dwarf2_per_cu_ptr, cu->per_cu->imported_symtabs);
-      struct dwarf2_per_cu_data *iter;
+      int len = cu->per_cu->imported_symtabs.size ();
 
       /* Fill in 'dependencies' here; we fill in 'users' in a
 	 post-pass.  */
       pst->number_of_dependencies = len;
       pst->dependencies =
 	XOBNEWVEC (&objfile->objfile_obstack, struct partial_symtab *, len);
-      for (i = 0;
-	   VEC_iterate (dwarf2_per_cu_ptr, cu->per_cu->imported_symtabs,
-			i, iter);
-	   ++i)
-	pst->dependencies[i] = iter->v.psymtab;
+      for (i = 0; i < len; ++i)
+	pst->dependencies[i] = cu->per_cu->imported_symtabs[i]->v.psymtab;
 
-      VEC_free (dwarf2_per_cu_ptr, cu->per_cu->imported_symtabs);
+      cu->per_cu->imported_symtabs.clear ();
     }
 
   /* Get the list of files included in the current compilation unit,
@@ -8656,8 +8651,7 @@ scan_partial_symbols (struct partial_die_info *first_die, CORE_ADDR *lowpc,
 		if (per_cu->v.psymtab == NULL)
 		  process_psymtab_comp_unit (per_cu, 1, cu->language);
 
-		VEC_safe_push (dwarf2_per_cu_ptr,
-			       cu->per_cu->imported_symtabs, per_cu);
+		cu->per_cu->imported_symtabs.push_back (per_cu);
 	      }
 	      break;
 	    case DW_TAG_imported_declaration:
@@ -10150,9 +10144,7 @@ recursively_compute_inclusions (VEC (compunit_symtab_ptr) **result,
 				struct compunit_symtab *immediate_parent)
 {
   void **slot;
-  int ix;
   struct compunit_symtab *cust;
-  struct dwarf2_per_cu_data *iter;
 
   slot = htab_find_slot (all_children, per_cu, INSERT);
   if (*slot != NULL)
@@ -10187,13 +10179,9 @@ recursively_compute_inclusions (VEC (compunit_symtab_ptr) **result,
 	}
     }
 
-  for (ix = 0;
-       VEC_iterate (dwarf2_per_cu_ptr, per_cu->imported_symtabs, ix, iter);
-       ++ix)
-    {
-      recursively_compute_inclusions (result, all_children,
-				      all_type_symtabs, iter, cust);
-    }
+  for (struct dwarf2_per_cu_data *iter : per_cu->imported_symtabs)
+    recursively_compute_inclusions (result, all_children,
+				    all_type_symtabs, iter, cust);
 }
 
 /* Compute the compunit_symtab 'includes' fields for the compunit_symtab of
@@ -10204,10 +10192,9 @@ compute_compunit_symtab_includes (struct dwarf2_per_cu_data *per_cu)
 {
   gdb_assert (! per_cu->is_debug_types);
 
-  if (!VEC_empty (dwarf2_per_cu_ptr, per_cu->imported_symtabs))
+  if (!per_cu->imported_symtabs.empty ())
     {
       int ix, len;
-      struct dwarf2_per_cu_data *per_cu_iter;
       struct compunit_symtab *compunit_symtab_iter;
       VEC (compunit_symtab_ptr) *result_symtabs = NULL;
       htab_t all_children, all_type_symtabs;
@@ -10222,15 +10209,10 @@ compute_compunit_symtab_includes (struct dwarf2_per_cu_data *per_cu)
       all_type_symtabs = htab_create_alloc (1, htab_hash_pointer, htab_eq_pointer,
 					    NULL, xcalloc, xfree);
 
-      for (ix = 0;
-	   VEC_iterate (dwarf2_per_cu_ptr, per_cu->imported_symtabs,
-			ix, per_cu_iter);
-	   ++ix)
-	{
-	  recursively_compute_inclusions (&result_symtabs, all_children,
-					  all_type_symtabs, per_cu_iter,
-					  cust);
-	}
+      for (struct dwarf2_per_cu_data *per_cu_iter : per_cu->imported_symtabs)
+	recursively_compute_inclusions (&result_symtabs, all_children,
+					all_type_symtabs, per_cu_iter,
+					cust);
 
       /* Now we have a transitive closure of all the included symtabs.  */
       len = VEC_length (compunit_symtab_ptr, result_symtabs);
@@ -10256,19 +10238,13 @@ compute_compunit_symtab_includes (struct dwarf2_per_cu_data *per_cu)
 static void
 process_cu_includes (struct dwarf2_per_objfile *dwarf2_per_objfile)
 {
-  int ix;
-  struct dwarf2_per_cu_data *iter;
-
-  for (ix = 0;
-       VEC_iterate (dwarf2_per_cu_ptr, dwarf2_per_objfile->just_read_cus,
-		    ix, iter);
-       ++ix)
+  for (struct dwarf2_per_cu_data *iter : dwarf2_per_objfile->just_read_cus)
     {
       if (! iter->is_debug_types)
 	compute_compunit_symtab_includes (iter);
     }
 
-  VEC_free (dwarf2_per_cu_ptr, dwarf2_per_objfile->just_read_cus);
+  dwarf2_per_objfile->just_read_cus.clear ();
 }
 
 /* Generate full symbol information for PER_CU, whose DIEs have
@@ -10376,7 +10352,7 @@ process_full_comp_unit (struct dwarf2_per_cu_data *per_cu,
     }
 
   /* Push it for inclusion processing later.  */
-  VEC_safe_push (dwarf2_per_cu_ptr, dwarf2_per_objfile->just_read_cus, per_cu);
+  dwarf2_per_objfile->just_read_cus.push_back (per_cu);
 }
 
 /* Generate full symbol information for type unit PER_CU, whose DIEs have
@@ -10485,8 +10461,7 @@ process_imported_unit_die (struct die_info *die, struct dwarf2_cu *cu)
       if (maybe_queue_comp_unit (cu, per_cu, cu->language))
 	load_full_comp_unit (per_cu, false, cu->language);
 
-      VEC_safe_push (dwarf2_per_cu_ptr, cu->per_cu->imported_symtabs,
-		     per_cu);
+      cu->per_cu->imported_symtabs.push_back (per_cu);
     }
 }
 
@@ -13408,7 +13383,7 @@ queue_and_load_dwo_tu (void **slot, void *info)
 	 while processing PER_CU.  */
       if (maybe_queue_comp_unit (NULL, sig_cu, per_cu->cu->language))
 	load_full_type_unit (sig_cu);
-      VEC_safe_push (dwarf2_per_cu_ptr, per_cu->imported_symtabs, sig_cu);
+      per_cu->imported_symtabs.push_back (sig_cu);
     }
 
   return 1;
@@ -23260,11 +23235,7 @@ follow_die_sig_1 (struct die_info *src_die, struct signatured_type *sig_type,
 	 http://sourceware.org/bugzilla/show_bug.cgi?id=15021.  */
       if (dwarf2_per_objfile->index_table != NULL
 	  && dwarf2_per_objfile->index_table->version <= 7)
-	{
-	  VEC_safe_push (dwarf2_per_cu_ptr,
-			 (*ref_cu)->per_cu->imported_symtabs,
-			 sig_cu->per_cu);
-	}
+	(*ref_cu)->per_cu->imported_symtabs.push_back (sig_cu->per_cu);
 
       *ref_cu = sig_cu;
       return die;

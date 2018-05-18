@@ -23,9 +23,6 @@
 #include "filename-seen-cache.h"
 #include "gdb_obstack.h"
 
-typedef struct dwarf2_per_cu_data *dwarf2_per_cu_ptr;
-DEF_VEC_P (dwarf2_per_cu_ptr);
-
 /* A descriptor for dwarf sections.
 
    S.ASECTION, SIZE are typically initialized when the objfile is first
@@ -233,7 +230,7 @@ public:
   htab_t die_type_hash {};
 
   /* The CUs we recently read.  */
-  VEC (dwarf2_per_cu_ptr) *just_read_cus = NULL;
+  std::vector<struct dwarf2_per_cu_data *> just_read_cus;
 
   /* Table containing line_header indexed by offset and offset_in_dwz.  */
   htab_t line_header_hash {};
@@ -350,7 +347,7 @@ struct dwarf2_per_cu_data
      to.  Concurrently with this change gdb was modified to emit version 8
      indices so we only pay a price for gold generated indices.
      http://sourceware.org/bugzilla/show_bug.cgi?id=15021.  */
-  VEC (dwarf2_per_cu_ptr) *imported_symtabs = nullptr;
+  std::vector<struct dwarf2_per_cu_data *> imported_symtabs;
 };
 
 /* Entry in the signatured_types hash table.  */

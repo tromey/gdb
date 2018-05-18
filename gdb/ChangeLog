@@ -1,5 +1,19 @@
 2018-05-18  Tom Tromey  <tom@tromey.com>
 
+	* dwarf2read.c (dwarf2_per_cu_data): Update.
+	(process_psymtab_comp_unit_reader, scan_partial_symbols)
+	(recursively_compute_inclusions)
+	(compute_compunit_symtab_includes, process_cu_includes)
+	(process_full_comp_unit, process_imported_unit_die)
+	(queue_and_load_dwo_tu, follow_die_sig_1): Update.
+	* dwarf2read.h (dwarf2_per_cu_ptr): Remove typedef.  Don't declare
+	VEC.
+	(struct dwarf2_per_objfile) <just_read_cus>: Now a std::vector.
+	(struct dwarf2_per_cu_data) <imported_symtabs>: Now a
+	std::vector.
+
+2018-05-18  Tom Tromey  <tom@tromey.com>
+
 	* dwarf2read.c (dwarf2_per_cu_data::dwarf2_per_cu_data)
 	(dwarf2_per_cu_data::~dwarf2_per_cu_data): Define.
 	(~dwarf2_per_objfile): Update.
