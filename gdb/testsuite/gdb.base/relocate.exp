@@ -101,11 +101,11 @@ gdb_test_multiple "add-symbol-file -s -section-name 0x200 $binfile 0x100" $test 
 # Since we're here, might as well test the 'symbol-file' command and
 # if its arguments can also be passed at any position.
 gdb_test "symbol-file -readnow $binfile" \
-    "Reading symbols from ${binfile}\.\.\.expanding to full symbols\.\.\.done\." \
+    "Reading symbols from ${binfile}\.\.\.\r\nExpanding full symbols from ${binfile}\.\.\." \
     "symbol-file with -readnow first"
 clean_restart
 gdb_test "symbol-file $binfile -readnow" \
-    "Reading symbols from ${binfile}\.\.\.expanding to full symbols\.\.\.done\." \
+    "Reading symbols from ${binfile}\.\.\.\r\nExpanding full symbols from ${binfile}\.\.\." \
     "symbol-file with -readnow second"
 gdb_test "symbol-file -readnow" \
     "no symbol file name was specified" \
@@ -115,7 +115,7 @@ gdb_test "symbol-file -- -non-existent-file" \
     "symbol-file with -- disables option processing"
 clean_restart
 gdb_test "symbol-file -readnow -- $binfile" \
-    "Reading symbols from ${binfile}\.\.\.expanding to full symbols\.\.\.done\." \
+    "Reading symbols from ${binfile}\.\.\.\r\nExpanding full symbols from ${binfile}\.\.\." \
     "symbol-file with -- and -readnow"
 gdb_test "symbol-file -- $binfile -readnow" \
     "Unrecognized argument \"-readnow\"" \
@@ -132,7 +132,7 @@ gdb_test "add-symbol-file ${binfile} 0 -s .whatever" \
 
 # Load the object file.
 gdb_test "add-symbol-file ${binfile} 0" \
-	"Reading symbols from .*${testfile}\\.o\\.\\.\\.done\\.(|\r\nUsing host libthread_db library .*libthread_db.so.*\\.)" \
+	"Reading symbols from .*${testfile}\\.o\\.\\.\\.(|\r\nUsing host libthread_db library .*libthread_db.so.*\\.)" \
 	"add-symbol-file ${testfile}.o 0" \
 	"add symbol table from file \".*${testfile}\\.o\" at\[ \t\r\n\]+\.text_addr = 0x0\[\r\n\]+\\(y or n\\) " \
 	"y"
@@ -181,7 +181,7 @@ gdb_test_no_output "set \$offset = 0x10000"
 
 # Load the object file.
 gdb_test "add-symbol-file ${binfile} \$offset" \
-	"Reading symbols from .*${testfile}\\.o\\.\\.\\.done\\.(|\r\nUsing host libthread_db library .*libthread_db.so.*\\.)" \
+	"Reading symbols from .*${testfile}\\.o\\.\\.\\.(|\r\nUsing host libthread_db library .*libthread_db.so.*\\.)" \
 	"add-symbol-file ${testfile}.o \$offset" \
 	"add symbol table from file \".*${testfile}\\.o\" at\[ \t\r\n\]+\.text_addr = 0x10000\[\r\n\]+\\(y or n\\) " \
 	"y"
