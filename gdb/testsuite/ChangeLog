@@ -1,3 +1,16 @@
+2018-05-29  Tom Tromey  <tom@tromey.com>
+
+	* gdb.cp/maint.exp (test_invalid_name): Update expected output.
+
+2018-05-29  Tom Tromey  <tom@tromey.com>
+
+	* gdb.gdb/complaints.exp (test_short_complaints): Remove.
+	(test_initial_complaints, test_empty_complaints): Update.
+
+2018-05-29  Tom Tromey  <tom@tromey.com>
+
+	* gdb.dwarf2/dw2-stack-boundary.exp: Update.
+
 2018-05-27  Tom Tromey  <tom@tromey.com>
 
 	PR cli/19551:
