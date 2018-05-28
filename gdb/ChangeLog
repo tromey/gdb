@@ -1,3 +1,8 @@
+2018-05-27  Tom Tromey  <tom@tromey.com>
+
+	* symfile.c (symbol_file_add_with_addrs): Do not print "no
+	debugging symbols" message if there is a separate debug objfile.
+
 2018-05-19  Tom Tromey  <tom@tromey.com>
 
 	PR cli/19551:
