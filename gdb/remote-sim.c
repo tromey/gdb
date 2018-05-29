@@ -1338,6 +1338,15 @@ gdbsim_target::has_memory ()
   return true;
 }
 
+/* See remote.h.  */
+
+bool
+sim_target_pushed_p ()
+{
+  return (dynamic_cast<gdbsim_target *> (find_target_at (process_stratum))
+	  != nullptr);
+}
+
 void
 _initialize_remote_sim (void)
 {

@@ -39,6 +39,7 @@
 #include "infcall.h"
 #include "xml-syscall.h"
 #include "bfin-tdep.h"
+#include "remote.h"
 
 /* Macros used by prologue functions.  */
 #define P_LINKAGE			0xE800
@@ -597,7 +598,7 @@ bfin_sw_breakpoint_from_kind (struct gdbarch *gdbarch, int kind, int *size)
 
   *size = kind;
 
-  if (strcmp (target_shortname, "sim") == 0)
+  if (sim_target_pushed_p ())
     return bfin_sim_breakpoint;
   else
     return bfin_breakpoint;

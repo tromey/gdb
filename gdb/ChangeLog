@@ -1,3 +1,14 @@
+2018-05-28  Tom Tromey  <tom@tromey.com>
+
+	* remote-sim.c (sim_target_pushed_p): New function.
+	* bfin-tdep.c (bfin_sw_breakpoint_from_kind): Use
+	sim_target_pushed_p.
+	* sh-tdep.c (sh_sw_breakpoint_from_kind): Use
+	remote_target_pushed_p.
+	* remote.h (remote_target_pushed_p, sim_target_pushed_p):
+	Declare.
+	* remote.c (remote_target_pushed_p): New function.
+
 2018-05-27  Tom Tromey  <tom@tromey.com>
 
 	* Makefile.in (DEPFILES): Don't reference REMOTE_OBS.

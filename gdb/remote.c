@@ -1109,6 +1109,15 @@ remote_state::~remote_state ()
   QUEUE_free (stop_reply_p, this->stop_reply_queue);
 }
 
+/* See remote.h.  */
+
+bool
+remote_target_pushed_p ()
+{
+  return (dynamic_cast<remote_target *> (find_target_at (process_stratum))
+	  != nullptr);
+}
+
 /* Utility: generate error from an incoming stub packet.  */
 static void
 trace_error (char *buf)

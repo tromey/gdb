@@ -57,4 +57,13 @@ extern int remote_register_number_and_offset (struct gdbarch *gdbarch,
 
 extern void remote_notif_get_pending_events (remote_target *remote,
 					     struct notif_client *np);
+
+/* Return true if a remote target is currently pushed.  */
+
+extern bool remote_target_pushed_p ();
+
+/* Return true if a sim target is currently pushed.  */
+
+extern bool sim_target_pushed_p ();
+
 #endif
