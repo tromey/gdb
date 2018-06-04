@@ -989,16 +989,13 @@ Write the given buffer object to the inferior's memory." },
     METH_VARARGS | METH_KEYWORDS,
     "search_memory (address, length, pattern) -> long\n\
 Return a long with the address of a match, or None." },
-<<<<<<< HEAD
   { "thread_from_thread_handle", (PyCFunction) infpy_thread_from_thread_handle,
     METH_VARARGS | METH_KEYWORDS,
     "thread_from_thread_handle (handle) -> gdb.InferiorThread.\n\
 Return thread object corresponding to thread handle." },
-=======
   { "architecture", infpy_arch, METH_NOARGS,
     "architecture () -> gdb.Architecture.\n\
 Return the architecture of the inferior." },
->>>>>>> cfb6d518c37... add Inferior.architecture
   { NULL }
 };
 
