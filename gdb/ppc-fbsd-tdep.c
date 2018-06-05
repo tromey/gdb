@@ -262,6 +262,7 @@ ppcfbsd_sigtramp_frame_prev_register (struct frame_info *this_frame,
 }
 
 static const struct frame_unwind ppcfbsd_sigtramp_frame_unwind = {
+  "PowerPC FreeBSD sigtramp",
   SIGTRAMP_FRAME,
   default_frame_unwind_stop_reason,
   ppcfbsd_sigtramp_frame_this_id,

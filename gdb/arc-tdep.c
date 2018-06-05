@@ -1737,6 +1737,7 @@ arc_dwarf2_frame_init_reg (struct gdbarch *gdbarch, int regnum,
    accepts the frame.  */
 
 static const struct frame_unwind arc_frame_unwind = {
+  "arc",
   NORMAL_FRAME,
   default_frame_unwind_stop_reason,
   arc_frame_this_id,

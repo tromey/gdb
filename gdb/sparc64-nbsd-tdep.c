@@ -225,6 +225,7 @@ sparc64nbsd_sigtramp_frame_sniffer (const struct frame_unwind *self,
 
 static const struct frame_unwind sparc64nbsd_sigcontext_frame_unwind =
 {
+  "NetBSD Sparc64 sigtramp",
   SIGTRAMP_FRAME,
   default_frame_unwind_stop_reason,
   sparc64nbsd_sigcontext_frame_this_id,
