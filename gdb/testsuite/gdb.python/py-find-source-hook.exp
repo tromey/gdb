@@ -1,4 +1,4 @@
-# Copyright (C) 2015 Free Software Foundation, Inc.
+# Copyright (C) 2018 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,12 +40,15 @@ if { [skip_python_tests] } { continue }
 
 gdb_test_no_output "python exec (open ('${pyfile}').read ())" ""
 
-gdb_py_test_silent_cmd "python gdb.find_source_hook = find_source_do_nothing" "set find_source_hook" 0
+gdb_py_test_silent_cmd "python gdb.find_source_hook = find_source_do_nothing" \
+    "set find_source_hook" 0
 
 # Since we haven't moved the source file yet, the hook should not be
 # called.
 gdb_test "python print(do_nothing_calls)" "0"
-gdb_test "list 1" "10	   This program is distributed in the hope that it will be useful," "find_source_do_nothing not called"
+gdb_test "list 1" \
+    "10	   This program is distributed in the hope that it will be useful," \
+    "find_source_do_nothing not called"
 gdb_test "python print(do_nothing_calls)" "0"
 
 # Now remove the source file so gdb can't find it.
@@ -59,7 +62,8 @@ if {$result == 1} {
 gdb_reinitialize_dir $srcdir
 
 # The hook should be invoked here.
-gdb_test "list 1" "1\[ \t\]+$srcfile: No such file or directory." "find_source_do_nothing gets called"
+gdb_test "list 1" "1\[ \t\]+$srcfile: No such file or directory." \
+    "find_source_do_nothing gets called"
 # It actually gets invoked 3 times when running list, but I'd rather
 # not depend on that exact number.
 gdb_test "python print(do_nothing_calls > 0)" "True"
@@ -67,22 +71,32 @@ gdb_test "python print(do_nothing_calls > 0)" "True"
 # Check that a hook that raises prints an exception
 gdb_reinitialize_dir $srcdir
 
-gdb_py_test_silent_cmd "python gdb.find_source_hook = find_source_raise" "set find_source_hook" 0
-gdb_test "list 1" "Python Exception <type 'exceptions.Exception'> oops: +\r\n1\[ \t\]+$srcfile: No such file or directory." "find_source_raise output"
+gdb_py_test_silent_cmd "python gdb.find_source_hook = find_source_raise" \
+    "set find_source_hook" 0
+gdb_test "list 1" \
+    "Python Exception <type 'exceptions.Exception'> oops: +\r\n1\[ \t\]+$srcfile: No such file or directory." \
+    "find_source_raise output"
 
 # Check that a hook that returns a non-string prints an error.
 gdb_reinitialize_dir $srcdir
 
-gdb_py_test_silent_cmd "python gdb.find_source_hook = find_source_bad_return" "set find_source_hook" 0
-gdb_test "list 1" "Python Exception <type 'exceptions.RuntimeError'> Return from find_source_hook must be either a Python string, or None: +\r\n1\[ \t\]+$srcfile: No such file or directory." "find_source_bad_return output"
+gdb_py_test_silent_cmd "python gdb.find_source_hook = find_source_bad_return" \
+    "set find_source_hook" 0
+gdb_test "list 1" \
+    "Python Exception <type 'exceptions.RuntimeError'> Return from find_source_hook must be either a Python string, or None: +\r\n1\[ \t\]+$srcfile: No such file or directory." \
+    "find_source_bad_return output"
 
 # Finally check that a hook that returns a new, valid path works.
 gdb_reinitialize_dir $srcdir
-gdb_py_test_silent_cmd "python new_path = '$orig_srcfile'" "set find_source_hook" 0
-gdb_py_test_silent_cmd "python gdb.find_source_hook = find_source_new_path" "set find_source_hook" 0
+gdb_py_test_silent_cmd "python new_path = '$orig_srcfile'" \
+    "set find_source_hook" 0
+gdb_py_test_silent_cmd "python gdb.find_source_hook = find_source_new_path" \
+    "set find_source_hook" 0
 gdb_test "python print(new_path_calls)" "0"
 # Should get the source back now
-gdb_test "list 1" "10	   This program is distributed in the hope that it will be useful," "find_source_new_path works"
+gdb_test "list 1" \
+    "10	   This program is distributed in the hope that it will be useful," \
+    "find_source_new_path works"
 # This is 2 in my testing, but again I would rather not rely on that.
 gdb_test "python print(new_path_calls > 0)" "True"
 set new_path_calls [get_python_valueof "new_path_calls" "None"]
@@ -90,7 +104,9 @@ if { ${new_path_calls} == "None" } {
   fail "new_path_calls not found"
 }
 # Check that the returned path will be cached.
-gdb_test "list 1" "10	   This program is distributed in the hope that it will be useful," "find_source_new_path return value gets cached"
+gdb_test "list 1" \
+    "10	   This program is distributed in the hope that it will be useful," \
+    "find_source_new_path return value gets cached"
 if { [get_python_valueof "new_path_calls" "None"] != ${new_path_calls} } {
   fail "find_source hook shouldn't have been called again"
 }

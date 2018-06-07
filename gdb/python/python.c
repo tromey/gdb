@@ -153,8 +153,8 @@ static int gdbpy_check_quit_flag (const struct extension_language_defn *);
 static enum ext_lang_rc gdbpy_before_prompt_hook
   (const struct extension_language_defn *, const char *current_gdb_prompt);
 static enum ext_lang_rc gdbpy_find_source_hook
-(const struct extension_language_defn *, const char *filename,
- char **found_filename);
+  (const struct extension_language_defn *, const char *filename,
+   gdb::unique_xmalloc_ptr<char> *found_filename);
 
 /* The interface between gdb proper and loading of python scripts.  */
 
@@ -1187,73 +1187,60 @@ gdbpy_before_prompt_hook (const struct extension_language_defn *extlang,
 static enum ext_lang_rc
 gdbpy_find_source_hook (const struct extension_language_defn *extlang,
 			const char *filename,
-			char **found_filename)
+			gdb::unique_xmalloc_ptr<char> *found_filename)
 {
-  struct cleanup *cleanup;
-  char *result = NULL;
-
   if (!gdb_python_initialized)
     return EXT_LANG_RC_NOP;
 
-  cleanup = ensure_python_env (get_current_arch (), current_language);
+  gdb::unique_xmalloc_ptr<char> result;
+  gdbpy_enter enter_py (get_current_arch (), current_language);
 
   if (gdb_python_module
       && PyObject_HasAttrString (gdb_python_module, "find_source_hook"))
     {
-      PyObject *hook;
-
-      hook = PyObject_GetAttrString (gdb_python_module, "find_source_hook");
-      if (hook == NULL)
+      gdbpy_ref<> hook (PyObject_GetAttrString (gdb_python_module,
+						"find_source_hook"));
+      if (hook == nullptr)
 	goto fail;
 
-      make_cleanup_py_decref (hook);
-
-      if (PyCallable_Check (hook))
+      if (PyCallable_Check (hook.get ()))
 	{
-	  PyObject *result_obj;
-	  PyObject *in_filename;
-
-	  in_filename = PyString_FromString (filename);
-	  if (in_filename == NULL)
+	  gdbpy_ref<> in_filename (PyString_FromString (filename));
+	  if (in_filename == nullptr)
 	    goto fail;
 
-	  result_obj = PyObject_CallFunctionObjArgs (hook, in_filename, NULL);
-
-	  Py_DECREF (in_filename);
-
-	  if (result_obj == NULL)
+	  gdbpy_ref<> result_obj
+	    (PyObject_CallFunctionObjArgs (hook.get (), in_filename.get (),
+					   NULL));
+	  if (result_obj == nullptr)
 	    goto fail;
-
-	  make_cleanup_py_decref (result_obj);
 
 	  /* Return type should be None, or a String.  If it is None,
 	     fall through.  If it is a string, set FOUND_FILENAME.
 	     Anything else, set an exception.  */
-	  if (result_obj != Py_None && ! PyString_Check (result_obj))
+	  if (result_obj != Py_None && !PyString_Check (result_obj.get ()))
 	    {
 	      PyErr_Format (PyExc_RuntimeError,
-			    _("Return from find_source_hook must " \
+			    _("Return from find_source_hook must "	\
 			      "be either a Python string, or None"));
 	      goto fail;
 	    }
 
 	  if (result_obj != Py_None)
 	    {
-	      result = python_string_to_host_string (result_obj);
-	      if (result == NULL)
+	      result = python_string_to_host_string (result_obj.get ());
+	      if (result == nullptr)
 		goto fail;
 
-	      *found_filename = result;
+	      *found_filename = std::move (result);
 	    }
 	}
     }
 
-  do_cleanups (cleanup);
-  return result != NULL ? EXT_LANG_RC_OK : EXT_LANG_RC_NOP;
+  return result != nullptr ? EXT_LANG_RC_OK : EXT_LANG_RC_NOP;
 
  fail:
   gdbpy_print_stack ();
-  do_cleanups (cleanup);
   return EXT_LANG_RC_ERROR;
 }
 

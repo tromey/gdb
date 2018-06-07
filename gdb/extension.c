@@ -937,18 +937,18 @@ ext_lang_before_prompt (const char *current_gdb_prompt)
    If there was an error, or if no extension succeeds, then NULL is returned.
 */
 
-char *
-ext_lang_find_source (const char* filename)
+gdb::unique_xmalloc_ptr<char>
+ext_lang_find_source (const char *filename)
 {
   int i;
   const struct extension_language_defn *extlang;
 
   ALL_ENABLED_EXTENSION_LANGUAGES (i, extlang)
     {
-      char *result = NULL;
+      gdb::unique_xmalloc_ptr<char> result;
       enum ext_lang_rc rc;
 
-      if (extlang->ops->find_source == NULL)
+      if (extlang->ops->find_source == nullptr)
 	continue;
       rc = extlang->ops->find_source (extlang, filename, &result);
       switch (rc)
@@ -957,7 +957,7 @@ ext_lang_find_source (const char* filename)
 	  gdb_assert (result != NULL);
 	  return result;
 	case EXT_LANG_RC_ERROR:
-	  return NULL;
+	  return nullptr;
 	case EXT_LANG_RC_NOP:
 	  break;
 	default:
@@ -965,7 +965,7 @@ ext_lang_find_source (const char* filename)
 	}
     }
 
-  return NULL;
+  return nullptr;
 }
 
 void

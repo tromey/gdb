@@ -1062,19 +1062,14 @@ find_and_open_source (const char *filename,
   if (result < 0)
     {
       /* Didn't work.  Ask extension languages if they can find it.  */
-      char *found_filename = ext_lang_find_source (filename);
+      gdb::unique_xmalloc_ptr<char> found_filename
+	= ext_lang_find_source (filename);
 
-      if (found_filename != NULL)
+      if (found_filename != nullptr)
         {
-	  result = gdb_open_cloexec (found_filename, OPEN_MODE, 0);
+	  result = gdb_open_cloexec (found_filename.get (), OPEN_MODE, 0);
 	  if (result >= 0)
-	    {
-	      *fullname = found_filename;
-	    }
-	  else
-	    {
-	      make_cleanup (xfree, found_filename);
-	    }
+	    *fullname = std::move (found_filename);
 	}
     }
 
