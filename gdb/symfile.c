@@ -814,7 +814,7 @@ read_symbols (struct objfile *objfile, symfile_add_flags add_flags)
 	}
     }
   if ((add_flags & SYMFILE_NO_READ) == 0)
-    require_partial_symbols (objfile, 0);
+    require_partial_symbols (objfile, (add_flags & SYMFILE_VERBOSE) != 0);
 }
 
 /* Initialize entry point information for this objfile.  */
