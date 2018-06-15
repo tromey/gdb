@@ -1882,11 +1882,9 @@ spu_overlay_update (struct obj_section *osect)
   /* All sections.  */
   else
     {
-      struct objfile *objfile;
-
-      ALL_OBJSECTIONS (objfile, osect)
-	if (section_is_overlay (osect))
-	  spu_overlay_update_osect (osect);
+      ALL_OBJSECTIONS (iter)
+	if (section_is_overlay (iter.obj_section))
+	  spu_overlay_update_osect (iter.obj_section);
     }
 }
 

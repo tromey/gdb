@@ -1271,8 +1271,6 @@ static void
 info_symbol_command (const char *arg, int from_tty)
 {
   struct minimal_symbol *msymbol;
-  struct objfile *objfile;
-  struct obj_section *osect;
   CORE_ADDR addr, sect_addr;
   int matches = 0;
   unsigned int offset;
@@ -1281,8 +1279,11 @@ info_symbol_command (const char *arg, int from_tty)
     error_no_arg (_("address"));
 
   addr = parse_and_eval_address (arg);
-  ALL_OBJSECTIONS (objfile, osect)
+  ALL_OBJSECTIONS (iter)
   {
+    struct objfile *objfile = iter.objfile;
+    struct obj_section *osect = iter.obj_section;
+
     /* Only process each object file once, even if there's a separate
        debug file.  */
     if (objfile->separate_debug_objfile_backlink)

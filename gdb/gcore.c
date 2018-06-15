@@ -424,11 +424,11 @@ gcore_create_callback (CORE_ADDR vaddr, unsigned long size, int read,
     {
       /* See if this region of memory lies inside a known file on disk.
 	 If so, we can avoid copying its contents by clearing SEC_LOAD.  */
-      struct objfile *objfile;
-      struct obj_section *objsec;
-
-      ALL_OBJSECTIONS (objfile, objsec)
+      ALL_OBJSECTIONS (iter)
 	{
+	  struct objfile *objfile = iter.objfile;
+	  struct obj_section *objsec = iter.obj_section;
+
 	  bfd *abfd = objfile->obfd;
 	  asection *asec = objsec->the_bfd_section;
 	  bfd_vma align = (bfd_vma) 1 << bfd_get_section_alignment (abfd,
@@ -489,13 +489,14 @@ objfile_find_memory_regions (struct target_ops *self,
 			     find_memory_region_ftype func, void *obfd)
 {
   /* Use objfile data to create memory sections.  */
-  struct objfile *objfile;
-  struct obj_section *objsec;
   bfd_vma temp_bottom, temp_top;
 
   /* Call callback function for each objfile section.  */
-  ALL_OBJSECTIONS (objfile, objsec)
+  ALL_OBJSECTIONS (iter)
     {
+      struct objfile *objfile = iter.objfile;
+      struct obj_section *objsec = iter.obj_section;
+
       bfd *ibfd = objfile->obfd;
       asection *isec = objsec->the_bfd_section;
       flagword flags = bfd_get_section_flags (ibfd, isec);

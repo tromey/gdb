@@ -680,41 +680,101 @@ private:
       }									\
     else
 
+/* Type returned by the iterator created via
+   objfile_and_objsection_iterable.  */
+struct objfile_and_objsection
+{
+  struct objfile *objfile;
+  struct obj_section *obj_section;
+};
+
+/* An iterable that can be used to iterate over the objfiles and
+   objsections of a program space.  Can be used like:
+   
+   for (objfile_and_objsection oo : objfile_and_objsection_iterable (pspace))
+   { ... }
+
+   However, it is more usual to use the ALL_OBJSECTIONS macro.  */
+
+struct objfile_and_objsection_iterable
+{
+  explicit objfile_and_objsection_iterable (struct program_space *pspace)
+    : m_pspace (pspace)
+  {
+  }
+
+  struct iterator
+  {
+    explicit iterator (struct program_space *pspace)
+      : m_objfile_iterable (pspace),
+	m_objfile_iter (nullptr)
+    {
+      if (pspace == nullptr)
+	{
+	  m_objfile_iter = m_objfile_iterable.end ();
+	  m_osect = nullptr;
+	}
+      else
+	{
+	  m_objfile_iter = m_objfile_iterable.begin ();
+	  m_osect = (*m_objfile_iter)->sections;
+	}
+    }
+
+    bool operator!= (const iterator &other) const
+    {
+      return (m_objfile_iter != other.m_objfile_iter
+	      || m_osect != other.m_osect);
+    }
+
+    iterator &operator++ ()
+    {
+      ++m_osect;
+      if (m_osect->the_bfd_section == nullptr)
+	{
+	  ++m_objfile_iter;
+	  if (m_objfile_iter != m_objfile_iterable.end ())
+	    m_osect = (*m_objfile_iter)->sections;
+	  else
+	    m_osect = nullptr;
+	}
+      return *this;
+    }
+
+    struct objfile_and_objsection operator* () const
+    {
+      objfile_and_objsection result = { *m_objfile_iter, m_osect };
+      return result;
+    }
+
+  private:
+
+    objfile_iterable m_objfile_iterable;
+    objfile_iterable::iterator m_objfile_iter;
+    struct obj_section *m_osect;
+  };
+
+  iterator begin ()
+  {
+    return iterator (m_pspace);
+  }
+
+  iterator end ()
+  {
+    return iterator (nullptr);
+  }
+
+private:
+
+  struct program_space *m_pspace;
+};
+
 /* Traverse all obj_sections in all objfiles in the current program
-   space.
+   space.  */
 
-   Note that this detects a "break" in the inner loop, and exits
-   immediately from the outer loop as well, thus, client code doesn't
-   need to know that this is implemented with a double for.  The extra
-   hair is to make sure that a "break;" stops the outer loop iterating
-   as well, and both OBJFILE and OSECT are left unmodified:
-
-    - The outer loop learns about the inner loop's end condition, and
-      stops iterating if it detects the inner loop didn't reach its
-      end.  In other words, the outer loop keeps going only if the
-      inner loop reached its end cleanly [(osect) ==
-      (objfile)->sections_end].
-
-    - OSECT is initialized in the outer loop initialization
-      expressions, such as if the inner loop has reached its end, so
-      the check mentioned above succeeds the first time.
-
-    - The trick to not clearing OBJFILE on a "break;" is, in the outer
-      loop's loop expression, advance OBJFILE, but iff the inner loop
-      reached its end.  If not, there was a "break;", so leave OBJFILE
-      as is; the outer loop's conditional will break immediately as
-      well (as OSECT will be different from OBJFILE->sections_end).  */
-
-#define ALL_OBJSECTIONS(objfile, osect)					\
-  for ((objfile) = current_program_space->objfiles,			\
-	 (objfile) != NULL ? ((osect) = (objfile)->sections_end) : 0;	\
-       (objfile) != NULL						\
-	 && (osect) == (objfile)->sections_end;				\
-       ((osect) == (objfile)->sections_end				\
-	? ((objfile) = (objfile)->next,					\
-	   (objfile) != NULL ? (osect) = (objfile)->sections_end : 0)	\
-	: 0))								\
-    ALL_OBJFILE_OSECTIONS (objfile, osect)
+#define ALL_OBJSECTIONS(name)						\
+  for (objfile_and_objsection name					\
+       : objfile_and_objsection_iterable (current_program_space))
 
 #define SECT_OFF_DATA(objfile) \
      ((objfile->sect_index_data == -1) \

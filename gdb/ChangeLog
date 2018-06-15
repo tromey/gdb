@@ -1,3 +1,18 @@
+2018-06-30  Tom Tromey  <tom@tromey.com>
+
+	* symfile.c (overlay_invalidate_all, find_pc_overlay)
+	(find_pc_mapped_section, list_overlays_command)
+	(map_overlay_command, unmap_overlay_command)
+	(simple_overlay_update): Update.
+	* spu-tdep.c (spu_overlay_update): Update.
+	* printcmd.c (info_symbol_command): Update.
+	* objfiles.h (struct objfile_and_objsection): New.
+	(struct objfile_and_objsection_iterable): New.
+	(ALL_OBJSECTIONS): Rewrite.
+	* maint.c (maintenance_translate_address): Update.
+	* gcore.c (gcore_create_callback, objfile_find_memory_regions):
+	Update.
+
 2018-06-29  Tom Tromey  <tom@tromey.com>
 
 	* objfiles.h (ALL_OBJFILES_SAFE): Remove.

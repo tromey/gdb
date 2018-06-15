@@ -448,8 +448,10 @@ maintenance_translate_address (const char *arg, int from_tty)
       int arg_len = p - arg;
       p = skip_spaces (p + 1);
 
-      ALL_OBJSECTIONS (objfile, sect)
+      ALL_OBJSECTIONS (iter)
       {
+	objfile = iter.objfile;
+	sect = iter.obj_section;
 	if (strncmp (sect->the_bfd_section->name, arg, arg_len) == 0)
 	  break;
       }
