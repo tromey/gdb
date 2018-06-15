@@ -3200,7 +3200,6 @@ free_breakpoint_objfile_data (struct objfile *obj, void *data)
 static void
 create_overlay_event_breakpoint (void)
 {
-  struct objfile *objfile;
   const char *const func_name = "_ovly_debug_event";
 
   ALL_OBJFILES (objfile)
@@ -3259,8 +3258,6 @@ create_longjmp_master_breakpoint (void)
 
   ALL_PSPACES (pspace)
   {
-    struct objfile *objfile;
-
     set_current_program_space (pspace);
 
     ALL_OBJFILES (objfile)
@@ -3364,7 +3361,6 @@ create_std_terminate_master_breakpoint (void)
 
   ALL_PSPACES (pspace)
   {
-    struct objfile *objfile;
     CORE_ADDR addr;
 
     set_current_program_space (pspace);
@@ -3412,7 +3408,6 @@ create_std_terminate_master_breakpoint (void)
 static void
 create_exception_master_breakpoint (void)
 {
-  struct objfile *objfile;
   const char *const func_name = "_Unwind_DebugHook";
 
   ALL_OBJFILES (objfile)

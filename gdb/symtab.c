@@ -463,7 +463,6 @@ void
 iterate_over_symtabs (const char *name,
 		      gdb::function_view<bool (symtab *)> callback)
 {
-  struct objfile *objfile;
   gdb::unique_xmalloc_ptr<char> real_path;
 
   /* Here we are interested in canonicalizing an absolute path, not
@@ -972,7 +971,6 @@ matching_obj_sections (struct obj_section *obj_first,
 {
   asection *first = obj_first? obj_first->the_bfd_section : NULL;
   asection *second = obj_second? obj_second->the_bfd_section : NULL;
-  struct objfile *obj;
 
   /* If they're the same section, then they match.  */
   if (first == second)
@@ -1014,17 +1012,18 @@ matching_obj_sections (struct obj_section *obj_first,
 
   ALL_OBJFILES (obj)
     if (obj->obfd == first->owner)
-      break;
-  gdb_assert (obj != NULL);
+      {
+	if (obj->separate_debug_objfile != NULL
+	    && obj->separate_debug_objfile->obfd == second->owner)
+	  return 1;
+	if (obj->separate_debug_objfile_backlink != NULL
+	    && obj->separate_debug_objfile_backlink->obfd == second->owner)
+	  return 1;
 
-  if (obj->separate_debug_objfile != NULL
-      && obj->separate_debug_objfile->obfd == second->owner)
-    return 1;
-  if (obj->separate_debug_objfile_backlink != NULL
-      && obj->separate_debug_objfile_backlink->obfd == second->owner)
-    return 1;
+	return 0;
+      }
 
-  return 0;
+  gdb_assert_not_reached ("objfile not found");
 }
 
 /* See symtab.h.  */
@@ -1032,7 +1031,6 @@ matching_obj_sections (struct obj_section *obj_first,
 void
 expand_symtab_containing_pc (CORE_ADDR pc, struct obj_section *section)
 {
-  struct objfile *objfile;
   struct bound_minimal_symbol msymbol;
 
   /* If we know that this is not a text address, return failure.  This is
@@ -2164,7 +2162,6 @@ lookup_local_symbol (const char *name,
 struct objfile *
 lookup_objfile_from_block (const struct block *block)
 {
-  struct objfile *obj;
   struct compunit_symtab *cust;
 
   if (block == NULL)
@@ -2575,7 +2572,6 @@ struct block_symbol
 lookup_static_symbol (const char *name, const domain_enum domain)
 {
   struct symbol_cache *cache = get_symbol_cache (current_program_space);
-  struct objfile *objfile;
   struct block_symbol result;
   struct block_symbol_cache *bsc;
   struct symbol_cache_slot *slot;
@@ -2792,7 +2788,6 @@ basic_lookup_transparent_type_1 (struct objfile *objfile, int block_index,
 struct type *
 basic_lookup_transparent_type (const char *name)
 {
-  struct objfile *objfile;
   struct type *t;
 
   /* Now search all the global symbols.  Do the symtab's first, then
@@ -2874,7 +2869,6 @@ find_pc_sect_compunit_symtab (CORE_ADDR pc, struct obj_section *section)
 {
   struct compunit_symtab *cust;
   struct compunit_symtab *best_cust = NULL;
-  struct objfile *objfile;
   CORE_ADDR distance = 0;
   struct bound_minimal_symbol msymbol;
 
@@ -2996,8 +2990,6 @@ find_pc_compunit_symtab (CORE_ADDR pc)
 struct symbol *
 find_symbol_at_address (CORE_ADDR address)
 {
-  struct objfile *objfile;
-
   ALL_OBJFILES (objfile)
   {
     if (objfile->sf == NULL
@@ -3350,7 +3342,6 @@ find_line_symtab (struct symtab *symtab, int line,
          BEST_INDEX and BEST_LINETABLE identify the item for it.  */
       int best;
 
-      struct objfile *objfile;
       struct compunit_symtab *cu;
       struct symtab *s;
 
@@ -4188,7 +4179,6 @@ info_sources_command (const char *ignore, int from_tty)
 {
   struct compunit_symtab *cu;
   struct symtab *s;
-  struct objfile *objfile;
   struct output_source_filename_data data;
 
   if (!have_full_symbols () && !have_partial_symbols ())
@@ -4299,7 +4289,6 @@ search_symbols (const char *regexp, enum search_domain kind,
   int i = 0;
   struct block_iterator iter;
   struct symbol *sym;
-  struct objfile *objfile;
   struct minimal_symbol *msymbol;
   int found_misc = 0;
   static const enum minimal_symbol_type types[]
@@ -5071,7 +5060,6 @@ default_collect_symbol_completion_matches_break_on
   struct symbol *sym;
   struct compunit_symtab *cust;
   struct minimal_symbol *msymbol;
-  struct objfile *objfile;
   const struct block *b;
   const struct block *surrounding_static_block, *surrounding_global_block;
   struct block_iterator iter;
@@ -5455,7 +5443,6 @@ make_source_files_completion_list (const char *text, const char *word)
 {
   struct compunit_symtab *cu;
   struct symtab *s;
-  struct objfile *objfile;
   size_t text_len = strlen (text);
   completion_list list;
   const char *base_name;
@@ -5570,7 +5557,6 @@ static void
 find_main_name (void)
 {
   const char *new_main_name;
-  struct objfile *objfile;
 
   /* First check the objfiles to see whether a debuginfo reader has
      picked up the appropriate main name.  Historically the main name

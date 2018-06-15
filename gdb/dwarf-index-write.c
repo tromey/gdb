@@ -1622,7 +1622,6 @@ write_psymtabs_to_index (struct dwarf2_per_objfile *dwarf2_per_objfile,
 static void
 save_gdb_index_command (const char *arg, int from_tty)
 {
-  struct objfile *objfile;
   const char dwarf5space[] = "-dwarf-5 ";
   dw_index_kind index_kind = dw_index_kind::GDB_INDEX;
 

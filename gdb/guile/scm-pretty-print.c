@@ -433,8 +433,6 @@ ppscm_search_pp_list (SCM list, SCM value)
 static SCM
 ppscm_find_pretty_printer_from_objfiles (SCM value)
 {
-  struct objfile *objfile;
-
   ALL_OBJFILES (objfile)
   {
     objfile_smob *o_smob = ofscm_objfile_smob_from_objfile (objfile);

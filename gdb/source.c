@@ -247,7 +247,6 @@ clear_current_source_symtab_and_line (void)
 void
 select_source_symtab (struct symtab *s)
 {
-  struct objfile *ofp;
   struct compunit_symtab *cu;
 
   if (s)

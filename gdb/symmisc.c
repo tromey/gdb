@@ -470,7 +470,6 @@ maintenance_print_symbols (const char *args, int from_tty)
     }
   else
     {
-      struct objfile *objfile;
       struct compunit_symtab *cu;
       struct symtab *s;
       int found = 0;
@@ -690,7 +689,6 @@ maintenance_print_msymbols (const char *args, int from_tty)
 {
   struct ui_file *outfile = gdb_stdout;
   char *objfile_arg = NULL;
-  struct objfile *objfile;
   int i, outfile_idx;
 
   dont_repeat ();

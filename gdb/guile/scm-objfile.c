@@ -370,7 +370,6 @@ gdbscm_get_current_objfile (void)
 static SCM
 gdbscm_objfiles (void)
 {
-  struct objfile *objf;
   SCM result;
 
   result = SCM_EOL;

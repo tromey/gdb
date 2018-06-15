@@ -1949,7 +1949,6 @@ maintenance_print_psymbols (const char *args, int from_tty)
 {
   struct ui_file *outfile = gdb_stdout;
   char *address_arg = NULL, *source_arg = NULL, *objfile_arg = NULL;
-  struct objfile *objfile;
   struct partial_symtab *ps;
   int i, outfile_idx, found;
   CORE_ADDR pc = 0;
@@ -2216,7 +2215,6 @@ maintenance_check_psymtabs (const char *ignore, int from_tty)
   struct compunit_symtab *cust = NULL;
   struct partial_symtab *ps;
   const struct blockvector *bv;
-  struct objfile *objfile;
   struct block *b;
   int length;
 

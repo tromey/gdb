@@ -563,7 +563,6 @@ compare_selectors (const void *a, const void *b)
 static void
 info_selectors_command (const char *regexp, int from_tty)
 {
-  struct objfile	*objfile;
   struct minimal_symbol *msymbol;
   const char            *name;
   char                  *val;
@@ -724,7 +723,6 @@ compare_classes (const void *a, const void *b)
 static void
 info_classes_command (const char *regexp, int from_tty)
 {
-  struct objfile	*objfile;
   struct minimal_symbol *msymbol;
   const char            *name;
   char                  *val;
@@ -973,8 +971,6 @@ find_methods (char type, const char *theclass, const char *category,
 	      const char *selector,
 	      std::vector<const char *> *symbol_names)
 {
-  struct objfile *objfile = NULL;
-
   const char *symname = NULL;
 
   char ntype = '\0';

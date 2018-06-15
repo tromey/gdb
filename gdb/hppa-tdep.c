@@ -483,7 +483,6 @@ struct unwind_table_entry *
 find_unwind_entry (CORE_ADDR pc)
 {
   int first, middle, last;
-  struct objfile *objfile;
   struct hppa_objfile_private *priv;
 
   if (hppa_debug)
@@ -2541,7 +2540,6 @@ struct bound_minimal_symbol
 hppa_lookup_stub_minimal_symbol (const char *name,
                                  enum unwind_stub_types stub_type)
 {
-  struct objfile *objfile;
   struct minimal_symbol *msym;
   struct bound_minimal_symbol result = { NULL, NULL };
 

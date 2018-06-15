@@ -93,8 +93,6 @@ search_pp_list (PyObject *list, PyObject *value)
 static PyObject *
 find_pretty_printer_from_objfiles (PyObject *value)
 {
-  struct objfile *obj;
-
   ALL_OBJFILES (obj)
   {
     PyObject *objf = objfile_to_objfile_object (obj);

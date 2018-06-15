@@ -4930,7 +4930,6 @@ struct bound_minimal_symbol
 ada_lookup_simple_minsym (const char *name)
 {
   struct bound_minimal_symbol result;
-  struct objfile *objfile;
   struct minimal_symbol *msymbol;
 
   memset (&result, 0, sizeof (result));
@@ -5623,7 +5622,6 @@ add_nonlocal_symbols (struct obstack *obstackp,
 		      const lookup_name_info &lookup_name,
 		      domain_enum domain, int global)
 {
-  struct objfile *objfile;
   struct compunit_symtab *cu;
   struct match_data data;
 
@@ -6413,7 +6411,6 @@ ada_collect_symbol_completion_matches (completion_tracker &tracker,
   struct symbol *sym;
   struct compunit_symtab *s;
   struct minimal_symbol *msymbol;
-  struct objfile *objfile;
   const struct block *b, *surrounding_static_block = 0;
   struct block_iterator iter;
 
@@ -13565,7 +13562,6 @@ static void
 ada_add_global_exceptions (compiled_regex *preg,
 			   std::vector<ada_exc_info> *exceptions)
 {
-  struct objfile *objfile;
   struct compunit_symtab *s;
 
   /* In Ada, the symbol "search name" is a linkage name, whereas the

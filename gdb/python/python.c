@@ -1442,8 +1442,6 @@ gdbpy_get_current_objfile (PyObject *unused1, PyObject *unused2)
 static PyObject *
 gdbpy_objfiles (PyObject *unused1, PyObject *unused2)
 {
-  struct objfile *objf;
-
   gdbpy_ref<> list (PyList_New (0));
   if (list == NULL)
     return NULL;

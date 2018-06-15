@@ -1013,8 +1013,6 @@ objfile_has_symbols (struct objfile *objfile)
 int
 have_partial_symbols (void)
 {
-  struct objfile *ofp;
-
   ALL_OBJFILES (ofp)
   {
     if (objfile_has_partial_symbols (ofp))
@@ -1030,8 +1028,6 @@ have_partial_symbols (void)
 int
 have_full_symbols (void)
 {
-  struct objfile *ofp;
-
   ALL_OBJFILES (ofp)
   {
     if (objfile_has_full_symbols (ofp))
@@ -1069,8 +1065,6 @@ objfile_purge_solibs (void)
 int
 have_minimal_symbols (void)
 {
-  struct objfile *ofp;
-
   ALL_OBJFILES (ofp)
   {
     if (ofp->per_bfd->minimal_symbol_count > 0)
@@ -1141,8 +1135,6 @@ qsort_cmp (const void *a, const void *b)
       else
 	{
 	  /* Sort on sequence number of the objfile in the chain.  */
-
-	  const struct objfile *objfile;
 
 	  ALL_OBJFILES (objfile)
 	    if (objfile == objfile1)
@@ -1513,7 +1505,6 @@ default_iterate_over_objfiles_in_search_order
    void *cb_data, struct objfile *current_objfile)
 {
   int stop = 0;
-  struct objfile *objfile;
 
   ALL_OBJFILES (objfile)
     {

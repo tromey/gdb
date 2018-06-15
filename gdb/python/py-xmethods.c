@@ -121,7 +121,6 @@ gdbpy_get_matching_xmethod_workers
    struct type *obj_type, const char *method_name,
    std::vector<xmethod_worker_up> *dm_vec)
 {
-  struct objfile *objfile;
   PyObject *py_progspace;
 
   gdb_assert (obj_type != NULL && method_name != NULL);

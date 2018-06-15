@@ -1,5 +1,70 @@
 2018-06-29  Tom Tromey  <tom@tromey.com>
 
+	* windows-tdep.c (windows_iterate_over_objfiles_in_search_order):
+	Update.
+	* symtab.c (iterate_over_symtabs, matching_obj_sections)
+	(expand_symtab_containing_pc, lookup_objfile_from_block)
+	(lookup_static_symbol, basic_lookup_transparent_type)
+	(find_pc_sect_compunit_symtab, find_symbol_at_address)
+	(find_line_symtab, info_sources_command, search_symbols)
+	(default_collect_symbol_completion_matches_break_on)
+	(make_source_files_completion_list, find_main_name): Update.
+	* symmisc.c (maintenance_print_symbols)
+	(maintenance_print_msymbols): Update.
+	* symfile.c (remove_symbol_file_command)
+	(expand_symtabs_matching, map_symbol_filenames): Update.
+	* spu-tdep.c (spu_objfile_from_frame): Update.
+	* source.c (select_source_symtab): Update.
+	* solib.c (solib_read_symbols): Update.
+	* solib-spu.c (append_ocl_sos): Update.
+	* python/python.c (gdbpy_objfiles): Update.
+	* python/py-xmethods.c (gdbpy_get_matching_xmethod_workers):
+	Update.
+	* python/py-prettyprint.c (find_pretty_printer_from_objfiles):
+	Update.
+	* python/py-objfile.c (objfpy_lookup_objfile_by_name)
+	(objfpy_lookup_objfile_by_build_id): Update.
+	* psymtab.c (maintenance_print_psymbols)
+	(maintenance_check_psymtabs): Update.
+	* probe.c (find_probe_by_pc, collect_probes): Update.
+	* ppc-linux-tdep.c (ppc_linux_spe_context_inferior_created):
+	Update.
+	* objfiles.h (ALL_OBJFILES): Use ALL_PSPACE_OBJFILES.
+	* objfiles.c (have_partial_symbols, have_full_symbols)
+	(have_minimal_symbols, qsort_cmp)
+	(default_iterate_over_objfiles_in_search_order): Update.
+	* objc-lang.c (info_selectors_command, info_classes_command)
+	(find_methods): Update.
+	* minsyms.c (find_solib_trampoline_target): Update.
+	* mi/mi-cmd-file.c (mi_cmd_file_list_exec_source_files): Update.
+	* maint.c (maintenance_info_sections, count_symtabs_and_blocks):
+	Update.
+	* main.c (captured_main_1): Update.
+	* linux-thread-db.c (try_thread_db_load_from_pdir)
+	(has_libpthread): Update.
+	* linespec.c (iterate_over_all_matching_symtabs)
+	(search_minsyms_for_name): Update.
+	* jit.c (jit_find_objf_with_entry_addr): Update.
+	* hppa-tdep.c (find_unwind_entry)
+	(hppa_lookup_stub_minimal_symbol): Update.
+	* guile/scm-pretty-print.c
+	(ppscm_find_pretty_printer_from_objfiles): Update.
+	* guile/scm-objfile.c (gdbscm_objfiles): Update.
+	* dwarf2-frame.c (dwarf2_frame_find_fde): Update.
+	* dwarf-index-write.c (save_gdb_index_command): Update.
+	* cp-support.c (make_symbol_overload_list_qualified): Update.
+	* compile/compile-object-run.c (do_module_cleanup): Update.
+	* breakpoint.c (create_overlay_event_breakpoint)
+	(create_longjmp_master_breakpoint)
+	(create_std_terminate_master_breakpoint)
+	(create_exception_master_breakpoint): Update.
+	* blockframe.c (find_pc_partial_function): Update.
+	* ada-lang.c (ada_lookup_simple_minsym, add_nonlocal_symbols)
+	(ada_collect_symbol_completion_matches)
+	(ada_add_global_exceptions): Update.
+
+2018-06-29  Tom Tromey  <tom@tromey.com>
+
 	* symmisc.c (print_symbol_bcache_statistics)
 	(print_objfile_statistics, maintenance_print_objfiles)
 	(maintenance_info_symtabs, maintenance_check_symtabs)

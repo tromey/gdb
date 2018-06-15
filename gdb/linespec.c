@@ -1113,7 +1113,6 @@ iterate_over_all_matching_symtabs
    struct program_space *search_pspace, bool include_inline,
    gdb::function_view<symbol_found_callback_ftype> callback)
 {
-  struct objfile *objfile;
   struct program_space *pspace;
 
   ALL_PSPACES (pspace)
@@ -4417,8 +4416,6 @@ search_minsyms_for_name (struct collect_info *info,
 
       ALL_PSPACES (pspace)
       {
-	struct objfile *objfile;
-
 	if (search_pspace != NULL && search_pspace != pspace)
 	  continue;
 	if (pspace->executing_startup)

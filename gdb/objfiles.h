@@ -636,9 +636,7 @@ private:
   for (objfile *obj : objfile_iterable (ss))
 
 #define ALL_OBJFILES(obj)			    \
-  for ((obj) = current_program_space->objfiles; \
-       (obj) != NULL;				    \
-       (obj) = (obj)->next)
+  ALL_PSPACE_OBJFILES (current_program_space, obj)
 
 #define ALL_OBJFILES_SAFE(obj,nxt)			\
   for ((obj) = current_program_space->objfiles;	\

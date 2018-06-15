@@ -1229,8 +1229,6 @@ ppc_linux_spe_context_lookup (struct objfile *objfile)
 static void
 ppc_linux_spe_context_inferior_created (struct target_ops *t, int from_tty)
 {
-  struct objfile *objfile;
-
   ppc_linux_spe_context_lookup (NULL);
   ALL_OBJFILES (objfile)
     ppc_linux_spe_context_lookup (objfile);

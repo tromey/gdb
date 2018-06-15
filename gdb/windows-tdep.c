@@ -415,7 +415,6 @@ windows_iterate_over_objfiles_in_search_order
    void *cb_data, struct objfile *current_objfile)
 {
   int stop;
-  struct objfile *objfile;
 
   if (current_objfile)
     {

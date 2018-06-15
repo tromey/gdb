@@ -2299,7 +2299,7 @@ add_symbol_file_command (const char *args, int from_tty)
 static void
 remove_symbol_file_command (const char *args, int from_tty)
 {
-  struct objfile *objf = NULL;
+  struct objfile *found_objf = NULL;
   struct program_space *pspace = current_program_space;
 
   dont_repeat ();
@@ -2327,7 +2327,10 @@ remove_symbol_file_command (const char *args, int from_tty)
 	  if ((objf->flags & OBJF_USERLOADED) != 0
 	      && (objf->flags & OBJF_SHARED) != 0
 	      && objf->pspace == pspace && is_addr_in_objfile (addr, objf))
-	    break;
+	    {
+	      found_objf = objf;
+	      break;
+	    }
 	}
     }
   else if (argv[0] != NULL)
@@ -2345,19 +2348,22 @@ remove_symbol_file_command (const char *args, int from_tty)
 	      && (objf->flags & OBJF_SHARED) != 0
 	      && objf->pspace == pspace
 	      && filename_cmp (filename.get (), objfile_name (objf)) == 0)
-	    break;
+	    {
+	      found_objf = objf;
+	      break;
+	    }
 	}
     }
 
-  if (objf == NULL)
+  if (found_objf == NULL)
     error (_("No symbol file found"));
 
   if (from_tty
       && !query (_("Remove symbol table from file \"%s\"? "),
-		 objfile_name (objf)))
+		 objfile_name (found_objf)))
     error (_("Not confirmed."));
 
-  delete objf;
+  delete found_objf;
   clear_symtab_users (0);
 }
 
@@ -3761,8 +3767,6 @@ expand_symtabs_matching
    gdb::function_view<expand_symtabs_exp_notify_ftype> expansion_notify,
    enum search_domain kind)
 {
-  struct objfile *objfile;
-
   ALL_OBJFILES (objfile)
   {
     if (objfile->sf)
@@ -3781,8 +3785,6 @@ void
 map_symbol_filenames (symbol_filename_ftype *fun, void *data,
 		      int need_fullname)
 {
-  struct objfile *objfile;
-
   ALL_OBJFILES (objfile)
   {
     if (objfile->sf)

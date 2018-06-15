@@ -244,7 +244,6 @@ find_probes_in_objfile (struct objfile *objfile, const char *provider,
 struct bound_probe
 find_probe_by_pc (CORE_ADDR pc)
 {
-  struct objfile *objfile;
   struct bound_probe result;
 
   result.objfile = NULL;
@@ -282,7 +281,6 @@ static std::vector<bound_probe>
 collect_probes (const std::string &objname, const std::string &provider,
 		const std::string &probe_name, const static_probe_ops *spops)
 {
-  struct objfile *objfile;
   std::vector<bound_probe> result;
   gdb::optional<compiled_regex> obj_pat, prov_pat, probe_pat;
 

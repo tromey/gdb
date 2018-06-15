@@ -62,7 +62,6 @@ static void
 do_module_cleanup (void *arg, int registers_valid)
 {
   struct do_module_cleanup *data = (struct do_module_cleanup *) arg;
-  struct objfile *objfile;
 
   if (data->executedp != NULL)
     {

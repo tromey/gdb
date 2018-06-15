@@ -205,7 +205,6 @@ find_pc_partial_function (CORE_ADDR pc, const char **name, CORE_ADDR *address,
   struct symbol *f;
   struct bound_minimal_symbol msymbol;
   struct compunit_symtab *compunit_symtab = NULL;
-  struct objfile *objfile;
   CORE_ADDR mapped_pc;
 
   /* To ensure that the symbol returned belongs to the correct setion

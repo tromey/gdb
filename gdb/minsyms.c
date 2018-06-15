@@ -1456,7 +1456,6 @@ lookup_solib_trampoline_symbol_by_pc (CORE_ADDR pc)
 CORE_ADDR
 find_solib_trampoline_target (struct frame_info *frame, CORE_ADDR pc)
 {
-  struct objfile *objfile;
   struct minimal_symbol *msymbol;
   struct minimal_symbol *tsymbol = lookup_solib_trampoline_symbol_by_pc (pc);
 
