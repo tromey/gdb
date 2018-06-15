@@ -1,5 +1,19 @@
 2018-06-30  Tom Tromey  <tom@tromey.com>
 
+	* progspace.h (struct program_space) <objfiles>: Now a std::list.
+	* objfiles.h (struct objfile) <next>: Remove.
+	(put_objfile_before, unlink_objfile): Don't declare.
+	(objfile_iterable::iterator): Now a typedef.
+	(objfile_iterable::begin, objfile_iterable::end): Update.
+	(MULTI_OBJFILE_P): Rewrite.
+	* objfiles.c (objfile::objfile): Update.
+	(unlink_objfile): Update.  Move earlier.  Now static.
+	(put_objfile_before): Update.  Now static.
+	(free_all_objfiles): Clear objfiles.
+	(objfile_purge_solibs): Update.
+
+2018-06-30  Tom Tromey  <tom@tromey.com>
+
 	* symfile.c (overlay_invalidate_all, find_pc_overlay)
 	(find_pc_mapped_section, list_overlays_command)
 	(map_overlay_command, unmap_overlay_command)

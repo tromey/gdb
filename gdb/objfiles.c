@@ -419,17 +419,7 @@ objfile::objfile (bfd *abfd, const char *name, objfile_flags flags_)
 
   /* Add this file onto the tail of the linked list of other such files.  */
 
-  if (object_files == NULL)
-    object_files = this;
-  else
-    {
-      struct objfile *last_one;
-
-      for (last_one = object_files;
-	   last_one->next;
-	   last_one = last_one->next);
-      last_one->next = this;
-    }
+  object_files.push_back (this);
 
   /* Rebuild section map next time we need it.  */
   get_objfile_pspace_data (pspace)->new_objfiles_available = 1;
@@ -512,60 +502,34 @@ objfile_separate_debug_iterate (const struct objfile *parent,
   return NULL;
 }
 
+/* Unlink OBJFILE from the list of known objfiles.  */
+
+static void
+unlink_objfile (struct objfile *objfile)
+{
+  auto iter = std::find (object_files.begin (), object_files.end (), objfile);
+  if (iter == object_files.end ())
+    internal_error (__FILE__, __LINE__,
+		    _("unlink_objfile: objfile already unlinked"));
+  object_files.erase (iter);
+}
+
 /* Put one object file before a specified on in the global list.
    This can be used to make sure an object file is destroyed before
    another when using ALL_OBJFILES_SAFE to free all objfiles.  */
-void
+static void
 put_objfile_before (struct objfile *objfile, struct objfile *before_this)
 {
   struct objfile **objp;
 
   unlink_objfile (objfile);
-  
-  for (objp = &object_files; *objp != NULL; objp = &((*objp)->next))
-    {
-      if (*objp == before_this)
-	{
-	  objfile->next = *objp;
-	  *objp = objfile;
-	  return;
-	}
-    }
-  
-  internal_error (__FILE__, __LINE__,
-		  _("put_objfile_before: before objfile not in list"));
-}
 
-/* Unlink OBJFILE from the list of known objfiles, if it is found in the
-   list.
-
-   It is not a bug, or error, to call this function if OBJFILE is not known
-   to be in the current list.  This is done in the case of mapped objfiles,
-   for example, just to ensure that the mapped objfile doesn't appear twice
-   in the list.  Since the list is threaded, linking in a mapped objfile
-   twice would create a circular list.
-
-   If OBJFILE turns out to be in the list, we zap it's NEXT pointer after
-   unlinking it, just to ensure that we have completely severed any linkages
-   between the OBJFILE and the list.  */
-
-void
-unlink_objfile (struct objfile *objfile)
-{
-  struct objfile **objpp;
-
-  for (objpp = &object_files; *objpp != NULL; objpp = &((*objpp)->next))
-    {
-      if (*objpp == objfile)
-	{
-	  *objpp = (*objpp)->next;
-	  objfile->next = NULL;
-	  return;
-	}
-    }
-
-  internal_error (__FILE__, __LINE__,
-		  _("unlink_objfile: objfile already unlinked"));
+  auto iter = std::find (object_files.begin (), object_files.end (),
+			 before_this);
+  if (iter == object_files.end ())
+    internal_error (__FILE__, __LINE__,
+		    _("put_objfile_before: before objfile not in list"));
+  object_files.insert (iter, objfile);
 }
 
 /* Add OBJFILE as a separate debug objfile of PARENT.  */
@@ -747,6 +711,8 @@ free_all_objfiles (void)
       struct objfile *objfile = *iter;
       delete objfile;
     }
+  current_program_space->objfiles.clear ();
+
   clear_symtab_users (0);
 }
 
@@ -1048,22 +1014,21 @@ have_full_symbols (void)
    command.  */
 
 void
-objfile_purge_solibs (void)
+objfile_purge_solibs ()
 {
-  objfile_iterable iterable (current_program_space);
-  objfile_iterable::iterator next (nullptr);
-
-  for (auto iter = iterable.begin (); iter != iterable.end (); iter = next)
+  for (auto iter = current_program_space->objfiles.begin ();
+       iter != current_program_space->objfiles.end ();
+       )
     {
-      next = iter;
+      auto next = iter;
       ++next;
 
       struct objfile *objf = *iter;
-      /* We assume that the solib package has been purged already, or will
-	 be soon.  */
 
       if (!(objf->flags & OBJF_USERLOADED) && (objf->flags & OBJF_SHARED))
 	delete objf;
+
+      iter = next;
     }
 }
 

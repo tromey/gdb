@@ -27,6 +27,8 @@
 #include "gdb_vecs.h"
 #include "registry.h"
 
+#include <list>
+
 struct target_ops;
 struct bfd;
 struct objfile;
@@ -189,7 +191,7 @@ struct program_space
 
   /* All known objfiles are kept in a linked list.  This points to
      the head of this list.  */
-  struct objfile *objfiles = NULL;
+  std::list<struct objfile *> objfiles;
 
   /* The set of target sections matching the sections mapped into
      this program space.  Managed by both exec_ops and solib.c.  */

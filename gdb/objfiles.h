@@ -290,12 +290,6 @@ struct objfile
 
   DISABLE_COPY_AND_ASSIGN (objfile);
 
-  /* All struct objfile's are chained together by their next pointers.
-     The program space field "objfiles"  (frequently referenced via
-     the macro "object_files") points to the first link in this chain.  */
-
-  struct objfile *next = nullptr;
-
   /* The object file's original name as specified by the user,
      made absolute, and tilde-expanded.  However, it is not canonicalized
      (i.e., it has not been passed through gdb_realpath).
@@ -483,11 +477,7 @@ extern void build_objfile_section_table (struct objfile *);
 extern struct objfile *objfile_separate_debug_iterate (const struct objfile *,
                                                        const struct objfile *);
 
-extern void put_objfile_before (struct objfile *, struct objfile *);
-
 extern void add_separate_debug_objfile (struct objfile *, struct objfile *);
-
-extern void unlink_objfile (struct objfile *);
 
 extern void free_objfile_separate_debug (struct objfile *);
 
@@ -582,42 +572,16 @@ public:
   {
   }
 
-  struct iterator
-  {
-    explicit iterator (struct objfile *objfile)
-      : m_objfile (objfile)
-    {
-    }
-
-    struct objfile *operator* () const
-    {
-      return m_objfile;
-    }
-
-    bool operator!= (const iterator &other) const
-    {
-      return m_objfile != other.m_objfile;
-    }
-
-    iterator &operator++ ()
-    {
-      m_objfile = m_objfile->next;
-      return *this;
-    }
-
-  private:
-
-    struct objfile *m_objfile;
-  };
+  typedef std::list<struct objfile *>::iterator iterator;
 
   iterator begin ()
   {
-    return iterator (m_pspace->objfiles);
+    return m_pspace->objfiles.begin ();
   }
 
   iterator end ()
   {
-    return iterator (nullptr);
+    return m_pspace->objfiles.end ();
   }
 
 private:
@@ -801,7 +765,7 @@ private:
 
 /* Answer whether there is more than one object file loaded.  */
 
-#define MULTI_OBJFILE_P() (object_files && object_files->next)
+#define MULTI_OBJFILE_P() (object_files.size () > 0)
 
 /* Reset the per-BFD storage area on OBJ.  */
 
