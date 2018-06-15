@@ -1,3 +1,7 @@
+2018-06-29  Tom Tromey  <tom@tromey.com>
+
+	* objfiles.h (class objfile_iterable): New.
+
 2018-07-02  Sebastian Huber  <sebastian.huber@embedded-brains.de>
 
 	* riscv-tdep.c (riscv_register_aliases): Swap "fp" and "s0" entries.

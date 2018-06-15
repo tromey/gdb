@@ -565,6 +565,67 @@ extern void default_iterate_over_objfiles_in_search_order
    void *cb_data, struct objfile *current_objfile);
 
 
+/* An iterarable object that can be used to iterate over all
+   objfiles.  The basic use is in a foreach, like:
+   
+   for (struct objfile *objf : objfile_iterable (pspace) { ... }
+   
+   However, this is normally used via one of the macros like
+   ALL_OBJFILES.  */
+
+class objfile_iterable
+{
+public:
+
+  explicit objfile_iterable (struct program_space *pspace)
+    : m_pspace (pspace)
+  {
+  }
+
+  struct iterator
+  {
+    explicit iterator (struct objfile *objfile)
+      : m_objfile (objfile)
+    {
+    }
+
+    struct objfile *operator* () const
+    {
+      return m_objfile;
+    }
+
+    bool operator!= (const iterator &other) const
+    {
+      return m_objfile != other.m_objfile;
+    }
+
+    iterator &operator++ ()
+    {
+      m_objfile = m_objfile->next;
+      return *this;
+    }
+
+  private:
+
+    struct objfile *m_objfile;
+  };
+
+  iterator begin ()
+  {
+    return iterator (m_pspace->objfiles);
+  }
+
+  iterator end ()
+  {
+    return iterator (nullptr);
+  }
+
+private:
+
+  struct program_space *m_pspace;
+};
+
+
 /* Traverse all object files in the current program space.
    ALL_OBJFILES_SAFE works even if you delete the objfile during the
    traversal.  */
