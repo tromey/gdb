@@ -1,5 +1,23 @@
 2018-06-29  Tom Tromey  <tom@tromey.com>
 
+	* symmisc.c (print_symbol_bcache_statistics)
+	(print_objfile_statistics, maintenance_print_objfiles)
+	(maintenance_info_symtabs, maintenance_check_symtabs)
+	(maintenance_expand_symtabs, maintenance_info_line_tables):
+	Update.
+	* symfile-debug.c (set_debug_symfile): Update.
+	* source.c (forget_cached_source_info): Update.
+	* psymtab.c (maintenance_info_psymtabs): Update.
+	* probe.c (parse_probes_in_pspace): Update.
+	* objfiles.h (ALL_PSPACE_OBJFILES): Rewrite.
+	* objfiles.c (update_section_map)
+	(shared_objfile_contains_address_p): Update.
+	* guile/scm-progspace.c (gdbscm_progspace_objfiles): Update.
+	* elfread.c (elf_gnu_ifunc_resolve_by_cache)
+	(elf_gnu_ifunc_resolve_by_got): Update.
+
+2018-06-29  Tom Tromey  <tom@tromey.com>
+
 	* objfiles.h (class objfile_iterable): New.
 
 2018-07-02  Sebastian Huber  <sebastian.huber@embedded-brains.de>

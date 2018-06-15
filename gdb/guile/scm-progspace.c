@@ -285,7 +285,6 @@ gdbscm_progspace_objfiles (SCM self)
 {
   pspace_smob *p_smob
     = psscm_get_valid_pspace_smob_arg_unsafe (self, SCM_ARG1, FUNC_NAME);
-  struct objfile *objfile;
   SCM result;
 
   result = SCM_EOL;

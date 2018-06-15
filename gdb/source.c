@@ -389,7 +389,6 @@ void
 forget_cached_source_info (void)
 {
   struct program_space *pspace;
-  struct objfile *objfile;
 
   ALL_PSPACES (pspace)
     ALL_PSPACE_OBJFILES (pspace, objfile)

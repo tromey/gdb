@@ -678,7 +678,6 @@ static void
 set_debug_symfile (const char *args, int from_tty, struct cmd_list_element *c)
 {
   struct program_space *pspace;
-  struct objfile *objfile;
 
   ALL_PSPACES (pspace)
     ALL_PSPACE_OBJFILES (pspace, objfile)

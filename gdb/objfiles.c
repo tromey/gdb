@@ -1319,7 +1319,6 @@ update_section_map (struct program_space *pspace,
   struct objfile_pspace_info *pspace_info;
   int alloc_size, map_size, i;
   struct obj_section *s, **map;
-  struct objfile *objfile;
 
   pspace_info = get_objfile_pspace_data (pspace);
   gdb_assert (pspace_info->section_map_dirty != 0
@@ -1489,8 +1488,6 @@ int
 shared_objfile_contains_address_p (struct program_space *pspace,
 				   CORE_ADDR address)
 {
-  struct objfile *objfile;
-
   ALL_PSPACE_OBJFILES (pspace, objfile)
     {
       if ((objfile->flags & OBJF_SHARED) != 0

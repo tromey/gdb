@@ -2106,7 +2106,6 @@ static void
 maintenance_info_psymtabs (const char *regexp, int from_tty)
 {
   struct program_space *pspace;
-  struct objfile *objfile;
 
   if (regexp)
     re_comp (regexp);

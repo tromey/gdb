@@ -633,7 +633,7 @@ private:
 /* Traverse all object files in program space SS.  */
 
 #define ALL_PSPACE_OBJFILES(ss, obj)					\
-  for ((obj) = ss->objfiles; (obj) != NULL; (obj) = (obj)->next)
+  for (objfile *obj : objfile_iterable (ss))
 
 #define ALL_OBJFILES(obj)			    \
   for ((obj) = current_program_space->objfiles; \

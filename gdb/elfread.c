@@ -759,8 +759,6 @@ elf_gnu_ifunc_record_cache (const char *name, CORE_ADDR addr)
 static int
 elf_gnu_ifunc_resolve_by_cache (const char *name, CORE_ADDR *addr_p)
 {
-  struct objfile *objfile;
-
   ALL_PSPACE_OBJFILES (current_program_space, objfile)
     {
       htab_t htab;
@@ -801,7 +799,6 @@ static int
 elf_gnu_ifunc_resolve_by_got (const char *name, CORE_ADDR *addr_p)
 {
   char *name_got_plt;
-  struct objfile *objfile;
   const size_t got_suffix_len = strlen (SYMBOL_GOT_PLT_SUFFIX);
 
   name_got_plt = (char *) alloca (strlen (name) + got_suffix_len + 1);

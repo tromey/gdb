@@ -62,7 +62,6 @@ void
 print_symbol_bcache_statistics (void)
 {
   struct program_space *pspace;
-  struct objfile *objfile;
 
   ALL_PSPACES (pspace)
     ALL_PSPACE_OBJFILES (pspace, objfile)
@@ -83,7 +82,6 @@ void
 print_objfile_statistics (void)
 {
   struct program_space *pspace;
-  struct objfile *objfile;
   struct compunit_symtab *cu;
   struct symtab *s;
   int i, linetables, blockvectors;
@@ -749,7 +747,6 @@ static void
 maintenance_print_objfiles (const char *regexp, int from_tty)
 {
   struct program_space *pspace;
-  struct objfile *objfile;
 
   dont_repeat ();
 
@@ -772,7 +769,6 @@ static void
 maintenance_info_symtabs (const char *regexp, int from_tty)
 {
   struct program_space *pspace;
-  struct objfile *objfile;
 
   dont_repeat ();
 
@@ -866,7 +862,6 @@ static void
 maintenance_check_symtabs (const char *ignore, int from_tty)
 {
   struct program_space *pspace;
-  struct objfile *objfile;
 
   ALL_PSPACES (pspace)
     ALL_PSPACE_OBJFILES (pspace, objfile)
@@ -917,7 +912,6 @@ static void
 maintenance_expand_symtabs (const char *args, int from_tty)
 {
   struct program_space *pspace;
-  struct objfile *objfile;
   char *regexp = NULL;
 
   /* We use buildargv here so that we handle spaces in the regexp
@@ -1032,7 +1026,6 @@ static void
 maintenance_info_line_tables (const char *regexp, int from_tty)
 {
   struct program_space *pspace;
-  struct objfile *objfile;
 
   dont_repeat ();
 
