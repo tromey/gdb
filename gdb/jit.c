@@ -1393,11 +1393,16 @@ jit_breakpoint_re_set (void)
 static void
 jit_inferior_exit_hook (struct inferior *inf)
 {
-  struct objfile *objf;
-  struct objfile *temp;
+  objfile_iterable iterable (current_program_space);
+  objfile_iterable::iterator next (nullptr);
 
-  ALL_OBJFILES_SAFE (objf, temp)
+  for (auto iter = iterable.begin (); iter != iterable.end (); iter = next)
     {
+      next = iter;
+      ++next;
+
+      struct objfile *objf = *iter;
+
       struct jit_objfile_data *objf_data
 	= (struct jit_objfile_data *) objfile_data (objf, jit_objfile_data);
 

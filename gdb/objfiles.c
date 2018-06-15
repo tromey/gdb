@@ -730,17 +730,23 @@ objfile::~objfile ()
 void
 free_all_objfiles (void)
 {
-  struct objfile *objfile, *temp;
   struct so_list *so;
 
   /* Any objfile referencewould become stale.  */
   for (so = master_so_list (); so; so = so->next)
     gdb_assert (so->objfile == NULL);
 
-  ALL_OBJFILES_SAFE (objfile, temp)
-  {
-    delete objfile;
-  }
+  objfile_iterable iterable (current_program_space);
+  objfile_iterable::iterator next (nullptr);
+
+  for (auto iter = iterable.begin (); iter != iterable.end (); iter = next)
+    {
+      next = iter;
+      ++next;
+
+      struct objfile *objfile = *iter;
+      delete objfile;
+    }
   clear_symtab_users (0);
 }
 
@@ -1044,17 +1050,21 @@ have_full_symbols (void)
 void
 objfile_purge_solibs (void)
 {
-  struct objfile *objf;
-  struct objfile *temp;
+  objfile_iterable iterable (current_program_space);
+  objfile_iterable::iterator next (nullptr);
 
-  ALL_OBJFILES_SAFE (objf, temp)
-  {
-    /* We assume that the solib package has been purged already, or will
-       be soon.  */
+  for (auto iter = iterable.begin (); iter != iterable.end (); iter = next)
+    {
+      next = iter;
+      ++next;
 
-    if (!(objf->flags & OBJF_USERLOADED) && (objf->flags & OBJF_SHARED))
-      delete objf;
-  }
+      struct objfile *objf = *iter;
+      /* We assume that the solib package has been purged already, or will
+	 be soon.  */
+
+      if (!(objf->flags & OBJF_USERLOADED) && (objf->flags & OBJF_SHARED))
+	delete objf;
+    }
 }
 
 

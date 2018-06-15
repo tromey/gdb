@@ -626,10 +626,6 @@ private:
 };
 
 
-/* Traverse all object files in the current program space.
-   ALL_OBJFILES_SAFE works even if you delete the objfile during the
-   traversal.  */
-
 /* Traverse all object files in program space SS.  */
 
 #define ALL_PSPACE_OBJFILES(ss, obj)					\
@@ -637,11 +633,6 @@ private:
 
 #define ALL_OBJFILES(obj)			    \
   ALL_PSPACE_OBJFILES (current_program_space, obj)
-
-#define ALL_OBJFILES_SAFE(obj,nxt)			\
-  for ((obj) = current_program_space->objfiles;	\
-       (obj) != NULL? ((nxt)=(obj)->next,1) :0;	\
-       (obj) = (nxt))
 
 /* Traverse all symtabs in one objfile.  */
 

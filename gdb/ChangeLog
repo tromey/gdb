@@ -1,5 +1,11 @@
 2018-06-29  Tom Tromey  <tom@tromey.com>
 
+	* objfiles.h (ALL_OBJFILES_SAFE): Remove.
+	* objfiles.c (free_all_objfiles, objfile_purge_solibs): Update.
+	* jit.c (jit_inferior_exit_hook): Update.
+
+2018-06-29  Tom Tromey  <tom@tromey.com>
+
 	* symfile.c (reread_symbols): Use ALL_OBJFILES.
 	* minsyms.c (lookup_minimal_symbol, lookup_minimal_symbol_text)
 	(lookup_minimal_symbol_by_pc_name)
