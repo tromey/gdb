@@ -1284,7 +1284,7 @@ elf_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
      be NULL and we would possibly violate it.  */
 
   else if (!objfile_has_partial_symbols (objfile)
-	   && objfile->separate_debug_objfile == NULL
+	   && objfile->separate_debug_objfiles.empty ()
 	   && objfile->separate_debug_objfile_backlink == NULL)
     {
       std::string debugfile = find_separate_debug_file_by_buildid (objfile);

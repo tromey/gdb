@@ -425,19 +425,12 @@ struct objfile
      visited by ALL_OBJFILES & co iterators.  Separate debug objfile always
      has a non-nul separate_debug_objfile_backlink.  */
 
-  /* Link to the first separate debug object, if any.  */
-
-  struct objfile *separate_debug_objfile = nullptr;
+  std::list<struct objfile *> separate_debug_objfiles;
 
   /* If this is a separate debug object, this is used as a link to the
      actual executable objfile.  */
 
   struct objfile *separate_debug_objfile_backlink = nullptr;
-
-  /* If this is a separate debug object, this is a link to the next one
-     for the same executable objfile.  */
-
-  struct objfile *separate_debug_objfile_link = nullptr;
 
   /* Place to stash various statistics about this objfile.  */
 
@@ -474,8 +467,93 @@ extern CORE_ADDR entry_point_address (void);
 
 extern void build_objfile_section_table (struct objfile *);
 
-extern struct objfile *objfile_separate_debug_iterate (const struct objfile *,
-                                                       const struct objfile *);
+/* An iterarable object that can be used to iterate over all
+   objfiles.  The basic use is in a foreach, like:
+   
+   for (struct objfile *objf : objfile_iterable (pspace) { ... }
+   
+   However, this is normally used via one of the macros like
+   ALL_OBJFILES.  */
+
+
+/* An iterable that can be used to iterate over all the separate debug
+   files of an objfile.  The iterator will first return the objfile
+   itself, followed by each separate debug objfile.  It can be used
+   like:
+   
+   for (objfile *obj : objfile_separate_debug_iterable (objfile))
+   { ... }
+*/
+
+struct objfile_separate_debug_iterable
+{
+  explicit objfile_separate_debug_iterable (struct objfile *objfile)
+    : m_objfile (objfile)
+  {
+  }
+
+  class iterator
+  {
+  public:
+
+    iterator (struct objfile *objfile, bool is_end)
+      : m_objfile (objfile)
+    {
+      if (m_objfile != nullptr)
+	{
+	  if (is_end)
+	    m_iter = m_objfile->separate_debug_objfiles.end ();
+	  else
+	    m_iter = m_objfile->separate_debug_objfiles.begin ();
+	}
+    }
+
+    iterator ()
+      : m_objfile (nullptr)
+    {
+    }
+
+    bool operator!= (const iterator &other) const
+    {
+      return m_objfile != other.m_objfile || m_iter != other.m_iter;
+    }
+
+    iterator &operator++ ()
+    {
+      if (m_objfile)
+	m_objfile = nullptr;
+      else
+	++m_iter;
+      return *this;
+    }
+
+    struct objfile *operator* () const
+    {
+      if (m_objfile != nullptr)
+	return m_objfile;
+      return *m_iter;
+    }
+
+  private:
+
+    struct objfile *m_objfile;
+    std::list<struct objfile *>::iterator m_iter;
+  };
+
+  iterator begin ()
+  {
+    return iterator (m_objfile, false);
+  }
+
+  iterator end ()
+  {
+    return iterator (m_objfile, true);
+  }
+
+private:
+
+  struct objfile *m_objfile;
+};
 
 extern void add_separate_debug_objfile (struct objfile *, struct objfile *);
 

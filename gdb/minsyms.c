@@ -689,7 +689,6 @@ lookup_minimal_symbol_by_pc_section (CORE_ADDR pc_in, struct obj_section *sectio
   int lo;
   int hi;
   int newobj;
-  struct objfile *objfile;
   struct minimal_symbol *msymbol;
   struct minimal_symbol *best_symbol = NULL;
   struct objfile *best_objfile = NULL;
@@ -715,9 +714,7 @@ lookup_minimal_symbol_by_pc_section (CORE_ADDR pc_in, struct obj_section *sectio
 
   gdb_assert (section != NULL);
 
-  for (objfile = section->objfile;
-       objfile != NULL;
-       objfile = objfile_separate_debug_iterate (section->objfile, objfile))
+  for (objfile *objfile : objfile_separate_debug_iterable (section->objfile))
     {
       CORE_ADDR pc = pc_in;
 

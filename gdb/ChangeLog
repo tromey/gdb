@@ -1,5 +1,24 @@
 2018-06-30  Tom Tromey  <tom@tromey.com>
 
+	* symtab.c (matching_obj_sections)
+	(lookup_global_symbol_from_objfile)
+	(lookup_symbol_in_objfile_from_linkage_name): Update.
+	* symfile.c (read_symbols): Update.
+	* objfiles.h (struct objfile) <separate_debug_objfiles>: Now a
+	std::list.
+	<separate_debug_objfile_link>: Remove.
+	(objfile_separate_debug_iterate): Don't declare.
+	(struct objfile_separate_debug_iterable): New.
+	* objfiles.c (objfile_separate_debug_iterate): Remove.
+	(add_separate_debug_objfile, free_objfile_separate_debug)
+	(objfile::~objfile, objfile_relocate, objfile_rebase)
+	(objfile_has_symbols, preferred_obj_section)
+	(filter_debuginfo_sections): Update.
+	* minsyms.c (lookup_minimal_symbol_by_pc_section): Update.
+	* elfread.c (elf_symfile_read): Update.
+
+2018-06-30  Tom Tromey  <tom@tromey.com>
+
 	* progspace.h (struct program_space) <objfiles>: Now a std::list.
 	* objfiles.h (struct objfile) <next>: Remove.
 	(put_objfile_before, unlink_objfile): Don't declare.

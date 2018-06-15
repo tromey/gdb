@@ -462,46 +462,6 @@ entry_point_address (void)
   return retval;
 }
 
-/* Iterator on PARENT and every separate debug objfile of PARENT.
-   The usage pattern is:
-     for (objfile = parent;
-          objfile;
-          objfile = objfile_separate_debug_iterate (parent, objfile))
-       ...
-*/
-
-struct objfile *
-objfile_separate_debug_iterate (const struct objfile *parent,
-                                const struct objfile *objfile)
-{
-  struct objfile *res;
-
-  /* If any, return the first child.  */
-  res = objfile->separate_debug_objfile;
-  if (res)
-    return res;
-
-  /* Common case where there is no separate debug objfile.  */
-  if (objfile == parent)
-    return NULL;
-
-  /* Return the brother if any.  Note that we don't iterate on brothers of
-     the parents.  */
-  res = objfile->separate_debug_objfile_link;
-  if (res)
-    return res;
-
-  for (res = objfile->separate_debug_objfile_backlink;
-       res != parent;
-       res = res->separate_debug_objfile_backlink)
-    {
-      gdb_assert (res != NULL);
-      if (res->separate_debug_objfile_link)
-        return res->separate_debug_objfile_link;
-    }
-  return NULL;
-}
-
 /* Unlink OBJFILE from the list of known objfiles.  */
 
 static void
@@ -541,14 +501,11 @@ add_separate_debug_objfile (struct objfile *objfile, struct objfile *parent)
 
   /* Must not be already in a list.  */
   gdb_assert (objfile->separate_debug_objfile_backlink == NULL);
-  gdb_assert (objfile->separate_debug_objfile_link == NULL);
-  gdb_assert (objfile->separate_debug_objfile == NULL);
+  gdb_assert (objfile->separate_debug_objfiles.empty ());
   gdb_assert (parent->separate_debug_objfile_backlink == NULL);
-  gdb_assert (parent->separate_debug_objfile_link == NULL);
 
   objfile->separate_debug_objfile_backlink = parent;
-  objfile->separate_debug_objfile_link = parent->separate_debug_objfile;
-  parent->separate_debug_objfile = objfile;
+  parent->separate_debug_objfiles.push_front (objfile);
 
   /* Put the separate debug object before the normal one, this is so that
      usage of the ALL_OBJFILES_SAFE macro will stay safe.  */
@@ -561,14 +518,8 @@ add_separate_debug_objfile (struct objfile *objfile, struct objfile *parent)
 void
 free_objfile_separate_debug (struct objfile *objfile)
 {
-  struct objfile *child;
-
-  for (child = objfile->separate_debug_objfile; child;)
-    {
-      struct objfile *next_child = child->separate_debug_objfile_link;
-      delete child;
-      child = next_child;
-    }
+  for (struct objfile *child : objfile->separate_debug_objfiles)
+    delete child;
 }
 
 /* Destroy an objfile and all the symtabs and psymtabs under it.  */
@@ -585,31 +536,12 @@ objfile::~objfile ()
     {
       /* We freed the separate debug file, make sure the base objfile
 	 doesn't reference it.  */
-      struct objfile *child;
-
-      child = separate_debug_objfile_backlink->separate_debug_objfile;
-
-      if (child == this)
-        {
-          /* THIS is the first child.  */
-          separate_debug_objfile_backlink->separate_debug_objfile =
-            separate_debug_objfile_link;
-        }
-      else
-        {
-          /* Find THIS in the list.  */
-          while (1)
-            {
-              if (child->separate_debug_objfile_link == this)
-                {
-                  child->separate_debug_objfile_link =
-                    separate_debug_objfile_link;
-                  break;
-                }
-              child = child->separate_debug_objfile_link;
-              gdb_assert (child);
-            }
-        }
+      struct objfile *parent = separate_debug_objfile_backlink;
+      auto iter = std::find (parent->separate_debug_objfiles.begin (),
+			     parent->separate_debug_objfiles.end (),
+			     this);
+      gdb_assert (iter != parent->separate_debug_objfiles.end ());
+      parent->separate_debug_objfiles.erase (iter);
     }
 
   /* Remove any references to this objfile in the global value
@@ -864,14 +796,11 @@ void
 objfile_relocate (struct objfile *objfile,
 		  const struct section_offsets *new_offsets)
 {
-  struct objfile *debug_objfile;
   int changed = 0;
 
   changed |= objfile_relocate1 (objfile, new_offsets);
 
-  for (debug_objfile = objfile->separate_debug_objfile;
-       debug_objfile;
-       debug_objfile = objfile_separate_debug_iterate (objfile, debug_objfile))
+  for (struct objfile *debug_objfile : objfile->separate_debug_objfiles)
     {
       section_addr_info objfile_addrs
 	= build_section_addr_info_from_objfile (objfile);
@@ -921,14 +850,11 @@ objfile_rebase1 (struct objfile *objfile, CORE_ADDR slide)
 void
 objfile_rebase (struct objfile *objfile, CORE_ADDR slide)
 {
-  struct objfile *debug_objfile;
   int changed = 0;
 
   changed |= objfile_rebase1 (objfile, slide);
 
-  for (debug_objfile = objfile->separate_debug_objfile;
-       debug_objfile;
-       debug_objfile = objfile_separate_debug_iterate (objfile, debug_objfile))
+  for (struct objfile *debug_objfile : objfile->separate_debug_objfiles)
     changed |= objfile_rebase1 (debug_objfile, slide);
 
   /* Relocate breakpoints as necessary, after things are relocated.  */
@@ -969,9 +895,7 @@ objfile_has_full_symbols (struct objfile *objfile)
 int
 objfile_has_symbols (struct objfile *objfile)
 {
-  struct objfile *o;
-
-  for (o = objfile; o; o = objfile_separate_debug_iterate (objfile, o))
+  for (struct objfile *o : objfile_separate_debug_iterable (objfile))
     if (objfile_has_partial_symbols (o) || objfile_has_full_symbols (o))
       return 1;
   return 0;
@@ -1074,8 +998,8 @@ qsort_cmp (const void *a, const void *b)
       const struct objfile *const objfile1 = sect1->objfile;
       const struct objfile *const objfile2 = sect2->objfile;
 
-      if (objfile1->separate_debug_objfile == objfile2
-	  || objfile2->separate_debug_objfile == objfile1)
+      if (objfile1->separate_debug_objfiles.front () == objfile2
+	  || objfile2->separate_debug_objfiles.front () == objfile1)
 	{
 	  /* Case A.  The ordering doesn't matter: separate debuginfo files
 	     will be filtered out later.  */
@@ -1137,12 +1061,12 @@ static struct obj_section *
 preferred_obj_section (struct obj_section *a, struct obj_section *b)
 {
   gdb_assert (obj_section_addr (a) == obj_section_addr (b));
-  gdb_assert ((a->objfile->separate_debug_objfile == b->objfile)
-	      || (b->objfile->separate_debug_objfile == a->objfile));
+  gdb_assert ((a->objfile->separate_debug_objfiles.front () == b->objfile)
+	      || (b->objfile->separate_debug_objfiles.front () == a->objfile));
   gdb_assert ((a->objfile->separate_debug_objfile_backlink == b->objfile)
 	      || (b->objfile->separate_debug_objfile_backlink == a->objfile));
 
-  if (a->objfile->separate_debug_objfile != NULL)
+  if (!a->objfile->separate_debug_objfiles.empty ())
     return a;
   return b;
 }
@@ -1188,8 +1112,8 @@ filter_debuginfo_sections (struct obj_section **map, int map_size)
       const CORE_ADDR sect2_addr = obj_section_addr (sect2);
 
       if (sect1_addr == sect2_addr
-	  && (objfile1->separate_debug_objfile == objfile2
-	      || objfile2->separate_debug_objfile == objfile1))
+	  && (objfile1->separate_debug_objfiles.front () == objfile2
+	      || objfile2->separate_debug_objfiles.front () == objfile1))
 	{
 	  map[j++] = preferred_obj_section (sect1, sect2);
 	  ++i;

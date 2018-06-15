@@ -797,7 +797,7 @@ read_symbols (struct objfile *objfile, symfile_add_flags add_flags)
   /* find_separate_debug_file_in_section should be called only if there is
      single binary with no existing separate debug info file.  */
   if (!objfile_has_partial_symbols (objfile)
-      && objfile->separate_debug_objfile == NULL
+      && !objfile->separate_debug_objfiles.empty ()
       && objfile->separate_debug_objfile_backlink == NULL)
     {
       gdb_bfd_ref_ptr abfd (find_separate_debug_file_in_section (objfile));

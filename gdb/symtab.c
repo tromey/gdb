@@ -1013,8 +1013,8 @@ matching_obj_sections (struct obj_section *obj_first,
   ALL_OBJFILES (obj)
     if (obj->obfd == first->owner)
       {
-	if (obj->separate_debug_objfile != NULL
-	    && obj->separate_debug_objfile->obfd == second->owner)
+	if (obj->separate_debug_objfiles.front () != NULL
+	    && obj->separate_debug_objfiles.front ()->obfd == second->owner)
 	  return 1;
 	if (obj->separate_debug_objfile_backlink != NULL
 	    && obj->separate_debug_objfile_backlink->obfd == second->owner)
@@ -2225,11 +2225,7 @@ lookup_global_symbol_from_objfile (struct objfile *main_objfile,
 				   const char *name,
 				   const domain_enum domain)
 {
-  struct objfile *objfile;
-
-  for (objfile = main_objfile;
-       objfile;
-       objfile = objfile_separate_debug_iterate (main_objfile, objfile))
+  for (objfile *objfile : objfile_separate_debug_iterable (main_objfile))
     {
       struct block_symbol result
         = lookup_symbol_in_objfile (objfile, GLOBAL_BLOCK, name, domain);
@@ -2308,7 +2304,7 @@ lookup_symbol_in_objfile_from_linkage_name (struct objfile *objfile,
 					    domain_enum domain)
 {
   enum language lang = current_language->la_language;
-  struct objfile *main_objfile, *cur_objfile;
+  struct objfile *main_objfile;
 
   demangle_result_storage storage;
   const char *modified_name = demangle_for_lookup (linkage_name, lang, storage);
@@ -2318,9 +2314,8 @@ lookup_symbol_in_objfile_from_linkage_name (struct objfile *objfile,
   else
     main_objfile = objfile;
 
-  for (cur_objfile = main_objfile;
-       cur_objfile;
-       cur_objfile = objfile_separate_debug_iterate (main_objfile, cur_objfile))
+  for (struct objfile *cur_objfile
+	 : objfile_separate_debug_iterable (main_objfile))
     {
       struct block_symbol result;
 
