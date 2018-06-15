@@ -313,7 +313,6 @@ struct bound_minimal_symbol
 lookup_minimal_symbol (const char *name, const char *sfile,
 		       struct objfile *objf)
 {
-  struct objfile *objfile;
   found_minimal_symbols found;
 
   unsigned int mangled_hash = msymbol_hash (name) % MINIMAL_SYMBOL_HASH_SIZE;
@@ -328,9 +327,7 @@ lookup_minimal_symbol (const char *name, const char *sfile,
 
   lookup_name_info lookup_name (name, symbol_name_match_type::FULL);
 
-  for (objfile = object_files;
-       objfile != NULL && found.external_symbol.minsym == NULL;
-       objfile = objfile->next)
+  ALL_OBJFILES (objfile)
     {
       if (objf == NULL || objf == objfile
 	  || objf == objfile->separate_debug_objfile_backlink)
@@ -349,30 +346,30 @@ lookup_minimal_symbol (const char *name, const char *sfile,
 					 objfile->per_bfd->msymbol_hash,
 					 mangled_hash, mangled_cmp, found);
 
+	  if (found.external_symbol.minsym != NULL)
+	    break;
+
 	  /* If not found, try the demangled hash table.  */
-	  if (found.external_symbol.minsym == NULL)
+	  /* Once for each language in the demangled hash names
+	     table (usually just zero or one languages).  */
+	  for (auto lang : objfile->per_bfd->demangled_hash_languages)
 	    {
-	      /* Once for each language in the demangled hash names
-		 table (usually just zero or one languages).  */
-	      for (auto lang : objfile->per_bfd->demangled_hash_languages)
-		{
-		  unsigned int hash
-		    = (lookup_name.search_name_hash (lang)
-		       % MINIMAL_SYMBOL_HASH_SIZE);
+	      unsigned int hash
+		= (lookup_name.search_name_hash (lang)
+		   % MINIMAL_SYMBOL_HASH_SIZE);
 
-		  symbol_name_matcher_ftype *match
-		    = get_symbol_name_matcher (language_def (lang),
-					       lookup_name);
-		  struct minimal_symbol **msymbol_demangled_hash
-		    = objfile->per_bfd->msymbol_demangled_hash;
+	      symbol_name_matcher_ftype *match
+		= get_symbol_name_matcher (language_def (lang),
+					   lookup_name);
+	      struct minimal_symbol **msymbol_demangled_hash
+		= objfile->per_bfd->msymbol_demangled_hash;
 
-		  lookup_minimal_symbol_demangled (lookup_name, sfile, objfile,
-						   msymbol_demangled_hash,
-						   hash, match, found);
+	      lookup_minimal_symbol_demangled (lookup_name, sfile, objfile,
+					       msymbol_demangled_hash,
+					       hash, match, found);
 
-		  if (found.external_symbol.minsym != NULL)
-		    break;
-		}
+	      if (found.external_symbol.minsym != NULL)
+		break;
 	    }
 	}
     }
@@ -519,16 +516,13 @@ iterate_over_minimal_symbols
 struct bound_minimal_symbol
 lookup_minimal_symbol_text (const char *name, struct objfile *objf)
 {
-  struct objfile *objfile;
   struct minimal_symbol *msymbol;
   struct bound_minimal_symbol found_symbol = { NULL, NULL };
   struct bound_minimal_symbol found_file_symbol = { NULL, NULL };
 
   unsigned int hash = msymbol_hash (name) % MINIMAL_SYMBOL_HASH_SIZE;
 
-  for (objfile = object_files;
-       objfile != NULL && found_symbol.minsym == NULL;
-       objfile = objfile->next)
+  ALL_OBJFILES (objfile)
     {
       if (objf == NULL || objf == objfile
 	  || objf == objfile->separate_debug_objfile_backlink)
@@ -555,6 +549,8 @@ lookup_minimal_symbol_text (const char *name, struct objfile *objf)
 		    }
 		}
 	    }
+	  if (found_symbol.minsym != NULL)
+	    break;
 	}
     }
   /* External symbols are best.  */
@@ -571,14 +567,11 @@ struct minimal_symbol *
 lookup_minimal_symbol_by_pc_name (CORE_ADDR pc, const char *name,
 				  struct objfile *objf)
 {
-  struct objfile *objfile;
   struct minimal_symbol *msymbol;
 
   unsigned int hash = msymbol_hash (name) % MINIMAL_SYMBOL_HASH_SIZE;
 
-  for (objfile = object_files;
-       objfile != NULL;
-       objfile = objfile->next)
+  ALL_OBJFILES (objfile)
     {
       if (objf == NULL || objf == objfile
 	  || objf == objfile->separate_debug_objfile_backlink)
@@ -603,15 +596,12 @@ struct bound_minimal_symbol
 lookup_minimal_symbol_solib_trampoline (const char *name,
 					struct objfile *objf)
 {
-  struct objfile *objfile;
   struct minimal_symbol *msymbol;
   struct bound_minimal_symbol found_symbol = { NULL, NULL };
 
   unsigned int hash = msymbol_hash (name) % MINIMAL_SYMBOL_HASH_SIZE;
 
-  for (objfile = object_files;
-       objfile != NULL;
-       objfile = objfile->next)
+  ALL_OBJFILES (objfile)
     {
       if (objf == NULL || objf == objfile
 	  || objf == objfile->separate_debug_objfile_backlink)

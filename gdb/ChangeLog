@@ -1,5 +1,13 @@
 2018-06-29  Tom Tromey  <tom@tromey.com>
 
+	* symfile.c (reread_symbols): Use ALL_OBJFILES.
+	* minsyms.c (lookup_minimal_symbol, lookup_minimal_symbol_text)
+	(lookup_minimal_symbol_by_pc_name)
+	(lookup_minimal_symbol_solib_trampoline): Use ALL_OBJFILES.
+	* ia64-tdep.c (ia64_get_dyn_info_list): Use ALL_OBJFILES.
+
+2018-06-29  Tom Tromey  <tom@tromey.com>
+
 	* windows-tdep.c (windows_iterate_over_objfiles_in_search_order):
 	Update.
 	* symtab.c (iterate_over_symtabs, matching_obj_sections)

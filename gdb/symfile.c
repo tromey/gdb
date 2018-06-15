@@ -2372,7 +2372,6 @@ remove_symbol_file_command (const char *args, int from_tty)
 void
 reread_symbols (void)
 {
-  struct objfile *objfile;
   long new_modtime;
   struct stat new_statbuf;
   int res;
@@ -2384,7 +2383,7 @@ reread_symbols (void)
      This routine should then walk down each partial symbol table
      and see if the symbol table that it originates from has been changed.  */
 
-  for (objfile = object_files; objfile; objfile = objfile->next)
+  ALL_OBJFILES (objfile)
     {
       if (objfile->obfd == NULL)
 	continue;
@@ -2614,7 +2613,7 @@ reread_symbols (void)
 	 gdb::observers::new_objfile.notify (NULL) has been called by
 	 clear_symtab_users above.  Notify the new files now.  */
       for (auto iter : new_objfiles)
-	gdb::observers::new_objfile.notify (objfile);
+	gdb::observers::new_objfile.notify (iter);
 
       /* At least one objfile has changed, so we can consider that
          the executable we're debugging has changed too.  */
