@@ -1,5 +1,9 @@
 2018-06-30  Tom Tromey  <tom@tromey.com>
 
+	* symfile.c (reread_symbols): Remove comment.
+
+2018-06-30  Tom Tromey  <tom@tromey.com>
+
 	* symfile.c (symbol_file_add_with_addrs): Update.
 	* objfiles.h (struct objfile) <objfile>: Add "parent" argument.
 	(add_separate_debug_objfile): Don't declare.
