@@ -559,6 +559,22 @@ extern void free_objfile_separate_debug (struct objfile *);
 
 extern void free_all_objfiles (void);
 
+/* A wrapper for the objfile constructor.
+
+   If there is a preserved objfile matching ABFD, set *ALLOCATED to
+   false and return the preserved objfile.
+
+   Otherwise, set *ALLOCATED to true and return a new objfile.
+
+   In either case, the caller owns the objfile.  If a preserved
+   objfile is returned, then it will already hold all the separate
+   debug objfiles, if any.  */
+
+extern struct objfile *make_or_reuse_objfile (bfd *abfd, const char *name,
+					      objfile_flags flags,
+					      objfile *parent,
+					      bool *allocated);
+
 extern void objfile_relocate (struct objfile *, const struct section_offsets *);
 extern void objfile_rebase (struct objfile *, CORE_ADDR);
 

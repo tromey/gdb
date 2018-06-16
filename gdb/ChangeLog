@@ -1,5 +1,18 @@
 2018-06-30  Tom Tromey  <tom@tromey.com>
 
+	* symfile.c (symbol_file_add_with_addrs): Use
+	make_or_reuse_objfile.
+	* objfiles.h (make_or_reuse_objfile): Declare.
+	* objfiles.c (preserved_objfiles): New global.
+	(zap_preserved_objfiles): New function.
+	(free_all_objfiles): Preserve some objfiles.
+	(objfile_purge_solibs): Move earlier.  Preserve objfiles in some
+	cases.
+	(make_or_reuse_objfile): New function.
+	(unlink_objfile): Remove assert.
+
+2018-06-30  Tom Tromey  <tom@tromey.com>
+
 	* symfile.c (reread_symbols): Remove comment.
 
 2018-06-30  Tom Tromey  <tom@tromey.com>

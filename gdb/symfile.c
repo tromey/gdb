@@ -1097,7 +1097,11 @@ symbol_file_add_with_addrs (bfd *abfd, const char *name,
 
   if (mainline)
     flags |= OBJF_MAINLINE;
-  objfile = new struct objfile (abfd, name, flags, parent);
+
+  bool allocated;
+  objfile = make_or_reuse_objfile (abfd, name, flags, parent, &allocated);
+  if (!allocated)
+    return objfile;
 
   /* We either created a new mapped symbol table, mapped an existing
      symbol table file which has not had initial symbol reading

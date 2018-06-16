@@ -477,8 +477,8 @@ static void
 unlink_objfile (struct objfile *objfile, std::list<struct objfile *> *files)
 {
   auto iter = std::find (files->begin (), files->end (), objfile);
-  gdb_assert (iter != files->end ());
-  files->erase (iter);
+  if (iter != files->end ())
+    files->erase (iter);
 }
 
 /* Free all separate debug objfile of OBJFILE, but don't free OBJFILE
@@ -593,6 +593,25 @@ objfile::~objfile ()
     htab_delete (static_links);
 }
 
+/* This holds objfiles that were preserved when an inferior exited.
+   We keep them in case the next run of an inferior might use
+   them.  */
+
+static std::list<struct objfile *> preserved_objfiles;
+
+/* Delete any leftover preserved objfiles.  */
+
+static void
+zap_preserved_objfiles ()
+{
+  /* We're done with the last round of preserved-but-not-reused
+     objfiles.  */
+  for (auto iter : preserved_objfiles)
+    delete iter;
+  preserved_objfiles.clear ();
+
+}
+
 /* Free all the object files at once and clean up their users.  */
 
 void
@@ -600,9 +619,11 @@ free_all_objfiles (void)
 {
   struct so_list *so;
 
-  /* Any objfile referencewould become stale.  */
+  /* Any objfile reference would become stale.  */
   for (so = master_so_list (); so; so = so->next)
     gdb_assert (so->objfile == NULL);
+
+  zap_preserved_objfiles ();
 
   for (auto iter = current_program_space->objfiles.begin ();
        iter != current_program_space->objfiles.end ();
@@ -610,7 +631,20 @@ free_all_objfiles (void)
     {
       auto next = iter;
       ++next;
-      delete *iter;
+
+      struct objfile *objf = *iter;
+      if ((objf->flags & OBJF_NOT_FILENAME) != 0 || objf->obfd == nullptr)
+	{
+	  /* Not a real file, so we aren't going to reuse it.  */
+	  delete objf;
+	}
+      else
+	{
+	  if (objf == symfile_objfile)
+	    symfile_objfile = NULL;
+	  preserved_objfiles.push_back (objf);
+	}
+
       iter = next;
     }
 
@@ -618,6 +652,83 @@ free_all_objfiles (void)
 
   clear_symtab_users (0);
 }
+
+/* This operations deletes all objfile entries that represent solibs that
+   weren't explicitly loaded by the user, via e.g., the add-symbol-file
+   command.  */
+
+void
+objfile_purge_solibs ()
+{
+  zap_preserved_objfiles ();
+
+  for (auto iter = current_program_space->objfiles.begin ();
+       iter != current_program_space->objfiles.end ();
+       )
+    {
+      auto next = iter;
+      ++next;
+
+      struct objfile *objf = *iter;
+
+      if (!(objf->flags & OBJF_USERLOADED) && (objf->flags & OBJF_SHARED)
+	  && objf->obfd != nullptr)
+	{
+	  preserved_objfiles.push_back (objf);
+	  if (objf == symfile_objfile)
+	    symfile_objfile = NULL;
+	  current_program_space->objfiles.erase (iter);
+	}
+
+      iter = next;
+    }
+}
+
+/* See objfiles.h.  */
+
+struct objfile *
+make_or_reuse_objfile (bfd *abfd, const char *name,
+		       objfile_flags flags, objfile *parent,
+		       bool *allocated)
+{
+  if (parent != nullptr)
+    {
+      for (auto iter = preserved_objfiles.begin ();
+	   iter != preserved_objfiles.end ();
+	   )
+	{
+	  auto next = iter;
+	  ++next;
+
+	  /* Due to BFD caching, we can compare BFDs for equality;
+	     this eliminates the need for both mtime and filename
+	     comparisons.  */
+	  struct objfile *objf = *iter;
+	  if (objf->obfd == abfd && objf->flags == flags)
+	    {
+	      *allocated = false;
+	      preserved_objfiles.erase (iter);
+	      return objf;
+	    }
+	  if ((objf->flags & OBJF_NOT_FILENAME) == 0
+	      && strcmp (bfd_get_filename (abfd),
+			 bfd_get_filename (objf->obfd)) == 0)
+	    {
+	      /* If the filenames match but the BFDs do not, then the
+		 preserved objfile is probably out of date and will
+		 never be reused, so delete it.  */
+	      preserved_objfiles.erase (iter);
+	      delete objf;
+	    }
+
+	  iter = next;
+	}
+    }
+
+  *allocated = true;
+  return new struct objfile (abfd, name, flags, parent);
+}
+
 
 /* A helper function for objfile_relocate1 that relocates a single
    symbol.  */
@@ -902,31 +1013,6 @@ have_full_symbols (void)
   }
   return 0;
 }
-
-
-/* This operations deletes all objfile entries that represent solibs that
-   weren't explicitly loaded by the user, via e.g., the add-symbol-file
-   command.  */
-
-void
-objfile_purge_solibs ()
-{
-  for (auto iter = current_program_space->objfiles.begin ();
-       iter != current_program_space->objfiles.end ();
-       )
-    {
-      auto next = iter;
-      ++next;
-
-      struct objfile *objf = *iter;
-
-      if (!(objf->flags & OBJF_USERLOADED) && (objf->flags & OBJF_SHARED))
-	delete objf;
-
-      iter = next;
-    }
-}
-
 
 /* Many places in gdb want to test just to see if we have any minimal
    symbols available.  This function returns zero if none are currently
