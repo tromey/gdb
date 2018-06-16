@@ -285,7 +285,7 @@ struct objfile_per_bfd_storage
 
 struct objfile
 {
-  objfile (bfd *, const char *, objfile_flags);
+  objfile (bfd *, const char *, objfile_flags, objfile * = nullptr);
   ~objfile ();
 
   DISABLE_COPY_AND_ASSIGN (objfile);
@@ -555,8 +555,6 @@ private:
   struct objfile *m_objfile;
 };
 
-extern void add_separate_debug_objfile (struct objfile *, struct objfile *);
-
 extern void free_objfile_separate_debug (struct objfile *);
 
 extern void free_all_objfiles (void);
@@ -650,16 +648,87 @@ public:
   {
   }
 
-  typedef std::list<struct objfile *>::iterator iterator;
+  struct iterator
+  {
+    iterator (struct program_space *pspace, bool is_end)
+      : m_pspace (is_end ? nullptr : pspace)
+    {
+      if (!is_end)
+	{
+	  if (pspace->objfiles.empty ())
+	    m_pspace = nullptr;
+	  else
+	    {
+	      m_objf_iter = pspace->objfiles.begin ();
+	      m_sep_iter = (*m_objf_iter)->separate_debug_objfiles.begin ();
+	    }
+	}
+    }
+
+    bool operator!= (const iterator &other) const
+    {
+      if (m_pspace == nullptr)
+	return other.m_pspace != nullptr;
+      return (m_objf_iter != other.m_objf_iter
+	      || did_objfile != other.did_objfile
+	      || m_sep_iter != other.m_sep_iter);
+    }
+
+    iterator &operator++ ()
+    {
+      if (m_pspace == nullptr)
+	{
+	  /* Done.  */
+	  return *this;
+	}
+
+      if (m_sep_iter != (*m_objf_iter)->separate_debug_objfiles.end ())
+	{
+	  ++m_sep_iter;
+	  return *this;
+	}
+
+      if (!did_objfile)
+	did_objfile = true;
+      else
+	{
+	  ++m_objf_iter;
+	  if (m_objf_iter == m_pspace->objfiles.end ())
+	    m_pspace = nullptr;
+	  else
+	    {
+	      did_objfile = false;
+	      m_sep_iter
+		= (*m_objf_iter)->separate_debug_objfiles.begin ();
+	    }
+	}
+
+      return *this;
+    }
+
+    struct objfile *operator* () const
+    {
+      if (m_sep_iter != (*m_objf_iter)->separate_debug_objfiles.end ())
+	return *m_sep_iter;
+      return *m_objf_iter;
+    }
+
+  private:
+
+    struct program_space *m_pspace;
+    std::list<struct objfile *>::iterator m_objf_iter;
+    bool did_objfile = false;
+    std::list<struct objfile *>::iterator m_sep_iter;
+  };
 
   iterator begin ()
   {
-    return m_pspace->objfiles.begin ();
+    return iterator (m_pspace, false);
   }
 
   iterator end ()
   {
-    return m_pspace->objfiles.end ();
+    return iterator (m_pspace, true);
   }
 
 private:
@@ -749,18 +818,13 @@ struct objfile_and_objsection_iterable
   {
     explicit iterator (struct program_space *pspace)
       : m_objfile_iterable (pspace),
-	m_objfile_iter (nullptr)
+	m_objfile_iter (pspace == nullptr
+			? m_objfile_iterable.end ()
+			: m_objfile_iterable.begin ()),
+	m_osect (pspace == nullptr
+		 ? nullptr
+		 : (*m_objfile_iter)->sections)
     {
-      if (pspace == nullptr)
-	{
-	  m_objfile_iter = m_objfile_iterable.end ();
-	  m_osect = nullptr;
-	}
-      else
-	{
-	  m_objfile_iter = m_objfile_iterable.begin ();
-	  m_osect = (*m_objfile_iter)->sections;
-	}
     }
 
     bool operator!= (const iterator &other) const

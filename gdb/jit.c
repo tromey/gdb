@@ -1394,7 +1394,7 @@ static void
 jit_inferior_exit_hook (struct inferior *inf)
 {
   objfile_iterable iterable (current_program_space);
-  objfile_iterable::iterator next (nullptr);
+  objfile_iterable::iterator next (nullptr, true);
 
   for (auto iter = iterable.begin (); iter != iterable.end (); iter = next)
     {

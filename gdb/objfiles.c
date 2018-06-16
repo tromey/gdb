@@ -366,7 +366,8 @@ build_objfile_section_table (struct objfile *objfile)
    requests for specific operations.  Other bits like OBJF_SHARED are
    simply copied through to the new objfile flags member.  */
 
-objfile::objfile (bfd *abfd, const char *name, objfile_flags flags_)
+objfile::objfile (bfd *abfd, const char *name, objfile_flags flags_,
+		  objfile *parent)
   : flags (flags_),
     pspace (current_program_space),
     obfd (abfd),
@@ -417,9 +418,17 @@ objfile::objfile (bfd *abfd, const char *name, objfile_flags flags_)
 
   terminate_minimal_symbol_table (this);
 
-  /* Add this file onto the tail of the linked list of other such files.  */
-
-  object_files.push_back (this);
+  if (parent == nullptr)
+    {
+      /* Add this file onto the tail of the linked list of other such
+	 files.  */
+      object_files.push_back (this);
+    }
+  else
+    {
+      separate_debug_objfile_backlink = parent;
+      parent->separate_debug_objfiles.push_front (this);
+    }
 
   /* Rebuild section map next time we need it.  */
   get_objfile_pspace_data (pspace)->new_objfiles_available = 1;
@@ -462,54 +471,14 @@ entry_point_address (void)
   return retval;
 }
 
-/* Unlink OBJFILE from the list of known objfiles.  */
+/* Unlink OBJFILE from the given list of objfiles.  */
 
 static void
-unlink_objfile (struct objfile *objfile)
+unlink_objfile (struct objfile *objfile, std::list<struct objfile *> *files)
 {
-  auto iter = std::find (object_files.begin (), object_files.end (), objfile);
-  if (iter == object_files.end ())
-    internal_error (__FILE__, __LINE__,
-		    _("unlink_objfile: objfile already unlinked"));
-  object_files.erase (iter);
-}
-
-/* Put one object file before a specified on in the global list.
-   This can be used to make sure an object file is destroyed before
-   another when using ALL_OBJFILES_SAFE to free all objfiles.  */
-static void
-put_objfile_before (struct objfile *objfile, struct objfile *before_this)
-{
-  struct objfile **objp;
-
-  unlink_objfile (objfile);
-
-  auto iter = std::find (object_files.begin (), object_files.end (),
-			 before_this);
-  if (iter == object_files.end ())
-    internal_error (__FILE__, __LINE__,
-		    _("put_objfile_before: before objfile not in list"));
-  object_files.insert (iter, objfile);
-}
-
-/* Add OBJFILE as a separate debug objfile of PARENT.  */
-
-void
-add_separate_debug_objfile (struct objfile *objfile, struct objfile *parent)
-{
-  gdb_assert (objfile && parent);
-
-  /* Must not be already in a list.  */
-  gdb_assert (objfile->separate_debug_objfile_backlink == NULL);
-  gdb_assert (objfile->separate_debug_objfiles.empty ());
-  gdb_assert (parent->separate_debug_objfile_backlink == NULL);
-
-  objfile->separate_debug_objfile_backlink = parent;
-  parent->separate_debug_objfiles.push_front (objfile);
-
-  /* Put the separate debug object before the normal one, this is so that
-     usage of the ALL_OBJFILES_SAFE macro will stay safe.  */
-  put_objfile_before (objfile, parent);
+  auto iter = std::find (files->begin (), files->end (), objfile);
+  gdb_assert (iter != files->end ());
+  files->erase (iter);
 }
 
 /* Free all separate debug objfile of OBJFILE, but don't free OBJFILE
@@ -576,7 +545,10 @@ objfile::~objfile ()
 
   /* Remove it from the chain of all objfiles.  */
 
-  unlink_objfile (this);
+  unlink_objfile (this,
+		  (separate_debug_objfile_backlink == nullptr
+		   ? &object_files
+		   : &separate_debug_objfile_backlink->separate_debug_objfiles));
 
   if (this == symfile_objfile)
     symfile_objfile = NULL;
@@ -632,17 +604,16 @@ free_all_objfiles (void)
   for (so = master_so_list (); so; so = so->next)
     gdb_assert (so->objfile == NULL);
 
-  objfile_iterable iterable (current_program_space);
-  objfile_iterable::iterator next (nullptr);
-
-  for (auto iter = iterable.begin (); iter != iterable.end (); iter = next)
+  for (auto iter = current_program_space->objfiles.begin ();
+       iter != current_program_space->objfiles.end ();
+       )
     {
-      next = iter;
+      auto next = iter;
       ++next;
-
-      struct objfile *objfile = *iter;
-      delete objfile;
+      delete *iter;
+      iter = next;
     }
+
   current_program_space->objfiles.clear ();
 
   clear_symtab_users (0);

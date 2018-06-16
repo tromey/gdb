@@ -1,5 +1,20 @@
 2018-06-30  Tom Tromey  <tom@tromey.com>
 
+	* symfile.c (symbol_file_add_with_addrs): Update.
+	* objfiles.h (struct objfile) <objfile>: Add "parent" argument.
+	(add_separate_debug_objfile): Don't declare.
+	(class objfile_iterable) <iterator>: Now a struct.
+	<begin, end>: Update.
+	(objfile_and_objsection_iterable::objfile_and_objsection_iterable):
+	Update.
+	* objfiles.c (objfile::objfile): Take "parent" argument.
+	(unlink_objfile): Add "files" argument.
+	(put_objfile_before, add_separate_debug_objfile): Remove.
+	(free_all_objfiles, ~objfile): Update.
+	* jit.c (jit_inferior_exit_hook): Update.
+
+2018-06-30  Tom Tromey  <tom@tromey.com>
+
 	* symtab.c (matching_obj_sections)
 	(lookup_global_symbol_from_objfile)
 	(lookup_symbol_in_objfile_from_linkage_name): Update.
