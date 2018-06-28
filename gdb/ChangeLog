@@ -1,5 +1,11 @@
 2018-06-28  Tom Tromey  <tom@tromey.com>
 
+	PR cli/23340:
+	* darwin-nat.c (darwin_attach_pid): Reset inferior and
+	inferior_ptid on error.
+
+2018-06-28  Tom Tromey  <tom@tromey.com>
+
 	* NEWS: Mention --enable-codesign.
 	* silent-rules.mk (ECHO_SIGN): New variable.
 	* configure.ac: Add --enable-codesign.
