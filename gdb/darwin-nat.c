@@ -83,6 +83,31 @@
 #define PTRACE(CMD, PID, ADDR, SIG) \
  darwin_ptrace(#CMD, CMD, (PID), (ADDR), (SIG))
 
+/* Starting with El Capitan (10.11), System Integrity Protection might
+   prevent the debugging of certain executables.  This arranges to
+   warn the user in this case.  Note that these constants and
+   functions aren't defined in any header, so we have to define them
+   ourselves.  */
+#if HAVE_CSR_CHECK && HAVE_ROOTLESS_ALLOWS_TASK_FOR_PID && HAVE_CSOPS
+
+/* Make the later code simpler.  */
+#define SIP_CHECK 1
+
+extern "C"
+{
+#define CS_OPS_STATUS 0
+#define CS_RESTRICT 0x800
+#define CSR_ALLOW_TASK_FOR_PID 4
+
+extern int csops (pid_t, unsigned int, void *, size_t);
+
+extern bool rootless_allows_task_for_pid (pid_t);
+
+extern int csr_check(uint32_t);
+}
+
+#endif
+
 static ptid_t darwin_wait (ptid_t ptid, struct target_waitstatus *status);
 
 static void darwin_ptrace_me (void);
@@ -1569,6 +1594,25 @@ A task termination request was registered before the debugger registered\n\
 its own.  This is unexpected, but should otherwise not have any actual\n\
 impact on the debugging session."));
     }
+}
+
+static bool
+sip_check (int pid)
+{
+#if SIP_CHECK
+  if (csr_check (CSR_ALLOW_TASK_FOR_PID) != 0)
+    {
+      if (rootless_allows_task_for_pid (pid) == 0)
+	return false;
+
+      int flags = 0;
+      if (csops (pid, CS_OPS_STATUS, &flags, sizeof (flags)) != -1
+	  && (flags & CS_RESTRICT) != 0)
+	return false;
+    }
+#endif
+
+  return true;
 }
 
 static void
