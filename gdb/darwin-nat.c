@@ -1007,6 +1007,36 @@ darwin_nat_target::resume (ptid_t ptid, int step, enum gdb_signal signal)
     }
 }
 
+static bool
+sip_check (int pid)
+{
+#if SIP_CHECK
+  inferior_debug (4, "in sip_check\n");
+
+  if (csr_check (CSR_ALLOW_TASK_FOR_PID) != 0)
+    {
+      inferior_debug (4, "csr_check\n");
+
+      if (rootless_allows_task_for_pid (pid) == 0)
+	{
+	  inferior_debug (4, "rootless\n");
+	  return false;
+	}
+
+      int flags = 0;
+      if (csops (pid, CS_OPS_STATUS, &flags, sizeof (flags)) != -1
+	  && (flags & CS_RESTRICT) != 0)
+	{
+	  inferior_debug (4, "csops\n");
+	  return false;
+	}
+    }
+#endif
+
+  inferior_debug (4, "OK\n");
+  return true;
+}
+
 static ptid_t
 darwin_decode_message (mach_msg_header_t *hdr,
 		       darwin_thread_t **pthread,
@@ -1147,6 +1177,8 @@ darwin_decode_message (mach_msg_header_t *hdr,
 		  status->kind = TARGET_WAITKIND_EXITED;
 		  status->value.integer = WEXITSTATUS (wstatus);
 		}
+	      else if (!WIFSIGNALED (wstatus) && !sip_check (inf->pid))
+		error ("HI BOB _ SIP");
 	      else
 		{
 		  status->kind = TARGET_WAITKIND_SIGNALLED;
@@ -1594,25 +1626,6 @@ A task termination request was registered before the debugger registered\n\
 its own.  This is unexpected, but should otherwise not have any actual\n\
 impact on the debugging session."));
     }
-}
-
-static bool
-sip_check (int pid)
-{
-#if SIP_CHECK
-  if (csr_check (CSR_ALLOW_TASK_FOR_PID) != 0)
-    {
-      if (rootless_allows_task_for_pid (pid) == 0)
-	return false;
-
-      int flags = 0;
-      if (csops (pid, CS_OPS_STATUS, &flags, sizeof (flags)) != -1
-	  && (flags & CS_RESTRICT) != 0)
-	return false;
-    }
-#endif
-
-  return true;
 }
 
 static void
