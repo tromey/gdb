@@ -1,5 +1,10 @@
 2018-07-30  Tom Tromey  <tom@tromey.com>
 
+	* ada-lang.c (move_bits): Don't run off the end of the source
+	buffer.
+
+2018-07-30  Tom Tromey  <tom@tromey.com>
+
 	* record-btrace.c (get_thread_current_frame_id): Rename from
 	get_thread_current_frame.  Return a frame_id.
 	(record_btrace_start_replaying): Update.

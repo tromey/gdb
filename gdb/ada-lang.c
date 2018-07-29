@@ -2682,9 +2682,12 @@ move_bits (gdb_byte *target, int targ_offset, const gdb_byte *source,
         {
           int unused_right;
 
-          accum = (accum << HOST_CHAR_BIT) + (unsigned char) *source;
-          accum_bits += HOST_CHAR_BIT;
-          source += 1;
+	  if (n > accum_bits)
+	    {
+	      accum = (accum << HOST_CHAR_BIT) + (unsigned char) *source;
+	      accum_bits += HOST_CHAR_BIT;
+	      source += 1;
+	    }
           chunk_size = HOST_CHAR_BIT - targ_offset;
           if (chunk_size > n)
             chunk_size = n;
@@ -2707,9 +2710,12 @@ move_bits (gdb_byte *target, int targ_offset, const gdb_byte *source,
 
       while (n > 0)
         {
-          accum = accum + ((unsigned char) *source << accum_bits);
-          accum_bits += HOST_CHAR_BIT;
-          source += 1;
+	  if (n > accum_bits)
+	    {
+	      accum = accum + ((unsigned char) *source << accum_bits);
+	      accum_bits += HOST_CHAR_BIT;
+	      source += 1;
+	    }
           chunk_size = HOST_CHAR_BIT - targ_offset;
           if (chunk_size > n)
             chunk_size = n;
