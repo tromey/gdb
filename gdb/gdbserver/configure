@@ -729,6 +729,7 @@ with_ust_lib
 enable_werror
 enable_build_warnings
 enable_gdb_build_warnings
+enable_cxx_debug
 with_pkgversion
 with_bugurl
 with_libthread_db
@@ -1375,6 +1376,8 @@ Optional Features:
   --enable-gdb-build-warnings
                           enable GDB specific build-time compiler warnings if
                           gcc is used
+  --enable-cxx-debug      enable libstdc++ debug mode (yes/no/auto, default is
+                          auto)
   --enable-inprocess-agent
                           inprocess agent
 
@@ -7417,6 +7420,31 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
+
+# Check whether --enable-cxx-debug was given.
+if test "${enable_cxx_debug+set}" = set; then :
+  enableval=$enable_cxx_debug; case "${enableval}" in
+  yes| no | auto) ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-cxx-debug option" "$LINENO" 5 ;;
+esac
+else
+  enable_cxx_debug=auto
+fi
+
+
+if test $enable_cxx_debug = auto; then
+  if $development; then
+    enable_cxx_debug=yes
+  fi
+fi
+if test $enable_cxx_debug = yes; then
+
+$as_echo "#define _GLIBCXX_DEBUG 1" >>confdefs.h
+
+
+$as_echo "#define _GLIBCXX_DEBUG_PEDANTIC 1" >>confdefs.h
+
+fi
 
 old_LIBS="$LIBS"
 LIBS="$LIBS -ldl"

@@ -407,6 +407,12 @@
 /* Number of bits in a file offset, on hosts where this is settable. */
 #undef _FILE_OFFSET_BITS
 
+/* Define if libstdc++ debug mode should be enabled */
+#undef _GLIBCXX_DEBUG
+
+/* Define if libstdc++ pedantic debug mode should be enabled */
+#undef _GLIBCXX_DEBUG_PEDANTIC
+
 /* Define for large files, on AIX-style hosts. */
 #undef _LARGE_FILES
 

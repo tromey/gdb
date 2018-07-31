@@ -1862,6 +1862,7 @@ GDB_AC_WITH_DIR(SYSTEM_GDBINIT, system-gdbinit,
 
 AM_GDB_WARNINGS
 AM_GDB_UBSAN
+AM_GDB_CXX_DEBUG
 
 # In the Cygwin environment, we need some additional flags.
 AC_CACHE_CHECK([for cygwin], gdb_cv_os_cygwin,

@@ -9,6 +9,9 @@ sinclude(../libmcheck.m4)
 # This gets AM_GDB_WARNINGS.
 sinclude(../warning.m4)
 
+# This gets AM_GDB_CXX_DEBUG.
+sinclude(../cxx-debug.m4)
+
 dnl This gets autoconf bugfixes
 sinclude(../../config/override.m4)
 

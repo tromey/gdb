@@ -889,6 +889,7 @@ enable_werror
 enable_build_warnings
 enable_gdb_build_warnings
 enable_ubsan
+enable_cxx_debug
 with_lzma
 with_liblzma_prefix
 with_tcl
@@ -1561,6 +1562,8 @@ Optional Features:
                           enable GDB specific build-time compiler warnings if
                           gcc is used
   --enable-ubsan          enable undefined behavior sanitizer (auto/yes/no)
+  --enable-cxx-debug      enable libstdc++ debug mode (yes/no/auto, default is
+                          auto)
   --enable-sim            link gdb with simulator
   --enable-gdbserver      automatically build gdbserver (yes/no/auto, default
                           is auto)
@@ -15699,6 +15702,31 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
+
+# Check whether --enable-cxx-debug was given.
+if test "${enable_cxx_debug+set}" = set; then :
+  enableval=$enable_cxx_debug; case "${enableval}" in
+  yes| no | auto) ;;
+  *) as_fn_error $? "bad value ${enableval} for --enable-cxx-debug option" "$LINENO" 5 ;;
+esac
+else
+  enable_cxx_debug=auto
+fi
+
+
+if test $enable_cxx_debug = auto; then
+  if $development; then
+    enable_cxx_debug=yes
+  fi
+fi
+if test $enable_cxx_debug = yes; then
+
+$as_echo "#define _GLIBCXX_DEBUG 1" >>confdefs.h
+
+
+$as_echo "#define _GLIBCXX_DEBUG_PEDANTIC 1" >>confdefs.h
+
+fi
 
 # In the Cygwin environment, we need some additional flags.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cygwin" >&5
