@@ -1191,7 +1191,7 @@ gdb_setup_readline (int editing)
   /* If the input stream is connected to a terminal, turn on editing.
      However, that is only allowed on the main UI, as we can only have
      one instance of readline.  */
-  if (ISATTY (ui->instream) && editing && ui == main_ui)
+  if (editing && ISATTY (ui->instream) && ui == main_ui)
     {
       /* Tell gdb that we will be using the readline library.  This
 	 could be overwritten by a command in .gdbinit like 'set

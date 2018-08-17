@@ -1,3 +1,8 @@
+2018-08-17  Tom Tromey  <tom@tromey.com>
+
+	PR python/23544:
+	* gdb.python/python.exp: Add new test.
+
 2018-08-17  Alan Hayward  <alan.hayward@arm.com>
 
 	PR gdb/18931

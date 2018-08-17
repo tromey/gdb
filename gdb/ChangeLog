@@ -1,3 +1,9 @@
+2018-08-17  Tom Tromey  <tom@tromey.com>
+
+	PR python/23544:
+	* event-top.c (gdb_setup_readline): Handle the case where instream
+	is NULL.
+
 2018-08-15  Tom Tromey  <tom@tromey.com>
 
 	* aarch64-linux-tdep.c (aarch64_linux_core_read_vq): Use pulongest.
