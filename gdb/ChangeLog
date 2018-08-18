@@ -1,3 +1,7 @@
+2018-08-17  Tom Tromey  <tom@tromey.com>
+
+	* thread.c (delete_thread_1): Call clear_inline_frame_state.
+
 2018-07-30  Tom Tromey  <tom@tromey.com>
 
 	* ada-lang.c (move_bits): Don't run off the end of the source

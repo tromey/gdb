@@ -45,6 +45,7 @@
 #include "tid-parse.h"
 #include <algorithm>
 #include "common/gdb_optional.h"
+#include "inline-frame.h"
 
 /* Definition of struct thread_info exported to gdbthread.h.  */
 
@@ -448,6 +449,8 @@ delete_thread_1 (thread_info *thr, bool silent)
 
   if (!tp)
     return;
+
+  clear_inline_frame_state (thr->ptid);
 
   set_thread_exited (tp, silent);
 
