@@ -1,5 +1,9 @@
 2018-09-13  Tom Tromey  <tom@tromey.com>
 
+	* Makefile.in (aclocal_m4_deps): Update.
+
+2018-09-13  Tom Tromey  <tom@tromey.com>
+
 	* python/py-inferior.c (infpy_thread_from_thread_handle): Now
 	static.
 

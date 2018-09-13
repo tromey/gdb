@@ -2068,28 +2068,40 @@ config.status: $(srcdir)/configure configure.nat configure.tgt configure.host ..
 ACLOCAL = aclocal
 ACLOCAL_AMFLAGS = -I ../config
 
-# Keep these in sync with the includes in acinclude.m4.
+# Keep these in sync with the includes the various .m4 files included.
+# You can use this to make the list, but be sure to preserve
+# configure.ac:
+# $ cat *.m4 \
+#   | sed -n -e's/^\(sinclude\|m4_include\)[([]*\([^])]*\)[])]*$/\2/p' \
+#   | sort -u
 aclocal_m4_deps = \
 	configure.ac \
+	acinclude.m4 \
 	acx_configure_dir.m4 \
-	libmcheck.m4 \
-	transform.m4 \
+	ax_cxx_compile_stdcxx.m4 \
 	../bfd/bfd.m4 \
+	common/common.m4 \
 	../config/acinclude.m4 \
-	../config/plugins.m4 \
-	../config/lead-dot.m4 \
-	../config/override.m4 \
-	../config/largefile.m4 \
-	../config/gettext-sister.m4 \
-	../config/lib-ld.m4 \
-	../config/lib-prefix.m4 \
-	../config/lib-link.m4 \
 	../config/acx.m4 \
-	../config/tcl.m4 \
-	../config/depstand.m4 \
-	../config/lcmessage.m4 \
 	../config/codeset.m4 \
-	../config/zlib.m4
+	../config/depstand.m4 \
+	../config/gettext-sister.m4 \
+	../config/iconv.m4 \
+	../config/largefile.m4 \
+	../config/lcmessage.m4 \
+	../config/lead-dot.m4 \
+	../config/lib-ld.m4 \
+	../config/lib-link.m4 \
+	../config/lib-prefix.m4	\
+	../config/override.m4 \
+	../config/plugins.m4 \
+	../config/tcl.m4 \
+	../config/zlib.m4 \
+	libiberty.m4 \
+	libmcheck.m4 \
+	ptrace.m4 \
+	transform.m4 \
+	warning.m4
 
 $(srcdir)/aclocal.m4: @MAINTAINER_MODE_TRUE@ $(aclocal_m4_deps)
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
