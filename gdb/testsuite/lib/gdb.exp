@@ -3498,7 +3498,7 @@ proc gdb_compile {source dest type options} {
     # "shlib=librarypath" in OPTIONS.
     set new_options {}
     if {[lsearch -exact $options rust] != -1} {
-	# -fdiagnostics-color is not a rustcc option.
+	# -fdiagnostics-color is not a rustc option.
     } else {
 	set new_options [universal_compile_options]
     }
