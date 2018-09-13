@@ -35,3 +35,40 @@ proc gdb_compile_rust {sources dest options} {
     }
     return ""
 }
+
+# Return 1 if the version of LLVM used by the Rust compiler is less
+# than VERSION.  VERSION is a floating point value, like "6.11".
+proc rust_llvm_version_lt {version} {
+    set rustc [find_rust]
+    set output [remote_exec host "$rustc -vV"]
+    foreach line [split $output "\n"] {
+	if {[regexp "LLVM version: (\[0-9\]+\\.\[0-9\]+)" $line ignore llver]} {
+	    return [expr {$llver < $version}]
+	}
+    }
+
+    error "rust compiler did not print LLVM version"
+}
+
+# Return 1 if the version of  the Rust compiler is less
+# than VERSION.  VERSION is a floating point value, like "1.19".
+proc rust_version_lt {version} {
+    set rustc [find_rust]
+    set output [remote_exec host "$rustc -vV"]
+    foreach line [split $output "\n"] {
+	if {[regexp "LLVM version: (\[0-9\]+\\.\[0-9\]+)" $line ignore llver]} {
+	    return [expr {$llver < $version}]
+	}
+    }
+
+    error "rust compiler did not print LLVM version"
+}
+
+
+
+# DW_TAG_variant_part support is needed in order to pass some Rust
+# enum tests.  This proc calls setup_xfail if this support is not
+# available.
+proc rust_maybe_xfail_enum_test {} {
+    return [exp {[rust_llvm_version_lt 7.0] || [rust_
+}
