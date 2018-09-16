@@ -235,7 +235,7 @@ proc test_disassembly_bogus_args {} {
              "data-disassemble bogus address, -a"
 
     mi_gdb_test "456-data-disassemble -s \$pc -f basics.c -- 0" \
-             "456\\^error,msg=\"-data-disassemble: Usage: \\( .-f filename -l linenum .-n howmany.. \\| .-s startaddr -e endaddr. \\| .-a addr. \\) .--. mode.\"" \
+             "456\\^error,msg=\"Usage: -data-disassemble \\( .-f FILENAME -l LINENUM .-n HOWMANY.. \\| .-s STARTADDR -e ENDADDR. \\| .-a ADDR. \\) .--. MODE\"" \
              "data-disassemble mix different args"
 
     mi_gdb_test "789-data-disassemble -f basics.c -l $line_main_body -- 9" \

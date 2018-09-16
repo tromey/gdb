@@ -101,7 +101,7 @@ mi_cmd_var_create (const char *command, char **argv, int argc)
   enum varobj_type var_type;
 
   if (argc != 3)
-    error (_("-var-create: Usage: NAME FRAME EXPRESSION."));
+    error (_("Usage: -var-create NAME FRAME EXPRESSION"));
 
   frame = argv[1];
   expr = argv[2];
@@ -151,7 +151,7 @@ mi_cmd_var_delete (const char *command, char **argv, int argc)
   struct ui_out *uiout = current_uiout;
 
   if (argc < 1 || argc > 2)
-    error (_("-var-delete: Usage: [-c] EXPRESSION."));
+    error (_("Usage: -var-delete [-c] EXPRESSION"));
 
   name = argv[0];
 
@@ -223,7 +223,7 @@ mi_cmd_var_set_format (const char *command, char **argv, int argc)
   struct ui_out *uiout = current_uiout;
 
   if (argc != 2)
-    error (_("-var-set-format: Usage: NAME FORMAT."));
+    error (_("Usage: -var-set-format NAME FORMAT"));
 
   /* Get varobj handle, if a valid var obj name was specified.  */
   var = varobj_get_handle (argv[0]);
@@ -264,7 +264,7 @@ mi_cmd_var_set_frozen (const char *command, char **argv, int argc)
   bool frozen;
 
   if (argc != 2)
-    error (_("-var-set-format: Usage: NAME FROZEN_FLAG."));
+    error (_("Usage: -var-set-format NAME FROZEN_FLAG"));
 
   var = varobj_get_handle (argv[0]);
 
@@ -290,7 +290,7 @@ mi_cmd_var_show_format (const char *command, char **argv, int argc)
   struct varobj *var;
 
   if (argc != 1)
-    error (_("-var-show-format: Usage: NAME."));
+    error (_("Usage: -var-show-format NAME"));
 
   /* Get varobj handle, if a valid var obj name was specified.  */
   var = varobj_get_handle (argv[0]);
@@ -308,7 +308,7 @@ mi_cmd_var_info_num_children (const char *command, char **argv, int argc)
   struct varobj *var;
 
   if (argc != 1)
-    error (_("-var-info-num-children: Usage: NAME."));
+    error (_("Usage: -var-info-num-children NAME"));
 
   /* Get varobj handle, if a valid var obj name was specified.  */
   var = varobj_get_handle (argv[0]);
@@ -357,8 +357,7 @@ mi_cmd_var_list_children (const char *command, char **argv, int argc)
   int from, to;
 
   if (argc < 1 || argc > 4)
-    error (_("-var-list-children: Usage: "
-	     "[PRINT_VALUES] NAME [FROM TO]"));
+    error (_("Usage: -var-list-children [PRINT_VALUES] NAME [FROM TO]"));
 
   /* Get varobj handle, if a valid var obj name was specified.  */
   if (argc == 1 || argc == 3)
@@ -419,7 +418,7 @@ mi_cmd_var_info_type (const char *command, char **argv, int argc)
   struct varobj *var;
 
   if (argc != 1)
-    error (_("-var-info-type: Usage: NAME."));
+    error (_("Usage: -var-info-type NAME"));
 
   /* Get varobj handle, if a valid var obj name was specified.  */
   var = varobj_get_handle (argv[0]);
@@ -453,7 +452,7 @@ mi_cmd_var_info_expression (const char *command, char **argv, int argc)
   struct varobj *var;
 
   if (argc != 1)
-    error (_("-var-info-expression: Usage: NAME."));
+    error (_("Usage: -var-info-expression NAME"));
 
   /* Get varobj handle, if a valid var obj name was specified.  */
   var = varobj_get_handle (argv[0]);
@@ -475,7 +474,7 @@ mi_cmd_var_show_attributes (const char *command, char **argv, int argc)
   struct varobj *var;
 
   if (argc != 1)
-    error (_("-var-show-attributes: Usage: NAME."));
+    error (_("Usage: -var-show-attributes NAME"));
 
   /* Get varobj handle, if a valid var obj name was specified */
   var = varobj_get_handle (argv[0]);
@@ -564,7 +563,7 @@ mi_cmd_var_assign (const char *command, char **argv, int argc)
   struct varobj *var;
 
   if (argc != 2)
-    error (_("-var-assign: Usage: NAME EXPRESSION."));
+    error (_("Usage: -var-assign NAME EXPRESSION"));
 
   /* Get varobj handle, if a valid var obj name was specified.  */
   var = varobj_get_handle (argv[0]);
@@ -631,7 +630,7 @@ mi_cmd_var_update (const char *command, char **argv, int argc)
   enum print_values print_values;
 
   if (argc != 1 && argc != 2)
-    error (_("-var-update: Usage: [PRINT_VALUES] NAME."));
+    error (_("Usage: -var-update [PRINT_VALUES] NAME"));
 
   if (argc == 1)
     name = argv[0];
@@ -775,7 +774,7 @@ mi_cmd_var_set_update_range (const char *command, char **argv, int argc)
   int from, to;
 
   if (argc != 3)
-    error (_("-var-set-update-range: Usage: VAROBJ FROM TO"));
+    error (_("Usage: -var-set-update-range VAROBJ FROM TO"));
   
   var = varobj_get_handle (argv[0]);
   from = atoi (argv[1]);

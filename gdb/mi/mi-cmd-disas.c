@@ -147,8 +147,8 @@ mi_cmd_disassemble (const char *command, char **argv, int argc)
        || (!line_seen && !file_seen && !num_seen && !start_seen && !end_seen
 								&&  addr_seen))
       || argc != 1)
-    error (_("-data-disassemble: Usage: ( [-f filename -l linenum "
-	     "[-n howmany]] | [-s startaddr -e endaddr] | [-a addr] ) [--] mode."));
+    error (_("Usage: -data-disassemble ( [-f FILENAME -l LINENUM "
+	     "[-n HOWMANY]] | [-s STARTADDR -e ENDADDR] | [-a ADDR] ) [--] MODE"));
 
   mode = atoi (argv[0]);
   if (mode < 0 || mode > 5)

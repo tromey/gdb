@@ -87,7 +87,7 @@ void
 mi_cmd_env_cd (const char *command, char **argv, int argc)
 {
   if (argc == 0 || argc > 1)
-    error (_("-environment-cd: Usage DIRECTORY"));
+    error (_("Usage: -environment-cd DIRECTORY"));
           
   env_execute_cli_command ("cd", argv[0]);
 }
@@ -255,7 +255,7 @@ mi_cmd_inferior_tty_show (const char *command, char **argv, int argc)
   const char *inferior_io_terminal = get_inferior_io_terminal ();
   
   if ( !mi_valid_noargs ("-inferior-tty-show", argc, argv))
-    error (_("-inferior-tty-show: Usage: No args"));
+    error (_("-inferior-tty-show does not accept arguments"));
 
   if (inferior_io_terminal)
     current_uiout->field_string ("inferior_tty_terminal", inferior_io_terminal);

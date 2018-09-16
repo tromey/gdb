@@ -551,7 +551,7 @@ void
 mi_cmd_thread_select (const char *command, char **argv, int argc)
 {
   if (argc != 1)
-    error (_("-thread-select: USAGE: threadnum."));
+    error (_("Usage: -thread-select THREADNUM"));
 
   int num = value_as_long (parse_and_eval (argv[0]));
   thread_info *thr = find_thread_global_id (num);
@@ -1068,9 +1068,8 @@ mi_cmd_data_list_register_values (const char *command, char **argv, int argc)
     }
 
   if (argc - oind < 1)
-    error (_("-data-list-register-values: Usage: "
-	     "-data-list-register-values [--skip-unavailable] <format>"
-	     " [<regnum1>...<regnumN>]"));
+    error (_("Usage: -data-list-register-values [--skip-unavailable] FORMAT"
+	     " [REGNUM-1...REGNUM-N]"));
 
   format = (int) argv[oind][0];
 
@@ -1167,8 +1166,8 @@ mi_cmd_data_write_register_values (const char *command, char **argv, int argc)
   numregs = gdbarch_num_regs (gdbarch) + gdbarch_num_pseudo_regs (gdbarch);
 
   if (argc == 0)
-    error (_("-data-write-register-values: Usage: -data-write-register-"
-	     "values <format> [<regnum1> <value1>...<regnumN> <valueN>]"));
+    error (_("Usage: -data-write-register-values "
+	     "FORMAT [REGNUM-1 VALUE-1...REGNUM-N VALUE-N]"));
 
   if (!target_has_registers)
     error (_("-data-write-register-values: No registers."));
@@ -1293,8 +1292,8 @@ mi_cmd_data_read_memory (const char *command, char **argv, int argc)
   argc -= oind;
 
   if (argc < 5 || argc > 6)
-    error (_("-data-read-memory: Usage: "
-	     "ADDR WORD-FORMAT WORD-SIZE NR-ROWS NR-COLS [ASCHAR]."));
+    error (_("Usage: -data-read-memory "
+	     "ADDR WORD-FORMAT WORD-SIZE NR-ROWS NR-COLS [ASCHAR]"));
 
   /* Extract all the arguments. */
 
@@ -1547,8 +1546,8 @@ mi_cmd_data_write_memory (const char *command, char **argv, int argc)
   argc -= oind;
 
   if (argc != 4)
-    error (_("-data-write-memory: Usage: "
-	     "[-o COLUMN_OFFSET] ADDR FORMAT WORD-SIZE VALUE."));
+    error (_("Usage: -data-write-memory "
+	     "[-o COLUMN_OFFSET] ADDR FORMAT WORD-SIZE VALUE"));
 
   /* Extract all the arguments.  */
   /* Start address of the memory dump.  */
@@ -1662,7 +1661,7 @@ mi_cmd_enable_timings (const char *command, char **argv, int argc)
   return;
 
  usage_error:
-  error (_("-enable-timings: Usage: %s {yes|no}"), command);
+  error (_("Usage: -enable-timings [yes|no]"));
 }
 
 void

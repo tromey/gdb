@@ -1,3 +1,16 @@
+2018-09-18  Tom Tromey  <tom@tromey.com>
+
+	* gdb.mi/mi-stack.exp (test_stack_frame_listing)
+	(test_stack_args_listing, test_stack_info_depth)
+	(test_stack_locals_listing): Update for changes to usage text.
+	* gdb.mi/mi-pthreads.exp (check_mi_thread_command_set): Update for
+	changes to usage text.
+	* gdb.mi/mi-dprintf.exp: Update for changes to usage text.
+	* gdb.mi/mi-disassemble.exp (test_disassembly_bogus_args): Update
+	for changes to usage text.
+	* gdb.mi/gdb2549.exp (register_tests_no_exec): Update for changes
+	to usage text.
+
 2018-09-17  Simon Marchi  <simon.marchi@polymtl.ca>
 
 	PR python/23669

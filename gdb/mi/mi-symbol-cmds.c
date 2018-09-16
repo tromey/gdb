@@ -36,7 +36,7 @@ mi_cmd_symbol_list_lines (const char *command, char **argv, int argc)
   struct ui_out *uiout = current_uiout;
 
   if (argc != 1)
-    error (_("-symbol-list-lines: Usage: SOURCE_FILENAME"));
+    error (_("Usage: -symbol-list-lines SOURCE_FILENAME"));
 
   filename = argv[0];
   s = lookup_symtab (filename);

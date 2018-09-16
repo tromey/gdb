@@ -117,7 +117,7 @@ mi_cmd_stack_list_frames (const char *command, char **argv, int argc)
   /* After the last option is parsed, there should either be low -
      high range, or no further arguments.  */
   if ((argc - oind != 0) && (argc - oind != 2))
-    error (_("-stack-list-frames: Usage: [--no-frame-filters] [FRAME_LOW FRAME_HIGH]"));
+    error (_("Usage: -stack-list-frames [--no-frame-filters] [FRAME_LOW FRAME_HIGH]"));
 
   /* If there is a range, set it.  */
   if (argc - oind == 2)
@@ -187,7 +187,7 @@ mi_cmd_stack_info_depth (const char *command, char **argv, int argc)
   struct frame_info *fi;
 
   if (argc > 1)
-    error (_("-stack-info-depth: Usage: [MAX_DEPTH]"));
+    error (_("Usage: -stack-info-depth [MAX_DEPTH]"));
 
   if (argc == 1)
     frame_high = atoi (argv[0]);
@@ -256,7 +256,7 @@ mi_cmd_stack_list_locals (const char *command, char **argv, int argc)
   /* After the last option is parsed, there should be only
      'print-values'.  */
   if (argc - oind != 1)
-    error (_("-stack-list-locals: Usage: [--no-frame-filters] "
+    error (_("Usage: -stack-list-locals [--no-frame-filters] "
 	     "[--skip-unavailable] PRINT_VALUES"));
 
   frame = get_selected_frame (NULL);
@@ -328,7 +328,7 @@ mi_cmd_stack_list_args (const char *command, char **argv, int argc)
     }
 
   if (argc - oind != 1 && argc - oind != 3)
-    error (_("-stack-list-arguments: Usage: "	\
+    error (_("Usage: -stack-list-arguments "	\
 	     "[--no-frame-filters] [--skip-unavailable] "
 	     "PRINT_VALUES [FRAME_LOW FRAME_HIGH]"));
 
@@ -445,7 +445,7 @@ mi_cmd_stack_list_variables (const char *command, char **argv, int argc)
   /* After the last option is parsed, there should be only
      'print-values'.  */
   if (argc - oind != 1)
-    error (_("-stack-list-variables: Usage: [--no-frame-filters] " \
+    error (_("Usage: -stack-list-variables [--no-frame-filters] " \
 	     "[--skip-unavailable] PRINT_VALUES"));
 
    frame = get_selected_frame (NULL);
@@ -682,7 +682,7 @@ void
 mi_cmd_stack_select_frame (const char *command, char **argv, int argc)
 {
   if (argc == 0 || argc > 1)
-    error (_("-stack-select-frame: Usage: FRAME_SPEC"));
+    error (_("Usage: -stack-select-frame FRAME_SPEC"));
 
   select_frame_command (argv[0], 1 /* not used */ );
 }

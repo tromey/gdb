@@ -38,13 +38,13 @@ mi_run_to_main
 
 set i 0
 mi_gdb_test "[incr i]-dprintf-insert" \
-    "$i\\^error,msg=\"-dprintf-insert: Missing <location>\"" "mi insert without location"
+    "$i\\^error,msg=\"-dprintf-insert: Missing location\"" "mi insert without location"
 
 mi_gdb_test "[incr i]-dprintf-insert foo" \
-    "$i\\^error,msg=\"-dprintf-insert: Missing <format>\"" "mi insert breakpoint without format string"
+    "$i\\^error,msg=\"-dprintf-insert: Missing format\"" "mi insert breakpoint without format string"
 
 mi_gdb_test "[incr i]-dprintf-insert 29" \
-    "$i\\^error,msg=\"-dprintf-insert: Missing <format>\"" "mi insert second breakpoint without format string"
+    "$i\\^error,msg=\"-dprintf-insert: Missing format\"" "mi insert second breakpoint without format string"
 
 mi_gdb_test "-break-insert main" ".*" "mi insert breakpoint main"
 

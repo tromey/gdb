@@ -37,7 +37,7 @@ mi_cmd_target_file_get (const char *command, char **argv, int argc)
 
   if (mi_getopt (prefix, argc, argv, opts, &oind, &oarg) != -1
       || oind != argc - 2)
-    error (_("-target-file-get: Usage: REMOTE_FILE LOCAL_FILE"));
+    error (_("Usage: -target-file-get REMOTE_FILE LOCAL_FILE"));
 
   remote_file = argv[oind];
   local_file = argv[oind + 1];
@@ -61,7 +61,7 @@ mi_cmd_target_file_put (const char *command, char **argv, int argc)
 
   if (mi_getopt (prefix, argc, argv, opts, &oind, &oarg) != -1
       || oind != argc - 2)
-    error (_("-target-file-put: Usage: LOCAL_FILE REMOTE_FILE"));
+    error (_("Usage: -target-file-put LOCAL_FILE REMOTE_FILE"));
 
   local_file = argv[oind];
   remote_file = argv[oind + 1];
@@ -85,7 +85,7 @@ mi_cmd_target_file_delete (const char *command, char **argv, int argc)
 
   if (mi_getopt (prefix, argc, argv, opts, &oind, &oarg) != -1
       || oind != argc - 1)
-    error (_("-target-file-delete: Usage: REMOTE_FILE"));
+    error (_("Usage: -target-file-delete REMOTE_FILE"));
 
   remote_file = argv[oind];
 

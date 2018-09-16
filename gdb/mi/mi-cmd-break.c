@@ -268,8 +268,7 @@ mi_cmd_break_insert_1 (int dprintf, const char *command, char **argv, int argc)
     }
 
   if (oind >= argc && !is_explicit)
-    error (_("-%s-insert: Missing <location>"),
-	   dprintf ? "dprintf" : "break");
+    error (_("-%s-insert: Missing location"), dprintf ? "dprintf" : "break");
   if (dprintf)
     {
       int format_num = is_explicit ? oind : oind + 1;
@@ -277,7 +276,7 @@ mi_cmd_break_insert_1 (int dprintf, const char *command, char **argv, int argc)
       if (hardware || tracepoint)
 	error (_("-dprintf-insert: does not support -h or -a"));
       if (format_num >= argc)
-	error (_("-dprintf-insert: Missing <format>"));
+	error (_("-dprintf-insert: Missing format"));
 
       extra_string = mi_argv_to_format (argv + format_num, argc - format_num);
       address = argv[oind];
@@ -292,7 +291,7 @@ mi_cmd_break_insert_1 (int dprintf, const char *command, char **argv, int argc)
       else
 	{
 	  if (oind < argc - 1)
-	    error (_("-break-insert: Garbage following <location>"));
+	    error (_("-break-insert: Garbage following location"));
 	  address = argv[oind];
 	}
     }
@@ -447,9 +446,9 @@ mi_cmd_break_watch (const char *command, char **argv, int argc)
 	}
     }
   if (oind >= argc)
-    error (_("-break-watch: Missing <expression>"));
+    error (_("-break-watch: Missing expression"));
   if (oind < argc - 1)
-    error (_("-break-watch: Garbage following <expression>"));
+    error (_("-break-watch: Garbage following expression"));
   expr = argv[oind];
 
   /* Now we have what we need, let's insert the watchpoint!  */
@@ -478,7 +477,7 @@ mi_cmd_break_commands (const char *command, char **argv, int argc)
   struct breakpoint *b;
 
   if (argc < 1)
-    error (_("USAGE: %s <BKPT> [<COMMAND> [<COMMAND>...]]"), command);
+    error (_("Usage: %s BKPT [COMMAND [COMMAND...]]"), command);
 
   bnum = strtol (argv[0], &endptr, 0);
   if (endptr == argv[0])

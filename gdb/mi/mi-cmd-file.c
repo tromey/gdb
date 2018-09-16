@@ -40,7 +40,7 @@ mi_cmd_file_list_exec_source_file (const char *command, char **argv, int argc)
   struct ui_out *uiout = current_uiout;
   
   if (!mi_valid_noargs ("-file-list-exec-source-file", argc, argv))
-    error (_("-file-list-exec-source-file: Usage: No args"));
+    error (_("-file-list-exec-source-file does not accept arguments"));
 
   /* Set the default file and line, also get them.  */
   set_default_source_symtab_and_line ();
@@ -89,7 +89,7 @@ mi_cmd_file_list_exec_source_files (const char *command, char **argv, int argc)
   struct objfile *objfile;
 
   if (!mi_valid_noargs ("-file-list-exec-source-files", argc, argv))
-    error (_("-file-list-exec-source-files: Usage: No args"));
+    error (_("-file-list-exec-source-files does not accept arguments"));
 
   /* Print the table header.  */
   uiout->begin (ui_out_type_list, "files");
