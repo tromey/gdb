@@ -1,0 +1,28 @@
+#!/bin/sh
+
+# Usage: ./contrib/setup
+
+test -d .git || {
+    echo "setup: could not find .git directory" 1>&2
+    echo "This script is only useful with a git clone" 1>&2
+    exit 1
+}
+
+test -d .git/hooks || {
+    echo "setup: could not find .git/hooks directory" 1>&2
+    exit 1
+}
+
+if test -f .git/hooks/prepare-commit-msg; then
+    echo "setup: .git/hooks/prepare-commit-msg already exists" 1>&2
+    echo "Maybe you already ran this script, or maybe you need to chain" 1>&2
+    echo "your existing script with ./contrib/prepare-commit-msg" 1>&2
+    exit 1
+fi
+
+set -e
+cp ./contrib/prepare-commit-msg .git/hooks/prepare-commit-msg
+chmod u+x .git/hooks/prepare-commit-msg
+
+echo "New commits will now automatically get a Patch-ID tag."
+echo "If you preserve these across changes, the patch tracker will work better."

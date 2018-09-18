@@ -1,0 +1,12 @@
+#!/bin/sh
+
+MSG="$1"
+
+UUIDGEN=/usr/bin/uuidgen
+TOKEN='Patch-ID'
+
+if test -x $UUIDGEN; then
+    if ! grep -q -s "^$TOKEN" "$MSG"; then
+	git interpret-trailers --in-place --trailer "$TOKEN: `$UUIDGEN`" "$MSG"
+    fi
+fi
