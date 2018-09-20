@@ -1,3 +1,8 @@
+2018-09-20  Tom Tromey  <tom@tromey.com>
+
+	* procfs.c (open_with_retry, iterate_over_mappings): Use
+	gdb_open_cloexec.
+
 2018-09-20  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
 
 	* proc-utils.h (PROC_CTL_WORD_TYPE): Remove.

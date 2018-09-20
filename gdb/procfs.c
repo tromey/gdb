@@ -354,7 +354,7 @@ open_with_retry (const char *pathname, int flags)
 
   while (1)
     {
-      status = open (pathname, flags);
+      status = gdb_open_cloexec (pathname, flags, 0);
 
       if (status >= 0 || retries_remaining == 0)
 	break;
@@ -3410,7 +3410,7 @@ iterate_over_mappings (procinfo *pi, find_memory_region_ftype child_func,
   /* Open map fd.  */
   xsnprintf (pathname, sizeof (pathname), "/proc/%d/map", pi->pid);
 
-  scoped_fd map_fd (open (pathname, O_RDONLY));
+  scoped_fd map_fd (gdb_open_cloexec (pathname, O_RDONLY, 0));
   if (map_fd.get () < 0)
     proc_error (pi, "iterate_over_mappings (open)", __LINE__);
 
