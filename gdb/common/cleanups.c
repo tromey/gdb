@@ -60,7 +60,7 @@ static const struct cleanup sentinel_cleanup = { 0, 0, 0, 0 };
 
 /* Chain of cleanup actions established with make_cleanup,
    to be executed if an error happens.  */
-static struct cleanup *cleanup_chain = SENTINEL_CLEANUP;
+static thread_local struct cleanup *cleanup_chain = SENTINEL_CLEANUP;
 
 /* Chain of cleanup actions established with make_final_cleanup,
    to be executed when gdb exits.  */
