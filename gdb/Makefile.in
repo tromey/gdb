@@ -962,6 +962,7 @@ COMMON_SFILES = \
 	common/fileio.c \
 	common/filestuff.c \
 	common/format.c \
+	common/host-thread.c \
 	common/job-control.c \
 	common/gdb_tilde_expand.c \
 	common/gdb_vecs.c \
@@ -1466,6 +1467,7 @@ HFILES_NO_SRCDIR = \
 	common/common-inferior.h \
 	common/netstuff.h \
 	common/host-defs.h \
+	common/host-thread.h \
 	common/pathstuff.h \
 	common/print-utils.h \
 	common/ptid.h \

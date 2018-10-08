@@ -41,6 +41,7 @@
 #include "common/environ.h"
 #include "filenames.h"
 #include "common/pathstuff.h"
+#include "common/host-thread.h"
 
 #include "common/selftest.h"
 
@@ -3949,6 +3950,7 @@ captured_main (int argc, char *argv[])
 int
 main (int argc, char *argv[])
 {
+  this_is_the_main_thread ();
 
   TRY
     {

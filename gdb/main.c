@@ -47,6 +47,7 @@
 #include "common/signals-state-save-restore.h"
 #include <vector>
 #include "common/pathstuff.h"
+#include "common/host-thread.h"
 
 /* The selected interpreter.  This will be used as a set command
    variable, so it should always be malloc'ed - since
@@ -491,6 +492,8 @@ captured_main_1 (struct captured_main_args *context)
   /* Set this before constructing scoped_command_stats.  */
   lim_at_start = (char *) sbrk (0);
 #endif
+
+  this_is_the_main_thread ();
 
   scoped_command_stats stat_reporter (false);
 

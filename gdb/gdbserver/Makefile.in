@@ -211,6 +211,7 @@ SFILES = \
 	$(srcdir)/common/job-control.c \
 	$(srcdir)/common/gdb_tilde_expand.c \
 	$(srcdir)/common/gdb_vecs.c \
+	$(srcdir)/common/host-thread.c \
 	$(srcdir)/common/netstuff.c \
 	$(srcdir)/common/new-op.c \
 	$(srcdir)/common/pathstuff.c \
@@ -255,6 +256,7 @@ OBS = \
 	common/format.o \
 	common/gdb_tilde_expand.o \
 	common/gdb_vecs.o \
+	common/host-thread.o \
 	common/netstuff.o \
 	common/new-op.o \
 	common/pathstuff.o \
