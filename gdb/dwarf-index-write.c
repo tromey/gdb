@@ -1589,6 +1589,8 @@ write_psymtabs_to_index (struct dwarf2_per_objfile *dwarf2_per_objfile,
 
   if (index_kind == dw_index_kind::DEBUG_NAMES)
     {
+      gdb_assert (main_thread_p ());
+
       std::string filename_str (std::string (dir) + SLASH_STRING
 				+ basename + DEBUG_STR_SUFFIX);
       gdb::char_vector filename_str_temp = make_temp_filename (filename_str);
