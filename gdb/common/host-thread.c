@@ -20,13 +20,19 @@
 #include "defs.h"
 #include "gdb_thread.h"
 
+/* True for the main thread, false otherwise.  */
+
 static thread_local bool main_thread;
+
+/* See gdb_thread.h.  */
 
 void
 this_is_the_main_thread ()
 {
   main_thread = true;
 }
+
+/* See gdb_thread.h.  */
 
 bool
 main_thread_p ()
