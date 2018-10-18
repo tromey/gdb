@@ -20,6 +20,26 @@
 #ifndef COMMON_HOST_THREAD_H
 #define COMMON_HOST_THREAD_H
 
+/* A runnable can be sent to the main thread and it will be called
+   from the event loop.  */
+
+class runnable
+{
+public:
+
+  virtual void operator() ()
+  {
+  }
+
+  virtual ~runnable ()
+  {
+  }
+};
+
+/* Send a runnable to the main thread.  */
+
+extern void run_on_main_thread (std::unique_ptr<runnable> &&);
+
 /* Called once, by the main thread, to record which thread is the main
    thread.  */
 
