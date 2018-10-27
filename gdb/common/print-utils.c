@@ -19,6 +19,8 @@
 
 #include "common-defs.h"
 #include "print-utils.h"
+#include "common/host-thread.h"
+
 /* Temporary storage using circular buffer.  */
 
 /* Number of cells in the circular buffer.  */
@@ -31,6 +33,8 @@ get_print_cell (void)
 {
   static char buf[NUMCELLS][PRINT_CELL_SIZE];
   static int cell = 0;
+
+  gdb_assert (main_thread_p ());
 
   if (++cell >= NUMCELLS)
     cell = 0;
