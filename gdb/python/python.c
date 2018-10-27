@@ -34,7 +34,7 @@
 #include "cli/cli-utils.h"
 #include <ctype.h>
 #include "location.h"
-#include "gdb_thread.h"
+#include "common/host-thread.h"
 
 /* Declared constants and enum for python stack printing.  */
 static const char python_excp_none[] = "none";
