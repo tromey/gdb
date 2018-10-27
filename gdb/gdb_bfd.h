@@ -22,7 +22,7 @@
 
 #include "registry.h"
 #include "common/gdb_ref_ptr.h"
-#include "host-thread.h"
+#include "common/host-thread.h"
 
 DECLARE_REGISTRY (bfd);
 
