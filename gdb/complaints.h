@@ -21,9 +21,36 @@
 #if !defined (COMPLAINTS_H)
 #define COMPLAINTS_H
 
+#include <unordered_map>
+#include "common/host-thread.h"
+
+class deferred_complaints
+{
+public:
+
+  deferred_complaints ();
+  ~deferred_complaints ();
+
+  DISABLE_COPY_AND_ASSIGN (deferred_complaints);
+
+  bool complain_p () const
+  {
+    return m_max > 0;
+  }
+
+  void complain (const char *fmt, ...);
+
+private:
+
+  int m_max;
+  std::unordered_map<const char *, std::vector<std::string>> m_complaints;
+};
+
+extern thread_local deferred_complaints *omt_complaints;
+
 /* Helper for complaint.  */
-extern void complaint_internal (const char *fmt, ...)
-  ATTRIBUTE_PRINTF (1, 2);
+extern void complaint_internal (const char *key, const char *fmt, ...)
+  ATTRIBUTE_PRINTF (2, 3);
 
 /* Register a complaint.  This is a macro around complaint_internal to
    avoid computing complaint's arguments when complaints are disabled.
@@ -32,10 +59,19 @@ extern void complaint_internal (const char *fmt, ...)
 #define complaint(FMT, ...)					\
   do								\
     {								\
-      extern int stop_whining;					\
+      if (omt_complaints != nullptr)				\
+	{							\
+	  if (omt_complaints->complain_p ())			\
+	    omt_complaints->complain (FMT, ##__VA_ARGS__);	\
+	}							\
+      else							\
+	{							\
+	  extern int stop_whining;				\
+	  gdb_assert (main_thread_p ());			\
 								\
-      if (stop_whining > 0)					\
-	complaint_internal (FMT, ##__VA_ARGS__);		\
+	  if (stop_whining > 0)					\
+	    complaint_internal (FMT, FMT, ##__VA_ARGS__);	\
+	}							\
     }								\
   while (0)
 

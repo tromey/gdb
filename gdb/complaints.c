@@ -21,7 +21,6 @@
 #include "complaints.h"
 #include "command.h"
 #include "gdbcmd.h"
-#include <unordered_map>
 
 /* Map format strings to counters.  */
 
@@ -36,11 +35,11 @@ int stop_whining = 0;
 /* See complaints.h.  */
 
 void
-complaint_internal (const char *fmt, ...)
+complaint_internal (const char *key, const char *fmt, ...)
 {
   va_list args;
 
-  if (++counters[fmt] > stop_whining)
+  if (++counters[key] > stop_whining)
     return;
 
   va_start (args, fmt);
@@ -73,6 +72,79 @@ complaints_show_value (struct ui_file *file, int from_tty,
 			    " symbols is %s.\n"),
 		    value);
 }
+
+
+
+thread_local deferred_complaints *omt_complaints;
+
+class complain_on_main_thread : public runnable
+{
+public:
+
+  explicit complain_on_main_thread (std::unordered_map<const char *,
+				    std::vector<std::string>> &&complaints)
+    : m_complaints (std::move (complaints))
+  {
+  }
+
+  void operator() () override
+  {
+    for (auto &iter : m_complaints)
+      {
+	for (auto &text : iter.second)
+	  complaint_internal (iter.first, "%s", text.c_str ());
+      }
+  }
+
+private:
+
+  std::unordered_map<const char *, std::vector<std::string>> m_complaints;
+};
+
+deferred_complaints::deferred_complaints ()
+  : m_max (stop_whining)
+{
+  gdb_assert (omt_complaints == nullptr);
+  omt_complaints = this;
+}
+
+deferred_complaints::~deferred_complaints ()
+{
+  gdb_assert (omt_complaints == this);
+  omt_complaints = nullptr;
+
+  complain_on_main_thread *omt
+    = new complain_on_main_thread (std::move (m_complaints));
+  run_on_main_thread (std::unique_ptr<runnable> (omt));
+}
+
+void
+deferred_complaints::complain (const char *fmt, ...)
+{
+  va_list args;
+
+  auto iter = m_complaints.find (fmt);
+  if (iter != m_complaints.end ())
+    {
+      if (iter->second.size () >= m_max)
+	return;
+      va_start (args, fmt);
+      std::string text = string_vprintf (fmt, args);
+      va_end (args);
+      iter->second.push_back (std::move (text));
+    }
+  else
+    {
+      va_start (args, fmt);
+      std::string text = string_vprintf (fmt, args);
+      va_end (args);
+      std::vector<std::string> vec;
+      vec.push_back (std::move (text));
+      m_complaints[fmt] = std::move (vec);
+    }
+}
+
+
 
 void
 _initialize_complaints (void)
