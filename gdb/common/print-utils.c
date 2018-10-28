@@ -34,7 +34,9 @@ get_print_cell (void)
   static char buf[NUMCELLS][PRINT_CELL_SIZE];
   static int cell = 0;
 
+#ifndef IN_PROCESS_AGENT
   gdb_assert (main_thread_p ());
+#endif
 
   if (++cell >= NUMCELLS)
     cell = 0;
