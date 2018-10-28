@@ -2374,6 +2374,11 @@ dwarf2_per_objfile::locate_sections (bfd *abfd, asection *sectp,
 				     const dwarf2_debug_sections &names)
 {
   flagword aflag = bfd_get_section_flags (abfd, sectp);
+  struct dwarf2_section_info *info = nullptr;
+
+  if ((aflag & (SEC_LOAD | SEC_ALLOC)) != 0
+      && bfd_section_vma (abfd, sectp) == 0)
+    this->has_section_at_zero = true;
 
   if ((aflag & SEC_HAS_CONTENTS) == 0)
     {
@@ -2382,71 +2387,85 @@ dwarf2_per_objfile::locate_sections (bfd *abfd, asection *sectp,
     {
       this->info.s.section = sectp;
       this->info.size = bfd_get_section_size (sectp);
+      info = &this->info;
     }
   else if (section_is_p (sectp->name, &names.abbrev))
     {
       this->abbrev.s.section = sectp;
       this->abbrev.size = bfd_get_section_size (sectp);
+      info = &this->abbrev;
     }
   else if (section_is_p (sectp->name, &names.line))
     {
       this->line.s.section = sectp;
       this->line.size = bfd_get_section_size (sectp);
+      info = &this->line;
     }
   else if (section_is_p (sectp->name, &names.loc))
     {
       this->loc.s.section = sectp;
       this->loc.size = bfd_get_section_size (sectp);
+      info = &this->loc;
     }
   else if (section_is_p (sectp->name, &names.loclists))
     {
       this->loclists.s.section = sectp;
       this->loclists.size = bfd_get_section_size (sectp);
+      info = &this->loclists;
     }
   else if (section_is_p (sectp->name, &names.macinfo))
     {
       this->macinfo.s.section = sectp;
       this->macinfo.size = bfd_get_section_size (sectp);
+      info = &this->macinfo;
     }
   else if (section_is_p (sectp->name, &names.macro))
     {
       this->macro.s.section = sectp;
       this->macro.size = bfd_get_section_size (sectp);
+      info = &this->macro;
     }
   else if (section_is_p (sectp->name, &names.str))
     {
       this->str.s.section = sectp;
       this->str.size = bfd_get_section_size (sectp);
+      info = &this->str;
     }
   else if (section_is_p (sectp->name, &names.line_str))
     {
       this->line_str.s.section = sectp;
       this->line_str.size = bfd_get_section_size (sectp);
+      info = &this->line_str;
     }
   else if (section_is_p (sectp->name, &names.addr))
     {
       this->addr.s.section = sectp;
       this->addr.size = bfd_get_section_size (sectp);
+      info = &this->addr;
     }
   else if (section_is_p (sectp->name, &names.frame))
     {
       this->frame.s.section = sectp;
       this->frame.size = bfd_get_section_size (sectp);
+      info = &this->frame;
     }
   else if (section_is_p (sectp->name, &names.eh_frame))
     {
       this->eh_frame.s.section = sectp;
       this->eh_frame.size = bfd_get_section_size (sectp);
+      info = &this->eh_frame;
     }
   else if (section_is_p (sectp->name, &names.ranges))
     {
       this->ranges.s.section = sectp;
       this->ranges.size = bfd_get_section_size (sectp);
+      info = &this->ranges;
     }
   else if (section_is_p (sectp->name, &names.rnglists))
     {
       this->rnglists.s.section = sectp;
       this->rnglists.size = bfd_get_section_size (sectp);
+      info = &this->rnglists;
     }
   else if (section_is_p (sectp->name, &names.types))
     {
@@ -2458,22 +2477,29 @@ dwarf2_per_objfile::locate_sections (bfd *abfd, asection *sectp,
 
       VEC_safe_push (dwarf2_section_info_def, this->types,
 		     &type_section);
+      info = VEC_last (dwarf2_section_info_def, this->types);
     }
   else if (section_is_p (sectp->name, &names.gdb_index))
     {
       this->gdb_index.s.section = sectp;
       this->gdb_index.size = bfd_get_section_size (sectp);
+      info = &this->gdb_index;
     }
   else if (section_is_p (sectp->name, &names.debug_names))
     {
       this->debug_names.s.section = sectp;
       this->debug_names.size = bfd_get_section_size (sectp);
+      info = &this->debug_names;
     }
   else if (section_is_p (sectp->name, &names.debug_aranges))
     {
       this->debug_aranges.s.section = sectp;
       this->debug_aranges.size = bfd_get_section_size (sectp);
+      info = &this->debug_aranges;
     }
+
+  if (info != nullptr)
+    dwarf2_read_section (objfile, info);
 
   if ((bfd_get_section_flags (abfd, sectp) & (SEC_LOAD | SEC_ALLOC))
       && bfd_section_vma (abfd, sectp) == 0)
