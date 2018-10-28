@@ -19,6 +19,8 @@
 #ifndef SER_EVENT_H
 #define SER_EVENT_H
 
+#include <functional>
+
 /* This is used to be able to signal the event loop (or any other
    select/poll) of events, in a race-free manner.
 
