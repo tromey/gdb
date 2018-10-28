@@ -228,7 +228,7 @@ static struct serial_event *runnable_event;
 
 /* Runnables that have been posted.  */
 
-static std::vector<std::unique_ptr<runnable>> runnables;
+static std::vector<std::function<void ()>> runnables;
 
 /* Mutex to hold when handling runnable_event or runnables.  */
 
@@ -239,7 +239,7 @@ std::mutex runnable_mutex;
 static void
 run_events (int error, gdb_client_data client_data)
 {
-  std::vector<std::unique_ptr<runnable>> local;
+  std::vector<std::function<void ()>> local;
 
   /* Hold the lock while changing the globals, but not while running
      the runnables.  */
@@ -257,16 +257,16 @@ run_events (int error, gdb_client_data client_data)
   }
 
   for (auto &item : local)
-    (*item) ();
+    item ();
 }
 
 /* See ser-event.h.  */
 
 void
-run_on_main_thread (std::unique_ptr<runnable> &&r)
+run_on_main_thread (std::function<void ()> &&func)
 {
   std::lock_guard<std::mutex> lock (runnable_mutex);
-  runnables.emplace_back (std::move (r));
+  runnables.emplace_back (std::move (func));
   serial_event_set (runnable_event);
 }
 

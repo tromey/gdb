@@ -48,24 +48,8 @@ extern void serial_event_set (struct serial_event *event);
    call is made.  */
 extern void serial_event_clear (struct serial_event *event);
 
-/* A runnable can be sent to the main thread and it will be called
-   from the event loop.  */
-
-class runnable
-{
-public:
-
-  virtual void operator() ()
-  {
-  }
-
-  virtual ~runnable ()
-  {
-  }
-};
-
 /* Send a runnable to the main thread.  */
 
-extern void run_on_main_thread (std::unique_ptr<runnable> &&);
+extern void run_on_main_thread (std::function<void ()> &&);
 
 #endif
