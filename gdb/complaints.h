@@ -59,7 +59,7 @@ extern void complaint_internal (const char *key, const char *fmt, ...)
 #define complaint(FMT, ...)					\
   do								\
     {								\
-      if (omt_complaints != nullptr)				\
+      if (!main_thread_p ())					\
 	{							\
 	  if (omt_complaints->complain_p ())			\
 	    omt_complaints->complain (FMT, ##__VA_ARGS__);	\
@@ -67,7 +67,6 @@ extern void complaint_internal (const char *key, const char *fmt, ...)
       else							\
 	{							\
 	  extern int stop_whining;				\
-	  gdb_assert (main_thread_p ());			\
 								\
 	  if (stop_whining > 0)					\
 	    complaint_internal (FMT, FMT, ##__VA_ARGS__);	\
