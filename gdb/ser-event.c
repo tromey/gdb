@@ -217,3 +217,60 @@ serial_event_clear (struct serial_event *event)
   ResetEvent (state->event);
 #endif
 }
+
+
+
+/* The serial event used when posting runnables.  */
+
+static struct serial_event *runnable_event;
+
+/* Runnables that have been posted.  */
+
+static std::vector<std::unique_ptr<runnable>> runnables;
+
+/* Mutex to hold when handling runnable_event or runnables.  */
+
+std::mutex runnable_mutex;
+
+/* Run all the queued runnables.  */
+
+static void
+run_events (int error, gdb_client_data client_data)
+{
+  std::vector<std::unique_ptr<runnable>> local;
+
+  /* Hold the lock while changing the globals, but not while running
+     the runnables.  */
+  {
+    std::lock_guard<std::mutex> lock (runnable_mutex);
+
+    /* Clear the event fd.  Do this before flushing the events list,
+       so that any new event post afterwards is sure to re-awaken the
+       event loop.  */
+    serial_event_clear (runnable_event);
+
+    /* Move the vector in case running a runnable pushes a new
+       runnable.  */
+    std::swap (local, runnables);
+  }
+
+  for (auto &item : local)
+    (*item) ();
+}
+
+/* See ser-event.h.  */
+
+void
+run_on_main_thread (std::unique_ptr<runnable> &&r)
+{
+  std::lock_guard<std::mutex> lock (runnable_mutex);
+  runnables.emplace_back (std::move (r));
+  serial_event_set (runnable_event);
+}
+
+void
+_initialize_gdb_thread ()
+{
+  runnable_event = make_serial_event ();
+  add_file_handler (serial_event_fd (runnable_event), run_events, nullptr);
+}
