@@ -19,7 +19,6 @@
 
 #include "common-defs.h"
 #include "common/host-thread.h"
-#include "event-loop.h"
 
 /* True for the main thread, false otherwise.  */
 
