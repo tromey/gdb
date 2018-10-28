@@ -20,6 +20,8 @@
 #include "ser-event.h"
 #include "serial.h"
 #include "common/filestuff.h"
+#include <mutex>
+#include "event-loop.h"
 
 /* On POSIX hosts, a serial_event is basically an abstraction for the
    classical self-pipe trick.

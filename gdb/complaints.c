@@ -21,6 +21,7 @@
 #include "complaints.h"
 #include "command.h"
 #include "gdbcmd.h"
+#include "ser-event.h"
 
 /* Map format strings to counters.  */
 

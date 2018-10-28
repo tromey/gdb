@@ -20,8 +20,6 @@
 #include "common-defs.h"
 #include "common/host-thread.h"
 #include "event-loop.h"
-#include "ser-event.h"
-#include <mutex>
 
 /* True for the main thread, false otherwise.  */
 
