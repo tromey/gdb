@@ -294,6 +294,7 @@ GDBREPLAY_OBS = \
 	common/common-exceptions.o \
 	common/common-utils.o \
 	common/errors.o \
+	common/host-thread.o \
 	common/netstuff.o \
 	common/print-utils.o \
 	gdbreplay.o \
