@@ -80,7 +80,7 @@ complaints_show_value (struct ui_file *file, int from_tty,
 
 thread_local deferred_complaints *omt_complaints;
 
-class complain_on_main_thread : public runnable
+class complain_on_main_thread
 {
 public:
 
@@ -90,7 +90,7 @@ public:
   {
   }
 
-  void operator() () override
+  void operator() ()
   {
     for (auto &iter : m_complaints)
       {
@@ -116,9 +116,8 @@ deferred_complaints::~deferred_complaints ()
   gdb_assert (omt_complaints == this);
   omt_complaints = nullptr;
 
-  complain_on_main_thread *omt
-    = new complain_on_main_thread (std::move (m_complaints));
-  run_on_main_thread (std::unique_ptr<runnable> (omt));
+  complain_on_main_thread omt (std::move (m_complaints));
+  run_on_main_thread (std::function<void ()> (std::move (omt)));
 }
 
 void
