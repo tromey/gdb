@@ -939,7 +939,7 @@ gdbpy_source_script (const struct extension_language_defn *extlang,
 /* Posting and handling events.  */
 
 /* A single Python runnable.  */
-struct gdbpy_event : runnable
+struct gdbpy_event
 {
   gdbpy_event (gdbpy_ref<> &&event_)
     : event (std::move (event_))
@@ -947,7 +947,7 @@ struct gdbpy_event : runnable
   }
 
   /* Run the queued function.  */
-  void operator() () override;
+  void operator() ();
 
   /* The Python event.  This is just a callable object.  */
   gdbpy_ref<> event;
@@ -980,8 +980,8 @@ gdbpy_post_event (PyObject *self, PyObject *args)
     }
 
   gdbpy_ref<> func_ref = gdbpy_ref<>::new_reference (func);
-  std::unique_ptr<runnable> r (new gdbpy_event (std::move (func_ref)));
-  run_on_main_thread (std::move (r));
+  gdbpy_event r (std::move (func_ref));
+  run_on_main_thread (std::function<void ()> (std::move (r)));
 
   Py_RETURN_NONE;
 }
