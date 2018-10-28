@@ -69,7 +69,7 @@ extern void complaint_internal (const char *key, const char *fmt, ...)
 	  extern int stop_whining;				\
 								\
 	  if (stop_whining > 0)					\
-	    complaint_internal (FMT, FMT, ##__VA_ARGS__);	\
+	    complaint_internal (nullptr, FMT, ##__VA_ARGS__);	\
 	}							\
     }								\
   while (0)

@@ -39,6 +39,8 @@ complaint_internal (const char *key, const char *fmt, ...)
 {
   va_list args;
 
+  if (key == nullptr)
+    key = fmt;
   if (++counters[key] > stop_whining)
     return;
 
