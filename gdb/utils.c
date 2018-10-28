@@ -72,6 +72,7 @@
 #include <algorithm>
 #include "common/pathstuff.h"
 #include "cli/cli-style.h"
+#include "ser-event.h"
 
 void (*deprecated_error_begin_hook) (void);
 
@@ -168,7 +169,7 @@ vwarning (const char *string, va_list args)
 {
   if (deprecated_warning_hook)
     (*deprecated_warning_hook) (string, args);
-  else
+  else if (main_thread_p ())
     {
       gdb::optional<target_terminal::scoped_restore_terminal_state> term_state;
       if (target_supports_terminal_ours ())
@@ -183,6 +184,15 @@ vwarning (const char *string, va_list args)
 	fputs_unfiltered (warning_pre_print, gdb_stderr);
       vfprintf_unfiltered (gdb_stderr, string, args);
       fprintf_unfiltered (gdb_stderr, "\n");
+    }
+  else
+    {
+      std::string text = string_vprintf (string, args);
+      /* C++14: use move capture here.  */
+      run_on_main_thread ([=] ()
+			  {
+			    warning ("%s", text.c_str ());
+			  });
     }
 }
 
