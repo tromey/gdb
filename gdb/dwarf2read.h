@@ -168,6 +168,8 @@ public:
 
   VEC (dwarf2_section_info_def) *types = NULL;
 
+  auto_obstack obstack;
+
   /* Back link.  */
   struct objfile *objfile = NULL;
 
