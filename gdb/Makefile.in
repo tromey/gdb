@@ -976,6 +976,7 @@ COMMON_SFILES = \
 	common/scoped_mmap.c \
 	common/signals.c \
 	common/signals-state-save-restore.c \
+	common/task-pool.c \
 	common/tdesc.c \
 	common/vec.c \
 	common/xml-utils.c \
@@ -1476,6 +1477,7 @@ HFILES_NO_SRCDIR = \
 	common/run-time-clock.h \
 	common/signals-state-save-restore.h \
 	common/symbol.h \
+	common/task-pool.h \
 	common/tdesc.h \
 	common/vec.h \
 	common/version.h \
