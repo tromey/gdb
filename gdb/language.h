@@ -471,7 +471,10 @@ struct language_defn
    the language of symbol files (e.g. detecting when ".c" files are
    C++), it should be a separate setting from the current_language.  */
 
-extern const struct language_defn *current_language;
+extern const struct language_defn *get_current_language ();
+#define current_language get_current_language ()
+
+extern const struct language_defn *get_current_language_no_set ();
 
 /* Pointer to the language_defn expected by the user, e.g. the language
    of main(), or the language we last mentioned in a message, or C.  */
@@ -526,6 +529,9 @@ struct symbol *
 extern void language_info (int);
 
 extern enum language set_language (enum language);
+
+extern void lazily_set_initial_language ();
+
 
 
 /* This page contains functions that return things that are

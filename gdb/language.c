@@ -76,7 +76,8 @@ enum case_sensitivity case_sensitivity = case_sensitive_on;
 
 /* The current language and language_mode (see language.h).  */
 
-const struct language_defn *current_language = &unknown_language_defn;
+static const struct language_defn *real_current_language
+  = &unknown_language_defn;
 enum language_mode language_mode = language_mode_auto;
 
 /* The language that the user expects to be typing in (the language
@@ -188,7 +189,7 @@ set_language_command (const char *ignore,
 	      if (flang != language_unknown)
 		set_language (flang);
 	      else
-		set_initial_language ();
+		lazily_set_initial_language ();
 	      expected_language = current_language;
 	      return;
 	    }
@@ -196,7 +197,7 @@ set_language_command (const char *ignore,
 	    {
 	      /* Enter manual mode.  Set the specified language.  */
 	      language_mode = language_mode_manual;
-	      current_language = lang;
+	      real_current_language = lang;
 	      set_range_case ();
 	      expected_language = current_language;
 	      return;
@@ -378,10 +379,70 @@ set_language (enum language lang)
   enum language prev_language;
 
   prev_language = current_language->la_language;
-  current_language = languages[lang];
+  real_current_language = languages[lang];
   set_range_case ();
   return prev_language;
 }
+
+static bool initial_language_set = true;
+
+void
+lazily_set_initial_language ()
+{
+  initial_language_set = false;
+}
+
+/* Set the initial language.
+
+   FIXME: A better solution would be to record the language in the
+   psymtab when reading partial symbols, and then use it (if known) to
+   set the language.  This would be a win for formats that encode the
+   language in an easily discoverable place, such as DWARF.  For
+   stabs, we can jump through hoops looking for specially named
+   symbols or try to intuit the language from the specific type of
+   stabs we find, but we can't do that until later when we read in
+   full symbols.  */
+
+const struct language_defn *
+get_current_language ()
+{
+  if (!initial_language_set)
+    {
+      initial_language_set = true;
+
+      enum language lang = main_language ();
+
+      if (lang == language_unknown)
+	{
+	  char *name = main_name ();
+	  struct symbol *sym = lookup_symbol_in_language (name, NULL,
+							  VAR_DOMAIN,
+							  language_c,
+							  NULL).symbol;
+
+	  if (sym != NULL)
+	    lang = SYMBOL_LANGUAGE (sym);
+	}
+
+      if (lang == language_unknown)
+	{
+	  /* Make C the default language */
+	  lang = language_c;
+	}
+
+      set_language (lang);
+      expected_language = current_language; /* Don't warn the user.  */
+    }
+
+  return real_current_language;
+}
+
+const struct language_defn *
+get_current_language_no_set ()
+{
+  return real_current_language;
+}
+
 
 
 /* Print out the current language settings: language, range and
@@ -731,9 +792,9 @@ get_symbol_name_matcher (const language_defn *lang,
   /* If currently in Ada mode, and the lookup name is wrapped in
      '<...>', hijack all symbol name comparisons using the Ada
      matcher, which handles the verbatim matching.  */
-  if (current_language->la_language == language_ada
+  if (real_current_language->la_language == language_ada
       && lookup_name.ada ().verbatim_p ())
-    return current_language->la_get_symbol_name_matcher (lookup_name);
+    return real_current_language->la_get_symbol_name_matcher (lookup_name);
 
   if (lang->la_get_symbol_name_matcher != nullptr)
     return lang->la_get_symbol_name_matcher (lookup_name);
