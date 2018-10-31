@@ -120,6 +120,7 @@ task_pool::run (std::shared_ptr<task> &job)
     if (job->m_started)
       {
 	while (!job->m_finished)
+	  /* FIXME this is where we'd print the name.  */
 	  job->wait (lock);
 	return;
       }
