@@ -111,6 +111,8 @@ static int use_deprecated_index_sections = 0;
 
 static const struct objfile_data *dwarf2_objfile_data_key;
 
+static task_pool dwarf2_task_pool;
+
 /* The "aclass" indices for various kinds of computed DWARF symbols.  */
 
 static int dwarf2_locexpr_index;
@@ -6285,6 +6287,8 @@ get_gdb_index_contents_from_cache_dwz (objfile *obj, dwz_file *dwz)
 
 /* See symfile.h.  */
 
+static void dwarf2_do_build_psymtabs (struct objfile *objfile);
+
 bool
 dwarf2_initialize_objfile (struct objfile *objfile, dw_index_kind *index_kind)
 {
@@ -6345,6 +6349,17 @@ dwarf2_initialize_objfile (struct objfile *objfile, dw_index_kind *index_kind)
     }
 
   global_index_cache.miss ();
+
+  dwarf2_per_objfile->psym_task
+    = dwarf2_task_pool.add_task (std::string ("Scanning DWARF for ")
+				 + objfile->original_name,
+				 [=] ()
+				 {
+				   deferred_complaints complaints;
+				   dwarf2_do_build_psymtabs (objfile);
+				 },
+				 // FIXME
+				 15);
   return false;
 }
 
@@ -6352,8 +6367,8 @@ dwarf2_initialize_objfile (struct objfile *objfile, dw_index_kind *index_kind)
 
 /* Build a partial symbol table.  */
 
-void
-dwarf2_build_psymtabs (struct objfile *objfile)
+static void
+dwarf2_do_build_psymtabs (struct objfile *objfile)
 {
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
@@ -6377,6 +6392,19 @@ dwarf2_build_psymtabs (struct objfile *objfile)
       exception_print (gdb_stderr, except);
     }
   END_CATCH
+}
+
+void
+dwarf2_build_psymtabs (struct objfile *objfile)
+{
+  struct dwarf2_per_objfile *dwarf2_per_objfile
+    = get_dwarf2_per_objfile (objfile);
+
+  if (dwarf2_per_objfile->psym_task != nullptr)
+    {
+      dwarf2_task_pool.run (dwarf2_per_objfile->psym_task);
+      dwarf2_per_objfile->psym_task.reset ();
+    }
 }
 
 /* Return the total length of the CU described by HEADER.  */

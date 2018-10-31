@@ -24,6 +24,7 @@
 #include "dwarf-index-cache.h"
 #include "filename-seen-cache.h"
 #include "gdb_obstack.h"
+#include "common/task-pool.h"
 
 /* Hold 'maintenance (set|show) dwarf' commands.  */
 extern struct cmd_list_element *set_dwarf_cmdlist;
@@ -260,6 +261,8 @@ public:
      DW_AT_abstract_origin.  */
   std::unordered_map<die_info_ptr, std::vector<die_info_ptr>>
     abstract_to_concrete;
+
+  std::shared_ptr<task_pool::task> psym_task;
 };
 
 /* Get the dwarf2_per_objfile associated to OBJFILE.  */
