@@ -594,7 +594,7 @@ extern const char *language_str (enum language);
 extern CORE_ADDR skip_language_trampoline (struct frame_info *, CORE_ADDR pc);
 
 /* Return demangled language symbol, or NULL.  */
-extern char *language_demangle (const struct language_defn *current_language, 
+extern char *language_demangle (const struct language_defn *lang, 
 				const char *mangled, int options);
 
 /* A wrapper for la_sniff_from_mangled_name.  The arguments and result
