@@ -35,7 +35,10 @@ class task_pool
 {
 public:
 
-  explicit task_pool (unsigned int n_threads);
+  explicit task_pool (unsigned int n_threads)
+    : m_n_threads (n_threads)
+  {
+  }
 
   class task;
   std::shared_ptr<task> add_task (std::string &&name,
@@ -55,6 +58,10 @@ private:
   };
 
   void worker ();
+  void start ();
+
+  bool m_started = false;
+  unsigned int m_n_threads;
 
   std::mutex m_lock;
   std::condition_variable m_var;

@@ -137,14 +137,17 @@ task_pool::run (std::shared_ptr<task> &job)
   }
 }
 
-task_pool::task_pool (unsigned int n_threads)
+void
+task_pool::start ()
 {
-  if (n_threads == 0)
-    n_threads = std::thread::hardware_concurrency ();
-  if (n_threads == 0)
-    n_threads = 2;
+  m_started = true;
 
-  for (unsigned int i = 0; i < n_threads; ++i)
+  if (m_n_threads == 0)
+    m_n_threads = std::thread::hardware_concurrency ();
+  if (m_n_threads == 0)
+    m_n_threads = 2;
+
+  for (unsigned int i = 0; i < m_n_threads; ++i)
     {
       std::thread t (&task_pool::worker, this);
       t.detach ();
@@ -155,6 +158,10 @@ std::shared_ptr<task_pool::task>
 task_pool::add_task (std::string &&name, std::function<void ()> &&func,
 		     size_t priority)
 {
+  /* Start threads on demand.  */
+  if (!m_started)
+    start ();
+
   std::shared_ptr<task> job (new task (std::move (name), std::move (func),
 				       priority));
   std::unique_lock<std::mutex> lock (m_lock);
