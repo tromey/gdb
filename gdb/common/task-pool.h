@@ -35,7 +35,7 @@ class task_pool
 {
 public:
 
-  explicit task_pool (unsigned int n_threads)
+  explicit task_pool (unsigned int n_threads = 0)
     : m_n_threads (n_threads)
   {
   }
