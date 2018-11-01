@@ -20,6 +20,8 @@
 #include "common-defs.h"
 #include "common/task-pool.h"
 
+#include <chrono>
+
 class task_pool::task
 {
   explicit task (std::string &&name, std::function<void ()> &&func,
@@ -48,11 +50,6 @@ class task_pool::task
   void notify ()
   {
     m_cond.notify_all ();
-  }
-
-  void wait (std::unique_lock<std::mutex> &mutex)
-  {
-    m_cond.wait (mutex);
   }
 
   bool operator< (const task &other) const
@@ -120,8 +117,19 @@ task_pool::run (std::shared_ptr<task> &job)
     if (job->m_started)
       {
 	while (!job->m_finished)
-	  /* FIXME this is where we'd print the name.  */
-	  job->wait (lock);
+	  {
+	    if (job->m_cond.wait_for (lock, std::chrono::seconds (1))
+		== std::cv_status::timeout)
+	      {
+		// FIXME printf_filtered not in common/
+		// printf_filtered ("%s\n", job->m_name.c_str ());
+		break;
+	      }
+	  }
+
+	while (!job->m_finished)
+	  job->m_cond.wait (lock);
+
 	return;
       }
 
