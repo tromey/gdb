@@ -20,6 +20,7 @@
 #include "common-defs.h"
 #include "print-utils.h"
 #include "common/host-thread.h"
+#include <atomic>
 
 /* Temporary storage using circular buffer.  */
 
@@ -32,15 +33,10 @@ char *
 get_print_cell (void)
 {
   static char buf[NUMCELLS][PRINT_CELL_SIZE];
-  static int cell = 0;
+  static std::atomic_uint cell;
 
-#ifndef IN_PROCESS_AGENT
-  gdb_assert (main_thread_p ());
-#endif
-
-  if (++cell >= NUMCELLS)
-    cell = 0;
-  return buf[cell];
+  unsigned int value = cell++;
+  return buf[value % NUMCELLS];
 }
 
 static char *
