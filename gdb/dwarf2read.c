@@ -111,7 +111,11 @@ static int use_deprecated_index_sections = 0;
 
 static const struct objfile_data *dwarf2_objfile_data_key;
 
-static task_pool dwarf2_task_pool;
+/* Note this is heap-allocated to avoid undefined behavior during
+   shutdown: if it is statically allocated, then it will be
+   destructed, sometimes causing a condition variable to be destroyed
+   while it is still in use.  */
+static task_pool *dwarf2_task_pool;
 
 /* The "aclass" indices for various kinds of computed DWARF symbols.  */
 
@@ -6351,15 +6355,15 @@ dwarf2_initialize_objfile (struct objfile *objfile, dw_index_kind *index_kind)
   global_index_cache.miss ();
 
   dwarf2_per_objfile->psym_task
-    = dwarf2_task_pool.add_task (std::string ("Scanning DWARF for ")
-				 + objfile->original_name,
-				 [=] ()
-				 {
-				   deferred_complaints complaints;
-				   dwarf2_do_build_psymtabs (objfile);
-				 },
-				 // FIXME
-				 15);
+    = dwarf2_task_pool->add_task (std::string ("Scanning DWARF for ")
+				  + objfile->original_name,
+				  [=] ()
+				  {
+				    deferred_complaints complaints;
+				    dwarf2_do_build_psymtabs (objfile);
+				  },
+				  // FIXME
+				  15);
   return false;
 }
 
@@ -6402,7 +6406,7 @@ dwarf2_build_psymtabs (struct objfile *objfile)
 
   if (dwarf2_per_objfile->psym_task != nullptr)
     {
-      dwarf2_task_pool.run (dwarf2_per_objfile->psym_task);
+      dwarf2_task_pool->run (dwarf2_per_objfile->psym_task);
       dwarf2_per_objfile->psym_task.reset ();
     }
 }
@@ -25771,4 +25775,6 @@ Warning: This option must be enabled before gdb reads the file."),
   selftests::register_test ("dw2_expand_symtabs_matching",
 			    selftests::dw2_expand_symtabs_matching::run_test);
 #endif
+
+  dwarf2_task_pool = new task_pool ();
 }
