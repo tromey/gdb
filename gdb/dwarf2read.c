@@ -2507,7 +2507,7 @@ dwarf2_per_objfile::locate_sections (bfd *abfd, asection *sectp,
     }
 
   if (info != nullptr)
-    dwarf2_read_section (objfile, info);
+    dwarf2_read_section (objfile, info, this);
 
   if ((bfd_get_section_flags (abfd, sectp) & (SEC_LOAD | SEC_ALLOC))
       && bfd_section_vma (abfd, sectp) == 0)
@@ -2528,7 +2528,8 @@ dwarf2_section_empty_p (const struct dwarf2_section_info *section)
 /* See dwarf2read.h.  */
 
 void
-dwarf2_read_section (struct objfile *objfile, dwarf2_section_info *info)
+dwarf2_read_section (struct objfile *objfile, dwarf2_section_info *info,
+		     struct dwarf2_per_objfile *dwarf2_per_objfile)
 {
   asection *sectp;
   bfd *abfd;
@@ -2542,8 +2543,8 @@ dwarf2_read_section (struct objfile *objfile, dwarf2_section_info *info)
   if (dwarf2_section_empty_p (info))
     return;
 
-  struct dwarf2_per_objfile *dwarf2_per_objfile
-    = get_dwarf2_per_objfile (objfile);
+  if (dwarf2_per_objfile == nullptr)
+    dwarf2_per_objfile = get_dwarf2_per_objfile (objfile);
 
   sectp = get_section_bfd_section (info);
 

@@ -82,7 +82,8 @@ DEF_VEC_O (dwarf2_section_info_def);
    of the DWO file.
    If the section is compressed, uncompress it before returning.  */
 
-void dwarf2_read_section (struct objfile *objfile, dwarf2_section_info *info);
+void dwarf2_read_section (struct objfile *objfile, dwarf2_section_info *info,
+			  struct dwarf2_per_objfile *dwarf2_per_objfile = nullptr);
 
 struct tu_stats
 {
