@@ -39,7 +39,7 @@
 
 /* Counters used to initialize the bfd identifier.  */
 
-static unsigned int bfd_id_counter = 0;
+static _Atomic unsigned int bfd_id_counter = 0;
 static unsigned int bfd_reserved_id_counter = 0;
 
 /*

@@ -57,16 +57,11 @@ struct gdb_bfd_ref_policy
 {
   static void incref (struct bfd *abfd)
   {
-    /* This is not thread-safe.  */
-    gdb_assert (main_thread_p ());
     gdb_bfd_ref (abfd);
   }
 
   static void decref (struct bfd *abfd)
   {
-    /* This is not thread-safe, and anyway a BFD cannot be deallocated
-       off the main thread.  */
-    gdb_assert (main_thread_p ());
     gdb_bfd_unref (abfd);
   }
 };

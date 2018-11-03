@@ -440,7 +440,7 @@ CODE_FRAGMENT
 .
 */
 
-static bfd_error_type bfd_error = bfd_error_no_error;
+static _Thread_local bfd_error_type bfd_error = bfd_error_no_error;
 static bfd *input_bfd = NULL;
 static bfd_error_type input_error = bfd_error_no_error;
 

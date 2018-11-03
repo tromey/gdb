@@ -33,6 +33,7 @@
 #include "target.h"
 #include "gdb/fileio.h"
 #include "inferior.h"
+#include <mutex>
 
 /* An object of this type is stored in the section's user data when
    mapping a section.  */
@@ -48,6 +49,11 @@ struct gdb_bfd_section_data
   /* If the data was mmapped, this is the map address.  */
   void *map_addr;
 };
+
+/* A mutex that must be held when manipulating `all_bfds',
+   `gdb_bfd_cache', or when manipulating per-BFD data.  */
+
+static std::recursive_mutex gdb_bfd_mutex;
 
 /* A hash table holding every BFD that gdb knows about.  This is not
    to be confused with 'gdb_bfd_cache', which is used for sharing
@@ -405,6 +411,8 @@ gdb_bfd_open (const char *name, const char *target, int fd)
       name += strlen (TARGET_SYSROOT_PREFIX);
     }
 
+  std::lock_guard<std::recursive_mutex> lock (gdb_bfd_mutex);
+
   if (gdb_bfd_cache == NULL)
     gdb_bfd_cache = htab_create_alloc (1, hash_bfd, eq_bfd, NULL,
 				       xcalloc, xfree);
@@ -528,6 +536,8 @@ gdb_bfd_ref (struct bfd *abfd)
   if (abfd == NULL)
     return;
 
+  std::lock_guard<std::recursive_mutex> lock (gdb_bfd_mutex);
+
   gdata = (struct gdb_bfd_data *) bfd_usrdata (abfd);
 
   if (debug_bfd_cache)
@@ -566,6 +576,8 @@ gdb_bfd_unref (struct bfd *abfd)
 
   if (abfd == NULL)
     return;
+
+  std::lock_guard<std::recursive_mutex> lock (gdb_bfd_mutex);
 
   gdata = (struct gdb_bfd_data *) bfd_usrdata (abfd);
   gdb_assert (gdata->refc >= 1);
@@ -647,6 +659,8 @@ gdb_bfd_map_section (asection *sectp, bfd_size_type *size)
   bfd *abfd;
   struct gdb_bfd_section_data *descriptor;
   bfd_byte *data;
+
+  std::lock_guard<std::recursive_mutex> lock (gdb_bfd_mutex);
 
   gdb_assert ((sectp->flags & SEC_RELOC) == 0);
   gdb_assert (size != NULL);
@@ -836,6 +850,8 @@ gdb_bfd_mark_parent (bfd *child, bfd *parent)
 {
   struct gdb_bfd_data *gdata;
 
+  std::lock_guard<std::recursive_mutex> lock (gdb_bfd_mutex);
+
   gdb_bfd_ref (child);
   /* No need to stash the filename here, because we also keep a
      reference on the parent archive.  */
@@ -855,6 +871,8 @@ gdb_bfd_mark_parent (bfd *child, bfd *parent)
 gdb_bfd_ref_ptr
 gdb_bfd_openr_next_archived_file (bfd *archive, bfd *previous)
 {
+  std::lock_guard<std::recursive_mutex> lock (gdb_bfd_mutex);
+
   bfd *result = bfd_openr_next_archived_file (archive, previous);
 
   if (result)
@@ -870,6 +888,7 @@ gdb_bfd_record_inclusion (bfd *includer, bfd *includee)
 {
   struct gdb_bfd_data *gdata;
 
+  std::lock_guard<std::recursive_mutex> lock (gdb_bfd_mutex);
   gdata = (struct gdb_bfd_data *) bfd_usrdata (includer);
   gdata->included_bfds.push_back (gdb_bfd_ref_ptr::new_reference (includee));
 }
@@ -964,6 +983,8 @@ static void
 maintenance_info_bfds (const char *arg, int from_tty)
 {
   struct ui_out *uiout = current_uiout;
+
+  std::lock_guard<std::recursive_mutex> lock (gdb_bfd_mutex);
 
   ui_out_emit_table table_emitter (uiout, 3, -1, "bfds");
   uiout->table_header (10, ui_left, "refcount", "Refcount");

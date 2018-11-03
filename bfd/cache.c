@@ -115,7 +115,7 @@ bfd_cache_max_open (void)
 
 /* The number of BFD files we have open.  */
 
-static int open_files;
+static _Atomic int open_files;
 
 /* Zero, or a pointer to the topmost BFD on the chain.  This is
    used by the <<bfd_cache_lookup>> macro in @file{libbfd.h} to
