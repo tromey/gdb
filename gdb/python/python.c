@@ -961,6 +961,10 @@ gdbpy_event::operator() ()
   gdbpy_ref<> call_result (PyObject_CallObject (event.get (), NULL));
   if (call_result == NULL)
     gdbpy_print_stack ();
+
+  /* Destroy the object now, so we don't have to acquire the GIL in
+     the destructor.  */
+  event.release ();
 }
 
 /* Submit an event to the gdb thread.  */
