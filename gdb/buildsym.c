@@ -244,8 +244,8 @@ buildsym_compunit::finish_block_internal
 	}
     }
 
-  BLOCK_START (block) = start;
-  BLOCK_END (block) = end;
+  block->startaddr = start = start;
+  block->endaddr = end;
 
   /* Put the block in as the value of the symbol that names it.  */
 
@@ -331,7 +331,7 @@ buildsym_compunit::finish_block_internal
 		     paddress (gdbarch, BLOCK_START (block)));
 	}
       /* Better than nothing.  */
-      BLOCK_END (block) = BLOCK_START (block);
+      block->endaddr = BLOCK_START (block);
     }
 
   /* Install this block as the superblock of all blocks made since the
@@ -370,9 +370,9 @@ buildsym_compunit::finish_block_internal
 			     paddress (gdbarch, BLOCK_END (block)));
 		}
 	      if (BLOCK_START (pblock->block) < BLOCK_START (block))
-		BLOCK_START (pblock->block) = BLOCK_START (block);
+		pblock->block->startaddr = BLOCK_START (block);
 	      if (BLOCK_END (pblock->block) > BLOCK_END (block))
-		BLOCK_END (pblock->block) = BLOCK_END (block);
+		pblock->block->endaddr = BLOCK_END (block);
 	    }
 	  BLOCK_SUPERBLOCK (pblock->block) = block;
 	}

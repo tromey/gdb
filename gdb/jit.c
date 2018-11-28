@@ -703,8 +703,8 @@ finalize_symtab (struct gdb_symtab *stab, struct objfile *objfile)
       BLOCK_MULTIDICT (new_block)
 	= mdict_create_linear (&objfile->objfile_obstack, NULL);
       /* The address range.  */
-      BLOCK_START (new_block) = (CORE_ADDR) gdb_block_iter->begin;
-      BLOCK_END (new_block) = (CORE_ADDR) gdb_block_iter->end;
+      new_block->startaddr = (CORE_ADDR) gdb_block_iter->begin;
+      new_block->endaddr = (CORE_ADDR) gdb_block_iter->end;
 
       /* The name.  */
       SYMBOL_DOMAIN (block_name) = VAR_DOMAIN;
@@ -743,8 +743,8 @@ finalize_symtab (struct gdb_symtab *stab, struct objfile *objfile)
       BLOCK_SUPERBLOCK (new_block) = block_iter;
       block_iter = new_block;
 
-      BLOCK_START (new_block) = (CORE_ADDR) begin;
-      BLOCK_END (new_block) = (CORE_ADDR) end;
+      new_block->startaddr = (CORE_ADDR) begin;
+      new_block->endaddr = (CORE_ADDR) end;
 
       BLOCKVECTOR_BLOCK (bv, i) = new_block;
 

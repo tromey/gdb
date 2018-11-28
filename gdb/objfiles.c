@@ -791,16 +791,16 @@ objfile_relocate1 (struct objfile *objfile,
 	    struct mdict_iterator miter;
 
 	    b = BLOCKVECTOR_BLOCK (bv, i);
-	    BLOCK_START (b) += ANOFFSET (delta, block_line_section);
-	    BLOCK_END (b) += ANOFFSET (delta, block_line_section);
+	    b->startaddr += ANOFFSET (delta, block_line_section);
+	    b->endaddr += ANOFFSET (delta, block_line_section);
 
 	    if (BLOCK_RANGES (b) != nullptr)
 	      for (int j = 0; j < BLOCK_NRANGES (b); j++)
 		{
-		  BLOCK_RANGE_START (b, j)
+		  BLOCK_RANGE (b)[j].startaddr
 		    += ANOFFSET (delta, block_line_section);
-		  BLOCK_RANGE_END (b, j) += ANOFFSET (delta,
-						      block_line_section);
+		  BLOCK_RANGE (b)[j].endaddr
+		    += ANOFFSET (delta, block_line_section);
 		}
 
 	    /* We only want to iterate over the local symbols, not any

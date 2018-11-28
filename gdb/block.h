@@ -139,8 +139,8 @@ struct global_block
   struct compunit_symtab *compunit_symtab;
 };
 
-#define BLOCK_START(bl)		(bl)->startaddr
-#define BLOCK_END(bl)		(bl)->endaddr
+#define BLOCK_START(bl)		(((bl)->startaddr) + 0)
+#define BLOCK_END(bl)		(((bl)->endaddr) + 0)
 #define BLOCK_FUNCTION(bl)	(bl)->function
 #define BLOCK_SUPERBLOCK(bl)	(bl)->superblock
 #define BLOCK_MULTIDICT(bl)	(bl)->multidict
@@ -165,11 +165,11 @@ struct global_block
 
 /* Obtain the start address of the Nth range for block BL.  */
 
-#define BLOCK_RANGE_START(bl,n) (BLOCK_RANGE (bl)[n].startaddr)
+#define BLOCK_RANGE_START(bl,n) ((BLOCK_RANGE (bl)[n].startaddr) + 0)
 
 /* Obtain the end address of the Nth range for block BL.  */
 
-#define BLOCK_RANGE_END(bl,n)	(BLOCK_RANGE (bl)[n].endaddr)
+#define BLOCK_RANGE_END(bl,n)	((BLOCK_RANGE (bl)[n].endaddr) + 0)
 
 /* Define the "entry pc" for a block BL to be the lowest (start) address
    for the block when all addresses within the block are contiguous.  If
