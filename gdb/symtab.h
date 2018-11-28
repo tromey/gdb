@@ -1157,6 +1157,10 @@ struct block_symbol
   /* If SYMBOL is not NULL, then this is the block in which the symbol is
      defined.  */
   const struct block *block;
+
+  /* If SYMBOL is not NULL, then this is the objfile in which the
+     symbol is defined.  */
+  struct objfile *objfile;
 };
 
 extern const struct symbol_impl *symbol_impls;

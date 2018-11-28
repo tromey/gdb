@@ -97,6 +97,7 @@ d_lookup_symbol (const struct language_defn *langdef,
       sym.symbol
 	= language_lookup_primitive_type_as_symbol (langdef, gdbarch, name);
       sym.block = NULL;
+      sym.objfile = NULL;
       if (sym.symbol != NULL)
 	return sym;
     }
@@ -251,6 +252,7 @@ find_symbol_in_baseclass (struct type *parent_type, const char *name,
 
   sym.symbol = NULL;
   sym.block = NULL;
+  sym.objfile = NULL;
 
   for (i = 0; i < TYPE_N_BASECLASSES (parent_type); ++i)
     {

@@ -95,7 +95,7 @@ static struct block_symbol
 			    const char *name, const domain_enum domain);
 
 /* See symtab.h.  */
-const struct block_symbol null_block_symbol = { NULL, NULL };
+const struct block_symbol null_block_symbol = { NULL, NULL, NULL };
 
 /* Program space key for finding name and language of "main".  */
 
