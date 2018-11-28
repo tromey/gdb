@@ -831,9 +831,10 @@ objfile_relocate1 (struct objfile *objfile,
 	  if (BLOCK_RANGES (b) != nullptr)
 	    for (int j = 0; j < BLOCK_NRANGES (b); j++)
 	      {
-		BLOCK_RANGE_START (b, j)
+		BLOCK_RANGE (b)[j].startaddr
 		  += ANOFFSET (delta, block_line_section);
-		BLOCK_RANGE_END (b, j) += ANOFFSET (delta, block_line_section);
+		BLOCK_RANGE (b)[j].endaddr
+		  += ANOFFSET (delta, block_line_section);
 	      }
 
 	  /* We only want to iterate over the local symbols, not any
