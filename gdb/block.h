@@ -139,8 +139,8 @@ struct global_block
   struct compunit_symtab *compunit_symtab;
 };
 
-#define BLOCK_START(bl)		(bl)->startaddr
-#define BLOCK_END(bl)		(bl)->endaddr
+#define BLOCK_START(bl)		(((bl)->startaddr) + 0)
+#define BLOCK_END(bl)		(((bl)->endaddr) + 0)
 #define BLOCK_FUNCTION(bl)	(bl)->function
 #define BLOCK_SUPERBLOCK(bl)	(bl)->superblock
 #define BLOCK_DICT(bl)		(bl)->dict

@@ -825,8 +825,8 @@ objfile_relocate1 (struct objfile *objfile,
 	  struct dict_iterator iter;
 
 	  b = BLOCKVECTOR_BLOCK (bv, i);
-	  BLOCK_START (b) += ANOFFSET (delta, block_line_section);
-	  BLOCK_END (b) += ANOFFSET (delta, block_line_section);
+	  b->startaddr += ANOFFSET (delta, block_line_section);
+	  b->endaddr += ANOFFSET (delta, block_line_section);
 
 	  if (BLOCK_RANGES (b) != nullptr)
 	    for (int j = 0; j < BLOCK_NRANGES (b); j++)
