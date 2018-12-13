@@ -1611,8 +1611,12 @@ generated_files = \
 # Flags needed to compile Python code
 PYTHON_CFLAGS = @PYTHON_CFLAGS@
 
-all: gdb$(EXEEXT) $(CONFIG_ALL) gdb-gdb.py gdb-gdb.gdb
+all: gdb$(EXEEXT) $(CONFIG_ALL) gdb-gdb.py gdb-gdb.gdb run-gdb$(EXEEXT)
 	@$(MAKE) $(FLAGS_TO_PASS) DO=all "DODIRS=`echo $(SUBDIRS) | sed 's/testsuite//'`" subdir_do
+
+run-gdb$(EXEEXT): run-gdb.c
+	$(ECHO_CXXLD) $(CC_LD) $(INTERNAL_LDFLAGS) \
+		-o run-gdb$(EXEEXT) $(srcdir)/run-gdb.c -ldl
 
 # Rule for compiling .c files in the top-level gdb directory.
 # The order-only dependencies ensure that we create the build subdirectories.
@@ -1748,6 +1752,7 @@ install-only: $(CONFIG_INSTALL)
 			$(DESTDIR)$(bindir)/$$transformed_name$(EXEEXT) ; \
 		$(SHELL) $(srcdir)/../mkinstalldirs $(DESTDIR)$(includedir)/gdb ; \
 		$(INSTALL_DATA) jit-reader.h $(DESTDIR)$(includedir)/gdb/jit-reader.h
+	$(INSTALL_PROGRAM) run-gdb$(EXEEXT) $(DESTDIR)$(bindir)/run-gdb$(EXEEXT)
 	if test "x$(HAVE_NATIVE_GCORE_TARGET)$(HAVE_NATIVE_GCORE_HOST)" != x; \
 	then \
 	  transformed_name=`t='$(program_transform_name)'; \
