@@ -1,3 +1,11 @@
+2018-12-24  Tom Tromey  <tom@tromey.com>
+
+	* gnu-nat.c (THREAD_STATE_FLAVOR, THREAD_STATE_SIZE)
+	(THREAD_STATE_SET_TRACED, THREAD_STATE_CLEAR_TRACED): Move
+	definitions from nm-i386gnu.h.
+	* configure.nat: Don't reference nm-i386gnu.h.
+	* config/i386/nm-i386gnu.h: Remove.
+
 2018-12-18  Tom Tromey  <tom@tromey.com>
 
 	* dwarf2read.c (dwarf2_find_containing_comp_unit): Don't take

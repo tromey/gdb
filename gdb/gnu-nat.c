@@ -81,6 +81,14 @@ extern "C"
 #include "msg_U.h"
 }
 
+/* Thread flavors used in re-setting the T bit.  */
+#define THREAD_STATE_FLAVOR		i386_REGS_SEGS_STATE
+#define THREAD_STATE_SIZE		i386_THREAD_STATE_COUNT
+#define THREAD_STATE_SET_TRACED(state) \
+  	((struct i386_thread_state *) (state))->efl |= 0x100
+#define THREAD_STATE_CLEAR_TRACED(state) \
+  	((((struct i386_thread_state *) (state))->efl &= ~0x100), 1)
+
 static process_t proc_server = MACH_PORT_NULL;
 
 /* If we've sent a proc_wait_request to the proc server, the pid of the
