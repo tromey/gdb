@@ -171,8 +171,7 @@ thread_cancel_execution_command (struct thread_info *thr)
   if (thr->thread_fsm != NULL)
     {
       thr->thread_fsm->clean_up (thr);
-      delete thr->thread_fsm;
-      thr->thread_fsm = NULL;
+      thr->thread_fsm.reset ();
     }
 }
 

@@ -671,7 +671,6 @@ follow_fork (void)
   CORE_ADDR step_range_start = 0;
   CORE_ADDR step_range_end = 0;
   struct frame_id step_frame_id = { 0 };
-  struct thread_fsm *thread_fsm = NULL;
 
   if (!non_stop)
     {
@@ -713,6 +712,7 @@ follow_fork (void)
     case TARGET_WAITKIND_VFORKED:
       {
 	ptid_t parent, child;
+	std::unique_ptr<thread_fsm> thread_fsm;
 
 	/* If the user did a next/step, etc, over a fork call,
 	   preserve the stepping state in the fork child.  */
@@ -725,7 +725,6 @@ follow_fork (void)
 	    step_frame_id = tp->control.step_frame_id;
 	    exception_resume_breakpoint
 	      = clone_momentary_breakpoint (tp->control.exception_resume_breakpoint);
-	    thread_fsm = tp->thread_fsm;
 
 	    /* For now, delete the parent's sr breakpoint, otherwise,
 	       parent/child sr breakpoints are considered duplicates,
@@ -737,7 +736,8 @@ follow_fork (void)
 	    tp->control.step_range_end = 0;
 	    tp->control.step_frame_id = null_frame_id;
 	    delete_exception_resume_breakpoint (tp);
-	    tp->thread_fsm = NULL;
+	    thread_fsm = std::move (tp->thread_fsm);
+	    tp->thread_fsm.reset ();
 	  }
 
 	parent = inferior_ptid;
@@ -784,7 +784,7 @@ follow_fork (void)
 		    tp->control.step_frame_id = step_frame_id;
 		    tp->control.exception_resume_breakpoint
 		      = exception_resume_breakpoint;
-		    tp->thread_fsm = thread_fsm;
+		    tp->thread_fsm = std::move (thread_fsm);
 		  }
 		else
 		  {
@@ -2812,8 +2812,7 @@ clear_proceed_status_thread (struct thread_info *tp)
   if (!signal_pass_state (tp->suspend.stop_signal))
     tp->suspend.stop_signal = GDB_SIGNAL_0;
 
-  delete tp->thread_fsm;
-  tp->thread_fsm = NULL;
+  tp->thread_fsm.reset ();
 
   tp->control.trap_expected = 0;
   tp->control.step_range_start = 0;
@@ -3876,7 +3875,7 @@ fetch_inferior_event (void *client_data)
 
       if (thr != NULL)
 	{
-	  struct thread_fsm *thread_fsm = thr->thread_fsm;
+	  struct thread_fsm *thread_fsm = thr->thread_fsm.get ();
 
 	  if (thread_fsm != NULL)
 	    should_stop = thread_fsm->should_stop (thr);

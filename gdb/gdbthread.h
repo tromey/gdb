@@ -370,7 +370,7 @@ public:
   /* Pointer to the state machine manager object that handles what is
      left to do for the thread's execution command after the target
      stops.  Several execution commands use it.  */
-  struct thread_fsm *thread_fsm = NULL;
+  std::unique_ptr<struct thread_fsm> thread_fsm;
 
   /* This is used to remember when a fork or vfork event was caught by
      a catchpoint, and thus the event is to be followed at the next

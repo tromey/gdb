@@ -11118,9 +11118,9 @@ until_break_command (const char *arg, int from_tty, int anywhere)
     location_breakpoint = set_momentary_breakpoint (frame_gdbarch, sal,
 						    stack_frame_id, bp_until);
 
-  tp->thread_fsm = new until_break_fsm (command_interp (), tp->global_num,
-					std::move (location_breakpoint),
-					std::move (caller_breakpoint));
+  tp->thread_fsm.reset (new until_break_fsm (command_interp (), tp->global_num,
+					     std::move (location_breakpoint),
+					     std::move (caller_breakpoint)));
 
   discard_cleanups (old_chain);
 

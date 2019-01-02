@@ -586,7 +586,7 @@ run_inferior_call (struct call_thread_fsm *sm,
   /* Associate the FSM with the thread after clear_proceed_status
      (otherwise it'd clear this FSM), and before anything throws, so
      we don't leak it (and any resources it manages).  */
-  call_thread->thread_fsm = sm;
+  call_thread->thread_fsm = std::unique_ptr<thread_fsm> (sm);
 
   disable_watchpoints_before_interactive_call_start ();
 
@@ -1111,12 +1111,11 @@ call_function_by_hand_dummy (struct value *function,
      just below is the place to chop this function in two..  */
 
   {
-    struct thread_fsm *saved_sm;
     struct call_thread_fsm *sm;
 
     /* Save the current FSM.  We'll override it.  */
-    saved_sm = call_thread->thread_fsm;
-    call_thread->thread_fsm = NULL;
+    std::unique_ptr<thread_fsm> saved_sm = std::move (call_thread->thread_fsm);
+    call_thread->thread_fsm.reset ();
 
     /* Save this thread's ptid, we need it later but the thread
        may have exited.  */
@@ -1141,7 +1140,7 @@ call_function_by_hand_dummy (struct value *function,
     if (call_thread->state != THREAD_EXITED)
       {
 	/* The FSM should still be the same.  */
-	gdb_assert (call_thread->thread_fsm == sm);
+	gdb_assert (call_thread->thread_fsm.get () == sm);
 
 	if (call_thread->thread_fsm->finished_p ())
 	  {
@@ -1160,8 +1159,7 @@ call_function_by_hand_dummy (struct value *function,
 	    /* Clean up / destroy the call FSM, and restore the
 	       original one.  */
 	    call_thread->thread_fsm->clean_up (call_thread.get ());
-	    delete call_thread->thread_fsm;
-	    call_thread->thread_fsm = saved_sm;
+	    call_thread->thread_fsm = std::move (saved_sm);
 
 	    maybe_remove_breakpoints ();
 
@@ -1173,8 +1171,7 @@ call_function_by_hand_dummy (struct value *function,
 	/* Didn't complete.  Clean up / destroy the call FSM, and restore the
 	   previous state machine, and handle the error.  */
 	call_thread->thread_fsm->clean_up (call_thread.get ());
-	delete call_thread->thread_fsm;
-	call_thread->thread_fsm = saved_sm;
+	call_thread->thread_fsm = std::move (saved_sm);
       }
   }
 

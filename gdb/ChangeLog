@@ -1,6 +1,17 @@
 2019-01-02  Tom Tromey  <tom@tromey.com>
 
 	* thread.c (thread_cancel_execution_command): Update.
+	* infrun.c (follow_fork, clear_proceed_status_thread)
+	(fetch_inferior_event): Update.
+	* infcmd.c (step_1, until_next_command, finish_command): Update.
+	* infcall.c (run_inferior_call, call_function_by_hand_dummy):
+	Update.
+	* gdbthread.h (class thread_info) <thread_fsm>: Now a unique_ptr.
+	* breakpoint.c (until_break_command): Update.
+
+2019-01-02  Tom Tromey  <tom@tromey.com>
+
+	* thread.c (thread_cancel_execution_command): Update.
 	* thread-fsm.h (struct thread_fsm): Add constructor, destructor,
 	methods.
 	(struct thread_fsm_ops): Remove.
