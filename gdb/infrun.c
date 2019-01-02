@@ -2812,7 +2812,7 @@ clear_proceed_status_thread (struct thread_info *tp)
   if (!signal_pass_state (tp->suspend.stop_signal))
     tp->suspend.stop_signal = GDB_SIGNAL_0;
 
-  thread_fsm_delete (tp->thread_fsm);
+  delete tp->thread_fsm;
   tp->thread_fsm = NULL;
 
   tp->control.trap_expected = 0;
@@ -3726,8 +3726,7 @@ clean_up_just_stopped_threads_fsms (struct execution_control_state *ecs)
 {
   if (ecs->event_thread != NULL
       && ecs->event_thread->thread_fsm != NULL)
-    thread_fsm_clean_up (ecs->event_thread->thread_fsm,
-			 ecs->event_thread);
+    ecs->event_thread->thread_fsm->clean_up (ecs->event_thread);
 
   if (!non_stop)
     {
@@ -3739,7 +3738,7 @@ clean_up_just_stopped_threads_fsms (struct execution_control_state *ecs)
 	    continue;
 
 	  switch_to_thread (thr);
-	  thread_fsm_clean_up (thr->thread_fsm, thr);
+	  thr->thread_fsm->clean_up (thr);
 	}
 
       if (ecs->event_thread != NULL)
@@ -3880,7 +3879,7 @@ fetch_inferior_event (void *client_data)
 	  struct thread_fsm *thread_fsm = thr->thread_fsm;
 
 	  if (thread_fsm != NULL)
-	    should_stop = thread_fsm_should_stop (thread_fsm, thr);
+	    should_stop = thread_fsm->should_stop (thr);
 	}
 
       if (!should_stop)
@@ -3889,16 +3888,13 @@ fetch_inferior_event (void *client_data)
 	}
       else
 	{
-	  int should_notify_stop = 1;
+	  bool should_notify_stop = true;
 	  int proceeded = 0;
 
 	  clean_up_just_stopped_threads_fsms (ecs);
 
 	  if (thr != NULL && thr->thread_fsm != NULL)
-	    {
-	      should_notify_stop
-		= thread_fsm_should_notify_stop (thr->thread_fsm);
-	    }
+	    should_notify_stop = thr->thread_fsm->should_notify_stop ();
 
 	  if (should_notify_stop)
 	    {
@@ -8009,11 +8005,11 @@ print_stop_event (struct ui_out *uiout)
 
   tp = inferior_thread ();
   if (tp->thread_fsm != NULL
-      && thread_fsm_finished_p (tp->thread_fsm))
+      && tp->thread_fsm->finished_p ())
     {
       struct return_value_info *rv;
 
-      rv = thread_fsm_return_value (tp->thread_fsm);
+      rv = tp->thread_fsm->return_value ();
       if (rv != NULL)
 	print_return_value (uiout, rv);
     }
