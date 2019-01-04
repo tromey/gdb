@@ -1540,6 +1540,7 @@ partial_symtab::partial_symtab (struct objfile *objfile, const char *filename)
 {
   objfile->partial_symtabs->psymtabs = this;
 
+  // FIXME
   this->filename = (const char *) bcache (filename, strlen (filename) + 1,
 					  objfile->per_bfd->filename_cache);
 
