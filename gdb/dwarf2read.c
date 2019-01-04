@@ -1502,14 +1502,14 @@ public:
   void read_symtab (struct objfile *) override;
 
   dwarf2_psymtab (struct objfile *objfile, const char *filename,
-		    struct dwarf2_per_cu_data *per_cu)
+		  int cu_index)
     : partial_symtab (objfile, filename, 0),
-      per_cu (per_cu)
+      cu_index (cu_index)
   {
     psymtabs_addrmap_supported = 1;
   }
 
-  struct dwarf2_per_cu_data *per_cu;
+  int cu_index;
 };
 
 
@@ -1907,7 +1907,8 @@ static int partial_die_eq (const void *item_lhs, const void *item_rhs);
 
 static struct dwarf2_per_cu_data *dwarf2_find_containing_comp_unit
   (sect_offset sect_off, unsigned int offset_in_dwz,
-   struct dwarf2_per_objfile *dwarf2_per_objfile);
+   struct dwarf2_per_objfile *dwarf2_per_objfile,
+   int *cu_index = nullptr);
 
 static void prepare_one_comp_unit (struct dwarf2_cu *cu,
 				   struct die_info *comp_unit_die,
@@ -7981,8 +7982,31 @@ get_type_unit_group (struct dwarf2_cu *cu, const struct attribute *stmt_list)
 static struct partial_symtab *
 create_partial_symtab (struct dwarf2_per_cu_data *per_cu, const char *name)
 {
+  struct dwarf2_per_objfile *dwarf2_per_objfile = per_cu->dwarf2_per_objfile;
   struct objfile *objfile = per_cu->dwarf2_per_objfile->objfile;
-  struct partial_symtab *pst = new dwarf2_psymtab (objfile, name, per_cu);
+  int cu_index;
+  if (IS_TYPE_UNIT_GROUP (per_cu))
+    cu_index = 0;
+  else if (per_cu->is_debug_types)
+    {
+      auto iter = std::find_if (dwarf2_per_objfile->all_type_units.begin (),
+				dwarf2_per_objfile->all_type_units.end (),
+				[=] (struct signatured_type *item)
+				{
+				  return per_cu == &item->per_cu;
+				});
+      gdb_assert (iter != dwarf2_per_objfile->all_type_units.end ());
+      cu_index = iter - dwarf2_per_objfile->all_type_units.begin ();
+    }
+  else
+    {
+      struct dwarf2_per_cu_data *found
+	= dwarf2_find_containing_comp_unit (per_cu->sect_off, per_cu->is_dwz,
+					    per_cu->dwarf2_per_objfile,
+					    &cu_index);
+      gdb_assert (found == per_cu);
+    }
+  struct partial_symtab *pst = new dwarf2_psymtab (objfile, name, cu_index);
   per_cu->v.psymtab = pst;
   return pst;
 }
@@ -9473,6 +9497,8 @@ dwarf2_psymtab::read_symtab (struct objfile *objfile)
       if (!readin)
 	{
 	  read_dependencies (objfile);
+	  struct dwarf2_per_cu_data *per_cu
+	    = dwarf2_per_objfile->all_comp_units[cu_index];
 	  gdb_assert (per_cu != nullptr);
 	  dw2_do_instantiate_symtab (per_cu, false);
 	}
@@ -25096,7 +25122,8 @@ dwarf2_version (struct dwarf2_per_cu_data *per_cu)
 static struct dwarf2_per_cu_data *
 dwarf2_find_containing_comp_unit (sect_offset sect_off,
 				  unsigned int offset_in_dwz,
-				  struct dwarf2_per_objfile *dwarf2_per_objfile)
+				  struct dwarf2_per_objfile *dwarf2_per_objfile,
+				  int *cu_index)
 {
   struct dwarf2_per_cu_data *this_cu;
   int low, high;
@@ -25128,6 +25155,8 @@ dwarf2_find_containing_comp_unit (sect_offset sect_off,
 
       gdb_assert (dwarf2_per_objfile->all_comp_units[low-1]->sect_off
 		  <= sect_off);
+      if (cu_index != nullptr)
+	*cu_index = low - 1;
       return dwarf2_per_objfile->all_comp_units[low-1];
     }
   else
@@ -25137,6 +25166,8 @@ dwarf2_find_containing_comp_unit (sect_offset sect_off,
 	  && sect_off >= this_cu->sect_off + this_cu->length)
 	error (_("invalid dwarf2 offset %s"), sect_offset_str (sect_off));
       gdb_assert (sect_off < this_cu->sect_off + this_cu->length);
+      if (cu_index != nullptr)
+	*cu_index = low;
       return this_cu;
     }
 }
