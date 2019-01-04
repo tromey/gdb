@@ -82,17 +82,7 @@ psymtab_storage::~psymtab_storage ()
 struct partial_symtab *
 psymtab_storage::allocate_psymtab ()
 {
-  struct partial_symtab *psymtab;
-
-  if (free_psymtabs != nullptr)
-    {
-      psymtab = free_psymtabs;
-      free_psymtabs = psymtab->next;
-    }
-  else
-    psymtab = XOBNEW (obstack (), struct partial_symtab);
-
-  memset (psymtab, 0, sizeof (struct partial_symtab));
+  struct partial_symtab *psymtab = XCNEW (struct partial_symtab);
 
   psymtab->next = psymtabs;
   psymtabs = psymtab;
@@ -1829,11 +1819,7 @@ psymtab_storage::discard_psymtab (struct partial_symtab *pst)
   while ((*prev_pst) != pst)
     prev_pst = &((*prev_pst)->next);
   (*prev_pst) = pst->next;
-
-  /* Next, put it on a free list for recycling.  */
-
-  pst->next = free_psymtabs;
-  free_psymtabs = pst;
+  xfree (pst);
 }
 
 
