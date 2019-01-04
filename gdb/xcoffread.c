@@ -229,7 +229,7 @@ static CORE_ADDR read_symbol_nvalue (int);
 static struct symbol *process_xcoff_symbol (struct coff_symbol *,
 					    struct objfile *);
 
-static void read_xcoff_symtab (struct objfile *, struct partial_symtab *);
+static void read_xcoff_symtab (struct objfile *, struct legacy_partial_symtab *);
 
 #if 0
 static void add_stab_to_list (char *, struct pending_stabs **);
@@ -604,7 +604,7 @@ allocate_include_entry (void)
 
 /* Global variable to pass the psymtab down to all the routines involved
    in psymtab to symtab processing.  */
-static struct partial_symtab *this_symtab_psymtab;
+static struct legacy_partial_symtab *this_symtab_psymtab;
 
 /* Objfile related to this_symtab_psymtab; set at the same time.  */
 static struct objfile *this_symtab_objfile;
@@ -1002,7 +1002,7 @@ xcoff_next_symbol_text (struct objfile *objfile)
 /* Read symbols for a given partial symbol table.  */
 
 static void
-read_xcoff_symtab (struct objfile *objfile, struct partial_symtab *pst)
+read_xcoff_symtab (struct objfile *objfile, struct legacy_partial_symtab *pst)
 {
   bfd *abfd = objfile->obfd;
   char *raw_auxptr;		/* Pointer to first raw aux entry for sym.  */
@@ -1835,7 +1835,8 @@ find_linenos (struct bfd *abfd, struct bfd_section *asect, void *vpinfo)
 }
 
 static void
-xcoff_psymtab_to_symtab_1 (struct objfile *objfile, struct partial_symtab *pst)
+xcoff_psymtab_to_symtab_1 (struct objfile *objfile,
+			   struct legacy_partial_symtab *pst)
 {
   int i;
 
@@ -1865,7 +1866,10 @@ xcoff_psymtab_to_symtab_1 (struct objfile *objfile, struct partial_symtab *pst)
 	    wrap_here ("");	/* Flush output */
 	    gdb_flush (gdb_stdout);
 	  }
-	xcoff_psymtab_to_symtab_1 (objfile, pst->dependencies[i]);
+	struct legacy_partial_symtab *lpsymtab
+	  = (dynamic_cast<struct legacy_partial_symtab *>
+	     (pst->dependencies[i]));
+	xcoff_psymtab_to_symtab_1 (objfile, lpsymtab);
       }
 
   if (((struct symloc *) pst->read_symtab_private)->numsyms != 0)
@@ -1884,7 +1888,7 @@ xcoff_psymtab_to_symtab_1 (struct objfile *objfile, struct partial_symtab *pst)
    Be verbose about it if the user wants that.  SELF is not NULL.  */
 
 static void
-xcoff_read_symtab (struct partial_symtab *self, struct objfile *objfile)
+xcoff_read_symtab (struct legacy_partial_symtab *self, struct objfile *objfile)
 {
   if (self->readin)
     {
@@ -2024,20 +2028,20 @@ static unsigned int first_fun_line_offset;
    is the address relative to which its symbols are (incremental) or 0
    (normal).  */
 
-static struct partial_symtab *
+static struct legacy_partial_symtab *
 xcoff_start_psymtab (struct objfile *objfile,
 		     const char *filename, int first_symnum)
 {
-  struct partial_symtab *result =
-    start_psymtab_common (objfile,
-			  filename,
-			  /* We fill in textlow later.  */
-			  0);
+  struct legacy_partial_symtab *result =
+    new legacy_partial_symtab (objfile,
+			       filename,
+			       /* We fill in textlow later.  */
+			       0);
 
   result->read_symtab_private =
     XOBNEW (&objfile->objfile_obstack, struct symloc);
   ((struct symloc *) result->read_symtab_private)->first_symnum = first_symnum;
-  result->read_symtab = xcoff_read_symtab;
+  result->do_read_symtab = xcoff_read_symtab;
 
   /* Deduce the source language from the filename for this psymtab.  */
   psymtab_language = deduce_language_from_filename (filename);
@@ -2053,11 +2057,11 @@ xcoff_start_psymtab (struct objfile *objfile,
    INCLUDE_LIST, NUM_INCLUDES, DEPENDENCY_LIST, and NUMBER_DEPENDENCIES
    are the information for includes and dependencies.  */
 
-static struct partial_symtab *
-xcoff_end_psymtab (struct objfile *objfile, struct partial_symtab *pst,
+static struct legacy_partial_symtab *
+xcoff_end_psymtab (struct objfile *objfile, struct legacy_partial_symtab *pst,
 		   const char **include_list, int num_includes,
 		   int capping_symbol_number,
-		   struct partial_symtab **dependency_list,
+		   struct legacy_partial_symtab **dependency_list,
 		   int number_dependencies, int textlow_not_set)
 {
   int i;
@@ -2078,15 +2082,15 @@ xcoff_end_psymtab (struct objfile *objfile, struct partial_symtab *pst,
       pst->dependencies
 	= objfile->partial_symtabs->allocate_dependencies (number_dependencies);
       memcpy (pst->dependencies, dependency_list,
-	      number_dependencies * sizeof (struct partial_symtab *));
+	      number_dependencies * sizeof (struct legacy_partial_symtab *));
     }
   else
     pst->dependencies = 0;
 
   for (i = 0; i < num_includes; i++)
     {
-      struct partial_symtab *subpst =
-	allocate_psymtab (include_list[i], objfile);
+      struct legacy_partial_symtab *subpst =
+	new legacy_partial_symtab (objfile, include_list[i]);
 
       subpst->read_symtab_private = XOBNEW (&objfile->objfile_obstack, symloc);
       ((struct symloc *) subpst->read_symtab_private)->first_symnum = 0;
@@ -2099,7 +2103,7 @@ xcoff_end_psymtab (struct objfile *objfile, struct partial_symtab *pst,
       subpst->dependencies[0] = pst;
       subpst->number_of_dependencies = 1;
 
-      subpst->read_symtab = pst->read_symtab;
+      subpst->do_read_symtab = pst->do_read_symtab;
     }
 
   if (num_includes == 0
@@ -2193,7 +2197,7 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
   unsigned int nsyms;
 
   /* Current partial symtab */
-  struct partial_symtab *pst;
+  struct legacy_partial_symtab *pst;
 
   /* List of current psymtab's include files.  */
   const char **psymtab_include_list;
@@ -2201,7 +2205,7 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
   int includes_used;
 
   /* Index within current psymtab dependency list.  */
-  struct partial_symtab **dependency_list;
+  struct legacy_partial_symtab **dependency_list;
   int dependencies_used, dependencies_allocated;
 
   char *sraw_symbol;
@@ -2215,7 +2219,7 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
   int misc_func_recorded = 0;	/* true if any misc. function.  */
   int textlow_not_set = 1;
 
-  pst = (struct partial_symtab *) 0;
+  pst = (struct legacy_partial_symtab *) 0;
 
   includes_allocated = 30;
   includes_used = 0;
@@ -2225,8 +2229,8 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
   dependencies_allocated = 30;
   dependencies_used = 0;
   dependency_list =
-    (struct partial_symtab **) alloca (dependencies_allocated *
-				       sizeof (struct partial_symtab *));
+    (struct legacy_partial_symtab **) alloca (dependencies_allocated *
+				       sizeof (struct legacy_partial_symtab *));
 
   set_last_source_file (NULL);
 

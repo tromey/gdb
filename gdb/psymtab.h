@@ -83,12 +83,6 @@ public:
     return OBSTACK_CALLOC (obstack (), number, struct partial_symtab *);
   }
 
-  /* Allocate a new psymtab on the psymtab obstack.  The new psymtab
-     will be linked in to the "psymtabs" list, but otherwise all other
-     fields will be zero.  */
-
-  struct partial_symtab *allocate_psymtab ();
-
   typedef next_adapter<struct partial_symtab> partial_symtab_range;
 
   /* A range adapter that makes it possible to iterate over all
