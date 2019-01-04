@@ -1434,6 +1434,49 @@ show_dwarf_max_cache_age (struct ui_file *file, int from_tty,
 			    "DWARF compilation units is %s.\n"),
 		    value);
 }
+
+struct dwarf2_include_psymtab : public partial_symtab
+{
+public:
+
+  void read_symtab (struct objfile *objfile) override
+  {
+    if (!readin)
+      {
+	readin = 1;
+	read_dependencies (objfile);
+      }
+  }
+
+  dwarf2_include_psymtab (struct objfile *objfile, const char *filename,
+			  struct partial_symtab *dependency)
+    : partial_symtab (objfile, filename),
+      sole_dependency (dependency)
+  {
+    dependencies = &sole_dependency;
+    number_of_dependencies = 1;
+  }
+
+  struct partial_symtab *sole_dependency;
+};
+
+struct dwarf2_psymtab : public partial_symtab
+{
+public:
+
+  void read_symtab (struct objfile *) override;
+
+  dwarf2_psymtab (struct objfile *objfile, const char *filename,
+		    struct dwarf2_per_cu_data *per_cu)
+    : partial_symtab (objfile, filename, 0),
+      per_cu (per_cu)
+  {
+    psymtabs_addrmap_supported = 1;
+  }
+
+  struct dwarf2_per_cu_data *per_cu;
+};
+
 
 /* local function prototypes */
 
@@ -1476,11 +1519,6 @@ static void add_partial_enumeration (struct partial_die_info *enum_pdi,
 static void add_partial_subprogram (struct partial_die_info *pdi,
 				    CORE_ADDR *lowpc, CORE_ADDR *highpc,
 				    int need_pc, struct dwarf2_cu *cu);
-
-static void dwarf2_read_symtab (struct partial_symtab *,
-				struct objfile *);
-
-static void psymtab_to_symtab_1 (struct partial_symtab *);
 
 static abbrev_table_up abbrev_table_read_table
   (struct dwarf2_per_objfile *dwarf2_per_objfile, struct dwarf2_section_info *,
@@ -6577,24 +6615,13 @@ static void
 dwarf2_create_include_psymtab (const char *name, struct partial_symtab *pst,
                                struct objfile *objfile)
 {
-  struct partial_symtab *subpst = allocate_psymtab (name, objfile);
+  struct partial_symtab *subpst = new dwarf2_include_psymtab (objfile, name, pst);
 
   if (!IS_ABSOLUTE_PATH (subpst->filename))
     {
       /* It shares objfile->objfile_obstack.  */
       subpst->dirname = pst->dirname;
     }
-
-  subpst->dependencies = objfile->partial_symtabs->allocate_dependencies (1);
-  subpst->dependencies[0] = pst;
-  subpst->number_of_dependencies = 1;
-
-  subpst->read_symtab = pst->read_symtab;
-
-  /* No private part is necessary for include psymtabs.  This property
-     can be used to differentiate between such include psymtabs and
-     the regular ones.  */
-  subpst->read_symtab_private = NULL;
 }
 
 /* Read the Line Number Program data and extract the list of files
@@ -7924,17 +7951,8 @@ static struct partial_symtab *
 create_partial_symtab (struct dwarf2_per_cu_data *per_cu, const char *name)
 {
   struct objfile *objfile = per_cu->dwarf2_per_objfile->objfile;
-  struct partial_symtab *pst;
-
-  pst = start_psymtab_common (objfile, name, 0);
-
-  pst->psymtabs_addrmap_supported = 1;
-
-  /* This is the glue that links PST into GDB's symbol API.  */
-  pst->read_symtab_private = per_cu;
-  pst->read_symtab = dwarf2_read_symtab;
+  struct partial_symtab *pst = new dwarf2_psymtab (objfile, name, per_cu);
   per_cu->v.psymtab = pst;
-
   return pst;
 }
 
@@ -9390,24 +9408,19 @@ locate_pdi_sibling (const struct die_reader_specs *reader,
 /* Expand this partial symbol table into a full symbol table.  SELF is
    not NULL.  */
 
-static void
-dwarf2_read_symtab (struct partial_symtab *self,
-		    struct objfile *objfile)
+void
+dwarf2_psymtab::read_symtab (struct objfile *objfile)
 {
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
 
-  if (self->readin)
-    {
-      warning (_("bug: psymtab for %s is already read in."),
-	       self->filename);
-    }
+  if (readin)
+    warning (_("bug: psymtab for %s is already read in."), filename);
   else
     {
       if (info_verbose)
 	{
-	  printf_filtered (_("Reading in symbols for %s..."),
-			   self->filename);
+	  printf_filtered (_("Reading in symbols for %s..."), filename);
 	  gdb_flush (gdb_stdout);
 	}
 
@@ -9426,7 +9439,12 @@ dwarf2_read_symtab (struct partial_symtab *self,
 
       dwarf2_per_objfile->reading_partial_symbols = 0;
 
-      psymtab_to_symtab_1 (self);
+      if (!readin)
+	{
+	  read_dependencies (objfile);
+	  gdb_assert (per_cu != nullptr);
+	  dw2_do_instantiate_symtab (per_cu, false);
+	}
 
       /* Finish up the debug error message.  */
       if (info_verbose)
@@ -9578,49 +9596,6 @@ process_queue (struct dwarf2_per_objfile *dwarf2_per_objfile)
       fprintf_unfiltered (gdb_stdlog, "Done expanding symtabs of %s.\n",
 			  objfile_name (dwarf2_per_objfile->objfile));
     }
-}
-
-/* Read in full symbols for PST, and anything it depends on.  */
-
-static void
-psymtab_to_symtab_1 (struct partial_symtab *pst)
-{
-  struct dwarf2_per_cu_data *per_cu;
-  int i;
-
-  if (pst->readin)
-    return;
-
-  for (i = 0; i < pst->number_of_dependencies; i++)
-    if (!pst->dependencies[i]->readin
-	&& pst->dependencies[i]->user == NULL)
-      {
-        /* Inform about additional files that need to be read in.  */
-        if (info_verbose)
-          {
-	    /* FIXME: i18n: Need to make this a single string.  */
-            fputs_filtered (" ", gdb_stdout);
-            wrap_here ("");
-            fputs_filtered ("and ", gdb_stdout);
-            wrap_here ("");
-            printf_filtered ("%s...", pst->dependencies[i]->filename);
-            wrap_here ("");     /* Flush output.  */
-            gdb_flush (gdb_stdout);
-          }
-        psymtab_to_symtab_1 (pst->dependencies[i]);
-      }
-
-  per_cu = (struct dwarf2_per_cu_data *) pst->read_symtab_private;
-
-  if (per_cu == NULL)
-    {
-      /* It's an include file, no symbols to read for it.
-         Everything is in the parent symtab.  */
-      pst->readin = 1;
-      return;
-    }
-
-  dw2_do_instantiate_symtab (per_cu, false);
 }
 
 /* Trivial hash function for die_info: the hash value of a DIE

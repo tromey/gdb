@@ -75,19 +75,12 @@ psymtab_storage::psymtab_storage ()
 psymtab_storage::~psymtab_storage ()
 {
   psymbol_bcache_free (psymbol_cache);
-}
-
-/* See psymtab.h.  */
-
-struct partial_symtab *
-psymtab_storage::allocate_psymtab ()
-{
-  struct partial_symtab *psymtab = XCNEW (struct partial_symtab);
-
-  psymtab->next = psymtabs;
-  psymtabs = psymtab;
-
-  return psymtab;
+  while (psymtabs != nullptr)
+    {
+      struct partial_symtab *elt = psymtabs;
+      psymtabs = psymtabs->next;
+      delete elt;
+    }
 }
 
 
@@ -779,7 +772,7 @@ psymtab_to_symtab (struct objfile *objfile, struct partial_symtab *pst)
     {
       scoped_restore decrementer = increment_reading_symtab ();
 
-      (*pst->read_symtab) (pst, objfile);
+      pst->read_symtab (objfile);
     }
 
   return pst->compunit_symtab;
@@ -963,8 +956,6 @@ dump_psymtab (struct objfile *objfile, struct partial_symtab *psymtab,
       fprintf_filtered (outfile,
 			"  Full symtab was read (at ");
       gdb_print_host_address (psymtab->compunit_symtab, outfile);
-      fprintf_filtered (outfile, " by function at ");
-      gdb_print_host_address (psymtab->read_symtab, outfile);
       fprintf_filtered (outfile, ")\n");
     }
 
@@ -1542,24 +1533,71 @@ sort_pst_symbols (struct objfile *objfile, struct partial_symtab *pst)
     });
 }
 
-/* Allocate and partially fill a partial symtab.  It will be
-   completely filled at the end of the symbol list.
+/* See psympriv.h.  */
 
-   FILENAME is the name of the symbol-file we are reading from.  */
-
-struct partial_symtab *
-start_psymtab_common (struct objfile *objfile,
-		      const char *filename,
-		      CORE_ADDR textlow)
+partial_symtab::partial_symtab (struct objfile *objfile, const char *filename)
+  : next (objfile->partial_symtabs->psymtabs)
 {
-  struct partial_symtab *psymtab;
+  objfile->partial_symtabs->psymtabs = this;
 
-  psymtab = allocate_psymtab (filename, objfile);
-  psymtab->set_text_low (textlow);
-  psymtab->set_text_high (psymtab->raw_text_low ()); /* default */
-  psymtab->globals_offset = objfile->partial_symtabs->global_psymbols.size ();
-  psymtab->statics_offset = objfile->partial_symtabs->static_psymbols.size ();
-  return psymtab;
+  this->filename = (const char *) bcache (filename, strlen (filename) + 1,
+					  objfile->per_bfd->filename_cache);
+
+  if (symtab_create_debug)
+    {
+      /* Be a bit clever with debugging messages, and don't print objfile
+	 every time, only when it changes.  */
+      static char *last_objfile_name = NULL;
+
+      if (last_objfile_name == NULL
+	  || strcmp (last_objfile_name, objfile_name (objfile)) != 0)
+	{
+	  xfree (last_objfile_name);
+	  last_objfile_name = xstrdup (objfile_name (objfile));
+	  fprintf_filtered (gdb_stdlog,
+			    "Creating one or more psymtabs for objfile %s ...\n",
+			    last_objfile_name);
+	}
+      fprintf_filtered (gdb_stdlog,
+			"Created psymtab %s for module %s.\n",
+			host_address_to_string (this), filename);
+    }
+}
+
+/* See psympriv.h.  */
+
+partial_symtab::partial_symtab (struct objfile *objfile,
+				const char *filename,
+				CORE_ADDR textlow)
+  : partial_symtab (objfile, filename)
+{
+  set_text_low (textlow);
+  set_text_high (raw_text_low ()); /* default */
+  globals_offset = objfile->partial_symtabs->global_psymbols.size ();
+  statics_offset = objfile->partial_symtabs->static_psymbols.size ();
+}
+
+/* See psympriv.h.  */
+
+void
+partial_symtab::read_dependencies (struct objfile *objfile)
+{
+  for (int i = 0; i < number_of_dependencies; i++)
+    if (!dependencies[i]->readin && dependencies[i]->user == NULL)
+      {
+	/* Inform about additional files to be read in.  */
+	if (info_verbose)
+	  {
+	    fputs_filtered (" ", gdb_stdout);
+	    wrap_here ("");
+	    fputs_filtered ("and ", gdb_stdout);
+	    wrap_here ("");
+	    printf_filtered ("%s...", dependencies[i]->filename);
+	    wrap_here ("");	/* Flush output */
+	    gdb_flush (gdb_stdout);
+	  }
+	dependencies[i]->read_symtab (objfile);
+      }
 }
 
 /* Perform "finishing up" operations of a partial symtab.  */
@@ -1765,42 +1803,6 @@ init_psymbol_list (struct objfile *objfile, int total_symbols)
     }
 }
 
-/* See psympriv.h.  */
-
-struct partial_symtab *
-allocate_psymtab (const char *filename, struct objfile *objfile)
-{
-  struct partial_symtab *psymtab
-    = objfile->partial_symtabs->allocate_psymtab ();
-
-  psymtab->filename
-    = (const char *) bcache (filename, strlen (filename) + 1,
-			     objfile->per_bfd->filename_cache);
-  psymtab->compunit_symtab = NULL;
-
-  if (symtab_create_debug)
-    {
-      /* Be a bit clever with debugging messages, and don't print objfile
-	 every time, only when it changes.  */
-      static char *last_objfile_name = NULL;
-
-      if (last_objfile_name == NULL
-	  || strcmp (last_objfile_name, objfile_name (objfile)) != 0)
-	{
-	  xfree (last_objfile_name);
-	  last_objfile_name = xstrdup (objfile_name (objfile));
-	  fprintf_filtered (gdb_stdlog,
-			    "Creating one or more psymtabs for objfile %s ...\n",
-			    last_objfile_name);
-	}
-      fprintf_filtered (gdb_stdlog,
-			"Created psymtab %s for module %s.\n",
-			host_address_to_string (psymtab), filename);
-    }
-
-  return psymtab;
-}
-
 void
 psymtab_storage::discard_psymtab (struct partial_symtab *pst)
 {
@@ -1819,7 +1821,7 @@ psymtab_storage::discard_psymtab (struct partial_symtab *pst)
   while ((*prev_pst) != pst)
     prev_pst = &((*prev_pst)->next);
   (*prev_pst) = pst->next;
-  xfree (pst);
+  delete pst;
 }
 
 
