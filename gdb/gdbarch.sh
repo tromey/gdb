@@ -25,10 +25,18 @@ LANG=C ; export LANG
 LC_ALL=C ; export LC_ALL
 
 
+update=
+if test "x$1" = "x-update"; then
+    update=yes
+fi
+
 compare_new ()
 {
     file=$1
-    if test ! -r ${file}
+    if test -n "$update"
+    then
+	../move-if-change new-${file} ${file}
+    elif test ! -r ${file}
     then
 	echo "${file} missing? cp new-${file} ${file}" 1>&2
     elif diff -u ${file} new-${file}
@@ -1671,7 +1679,6 @@ gdbarch_num_cooked_regs (gdbarch *arch)
 #endif
 EOF
 exec 1>&2
-#../move-if-change new-gdbarch.h gdbarch.h
 compare_new gdbarch.h
 
 
@@ -2580,5 +2587,4 @@ EOF
 
 # close things off
 exec 1>&2
-#../move-if-change new-gdbarch.c gdbarch.c
 compare_new gdbarch.c

@@ -1,3 +1,10 @@
+2019-01-20  Tom Tromey  <tom@tromey.com>
+
+	* gdbarch.sh: Add -update option.
+	(compare_new): Implement -update.
+	* Makefile.in (update-gdbarch): New target.
+	(update-target): New target.
+
 2019-01-16  Tom Tromey  <tom@tromey.com>
 
 	* objfiles.h (struct minimal_symbol_iterator): Rename.  Move

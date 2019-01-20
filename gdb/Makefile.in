@@ -1831,6 +1831,15 @@ test-cp-name-parser$(EXEEXT): test-cp-name-parser.o $(LIBIBERTY)
 		-o test-cp-name-parser$(EXEEXT) test-cp-name-parser.o \
 		$(LIBIBERTY)
 
+# Update gdbarch.[ch].
+update-gdbarch:
+	cd $(srcdir) && ./gdbarch.sh -update
+.PHONY: update-gdbarch
+
+update-target:
+	cd $(srcdir) && ./make-target-delegates target.h > target-delegates.c
+.PHONY: update-target
+
 # We do this by grepping through sources.  If that turns out to be too slow,
 # maybe we could just require every .o file to have an initialization routine
 # of a given name (top.o -> _initialize_top, etc.).
