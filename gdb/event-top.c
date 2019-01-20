@@ -922,7 +922,11 @@ async_init_signals (void)
 void
 quit_serial_event_set (void)
 {
-  serial_event_set (quit_serial_event);
+  /* This could possibly be called early in startup, before
+     quit_serial_event is initialized, so check that this is non-null.
+     See PR gdb/24109.  */
+  if (quit_serial_event != nullptr)
+    serial_event_set (quit_serial_event);
 }
 
 /* See defs.h.  */
