@@ -1,3 +1,13 @@
+2019-01-28  Tom Tromey  <tom@tromey.com>
+
+	* rs6000-tdep.c (skip_prologue): Remove indentation directives.
+	* defs.h: Remove indentation directives.
+	* arm-tdep.c: Remove indentation directives.
+	* gdbarch.h, gdbarch.c: Rebuild.
+	* gdbarch.sh: Don't emit indentation directives.
+	* stabsread.c: Remove indentation directives.
+	* common/common-exceptions.h: Remove indentation directives.
+
 2019-01-25  Tom Tromey  <tom@tromey.com>
 
 	* Makefile.in (GDB_CFLAGS): Don't add -I for common.

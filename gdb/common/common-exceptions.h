@@ -158,8 +158,6 @@ extern void exception_rethrow (void) ATTRIBUTE_NORETURN;
 
    For instance:
 
-   *INDENT-OFF*
-
    TRY
      {
      }
@@ -308,8 +306,6 @@ struct gdb_quit_bad_alloc
     *self = ex;
   }
 };
-
-/* *INDENT-ON* */
 
 /* Throw an exception (as described by "struct gdb_exception"),
    landing in the inner most containing exception handler established

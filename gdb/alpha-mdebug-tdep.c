@@ -30,7 +30,6 @@
 
 /* FIXME: Some of this code should perhaps be merged with mips.  */
 
-/* *INDENT-OFF* */
 /* Layout of a stack frame on the alpha:
 
                 |				|
