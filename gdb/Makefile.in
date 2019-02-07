@@ -1632,6 +1632,10 @@ PYTHON_CFLAGS = @PYTHON_CFLAGS@
 all: gdb$(EXEEXT) $(CONFIG_ALL) gdb-gdb.py gdb-gdb.gdb
 	@$(MAKE) $(FLAGS_TO_PASS) DO=all "DODIRS=`echo $(SUBDIRS) | sed 's/testsuite//'`" subdir_do
 
+defs.h.gch: defs.h | $(CONFIG_DEP_SUBDIR)
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
 # Rule for compiling .c files in the top-level gdb directory.
 # The order-only dependencies ensure that we create the build subdirectories.
 %.o: %.c | $(CONFIG_DEP_SUBDIR)
