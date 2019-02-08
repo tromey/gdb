@@ -54,12 +54,6 @@ static void generic_tls_error (void) ATTRIBUTE_NORETURN;
 
 static void default_terminal_info (struct target_ops *, const char *, int);
 
-static int default_watchpoint_addr_within_range (struct target_ops *,
-						 CORE_ADDR, CORE_ADDR, int);
-
-static int default_region_ok_for_hw_watchpoint (struct target_ops *,
-						CORE_ADDR, int);
-
 static void default_rcmd (struct target_ops *, const char *, struct ui_file *);
 
 static ptid_t default_get_ada_task_ptid (struct target_ops *self,
@@ -3091,17 +3085,15 @@ target_fileio_read_stralloc (struct inferior *inf, const char *filename)
 }
 
 
-static int
-default_region_ok_for_hw_watchpoint (struct target_ops *self,
-				     CORE_ADDR addr, int len)
+int
+target_ops::default_region_ok_for_hw_watchpoint (CORE_ADDR addr, int len)
 {
   return (len <= gdbarch_ptr_bit (target_gdbarch ()) / TARGET_CHAR_BIT);
 }
 
-static int
-default_watchpoint_addr_within_range (struct target_ops *target,
-				      CORE_ADDR addr,
-				      CORE_ADDR start, int length)
+int
+target_ops::default_watchpoint_addr_within_range (CORE_ADDR addr,
+						  CORE_ADDR start, int length)
 {
   return addr >= start && addr < start + length;
 }

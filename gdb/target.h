@@ -562,12 +562,12 @@ struct target_ops
     virtual bool stopped_data_address (CORE_ADDR *)
       TARGET_DEFAULT_RETURN (false);
     virtual bool watchpoint_addr_within_range (CORE_ADDR, CORE_ADDR, int)
-      TARGET_DEFAULT_FUNC (default_watchpoint_addr_within_range);
+      TARGET_DEFAULT_RETURN (default_watchpoint_addr_within_range);
 
     /* Documentation of this routine is provided with the corresponding
        target_* macro.  */
     virtual int region_ok_for_hw_watchpoint (CORE_ADDR, int)
-      TARGET_DEFAULT_FUNC (default_region_ok_for_hw_watchpoint);
+      TARGET_DEFAULT_RETURN (default_region_ok_for_hw_watchpoint);
 
     virtual bool can_accel_watchpoint_condition (CORE_ADDR, int, int,
 						 struct expression *)
@@ -1299,10 +1299,13 @@ public:
 
 protected:
 
-  /* The default target_ops::wait implementation.  */
-
   ptid_t default_wait (ptid_t ptid, struct target_waitstatus *status,
 		       int options);
+
+  int default_watchpoint_addr_within_range (CORE_ADDR addr, CORE_ADDR start,
+					    int length);
+
+  int default_region_ok_for_hw_watchpoint (CORE_ADDR addr, int len);
 
 private:
   /* The stratum of the top target.  */
