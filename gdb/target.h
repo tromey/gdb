@@ -1407,8 +1407,6 @@ extern void target_commit_resume ();
    active.  */
 extern scoped_restore_tmpl<int> make_scoped_defer_target_commit_resume ();
 
-/* For target_read_memory see target/target.h.  */
-
 /* The default target_ops::to_wait implementation.  */
 
 extern ptid_t default_target_wait (struct target_ops *ops,
