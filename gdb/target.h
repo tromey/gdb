@@ -483,7 +483,7 @@ struct target_ops
       TARGET_DEFAULT_IGNORE ();
     virtual ptid_t wait (ptid_t, struct target_waitstatus *,
 			 int TARGET_DEBUG_PRINTER (target_debug_print_options))
-      TARGET_DEFAULT_FUNC (default_target_wait);
+      TARGET_DEFAULT_FUNC (default_wait);
     virtual void fetch_registers (struct regcache *, int)
       TARGET_DEFAULT_IGNORE ();
     virtual void store_registers (struct regcache *, int)
@@ -1297,6 +1297,13 @@ public:
   /* Find the next target down the stack from the specified target.  */
   target_ops *find_beneath (const target_ops *t) const;
 
+protected:
+
+  /* The default target_ops::wait implementation.  */
+
+  ptid_t default_wait (ptid_t ptid, struct target_waitstatus *status,
+		       int options);
+
 private:
   /* The stratum of the top target.  */
   enum strata m_top {};
@@ -1406,13 +1413,6 @@ extern void target_commit_resume ();
    target_commit_resume on destruction, if it was previously
    active.  */
 extern scoped_restore_tmpl<int> make_scoped_defer_target_commit_resume ();
-
-/* The default target_ops::to_wait implementation.  */
-
-extern ptid_t default_target_wait (struct target_ops *ops,
-				   ptid_t ptid,
-				   struct target_waitstatus *status,
-				   int options);
 
 /* Fetch at least register REGNO, or all regs if regno == -1.  No result.  */
 

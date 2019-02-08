@@ -461,7 +461,7 @@ target_ops::wait (ptid_t arg0, struct target_waitstatus *arg1, int arg2)
 ptid_t
 dummy_target::wait (ptid_t arg0, struct target_waitstatus *arg1, int arg2)
 {
-  return default_target_wait (this, arg0, arg1, arg2);
+  return default_wait (this, arg0, arg1, arg2);
 }
 
 ptid_t

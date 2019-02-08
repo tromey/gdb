@@ -2044,9 +2044,8 @@ target_wait (ptid_t ptid, struct target_waitstatus *status, int options)
 /* See target.h.  */
 
 ptid_t
-default_target_wait (struct target_ops *ops,
-		     ptid_t ptid, struct target_waitstatus *status,
-		     int options)
+target_ops::default_wait (ptid_t ptid, struct target_waitstatus *status,
+			  int options)
 {
   status->kind = TARGET_WAITKIND_IGNORE;
   return minus_one_ptid;
