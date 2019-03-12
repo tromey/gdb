@@ -6347,6 +6347,12 @@ dwarf2_initialize_objfile (struct objfile *objfile, dw_index_kind *index_kind)
       return true;
     }
 
+  /* The index methods cannot handle simultaneous non-DWARF debug
+     information present in OBJFILE.  If there is such debug info
+     present, never use an index.  */
+  if (objfile_has_partial_symbols (objfile))
+    return false;
+
   if (dwarf2_read_debug_names (dwarf2_per_objfile))
     {
       *index_kind = dw_index_kind::DEBUG_NAMES;

@@ -1246,11 +1246,7 @@ elf_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
     {
       dw_index_kind index_kind;
 
-      /* elf_sym_fns_gdb_index cannot handle simultaneous non-DWARF
-	 debug information present in OBJFILE.  If there is such debug
-	 info present never use an index.  */
-      if (!objfile_has_partial_symbols (objfile)
-	  && dwarf2_initialize_objfile (objfile, &index_kind))
+      if (dwarf2_initialize_objfile (objfile, &index_kind))
 	{
 	  switch (index_kind)
 	    {
