@@ -228,12 +228,6 @@ struct partial_symtab
   int statics_offset = 0;
   int n_static_syms = 0;
 
-  /* Non-zero if the symtab corresponding to this psymtab has been
-     readin.  This is located here so that this structure packs better
-     on 64-bit systems.  */
-
-  unsigned char readin = 0;
-
   /* True iff objfile->psymtabs_addrmap is properly populated for this
      partial_symtab.  For discontiguous overlapping psymtabs is the only usable
      info in PSYMTABS_ADDRMAP.  */
@@ -253,14 +247,17 @@ struct partial_symtab
   unsigned int text_low_valid : 1;
   unsigned int text_high_valid : 1;
 
-  /* Pointer to compunit eventually allocated for this source file, 0 if
-     !readin or if we haven't looked for the symtab after it was readin.  */
-
-  struct compunit_symtab *compunit_symtab = nullptr;
-
   /* Read in the symtab corresponding to this psymtab.  */
 
   virtual void read_symtab (struct objfile *) = 0;
+
+  virtual bool readin_p (struct objfile *) const = 0;
+
+  /* Return the compunit allocated for this source file.  Return 0 if
+     !readin or if we haven't looked for the symtab after it was
+     readin.  */
+
+  virtual struct compunit_symtab *get_compunit_symtab (struct objfile *) = 0;
 
   virtual ~partial_symtab ()
   {
@@ -305,6 +302,27 @@ struct legacy_partial_symtab : public partial_symtab
   {
     do_read_symtab (this, objfile);
   }
+
+  struct compunit_symtab *get_compunit_symtab (struct objfile *) override
+  {
+    return compunit_symtab;
+  }
+
+  virtual bool readin_p (struct objfile *) const override
+  {
+    return readin;
+  }
+
+  /* Non-zero if the symtab corresponding to this psymtab has been
+     readin.  This is located here so that this structure packs better
+     on 64-bit systems.  */
+
+  unsigned char readin = 0;
+
+  /* Pointer to compunit eventually allocated for this source file, 0 if
+     !readin or if we haven't looked for the symtab after it was readin.  */
+
+  struct compunit_symtab *compunit_symtab = nullptr;
 
   void (*do_read_symtab) (struct legacy_partial_symtab *,
 			  struct objfile *) = nullptr;

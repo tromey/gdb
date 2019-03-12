@@ -1478,7 +1478,7 @@ public:
   {
     if (!readin)
       {
-	readin = 1;
+	readin = true;
 	read_dependencies (objfile);
       }
   }
@@ -1492,6 +1492,18 @@ public:
     number_of_dependencies = 1;
   }
 
+  bool readin_p (struct objfile *) const override
+  {
+    return readin;
+  }
+
+  struct compunit_symtab *get_compunit_symtab (struct objfile *) override
+  {
+    return nullptr;
+  }
+
+  bool readin = false;
+
   struct partial_symtab *sole_dependency;
 };
 
@@ -1500,6 +1512,10 @@ struct dwarf2_psymtab : public partial_symtab
 public:
 
   void read_symtab (struct objfile *) override;
+
+  struct compunit_symtab *get_compunit_symtab (struct objfile *) override;
+
+  virtual bool readin_p (struct objfile *) const override;
 
   dwarf2_psymtab (struct objfile *objfile, const char *filename,
 		  int cu_index)
@@ -2945,7 +2961,7 @@ dw2_do_instantiate_symtab (struct dwarf2_per_cu_data *per_cu, bool skip_partial)
 
   if (dwarf2_per_objfile->using_index
       ? per_cu->v.quick->compunit_symtab == NULL
-      : (per_cu->v.psymtab == NULL || !per_cu->v.psymtab->readin))
+      : (per_cu->v.psymtab == NULL || !per_cu->readin))
     {
       queue_comp_unit (per_cu, language_minimal);
       load_cu (per_cu, skip_partial);
@@ -9461,6 +9477,34 @@ locate_pdi_sibling (const struct die_reader_specs *reader,
   return skip_children (reader, info_ptr);
 }
 
+struct compunit_symtab *
+dwarf2_psymtab::get_compunit_symtab (struct objfile *objfile)
+{
+  struct dwarf2_per_objfile *dwarf2_per_objfile
+    = get_dwarf2_per_objfile (objfile);
+
+  struct dwarf2_per_cu_data *per_cu = dwarf2_per_objfile->get_cutu (cu_index);
+  gdb_assert (per_cu != nullptr);
+
+  if (!per_cu->readin)
+    return nullptr;
+  if (dwarf2_per_objfile->using_index)
+    return per_cu->v.quick->compunit_symtab;
+  return per_cu->v.compunit_symtab;
+}
+
+bool
+dwarf2_psymtab::readin_p (struct objfile *objfile) const
+{
+  struct dwarf2_per_objfile *dwarf2_per_objfile
+    = get_dwarf2_per_objfile (objfile);
+
+  struct dwarf2_per_cu_data *per_cu = dwarf2_per_objfile->get_cutu (cu_index);
+  gdb_assert (per_cu != nullptr);
+
+  return per_cu->readin;
+}
+
 /* Expand this partial symbol table into a full symbol table.  SELF is
    not NULL.  */
 
@@ -9470,7 +9514,10 @@ dwarf2_psymtab::read_symtab (struct objfile *objfile)
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
 
-  if (readin)
+  struct dwarf2_per_cu_data *per_cu = dwarf2_per_objfile->get_cutu (cu_index);
+  gdb_assert (per_cu != nullptr);
+
+  if (per_cu->readin)
     warning (_("bug: psymtab for %s is already read in."), filename);
   else
     {
@@ -9495,14 +9542,8 @@ dwarf2_psymtab::read_symtab (struct objfile *objfile)
 
       dwarf2_per_objfile->reading_partial_symbols = 0;
 
-      if (!readin)
-	{
-	  read_dependencies (objfile);
-	  struct dwarf2_per_cu_data *per_cu
-	    = dwarf2_per_objfile->get_cutu (cu_index);
-	  gdb_assert (per_cu != nullptr);
-	  dw2_do_instantiate_symtab (per_cu, false);
-	}
+      read_dependencies (objfile);
+      dw2_do_instantiate_symtab (per_cu, false);
 
       /* Finish up the debug error message.  */
       if (info_verbose)
@@ -9603,7 +9644,7 @@ process_queue (struct dwarf2_per_objfile *dwarf2_per_objfile)
     {
       if ((dwarf2_per_objfile->using_index
 	   ? !item->per_cu->v.quick->compunit_symtab
-	   : (item->per_cu->v.psymtab && !item->per_cu->v.psymtab->readin))
+	   : (item->per_cu->v.psymtab && !item->per_cu->readin))
 	  /* Skip dummy CUs.  */
 	  && item->per_cu->cu != NULL)
 	{
@@ -10209,9 +10250,11 @@ rust_union_quirks (struct dwarf2_cu *cu)
 static struct compunit_symtab *
 get_compunit_symtab (struct dwarf2_per_cu_data *per_cu)
 {
-  return (per_cu->dwarf2_per_objfile->using_index
-	  ? per_cu->v.quick->compunit_symtab
-	  : per_cu->v.psymtab->compunit_symtab);
+  if (per_cu->dwarf2_per_objfile->using_index)
+    return per_cu->v.quick->compunit_symtab;
+  if (per_cu->readin)
+    return nullptr;
+  return per_cu->v.compunit_symtab;
 }
 
 /* A helper function for computing the list of all symbol tables
@@ -10425,14 +10468,11 @@ process_full_comp_unit (struct dwarf2_per_cu_data *per_cu,
       cust->call_site_htab = cu->call_site_htab;
     }
 
+  per_cu->readin = 1;
   if (dwarf2_per_objfile->using_index)
     per_cu->v.quick->compunit_symtab = cust;
   else
-    {
-      struct partial_symtab *pst = per_cu->v.psymtab;
-      pst->compunit_symtab = cust;
-      pst->readin = 1;
-    }
+    per_cu->v.compunit_symtab = cust;
 
   /* Push it for inclusion processing later.  */
   dwarf2_per_objfile->just_read_cus.push_back (per_cu);
@@ -10505,14 +10545,11 @@ process_full_type_unit (struct dwarf2_per_cu_data *per_cu,
       cust = sig_type->type_unit_group->compunit_symtab;
     }
 
+  per_cu->readin = 1;
   if (dwarf2_per_objfile->using_index)
     per_cu->v.quick->compunit_symtab = cust;
   else
-    {
-      struct partial_symtab *pst = per_cu->v.psymtab;
-      pst->compunit_symtab = cust;
-      pst->readin = 1;
-    }
+    per_cu->v.compunit_symtab = cust;
 
   /* Not needed any more.  */
   cu->reset_builder ();

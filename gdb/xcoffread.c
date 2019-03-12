@@ -1853,24 +1853,26 @@ xcoff_psymtab_to_symtab_1 (struct objfile *objfile,
 
   /* Read in all partial symtabs on which this one is dependent.  */
   for (i = 0; i < pst->number_of_dependencies; i++)
-    if (!pst->dependencies[i]->readin)
-      {
-	/* Inform about additional files that need to be read in.  */
-	if (info_verbose)
-	  {
-	    fputs_filtered (" ", gdb_stdout);
-	    wrap_here ("");
-	    fputs_filtered ("and ", gdb_stdout);
-	    wrap_here ("");
-	    printf_filtered ("%s...", pst->dependencies[i]->filename);
-	    wrap_here ("");	/* Flush output */
-	    gdb_flush (gdb_stdout);
-	  }
-	struct legacy_partial_symtab *lpsymtab
-	  = (dynamic_cast<struct legacy_partial_symtab *>
-	     (pst->dependencies[i]));
-	xcoff_psymtab_to_symtab_1 (objfile, lpsymtab);
-      }
+    {
+      struct legacy_partial_symtab *lpsymtab
+	= (dynamic_cast<struct legacy_partial_symtab *>
+	   (pst->dependencies[i]));
+      if (!lpsymtab->readin)
+	{
+	  /* Inform about additional files that need to be read in.  */
+	  if (info_verbose)
+	    {
+	      fputs_filtered (" ", gdb_stdout);
+	      wrap_here ("");
+	      fputs_filtered ("and ", gdb_stdout);
+	      wrap_here ("");
+	      printf_filtered ("%s...", lpsymtab->filename);
+	      wrap_here ("");	/* Flush output */
+	      gdb_flush (gdb_stdout);
+	    }
+	  xcoff_psymtab_to_symtab_1 (objfile, lpsymtab);
+	}
+    }
 
   if (((struct symloc *) pst->read_symtab_private)->numsyms != 0)
     {

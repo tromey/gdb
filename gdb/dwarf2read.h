@@ -315,6 +315,8 @@ struct dwarf2_per_cu_data
      This flag is only valid if is_debug_types is true.  */
   unsigned int tu_read : 1;
 
+  unsigned int readin : 1;
+
   /* The section this CU/TU lives in.
      If the DIE refers to a DWO file, this is always the original die,
      not the DWO file.  */
@@ -335,6 +337,8 @@ struct dwarf2_per_cu_data
     /* The partial symbol table associated with this compilation unit,
        or NULL for unread partial units.  */
     struct partial_symtab *psymtab;
+
+    struct compunit_symtab *compunit_symtab;
 
     /* Data needed by the "quick" functions.  */
     struct dwarf2_per_cu_quick_data *quick;
