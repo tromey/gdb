@@ -216,6 +216,12 @@ public:
      or we are faking it for OBJF_READNOW's sake.  */
   bool using_index = false;
 
+  /* True if we can save our psymbols in the BFD.  */
+  bool can_stash_psymbols = false;
+
+  /* True if we found psymbols in the BFD and are reusing them.  */
+  bool found_bfd_psymbols = false;
+
   /* The mapped index, or NULL if .gdb_index is missing or not being used.  */
   std::unique_ptr<mapped_index> index_table;
 

@@ -110,6 +110,8 @@ static int use_deprecated_index_sections = 0;
 
 static const struct objfile_data *dwarf2_objfile_data_key;
 
+static const struct bfd_data *dwarf2_bfd_data_key;
+
 /* The "aclass" indices for various kinds of computed DWARF symbols.  */
 
 static int dwarf2_locexpr_index;
@@ -6377,6 +6379,22 @@ dwarf2_initialize_objfile (struct objfile *objfile, dw_index_kind *index_kind)
       return true;
     }
 
+  if (objfile->obfd != nullptr)
+    {
+      std::shared_ptr<psymtab_storage> *psymtabs
+	= (std::shared_ptr<psymtab_storage> *) bfd_data (objfile->obfd,
+							 dwarf2_bfd_data_key);
+      if (psymtabs != nullptr)
+	{
+	  objfile->partial_symtabs = *psymtabs;
+	  dwarf2_per_objfile->found_bfd_psymbols = true;
+	}
+    }
+  /* Note that this can also end up as "false" via an early exit,
+     above.  */
+  dwarf2_per_objfile->can_stash_psymbols
+    = !dwarf2_per_objfile->found_bfd_psymbols;
+
   global_index_cache.miss ();
   return false;
 }
@@ -8309,7 +8327,8 @@ build_type_psymtabs_1 (struct dwarf2_per_objfile *dwarf2_per_objfile)
   /* It's up to the caller to not call us multiple times.  */
   gdb_assert (dwarf2_per_objfile->type_unit_groups == NULL);
 
-  if (dwarf2_per_objfile->all_type_units.empty ())
+  if (dwarf2_per_objfile->all_type_units.empty ()
+      || dwarf2_per_objfile->found_bfd_psymbols)
     return;
 
   /* TUs typically share abbrev tables, and there can be way more TUs than
@@ -8557,6 +8576,9 @@ dwarf2_build_psymtabs_hard (struct dwarf2_per_objfile *dwarf2_per_objfile)
 
   create_all_comp_units (dwarf2_per_objfile);
 
+  if (dwarf2_per_objfile->found_bfd_psymbols)
+    return;
+
   /* Create a temporary address map on a temporary obstack.  We later
      copy this to the final obstack.  */
   auto_obstack temp_obstack;
@@ -8588,6 +8610,13 @@ dwarf2_build_psymtabs_hard (struct dwarf2_per_objfile *dwarf2_per_objfile)
 			    objfile->partial_symtabs->obstack ());
   /* At this point we want to keep the address map.  */
   save_psymtabs_addrmap.release ();
+
+  if (dwarf2_per_objfile->can_stash_psymbols)
+    {
+      std::shared_ptr<psymtab_storage> *copy
+	= new std::shared_ptr<psymtab_storage> (objfile->partial_symtabs);
+      set_bfd_data (objfile->obfd, dwarf2_bfd_data_key, copy);
+    }
 
   if (dwarf_read_debug)
     fprintf_unfiltered (gdb_stdlog, "Done building psymtabs of %s\n",
@@ -25340,6 +25369,14 @@ dwarf2_free_objfile (struct objfile *objfile, void *datum)
   delete dwarf2_per_objfile;
 }
 
+static void
+dwarf2_free_bfd (struct bfd *abfd, void *datum)
+{
+  std::shared_ptr<psymtab_storage> *psymtabs
+    = (std::shared_ptr<psymtab_storage> *) datum;
+  delete psymtabs;
+}
+
 /* A set of CU "per_cu" pointer, DIE offset, and GDB type pointer.
    We store these in a hash table separate from the DIEs, and preserve them
    when the DIEs are flushed out of cache.
@@ -25659,6 +25696,8 @@ _initialize_dwarf2_read (void)
 {
   dwarf2_objfile_data_key
     = register_objfile_data_with_cleanup (nullptr, dwarf2_free_objfile);
+  dwarf2_bfd_data_key
+    = register_bfd_data_with_cleanup (nullptr, dwarf2_free_bfd);
 
   add_prefix_cmd ("dwarf", class_maintenance, set_dwarf_cmd, _("\
 Set DWARF specific variables.\n\
