@@ -726,7 +726,7 @@ relocate_one_symbol (struct symbol *sym, struct objfile *objfile,
       && SYMBOL_SECTION (sym) >= 0)
     {
       SET_SYMBOL_VALUE_ADDRESS (sym,
-				SYMBOL_VALUE_ADDRESS (sym)
+				SYMBOL_VALUE_RAW_ADDRESS (sym)
 				+ ANOFFSET (delta, SYMBOL_SECTION (sym)));
     }
 }

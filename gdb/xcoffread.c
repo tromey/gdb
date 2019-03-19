@@ -1678,7 +1678,7 @@ process_xcoff_symbol (struct coff_symbol *cs, struct objfile *objfile)
 	  if (sym != NULL)
 	    {
 	      SET_SYMBOL_VALUE_ADDRESS (sym,
-					SYMBOL_VALUE_ADDRESS (sym)
+					SYMBOL_VALUE_RAW_ADDRESS (sym)
 					+ static_block_base);
 	      SYMBOL_SECTION (sym) = static_block_section;
 	    }

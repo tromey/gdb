@@ -2562,8 +2562,9 @@ info_scope_command (const char *args_in, int from_tty)
 		  break;
 		case LOC_STATIC:
 		  printf_filtered ("in static storage at address ");
-		  printf_filtered ("%s", paddress (gdbarch,
-						   SYMBOL_VALUE_ADDRESS (sym)));
+		  printf_filtered ("%s",
+				   paddress (gdbarch,
+					     SYMBOL_VALUE_RAW_ADDRESS (sym)));
 		  break;
 		case LOC_REGISTER:
 		  /* GDBARCH is the architecture associated with the objfile
@@ -2607,8 +2608,9 @@ info_scope_command (const char *args_in, int from_tty)
 		  continue;
 		case LOC_LABEL:
 		  printf_filtered ("a label at address ");
-		  printf_filtered ("%s", paddress (gdbarch,
-						   SYMBOL_VALUE_ADDRESS (sym)));
+		  printf_filtered ("%s",
+				   paddress (gdbarch,
+					     SYMBOL_VALUE_RAW_ADDRESS (sym)));
 		  break;
 		case LOC_BLOCK:
 		  printf_filtered ("a function at address ");

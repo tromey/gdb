@@ -628,7 +628,7 @@ compile_cplus_convert_struct_or_union_members
 		const char *filename = symbol_symtab (sym.symbol)->filename;
 		unsigned int line = SYMBOL_LINE (sym.symbol);
 
-		physaddr = SYMBOL_VALUE_ADDRESS (sym.symbol);
+		physaddr = BSYMBOL_VALUE_ADDRESS (sym);
 		instance->plugin ().build_decl
 		  ("field physname", field_name,
 		   (GCC_CP_SYMBOL_VARIABLE| get_field_access_flag (type, i)),

@@ -1364,7 +1364,7 @@ info_address_command (const char *exp, int from_tty)
 {
   struct gdbarch *gdbarch;
   int regno;
-  struct symbol *sym;
+  struct block_symbol sym;
   struct bound_minimal_symbol msymbol;
   long val;
   struct obj_section *section;
@@ -1375,8 +1375,8 @@ info_address_command (const char *exp, int from_tty)
     error (_("Argument required."));
 
   sym = lookup_symbol (exp, get_selected_block (&context_pc), VAR_DOMAIN,
-		       &is_a_field_of_this).symbol;
-  if (sym == NULL)
+		       &is_a_field_of_this);
+  if (sym.symbol == NULL)
     {
       if (is_a_field_of_this.type != NULL)
 	{
@@ -1426,25 +1426,26 @@ info_address_command (const char *exp, int from_tty)
     }
 
   printf_filtered ("Symbol \"");
-  fprintf_symbol_filtered (gdb_stdout, SYMBOL_PRINT_NAME (sym),
+  fprintf_symbol_filtered (gdb_stdout, SYMBOL_PRINT_NAME (sym.symbol),
 			   current_language->la_language, DMGL_ANSI);
   printf_filtered ("\" is ");
-  val = SYMBOL_VALUE (sym);
-  if (SYMBOL_OBJFILE_OWNED (sym))
-    section = SYMBOL_OBJ_SECTION (symbol_objfile (sym), sym);
+  val = SYMBOL_VALUE (sym.symbol);
+  if (SYMBOL_OBJFILE_OWNED (sym.symbol))
+    section = SYMBOL_OBJ_SECTION (symbol_objfile (sym.symbol), sym.symbol);
   else
     section = NULL;
-  gdbarch = symbol_arch (sym);
+  gdbarch = symbol_arch (sym.symbol);
 
-  if (SYMBOL_COMPUTED_OPS (sym) != NULL)
+  if (SYMBOL_COMPUTED_OPS (sym.symbol) != NULL)
     {
-      SYMBOL_COMPUTED_OPS (sym)->describe_location (sym, context_pc,
-						    gdb_stdout);
+      SYMBOL_COMPUTED_OPS (sym.symbol)->describe_location (sym.symbol,
+							   context_pc,
+							   gdb_stdout);
       printf_filtered (".\n");
       return;
     }
 
-  switch (SYMBOL_CLASS (sym))
+  switch (SYMBOL_CLASS (sym.symbol))
     {
     case LOC_CONST:
     case LOC_CONST_BYTES:
@@ -1453,7 +1454,7 @@ info_address_command (const char *exp, int from_tty)
 
     case LOC_LABEL:
       printf_filtered ("a label at address ");
-      load_addr = SYMBOL_VALUE_ADDRESS (sym);
+      load_addr = BSYMBOL_VALUE_ADDRESS (sym);
       fputs_styled (paddress (gdbarch, load_addr), address_style.style (),
 		    gdb_stdout);
       if (section_is_overlay (section))
@@ -1477,9 +1478,10 @@ info_address_command (const char *exp, int from_tty)
 	 architecture at this point.  We assume the objfile architecture
 	 will contain all the standard registers that occur in debug info
 	 in that objfile.  */
-      regno = SYMBOL_REGISTER_OPS (sym)->register_number (sym, gdbarch);
+      regno = SYMBOL_REGISTER_OPS (sym.symbol)->register_number (sym.symbol,
+								 gdbarch);
 
-      if (SYMBOL_IS_ARGUMENT (sym))
+      if (SYMBOL_IS_ARGUMENT (sym.symbol))
 	printf_filtered (_("an argument in register %s"),
 			 gdbarch_register_name (gdbarch, regno));
       else
@@ -1489,7 +1491,7 @@ info_address_command (const char *exp, int from_tty)
 
     case LOC_STATIC:
       printf_filtered (_("static storage at address "));
-      load_addr = SYMBOL_VALUE_ADDRESS (sym);
+      load_addr = BSYMBOL_VALUE_ADDRESS (sym);
       fputs_styled (paddress (gdbarch, load_addr), address_style.style (),
 		    gdb_stdout);
       if (section_is_overlay (section))
@@ -1505,7 +1507,8 @@ info_address_command (const char *exp, int from_tty)
 
     case LOC_REGPARM_ADDR:
       /* Note comment at LOC_REGISTER.  */
-      regno = SYMBOL_REGISTER_OPS (sym)->register_number (sym, gdbarch);
+      regno = SYMBOL_REGISTER_OPS (sym.symbol)->register_number (sym.symbol,
+								 gdbarch);
       printf_filtered (_("address of an argument in register %s"),
 		       gdbarch_register_name (gdbarch, regno));
       break;
@@ -1528,7 +1531,7 @@ info_address_command (const char *exp, int from_tty)
 
     case LOC_BLOCK:
       printf_filtered (_("a function at address "));
-      load_addr = BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (sym));
+      load_addr = BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (sym.symbol));
       fputs_styled (paddress (gdbarch, load_addr), address_style.style (),
 		    gdb_stdout);
       if (section_is_overlay (section))
@@ -1546,7 +1549,7 @@ info_address_command (const char *exp, int from_tty)
       {
 	struct bound_minimal_symbol msym;
 
-	msym = lookup_bound_minimal_symbol (SYMBOL_LINKAGE_NAME (sym));
+	msym = lookup_bound_minimal_symbol (SYMBOL_LINKAGE_NAME (sym.symbol));
 	if (msym.minsym == NULL)
 	  printf_filtered ("unresolved");
 	else

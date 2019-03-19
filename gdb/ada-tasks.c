@@ -876,7 +876,7 @@ static void
 ada_tasks_inferior_data_sniffer (struct ada_tasks_inferior_data *data)
 {
   struct bound_minimal_symbol msym;
-  struct symbol *sym;
+  struct block_symbol sym;
 
   /* Return now if already set.  */
   if (data->known_tasks_kind != ADA_TASKS_UNKNOWN)
@@ -892,11 +892,11 @@ ada_tasks_inferior_data_sniffer (struct ada_tasks_inferior_data *data)
 
       /* Try to get pointer type and array length from the symtab.  */
       sym = lookup_symbol_in_language (KNOWN_TASKS_NAME, NULL, VAR_DOMAIN,
-				       language_c, NULL).symbol;
-      if (sym != NULL)
+				       language_c, NULL);
+      if (sym.symbol != NULL)
 	{
 	  /* Validate.  */
-	  struct type *type = check_typedef (SYMBOL_TYPE (sym));
+	  struct type *type = check_typedef (SYMBOL_TYPE (sym.symbol));
 	  struct type *eltype = NULL;
 	  struct type *idxtype = NULL;
 
@@ -937,11 +937,11 @@ ada_tasks_inferior_data_sniffer (struct ada_tasks_inferior_data *data)
       data->known_tasks_length = 1;
 
       sym = lookup_symbol_in_language (KNOWN_TASKS_LIST, NULL, VAR_DOMAIN,
-				       language_c, NULL).symbol;
-      if (sym != NULL && SYMBOL_VALUE_ADDRESS (sym) != 0)
+				       language_c, NULL);
+      if (sym.symbol != NULL && BSYMBOL_VALUE_ADDRESS (sym) != 0)
 	{
 	  /* Validate.  */
-	  struct type *type = check_typedef (SYMBOL_TYPE (sym));
+	  struct type *type = check_typedef (SYMBOL_TYPE (sym.symbol));
 
 	  if (TYPE_CODE (type) == TYPE_CODE_PTR)
 	    {

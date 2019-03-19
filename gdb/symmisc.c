@@ -522,7 +522,7 @@ print_symbol (struct gdbarch *gdbarch, struct symbol *symbol,
   if (SYMBOL_DOMAIN (symbol) == LABEL_DOMAIN)
     {
       fprintf_filtered (outfile, "label %s at ", SYMBOL_PRINT_NAME (symbol));
-      fputs_filtered (paddress (gdbarch, SYMBOL_VALUE_ADDRESS (symbol)),
+      fputs_filtered (paddress (gdbarch, SYMBOL_VALUE_RAW_ADDRESS (symbol)),
 		      outfile);
       if (section)
 	fprintf_filtered (outfile, " section %s\n",
@@ -593,7 +593,8 @@ print_symbol (struct gdbarch *gdbarch, struct symbol *symbol,
 
 	case LOC_STATIC:
 	  fprintf_filtered (outfile, "static at ");
-	  fputs_filtered (paddress (gdbarch, SYMBOL_VALUE_ADDRESS (symbol)),
+	  fputs_filtered (paddress (gdbarch,
+				    SYMBOL_VALUE_RAW_ADDRESS (symbol)),
 			  outfile);
 	  if (section)
 	    fprintf_filtered (outfile, " section %s",
@@ -635,7 +636,8 @@ print_symbol (struct gdbarch *gdbarch, struct symbol *symbol,
 
 	case LOC_LABEL:
 	  fprintf_filtered (outfile, "label at ");
-	  fputs_filtered (paddress (gdbarch, SYMBOL_VALUE_ADDRESS (symbol)),
+	  fputs_filtered (paddress (gdbarch,
+				    SYMBOL_VALUE_RAW_ADDRESS (symbol)),
 			  outfile);
 	  if (section)
 	    fprintf_filtered (outfile, " section %s",

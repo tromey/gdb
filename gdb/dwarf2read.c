@@ -21322,7 +21322,7 @@ var_decode_location (struct attribute *attr, struct symbol *sym,
       SYMBOL_ACLASS_INDEX (sym) = LOC_STATIC;
       fixup_symbol_section (sym, objfile);
       SET_SYMBOL_VALUE_ADDRESS (sym,
-				SYMBOL_VALUE_ADDRESS (sym)
+				SYMBOL_VALUE_RAW_ADDRESS (sym)
 				+ ANOFFSET (objfile->section_offsets,
 					    SYMBOL_SECTION (sym)));
       return;
