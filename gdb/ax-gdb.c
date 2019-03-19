@@ -89,9 +89,6 @@ static void gen_frame_args_address (struct agent_expr *);
 static void gen_frame_locals_address (struct agent_expr *);
 static void gen_offset (struct agent_expr *ax, int offset);
 static void gen_sym_offset (struct agent_expr *, struct symbol *);
-static void gen_var_ref (struct agent_expr *ax, struct axs_value *value,
-			 struct symbol *var);
-
 
 static void gen_int_literal (struct agent_expr *ax,
 			     struct axs_value *value,
@@ -615,28 +612,30 @@ gen_sym_offset (struct agent_expr *ax, struct symbol *var)
    symbol VAR.  Set VALUE to describe the result.  */
 
 static void
-gen_var_ref (struct agent_expr *ax, struct axs_value *value, struct symbol *var)
+gen_var_ref (struct agent_expr *ax, struct axs_value *value,
+	     const struct block_symbol &var)
 {
   /* Dereference any typedefs.  */
-  value->type = check_typedef (SYMBOL_TYPE (var));
+  value->type = check_typedef (SYMBOL_TYPE (var.symbol));
   value->optimized_out = 0;
 
-  if (SYMBOL_COMPUTED_OPS (var) != NULL)
+  if (SYMBOL_COMPUTED_OPS (var.symbol) != NULL)
     {
-      SYMBOL_COMPUTED_OPS (var)->tracepoint_var_ref (var, ax, value);
+      SYMBOL_COMPUTED_OPS (var.symbol)->tracepoint_var_ref (var.symbol,
+							    ax, value);
       return;
     }
 
   /* I'm imitating the code in read_var_value.  */
-  switch (SYMBOL_CLASS (var))
+  switch (SYMBOL_CLASS (var.symbol))
     {
     case LOC_CONST:		/* A constant, like an enum value.  */
-      ax_const_l (ax, (LONGEST) SYMBOL_VALUE (var));
+      ax_const_l (ax, (LONGEST) SYMBOL_VALUE (var.symbol));
       value->kind = axs_rvalue;
       break;
 
     case LOC_LABEL:		/* A goto label, being used as a value.  */
-      ax_const_l (ax, (LONGEST) SYMBOL_VALUE_ADDRESS (var));
+      ax_const_l (ax, (LONGEST) BSYMBOL_VALUE_ADDRESS (var));
       value->kind = axs_rvalue;
       break;
 
@@ -648,20 +647,20 @@ gen_var_ref (struct agent_expr *ax, struct axs_value *value, struct symbol *var)
       /* Variable at a fixed location in memory.  Easy.  */
     case LOC_STATIC:
       /* Push the address of the variable.  */
-      ax_const_l (ax, SYMBOL_VALUE_ADDRESS (var));
+      ax_const_l (ax, BSYMBOL_VALUE_ADDRESS (var));
       value->kind = axs_lvalue_memory;
       break;
 
     case LOC_ARG:		/* var lives in argument area of frame */
       gen_frame_args_address (ax);
-      gen_sym_offset (ax, var);
+      gen_sym_offset (ax, var.symbol);
       value->kind = axs_lvalue_memory;
       break;
 
     case LOC_REF_ARG:		/* As above, but the frame slot really
 				   holds the address of the variable.  */
       gen_frame_args_address (ax);
-      gen_sym_offset (ax, var);
+      gen_sym_offset (ax, var.symbol);
       /* Don't assume any particular pointer size.  */
       gen_fetch (ax, builtin_type (ax->gdbarch)->builtin_data_ptr);
       value->kind = axs_lvalue_memory;
@@ -669,17 +668,17 @@ gen_var_ref (struct agent_expr *ax, struct axs_value *value, struct symbol *var)
 
     case LOC_LOCAL:		/* var lives in locals area of frame */
       gen_frame_locals_address (ax);
-      gen_sym_offset (ax, var);
+      gen_sym_offset (ax, var.symbol);
       value->kind = axs_lvalue_memory;
       break;
 
     case LOC_TYPEDEF:
       error (_("Cannot compute value of typedef `%s'."),
-	     SYMBOL_PRINT_NAME (var));
+	     SYMBOL_PRINT_NAME (var.symbol));
       break;
 
     case LOC_BLOCK:
-      ax_const_l (ax, BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (var)));
+      ax_const_l (ax, BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (var.symbol)));
       value->kind = axs_rvalue;
       break;
 
@@ -689,7 +688,8 @@ gen_var_ref (struct agent_expr *ax, struct axs_value *value, struct symbol *var)
          right code.  */
       value->kind = axs_lvalue_register;
       value->u.reg
-	= SYMBOL_REGISTER_OPS (var)->register_number (var, ax->gdbarch);
+	= SYMBOL_REGISTER_OPS (var.symbol)->register_number (var.symbol,
+							     ax->gdbarch);
       break;
 
       /* A lot like LOC_REF_ARG, but the pointer lives directly in a
@@ -698,17 +698,20 @@ gen_var_ref (struct agent_expr *ax, struct axs_value *value, struct symbol *var)
 	 has a real address.  */
     case LOC_REGPARM_ADDR:
       ax_reg (ax,
-	      SYMBOL_REGISTER_OPS (var)->register_number (var, ax->gdbarch));
+	      SYMBOL_REGISTER_OPS (var.symbol)->register_number (var.symbol,
+								 ax->gdbarch));
       value->kind = axs_lvalue_memory;
       break;
 
     case LOC_UNRESOLVED:
       {
 	struct bound_minimal_symbol msym
-	  = lookup_minimal_symbol (SYMBOL_LINKAGE_NAME (var), NULL, NULL);
+	  = lookup_minimal_symbol (SYMBOL_LINKAGE_NAME (var.symbol),
+				   NULL, NULL);
 
 	if (!msym.minsym)
-	  error (_("Couldn't resolve symbol `%s'."), SYMBOL_PRINT_NAME (var));
+	  error (_("Couldn't resolve symbol `%s'."),
+		 SYMBOL_PRINT_NAME (var.symbol));
 
 	/* Push the address of the variable.  */
 	ax_const_l (ax, BMSYMBOL_VALUE_ADDRESS (msym));
@@ -727,9 +730,18 @@ gen_var_ref (struct agent_expr *ax, struct axs_value *value, struct symbol *var)
 
     default:
       error (_("Cannot find value of botched symbol `%s'."),
-	     SYMBOL_PRINT_NAME (var));
+	     SYMBOL_PRINT_NAME (var.symbol));
       break;
     }
+}
+
+/* FIXME this is temporary */
+static void
+gen_var_ref (struct agent_expr *ax, struct axs_value *value,
+	     struct symbol *sym)
+{
+  struct block_symbol b = { sym, nullptr };
+  gen_var_ref (ax, value, b);
 }
 
 /* Generate code for a minimal symbol variable reference to AX.  The
@@ -1557,9 +1569,9 @@ gen_static_field (struct agent_expr *ax, struct axs_value *value,
   else
     {
       const char *phys_name = TYPE_FIELD_STATIC_PHYSNAME (type, fieldno);
-      struct symbol *sym = lookup_symbol (phys_name, 0, VAR_DOMAIN, 0).symbol;
+      struct block_symbol sym = lookup_symbol (phys_name, 0, VAR_DOMAIN, 0);
 
-      if (sym)
+      if (sym.symbol)
 	{
 	  gen_var_ref (ax, value, sym);
   
@@ -1654,7 +1666,7 @@ gen_maybe_namespace_elt (struct agent_expr *ax, struct axs_value *value,
   if (sym.symbol == NULL)
     return 0;
 
-  gen_var_ref (ax, value, sym.symbol);
+  gen_var_ref (ax, value, sym);
 
   if (value->optimized_out)
     error (_("`%s' has been optimized out, cannot use"),
@@ -2224,7 +2236,8 @@ gen_expr (struct expression *exp, union exp_element **pc,
 
     case OP_THIS:
       {
-	struct symbol *sym, *func;
+	struct block_symbol sym;
+	struct symbol *func;
 	const struct block *b;
 	const struct language_defn *lang;
 
@@ -2232,15 +2245,15 @@ gen_expr (struct expression *exp, union exp_element **pc,
 	func = block_linkage_function (b);
 	lang = language_def (SYMBOL_LANGUAGE (func));
 
-	sym = lookup_language_this (lang, b).symbol;
-	if (!sym)
+	sym = lookup_language_this (lang, b);
+	if (!sym.symbol)
 	  error (_("no `%s' found"), lang->la_name_of_this);
 
 	gen_var_ref (ax, value, sym);
 
 	if (value->optimized_out)
 	  error (_("`%s' has been optimized out, cannot use"),
-		 SYMBOL_PRINT_NAME (sym));
+		 SYMBOL_PRINT_NAME (sym.symbol));
 
 	(*pc) += 2;
       }
