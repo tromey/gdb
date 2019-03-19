@@ -382,7 +382,7 @@ static struct line_offset
 			      const char *variable);
 
 static int symbol_to_sal (struct symtab_and_line *result,
-			  int funfirstline, struct symbol *sym);
+			  int funfirstline, const struct block_symbol &sym);
 
 static void add_matching_symbols_to_info (const char *name,
 					  symbol_name_match_type name_match_type,
@@ -2244,7 +2244,7 @@ convert_linespec_to_sals (struct linespec_state *state, linespec_p ls)
 	  struct program_space *pspace
 	    = SYMTAB_PSPACE (symbol_symtab (sym.symbol));
 
-	  if (symbol_to_sal (&sal, state->funfirstline, sym.symbol)
+	  if (symbol_to_sal (&sal, state->funfirstline, sym)
 	      && maybe_add_address (state->addr_set, pspace, sal.pc))
 	    add_sal_to_sals (state, &sals, &sal,
 			     SYMBOL_NATURAL_NAME (sym.symbol), 0);
@@ -2309,7 +2309,7 @@ convert_linespec_to_sals (struct linespec_state *state, linespec_p ls)
 	      if (!found_ifunc)
 		{
 		  symtab_and_line sal;
-		  if (symbol_to_sal (&sal, state->funfirstline, sym.symbol)
+		  if (symbol_to_sal (&sal, state->funfirstline, sym)
 		      && maybe_add_address (state->addr_set, pspace, sal.pc))
 		    add_sal_to_sals (state, &sals, &sal,
 				     SYMBOL_NATURAL_NAME (sym.symbol), 0);
@@ -4453,22 +4453,23 @@ add_matching_symbols_to_info (const char *name,
 
 static int
 symbol_to_sal (struct symtab_and_line *result,
-	       int funfirstline, struct symbol *sym)
+	       int funfirstline, const struct block_symbol &sym)
 {
-  if (SYMBOL_CLASS (sym) == LOC_BLOCK)
+  if (SYMBOL_CLASS (sym.symbol) == LOC_BLOCK)
     {
-      *result = find_function_start_sal (sym, funfirstline);
+      *result = find_function_start_sal (sym.symbol, funfirstline);
       return 1;
     }
   else
     {
-      if (SYMBOL_CLASS (sym) == LOC_LABEL && SYMBOL_VALUE_ADDRESS (sym) != 0)
+      if (SYMBOL_CLASS (sym.symbol) == LOC_LABEL
+	  && BSYMBOL_VALUE_ADDRESS (sym) != 0)
 	{
 	  *result = {};
-	  result->symtab = symbol_symtab (sym);
-	  result->symbol = sym;
-	  result->line = SYMBOL_LINE (sym);
-	  result->pc = SYMBOL_VALUE_ADDRESS (sym);
+	  result->symtab = symbol_symtab (sym.symbol);
+	  result->symbol = sym.symbol;
+	  result->line = SYMBOL_LINE (sym.symbol);
+	  result->pc = BSYMBOL_VALUE_ADDRESS (sym);
 	  result->pspace = SYMTAB_PSPACE (result->symtab);
 	  result->explicit_pc = 1;
 	  return 1;
@@ -4477,14 +4478,14 @@ symbol_to_sal (struct symtab_and_line *result,
 	{
 	  /* Nothing.  */
 	}
-      else if (SYMBOL_LINE (sym) != 0)
+      else if (SYMBOL_LINE (sym.symbol) != 0)
 	{
 	  /* We know its line number.  */
 	  *result = {};
-	  result->symtab = symbol_symtab (sym);
-	  result->symbol = sym;
-	  result->line = SYMBOL_LINE (sym);
-	  result->pc = SYMBOL_VALUE_ADDRESS (sym);
+	  result->symtab = symbol_symtab (sym.symbol);
+	  result->symbol = sym.symbol;
+	  result->line = SYMBOL_LINE (sym.symbol);
+	  result->pc = BSYMBOL_VALUE_ADDRESS (sym);
 	  result->pspace = SYMTAB_PSPACE (result->symtab);
 	  return 1;
 	}
