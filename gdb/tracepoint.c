@@ -1058,11 +1058,11 @@ struct add_local_symbols_data
 /* The callback for the locals and args iterators.  */
 
 static void
-do_collect_symbol (const char *print_name,
+do_collect_symbol (const struct block *block,
+		   const char *print_name,
 		   struct symbol *sym,
-		   void *cb_data)
+		   struct add_local_symbols_data *p)
 {
-  struct add_local_symbols_data *p = (struct add_local_symbols_data *) cb_data;
 
   p->collect->collect_symbol (sym, p->gdbarch, p->frame_regno,
 			      p->frame_offset, p->pc, p->trace_string);
@@ -1105,7 +1105,14 @@ collection_list::add_local_symbols (struct gdbarch *gdbarch, CORE_ADDR pc,
 	  return;
 	}
 
-      iterate_over_block_local_vars (block, do_collect_symbol, &cb_data);
+      iterate_over_block_local_vars (block,
+				     [&] (const struct block *b,
+					  const char *print_name,
+					  struct symbol *sym)
+				     {
+				       do_collect_symbol (b, print_name,
+							  sym, &cb_data);
+				     });
       if (cb_data.count == 0)
 	warning (_("No locals found in scope."));
     }
@@ -1119,7 +1126,14 @@ collection_list::add_local_symbols (struct gdbarch *gdbarch, CORE_ADDR pc,
 	  return;
 	}
 
-      iterate_over_block_arg_vars (block, do_collect_symbol, &cb_data);
+      iterate_over_block_arg_vars (block,
+				   [&] (const struct block *b,
+					const char *print_name,
+					struct symbol *sym)
+				   {
+				     do_collect_symbol (b, print_name,
+							sym, &cb_data);
+				   });
       if (cb_data.count == 0)
 	warning (_("No args found in scope."));
     }

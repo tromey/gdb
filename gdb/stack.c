@@ -1957,13 +1957,11 @@ backtrace_command (const char *arg, int from_tty)
   backtrace_command_1 (arg, flags, !filters /* no frame-filters */, from_tty);
 }
 
-/* Iterate over the local variables of a block B, calling CB with
-   CB_DATA.  */
+/* Iterate over the local variables of a block B, calling CB.  */
 
 static void
 iterate_over_block_locals (const struct block *b,
-			   iterate_over_block_arg_local_vars_cb cb,
-			   void *cb_data)
+			   iterate_over_block_arg_local_vars_cb cb)
 {
   struct block_iterator iter;
   struct symbol *sym;
@@ -1981,7 +1979,7 @@ iterate_over_block_locals (const struct block *b,
 	    break;
 	  if (SYMBOL_DOMAIN (sym) == COMMON_BLOCK_DOMAIN)
 	    break;
-	  (*cb) (SYMBOL_PRINT_NAME (sym), sym, cb_data);
+	  cb (b, SYMBOL_PRINT_NAME (sym), sym);
 	  break;
 
 	default:
@@ -1996,12 +1994,11 @@ iterate_over_block_locals (const struct block *b,
 
 void
 iterate_over_block_local_vars (const struct block *block,
-			       iterate_over_block_arg_local_vars_cb cb,
-			       void *cb_data)
+			       iterate_over_block_arg_local_vars_cb cb)
 {
   while (block)
     {
-      iterate_over_block_locals (block, cb, cb_data);
+      iterate_over_block_locals (block, cb);
       /* After handling the function's top-level block, stop.  Don't
 	 continue to its superblock, the block of per-file
 	 symbols.  */
@@ -2027,12 +2024,11 @@ struct print_variable_and_value_data
 /* The callback for the locals and args iterators.  */
 
 static void
-do_print_variable_and_value (const char *print_name,
+do_print_variable_and_value (const struct block *block,
+			     const char *print_name,
 			     struct symbol *sym,
-			     void *cb_data)
+			     struct print_variable_and_value_data *p)
 {
-  struct print_variable_and_value_data *p
-    = (struct print_variable_and_value_data *) cb_data;
   struct frame_info *frame;
 
   if (p->preg.has_value ()
@@ -2125,8 +2121,15 @@ print_frame_local_vars (struct frame_info *frame,
   select_frame (frame);
 
   iterate_over_block_local_vars (block,
-				 do_print_variable_and_value,
-				 &cb_data);
+				 [&] (const struct block *b,
+				      const char *print_name,
+				      struct symbol *sym)
+				 {
+				   do_print_variable_and_value (b,
+								print_name,
+								sym,
+								&cb_data);
+				 });
 
   if (!cb_data.values_printed && !quiet)
     {
@@ -2162,8 +2165,7 @@ info_locals_command (const char *args, int from_tty)
 
 void
 iterate_over_block_arg_vars (const struct block *b,
-			     iterate_over_block_arg_local_vars_cb cb,
-			     void *cb_data)
+			     iterate_over_block_arg_local_vars_cb cb)
 {
   struct block_iterator iter;
   struct symbol *sym, *sym2;
@@ -2186,7 +2188,7 @@ iterate_over_block_arg_vars (const struct block *b,
 
 	  sym2 = lookup_symbol_search_name (SYMBOL_SEARCH_NAME (sym),
 					    b, VAR_DOMAIN).symbol;
-	  (*cb) (SYMBOL_PRINT_NAME (sym), sym2, cb_data);
+	  cb (b, SYMBOL_PRINT_NAME (sym), sym2);
 	}
     }
 }
@@ -2238,7 +2240,15 @@ print_frame_arg_vars (struct frame_info *frame,
   cb_data.values_printed = 0;
 
   iterate_over_block_arg_vars (SYMBOL_BLOCK_VALUE (func),
-			       do_print_variable_and_value, &cb_data);
+			       [&] (const struct block *block,
+				    const char *print_name,
+				    struct symbol *sym)
+			       {
+				 do_print_variable_and_value (block,
+							      print_name,
+							      sym,
+							      &cb_data);
+			       });
 
   /* do_print_variable_and_value invalidates FRAME.  */
   frame = NULL;

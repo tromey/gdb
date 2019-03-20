@@ -30,17 +30,16 @@ gdb::unique_xmalloc_ptr<char> find_frame_funname (struct frame_info *frame,
 						  enum language *funlang,
 						  struct symbol **funcp);
 
-typedef void (*iterate_over_block_arg_local_vars_cb) (const char *print_name,
-						      struct symbol *sym,
-						      void *cb_data);
+typedef gdb::function_view<void (const struct block *block,
+				 const char *print_name,
+				 struct symbol *sym)>
+  iterate_over_block_arg_local_vars_cb;
 
 void iterate_over_block_arg_vars (const struct block *block,
-				  iterate_over_block_arg_local_vars_cb cb,
-				  void *cb_data);
+				  iterate_over_block_arg_local_vars_cb cb);
 
 void iterate_over_block_local_vars (const struct block *block,
-				    iterate_over_block_arg_local_vars_cb cb,
-				    void *cb_data);
+				    iterate_over_block_arg_local_vars_cb cb);
 
 /* Get or set the last displayed symtab and line, which is, e.g. where we set a
  * breakpoint when `break' is supplied with no arguments.  */
