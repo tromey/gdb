@@ -609,7 +609,7 @@ default_read_var_value (struct symbol *var, const struct block *var_block,
   if (SYMBOL_COMPUTED_OPS (var) != NULL)
     return SYMBOL_COMPUTED_OPS (var)->read_variable (var, frame);
 
-  struct block_symbol bsym = { var_block, var };
+  struct block_symbol bsym = { var, var_block };
 
   switch (SYMBOL_CLASS (var))
     {
@@ -659,7 +659,7 @@ default_read_var_value (struct symbol *var, const struct block *var_block,
 
     case LOC_STATIC:
       if (overlay_debugging)
-	addr = symbol_overlayed_address (BSYMBOL_VALUE_ADDRESS (sym),
+	addr = symbol_overlayed_address (BSYMBOL_VALUE_ADDRESS (bsym),
 					 SYMBOL_OBJ_SECTION (symbol_objfile (var),
 							     var));
       else
