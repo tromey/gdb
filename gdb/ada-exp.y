@@ -816,7 +816,7 @@ write_object_renaming (struct parser_state *par_state,
   name = (char *) obstack_copy0 (&temp_parse_space, renamed_entity,
 				 renamed_entity_len);
   ada_lookup_encoded_symbol (name, orig_left_context, VAR_DOMAIN, &sym_info);
-  if (sym_info.symbol == NULL)
+  if (sym_info.empty ())
     error (_("Could not find renamed variable: %s"), ada_decode (name));
   else if (SYMBOL_CLASS (sym_info.symbol) == LOC_TYPEDEF)
     /* We have a renaming of an old-style renaming symbol.  Don't
@@ -889,7 +889,7 @@ write_object_renaming (struct parser_state *par_state,
 
 	    ada_lookup_encoded_symbol (index_name, orig_left_context,
 				       VAR_DOMAIN, &index_sym_info);
-	    if (index_sym_info.symbol == NULL)
+	    if (index_sym_info.empty ())
 	      error (_("Could not find %s"), index_name);
 	    else if (SYMBOL_CLASS (index_sym_info.symbol) == LOC_TYPEDEF)
 	      /* Index is an old-style renaming symbol.  */

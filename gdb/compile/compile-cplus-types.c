@@ -155,7 +155,7 @@ type_name_to_scope (const char *type_name, const struct block *block)
       struct block_symbol bsymbol
 	= lookup_symbol (lookup_name.c_str (), block, VAR_DOMAIN, nullptr);
 
-      if (bsymbol.symbol != nullptr)
+      if (!bsymbol.empty ())
 	{
 	  scope_component comp = {s, bsymbol};
 
@@ -619,7 +619,7 @@ compile_cplus_convert_struct_or_union_members
 		  = lookup_symbol (physname, instance->block (),
 				   VAR_DOMAIN, nullptr);
 
-		if (sym.symbol == nullptr)
+		if (sym.empty ())
 		  {
 		    /* We didn't actually find the symbol.  There's little
 		       we can do but ignore this member.  */
@@ -731,7 +731,7 @@ compile_cplus_convert_struct_or_union_methods (compile_cplus_instance *instance,
 	    = lookup_symbol (TYPE_FN_FIELD_PHYSNAME (methods, j),
 			     instance->block (), VAR_DOMAIN, nullptr);
 
-	  if (sym.symbol == nullptr)
+	  if (sym.empty ())
 	    {
 	      if (TYPE_FN_FIELD_VIRTUAL_P (methods, j))
 		{

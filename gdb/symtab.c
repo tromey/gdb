@@ -2058,7 +2058,7 @@ lookup_symbol_aux (const char *name, symbol_name_match_type match_type,
      STATIC_BLOCK or GLOBAL_BLOCK.  */
 
   result = lookup_local_symbol (name, match_type, block, domain, language);
-  if (result.symbol != NULL)
+  if (!result.empty ())
     {
       if (symbol_lookup_debug)
 	{
@@ -2080,7 +2080,7 @@ lookup_symbol_aux (const char *name, symbol_name_match_type match_type,
     {
       result = lookup_language_this (langdef, block);
 
-      if (result.symbol)
+      if (!result.empty ())
 	{
 	  struct type *t = result.symbol->type;
 
@@ -2111,7 +2111,7 @@ lookup_symbol_aux (const char *name, symbol_name_match_type match_type,
      up static and global variables.  */
 
   result = langdef->la_lookup_symbol_nonlocal (langdef, name, block, domain);
-  if (result.symbol != NULL)
+  if (!result.empty ())
     {
       if (symbol_lookup_debug)
 	{
@@ -2128,7 +2128,7 @@ lookup_symbol_aux (const char *name, symbol_name_match_type match_type,
   if (symbol_lookup_debug)
     {
       fprintf_unfiltered (gdb_stdlog, "lookup_symbol_aux (...) = %s\n",
-			  result.symbol != NULL
+			  !result.empty ()
 			    ? host_address_to_string (result.symbol)
 			    : "NULL");
     }
@@ -2258,7 +2258,7 @@ lookup_global_symbol_from_objfile (struct objfile *main_objfile,
       struct block_symbol result
         = lookup_symbol_in_objfile (objfile, GLOBAL_BLOCK, name, domain);
 
-      if (result.symbol != NULL)
+      if (!result.empty ())
 	return result;
     }
 
@@ -2296,7 +2296,7 @@ lookup_symbol_in_objfile_symtabs (struct objfile *objfile, int block_index,
       block = BLOCKVECTOR_BLOCK (bv, block_index);
       result.symbol = block_lookup_symbol_primary (block, name, domain);
       result.block = block;
-      if (result.symbol != NULL)
+      if (!result.empty ())
 	{
 	  if (symbol_lookup_debug > 1)
 	    {
@@ -2348,10 +2348,10 @@ lookup_symbol_in_objfile_from_linkage_name (struct objfile *objfile,
 
       result = lookup_symbol_in_objfile_symtabs (cur_objfile, GLOBAL_BLOCK,
 						 modified_name, domain);
-      if (result.symbol == NULL)
+      if (result.empty ())
 	result = lookup_symbol_in_objfile_symtabs (cur_objfile, STATIC_BLOCK,
 						   modified_name, domain);
-      if (result.symbol != NULL)
+      if (!result.empty ())
 	return result;
     }
 
@@ -2415,7 +2415,7 @@ lookup_symbol_via_quick_fns (struct objfile *objfile, int block_index,
   block = BLOCKVECTOR_BLOCK (bv, block_index);
   result.symbol = block_lookup_symbol (block, name,
 				       symbol_name_match_type::FULL, domain);
-  if (result.symbol == NULL)
+  if (result.empty ())
     error_in_psymtab_expansion (block_index, name, cust);
 
   if (symbol_lookup_debug > 1)
@@ -2474,7 +2474,7 @@ basic_lookup_symbol_nonlocal (const struct language_defn *langdef,
      for both matching user expectations as well as performance.  */
 
   result = lookup_symbol_in_static_block (name, block, domain);
-  if (result.symbol != NULL)
+  if (!result.empty ())
     return result;
 
   /* If we didn't find a definition for a builtin type in the static block,
@@ -2494,7 +2494,7 @@ basic_lookup_symbol_nonlocal (const struct language_defn *langdef,
       result.symbol = language_lookup_primitive_type_as_symbol (langdef,
 								gdbarch, name);
       result.block = NULL;
-      if (result.symbol != NULL)
+      if (!result.empty ())
 	return result;
     }
 
@@ -2562,7 +2562,7 @@ lookup_symbol_in_objfile (struct objfile *objfile, int block_index,
 
   result = lookup_symbol_in_objfile_symtabs (objfile, block_index,
 					     name, domain);
-  if (result.symbol != NULL)
+  if (!result.empty ())
     {
       if (symbol_lookup_debug)
 	{
@@ -2580,10 +2580,10 @@ lookup_symbol_in_objfile (struct objfile *objfile, int block_index,
     {
       fprintf_unfiltered (gdb_stdlog,
 			  "lookup_symbol_in_objfile (...) = %s%s\n",
-			  result.symbol != NULL
+			  !result.empty ()
 			  ? host_address_to_string (result.symbol)
 			  : "NULL",
-			  result.symbol != NULL ? " (via quick fns)" : "");
+			  !result.empty () ? " (via quick fns)" : "");
     }
   return result;
 }
@@ -2602,7 +2602,7 @@ lookup_static_symbol (const char *name, const domain_enum domain)
      NULL for OBJFILE_CONTEXT.  */
   result = symbol_cache_lookup (cache, NULL, STATIC_BLOCK, name, domain,
 				&bsc, &slot);
-  if (result.symbol != NULL)
+  if (!result.empty ())
     {
       if (SYMBOL_LOOKUP_FAILED_P (result))
 	return null_block_symbol;
@@ -2612,7 +2612,7 @@ lookup_static_symbol (const char *name, const domain_enum domain)
   for (objfile *objfile : current_program_space->objfiles ())
     {
       result = lookup_symbol_in_objfile (objfile, STATIC_BLOCK, name, domain);
-      if (result.symbol != NULL)
+      if (!result.empty ())
 	{
 	  /* Still pass NULL for OBJFILE_CONTEXT here.  */
 	  symbol_cache_mark_found (bsc, slot, NULL, result.symbol,
@@ -2684,7 +2684,7 @@ lookup_global_symbol (const char *name,
      This works because we use the current objfile to qualify the lookup.  */
   result = symbol_cache_lookup (cache, objfile, GLOBAL_BLOCK, name, domain,
 				&bsc, &slot);
-  if (result.symbol != NULL)
+  if (!result.empty ())
     {
       if (SYMBOL_LOOKUP_FAILED_P (result))
 	return null_block_symbol;
@@ -2696,7 +2696,7 @@ lookup_global_symbol (const char *name,
     result = solib_global_lookup (objfile, name, domain);
 
   /* If that didn't work go a global search (of global blocks, heh).  */
-  if (result.symbol == NULL)
+  if (result.empty ())
     {
       memset (&lookup_data, 0, sizeof (lookup_data));
       lookup_data.name = name;
@@ -2707,7 +2707,7 @@ lookup_global_symbol (const char *name,
       result = lookup_data.result;
     }
 
-  if (result.symbol != NULL)
+  if (!result.empty ())
     symbol_cache_mark_found (bsc, slot, objfile, result.symbol, result.block);
   else
     symbol_cache_mark_not_found (bsc, slot, objfile, name, domain);

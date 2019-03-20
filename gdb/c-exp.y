@@ -991,7 +991,7 @@ variable:	block COLONCOLON name
 			    = lookup_symbol (copy_name ($3), $1,
 					     VAR_DOMAIN, NULL);
 
-			  if (sym.symbol == 0)
+			  if (sym.empty ())
 			    error (_("No symbol \"%s\" in specified context."),
 				   copy_name ($3));
 			  if (symbol_read_needs_frame (sym.symbol))
@@ -1082,7 +1082,7 @@ variable:	qualified_name
 variable:	name_not_typename
 			{ struct block_symbol sym = $1.sym;
 
-			  if (sym.symbol)
+			  if (!sym.empty ())
 			    {
 			      if (symbol_read_needs_frame (sym.symbol))
 				innermost_block.update (sym);
@@ -2943,13 +2943,13 @@ classify_name (struct parser_state *par_state, const struct block *block,
 			parse_language (par_state)->la_name_of_this
 			? &is_a_field_of_this : NULL);
 
-  if (bsym.symbol && SYMBOL_CLASS (bsym.symbol) == LOC_BLOCK)
+  if (!bsym.empty () && SYMBOL_CLASS (bsym.symbol) == LOC_BLOCK)
     {
       yylval.ssym.sym = bsym;
       yylval.ssym.is_a_field_of_this = is_a_field_of_this.type != NULL;
       return BLOCKNAME;
     }
-  else if (!bsym.symbol)
+  else if (bsym.empty ())
     {
       /* If we found a field of 'this', we might have erroneously
 	 found a constructor where we wanted a type name.  Handle this
@@ -2964,7 +2964,7 @@ classify_name (struct parser_state *par_state, const struct block *block,
 
 	  bsym = lookup_symbol (copy, block, STRUCT_DOMAIN,
 				&inner_is_a_field_of_this);
-	  if (bsym.symbol != NULL)
+	  if (!bsym.empty ())
 	    {
 	      yylval.tsym.type = SYMBOL_TYPE (bsym.symbol);
 	      return TYPENAME;
@@ -2992,14 +2992,15 @@ classify_name (struct parser_state *par_state, const struct block *block,
 	}
     }
 
-  if (bsym.symbol && SYMBOL_CLASS (bsym.symbol) == LOC_TYPEDEF)
+  if (!bsym.empty () && SYMBOL_CLASS (bsym.symbol) == LOC_TYPEDEF)
     {
       yylval.tsym.type = SYMBOL_TYPE (bsym.symbol);
       return TYPENAME;
     }
 
   /* See if it's an ObjC classname.  */
-  if (parse_language (par_state)->la_language == language_objc && !bsym.symbol)
+  if (parse_language (par_state)->la_language == language_objc
+      && bsym.empty ())
     {
       CORE_ADDR Class = lookup_objc_class (parse_gdbarch (par_state), copy);
       if (Class)
@@ -3017,7 +3018,7 @@ classify_name (struct parser_state *par_state, const struct block *block,
   /* Input names that aren't symbols but ARE valid hex numbers, when
      the input radix permits them, can be names or numbers depending
      on the parse.  Note we support radixes > 16 here.  */
-  if (!bsym.symbol
+  if (bsym.empty ()
       && ((copy[0] >= 'a' && copy[0] < 'a' + input_radix - 10)
 	  || (copy[0] >= 'A' && copy[0] < 'A' + input_radix - 10)))
     {
@@ -3037,7 +3038,7 @@ classify_name (struct parser_state *par_state, const struct block *block,
   yylval.ssym.sym = bsym;
   yylval.ssym.is_a_field_of_this = is_a_field_of_this.type != NULL;
 
-  if (bsym.symbol == NULL
+  if (bsym.empty ()
       && parse_language (par_state)->la_language == language_cplus
       && is_a_field_of_this.type == NULL
       && lookup_minimal_symbol (copy, NULL, NULL).minsym == NULL)

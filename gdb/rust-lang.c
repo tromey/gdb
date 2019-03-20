@@ -1154,7 +1154,7 @@ rust_evaluate_funcall (struct expression *exp, int *pos, enum noside noside)
 
   block = get_selected_block (0);
   sym = lookup_symbol (name.c_str (), block, VAR_DOMAIN, NULL);
-  if (sym.symbol == NULL)
+  if (sym.empty ())
     error (_("Could not find function named '%s'"), name.c_str ());
 
   fn_type = SYMBOL_TYPE (sym.symbol);
@@ -2049,7 +2049,7 @@ rust_lookup_symbol_nonlocal (const struct language_defn *langdef,
   if (name != NULL)
     {
       result = lookup_symbol_in_static_block (name, block, domain);
-      if (result.symbol == NULL)
+      if (result.empty ())
 	result = lookup_global_symbol (name, block, domain);
     }
   return result;

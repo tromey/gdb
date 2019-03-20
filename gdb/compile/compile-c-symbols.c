@@ -237,7 +237,7 @@ convert_symbol_sym (compile_c_instance *context, const char *identifier,
       global_sym = lookup_symbol (identifier, NULL, domain, NULL);
       /* If the outer symbol is in the static block, we ignore it, as
 	 it cannot be referenced.  */
-      if (global_sym.symbol != NULL
+      if (!global_sym.empty ()
 	  && global_sym.block != block_static_block (global_sym.block))
 	{
 	  if (compile_debug)
@@ -349,7 +349,7 @@ gcc_convert_symbol (void *datum,
       struct block_symbol sym;
 
       sym = lookup_symbol (identifier, context->block (), domain, NULL);
-      if (sym.symbol != NULL)
+      if (!sym.empty ())
 	{
 	  convert_symbol_sym (context, identifier, sym, domain);
 	  found = 1;

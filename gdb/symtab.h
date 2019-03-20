@@ -1158,6 +1158,11 @@ struct block_symbol
   /* If SYMBOL is not NULL, then this is the block in which the symbol is
      defined.  */
   const struct block *block;
+
+  bool empty () const
+  {
+    return symbol == nullptr;
+  }
 };
 
 extern const struct symbol_impl *symbol_impls;

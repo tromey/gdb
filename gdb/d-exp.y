@@ -419,7 +419,7 @@ PrimaryExpression:
 		  /* Handle VAR, which could be local or global.  */
 		  sym = lookup_symbol (copy, expression_context_block, VAR_DOMAIN,
 				       &is_a_field_of_this);
-		  if (sym.symbol && SYMBOL_CLASS (sym.symbol) != LOC_TYPEDEF)
+		  if (!sym.empty () && SYMBOL_CLASS (sym.symbol) != LOC_TYPEDEF)
 		    {
 		      if (symbol_read_needs_frame (sym.symbol))
 			innermost_block.update (sym);
@@ -472,7 +472,7 @@ PrimaryExpression:
 				lookup_symbol (name.c_str (),
 					       (const struct block *) NULL,
 					       VAR_DOMAIN, NULL);
-			      if (sym.symbol)
+			      if (!sym.empty ())
 				{
 				  write_exp_elt_opcode (pstate, OP_VAR_VALUE);
 				  write_exp_elt_block (pstate, sym.block);
@@ -1345,19 +1345,19 @@ classify_name (struct parser_state *par_state, const struct block *block)
   copy = copy_name (yylval.sval);
 
   sym = lookup_symbol (copy, block, VAR_DOMAIN, &is_a_field_of_this);
-  if (sym.symbol && SYMBOL_CLASS (sym.symbol) == LOC_TYPEDEF)
+  if (!sym.empty () && SYMBOL_CLASS (sym.symbol) == LOC_TYPEDEF)
     {
       yylval.tsym.type = SYMBOL_TYPE (sym.symbol);
       return TYPENAME;
     }
-  else if (sym.symbol == NULL)
+  else if (sym.empty ())
     {
       /* Look-up first for a module name, then a type.  */
       sym = lookup_symbol (copy, block, MODULE_DOMAIN, NULL);
-      if (sym.symbol == NULL)
+      if (sym.empty ())
 	sym = lookup_symbol (copy, block, STRUCT_DOMAIN, NULL);
 
-      if (sym.symbol != NULL)
+      if (!sym.empty ())
 	{
 	  yylval.tsym.type = SYMBOL_TYPE (sym.symbol);
 	  return TYPENAME;

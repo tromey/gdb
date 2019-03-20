@@ -471,7 +471,7 @@ exp	:	STRING_LITERAL
 variable:	name_not_typename
 			{ struct block_symbol sym = $1.sym;
 
-			  if (sym.symbol)
+			  if (!sym.empty ())
 			    {
 			      if (symbol_read_needs_frame (sym.symbol))
 				innermost_block.update (sym);
@@ -1280,13 +1280,13 @@ yylex (void)
 				parse_language (pstate)->la_language
 				== language_cplus
 				  ? &is_a_field_of_this : NULL);
-	if (result.symbol && SYMBOL_CLASS (result.symbol) == LOC_TYPEDEF)
+	if (!result.empty () && SYMBOL_CLASS (result.symbol) == LOC_TYPEDEF)
 	  {
 	    yylval.tsym.type = SYMBOL_TYPE (result.symbol);
 	    return TYPENAME;
 	  }
 
-	if (result.symbol)
+	if (!result.empty ())
 	  break;
       }
 
@@ -1299,7 +1299,7 @@ yylex (void)
     /* Input names that aren't symbols but ARE valid hex numbers,
        when the input radix permits them, can be names or numbers
        depending on the parse.  Note we support radixes > 16 here.  */
-    if (!result.symbol
+    if (result.empty ()
 	&& ((tokstart[0] >= 'a' && tokstart[0] < 'a' + input_radix - 10)
 	    || (tokstart[0] >= 'A' && tokstart[0] < 'A' + input_radix - 10)))
       {

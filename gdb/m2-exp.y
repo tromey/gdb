@@ -544,7 +544,7 @@ variable:	block COLONCOLON NAME
 			    = lookup_symbol (copy_name ($3), $1,
 					     VAR_DOMAIN, 0);
 
-			  if (sym.symbol == 0)
+			  if (sym.empty ())
 			    error (_("No symbol \"%s\" in specified context."),
 				   copy_name ($3));
 			  if (symbol_read_needs_frame (sym.symbol))
@@ -566,7 +566,7 @@ variable:	NAME
 					       VAR_DOMAIN,
 					       &is_a_field_of_this);
 
-			  if (sym.symbol)
+			  if (!sym.empty ())
 			    {
 			      if (symbol_read_needs_frame (sym.symbol))
 				innermost_block.update (sym);

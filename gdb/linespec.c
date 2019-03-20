@@ -4023,7 +4023,7 @@ find_label_symbols_in_block (const struct block *block,
       struct block_symbol label_sym
 	= lookup_symbol (name, block, LABEL_DOMAIN, 0);
 
-      if (label_sym.symbol != NULL)
+      if (!label_sym.empty ())
 	{
 	  result->push_back (label_sym);
 	  label_funcs_ret->push_back ({fn_sym, block});

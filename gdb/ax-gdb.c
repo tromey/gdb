@@ -1651,7 +1651,7 @@ gen_maybe_namespace_elt (struct agent_expr *ax, struct axs_value *value,
 				    block_for_pc (ax->scope),
 				    VAR_DOMAIN);
 
-  if (sym.symbol == NULL)
+  if (sym.empty ())
     return 0;
 
   gen_var_ref (ax, value, sym.symbol);

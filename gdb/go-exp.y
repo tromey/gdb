@@ -549,7 +549,7 @@ variable:	name_not_typename ENTRY
 variable:	name_not_typename
 			{ struct block_symbol sym = $1.sym;
 
-			  if (sym.symbol)
+			  if (!sym.empty ())
 			    {
 			      if (symbol_read_needs_frame (sym.symbol))
 				innermost_block.update (sym);
@@ -1372,7 +1372,7 @@ classify_packaged_name (const struct block *block)
 
   sym = lookup_symbol (copy, block, VAR_DOMAIN, &is_a_field_of_this);
 
-  if (sym.symbol)
+  if (!sym.empty ())
     {
       yylval.ssym.sym = sym;
       yylval.ssym.is_a_field_of_this = is_a_field_of_this.type != NULL;
@@ -1416,7 +1416,7 @@ classify_name (struct parser_state *par_state, const struct block *block)
 
   sym = lookup_symbol (copy, block, VAR_DOMAIN, &is_a_field_of_this);
 
-  if (sym.symbol)
+  if (!sym.empty ())
     {
       yylval.ssym.sym = sym;
       yylval.ssym.is_a_field_of_this = is_a_field_of_this.type != NULL;

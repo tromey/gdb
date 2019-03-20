@@ -3918,7 +3918,7 @@ See set/show multiple-symbol."));
 
   for (i = 0; i < nsyms; i += 1)
     {
-      if (syms[i].symbol == NULL)
+      if (syms[i].empty ())
         continue;
 
       if (SYMBOL_CLASS (syms[i].symbol) == LOC_BLOCK)
@@ -5887,7 +5887,7 @@ ada_lookup_symbol_nonlocal (const struct language_defn *langdef,
   struct block_symbol sym;
 
   sym = ada_lookup_symbol (name, block_static_block (block), domain, NULL);
-  if (sym.symbol != NULL)
+  if (!sym.empty ())
     return sym;
 
   /* If we haven't found a match at this point, try the primitive
@@ -5911,7 +5911,7 @@ ada_lookup_symbol_nonlocal (const struct language_defn *langdef,
       else
 	gdbarch = block_gdbarch (block);
       sym.symbol = language_lookup_primitive_type_as_symbol (langdef, gdbarch, name);
-      if (sym.symbol != NULL)
+      if (!sym.empty ())
 	return sym;
     }
 

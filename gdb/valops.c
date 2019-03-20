@@ -118,7 +118,7 @@ find_function_in_inferior (const char *name, struct objfile **objf_p)
   struct block_symbol sym;
 
   sym = lookup_symbol (name, 0, VAR_DOMAIN, 0);
-  if (sym.symbol != NULL)
+  if (!sym.empty ())
     {
       if (SYMBOL_CLASS (sym.symbol) != LOC_BLOCK)
 	{
@@ -3588,7 +3588,7 @@ value_maybe_namespace_elt (const struct type *curtype,
   sym = cp_lookup_symbol_namespace (namespace_name, name,
 				    get_selected_block (0), VAR_DOMAIN);
 
-  if (sym.symbol == NULL)
+  if (sym.empty ())
     return NULL;
   else if ((noside == EVAL_AVOID_SIDE_EFFECTS)
 	   && (SYMBOL_CLASS (sym.symbol) == LOC_TYPEDEF))
@@ -3759,7 +3759,7 @@ value_of_this (const struct language_defn *lang)
   b = get_frame_block (frame, NULL);
 
   sym = lookup_language_this (lang, b);
-  if (sym.symbol == NULL)
+  if (sym.empty ())
     error (_("current stack frame does not contain a variable named `%s'"),
 	   lang->la_name_of_this);
 

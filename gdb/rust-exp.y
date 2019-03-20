@@ -1987,7 +1987,7 @@ rust_lookup_symbol (const char *name, const struct block *block,
   munge_name_and_block (&name, &block);
 
   result = lookup_symbol (name, block, domain, NULL);
-  if (result.symbol != NULL)
+  if (!result.empty ())
     update_innermost_block (result);
   return result;
 }
@@ -2003,7 +2003,7 @@ rust_parser::rust_lookup_type (const char *name, const struct block *block)
   munge_name_and_block (&name, &block);
 
   result = lookup_symbol (name, block, STRUCT_DOMAIN, NULL);
-  if (result.symbol != NULL)
+  if (!result.empty ())
     {
       update_innermost_block (result);
       return SYMBOL_TYPE (result.symbol);
@@ -2374,7 +2374,7 @@ rust_parser::convert_ast_to_expression (const struct rust_op *operation,
 	varname = convert_name (operation);
 	sym = rust_lookup_symbol (varname, expression_context_block,
 				  VAR_DOMAIN);
-	if (sym.symbol != NULL && SYMBOL_CLASS (sym.symbol) != LOC_TYPEDEF)
+	if (!sym.empty () && SYMBOL_CLASS (sym.symbol) != LOC_TYPEDEF)
 	  {
 	    write_exp_elt_opcode (pstate, OP_VAR_VALUE);
 	    write_exp_elt_block (pstate, sym.block);
@@ -2385,7 +2385,7 @@ rust_parser::convert_ast_to_expression (const struct rust_op *operation,
 	  {
 	    struct type *type = NULL;
 
-	    if (sym.symbol != NULL)
+	    if (!sym.empty ())
 	      {
 		gdb_assert (SYMBOL_CLASS (sym.symbol) == LOC_TYPEDEF);
 		type = SYMBOL_TYPE (sym.symbol);

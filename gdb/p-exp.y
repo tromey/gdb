@@ -645,7 +645,7 @@ variable:	block COLONCOLON name
 
 			  sym = lookup_symbol (copy_name ($3), $1,
 					       VAR_DOMAIN, NULL);
-			  if (sym.symbol == 0)
+			  if (sym.empty ())
 			    error (_("No symbol \"%s\" in specified context."),
 				   copy_name ($3));
 
@@ -706,7 +706,7 @@ variable:	qualified_name
 variable:	name_not_typename
 			{ struct block_symbol sym = $1.sym;
 
-			  if (sym.symbol)
+			  if (!sym.empty ())
 			    {
 			      if (symbol_read_needs_frame (sym.symbol))
 				innermost_block.update (sym);

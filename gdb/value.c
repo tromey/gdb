@@ -2835,7 +2835,7 @@ value_static_field (struct type *type, int fieldno)
       /* TYPE_FIELD_NAME (type, fieldno); */
       struct block_symbol sym = lookup_symbol (phys_name, 0, VAR_DOMAIN, 0);
 
-      if (sym.symbol == NULL)
+      if (sym.empty ())
 	{
 	  /* With some compilers, e.g. HP aCC, static data members are
 	     reported as non-debuggable symbols.  */

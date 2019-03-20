@@ -249,7 +249,7 @@ convert_symbol_sym (compile_cplus_instance *instance,
       global_sym = lookup_symbol (identifier, nullptr, domain, nullptr);
       /* If the outer symbol is in the static block, we ignore it, as
 	 it cannot be referenced.  */
-      if (global_sym.symbol != nullptr
+      if (!global_sym.empty ()
 	  && global_sym.block != block_static_block (global_sym.block))
 	{
 	  if (compile_debug)
@@ -353,7 +353,7 @@ gcc_cplus_convert_symbol (void *datum,
       struct block_symbol sym
 	= lookup_symbol (identifier, instance->block (), VAR_DOMAIN, nullptr);
 
-      if (sym.symbol != nullptr)
+      if (!sym.empty ())
 	{
 	  found = true;
 	  convert_symbol_sym (instance, identifier, sym, VAR_DOMAIN);

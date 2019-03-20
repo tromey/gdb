@@ -1370,7 +1370,7 @@ evaluate_subexp_standard (struct type *expect_type,
 
 	struct block_symbol sym = lookup_symbol (var, blk, VAR_DOMAIN, NULL);
 
-	if (sym.symbol == NULL)
+	if (sym.empty ())
 	  error (_("No symbol \"%s\" in specified context."), var);
 
 	return evaluate_var_value (noside, sym.block, sym.symbol);

@@ -81,7 +81,7 @@ d_lookup_symbol (const struct language_defn *langdef,
   struct block_symbol sym;
 
   sym = lookup_symbol_in_static_block (name, block, domain);
-  if (sym.symbol != NULL)
+  if (!sym.empty ())
     return sym;
 
   /* If we didn't find a definition for a builtin type in the static block,
@@ -103,7 +103,7 @@ d_lookup_symbol (const struct language_defn *langdef,
 
   sym = lookup_global_symbol (name, block, domain);
 
-  if (sym.symbol != NULL)
+  if (!sym.empty ())
     return sym;
 
   if (search)
@@ -126,7 +126,7 @@ d_lookup_symbol (const struct language_defn *langdef,
 	  struct block_symbol lang_this;
 
 	  lang_this = lookup_language_this (language_def (language_d), block);
-	  if (lang_this.symbol == NULL)
+	  if (!lang_this.empty ())
 	    return null_block_symbol;
 
 	  type = check_typedef (TYPE_TARGET_TYPE (SYMBOL_TYPE (lang_this.symbol)));
@@ -146,7 +146,7 @@ d_lookup_symbol (const struct language_defn *langdef,
       /* Lookup a class named CLASSNAME.  If none is found, there is nothing
 	 more that can be done.  */
       class_sym = lookup_global_symbol (classname.c_str (), block, domain);
-      if (class_sym.symbol == NULL)
+      if (!class_sym.empty ())
 	return null_block_symbol;
 
       /* Look for a symbol named NESTED in this class.  */
@@ -217,7 +217,7 @@ lookup_module_scope (const struct language_defn *langdef,
       new_scope_len += d_find_first_component (scope + new_scope_len);
       sym = lookup_module_scope (langdef, name, block, domain,
 				 scope, new_scope_len);
-      if (sym.symbol != NULL)
+      if (!sym.empty ())
 	return sym;
     }
 
@@ -260,7 +260,7 @@ find_symbol_in_baseclass (struct type *parent_type, const char *name,
       /* Search this particular base class.  */
       sym = d_lookup_symbol_in_module (base_name, name, block,
 				       VAR_DOMAIN, 0);
-      if (sym.symbol != NULL)
+      if (!sym.empty ())
 	break;
 
       /* Now search all static file-level symbols.  We have to do this for
@@ -269,14 +269,14 @@ find_symbol_in_baseclass (struct type *parent_type, const char *name,
       std::string concatenated_name = std::string (base_name) + "." + name;
       sym = lookup_symbol_in_static_block (concatenated_name.c_str (), block,
 					   VAR_DOMAIN);
-      if (sym.symbol != NULL)
+      if (!sym.empty ())
 	break;
 
       /* Nope.  We now have to search all static blocks in all objfiles,
 	 even if block != NULL, because there's no guarantees as to which
 	 symtab the symbol we want is in.  */
       sym = lookup_static_symbol (concatenated_name.c_str (), VAR_DOMAIN);
-      if (sym.symbol != NULL)
+      if (!sym.empty ())
 	break;
 
       /* If this class has base classes, search them next.  */
@@ -284,7 +284,7 @@ find_symbol_in_baseclass (struct type *parent_type, const char *name,
       if (TYPE_N_BASECLASSES (base_type) > 0)
 	{
 	  sym = find_symbol_in_baseclass (base_type, name, block);
-	  if (sym.symbol != NULL)
+	  if (!sym.empty ())
 	    break;
 	}
     }
@@ -321,7 +321,7 @@ d_lookup_nested_symbol (struct type *parent_type,
 					 block, VAR_DOMAIN, 0);
 	  char *concatenated_name;
 
-	  if (sym.symbol != NULL)
+	  if (!sym.empty ())
 	    return sym;
 
 	  /* Now search all static file-level symbols.  We have to do this
@@ -336,7 +336,7 @@ d_lookup_nested_symbol (struct type *parent_type,
 		     parent_name, nested_name);
 
 	  sym = lookup_static_symbol (concatenated_name, VAR_DOMAIN);
-	  if (sym.symbol != NULL)
+	  if (!sym.empty ())
 	    return sym;
 
 	  /* If no matching symbols were found, try searching any
@@ -367,7 +367,7 @@ d_lookup_symbol_imports (const char *scope, const char *name,
   /* First, try to find the symbol in the given module.  */
   sym = d_lookup_symbol_in_module (scope, name, block, domain, 1);
 
-  if (sym.symbol != NULL)
+  if (!sym.empty ())
     return sym;
 
   /* Go through the using directives.  If any of them add new names to
@@ -402,9 +402,9 @@ d_lookup_symbol_imports (const char *scope, const char *name,
 
 	  /* If a symbol was found or this import statement was an import
 	     declaration, the search of this import is complete.  */
-	  if (sym.symbol != NULL || current->declaration)
+	  if (!sym.empty () || current->declaration)
 	    {
-	      if (sym.symbol != NULL)
+	      if (!sym.empty ())
 		return sym;
 
 	      continue;
@@ -456,7 +456,7 @@ d_lookup_symbol_imports (const char *scope, const char *name,
 					       name, block, domain, 1);
 	    }
 
-	  if (sym.symbol != NULL)
+	  if (!sym.empty ())
 	    return sym;
 	}
     }
@@ -478,7 +478,7 @@ d_lookup_symbol_module (const char *scope, const char *name,
   /* First, try to find the symbol in the given module.  */
   sym = d_lookup_symbol_in_module (scope, name,
 				   block, domain, 1);
-  if (sym.symbol != NULL)
+  if (!sym.empty ())
     return sym;
 
   /* Search for name in modules imported to this and parent
@@ -487,7 +487,7 @@ d_lookup_symbol_module (const char *scope, const char *name,
     {
       sym = d_lookup_symbol_imports (scope, name, block, domain);
 
-      if (sym.symbol != NULL)
+      if (!sym.empty ())
 	return sym;
 
       block = BLOCK_SUPERBLOCK (block);
@@ -513,7 +513,7 @@ d_lookup_symbol_nonlocal (const struct language_defn *langdef,
   const char *scope = block_scope (block);
 
   sym = lookup_module_scope (langdef, name, block, domain, scope, 0);
-  if (sym.symbol != NULL)
+  if (!sym.empty ())
     return sym;
 
   return d_lookup_symbol_module (scope, name, block, domain);
