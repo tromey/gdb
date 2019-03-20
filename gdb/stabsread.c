@@ -4369,7 +4369,7 @@ fix_common_block (struct symbol *sym, CORE_ADDR valu)
 
       for (j = next->nsyms - 1; j >= 0; j--)
 	SET_SYMBOL_VALUE_ADDRESS (next->symbol[j],
-				  SYMBOL_VALUE_ADDRESS (next->symbol[j])
+				  SYMBOL_VALUE_RAW_ADDRESS (next->symbol[j])
 				  + valu);
     }
 }
