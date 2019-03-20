@@ -13569,8 +13569,11 @@ ada_add_global_exceptions (compiled_regex *preg,
 		if (ada_is_non_standard_exception_sym (sym)
 		    && name_matches_regex (SYMBOL_NATURAL_NAME (sym), preg))
 		  {
+		    struct block_symbol bsym = { sym, b };
+
 		    struct ada_exc_info info
-		      = {SYMBOL_PRINT_NAME (sym), SYMBOL_VALUE_ADDRESS (sym)};
+		      = {SYMBOL_PRINT_NAME (sym),
+			 BSYMBOL_VALUE_ADDRESS (bsym)};
 
 		    exceptions->push_back (info);
 		  }
