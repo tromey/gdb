@@ -13494,8 +13494,10 @@ ada_add_exceptions_from_frame (compiled_regex *preg,
 	    default:
 	      if (ada_is_exception_sym (sym))
 		{
+		  struct block_symbol bsym = { sym, block };
+
 		  struct ada_exc_info info = {SYMBOL_PRINT_NAME (sym),
-					      SYMBOL_VALUE_ADDRESS (sym)};
+					      BSYMBOL_VALUE_ADDRESS (bsym)};
 
 		  exceptions->push_back (info);
 		}
