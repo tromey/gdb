@@ -73,7 +73,6 @@
    struct agent_expr * --- agent expression buffer to generate code into
    struct axs_value * --- describes value left on top of stack  */
 
-static struct value *const_var_ref (struct symbol *var);
 static struct value *const_expr (union exp_element **pc);
 static struct value *maybe_const_expr (union exp_element **pc);
 
@@ -178,17 +177,17 @@ static void gen_expr_binop_rest (struct expression *exp,
    proletariat?  */
 
 static struct value *
-const_var_ref (struct symbol *var)
+const_var_ref (const struct block_symbol &var)
 {
-  struct type *type = SYMBOL_TYPE (var);
+  struct type *type = SYMBOL_TYPE (var.symbol);
 
-  switch (SYMBOL_CLASS (var))
+  switch (SYMBOL_CLASS (var.symbol))
     {
     case LOC_CONST:
-      return value_from_longest (type, (LONGEST) SYMBOL_VALUE (var));
+      return value_from_longest (type, (LONGEST) SYMBOL_VALUE (var.symbol));
 
     case LOC_LABEL:
-      return value_from_pointer (type, (CORE_ADDR) SYMBOL_VALUE_ADDRESS (var));
+      return value_from_pointer (type, BSYMBOL_VALUE_ADDRESS (var));
 
     default:
       return 0;
@@ -219,7 +218,10 @@ const_expr (union exp_element **pc)
 
     case OP_VAR_VALUE:
       {
-	struct value *v = const_var_ref ((*pc)[2].symbol);
+	const struct block *b = (*pc)[1].block;
+	struct symbol *s = (*pc)[2].symbol;
+	struct block_symbol bsym = { s, b };
+	struct value *v = const_var_ref (bsym);
 
 	(*pc) += 4;
 	return v;
