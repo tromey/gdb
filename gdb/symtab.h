@@ -1147,13 +1147,25 @@ struct symbol
   struct symbol *hash_next;
 };
 
+struct bound_symbol
+{
+  struct objfile *objfile;
+  struct symbol *symbol;
+
+  bool empty () const
+  {
+    return symbol == nullptr;
+  }
+};
+
 /* Several lookup functions return both a symbol and the block in which the
    symbol is found.  This structure is used in these cases.  */
 
 struct block_symbol
 {
-  /* The symbol that was found, or NULL if no symbol was found.  */
-  struct symbol *symbol;
+  /* The symbol.  bound_symbol::empty can be used to see if a symbol
+     was returned.  */
+  struct bound_symbol symbol;
 
   /* If SYMBOL is not NULL, then this is the block in which the symbol is
      defined.  */
@@ -1161,7 +1173,7 @@ struct block_symbol
 
   bool empty () const
   {
-    return symbol == nullptr;
+    return symbol.empty ();
   }
 };
 

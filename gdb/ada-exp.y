@@ -828,7 +828,7 @@ write_object_renaming (struct parser_state *par_state,
     int inner_renamed_entity_len;
     const char *inner_renaming_expr;
 
-    switch (ada_parse_renaming (sym_info.symbol, &inner_renamed_entity,
+    switch (ada_parse_renaming (sym_info.symbol.symbol, &inner_renamed_entity,
 				&inner_renamed_entity_len,
 				&inner_renaming_expr))
       {
