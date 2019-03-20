@@ -246,11 +246,8 @@ static struct block_symbol
 find_symbol_in_baseclass (struct type *parent_type, const char *name,
 			  const struct block *block)
 {
-  struct block_symbol sym;
+  struct block_symbol sym = null_block_symbol;
   int i;
-
-  sym.symbol = NULL;
-  sym.block = NULL;
 
   for (i = 0; i < TYPE_N_BASECLASSES (parent_type); ++i)
     {

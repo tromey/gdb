@@ -208,10 +208,8 @@ cp_lookup_bare_symbol (const struct language_defn *langdef,
 
   if (search)
     {
-      struct block_symbol lang_this;
+      struct block_symbol lang_this = null_block_symbol;
       struct type *type;
-
-      lang_this.symbol = NULL;
 
       if (langdef != NULL)
 	lang_this = lookup_language_this (langdef, block);
@@ -379,12 +377,9 @@ cp_lookup_symbol_via_imports (const char *scope,
 			      const int search_parents)
 {
   struct using_direct *current;
-  struct block_symbol sym;
+  struct block_symbol sym = null_block_symbol;
   int len;
   int directive_match;
-
-  sym.symbol = NULL;
-  sym.block = NULL;
 
   /* First, try to find the symbol in the given namespace if requested.  */
   if (search_scope_first)
@@ -808,10 +803,7 @@ find_symbol_in_baseclass (struct type *parent_type, const char *name,
 			  int is_in_anonymous)
 {
   int i;
-  struct block_symbol sym;
-
-  sym.symbol = NULL;
-  sym.block = NULL;
+  struct block_symbol sym = null_block_symbol;
 
   for (i = 0; i < TYPE_N_BASECLASSES (parent_type); ++i)
     {
