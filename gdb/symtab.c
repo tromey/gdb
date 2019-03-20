@@ -3029,8 +3029,10 @@ find_symbol_at_address (CORE_ADDR address)
 
 	      ALL_BLOCK_SYMBOLS (b, iter, sym)
 		{
+		  struct block_symbol bsym = { sym, b };
+
 		  if (SYMBOL_CLASS (sym) == LOC_STATIC
-		      && SYMBOL_VALUE_ADDRESS (sym) == address)
+		      && BSYMBOL_VALUE_ADDRESS (bsym) == address)
 		    return sym;
 		}
 	    }
