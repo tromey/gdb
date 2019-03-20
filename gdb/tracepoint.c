@@ -910,7 +910,8 @@ collection_list::add_memrange (struct gdbarch *gdbarch,
 /* Add a symbol to a collection list.  */
 
 void
-collection_list::collect_symbol (struct symbol *sym,
+collection_list::collect_symbol (const struct block *block,
+				 struct symbol *sym,
 				 struct gdbarch *gdbarch,
 				 long frame_regno, long frame_offset,
 				 CORE_ADDR scope,
@@ -934,19 +935,23 @@ collection_list::collect_symbol (struct symbol *sym,
 		       SYMBOL_PRINT_NAME (sym), plongest (SYMBOL_VALUE (sym)));
       break;
     case LOC_STATIC:
-      offset = SYMBOL_VALUE_ADDRESS (sym);
-      if (info_verbose)
-	{
-	  printf_filtered ("LOC_STATIC %s: collect %ld bytes at %s.\n",
-			   SYMBOL_PRINT_NAME (sym), len,
-			   paddress (gdbarch, offset));
-	}
-      /* A struct may be a C++ class with static fields, go to general
-	 expression handling.  */
-      if (TYPE_CODE (SYMBOL_TYPE (sym)) == TYPE_CODE_STRUCT)
-	treat_as_expr = 1;
-      else
-	add_memrange (gdbarch, memrange_absolute, offset, len, scope);
+      {
+	struct block_symbol bsym = { sym, block };
+
+	offset = BSYMBOL_VALUE_ADDRESS (bsym);
+	if (info_verbose)
+	  {
+	    printf_filtered ("LOC_STATIC %s: collect %ld bytes at %s.\n",
+			     SYMBOL_PRINT_NAME (sym), len,
+			     paddress (gdbarch, offset));
+	  }
+	/* A struct may be a C++ class with static fields, go to general
+	   expression handling.  */
+	if (TYPE_CODE (SYMBOL_TYPE (sym)) == TYPE_CODE_STRUCT)
+	  treat_as_expr = 1;
+	else
+	  add_memrange (gdbarch, memrange_absolute, offset, len, scope);
+      }
       break;
     case LOC_REGISTER:
       reg = SYMBOL_REGISTER_OPS (sym)->register_number (sym, gdbarch);
@@ -1064,7 +1069,7 @@ do_collect_symbol (const struct block *block,
 		   struct add_local_symbols_data *p)
 {
 
-  p->collect->collect_symbol (sym, p->gdbarch, p->frame_regno,
+  p->collect->collect_symbol (block, sym, p->gdbarch, p->frame_regno,
 			      p->frame_offset, p->pc, p->trace_string);
   p->count++;
 
