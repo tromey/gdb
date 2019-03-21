@@ -140,7 +140,9 @@ struct global_block
 };
 
 #define BLOCK_START(bl)		(((bl)->startaddr) + 0)
+#define BLOCK_RAW_START(bl)	(((bl)->startaddr) + 0)
 #define BLOCK_END(bl)		(((bl)->endaddr) + 0)
+#define BLOCK_RAW_END(bl)	(((bl)->endaddr) + 0)
 #define BLOCK_FUNCTION(bl)	(bl)->function
 #define BLOCK_SUPERBLOCK(bl)	(bl)->superblock
 #define BLOCK_MULTIDICT(bl)	(bl)->multidict
