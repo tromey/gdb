@@ -249,17 +249,6 @@ call_site_for_pc (struct gdbarch *gdbarch, CORE_ADDR pc)
   return (struct call_site *) *slot;
 }
 
-/* Return the blockvector immediately containing the innermost lexical block
-   containing the specified pc value, or 0 if there is none.
-   Backward compatibility, no section.  */
-
-const struct blockvector *
-blockvector_for_pc (CORE_ADDR pc, const struct block **pblock)
-{
-  return blockvector_for_pc_sect (pc, find_pc_mapped_section (pc),
-				  pblock, NULL);
-}
-
 /* Return the innermost lexical block containing the specified pc value
    in the specified section, or 0 if there is none.  */
 

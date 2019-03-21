@@ -268,7 +268,8 @@ block_starting_point_at (CORE_ADDR pc, const struct block *block)
   const struct blockvector *bv;
   const struct block *new_block;
 
-  bv = blockvector_for_pc (pc, NULL);
+  bv = blockvector_for_pc_sect (pc, find_pc_mapped_section (pc),
+				NULL, NULL);
   if (BLOCKVECTOR_MAP (bv) == NULL)
     return 0;
 
