@@ -737,15 +737,6 @@ gen_var_ref (struct agent_expr *ax, struct axs_value *value,
     }
 }
 
-/* FIXME this is temporary */
-static void
-gen_var_ref (struct agent_expr *ax, struct axs_value *value,
-	     struct symbol *sym)
-{
-  struct block_symbol b = { sym, nullptr };
-  gen_var_ref (ax, value, b);
-}
-
 /* Generate code for a minimal symbol variable reference to AX.  The
    variable is the symbol MINSYM, of OBJFILE.  Set VALUE to describe
    the result.  */
@@ -1794,7 +1785,9 @@ gen_expr_for_cast (struct expression *exp, union exp_element **pc,
     {
       if (op == OP_VAR_VALUE)
 	{
-	  gen_var_ref (ax, value, (*pc)[2].symbol);
+	  struct block_symbol bsym = { (*pc)[2].symbol,
+				       (*pc)[1].block };
+	  gen_var_ref (ax, value, bsym);
 
 	  if (value->optimized_out)
 	    error (_("`%s' has been optimized out, cannot use"),
@@ -2018,16 +2011,20 @@ gen_expr (struct expression *exp, union exp_element **pc,
       break;
 
     case OP_VAR_VALUE:
-      gen_var_ref (ax, value, (*pc)[2].symbol);
+      {
+	struct block_symbol bsym = { (*pc)[2].symbol,
+				     (*pc)[1].block };
+	gen_var_ref (ax, value, bsym);
 
-      if (value->optimized_out)
-	error (_("`%s' has been optimized out, cannot use"),
-	       SYMBOL_PRINT_NAME ((*pc)[2].symbol));
+	if (value->optimized_out)
+	  error (_("`%s' has been optimized out, cannot use"),
+		 SYMBOL_PRINT_NAME ((*pc)[2].symbol));
 
-      if (TYPE_CODE (value->type) == TYPE_CODE_ERROR)
-	error_unknown_type (SYMBOL_PRINT_NAME ((*pc)[2].symbol));
+	if (TYPE_CODE (value->type) == TYPE_CODE_ERROR)
+	  error_unknown_type (SYMBOL_PRINT_NAME ((*pc)[2].symbol));
 
-      (*pc) += 4;
+	(*pc) += 4;
+      }
       break;
 
     case OP_VAR_MSYM_VALUE:
@@ -2445,7 +2442,7 @@ gen_expr_binop_rest (struct expression *exp,
 
 agent_expr_up
 gen_trace_for_var (CORE_ADDR scope, struct gdbarch *gdbarch,
-		   struct symbol *var, int trace_string)
+		   const struct block_symbol &var, int trace_string)
 {
   agent_expr_up ax (new agent_expr (gdbarch, scope));
   struct axs_value value;

@@ -1024,8 +1024,10 @@ collection_list::collect_symbol (const struct block *block,
   /* Expressions are the most general case.  */
   if (treat_as_expr)
     {
+      struct block_symbol bsym = { sym, block };
+
       agent_expr_up aexpr = gen_trace_for_var (scope, gdbarch,
-					       sym, trace_string);
+					       bsym, trace_string);
 
       /* It can happen that the symbol is recorded as a computed
 	 location, but it's been optimized away and doesn't actually
