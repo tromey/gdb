@@ -1445,7 +1445,8 @@ encode_actions_1 (struct command_line *action,
 			struct symbol *sym = exp->elts[2].symbol;
 			const char *name = SYMBOL_NATURAL_NAME (sym);
 
-			collect->collect_symbol (exp->elts[2].symbol,
+			collect->collect_symbol (exp->elts[1].block,
+						 exp->elts[2].symbol,
 						 target_gdbarch (),
 						 frame_reg,
 						 frame_offset,
