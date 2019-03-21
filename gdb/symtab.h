@@ -463,9 +463,13 @@ extern CORE_ADDR symbol_overlayed_address (CORE_ADDR, struct obj_section *);
    field only, instead of the SYMBOL parameter.  */
 
 #define SYMBOL_VALUE(symbol)		(symbol)->ginfo.value.ivalue
-#define SYMBOL_VALUE_ADDRESS(symbol)	((symbol)->ginfo.value.address + 0)
+#define SYMBOL_VALUE_ADDRESS(objfile, symbol)	\
+  ((symbol)->ginfo.value.address		\
+   + 0 * ANOFFSET ((objfile)->section_offsets,	\
+		   ((symbol)->ginfo.section)))
+extern struct objfile *block_objfile (const struct block *block);
 #define BSYMBOL_VALUE_ADDRESS(sym) \
-  ((sym).symbol->ginfo.value.address + 0)
+  SYMBOL_VALUE_ADDRESS (block_objfile ((sym).block), (sym).symbol)
 #define SYMBOL_VALUE_RAW_ADDRESS(symbol) ((symbol)->ginfo.value.address + 0)
 #define SET_SYMBOL_VALUE_ADDRESS(symbol, new_value)	\
   ((symbol)->ginfo.value.address = (new_value))

@@ -21521,7 +21521,7 @@ new_symbol (struct die_info *die, struct type *type, struct dwarf2_cu *cu,
 		attr2 = NULL;
 
 	      if (SYMBOL_CLASS (sym) == LOC_STATIC
-		  && SYMBOL_VALUE_ADDRESS (sym) == 0
+		  && SYMBOL_VALUE_ADDRESS (objfile, sym) == 0
 		  && !dwarf2_per_objfile->has_section_at_zero)
 		{
 		  /* When a static variable is eliminated by the linker,
