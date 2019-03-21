@@ -267,12 +267,14 @@ block_starting_point_at (CORE_ADDR pc, const struct block *block)
 {
   const struct blockvector *bv;
   const struct block *new_block;
+  struct bound_block bblock;
 
   bv = blockvector_for_pc_sect (pc, find_pc_mapped_section (pc),
-				NULL, NULL);
+				&bblock, NULL);
   if (BLOCKVECTOR_MAP (bv) == NULL)
     return 0;
 
+  // fixme unrelocate PC now
   new_block = (const struct block *) addrmap_find (BLOCKVECTOR_MAP (bv),
 						   pc - 1);
   if (new_block == NULL)

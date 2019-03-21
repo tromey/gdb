@@ -9448,14 +9448,14 @@ resolve_sal_pc (struct symtab_and_line *sal)
   if (sal->section == 0 && sal->symtab != NULL)
     {
       const struct blockvector *bv;
-      const struct block *b;
+      struct bound_block b;
       struct symbol *sym;
 
       bv = blockvector_for_pc_sect (sal->pc, 0, &b,
 				    SYMTAB_COMPUNIT (sal->symtab));
       if (bv != NULL)
 	{
-	  sym = block_linkage_function (b);
+	  sym = block_linkage_function (b.block);
 	  if (sym != NULL)
 	    {
 	      fixup_symbol_section (sym, SYMTAB_OBJFILE (sal->symtab));

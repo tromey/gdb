@@ -221,9 +221,15 @@ extern int block_inlined_p (const struct block *block);
 
 extern int contained_in (const struct block *, const struct block *);
 
+struct bound_block
+{
+  struct objfile *objfile;
+  const struct block *block;
+};
+
 extern const struct blockvector *
   blockvector_for_pc_sect (CORE_ADDR, struct obj_section *,
-			   const struct block **, struct compunit_symtab *);
+			   struct bound_block *, struct compunit_symtab *);
 
 extern int blockvector_contains_pc (const struct blockvector *bv, CORE_ADDR pc);
 

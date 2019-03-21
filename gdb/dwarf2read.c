@@ -5247,6 +5247,7 @@ recursively_find_pc_sect_compunit_symtab (struct compunit_symtab *cust,
 {
   int i;
 
+  // fixme unrelocate PC here for bc-c-pc call
   if (COMPUNIT_BLOCKVECTOR (cust) != NULL
       && blockvector_contains_pc (COMPUNIT_BLOCKVECTOR (cust), pc))
     return cust;

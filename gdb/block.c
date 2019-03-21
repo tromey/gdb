@@ -131,6 +131,8 @@ block_inlined_p (const struct block *bl)
 /* A helper function that checks whether PC is in the blockvector BL.
    It returns the containing block if there is one, or else NULL.  */
 
+// FIXME document that this is the raw PC
+
 static const struct block *
 find_block_in_blockvector (const struct blockvector *bl, CORE_ADDR pc)
 {
@@ -182,7 +184,7 @@ find_block_in_blockvector (const struct blockvector *bl, CORE_ADDR pc)
 
 const struct blockvector *
 blockvector_for_pc_sect (CORE_ADDR pc, struct obj_section *section,
-			 const struct block **pblock,
+			 struct bound_block *pblock,
 			 struct compunit_symtab *cust)
 {
   const struct blockvector *bl;
@@ -198,18 +200,23 @@ blockvector_for_pc_sect (CORE_ADDR pc, struct obj_section *section,
 
   bl = COMPUNIT_BLOCKVECTOR (cust);
 
+  // FIXME unrelocate PC here
   /* Then search that symtab for the smallest block that wins.  */
   b = find_block_in_blockvector (bl, pc);
   if (b == NULL)
     return NULL;
 
   if (pblock)
-    *pblock = b;
+    {
+      pblock->objfile = section->objfile;
+      pblock->block = b;
+    }
   return bl;
 }
 
 /* Return true if the blockvector BV contains PC, false otherwise.  */
 
+// FIXME document that this takes the raw PC
 int
 blockvector_contains_pc (const struct blockvector *bv, CORE_ADDR pc)
 {
@@ -256,11 +263,11 @@ const struct block *
 block_for_pc_sect (CORE_ADDR pc, struct obj_section *section)
 {
   const struct blockvector *bl;
-  const struct block *b;
+  struct bound_block b;
 
   bl = blockvector_for_pc_sect (pc, section, &b, NULL);
   if (bl)
-    return b;
+    return b.block;
   return 0;
 }
 
