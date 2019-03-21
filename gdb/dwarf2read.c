@@ -10387,9 +10387,7 @@ process_full_comp_unit (struct dwarf2_per_cu_data *per_cu,
      this comp unit.  */
   dwarf2_record_block_ranges (cu->dies, static_block, baseaddr, cu);
 
-  cust = cu->get_builder ()->end_symtab_from_static_block (static_block,
-						    SECT_OFF_TEXT (objfile),
-						    0);
+  cust = cu->get_builder ()->end_symtab_from_static_block (static_block, 0);
 
   if (cust != NULL)
     {
@@ -10448,7 +10446,6 @@ process_full_type_unit (struct dwarf2_per_cu_data *per_cu,
 {
   struct dwarf2_cu *cu = per_cu->cu;
   struct dwarf2_per_objfile *dwarf2_per_objfile = per_cu->dwarf2_per_objfile;
-  struct objfile *objfile = dwarf2_per_objfile->objfile;
   struct compunit_symtab *cust;
   struct signatured_type *sig_type;
 
@@ -10483,7 +10480,7 @@ process_full_type_unit (struct dwarf2_per_cu_data *per_cu,
   if (sig_type->type_unit_group->compunit_symtab == NULL)
     {
       buildsym_compunit *builder = cu->get_builder ();
-      cust = builder->end_expandable_symtab (0, SECT_OFF_TEXT (objfile));
+      cust = builder->end_expandable_symtab (0);
       sig_type->type_unit_group->compunit_symtab = cust;
 
       if (cust != NULL)

@@ -3980,7 +3980,7 @@ psymtab_to_symtab_1 (struct objfile *objfile,
 		      valu += ANOFFSET (section_offsets,
 					SECT_OFF_TEXT (objfile));
 		      previous_stab_code = N_SO;
-		      cust = end_symtab (valu, SECT_OFF_TEXT (objfile));
+		      cust = end_symtab (valu);
 		      end_stabs ();
 		      last_symtab_ended = 1;
 		    }
@@ -4041,7 +4041,7 @@ psymtab_to_symtab_1 (struct objfile *objfile,
 
       if (! last_symtab_ended)
 	{
-	  cust = end_symtab (pst->raw_text_high (), SECT_OFF_TEXT (objfile));
+	  cust = end_symtab (pst->raw_text_high ());
 	  end_stabs ();
 	}
 

@@ -1438,10 +1438,6 @@ struct compunit_symtab
      all symtabs in a given compilation unit.  */
   const struct blockvector *blockvector;
 
-  /* Section in objfile->section_offsets for the blockvector and
-     the linetable.  Probably always SECT_OFF_TEXT.  */
-  int block_line_section;
-
   /* Symtab has been compiled with both optimizations and debug info so that
      GDB may stop skipping prologues as variables locations are valid already
      at function entry points.  */
@@ -1482,7 +1478,6 @@ struct compunit_symtab
 #define COMPUNIT_PRODUCER(cust) ((cust)->producer)
 #define COMPUNIT_DIRNAME(cust) ((cust)->dirname)
 #define COMPUNIT_BLOCKVECTOR(cust) ((cust)->blockvector)
-#define COMPUNIT_BLOCK_LINE_SECTION(cust) ((cust)->block_line_section)
 #define COMPUNIT_LOCATIONS_VALID(cust) ((cust)->locations_valid)
 #define COMPUNIT_EPILOGUE_UNWIND_VALID(cust) ((cust)->epilogue_unwind_valid)
 #define COMPUNIT_CALL_SITE_HTAB(cust) ((cust)->call_site_htab)

@@ -272,12 +272,11 @@ struct buildsym_compunit
 					     int expandable, int required);
 
   struct compunit_symtab *end_symtab_from_static_block
-      (struct block *static_block, int section, int expandable);
+      (struct block *static_block, int expandable);
 
-  struct compunit_symtab *end_symtab (CORE_ADDR end_addr, int section);
+  struct compunit_symtab *end_symtab (CORE_ADDR end_addr);
 
-  struct compunit_symtab *end_expandable_symtab (CORE_ADDR end_addr,
-						 int section);
+  struct compunit_symtab *end_expandable_symtab (CORE_ADDR end_addr);
 
   void augment_type_symtab ();
 
@@ -297,7 +296,7 @@ private:
   void watch_main_source_file_lossage ();
 
   struct compunit_symtab *end_symtab_with_blockvector
-      (struct block *static_block, int section, int expandable);
+      (struct block *static_block, int expandable);
 
   /* The objfile we're reading debug info from.  */
   struct objfile *m_objfile;

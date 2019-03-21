@@ -922,7 +922,7 @@ buildsym_compunit::end_symtab_get_static_block (CORE_ADDR end_addr,
 
 struct compunit_symtab *
 buildsym_compunit::end_symtab_with_blockvector (struct block *static_block,
-						int section, int expandable)
+						int expandable)
 {
   struct compunit_symtab *cu = m_compunit_symtab;
   struct blockvector *blockvector;
@@ -1049,8 +1049,6 @@ buildsym_compunit::end_symtab_with_blockvector (struct block *static_block,
     set_block_compunit_symtab (b, cu);
   }
 
-  COMPUNIT_BLOCK_LINE_SECTION (cu) = section;
-
   COMPUNIT_MACRO_TABLE (cu) = release_macros ();
 
   /* Default any symbols without a specified symtab to the primary symtab.  */
@@ -1089,15 +1087,12 @@ buildsym_compunit::end_symtab_with_blockvector (struct block *static_block,
 /* Implementation of the second part of end_symtab.  Pass STATIC_BLOCK
    as value returned by end_symtab_get_static_block.
 
-   SECTION is the same as for end_symtab: the section number
-   (in objfile->section_offsets) of the blockvector and linetable.
-
    If EXPANDABLE is non-zero the GLOBAL_BLOCK dictionary is made
    expandable.  */
 
 struct compunit_symtab *
 buildsym_compunit::end_symtab_from_static_block (struct block *static_block,
-						 int section, int expandable)
+						 int expandable)
 {
   struct compunit_symtab *cu;
 
@@ -1115,7 +1110,7 @@ buildsym_compunit::end_symtab_from_static_block (struct block *static_block,
       cu = NULL;
     }
   else
-    cu = end_symtab_with_blockvector (static_block, section, expandable);
+    cu = end_symtab_with_blockvector (static_block, expandable);
 
   return cu;
 }
@@ -1125,9 +1120,7 @@ buildsym_compunit::end_symtab_from_static_block (struct block *static_block,
    them), then make the struct symtab for that file and put it in the
    list of all such.
 
-   END_ADDR is the address of the end of the file's text.  SECTION is
-   the section number (in objfile->section_offsets) of the blockvector
-   and linetable.
+   END_ADDR is the address of the end of the file's text.
 
    Note that it is possible for end_symtab() to return NULL.  In
    particular, for the DWARF case at least, it will return NULL when
@@ -1142,23 +1135,23 @@ buildsym_compunit::end_symtab_from_static_block (struct block *static_block,
    yourself.  */
 
 struct compunit_symtab *
-buildsym_compunit::end_symtab (CORE_ADDR end_addr, int section)
+buildsym_compunit::end_symtab (CORE_ADDR end_addr)
 {
   struct block *static_block;
 
   static_block = end_symtab_get_static_block (end_addr, 0, 0);
-  return end_symtab_from_static_block (static_block, section, 0);
+  return end_symtab_from_static_block (static_block, 0);
 }
 
 /* Same as end_symtab except create a symtab that can be later added to.  */
 
 struct compunit_symtab *
-buildsym_compunit::end_expandable_symtab (CORE_ADDR end_addr, int section)
+buildsym_compunit::end_expandable_symtab (CORE_ADDR end_addr)
 {
   struct block *static_block;
 
   static_block = end_symtab_get_static_block (end_addr, 1, 0);
-  return end_symtab_from_static_block (static_block, section, 1);
+  return end_symtab_from_static_block (static_block, 1);
 }
 
 /* Subroutine of augment_type_symtab to simplify it.

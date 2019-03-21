@@ -2331,8 +2331,7 @@ read_ofile_symtab (struct objfile *objfile, struct partial_symtab *pst)
   if (get_last_source_start_addr () > text_offset)
     set_last_source_start_addr (text_offset);
 
-  pst->compunit_symtab = end_symtab (text_offset + text_size,
-				     SECT_OFF_TEXT (objfile));
+  pst->compunit_symtab = end_symtab (text_offset + text_size);
 
   end_stabs ();
 
@@ -2589,7 +2588,7 @@ process_one_symbol (int type, int desc, CORE_ADDR valu, const char *name,
 	      patch_subfile_names (get_current_subfile (), name);
 	      break;		/* Ignore repeated SOs.  */
 	    }
-	  end_symtab (valu, SECT_OFF_TEXT (objfile));
+	  end_symtab (valu);
 	  end_stabs ();
 	}
 
