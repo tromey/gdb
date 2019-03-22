@@ -2099,7 +2099,7 @@ print_frame_local_vars (struct frame_info *frame,
       return;
     }
 
-  block = get_frame_block (frame, 0);
+  block = get_frame_block (frame, 0).block;
   if (block == 0)
     {
       if (!quiet)
@@ -2297,7 +2297,7 @@ get_selected_block (CORE_ADDR *addr_in_block)
   if (!has_stack_frames ())
     return 0;
 
-  return get_frame_block (get_selected_frame (NULL), addr_in_block);
+  return get_frame_block (get_selected_frame (NULL), addr_in_block).block;
 }
 
 /* Find a frame a certain number of levels away from FRAME.

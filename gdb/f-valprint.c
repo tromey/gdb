@@ -445,7 +445,7 @@ info_common_command (const char *comname, int from_tty)
   /* The following is generally ripped off from stack.c's routine 
      print_frame_info().  */
 
-  block = get_frame_block (fi, 0);
+  block = get_frame_block (fi, 0).block;
   if (block == NULL)
     {
       printf_filtered (_("No symbol table info available.\n"));

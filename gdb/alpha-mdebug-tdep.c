@@ -24,6 +24,7 @@
 #include "gdbcore.h"
 #include "block.h"
 #include "trad-frame.h"
+#include "objfiles.h"
 
 #include "alpha-tdep.h"
 #include "mdebugread.h"
@@ -91,23 +92,23 @@
 static struct mdebug_extra_func_info *
 find_proc_desc (CORE_ADDR pc)
 {
-  const struct block *b = block_for_pc (pc);
+  struct bound_block b = block_for_pc (pc);
   struct mdebug_extra_func_info *proc_desc = NULL;
   struct symbol *sym = NULL;
   const char *sh_name = NULL;
 
-  if (b)
+  if (b.block)
     {
       CORE_ADDR startaddr;
       find_pc_partial_function (pc, &sh_name, &startaddr, NULL);
 
-      if (startaddr > BLOCK_START (b))
+      if (startaddr > XBLOCK_START (b.objfile, b.block))
 	/* This is the "pathological" case referred to in a comment in
 	   print_frame_info.  It might be better to move this check into
 	   symbol reading.  */
 	sym = NULL;
       else
-	sym = lookup_symbol (MDEBUG_EFI_SYMBOL_NAME, b, LABEL_DOMAIN,
+	sym = lookup_symbol (MDEBUG_EFI_SYMBOL_NAME, b.block, LABEL_DOMAIN,
 			     0).symbol;
     }
 

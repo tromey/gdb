@@ -51,32 +51,32 @@
    --- hopefully pointing us at the call instruction, or its delay
    slot instruction.  */
 
-const struct block *
+struct bound_block
 get_frame_block (struct frame_info *frame, CORE_ADDR *addr_in_block)
 {
   CORE_ADDR pc;
-  const struct block *bl;
+  struct bound_block bl;
   int inline_count;
 
   if (!get_frame_address_in_block_if_available (frame, &pc))
-    return NULL;
+    return {};
 
   if (addr_in_block)
     *addr_in_block = pc;
 
   bl = block_for_pc (pc);
-  if (bl == NULL)
-    return NULL;
+  if (bl.block == NULL)
+    return bl;
 
   inline_count = frame_inlined_callees (frame);
 
   while (inline_count > 0)
     {
-      if (block_inlined_p (bl))
+      if (block_inlined_p (bl.block))
 	inline_count--;
 
-      bl = BLOCK_SUPERBLOCK (bl);
-      gdb_assert (bl != NULL);
+      bl.block = BLOCK_SUPERBLOCK (bl.block);
+      gdb_assert (bl.block != NULL);
     }
 
   return bl;
@@ -85,18 +85,18 @@ get_frame_block (struct frame_info *frame, CORE_ADDR *addr_in_block)
 CORE_ADDR
 get_pc_function_start (CORE_ADDR pc)
 {
-  const struct block *bl;
+  struct bound_block bl;
   struct bound_minimal_symbol msymbol;
 
   bl = block_for_pc (pc);
-  if (bl)
+  if (bl.block)
     {
-      struct symbol *symbol = block_linkage_function (bl);
+      struct symbol *symbol = block_linkage_function (bl.block);
 
       if (symbol)
 	{
-	  bl = SYMBOL_BLOCK_VALUE (symbol);
-	  return BLOCK_ENTRY_PC (bl);
+	  bl.block = SYMBOL_BLOCK_VALUE (symbol);
+	  return BLOCK_ENTRY_PC (bl.block);
 	}
     }
 
@@ -117,7 +117,7 @@ get_pc_function_start (CORE_ADDR pc)
 struct symbol *
 get_frame_function (struct frame_info *frame)
 {
-  const struct block *bl = get_frame_block (frame, 0);
+  const struct block *bl = get_frame_block (frame, 0).block;
 
   if (bl == NULL)
     return NULL;
@@ -135,7 +135,7 @@ get_frame_function (struct frame_info *frame)
 struct symbol *
 find_pc_sect_function (CORE_ADDR pc, struct obj_section *section)
 {
-  const struct block *b = block_for_pc_sect (pc, section);
+  const struct block *b = block_for_pc_sect (pc, section).block;
 
   if (b == 0)
     return 0;
@@ -157,7 +157,7 @@ find_pc_function (CORE_ADDR pc)
 struct symbol *
 find_pc_sect_containing_function (CORE_ADDR pc, struct obj_section *section)
 {
-  const block *bl = block_for_pc_sect (pc, section);
+  const block *bl = block_for_pc_sect (pc, section).block;
 
   if (bl == nullptr)
     return nullptr;
@@ -472,7 +472,7 @@ block_innermost_frame (const struct block *block)
     frame = get_current_frame ();
   while (frame != NULL)
     {
-      const struct block *frame_block = get_frame_block (frame, NULL);
+      const struct block *frame_block = get_frame_block (frame, NULL).block;
       if (frame_block != NULL && contained_in (frame_block, block))
 	return frame;
 

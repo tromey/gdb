@@ -571,7 +571,7 @@ list_args_or_locals (enum what_to_list what, enum print_values values,
   const char *name_of_result;
   struct ui_out *uiout = current_uiout;
 
-  block = get_frame_block (fi, 0);
+  block = get_frame_block (fi, 0).block;
 
   switch (what)
     {

@@ -361,7 +361,7 @@ dwarf2_find_location_expression (struct dwarf2_loclist_baton *baton,
 	  /* This is entry PC record present only at entry point
 	     of a function.  Verify it is really the function entry point.  */
 
-	  const struct block *pc_block = block_for_pc (pc);
+	  const struct block *pc_block = block_for_pc (pc).block;
 	  struct symbol *pc_func = NULL;
 
 	  if (pc_block)
@@ -710,7 +710,7 @@ class dwarf_evaluate_loc_desc : public dwarf_expr_context
        get_frame_base_address(), and then implement a dwarf2 specific
        this_base method.  */
     struct symbol *framefunc;
-    const struct block *bl = get_frame_block (frame, NULL);
+    const struct block *bl = get_frame_block (frame, NULL).block;
 
     if (bl == NULL)
       error (_("frame address is not available."));
@@ -3098,7 +3098,7 @@ dwarf2_compile_expr_to_ax (struct agent_expr *expr, struct axs_value *loc,
 	    const struct block *b;
 	    struct symbol *framefunc;
 
-	    b = block_for_pc (expr->scope);
+	    b = block_for_pc (expr->scope).block;
 
 	    if (!b)
 	      error (_("No block found for address"));
@@ -3608,7 +3608,7 @@ locexpr_describe_location_piece (struct symbol *symbol, struct ui_file *stream,
 	return data;
       data = new_data;
 
-      b = block_for_pc (addr);
+      b = block_for_pc (addr).block;
 
       if (!b)
 	error (_("No block found for address for symbol \"%s\"."),

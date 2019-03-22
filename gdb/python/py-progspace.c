@@ -373,7 +373,7 @@ pspy_block_for_pc (PyObject *o, PyObject *args)
 {
   pspace_object *self = (pspace_object *) o;
   gdb_py_ulongest pc;
-  const struct block *block = NULL;
+  struct bound_block block = {};
   struct compunit_symtab *cust = NULL;
 
   PSPY_REQUIRE_VALID (self);
@@ -404,8 +404,8 @@ pspy_block_for_pc (PyObject *o, PyObject *args)
       return NULL;
     }
 
-  if (block)
-    return block_to_block_object (block, COMPUNIT_OBJFILE (cust));
+  if (block.block)
+    return block_to_block_object (block.block, block.objfile);
 
   Py_RETURN_NONE;
 }

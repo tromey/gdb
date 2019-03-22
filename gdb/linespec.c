@@ -2164,8 +2164,9 @@ create_sals_line_offset (struct linespec_state *self,
 	  set_current_program_space (intermediate_results[i].pspace);
 
 	  filter[i] = 1;
-	  blocks[i] = block_for_pc_sect (intermediate_results[i].pc,
-					 intermediate_results[i].section);
+	  blocks[i]
+	    = block_for_pc_sect (intermediate_results[i].pc,
+				 intermediate_results[i].section).block;
 	}
 
       for (i = 0; i < intermediate_results.size (); ++i)

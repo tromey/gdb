@@ -1653,7 +1653,7 @@ gen_maybe_namespace_elt (struct agent_expr *ax, struct axs_value *value,
   struct block_symbol sym;
 
   sym = cp_lookup_symbol_namespace (namespace_name, name,
-				    block_for_pc (ax->scope),
+				    block_for_pc (ax->scope).block,
 				    VAR_DOMAIN);
 
   if (sym.symbol == NULL)
@@ -2240,7 +2240,7 @@ gen_expr (struct expression *exp, union exp_element **pc,
 	const struct block *b;
 	const struct language_defn *lang;
 
-	b = block_for_pc (ax->scope);
+	b = block_for_pc (ax->scope).block;
 	func = block_linkage_function (b);
 	lang = language_def (SYMBOL_LANGUAGE (func));
 
@@ -2609,7 +2609,7 @@ agent_eval_command_one (const char *exp, int eval, CORE_ADDR pc)
     }
   else
     {
-      expression_up expr = parse_exp_1 (&arg, pc, block_for_pc (pc), 0);
+      expression_up expr = parse_exp_1 (&arg, pc, block_for_pc (pc).block, 0);
 
       if (eval)
 	{

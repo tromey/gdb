@@ -3756,7 +3756,7 @@ value_of_this (const struct language_defn *lang)
 
   frame = get_selected_frame (_("no frame selected"));
 
-  b = get_frame_block (frame, NULL);
+  b = get_frame_block (frame, NULL).block;
 
   sym = lookup_language_this (lang, b);
   if (sym.symbol == NULL)

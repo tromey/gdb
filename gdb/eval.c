@@ -1365,7 +1365,7 @@ evaluate_subexp_standard (struct type *expect_type,
 	value *func = evaluate_subexp_standard (NULL, exp, pos, noside);
 	CORE_ADDR addr = value_address (func);
 
-	const block *blk = block_for_pc (addr);
+	const block *blk = block_for_pc (addr).block;
 	const char *var = &exp->elts[pc + 2].string;
 
 	struct block_symbol sym = lookup_symbol (var, blk, VAR_DOMAIN, NULL);

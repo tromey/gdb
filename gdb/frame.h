@@ -704,8 +704,8 @@ class readonly_detached_regcache;
 std::unique_ptr<readonly_detached_regcache> frame_save_as_regcache
     (struct frame_info *this_frame);
 
-extern const struct block *get_frame_block (struct frame_info *,
-					    CORE_ADDR *addr_in_block);
+extern struct bound_block get_frame_block (struct frame_info *,
+					   CORE_ADDR *addr_in_block);
 
 /* Return the `struct block' that belongs to the selected thread's
    selected frame.  If the inferior has no state, return NULL.

@@ -391,7 +391,7 @@ gdbpy_lookup_symbol (PyObject *self, PyObject *args, PyObject *kw)
       TRY
 	{
 	  selected_frame = get_selected_frame (_("No frame selected."));
-	  block = get_frame_block (selected_frame, NULL);
+	  block = get_frame_block (selected_frame, NULL).block;
 	}
       CATCH (except, RETURN_MASK_ALL)
 	{

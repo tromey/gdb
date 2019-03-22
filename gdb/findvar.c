@@ -500,7 +500,7 @@ get_hosting_frame (struct symbol *var, const struct block *var_block,
      to look for upper frames when we find no block for the current frame: here
      and below, handle when frame_block == NULL.  */
   if (frame != NULL)
-    frame_block = get_frame_block (frame, NULL);
+    frame_block = get_frame_block (frame, NULL).block;
 
   /* Climb up the call stack until reaching the frame we are looking for.  */
   while (frame != NULL && frame_block != var_block)
@@ -513,7 +513,7 @@ get_hosting_frame (struct symbol *var, const struct block *var_block,
 	  frame = get_prev_frame (frame);
 	  if (frame == NULL)
 	    break;
-	  frame_block = get_frame_block (frame, NULL);
+	  frame_block = get_frame_block (frame, NULL).block;
 	}
 
       /* If we failed to find the proper frame, fallback to the heuristic
@@ -538,7 +538,7 @@ get_hosting_frame (struct symbol *var, const struct block *var_block,
 	      frame = follow_static_link (frame, static_link);
 	      if (frame != NULL)
 		{
-		  frame_block = get_frame_block (frame, NULL);
+		  frame_block = get_frame_block (frame, NULL).block;
 		  could_climb_up = frame_block != NULL;
 		}
 	    }

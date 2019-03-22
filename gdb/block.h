@@ -254,9 +254,9 @@ extern int blockvector_contains_pc (const struct blockvector *bv, CORE_ADDR pc);
 extern struct call_site *call_site_for_pc (struct gdbarch *gdbarch,
 					   CORE_ADDR pc);
 
-extern const struct block *block_for_pc (CORE_ADDR);
+extern struct bound_block block_for_pc (CORE_ADDR);
 
-extern const struct block *block_for_pc_sect (CORE_ADDR, struct obj_section *);
+extern struct bound_block block_for_pc_sect (CORE_ADDR, struct obj_section *);
 
 extern const char *block_scope (const struct block *block);
 

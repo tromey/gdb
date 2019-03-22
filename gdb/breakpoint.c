@@ -895,7 +895,7 @@ set_breakpoint_condition (struct breakpoint *b, const char *exp,
 	      arg = exp;
 	      loc->cond =
 		parse_exp_1 (&arg, loc->address,
-			     block_for_pc (loc->address), 0);
+			     block_for_pc (loc->address).block, 0);
 	      if (*arg)
 		error (_("Junk at end of expression"));
 	    }
@@ -2260,7 +2260,8 @@ parse_cmd_to_aexpr (CORE_ADDR scope, char *cmd)
       const char *cmd1;
 
       cmd1 = cmdrest;
-      expression_up expr = parse_exp_1 (&cmd1, scope, block_for_pc (scope), 1);
+      expression_up expr = parse_exp_1 (&cmd1, scope,
+					block_for_pc (scope).block, 1);
       argvec.push_back (expr.release ());
       cmdrest = cmd1;
       if (*cmdrest == ',')
@@ -8879,7 +8880,7 @@ init_breakpoint_sal (struct breakpoint *b, struct gdbarch *gdbarch,
 	  const char *arg = b->cond_string;
 
 	  loc->cond = parse_exp_1 (&arg, loc->address,
-				   block_for_pc (loc->address), 0);
+				   block_for_pc (loc->address).block, 0);
 	  if (*arg)
               error (_("Garbage '%s' follows condition"), arg);
 	}
@@ -9147,7 +9148,7 @@ find_condition_and_thread (const char *tok, CORE_ADDR pc,
       if (toklen >= 1 && strncmp (tok, "if", toklen) == 0)
 	{
 	  tok = cond_start = end_tok + 1;
-	  parse_exp_1 (&tok, pc, block_for_pc (pc), 0);
+	  parse_exp_1 (&tok, pc, block_for_pc (pc).block, 0);
 	  cond_end = tok;
 	  *cond_string = savestring (cond_start, cond_end - cond_start);
 	}
@@ -13529,7 +13530,7 @@ update_breakpoint_locations (struct breakpoint *b,
 	  TRY
 	    {
 	      new_loc->cond = parse_exp_1 (&s, sal.pc,
-					   block_for_pc (sal.pc),
+					   block_for_pc (sal.pc).block,
 					   0);
 	    }
 	  CATCH (e, RETURN_MASK_ERROR)

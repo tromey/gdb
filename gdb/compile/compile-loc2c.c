@@ -869,7 +869,7 @@ do_compile_dwarf_expr_to_c (int indent, string_file *stream,
 	    struct symbol *framefunc;
 	    char fb_name[50];
 
-	    b = block_for_pc (pc);
+	    b = block_for_pc (pc).block;
 
 	    if (!b)
 	      error (_("No block found for address"));

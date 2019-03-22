@@ -684,8 +684,9 @@ validate_actionline (const char *line, struct breakpoint *b)
 	  for (loc = t->loc; loc; loc = loc->next)
 	    {
 	      p = tmp_p;
-	      expression_up exp = parse_exp_1 (&p, loc->address,
-					       block_for_pc (loc->address), 1);
+	      expression_up exp
+		= parse_exp_1 (&p, loc->address,
+			       block_for_pc (loc->address).block, 1);
 
 	      if (exp->elts[0].opcode == OP_VAR_VALUE)
 		{
@@ -731,8 +732,9 @@ validate_actionline (const char *line, struct breakpoint *b)
 	      p = tmp_p;
 
 	      /* Only expressions are allowed for this action.  */
-	      expression_up exp = parse_exp_1 (&p, loc->address,
-					       block_for_pc (loc->address), 1);
+	      expression_up exp
+		= parse_exp_1 (&p, loc->address,
+			       block_for_pc (loc->address).block, 1);
 
 	      /* We have something to evaluate, make sure that the expr to
 		 bytecode translator can handle it and that it's not too
@@ -1104,7 +1106,7 @@ collection_list::add_local_symbols (struct gdbarch *gdbarch, CORE_ADDR pc,
 
   if (type == 'L')
     {
-      block = block_for_pc (pc);
+      block = block_for_pc (pc).block;
       if (block == NULL)
 	{
 	  warning (_("Can't collect locals; "
@@ -1126,7 +1128,7 @@ collection_list::add_local_symbols (struct gdbarch *gdbarch, CORE_ADDR pc,
   else
     {
       pc = get_pc_function_start (pc);
-      block = block_for_pc (pc);
+      block = block_for_pc (pc).block;
       if (block == NULL)
 	{
 	  warning (_("Can't collect args; no symbol table info available."));
@@ -1406,9 +1408,10 @@ encode_actions_1 (struct command_line *action,
 		{
 		  unsigned long addr;
 
-		  expression_up exp = parse_exp_1 (&action_exp, tloc->address,
-						   block_for_pc (tloc->address),
-						   1);
+		  expression_up exp
+		    = parse_exp_1 (&action_exp, tloc->address,
+				   block_for_pc (tloc->address).block,
+				   1);
 
 		  switch (exp->elts[0].opcode)
 		    {
@@ -1484,9 +1487,10 @@ encode_actions_1 (struct command_line *action,
 	      action_exp = skip_spaces (action_exp);
 
 		{
-		  expression_up exp = parse_exp_1 (&action_exp, tloc->address,
-						   block_for_pc (tloc->address),
-						   1);
+		  expression_up exp
+		    = parse_exp_1 (&action_exp, tloc->address,
+				   block_for_pc (tloc->address).block,
+				   1);
 
 		  agent_expr_up aexpr = gen_eval_for_expr (tloc->address,
 							   exp.get ());
@@ -2510,7 +2514,7 @@ info_scope_command (const char *args_in, int from_tty)
 {
   struct symbol *sym;
   struct bound_minimal_symbol msym;
-  const struct block *block;
+  struct bound_block block;
   const char *symname;
   const char *save_args = args_in;
   struct block_iterator iter;
@@ -2538,10 +2542,10 @@ info_scope_command (const char *args_in, int from_tty)
   resolve_sal_pc (&sals[0]);
   block = block_for_pc (sals[0].pc);
 
-  while (block != 0)
+  while (block.block != 0)
     {
       QUIT;			/* Allow user to bail out with ^C.  */
-      ALL_BLOCK_SYMBOLS (block, iter, sym)
+      ALL_BLOCK_SYMBOLS (block.block, iter, sym)
 	{
 	  QUIT;			/* Allow user to bail out with ^C.  */
 	  if (count == 0)
@@ -2557,9 +2561,10 @@ info_scope_command (const char *args_in, int from_tty)
 	  printf_filtered ("Symbol %s is ", symname);
 
 	  if (SYMBOL_COMPUTED_OPS (sym) != NULL)
-	    SYMBOL_COMPUTED_OPS (sym)->describe_location (sym,
-							  BLOCK_ENTRY_PC (block),
-							  gdb_stdout);
+	    SYMBOL_COMPUTED_OPS (sym)
+	      ->describe_location (sym,
+				   BLOCK_ENTRY_PC (block.block),
+				   gdb_stdout);
 	  else
 	    {
 	      switch (SYMBOL_CLASS (sym))
@@ -2663,10 +2668,10 @@ info_scope_command (const char *args_in, int from_tty)
 	    printf_filtered (", length %d.\n",
 			     TYPE_LENGTH (check_typedef (SYMBOL_TYPE (sym))));
 	}
-      if (BLOCK_FUNCTION (block))
+      if (BLOCK_FUNCTION (block.block))
 	break;
       else
-	block = BLOCK_SUPERBLOCK (block);
+	block.block = BLOCK_SUPERBLOCK (block.block);
     }
   if (count <= 0)
     printf_filtered ("Scope for %s contains no locals or arguments.\n",

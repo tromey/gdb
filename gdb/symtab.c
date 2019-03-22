@@ -3859,7 +3859,7 @@ skip_prologue_sal (struct symtab_and_line *sal)
 
   /* Check if we are now inside an inlined function.  If we can,
      use the call site of the function instead.  */
-  b = block_for_pc_sect (sal->pc, sal->section);
+  b = block_for_pc_sect (sal->pc, sal->section).block;
   function_block = NULL;
   while (b != NULL)
     {
@@ -3956,7 +3956,7 @@ skip_prologue_using_sal (struct gdbarch *gdbarch, CORE_ADDR func_addr)
 	  /* The line number is smaller.  Check that it's from the
 	     same function, not something inlined.  If it's inlined,
 	     then there is no point comparing the line numbers.  */
-	  bl = block_for_pc (prologue_sal.end);
+	  bl = block_for_pc (prologue_sal.end).block;
 	  while (bl)
 	    {
 	      if (block_inlined_p (bl))

@@ -286,7 +286,8 @@ static PyObject *
 frapy_block (PyObject *self, PyObject *args)
 {
   struct frame_info *frame;
-  const struct block *block = NULL, *fn_block;
+  struct bound_block block = {};
+  const struct block *fn_block;
 
   TRY
     {
@@ -299,23 +300,21 @@ frapy_block (PyObject *self, PyObject *args)
     }
   END_CATCH
 
-  for (fn_block = block;
+  for (fn_block = block.block;
        fn_block != NULL && BLOCK_FUNCTION (fn_block) == NULL;
        fn_block = BLOCK_SUPERBLOCK (fn_block))
     ;
 
-  if (block == NULL || fn_block == NULL || BLOCK_FUNCTION (fn_block) == NULL)
+  if (block.block == NULL || fn_block == NULL
+      || BLOCK_FUNCTION (fn_block) == NULL)
     {
       PyErr_SetString (PyExc_RuntimeError,
 		       _("Cannot locate block for frame."));
       return NULL;
     }
 
-  if (block)
-    {
-      return block_to_block_object
-	(block, symbol_objfile (BLOCK_FUNCTION (fn_block)));
-    }
+  if (block.block)
+    return block_to_block_object (block.block, block.objfile);
 
   Py_RETURN_NONE;
 }
@@ -529,7 +528,7 @@ frapy_read_var (PyObject *self, PyObject *args)
 	  FRAPY_REQUIRE_VALID (self, frame);
 
 	  if (!block)
-	    block = get_frame_block (frame, NULL);
+	    block = get_frame_block (frame, NULL).block;
 	  lookup_sym = lookup_symbol (var_name.get (), block, VAR_DOMAIN, NULL);
 	  var = lookup_sym.symbol;
 	  block = lookup_sym.block;

@@ -304,7 +304,7 @@ varobj_create (const char *objname,
       block = NULL;
       if (fi != NULL)
 	{
-	  block = get_frame_block (fi, 0);
+	  block = get_frame_block (fi, 0).block;
 	  pc = get_frame_pc (fi);
 	}
 

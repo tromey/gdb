@@ -786,8 +786,8 @@ frame_id_inner (struct gdbarch *gdbarch, struct frame_id l, struct frame_id r)
 
       gdb_assert (l.code_addr_p && r.code_addr_p);
 
-      lb = block_for_pc (l.code_addr);
-      rb = block_for_pc (r.code_addr);
+      lb = block_for_pc (l.code_addr).block;
+      rb = block_for_pc (r.code_addr).block;
 
       if (lb == NULL || rb == NULL)
 	/* Something's gone wrong.  */

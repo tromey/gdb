@@ -259,7 +259,7 @@ call_site_for_pc (struct gdbarch *gdbarch, CORE_ADDR pc)
 /* Return the innermost lexical block containing the specified pc value
    in the specified section, or 0 if there is none.  */
 
-const struct block *
+struct bound_block
 block_for_pc_sect (CORE_ADDR pc, struct obj_section *section)
 {
   const struct blockvector *bl;
@@ -267,14 +267,14 @@ block_for_pc_sect (CORE_ADDR pc, struct obj_section *section)
 
   bl = blockvector_for_pc_sect (pc, section, &b, NULL);
   if (bl)
-    return b.block;
-  return 0;
+    return b;
+  return {};
 }
 
 /* Return the innermost lexical block containing the specified pc value,
    or 0 if there is none.  Backward compatibility, no section.  */
 
-const struct block *
+struct bound_block
 block_for_pc (CORE_ADDR pc)
 {
   return block_for_pc_sect (pc, find_pc_mapped_section (pc));

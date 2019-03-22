@@ -12456,7 +12456,7 @@ create_excep_cond_exprs (struct ada_catchpoint *c,
 	  TRY
 	    {
 	      exp = parse_exp_1 (&s, bl->address,
-				 block_for_pc (bl->address),
+				 block_for_pc (bl->address).block,
 				 0);
 	    }
 	  CATCH (e, RETURN_MASK_ERROR)
@@ -13476,14 +13476,14 @@ ada_add_exceptions_from_frame (compiled_regex *preg,
 			       struct frame_info *frame,
 			       std::vector<ada_exc_info> *exceptions)
 {
-  const struct block *block = get_frame_block (frame, 0);
+  struct bound_block block = get_frame_block (frame, 0);
 
-  while (block != 0)
+  while (block.block != 0)
     {
       struct block_iterator iter;
       struct symbol *sym;
 
-      ALL_BLOCK_SYMBOLS (block, iter, sym)
+      ALL_BLOCK_SYMBOLS (block.block, iter, sym)
 	{
 	  switch (SYMBOL_CLASS (sym))
 	    {
@@ -13494,7 +13494,7 @@ ada_add_exceptions_from_frame (compiled_regex *preg,
 	    default:
 	      if (ada_is_exception_sym (sym))
 		{
-		  struct block_symbol bsym = { sym, block };
+		  struct block_symbol bsym = { sym, block.block };
 
 		  struct ada_exc_info info = {SYMBOL_PRINT_NAME (sym),
 					      BSYMBOL_VALUE_ADDRESS (bsym)};
@@ -13503,9 +13503,9 @@ ada_add_exceptions_from_frame (compiled_regex *preg,
 		}
 	    }
 	}
-      if (BLOCK_FUNCTION (block) != NULL)
+      if (BLOCK_FUNCTION (block.block) != NULL)
 	break;
-      block = BLOCK_SUPERBLOCK (block);
+      block.block = BLOCK_SUPERBLOCK (block.block);
     }
 }
 
@@ -14323,7 +14323,7 @@ ada_read_var_value (struct symbol *var, const struct block *var_block,
   /* The only case where default_read_var_value is not sufficient
      is when VAR is a renaming...  */
   if (frame)
-    frame_block = get_frame_block (frame, NULL);
+    frame_block = get_frame_block (frame, NULL).block;
   if (frame_block)
     renaming_sym = ada_find_renaming_symbol (var, frame_block);
   if (renaming_sym != NULL)
