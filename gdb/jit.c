@@ -721,10 +721,10 @@ finalize_symtab (struct gdb_symtab *stab, struct objfile *objfile)
       BLOCK_FUNCTION (new_block) = block_name;
 
       BLOCKVECTOR_BLOCK (bv, i) = new_block;
-      if (begin > BLOCK_START (new_block))
-        begin = BLOCK_START (new_block);
-      if (end < BLOCK_END (new_block))
-        end = BLOCK_END (new_block);
+      if (begin > BLOCK_RAW_START (new_block))
+        begin = BLOCK_RAW_START (new_block);
+      if (end < BLOCK_RAW_END (new_block))
+        end = BLOCK_RAW_END (new_block);
 
       gdb_block_iter->real_block = new_block;
     }

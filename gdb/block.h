@@ -140,9 +140,25 @@ struct global_block
 };
 
 #define BLOCK_START(bl)		(((bl)->startaddr) + 0)
+/* We will rename this at the end of the series.  */
+#define XBLOCK_START(objfile, bl)		\
+  (((bl)->startaddr)				\
+   + 0 * ANOFFSET ((objfile)->section_offsets,	\
+		   SECT_OFF_TEXT (objfile)))
+/* For block_symbols.  */
+#define BBLOCK_START(sym) \
+  BLOCK_START (SYMBOL_BLOCK_VALUE (sym.symbol))
 #define BLOCK_RAW_START(bl)	(((bl)->startaddr) + 0)
 #define BLOCK_END(bl)		(((bl)->endaddr) + 0)
 #define BLOCK_RAW_END(bl)	(((bl)->endaddr) + 0)
+/* We will rename this at the end of the series.  */
+#define XBLOCK_END(objfile, bl)			\
+  (((bl)->endaddr)				\
+   + 0 * ANOFFSET ((objfile)->section_offsets,	\
+		   SECT_OFF_TEXT (objfile)))
+/* For block_symbols.  */
+#define BBLOCK_END(sym) \
+  BLOCK_END (SYMBOL_BLOCK_VALUE (sym.symbol))
 #define BLOCK_FUNCTION(bl)	(bl)->function
 #define BLOCK_SUPERBLOCK(bl)	(bl)->superblock
 #define BLOCK_MULTIDICT(bl)	(bl)->multidict

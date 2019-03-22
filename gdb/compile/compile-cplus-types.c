@@ -766,7 +766,7 @@ compile_cplus_convert_struct_or_union_methods (compile_cplus_instance *instance,
 
 	  const char *filename = symbol_symtab (sym.symbol)->filename;
 	  unsigned int line = SYMBOL_LINE (sym.symbol);
-	  CORE_ADDR address = BLOCK_START (SYMBOL_BLOCK_VALUE (sym.symbol));
+	  CORE_ADDR address = BBLOCK_START (sym);
 	  const char *kind;
 
 	  if (TYPE_FN_FIELD_STATIC_P (methods, j))

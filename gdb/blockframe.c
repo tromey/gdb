@@ -218,6 +218,7 @@ find_pc_partial_function (CORE_ADDR pc, const char **name, CORE_ADDR *address,
   struct bound_minimal_symbol msymbol;
   struct compunit_symtab *compunit_symtab = NULL;
   CORE_ADDR mapped_pc;
+  struct objfile *found_objfile = nullptr;
 
   /* To ensure that the symbol returned belongs to the correct setion
      (and that the last [random] symbol from the previous section
@@ -247,7 +248,10 @@ find_pc_partial_function (CORE_ADDR pc, const char **name, CORE_ADDR *address,
 							     0);
 	}
       if (compunit_symtab != NULL)
-	break;
+	{
+	  found_objfile = objfile;
+	  break;
+	}
     }
 
   if (compunit_symtab != NULL)
@@ -288,8 +292,8 @@ find_pc_partial_function (CORE_ADDR pc, const char **name, CORE_ADDR *address,
 
 	  if (BLOCK_CONTIGUOUS_P (b))
 	    {
-	      cache_pc_function_low = BLOCK_START (b);
-	      cache_pc_function_high = BLOCK_END (b);
+	      cache_pc_function_low = XBLOCK_START (found_objfile, b);
+	      cache_pc_function_high = XBLOCK_END (found_objfile, b);
 	    }
 	  else
 	    {

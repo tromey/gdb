@@ -471,7 +471,7 @@ mips_make_symbol_special (struct symbol *sym, struct objfile *objfile)
       CORE_ADDR compact_block_start;
       struct bound_minimal_symbol msym;
 
-      compact_block_start = BLOCK_START (block) | 1;
+      compact_block_start = XBLOCK_START (objfile, block) | 1;
       msym = lookup_minimal_symbol_by_pc (compact_block_start);
       if (msym.minsym && !msymbol_is_mips (msym.minsym))
 	{

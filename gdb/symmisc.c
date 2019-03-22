@@ -330,9 +330,9 @@ dump_symtab_1 (struct symtab *symtab, struct ui_file *outfile)
 	     wants it.  */
 	  fprintf_filtered (outfile, ", %d syms/buckets in ",
 			    mdict_size (BLOCK_MULTIDICT (b)));
-	  fputs_filtered (paddress (gdbarch, BLOCK_START (b)), outfile);
+	  fputs_filtered (paddress (gdbarch, BLOCK_RAW_START (b)), outfile);
 	  fprintf_filtered (outfile, "..");
-	  fputs_filtered (paddress (gdbarch, BLOCK_END (b)), outfile);
+	  fputs_filtered (paddress (gdbarch, BLOCK_RAW_END (b)), outfile);
 	  if (BLOCK_FUNCTION (b))
 	    {
 	      fprintf_filtered (outfile, ", function %s",
@@ -650,11 +650,13 @@ print_symbol (struct gdbarch *gdbarch, struct symbol *symbol,
 	  gdb_print_host_address (SYMBOL_BLOCK_VALUE (symbol), outfile);
 	  fprintf_filtered (outfile, ", ");
 	  fputs_filtered (paddress (gdbarch,
-				    BLOCK_START (SYMBOL_BLOCK_VALUE (symbol))),
+				    BLOCK_RAW_START
+				    (SYMBOL_BLOCK_VALUE (symbol))),
 			  outfile);
 	  fprintf_filtered (outfile, "..");
 	  fputs_filtered (paddress (gdbarch,
-				    BLOCK_END (SYMBOL_BLOCK_VALUE (symbol))),
+				    BLOCK_RAW_END
+				    (SYMBOL_BLOCK_VALUE (symbol))),
 			  outfile);
 	  if (section)
 	    fprintf_filtered (outfile, " section %s",

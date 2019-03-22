@@ -87,7 +87,7 @@ convert_one_symbol (compile_cplus_instance *instance,
 	case LOC_BLOCK:
 	  {
 	    kind = GCC_CP_SYMBOL_FUNCTION;
-	    addr = BLOCK_START (SYMBOL_BLOCK_VALUE (sym.symbol));
+	    addr = BBLOCK_START (sym);
 	    if (is_global && TYPE_GNU_IFUNC (SYMBOL_TYPE (sym.symbol)))
 	      addr = gnu_ifunc_resolve_addr (target_gdbarch (), addr);
 	  }
@@ -433,17 +433,17 @@ gcc_cplus_symbol_address (void *datum, struct gcc_cp_context *gcc_context,
      is to simply emit a gcc error.  */
   TRY
     {
-      struct symbol *sym
-	= lookup_symbol (identifier, nullptr, VAR_DOMAIN, nullptr).symbol;
+      struct block_symbol sym
+	= lookup_symbol (identifier, nullptr, VAR_DOMAIN, nullptr);
 
-      if (sym != nullptr && SYMBOL_CLASS (sym) == LOC_BLOCK)
+      if (sym.symbol != nullptr && SYMBOL_CLASS (sym.symbol) == LOC_BLOCK)
 	{
 	  if (compile_debug)
 	    fprintf_unfiltered (gdb_stdlog,
 				"gcc_symbol_address \"%s\": full symbol\n",
 				identifier);
-	  result = BLOCK_START (SYMBOL_BLOCK_VALUE (sym));
-	  if (TYPE_GNU_IFUNC (SYMBOL_TYPE (sym)))
+	  result = BBLOCK_START (sym);
+	  if (TYPE_GNU_IFUNC (SYMBOL_TYPE (sym.symbol)))
 	    result = gnu_ifunc_resolve_addr (target_gdbarch (), result);
 	  found = 1;
 	}

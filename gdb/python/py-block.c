@@ -108,8 +108,10 @@ blpy_get_start (PyObject *self, void *closure)
   const struct block *block = NULL;
 
   BLPY_REQUIRE_VALID (self, block);
+  struct objfile *objfile = ((block_object *) self)->objfile;
 
-  return gdb_py_object_from_ulongest (BLOCK_START (block)).release ();
+  return gdb_py_object_from_ulongest (XBLOCK_START (objfile, block))
+    .release ();
 }
 
 static PyObject *
@@ -118,8 +120,10 @@ blpy_get_end (PyObject *self, void *closure)
   const struct block *block = NULL;
 
   BLPY_REQUIRE_VALID (self, block);
+  struct objfile *objfile = ((block_object *) self)->objfile;
 
-  return gdb_py_object_from_ulongest (BLOCK_END (block)).release ();
+  return gdb_py_object_from_ulongest (XBLOCK_END (objfile, block))
+    .release ();
 }
 
 static PyObject *

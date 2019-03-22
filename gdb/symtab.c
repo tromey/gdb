@@ -2925,10 +2925,15 @@ find_pc_sect_compunit_symtab (CORE_ADDR pc, struct obj_section *section)
 	  bv = COMPUNIT_BLOCKVECTOR (cust);
 	  b = BLOCKVECTOR_BLOCK (bv, GLOBAL_BLOCK);
 
-	  if (BLOCK_START (b) <= pc
-	      && BLOCK_END (b) > pc
+	  // FIXME could unrelocate PC outside this inner loop
+	  // instead, then use RAW forms -- maybe more efficient.
+	  // But trickier due to other uses of PC.
+	  if (XBLOCK_START (obj_file, b) <= pc
+	      && XBLOCK_END (obj_file, b) > pc
 	      && (distance == 0
-		  || BLOCK_END (b) - BLOCK_START (b) < distance))
+		  /* It's more efficient to use the "raw" forms here,
+		     and yields the same answer.  */
+		  || BLOCK_RAW_END (b) - BLOCK_RAW_START (b) < distance))
 	    {
 	      /* For an objfile that has its functions reordered,
 		 find_pc_psymtab will find the proper partial symbol table
@@ -2966,7 +2971,9 @@ find_pc_sect_compunit_symtab (CORE_ADDR pc, struct obj_section *section)
 		    continue;		/* No symbol in this symtab matches
 					   section.  */
 		}
-	      distance = BLOCK_END (b) - BLOCK_START (b);
+	      /* It's more efficient to use the "raw" forms here, and
+		 yields the same answer.  */
+	      distance = BLOCK_RAW_END (b) - BLOCK_RAW_START (b);
 	      best_cust = cust;
 	    }
 	}
