@@ -379,8 +379,9 @@ gdbscm_block_start (SCM self)
   block_smob *b_smob
     = bkscm_get_valid_block_smob_arg_unsafe (self, SCM_ARG1, FUNC_NAME);
   const struct block *block = b_smob->block;
+  const struct objfile *objfile = b_smob->objfile;
 
-  return gdbscm_scm_from_ulongest (BLOCK_START (block));
+  return gdbscm_scm_from_ulongest (XBLOCK_START (objfile, block));
 }
 
 /* (block-end <gdb:block>) -> address */
@@ -391,8 +392,9 @@ gdbscm_block_end (SCM self)
   block_smob *b_smob
     = bkscm_get_valid_block_smob_arg_unsafe (self, SCM_ARG1, FUNC_NAME);
   const struct block *block = b_smob->block;
+  const struct objfile *objfile = b_smob->objfile;
 
-  return gdbscm_scm_from_ulongest (BLOCK_END (block));
+  return gdbscm_scm_from_ulongest (XBLOCK_END (objfile, block));
 }
 
 /* (block-function <gdb:block>) -> <gdb:symbol> */
