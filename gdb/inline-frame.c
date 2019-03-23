@@ -30,6 +30,7 @@
 #include "common/vec.h"
 #include "frame.h"
 #include <algorithm>
+#include "objfiles.h"
 
 /* We need to save a few variables for every thread stopped at the
    virtual call site of an inlined function.  If there was always a
@@ -327,7 +328,8 @@ stopped_by_user_bp_inline_frame (const block *frame_block, bpstat stop_chain)
 void
 skip_inline_frames (thread_info *thread, bpstat stop_chain)
 {
-  const struct block *frame_block, *cur_block;
+  struct bound_block frame_block;
+  const struct block *cur_block;
   struct symbol *last_sym = NULL;
   int skip_count = 0;
 
@@ -335,18 +337,18 @@ skip_inline_frames (thread_info *thread, bpstat stop_chain)
      cache.  We try not to do more unwinding than absolutely
      necessary, for performance.  */
   CORE_ADDR this_pc = get_frame_pc (get_current_frame ());
-  frame_block = block_for_pc (this_pc).block;
+  frame_block = block_for_pc (this_pc);
 
-  if (frame_block != NULL)
+  if (frame_block.block != NULL)
     {
-      cur_block = frame_block;
+      cur_block = frame_block.block;
       while (BLOCK_SUPERBLOCK (cur_block))
 	{
 	  if (block_inlined_p (cur_block))
 	    {
 	      /* See comments in inline_frame_this_id about this use
 		 of BLOCK_ENTRY_PC.  */
-	      if (BLOCK_ENTRY_PC (cur_block) == this_pc
+	      if (XBLOCK_ENTRY_PC (frame_block.objfile, cur_block) == this_pc
 		  || block_starting_point_at (this_pc, cur_block))
 		{
 		  /* Do not skip the inlined frame if execution
