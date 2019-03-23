@@ -150,8 +150,10 @@ compile_object_run (struct compile_module *module)
       htab_delete (copied_types);
 
       gdb_assert (TYPE_CODE (func_type) == TYPE_CODE_FUNC);
-      func_val = value_from_pointer (lookup_pointer_type (func_type),
-				   BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (func_sym)));
+      func_val
+	= value_from_pointer (lookup_pointer_type (func_type),
+			      XBLOCK_ENTRY_PC (objfile,
+					       SYMBOL_BLOCK_VALUE (func_sym)));
 
       vargs = XALLOCAVEC (struct value *, TYPE_NFIELDS (func_type));
       if (TYPE_NFIELDS (func_type) >= 1)
