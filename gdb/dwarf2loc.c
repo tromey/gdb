@@ -361,13 +361,14 @@ dwarf2_find_location_expression (struct dwarf2_loclist_baton *baton,
 	  /* This is entry PC record present only at entry point
 	     of a function.  Verify it is really the function entry point.  */
 
-	  const struct block *pc_block = block_for_pc (pc).block;
+	  struct bound_block pc_block = block_for_pc (pc);
 	  struct symbol *pc_func = NULL;
 
-	  if (pc_block)
-	    pc_func = block_linkage_function (pc_block);
+	  if (pc_block.block)
+	    pc_func = block_linkage_function (pc_block.block);
 
-	  if (pc_func && pc == BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (pc_func)))
+	  if (pc_func && pc == XBLOCK_ENTRY_PC (pc_block.objfile,
+						SYMBOL_BLOCK_VALUE (pc_func)))
 	    {
 	      *locexpr_length = length;
 	      return loc_ptr;
