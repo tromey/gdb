@@ -210,6 +210,10 @@ struct global_block
 #define BLOCK_ENTRY_PC(bl)	(BLOCK_CONTIGUOUS_P (bl) \
 				 ? BLOCK_START (bl) \
 				 : BLOCK_RANGE_START (bl,0))
+#define XBLOCK_ENTRY_PC(objfile, bl)				\
+  (BLOCK_CONTIGUOUS_P (bl)					\
+   ? XBLOCK_START (objfile, bl)					\
+   : XBLOCK_RANGE_START (objfile, bl, 0))
 
 struct blockvector
 {

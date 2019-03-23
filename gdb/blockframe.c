@@ -193,7 +193,7 @@ static CORE_ADDR cache_pc_function_low = 0;
 static CORE_ADDR cache_pc_function_high = 0;
 static const char *cache_pc_function_name = 0;
 static struct obj_section *cache_pc_function_section = NULL;
-static const struct block *cache_pc_function_block = nullptr;
+static struct bound_block cache_pc_function_block = {};
 
 /* Clear cache, e.g. when symbol table is discarded.  */
 
@@ -204,14 +204,14 @@ clear_pc_function_cache (void)
   cache_pc_function_high = 0;
   cache_pc_function_name = (char *) 0;
   cache_pc_function_section = NULL;
-  cache_pc_function_block = nullptr;
+  cache_pc_function_block = {};
 }
 
 /* See symtab.h.  */
 
 int
 find_pc_partial_function (CORE_ADDR pc, const char **name, CORE_ADDR *address,
-			  CORE_ADDR *endaddr, const struct block **block)
+			  CORE_ADDR *endaddr, struct bound_block *block)
 {
   struct obj_section *section;
   struct symbol *f;
@@ -275,7 +275,8 @@ find_pc_partial_function (CORE_ADDR pc, const char **name, CORE_ADDR *address,
 
 	  cache_pc_function_name = SYMBOL_LINKAGE_NAME (f);
 	  cache_pc_function_section = section;
-	  cache_pc_function_block = b;
+	  cache_pc_function_block.block = b;
+	  cache_pc_function_block.objfile = found_objfile;
 
 	  /* For blocks occupying contiguous addresses (i.e. no gaps),
 	     the low and high cache addresses are simply the start
@@ -344,7 +345,7 @@ find_pc_partial_function (CORE_ADDR pc, const char **name, CORE_ADDR *address,
   cache_pc_function_name = MSYMBOL_LINKAGE_NAME (msymbol.minsym);
   cache_pc_function_section = section;
   cache_pc_function_high = minimal_symbol_upper_bound (msymbol);
-  cache_pc_function_block = nullptr;
+  cache_pc_function_block = {};
 
  return_cached_value:
 
@@ -387,23 +388,23 @@ bool
 find_function_entry_range_from_pc (CORE_ADDR pc, const char **name,
 				   CORE_ADDR *address, CORE_ADDR *endaddr)
 {
-  const struct block *block;
+  struct bound_block block;
   bool status = find_pc_partial_function (pc, name, address, endaddr, &block);
 
-  if (status && block != nullptr && !BLOCK_CONTIGUOUS_P (block))
+  if (status && block.block != nullptr && !BLOCK_CONTIGUOUS_P (block.block))
     {
-      CORE_ADDR entry_pc = BLOCK_ENTRY_PC (block);
+      CORE_ADDR entry_pc = XBLOCK_ENTRY_PC (block.objfile, block.block);
 
-      for (int i = 0; i < BLOCK_NRANGES (block); i++)
+      for (int i = 0; i < BLOCK_NRANGES (block.block); i++)
         {
-	  if (BLOCK_RANGE_START (block, i) <= entry_pc
-	      && entry_pc < BLOCK_RANGE_END (block, i))
+	  if (XBLOCK_RANGE_START (block.objfile, block.block, i) <= entry_pc
+	      && entry_pc < XBLOCK_RANGE_END (block.objfile, block.block, i))
 	    {
 	      if (address != nullptr)
-	        *address = BLOCK_RANGE_START (block, i);
+	        *address = XBLOCK_RANGE_START (block.objfile, block.block, i);
 
 	      if (endaddr != nullptr)
-	        *endaddr = BLOCK_RANGE_END (block, i);
+	        *endaddr = XBLOCK_RANGE_END (block.objfile, block.block, i);
 
 	      return status;
 	    }

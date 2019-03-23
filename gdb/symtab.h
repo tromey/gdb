@@ -1732,7 +1732,7 @@ extern struct symbol *find_symbol_at_address (CORE_ADDR);
 
 extern int find_pc_partial_function (CORE_ADDR pc, const char **name,
 				     CORE_ADDR *address, CORE_ADDR *endaddr,
-				     const struct block **block = nullptr);
+				     struct bound_block *block = nullptr);
 
 /* Like find_pc_partial_function, above, but *ADDRESS and *ENDADDR are
    set to start and end addresses of the range containing the entry pc.

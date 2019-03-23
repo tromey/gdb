@@ -1142,7 +1142,7 @@ disassemble_current_function (gdb_disassembly_flags flags)
   struct gdbarch *gdbarch;
   CORE_ADDR low, high, pc;
   const char *name;
-  const struct block *block;
+  struct bound_block block;
 
   frame = get_selected_frame (_("No frame selected."));
   gdbarch = get_frame_arch (frame);
@@ -1158,7 +1158,7 @@ disassemble_current_function (gdb_disassembly_flags flags)
 #endif
   low += gdbarch_deprecated_function_start_offset (gdbarch);
 
-  print_disassembly (gdbarch, name, low, high, block, flags);
+  print_disassembly (gdbarch, name, low, high, block.block, flags);
 }
 
 /* Dump a specified section of assembly code.
@@ -1194,7 +1194,7 @@ disassemble_command (const char *arg, int from_tty)
   CORE_ADDR pc;
   gdb_disassembly_flags flags;
   const char *p;
-  const struct block *block = nullptr;
+  struct bound_block block = {};
 
   p = arg;
   name = NULL;
@@ -1273,7 +1273,7 @@ disassemble_command (const char *arg, int from_tty)
 	high += low;
     }
 
-  print_disassembly (gdbarch, name, low, high, block, flags);
+  print_disassembly (gdbarch, name, low, high, block.block, flags);
 }
 
 static void
