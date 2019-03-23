@@ -2643,7 +2643,9 @@ info_scope_command (const char *args_in, int from_tty)
 		case LOC_BLOCK:
 		  printf_filtered ("a function at address ");
 		  printf_filtered ("%s",
-				   paddress (gdbarch, BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (sym))));
+				   paddress (gdbarch,
+					     XBLOCK_ENTRY_PC (block.objfile,
+							      SYMBOL_BLOCK_VALUE (sym))));
 		  break;
 		case LOC_UNRESOLVED:
 		  msym = lookup_minimal_symbol (SYMBOL_LINKAGE_NAME (sym),
