@@ -96,7 +96,7 @@ get_pc_function_start (CORE_ADDR pc)
       if (symbol)
 	{
 	  bl.block = SYMBOL_BLOCK_VALUE (symbol);
-	  return BLOCK_ENTRY_PC (bl.block);
+	  return XBLOCK_ENTRY_PC (bl.objfile, bl.block);
 	}
     }
 
@@ -268,7 +268,7 @@ find_pc_partial_function (CORE_ADDR pc, const char **name, CORE_ADDR *address,
       f = find_pc_sect_function (mapped_pc, section);
       if (f != NULL
 	  && (msymbol.minsym == NULL
-	      || (BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (f))
+	      || (XBLOCK_ENTRY_PC (found_objfile, SYMBOL_BLOCK_VALUE (f))
 		  >= BMSYMBOL_VALUE_ADDRESS (msymbol))))
 	{
 	  const struct block *b = SYMBOL_BLOCK_VALUE (f);

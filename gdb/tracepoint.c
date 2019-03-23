@@ -2563,7 +2563,8 @@ info_scope_command (const char *args_in, int from_tty)
 	  if (SYMBOL_COMPUTED_OPS (sym) != NULL)
 	    SYMBOL_COMPUTED_OPS (sym)
 	      ->describe_location (sym,
-				   BLOCK_ENTRY_PC (block.block),
+				   XBLOCK_ENTRY_PC (block.objfile,
+						    block.block),
 				   gdb_stdout);
 	  else
 	    {
