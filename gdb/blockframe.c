@@ -300,11 +300,13 @@ find_pc_partial_function (CORE_ADDR pc, const char **name, CORE_ADDR *address,
 	      int i;
 	      for (i = 0; i < BLOCK_NRANGES (b); i++)
 	        {
-		  if (BLOCK_RANGE_START (b, i) <= mapped_pc
-		      && mapped_pc < BLOCK_RANGE_END (b, i))
+		  if (XBLOCK_RANGE_START (found_objfile, b, i) <= mapped_pc
+		      && mapped_pc < XBLOCK_RANGE_END (found_objfile, b, i))
 		    {
-		      cache_pc_function_low = BLOCK_RANGE_START (b, i);
-		      cache_pc_function_high = BLOCK_RANGE_END (b, i);
+		      cache_pc_function_low
+			= XBLOCK_RANGE_START (found_objfile, b, i);
+		      cache_pc_function_high
+			= XBLOCK_RANGE_END (found_objfile, b, i);
 		      break;
 		    }
 		}
