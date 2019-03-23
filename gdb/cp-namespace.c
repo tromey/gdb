@@ -1012,7 +1012,7 @@ cp_lookup_transparent_type (const char *name)
 
   /* If that doesn't work and we're within a namespace, look there
      instead.  */
-  scope = block_scope (get_selected_block (0));
+  scope = block_scope (get_selected_block (0).block);
 
   if (scope[0] == '\0')
     return NULL;

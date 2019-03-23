@@ -998,7 +998,7 @@ evaluate_funcall (type *expect_type, expression *exp, int *pos,
 	{
 	  function = cp_lookup_symbol_namespace (TYPE_NAME (type),
 						 name,
-						 get_selected_block (0),
+						 get_selected_block (0).block,
 						 VAR_DOMAIN).symbol;
 	  if (function == NULL)
 	    error (_("No symbol \"%s\" in namespace \"%s\"."),
@@ -1225,7 +1225,7 @@ evaluate_funcall (type *expect_type, expression *exp, int *pos,
 							 noside);
 	    }
 	  else
-	    argvec[0] = value_of_variable (symp, get_selected_block (0));
+	    argvec[0] = value_of_variable (symp, get_selected_block (0).block);
 	}
       else
 	{

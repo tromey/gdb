@@ -811,7 +811,7 @@ write_object_renaming (struct parser_state *par_state,
     error (_("Could not find renamed symbol"));
 
   if (orig_left_context == NULL)
-    orig_left_context = get_selected_block (NULL);
+    orig_left_context = get_selected_block (NULL).block;
 
   name = (char *) obstack_copy0 (&temp_parse_space, renamed_entity,
 				 renamed_entity_len);

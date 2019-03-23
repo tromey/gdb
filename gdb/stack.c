@@ -2291,13 +2291,13 @@ info_args_command (const char *args, int from_tty)
    code address within the block returned.  We use this to decide
    which macros are in scope.  */
 
-const struct block *
+struct bound_block
 get_selected_block (CORE_ADDR *addr_in_block)
 {
   if (!has_stack_frames ())
-    return 0;
+    return {};
 
-  return get_frame_block (get_selected_frame (NULL), addr_in_block).block;
+  return get_frame_block (get_selected_frame (NULL), addr_in_block);
 }
 
 /* Find a frame a certain number of levels away from FRAME.

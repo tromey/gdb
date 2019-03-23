@@ -1239,7 +1239,7 @@ add_symbol_overload_list_namespace (const char *func_name,
     }
 
   /* Look in the static block.  */
-  block = block_static_block (get_selected_block (0));
+  block = block_static_block (get_selected_block (0).block);
   if (block)
     add_symbol_overload_list_block (name, block, overload_list);
 
@@ -1331,7 +1331,7 @@ add_symbol_overload_list_using (const char *func_name,
      look in the appropriate namespaces for new functions to match
      on.  */
 
-  for (block = get_selected_block (0);
+  for (block = get_selected_block (0).block;
        block != NULL;
        block = BLOCK_SUPERBLOCK (block))
     for (current = block_using (block);
@@ -1387,10 +1387,10 @@ add_symbol_overload_list_qualified (const char *func_name,
   /* Search upwards from currently selected frame (so that we can
      complete on local vars.  */
 
-  for (b = get_selected_block (0); b != NULL; b = BLOCK_SUPERBLOCK (b))
+  for (b = get_selected_block (0).block; b != NULL; b = BLOCK_SUPERBLOCK (b))
     add_symbol_overload_list_block (func_name, b, overload_list);
 
-  surrounding_static_block = block_static_block (get_selected_block (0));
+  surrounding_static_block = block_static_block (get_selected_block (0).block);
 
   /* Go through the symtabs and check the externs and statics for
      symbols which match.  */

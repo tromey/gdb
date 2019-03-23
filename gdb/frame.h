@@ -733,7 +733,7 @@ extern struct bound_block get_frame_block (struct frame_info *,
    it occurs in the CLI code and makes it possible for commands to
    work, even when the inferior has no state.  */
 
-extern const struct block *get_selected_block (CORE_ADDR *addr_in_block);
+extern struct bound_block get_selected_block (CORE_ADDR *addr_in_block);
 
 extern struct symbol *get_frame_function (struct frame_info *);
 

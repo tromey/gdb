@@ -1375,7 +1375,7 @@ info_address_command (const char *exp, int from_tty)
   if (exp == 0)
     error (_("Argument required."));
 
-  sym = lookup_symbol (exp, get_selected_block (&context_pc), VAR_DOMAIN,
+  sym = lookup_symbol (exp, get_selected_block (&context_pc).block, VAR_DOMAIN,
 		       &is_a_field_of_this);
   if (sym.symbol == NULL)
     {
@@ -1904,7 +1904,8 @@ do_one_display (struct display *d)
   if (d->block)
     {
       if (d->pspace == current_program_space)
-	within_current_scope = contained_in (get_selected_block (0), d->block);
+	within_current_scope = contained_in (get_selected_block (0).block,
+					     d->block);
       else
 	within_current_scope = 0;
     }
@@ -2067,7 +2068,7 @@ Num Enb Expression\n"));
       else if (d->format.format)
 	printf_filtered ("/%c ", d->format.format);
       puts_filtered (d->exp_string);
-      if (d->block && !contained_in (get_selected_block (0), d->block))
+      if (d->block && !contained_in (get_selected_block (0).block, d->block))
 	printf_filtered (_(" (cannot be evaluated in the current context)"));
       printf_filtered ("\n");
     }

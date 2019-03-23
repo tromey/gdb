@@ -425,7 +425,7 @@ get_new_file_names ()
 static const struct block *
 get_expr_block_and_pc (CORE_ADDR *pc)
 {
-  const struct block *block = get_selected_block (pc);
+  const struct block *block = get_selected_block (pc).block;
 
   if (block == NULL)
     {

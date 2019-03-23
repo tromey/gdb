@@ -1152,7 +1152,7 @@ rust_evaluate_funcall (struct expression *exp, int *pos, enum noside noside)
 
   std::string name = std::string (TYPE_NAME (type)) + "::" + method;
 
-  block = get_selected_block (0);
+  block = get_selected_block (0).block;
   sym = lookup_symbol (name.c_str (), block, VAR_DOMAIN, NULL);
   if (sym.symbol == NULL)
     error (_("Could not find function named '%s'"), name.c_str ());

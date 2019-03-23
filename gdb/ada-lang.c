@@ -6448,7 +6448,7 @@ ada_collect_symbol_completion_matches (completion_tracker &tracker,
   /* Search upwards from currently selected frame (so that we can
      complete on local vars.  */
 
-  for (b = get_selected_block (0); b != NULL; b = BLOCK_SUPERBLOCK (b))
+  for (b = get_selected_block (0).block; b != NULL; b = BLOCK_SUPERBLOCK (b))
     {
       if (!BLOCK_SUPERBLOCK (b))
         surrounding_static_block = b;   /* For elmin of dups */
@@ -7937,7 +7937,7 @@ ada_find_any_type_symbol (const char *name)
 {
   struct symbol *sym;
 
-  sym = standard_lookup (name, get_selected_block (NULL), VAR_DOMAIN);
+  sym = standard_lookup (name, get_selected_block (NULL).block, VAR_DOMAIN);
   if (sym != NULL && SYMBOL_CLASS (sym) == LOC_TYPEDEF)
     return sym;
 
@@ -11735,7 +11735,7 @@ get_var_value (const char *name, const char *err_msg)
 
   std::vector<struct block_symbol> syms;
   int nsyms = ada_lookup_symbol_list_worker (lookup_name,
-					     get_selected_block (0),
+					     get_selected_block (0).block,
 					     VAR_DOMAIN, &syms, 1);
 
   if (nsyms != 1)
