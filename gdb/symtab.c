@@ -3738,7 +3738,7 @@ skip_prologue_sal (struct symtab_and_line *sal)
       fixup_symbol_section (sym, NULL);
 
       objfile = symbol_objfile (sym);
-      pc = BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (sym));
+      pc = XBLOCK_ENTRY_PC (objfile, SYMBOL_BLOCK_VALUE (sym));
       section = SYMBOL_OBJ_SECTION (objfile, sym);
       name = SYMBOL_LINKAGE_NAME (sym);
     }
