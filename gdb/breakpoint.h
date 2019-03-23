@@ -30,6 +30,7 @@
 #include <vector>
 #include "common/array-view.h"
 #include "cli/cli-script.h"
+#include "block.h"
 
 struct block;
 struct gdbpy_breakpoint_object;
@@ -793,12 +794,12 @@ struct watchpoint : public breakpoint
   expression_up exp;
   /* The largest block within which it is valid, or NULL if it is
      valid anywhere (e.g. consists just of global symbols).  */
-  const struct block *exp_valid_block;
+  struct bound_block exp_valid_block;
   /* The conditional expression if any.  */
   expression_up cond_exp;
   /* The largest block within which it is valid, or NULL if it is
      valid anywhere (e.g. consists just of global symbols).  */
-  const struct block *cond_exp_valid_block;
+  struct bound_block cond_exp_valid_block;
   /* Value of the watchpoint the last time we checked it, or NULL when
      we do not know the value yet or the value was not readable.  VAL
      is never lazy.  */

@@ -881,7 +881,7 @@ set_breakpoint_condition (struct breakpoint *b, const char *exp,
 	  struct watchpoint *w = (struct watchpoint *) b;
 
 	  arg = exp;
-	  w->cond_exp = parse_exp_1 (&arg, 0, 0, 0);
+	  w->cond_exp = parse_exp_1 (&arg, 0, {}, 0);
 	  if (*arg)
 	    error (_("Junk at end of expression"));
 	  w->cond_exp_valid_block = innermost_block.block ();
@@ -895,7 +895,7 @@ set_breakpoint_condition (struct breakpoint *b, const char *exp,
 	      arg = exp;
 	      loc->cond =
 		parse_exp_1 (&arg, loc->address,
-			     block_for_pc (loc->address).block, 0);
+			     block_for_pc (loc->address), 0);
 	      if (*arg)
 		error (_("Junk at end of expression"));
 	    }
@@ -1695,7 +1695,7 @@ update_watchpoint (struct watchpoint *b, int reparse)
   frame_saved = 0;
 
   /* Determine if the watchpoint is within scope.  */
-  if (b->exp_valid_block == NULL)
+  if (b->exp_valid_block.block == NULL)
     within_current_scope = 1;
   else
     {
@@ -2261,7 +2261,7 @@ parse_cmd_to_aexpr (CORE_ADDR scope, char *cmd)
 
       cmd1 = cmdrest;
       expression_up expr = parse_exp_1 (&cmd1, scope,
-					block_for_pc (scope).block, 1);
+					block_for_pc (scope), 1);
       argvec.push_back (expr.release ());
       cmdrest = cmd1;
       if (*cmdrest == ',')
@@ -3917,7 +3917,7 @@ breakpoint_init_inferior (enum inf_context context)
 	  struct watchpoint *w = (struct watchpoint *) b;
 
 	  /* Likewise for watchpoints on local expressions.  */
-	  if (w->exp_valid_block != NULL)
+	  if (w->exp_valid_block.block != NULL)
 	    delete_breakpoint (b);
 	  else
 	    {
@@ -4836,7 +4836,7 @@ watchpoint_check (bpstat bs)
   if (!watchpoint_in_thread_scope (b))
     return WP_IGNORE;
 
-  if (b->exp_valid_block == NULL)
+  if (b->exp_valid_block.block == NULL)
     within_current_scope = 1;
   else
     {
@@ -4867,7 +4867,7 @@ watchpoint_check (bpstat bs)
 
 	  function = get_frame_function (fr);
 	  if (function == NULL
-	      || !contained_in (b->exp_valid_block,
+	      || !contained_in (b->exp_valid_block.block,
 				SYMBOL_BLOCK_VALUE (function)))
 	    within_current_scope = 0;
 	}
@@ -5227,7 +5227,7 @@ bpstat_check_breakpoint_conditions (bpstat bs, thread_info *thread)
 	 variables when we arrive at a breakpoint at the start
 	 of the inlined function; the current frame will be the
 	 call site.  */
-      if (w == NULL || w->cond_exp_valid_block == NULL)
+      if (w == NULL || w->cond_exp_valid_block.block == NULL)
 	select_frame (get_current_frame ());
       else
 	{
@@ -5247,7 +5247,7 @@ bpstat_check_breakpoint_conditions (bpstat bs, thread_info *thread)
 	     the innermost frame that's executing where it makes
 	     sense to evaluate the condition.  It seems
 	     intuitive.  */
-	  frame = block_innermost_frame (w->cond_exp_valid_block);
+	  frame = block_innermost_frame (w->cond_exp_valid_block.block);
 	  if (frame != NULL)
 	    select_frame (frame);
 	  else
@@ -8880,7 +8880,7 @@ init_breakpoint_sal (struct breakpoint *b, struct gdbarch *gdbarch,
 	  const char *arg = b->cond_string;
 
 	  loc->cond = parse_exp_1 (&arg, loc->address,
-				   block_for_pc (loc->address).block, 0);
+				   block_for_pc (loc->address), 0);
 	  if (*arg)
               error (_("Garbage '%s' follows condition"), arg);
 	}
@@ -9148,7 +9148,7 @@ find_condition_and_thread (const char *tok, CORE_ADDR pc,
       if (toklen >= 1 && strncmp (tok, "if", toklen) == 0)
 	{
 	  tok = cond_start = end_tok + 1;
-	  parse_exp_1 (&tok, pc, block_for_pc (pc).block, 0);
+	  parse_exp_1 (&tok, pc, block_for_pc (pc), 0);
 	  cond_end = tok;
 	  *cond_string = savestring (cond_start, cond_end - cond_start);
 	}
@@ -10499,7 +10499,7 @@ watch_command_1 (const char *arg, int accessflag, int from_tty,
 		 int just_location, int internal)
 {
   struct breakpoint *scope_breakpoint = NULL;
-  const struct block *exp_valid_block = NULL, *cond_exp_valid_block = NULL;
+  struct bound_block exp_valid_block = {}, cond_exp_valid_block = {};
   struct value *result;
   int saved_bitpos = 0, saved_bitsize = 0;
   const char *exp_start = NULL;
@@ -10604,7 +10604,7 @@ watch_command_1 (const char *arg, int accessflag, int from_tty,
      ARG.  */
   std::string expression (arg, exp_end - arg);
   exp_start = arg = expression.c_str ();
-  expression_up exp = parse_exp_1 (&arg, 0, 0, 0);
+  expression_up exp = parse_exp_1 (&arg, 0, {}, 0);
   exp_end = arg;
   /* Remove trailing whitespace from the expression before saving it.
      This makes the eventual display of the expression string a bit
@@ -10640,7 +10640,7 @@ watch_command_1 (const char *arg, int accessflag, int from_tty,
     {
       int ret;
 
-      exp_valid_block = NULL;
+      exp_valid_block = {};
       val = release_value (value_addr (result));
       value_free_to_mark (mark);
 
@@ -10664,7 +10664,7 @@ watch_command_1 (const char *arg, int accessflag, int from_tty,
   if (toklen >= 1 && strncmp (tok, "if", toklen) == 0)
     {
       tok = cond_start = end_tok + 1;
-      parse_exp_1 (&tok, 0, 0, 0);
+      parse_exp_1 (&tok, 0, {}, 0);
 
       /* The watchpoint expression may not be local, but the condition
 	 may still be.  E.g.: `watch global if local > 0'.  */
@@ -10675,7 +10675,7 @@ watch_command_1 (const char *arg, int accessflag, int from_tty,
   if (*tok)
     error (_("Junk at end of command."));
 
-  frame_info *wp_frame = block_innermost_frame (exp_valid_block);
+  frame_info *wp_frame = block_innermost_frame (exp_valid_block.block);
 
   /* Save this because create_internal_breakpoint below invalidates
      'wp_frame'.  */
@@ -10685,7 +10685,7 @@ watch_command_1 (const char *arg, int accessflag, int from_tty,
      breakpoint at the point where we've left the scope of the watchpoint
      expression.  Create the scope breakpoint before the watchpoint, so
      that we will encounter it first in bpstat_stop_status.  */
-  if (exp_valid_block != NULL && wp_frame != NULL)
+  if (exp_valid_block.block != NULL && wp_frame != NULL)
     {
       frame_id caller_frame_id = frame_unwind_caller_id (wp_frame);
 
@@ -13530,7 +13530,7 @@ update_breakpoint_locations (struct breakpoint *b,
 	  TRY
 	    {
 	      new_loc->cond = parse_exp_1 (&s, sal.pc,
-					   block_for_pc (sal.pc).block,
+					   block_for_pc (sal.pc),
 					   0);
 	    }
 	  CATCH (e, RETURN_MASK_ERROR)

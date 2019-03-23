@@ -1726,7 +1726,7 @@ display_command (const char *arg, int from_tty)
 
   newobj->exp_string = xstrdup (exp);
   newobj->exp = std::move (expr);
-  newobj->block = innermost_block.block ();
+  newobj->block = innermost_block.block ().block;
   newobj->pspace = current_program_space;
   newobj->number = ++display_number;
   newobj->format = fmt;
@@ -1888,7 +1888,7 @@ do_one_display (struct display *d)
       TRY
 	{
 	  d->exp = parse_expression (d->exp_string);
-	  d->block = innermost_block.block ();
+	  d->block = innermost_block.block ().block;
 	}
       CATCH (ex, RETURN_MASK_ALL)
 	{

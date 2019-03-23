@@ -2609,7 +2609,7 @@ agent_eval_command_one (const char *exp, int eval, CORE_ADDR pc)
     }
   else
     {
-      expression_up expr = parse_exp_1 (&arg, pc, block_for_pc (pc).block, 0);
+      expression_up expr = parse_exp_1 (&arg, pc, block_for_pc (pc), 0);
 
       if (eval)
 	{
@@ -2733,7 +2733,7 @@ maint_agent_printf_command (const char *cmdrest, int from_tty)
       const char *cmd1;
 
       cmd1 = cmdrest;
-      expression_up expr = parse_exp_1 (&cmd1, 0, (struct block *) 0, 1);
+      expression_up expr = parse_exp_1 (&cmd1, 0, {}, 1);
       argvec.push_back (expr.release ());
       cmdrest = cmd1;
       if (*cmdrest == ',')

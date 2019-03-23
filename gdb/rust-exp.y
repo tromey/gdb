@@ -1033,7 +1033,7 @@ rust_parser::concat3 (const char *s1, const char *s2, const char *s3)
 const struct rust_op *
 rust_parser::crate_name (const struct rust_op *name)
 {
-  std::string crate = rust_crate_for_block (expression_context_block);
+  std::string crate = rust_crate_for_block (expression_context_block.block);
   struct stoken result;
 
   gdb_assert (name->opcode == OP_VAR_VALUE);
@@ -1053,7 +1053,7 @@ rust_parser::crate_name (const struct rust_op *name)
 const struct rust_op *
 rust_parser::super_name (const struct rust_op *ident, unsigned int n_supers)
 {
-  const char *scope = block_scope (expression_context_block);
+  const char *scope = block_scope (expression_context_block.block);
   int offset;
 
   gdb_assert (ident->opcode == OP_VAR_VALUE);
@@ -2045,7 +2045,7 @@ rust_parser::convert_ast_to_type (const struct rust_op *operation)
     {
       const char *varname = convert_name (operation);
 
-      result = rust_lookup_type (varname, expression_context_block);
+      result = rust_lookup_type (varname, expression_context_block.block);
       if (result == NULL)
 	error (_("No typed name '%s' in current context"), varname);
       return result;
@@ -2118,7 +2118,7 @@ rust_parser::convert_ast_to_type (const struct rust_op *operation)
 
 	/* We don't allow creating new tuple types (yet), but we do
 	   allow looking up existing tuple types.  */
-	result = rust_lookup_type (name, expression_context_block);
+	result = rust_lookup_type (name, expression_context_block.block);
 	if (result == NULL)
 	  error (_("could not find tuple type '%s'"), name);
       }
@@ -2311,7 +2311,7 @@ rust_parser::convert_ast_to_expression (const struct rust_op *operation,
 	    struct type *type;
 	    const char *varname = convert_name (operation->left.op);
 
-	    type = rust_lookup_type (varname, expression_context_block);
+	    type = rust_lookup_type (varname, expression_context_block.block);
 	    if (type != NULL)
 	      {
 		/* This is actually a tuple struct expression, not a
@@ -2372,7 +2372,7 @@ rust_parser::convert_ast_to_expression (const struct rust_op *operation,
 	  }
 
 	varname = convert_name (operation);
-	sym = rust_lookup_symbol (varname, expression_context_block,
+	sym = rust_lookup_symbol (varname, expression_context_block.block,
 				  VAR_DOMAIN);
 	if (sym.symbol != NULL && SYMBOL_CLASS (sym.symbol) != LOC_TYPEDEF)
 	  {
@@ -2391,7 +2391,8 @@ rust_parser::convert_ast_to_expression (const struct rust_op *operation,
 		type = SYMBOL_TYPE (sym.symbol);
 	      }
 	    if (type == NULL)
-	      type = rust_lookup_type (varname, expression_context_block);
+	      type = rust_lookup_type (varname,
+				       expression_context_block.block);
 	    if (type == NULL)
 	      error (_("No symbol '%s' in current context"), varname);
 
@@ -2449,7 +2450,7 @@ rust_parser::convert_ast_to_expression (const struct rust_op *operation,
 	  }
 
 	name = convert_name (operation->left.op);
-	type = rust_lookup_type (name, expression_context_block);
+	type = rust_lookup_type (name, expression_context_block.block);
 	if (type == NULL)
 	  error (_("Could not find type '%s'"), operation->left.sval.ptr);
 

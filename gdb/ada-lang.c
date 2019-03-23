@@ -4425,7 +4425,7 @@ parse_old_style_renaming (struct type *type,
 
 static struct value *
 ada_read_renaming_var_value (struct symbol *renaming_sym,
-			     const struct block *block)
+			     const struct bound_block &block)
 {
   const char *sym_name;
 
@@ -12456,7 +12456,7 @@ create_excep_cond_exprs (struct ada_catchpoint *c,
 	  TRY
 	    {
 	      exp = parse_exp_1 (&s, bl->address,
-				 block_for_pc (bl->address).block,
+				 block_for_pc (bl->address),
 				 0);
 	    }
 	  CATCH (e, RETURN_MASK_ERROR)
@@ -14317,15 +14317,15 @@ static struct value *
 ada_read_var_value (struct symbol *var, const struct block *var_block,
 		    struct frame_info *frame)
 {
-  const struct block *frame_block = NULL;
+  struct bound_block frame_block = {};
   struct symbol *renaming_sym = NULL;
 
   /* The only case where default_read_var_value is not sufficient
      is when VAR is a renaming...  */
   if (frame)
-    frame_block = get_frame_block (frame, NULL).block;
-  if (frame_block)
-    renaming_sym = ada_find_renaming_symbol (var, frame_block);
+    frame_block = get_frame_block (frame, NULL);
+  if (frame_block.block)
+    renaming_sym = ada_find_renaming_symbol (var, frame_block.block);
   if (renaming_sym != NULL)
     return ada_read_renaming_var_value (renaming_sym, frame_block);
 

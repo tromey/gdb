@@ -25,8 +25,8 @@
 
 #include "common/vec.h"
 #include "expression.h"
+#include "block.h"
 
-struct block;
 struct language_defn;
 struct internalvar;
 
@@ -64,10 +64,10 @@ struct parser_state
   size_t expout_ptr;
 };
 
-/* If this is nonzero, this block is used as the lexical context
-   for symbol names.  */
+/* If this has a nonzero "block" member, this block is used as the
+   lexical context for symbol names.  */
 
-extern const struct block *expression_context_block;
+extern struct bound_block expression_context_block;
 
 /* If expression_context_block is non-zero, then this is the PC within
    the block that we want to evaluate expressions at.  When debugging
@@ -82,8 +82,7 @@ class innermost_block_tracker
 {
 public:
   innermost_block_tracker ()
-    : m_types (INNERMOST_BLOCK_FOR_SYMBOLS),
-      m_innermost_block (NULL)
+    : m_types (INNERMOST_BLOCK_FOR_SYMBOLS)
   { /* Nothing.  */ }
 
   /* Reset the currently stored innermost block.  Usually called before
@@ -93,7 +92,7 @@ public:
   void reset (innermost_block_tracker_types t = INNERMOST_BLOCK_FOR_SYMBOLS)
   {
     m_types = t;
-    m_innermost_block = NULL;
+    m_innermost_block = {};
   }
 
   /* Update the stored innermost block if the new block B is more inner
@@ -102,18 +101,21 @@ public:
      register.  The stored innermost block is only updated if the type T is
      a type we are interested in, the types we are interested in are held
      in M_TYPES and set during RESET.  */
-  void update (const struct block *b, innermost_block_tracker_types t);
+  void update (const struct bound_block &b, innermost_block_tracker_types t);
 
-  /* Overload of main UPDATE method which extracts the block from BS.  */
-  void update (const struct block_symbol &bs)
+  /* Overload of main UPDATE method which extracts the block from BS. */
+  void update (const struct block_symbol &bs,
+	       innermost_block_tracker_types t = INNERMOST_BLOCK_FOR_SYMBOLS)
   {
-    update (bs.block, INNERMOST_BLOCK_FOR_SYMBOLS);
+    /* FIXME - will be fixed in a subsequent patch.  */
+    struct bound_block b = { nullptr, bs.block };
+    update (b, t);
   }
 
   /* Return the stored innermost block.  Can be nullptr if no symbols or
      registers were found during an expression parse, and so no innermost
      block was defined.  */
-  const struct block *block () const
+  const struct bound_block &block () const
   {
     return m_innermost_block;
   }
@@ -124,7 +126,7 @@ private:
 
   /* The currently stored innermost block found while parsing an
      expression.  */
-  const struct block *m_innermost_block;
+  struct bound_block m_innermost_block = {};
 };
 
 /* The innermost context required by the stack and register variables

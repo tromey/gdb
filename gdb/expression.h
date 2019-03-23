@@ -119,7 +119,7 @@ extern struct type *parse_expression_for_completion
     (const char *, gdb::unique_xmalloc_ptr<char> *, enum type_code *);
 
 extern expression_up parse_exp_1 (const char **, CORE_ADDR pc,
-				  const struct block *, int,
+				  const struct bound_block &, int,
 				  innermost_block_tracker_types
 				    = INNERMOST_BLOCK_FOR_SYMBOLS);
 

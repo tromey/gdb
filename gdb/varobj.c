@@ -31,6 +31,7 @@
 #include "inferior.h"
 #include "varobj-iter.h"
 #include "parser-defs.h"
+#include "objfiles.h"
 
 #if HAVE_PYTHON
 #include "python/python.h"
@@ -72,7 +73,7 @@ struct varobj_root
   expression_up exp;
 
   /* Block for which this expression is valid.  */
-  const struct block *valid_block = NULL;
+  struct bound_block valid_block = {};
 
   /* The frame for this expression.  This field is set iff valid_block is
      not NULL.  */
@@ -271,7 +272,7 @@ varobj_create (const char *objname,
     {
       struct frame_info *fi;
       struct frame_id old_id = null_frame_id;
-      const struct block *block;
+      struct bound_block block;
       const char *p;
       struct value *value = NULL;
       CORE_ADDR pc;
@@ -301,10 +302,10 @@ varobj_create (const char *objname,
 	var->root->floating = true;
 
       pc = 0;
-      block = NULL;
+      block = {};
       if (fi != NULL)
 	{
-	  block = get_frame_block (fi, 0).block;
+	  block = get_frame_block (fi, 0);
 	  pc = get_frame_pc (fi);
 	}
 
@@ -335,8 +336,10 @@ varobj_create (const char *objname,
 	}
 
       var->format = variable_default_display (var.get ());
-      var->root->valid_block =
-	var->root->floating ? NULL : innermost_block.block ();
+      if (var->root->floating)
+	var->root->valid_block = {};
+      else
+	var->root->valid_block = innermost_block.block ();
       var->name = expression;
       /* For a root var, the name and the expr are the same.  */
       var->path_expr = expression;
@@ -345,7 +348,7 @@ varobj_create (const char *objname,
          we must select the appropriate frame before parsing
          the expression, otherwise the value will not be current.
          Since select_frame is so benign, just call it for all cases.  */
-      if (var->root->valid_block)
+      if (var->root->valid_block.block)
 	{
 	  /* User could specify explicit FRAME-ADDR which was not found but
 	     EXPRESSION is frame specific and we would not be able to evaluate
@@ -573,7 +576,7 @@ varobj_has_more (const struct varobj *var, int to)
 int
 varobj_get_thread_id (const struct varobj *var)
 {
-  if (var->root->valid_block && var->root->thread_id > 0)
+  if (var->root->valid_block.block && var->root->thread_id > 0)
     return var->root->thread_id;
   else
     return -1;
@@ -1032,7 +1035,7 @@ varobj_set_value (struct varobj *var, const char *expression)
   gdb_assert (varobj_editable_p (var));
 
   input_radix = 10;		/* ALWAYS reset to decimal temporarily.  */
-  expression_up exp = parse_exp_1 (&s, 0, 0, 0);
+  expression_up exp = parse_exp_1 (&s, 0, {}, 0);
   TRY
     {
       value = evaluate_expression (exp.get ());
@@ -2086,8 +2089,10 @@ check_scope (const struct varobj *var)
     {
       CORE_ADDR pc = get_frame_pc (fi);
 
-      if (pc <  BLOCK_START (var->root->valid_block) ||
-	  pc >= BLOCK_END (var->root->valid_block))
+      if (pc <  XBLOCK_START (var->root->valid_block.objfile,
+			      var->root->valid_block.block)
+	  || pc >= XBLOCK_END (var->root->valid_block.objfile,
+			       var->root->valid_block.block))
 	scope = false;
       else
 	select_frame (fi);
@@ -2112,7 +2117,7 @@ value_of_root_1 (struct varobj **var_handle)
   scoped_restore_current_thread restore_thread;
 
   /* Determine whether the variable is still around.  */
-  if (var->root->valid_block == NULL || var->root->floating)
+  if (var->root->valid_block.block == NULL || var->root->floating)
     within_scope = true;
   else if (var->root->thread_id == 0)
     {
@@ -2495,7 +2500,7 @@ static void
 varobj_invalidate_iter (struct varobj *var, void *unused)
 {
   /* global and floating var must be re-evaluated.  */
-  if (var->root->floating || var->root->valid_block == NULL)
+  if (var->root->floating || var->root->valid_block.block == NULL)
     {
       struct varobj *tmp_var;
 

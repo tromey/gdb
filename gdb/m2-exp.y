@@ -508,7 +508,7 @@ block	:	fblock
 fblock	:	BLOCKNAME
 			{ struct symbol *sym
 			    = lookup_symbol (copy_name ($1),
-					     expression_context_block,
+					     expression_context_block.block,
 					     VAR_DOMAIN, 0).symbol;
 			  $$ = sym;}
 	;
@@ -562,7 +562,7 @@ variable:	NAME
 			  struct field_of_this_result is_a_field_of_this;
 
 			  sym = lookup_symbol (copy_name ($1),
-					       expression_context_block,
+					       expression_context_block.block,
 					       VAR_DOMAIN,
 					       &is_a_field_of_this);
 
@@ -599,7 +599,8 @@ type
 			{ $$ = lookup_typename (parse_language (pstate),
 						parse_gdbarch (pstate),
 						copy_name ($1),
-						expression_context_block, 0); }
+						expression_context_block.block,
+						0); }
 
 	;
 
@@ -965,12 +966,13 @@ yylex (void)
 
     if (lookup_symtab (tmp))
       return BLOCKNAME;
-    sym = lookup_symbol (tmp, expression_context_block, VAR_DOMAIN, 0).symbol;
+    sym = lookup_symbol (tmp, expression_context_block.block,
+			 VAR_DOMAIN, 0).symbol;
     if (sym && SYMBOL_CLASS (sym) == LOC_BLOCK)
       return BLOCKNAME;
     if (lookup_typename (parse_language (pstate), parse_gdbarch (pstate),
 			 copy_name (yylval.sval),
-			 expression_context_block, 1))
+			 expression_context_block.block, 1))
       return TYPENAME;
 
     if(sym)

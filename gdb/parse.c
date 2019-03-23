@@ -66,7 +66,7 @@ const struct exp_descriptor exp_descriptor_standard =
   };
 
 /* Global variables declared in parser-defs.h (and commented there).  */
-const struct block *expression_context_block;
+struct bound_block expression_context_block;
 CORE_ADDR expression_context_pc;
 innermost_block_tracker innermost_block;
 int arglist_len;
@@ -115,19 +115,19 @@ static int prefixify_subexp (struct expression *, struct expression *, int,
 			     int);
 
 static expression_up parse_exp_in_context (const char **, CORE_ADDR,
-					   const struct block *, int,
+					   const struct bound_block &, int,
 					   int, int *,
 					   innermost_block_tracker_types);
 
 /* Documented at it's declaration.  */
 
 void
-innermost_block_tracker::update (const struct block *b,
+innermost_block_tracker::update (const struct bound_block &b,
 				 innermost_block_tracker_types t)
 {
   if ((m_types & t) != 0
-      && (m_innermost_block == NULL
-	  || contained_in (b, m_innermost_block)))
+      && (m_innermost_block.block == NULL
+	  || contained_in (b.block, m_innermost_block.block)))
     m_innermost_block = b;
 }
 
@@ -1091,8 +1091,9 @@ prefixify_subexp (struct expression *inexpr,
    If COMMA is nonzero, stop if a comma is reached.  */
 
 expression_up
-parse_exp_1 (const char **stringptr, CORE_ADDR pc, const struct block *block,
-	     int comma, innermost_block_tracker_types tracker_types)
+parse_exp_1 (const char **stringptr, CORE_ADDR pc,
+	     const struct bound_block &block, int comma,
+	     innermost_block_tracker_types tracker_types)
 {
   return parse_exp_in_context (stringptr, pc, block, comma, 0, NULL,
 			       tracker_types);
@@ -1107,7 +1108,7 @@ parse_exp_1 (const char **stringptr, CORE_ADDR pc, const struct block *block,
 
 static expression_up
 parse_exp_in_context (const char **stringptr, CORE_ADDR pc,
-		      const struct block *block,
+		      const struct bound_block &block,
 		      int comma, int void_context_p, int *out_subexp,
 		      innermost_block_tracker_types tracker_types)
 {
@@ -1136,28 +1137,34 @@ parse_exp_in_context (const char **stringptr, CORE_ADDR pc,
   expression_context_block = block;
 
   /* If no context specified, try using the current frame, if any.  */
-  if (!expression_context_block)
-    expression_context_block
-      = get_selected_block (&expression_context_pc).block;
+  if (!expression_context_block.block)
+    expression_context_block = get_selected_block (&expression_context_pc);
   else if (pc == 0)
-    expression_context_pc = BLOCK_ENTRY_PC (expression_context_block);
+    expression_context_pc = XBLOCK_ENTRY_PC (expression_context_block.objfile,
+					     expression_context_block.block);
   else
     expression_context_pc = pc;
 
   /* Fall back to using the current source static context, if any.  */
 
-  if (!expression_context_block)
+  if (!expression_context_block.block)
     {
       struct symtab_and_line cursal = get_current_source_symtab_and_line ();
       if (cursal.symtab)
-	expression_context_block
-	  = BLOCKVECTOR_BLOCK (SYMTAB_BLOCKVECTOR (cursal.symtab),
-			       STATIC_BLOCK);
-      if (expression_context_block)
-	expression_context_pc = BLOCK_ENTRY_PC (expression_context_block);
+	expression_context_block =
+	  {
+	    /* FIXME */
+	    nullptr,
+	    BLOCKVECTOR_BLOCK (SYMTAB_BLOCKVECTOR (cursal.symtab),
+			       STATIC_BLOCK)
+	  };
+      if (expression_context_block.block)
+	expression_context_pc
+	  = XBLOCK_ENTRY_PC (expression_context_block.objfile,
+			     expression_context_block.block);
     }
 
-  if (language_mode == language_mode_auto && block != NULL)
+  if (language_mode == language_mode_auto && block.block != NULL)
     {
       /* Find the language associated to the given context block.
          Default to the current language if it can not be determined.
@@ -1173,7 +1180,7 @@ parse_exp_in_context (const char **stringptr, CORE_ADDR pc,
          the current frame language to parse the expression.  That's why
          we do the following language detection only if the context block
          has been specifically provided.  */
-      struct symbol *func = block_linkage_function (block);
+      struct symbol *func = block_linkage_function (block.block);
 
       if (func != NULL)
         lang = language_def (SYMBOL_LANGUAGE (func));
@@ -1237,7 +1244,7 @@ parse_exp_in_context (const char **stringptr, CORE_ADDR pc,
 expression_up
 parse_expression (const char *string)
 {
-  expression_up exp = parse_exp_1 (&string, 0, 0, 0);
+  expression_up exp = parse_exp_1 (&string, 0, {}, 0);
   if (*string)
     error (_("Junk after end of expression."));
   return exp;
@@ -1278,7 +1285,7 @@ parse_expression_for_completion (const char *string,
   TRY
     {
       parse_completion = 1;
-      exp = parse_exp_in_context (&string, 0, 0, 0, 0, &subexp,
+      exp = parse_exp_in_context (&string, 0, {}, 0, 0, &subexp,
 				  INNERMOST_BLOCK_FOR_SYMBOLS);
     }
   CATCH (except, RETURN_MASK_ERROR)

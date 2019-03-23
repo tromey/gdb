@@ -560,7 +560,7 @@ exp	:	UNKNOWN_CPP_NAME '('
 			     lookup function (Koenig).  */
 			  write_exp_elt_opcode (pstate, OP_ADL_FUNC);
 			  write_exp_elt_block (pstate,
-					       expression_context_block);
+					       expression_context_block.block);
 			  write_exp_elt_sym (pstate,
 					     NULL); /* Placeholder.  */
 			  write_exp_string (pstate, $1.stoken);
@@ -1401,7 +1401,7 @@ typebase
 						0); }
 	|	STRUCT name
 			{ $$ = lookup_struct (copy_name ($2),
-					      expression_context_block); }
+					      expression_context_block.block); }
 	|	STRUCT COMPLETE
 			{
 			  mark_completion_tag (TYPE_CODE_STRUCT, "", 0);
@@ -1415,7 +1415,7 @@ typebase
 			}
 	|	CLASS name
 			{ $$ = lookup_struct (copy_name ($2),
-					      expression_context_block); }
+					      expression_context_block.block); }
 	|	CLASS COMPLETE
 			{
 			  mark_completion_tag (TYPE_CODE_STRUCT, "", 0);
@@ -1429,7 +1429,7 @@ typebase
 			}
 	|	UNION name
 			{ $$ = lookup_union (copy_name ($2),
-					     expression_context_block); }
+					     expression_context_block.block); }
 	|	UNION COMPLETE
 			{
 			  mark_completion_tag (TYPE_CODE_UNION, "", 0);
@@ -1443,7 +1443,7 @@ typebase
 			}
 	|	ENUM name
 			{ $$ = lookup_enum (copy_name ($2),
-					    expression_context_block); }
+					    expression_context_block.block); }
 	|	ENUM COMPLETE
 			{
 			  mark_completion_tag (TYPE_CODE_ENUM, "", 0);
@@ -1476,7 +1476,7 @@ typebase
                    in the token processing code in yylex. */
 	|	TEMPLATE name '<' type '>'
 			{ $$ = lookup_template_type(copy_name($2), $4,
-						    expression_context_block);
+						    expression_context_block.block);
 			}
 	| const_or_volatile_or_space_identifier_noopt typebase
 			{ $$ = follow_types ($2); }
@@ -1734,7 +1734,7 @@ name_not_typename :	NAME
 
 			  $$.stoken = $1;
 			  $$.sym = lookup_symbol ($1.ptr,
-						  expression_context_block,
+						  expression_context_block.block,
 						  VAR_DOMAIN,
 						  &is_a_field_of_this);
 			  $$.is_a_field_of_this
@@ -2869,7 +2869,7 @@ lex_one_token (struct parser_state *par_state, bool *is_quoted_name)
 	  {
 	    struct field_of_this_result is_a_field_of_this;
 
-	    if (lookup_symbol (copy, expression_context_block,
+	    if (lookup_symbol (copy, expression_context_block.block,
 			       VAR_DOMAIN,
 			       (parse_language (par_state)->la_language
 			        == language_cplus ? &is_a_field_of_this
@@ -3007,7 +3007,8 @@ classify_name (struct parser_state *par_state, const struct block *block,
 	  struct symbol *sym;
 
 	  yylval.theclass.theclass = Class;
-	  sym = lookup_struct_typedef (copy, expression_context_block, 1);
+	  sym = lookup_struct_typedef (copy,
+				       expression_context_block.block, 1);
 	  if (sym)
 	    yylval.theclass.type = SYMBOL_TYPE (sym);
 	  return CLASSNAME;
@@ -3145,7 +3146,7 @@ yylex (void)
      name-like token.  */
   current.token = lex_one_token (pstate, &is_quoted_name);
   if (current.token == NAME)
-    current.token = classify_name (pstate, expression_context_block,
+    current.token = classify_name (pstate, expression_context_block.block,
 				   is_quoted_name, last_lex_was_structop);
   if (parse_language (pstate)->la_language != language_cplus
       || (current.token != TYPENAME && current.token != COLONCOLON
@@ -3191,7 +3192,7 @@ yylex (void)
   else
     {
       gdb_assert (current.token == TYPENAME);
-      search_block = expression_context_block;
+      search_block = expression_context_block.block;
       obstack_grow (&name_obstack, current.value.sval.ptr,
 		    current.value.sval.length);
       context_type = current.value.tsym.type;
@@ -3288,7 +3289,7 @@ c_parse (struct parser_state *par_state)
 
   gdb::unique_xmalloc_ptr<struct macro_scope> macro_scope;
 
-  if (expression_context_block)
+  if (expression_context_block.block)
     macro_scope = sal_macro_scope (find_pc_line (expression_context_pc, 0));
   else
     macro_scope = default_macro_scope ();

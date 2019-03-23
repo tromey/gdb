@@ -753,15 +753,14 @@ yyerror (const char *msg)
 
 static void
 write_var_from_sym (struct parser_state *par_state,
-		    const struct block *block,
-		    struct symbol *sym)
+		    const struct block_symbol &sym)
 {
-  if (symbol_read_needs_frame (sym))
-    innermost_block.update (block, INNERMOST_BLOCK_FOR_SYMBOLS);
+  if (symbol_read_needs_frame (sym.symbol))
+    innermost_block.update (sym, INNERMOST_BLOCK_FOR_SYMBOLS);
 
   write_exp_elt_opcode (par_state, OP_VAR_VALUE);
-  write_exp_elt_block (par_state, block);
-  write_exp_elt_sym (par_state, sym);
+  write_exp_elt_block (par_state, sym.block);
+  write_exp_elt_sym (par_state, sym.symbol);
   write_exp_elt_opcode (par_state, OP_VAR_VALUE);
 }
 
@@ -833,7 +832,7 @@ write_object_renaming (struct parser_state *par_state,
 				&inner_renaming_expr))
       {
       case ADA_NOT_RENAMING:
-	write_var_from_sym (par_state, sym_info.block, sym_info.symbol);
+	write_var_from_sym (par_state, sym_info);
 	break;
       case ADA_OBJECT_RENAMING:
 	write_object_renaming (par_state, sym_info.block,
@@ -894,8 +893,7 @@ write_object_renaming (struct parser_state *par_state,
 	    else if (SYMBOL_CLASS (index_sym_info.symbol) == LOC_TYPEDEF)
 	      /* Index is an old-style renaming symbol.  */
 	      index_sym_info.block = orig_left_context;
-	    write_var_from_sym (par_state, index_sym_info.block,
-				index_sym_info.symbol);
+	    write_var_from_sym (par_state, index_sym_info);
 	  }
 	if (slice_state == SIMPLE_INDEX)
 	  {
@@ -1203,7 +1201,7 @@ write_var_or_type (struct parser_state *par_state,
   int name_len;
 
   if (block == NULL)
-    block = expression_context_block;
+    block = expression_context_block.block;
 
   encoded_name = ada_encode (name0.ptr);
   name_len = strlen (encoded_name);
@@ -1309,7 +1307,7 @@ write_var_or_type (struct parser_state *par_state,
 
 	  if (nsyms == 1)
 	    {
-	      write_var_from_sym (par_state, syms[0].block, syms[0].symbol);
+	      write_var_from_sym (par_state, syms[0]);
 	      write_selectors (par_state, encoded_name + tail_index);
 	      return NULL;
 	    }
@@ -1343,7 +1341,7 @@ write_var_or_type (struct parser_state *par_state,
 
       if (!have_full_symbols () && !have_partial_symbols () && block == NULL)
 	error (_("No symbol table is loaded.  Use the \"file\" command."));
-      if (block == expression_context_block)
+      if (block == expression_context_block.block)
 	error (_("No definition of \"%s\" in current context."), name0.ptr);
       else
 	error (_("No definition of \"%s\" in specified context."), name0.ptr);
@@ -1376,13 +1374,14 @@ write_name_assoc (struct parser_state *par_state, struct stoken name)
   if (strchr (name.ptr, '.') == NULL)
     {
       std::vector<struct block_symbol> syms;
-      int nsyms = ada_lookup_symbol_list (name.ptr, expression_context_block,
+      int nsyms = ada_lookup_symbol_list (name.ptr,
+					  expression_context_block.block,
 					  VAR_DOMAIN, &syms);
 
       if (nsyms != 1 || SYMBOL_CLASS (syms[0].symbol) == LOC_TYPEDEF)
 	write_exp_op_with_string (par_state, OP_NAME, name);
       else
-	write_var_from_sym (par_state, syms[0].block, syms[0].symbol);
+	write_var_from_sym (par_state, syms[0]);
     }
   else
     if (write_var_or_type (par_state, NULL, name) != NULL)
