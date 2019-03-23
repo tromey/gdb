@@ -1090,7 +1090,7 @@ list_command (const char *arg, int from_tty)
 static void
 print_disassembly (struct gdbarch *gdbarch, const char *name,
 		   CORE_ADDR low, CORE_ADDR high,
-		   const struct block *block,
+		   const struct bound_block &block,
 		   gdb_disassembly_flags flags)
 {
 #if defined(TUI)
@@ -1100,7 +1100,7 @@ print_disassembly (struct gdbarch *gdbarch, const char *name,
       printf_filtered ("Dump of assembler code ");
       if (name != NULL)
 	printf_filtered ("for function %s:\n", name);
-      if (block == nullptr || BLOCK_CONTIGUOUS_P (block))
+      if (block.block == nullptr || BLOCK_CONTIGUOUS_P (block.block))
         {
 	  if (name == NULL)
 	    printf_filtered ("from %s to %s:\n",
@@ -1111,10 +1111,12 @@ print_disassembly (struct gdbarch *gdbarch, const char *name,
 	}
       else
         {
-	  for (int i = 0; i < BLOCK_NRANGES (block); i++)
+	  for (int i = 0; i < BLOCK_NRANGES (block.block); i++)
 	    {
-	      CORE_ADDR range_low = BLOCK_RANGE_START (block, i);
-	      CORE_ADDR range_high = BLOCK_RANGE_END (block, i);
+	      CORE_ADDR range_low = XBLOCK_RANGE_START (block.objfile,
+							block.block, i);
+	      CORE_ADDR range_high = XBLOCK_RANGE_END (block.objfile,
+						       block.block, i);
 	      printf_filtered (_("Address range %s to %s:\n"),
 			       paddress (gdbarch, range_low),
 			       paddress (gdbarch, range_high));
@@ -1158,7 +1160,7 @@ disassemble_current_function (gdb_disassembly_flags flags)
 #endif
   low += gdbarch_deprecated_function_start_offset (gdbarch);
 
-  print_disassembly (gdbarch, name, low, high, block.block, flags);
+  print_disassembly (gdbarch, name, low, high, block, flags);
 }
 
 /* Dump a specified section of assembly code.
@@ -1273,7 +1275,7 @@ disassemble_command (const char *arg, int from_tty)
 	high += low;
     }
 
-  print_disassembly (gdbarch, name, low, high, block.block, flags);
+  print_disassembly (gdbarch, name, low, high, block, flags);
 }
 
 static void
