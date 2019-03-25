@@ -769,7 +769,7 @@ ps_pglobal_lookup (struct ps_prochandle *ph, const char *ld_object_name,
 {
   struct bound_minimal_symbol ms;
 
-  ms = lookup_minimal_symbol (ld_symbol_name, NULL, NULL);
+  ms = lookup_bound_minimal_symbol (ld_symbol_name);
   if (!ms.minsym)
     return PS_NOSYM;
 

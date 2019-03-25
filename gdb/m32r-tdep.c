@@ -824,7 +824,7 @@ m32r_frame_this_id (struct frame_info *this_frame,
   func = get_frame_func (this_frame);
 
   /* Check if the stack is empty.  */
-  msym_stack = lookup_minimal_symbol ("_stack", NULL, NULL);
+  msym_stack = lookup_bound_minimal_symbol ("_stack");
   if (msym_stack.minsym && info->base == BMSYMBOL_VALUE_ADDRESS (msym_stack))
     return;
 

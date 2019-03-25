@@ -1,5 +1,80 @@
 2019-03-25  Tom Tromey  <tromey@adacore.com>
 
+	* tui/tui-disasm.c (tui_get_begin_asm_address): Use
+	lookup_bound_minimal_symbol.
+	* compile/compile-object-load.c (compile_object_load): Use
+	lookup_bound_minimal_symbol.
+	* compile/compile-c-symbols.c (gcc_convert_symbol): Use
+	lookup_bound_minimal_symbol.
+	* value.c (value_static_field): Use lookup_bound_minimal_symbol.
+	* tracepoint.c (info_scope_command): Use
+	lookup_bound_minimal_symbol.
+	* symfile.c (simple_read_overlay_table): Use
+	lookup_bound_minimal_symbol.
+	(simple_overlay_update): Likewise.
+	* sol2-tdep.c (sol2_skip_solib_resolver): Use
+	lookup_bound_minimal_symbol.
+	* sol-thread.c (ps_pglobal_lookup): Use
+	lookup_bound_minimal_symbol.
+	* remote.c (remote_target::remote_check_symbols): Use
+	lookup_bound_minimal_symbol.
+	* ravenscar-thread.c (get_running_thread_msymbol): Use
+	lookup_bound_minimal_symbol.
+	(has_ravenscar_runtime): Likewise.
+	* proc-service.c (ps_pglobal_lookup): Use
+	lookup_bound_minimal_symbol.
+	* p-lang.c (pascal_main_name): Use lookup_bound_minimal_symbol.
+	* obsd-tdep.c (obsd_skip_solib_resolver): Use
+	lookup_bound_minimal_symbol.
+	* objc-lang.c (lookup_objc_class): Use
+	lookup_bound_minimal_symbol.
+	(lookup_child_selector, value_nsstring, find_imps): Likewise.
+	* mips-linux-tdep.c (mips_linux_skip_resolver): Use
+	lookup_bound_minimal_symbol.
+	* m68hc11-tdep.c (m68hc11_get_register_info): Use
+	lookup_bound_minimal_symbol.
+	* m32r-tdep.c (m32r_frame_this_id): Use
+	lookup_bound_minimal_symbol.
+	* m32c-tdep.c (m32c_return_value): Use
+	lookup_bound_minimal_symbol.
+	(m32c_return_value, m32c_m16c_pointer_to_address): Likewise.
+	* linux-thread-db.c (inferior_has_bug): Use
+	lookup_bound_minimal_symbol.
+	* linux-fork.c (inferior_call_waitpid): Use
+	lookup_bound_minimal_symbol.
+	(checkpoint_command): Likewise.
+	* hppa-tdep.c (hppa_symbol_address): Use
+	lookup_bound_minimal_symbol.
+	* go-lang.c (go_main_name): Use lookup_bound_minimal_symbol.
+	* gnu-v3-abi.c (gnuv3_get_typeid): Use
+	lookup_bound_minimal_symbol.
+	* gcore.c (call_target_sbrk): Use lookup_bound_minimal_symbol.
+	* ft32-tdep.c (ft32_analyze_prologue): Use
+	lookup_bound_minimal_symbol.
+	* frv-tdep.c (frv_frame_this_id): Use
+	lookup_bound_minimal_symbol.
+	* fbsd-tdep.c (fbsd_read_integer_by_name): Use
+	lookup_bound_minimal_symbol.
+	* eval.c (evaluate_subexp_standard): Use
+	lookup_bound_minimal_symbol.
+	* dwarf2loc.c (call_site_to_target_addr): Use
+	lookup_bound_minimal_symbol.
+	* d-lang.c (d_main_name): Use lookup_bound_minimal_symbol.
+	* ax-gdb.c (gen_var_ref): Use lookup_bound_minimal_symbol.
+	* avr-tdep.c (avr_scan_prologue): Use
+	lookup_bound_minimal_symbol.
+	* auxv.c (ld_so_xfer_auxv): Use lookup_bound_minimal_symbol.
+	* aix-thread.c (pdc_symbol_addrs, pd_enable): Use
+	lookup_bound_minimal_symbol.
+	* ada-tasks.c (ada_tasks_inferior_data_sniffer): Use
+	lookup_bound_minimal_symbol.
+	* ada-lang.c (ada_update_initial_language): Use
+	lookup_bound_minimal_symbol.
+	(ada_main_name, ada_has_this_exception_support): Likewise.
+	* c-exp.y (classify_name): Use lookup_bound_minimal_symbol.
+
+2019-03-25  Tom Tromey  <tromey@adacore.com>
+
 	* minsyms.c (BUNCH_SIZE): Update comment.
 	(~minimal_symbol_reader): Remove old comment.
 	(compact_minimal_symbols): Update comment.

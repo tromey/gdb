@@ -58,20 +58,20 @@ pascal_main_name (void)
 {
   struct bound_minimal_symbol msym;
 
-  msym = lookup_minimal_symbol (GPC_P_INITIALIZE, NULL, NULL);
+  msym = lookup_bound_minimal_symbol (GPC_P_INITIALIZE);
 
   /*  If '_p_initialize' was not found, the main program is likely not
      written in Pascal.  */
   if (msym.minsym == NULL)
     return NULL;
 
-  msym = lookup_minimal_symbol (GPC_MAIN_PROGRAM_NAME_1, NULL, NULL);
+  msym = lookup_bound_minimal_symbol (GPC_MAIN_PROGRAM_NAME_1);
   if (msym.minsym != NULL)
     {
       return GPC_MAIN_PROGRAM_NAME_1;
     }
 
-  msym = lookup_minimal_symbol (GPC_MAIN_PROGRAM_NAME_2, NULL, NULL);
+  msym = lookup_bound_minimal_symbol (GPC_MAIN_PROGRAM_NAME_2);
   if (msym.minsym != NULL)
     {
       return GPC_MAIN_PROGRAM_NAME_2;

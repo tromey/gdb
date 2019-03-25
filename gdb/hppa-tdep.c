@@ -195,7 +195,7 @@ hppa_symbol_address(const char *sym)
 {
   struct bound_minimal_symbol minsym;
 
-  minsym = lookup_minimal_symbol (sym, NULL, NULL);
+  minsym = lookup_bound_minimal_symbol (sym);
   if (minsym.minsym)
     return BMSYMBOL_VALUE_ADDRESS (minsym);
   else

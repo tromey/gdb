@@ -2230,7 +2230,7 @@ m32c_return_value (struct gdbarch *gdbarch,
 	     needed.  This is not what the Renesas tools do, but it's
 	     what GCC does at the moment.  */
 	  struct bound_minimal_symbol mem0
-	    = lookup_minimal_symbol ("mem0", NULL, NULL);
+	    = lookup_bound_minimal_symbol ("mem0");
 
 	  if (! mem0.minsym)
 	    error (_("The return value is stored in memory at 'mem0', "
@@ -2262,7 +2262,7 @@ m32c_return_value (struct gdbarch *gdbarch,
 	     needed.  This is not what the Renesas tools do, but it's
 	     what GCC does at the moment.  */
 	  struct bound_minimal_symbol mem0
-	    = lookup_minimal_symbol ("mem0", NULL, NULL);
+	    = lookup_bound_minimal_symbol ("mem0");
 
 	  if (! mem0.minsym)
 	    error (_("The return value is stored in memory at 'mem0', "
@@ -2455,7 +2455,7 @@ m32c_m16c_address_to_pointer (struct gdbarch *gdbarch,
       strcat (tramp_name, ".plt");
 
       /* Try to find a linker symbol for the trampoline.  */
-      tramp_msym = lookup_minimal_symbol (tramp_name, NULL, NULL);
+      tramp_msym = lookup_bound_minimal_symbol (tramp_name);
 
       /* We've either got another copy of the name now, or don't need
          the name any more.  */
@@ -2539,8 +2539,7 @@ m32c_m16c_pointer_to_address (struct gdbarch *gdbarch,
               char *func_name = (char *) xmalloc (len - 4 + 1);
               memcpy (func_name, ptr_msym_name, len - 4);
               func_name[len - 4] = '\0';
-              func_msym
-                = lookup_minimal_symbol (func_name, NULL, NULL);
+              func_msym = lookup_bound_minimal_symbol (func_name);
 
               /* If we do have such a symbol, return its value as the
                  function's true address.  */

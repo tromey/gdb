@@ -39,7 +39,7 @@ d_main_name (void)
 {
   struct bound_minimal_symbol msym;
 
-  msym = lookup_minimal_symbol (D_MAIN, NULL, NULL);
+  msym = lookup_bound_minimal_symbol (D_MAIN);
   if (msym.minsym != NULL)
     return D_MAIN;
 

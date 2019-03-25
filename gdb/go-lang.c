@@ -56,7 +56,7 @@ go_main_name (void)
 {
   struct bound_minimal_symbol msym;
 
-  msym = lookup_minimal_symbol (GO_MAIN_MAIN, NULL, NULL);
+  msym = lookup_bound_minimal_symbol (GO_MAIN_MAIN);
   if (msym.minsym != NULL)
     return GO_MAIN_MAIN;
 

@@ -4920,7 +4920,7 @@ remote_target::remote_check_symbols ()
       end = hex2bin (tmp, reinterpret_cast <gdb_byte *> (msg.data ()),
 		     strlen (tmp) / 2);
       msg[end] = '\0';
-      sym = lookup_minimal_symbol (msg.data (), NULL, NULL);
+      sym = lookup_bound_minimal_symbol (msg.data ());
       if (sym.minsym == NULL)
 	xsnprintf (msg.data (), get_remote_packet_size (), "qSymbol::%s",
 		   &reply[8]);

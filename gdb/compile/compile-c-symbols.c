@@ -358,7 +358,7 @@ gcc_convert_symbol (void *datum,
 	{
 	  struct bound_minimal_symbol bmsym;
 
-	  bmsym = lookup_minimal_symbol (identifier, NULL, NULL);
+	  bmsym = lookup_bound_minimal_symbol (identifier);
 	  if (bmsym.minsym != NULL)
 	    {
 	      convert_symbol_bmsym (context, bmsym);

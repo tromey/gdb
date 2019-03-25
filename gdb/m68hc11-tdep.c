@@ -200,7 +200,7 @@ m68hc11_get_register_info (struct m68hc11_soft_reg *reg, const char *name)
 {
   struct bound_minimal_symbol msymbol;
 
-  msymbol = lookup_minimal_symbol (name, NULL, NULL);
+  msymbol = lookup_bound_minimal_symbol (name);
   if (msymbol.minsym)
     {
       reg->addr = BMSYMBOL_VALUE_ADDRESS (msymbol);

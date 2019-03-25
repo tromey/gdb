@@ -195,7 +195,7 @@ ft32_analyze_prologue (CORE_ADDR start_addr, CORE_ADDR end_addr,
 
       snprintf (prolog_symbol, sizeof (prolog_symbol), "__prolog_$r%02d",
 		regnum);
-      msymbol = lookup_minimal_symbol (prolog_symbol, NULL, NULL);
+      msymbol = lookup_bound_minimal_symbol (prolog_symbol);
       if (msymbol.minsym)
 	prologs[regnum] = BMSYMBOL_VALUE_ADDRESS (msymbol);
       else

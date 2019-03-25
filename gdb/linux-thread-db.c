@@ -469,7 +469,7 @@ inferior_has_bug (const char *ver_symbol, int ver_major_min, int ver_minor_min)
   gdb::unique_xmalloc_ptr<char> version;
   int err, got, retval = 0;
 
-  version_msym = lookup_minimal_symbol (ver_symbol, NULL, NULL);
+  version_msym = lookup_bound_minimal_symbol (ver_symbol);
   if (version_msym.minsym == NULL)
     return 0;
 

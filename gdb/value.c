@@ -2840,7 +2840,7 @@ value_static_field (struct type *type, int fieldno)
 	  /* With some compilers, e.g. HP aCC, static data members are
 	     reported as non-debuggable symbols.  */
 	  struct bound_minimal_symbol msym
-	    = lookup_minimal_symbol (phys_name, NULL, NULL);
+	    = lookup_bound_minimal_symbol (phys_name);
 	  struct type *field_type = TYPE_FIELD_TYPE (type, fieldno);
 
 	  if (!msym.minsym)

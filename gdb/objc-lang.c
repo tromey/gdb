@@ -118,10 +118,10 @@ lookup_objc_class (struct gdbarch *gdbarch, const char *classname)
       return 0;
     }
 
-  if (lookup_minimal_symbol("objc_lookUpClass", 0, 0).minsym)
-    function = find_function_in_inferior("objc_lookUpClass", NULL);
-  else if (lookup_minimal_symbol ("objc_lookup_class", 0, 0).minsym)
-    function = find_function_in_inferior("objc_lookup_class", NULL);
+  if (lookup_bound_minimal_symbol ("objc_lookUpClass").minsym)
+    function = find_function_in_inferior ("objc_lookUpClass", NULL);
+  else if (lookup_bound_minimal_symbol ("objc_lookup_class").minsym)
+    function = find_function_in_inferior ("objc_lookup_class", NULL);
   else
     {
       complaint (_("no way to lookup Objective-C classes"));
@@ -147,10 +147,10 @@ lookup_child_selector (struct gdbarch *gdbarch, const char *selname)
       return 0;
     }
 
-  if (lookup_minimal_symbol("sel_getUid", 0, 0).minsym)
-    function = find_function_in_inferior("sel_getUid", NULL);
-  else if (lookup_minimal_symbol ("sel_get_any_uid", 0, 0).minsym)
-    function = find_function_in_inferior("sel_get_any_uid", NULL);
+  if (lookup_bound_minimal_symbol ("sel_getUid").minsym)
+    function = find_function_in_inferior ("sel_getUid", NULL);
+  else if (lookup_bound_minimal_symbol ("sel_get_any_uid").minsym)
+    function = find_function_in_inferior ("sel_get_any_uid", NULL);
   else
     {
       complaint (_("no way to lookup Objective-C selectors"));
@@ -178,20 +178,21 @@ value_nsstring (struct gdbarch *gdbarch, char *ptr, int len)
   stringValue[2] = value_string(ptr, len, char_type);
   stringValue[2] = value_coerce_array(stringValue[2]);
   /* _NSNewStringFromCString replaces "istr" after Lantern2A.  */
-  if (lookup_minimal_symbol("_NSNewStringFromCString", 0, 0).minsym)
+  if (lookup_bound_minimal_symbol ("_NSNewStringFromCString").minsym)
     {
-      function = find_function_in_inferior("_NSNewStringFromCString", NULL);
-      nsstringValue = call_function_by_hand(function, NULL, stringValue[2]);
+      function = find_function_in_inferior ("_NSNewStringFromCString", NULL);
+      nsstringValue = call_function_by_hand (function, NULL, stringValue[2]);
     }
-  else if (lookup_minimal_symbol("istr", 0, 0).minsym)
+  else if (lookup_bound_minimal_symbol ("istr").minsym)
     {
-      function = find_function_in_inferior("istr", NULL);
-      nsstringValue = call_function_by_hand(function, NULL, stringValue[2]);
+      function = find_function_in_inferior ("istr", NULL);
+      nsstringValue = call_function_by_hand (function, NULL, stringValue[2]);
     }
-  else if (lookup_minimal_symbol("+[NSString stringWithCString:]", 0, 0).minsym)
+  else if (lookup_bound_minimal_symbol ("+[NSString stringWithCString:]")
+	   .minsym)
     {
       function
-	= find_function_in_inferior("+[NSString stringWithCString:]", NULL);
+	= find_function_in_inferior ("+[NSString stringWithCString:]", NULL);
       type = builtin_type (gdbarch)->builtin_long;
 
       stringValue[0] = value_from_longest 
@@ -1153,7 +1154,7 @@ find_imps (const char *method, std::vector<const char *> *symbol_names)
       else
 	{
 	  struct bound_minimal_symbol msym
-	    = lookup_minimal_symbol (selector, 0, 0);
+	    = lookup_bound_minimal_symbol (selector);
 
 	  if (msym.minsym != NULL) 
 	    symbol_names->push_back (MSYMBOL_NATURAL_NAME (msym.minsym));

@@ -29,7 +29,7 @@ obsd_skip_solib_resolver (struct gdbarch *gdbarch, CORE_ADDR pc)
 {
   struct bound_minimal_symbol msym;
 
-  msym = lookup_minimal_symbol("_dl_bind", NULL, NULL);
+  msym = lookup_bound_minimal_symbol ("_dl_bind");
   if (msym.minsym && BMSYMBOL_VALUE_ADDRESS (msym) == pc)
     return frame_unwind_caller_pc (get_current_frame ());
   else

@@ -2616,8 +2616,7 @@ info_scope_command (const char *args_in, int from_tty)
 				   paddress (gdbarch, BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (sym))));
 		  break;
 		case LOC_UNRESOLVED:
-		  msym = lookup_minimal_symbol (SYMBOL_LINKAGE_NAME (sym),
-						NULL, NULL);
+		  msym = lookup_bound_minimal_symbol (SYMBOL_LINKAGE_NAME (sym));
 		  if (msym.minsym == NULL)
 		    printf_filtered ("Unresolved Static");
 		  else

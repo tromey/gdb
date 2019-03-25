@@ -332,11 +332,11 @@ tui_get_begin_asm_address (struct gdbarch **gdbarch_p, CORE_ADDR *addr_p)
 
       /* Find address of the start of program.
          Note: this should be language specific.  */
-      main_symbol = lookup_minimal_symbol ("main", NULL, NULL);
+      main_symbol = lookup_bound_minimal_symbol ("main");
       if (main_symbol.minsym == 0)
-        main_symbol = lookup_minimal_symbol ("MAIN", NULL, NULL);
+        main_symbol = lookup_bound_minimal_symbol ("MAIN");
       if (main_symbol.minsym == 0)
-        main_symbol = lookup_minimal_symbol ("_start", NULL, NULL);
+        main_symbol = lookup_bound_minimal_symbol ("_start");
       if (main_symbol.minsym)
         addr = BMSYMBOL_VALUE_ADDRESS (main_symbol);
       else

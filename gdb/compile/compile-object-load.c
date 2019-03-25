@@ -712,7 +712,7 @@ compile_object_load (const compile_file_names &file_names,
 	  sym->value = 0;
 	  continue;
 	}
-      bmsym = lookup_minimal_symbol (sym->name, NULL, NULL);
+      bmsym = lookup_bound_minimal_symbol (sym->name);
       switch (bmsym.minsym == NULL
 	      ? mst_unknown : MSYMBOL_TYPE (bmsym.minsym))
 	{
