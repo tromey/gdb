@@ -408,8 +408,11 @@ spu_enable_break (struct objfile *objfile)
 
   /* The libspe library will call __spe_context_update_event whenever any
      SPE context is allocated or destroyed.  */
-  spe_event_sym = lookup_minimal_symbol ("__spe_context_update_event",
-					 NULL, objfile);
+  if (objfile == NULL)
+    spe_event_sym = lookup_bound_minimal_symbol ("__spe_context_update_event");
+  else
+    spe_event_sym = lookup_minimal_symbol ("__spe_context_update_event",
+					   NULL, objfile);
 
   /* Place a solib_event breakpoint on the symbol.  */
   if (spe_event_sym.minsym)

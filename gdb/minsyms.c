@@ -439,8 +439,12 @@ int
 find_minimal_symbol_address (const char *name, CORE_ADDR *addr,
 			     struct objfile *objfile)
 {
-  struct bound_minimal_symbol sym
-    = lookup_minimal_symbol (name, NULL, objfile);
+  struct bound_minimal_symbol sym;
+
+  if (objfile == NULL)
+    sym = lookup_minimal_symbol (name, NULL, objfile);
+  else
+    sym = lookup_bound_minimal_symbol (name);
 
   if (sym.minsym != NULL)
     *addr = BMSYMBOL_VALUE_ADDRESS (sym);

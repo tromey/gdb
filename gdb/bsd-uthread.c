@@ -161,7 +161,10 @@ bsd_uthread_lookup_address (const char *name, struct objfile *objfile)
 {
   struct bound_minimal_symbol sym;
 
-  sym = lookup_minimal_symbol (name, NULL, objfile);
+  if (objfile == NULL)
+    sym = lookup_bound_minimal_symbol (name);
+  else
+    sym = lookup_minimal_symbol (name, NULL, objfile);
   if (sym.minsym)
     return BMSYMBOL_VALUE_ADDRESS (sym);
 

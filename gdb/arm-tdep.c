@@ -8305,8 +8305,10 @@ arm_skip_stub (struct frame_info *frame, CORE_ADDR pc)
       target_name[target_len] = '\0';
 
       sec = find_pc_section (pc);
-      objfile = (sec == NULL) ? NULL : sec->objfile;
-      minsym = lookup_minimal_symbol (target_name, NULL, objfile);
+      if (sec == NULL)
+	minsym = lookup_bound_minimal_symbol (target_name);
+      else
+	minsym = lookup_minimal_symbol (target_name, NULL, objfile);
       if (minsym.minsym != NULL)
 	return BMSYMBOL_VALUE_ADDRESS (minsym);
       else
