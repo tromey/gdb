@@ -322,53 +322,50 @@ lookup_minimal_symbol (const char *name, const char *sfile,
 
   lookup_name_info lookup_name (name, symbol_name_match_type::FULL);
 
-  for (struct objfile *objfile : current_program_space->objfiles ())
+  gdb_assert (objf != nullptr);
+
+  for (struct objfile *objfile = objf;
+       objfile != NULL && found.external_symbol.minsym == NULL;
+       objfile = objfile_separate_debug_iterate (objf, objfile))
     {
-      if (objf == NULL || objf == objfile
-	  || objf == objfile->separate_debug_objfile_backlink)
+      if (symbol_lookup_debug)
 	{
-	  if (symbol_lookup_debug)
+	  fprintf_unfiltered (gdb_stdlog,
+			      "lookup_minimal_symbol (%s, %s, %s)\n",
+			      name, sfile != NULL ? sfile : "NULL",
+			      objfile_debug_name (objfile));
+	}
+
+      /* Do two passes: the first over the ordinary hash table,
+	 and the second over the demangled hash table.  */
+      lookup_minimal_symbol_mangled (name, sfile, objfile,
+				     objfile->per_bfd->msymbol_hash,
+				     mangled_hash, mangled_cmp, found);
+
+      /* If not found, try the demangled hash table.  */
+      if (found.external_symbol.minsym == NULL)
+	{
+	  /* Once for each language in the demangled hash names
+	     table (usually just zero or one languages).  */
+	  for (unsigned iter = 0; iter < nr_languages; ++iter)
 	    {
-	      fprintf_unfiltered (gdb_stdlog,
-				  "lookup_minimal_symbol (%s, %s, %s)\n",
-				  name, sfile != NULL ? sfile : "NULL",
-				  objfile_debug_name (objfile));
-	    }
+	      if (!objfile->per_bfd->demangled_hash_languages.test (iter))
+		continue;
+	      enum language lang = (enum language) iter;
 
-	  /* Do two passes: the first over the ordinary hash table,
-	     and the second over the demangled hash table.  */
-	  lookup_minimal_symbol_mangled (name, sfile, objfile,
-					 objfile->per_bfd->msymbol_hash,
-					 mangled_hash, mangled_cmp, found);
+	      unsigned int hash
+		= (lookup_name.search_name_hash (lang)
+		   % MINIMAL_SYMBOL_HASH_SIZE);
 
-	  /* If not found, try the demangled hash table.  */
-	  if (found.external_symbol.minsym == NULL)
-	    {
-	      /* Once for each language in the demangled hash names
-		 table (usually just zero or one languages).  */
-	      for (unsigned iter = 0; iter < nr_languages; ++iter)
-		{
-		  if (!objfile->per_bfd->demangled_hash_languages.test (iter))
-		    continue;
-		  enum language lang = (enum language) iter;
+	      symbol_name_matcher_ftype *match
+		= get_symbol_name_matcher (language_def (lang),
+					   lookup_name);
+	      struct minimal_symbol **msymbol_demangled_hash
+		= objfile->per_bfd->msymbol_demangled_hash;
 
-		  unsigned int hash
-		    = (lookup_name.search_name_hash (lang)
-		       % MINIMAL_SYMBOL_HASH_SIZE);
-
-		  symbol_name_matcher_ftype *match
-		    = get_symbol_name_matcher (language_def (lang),
-					       lookup_name);
-		  struct minimal_symbol **msymbol_demangled_hash
-		    = objfile->per_bfd->msymbol_demangled_hash;
-
-		  lookup_minimal_symbol_demangled (lookup_name, sfile, objfile,
-						   msymbol_demangled_hash,
-						   hash, match, found);
-
-		  if (found.external_symbol.minsym != NULL)
-		    break;
-		}
+	      lookup_minimal_symbol_demangled (lookup_name, sfile, objfile,
+					       msymbol_demangled_hash,
+					       hash, match, found);
 
 	      if (found.external_symbol.minsym != NULL)
 		break;
@@ -430,7 +427,19 @@ lookup_minimal_symbol (const char *name, const char *sfile,
 struct bound_minimal_symbol
 lookup_bound_minimal_symbol (const char *name)
 {
-  return lookup_minimal_symbol (name, NULL, NULL);
+  for (struct objfile *objfile : current_program_space->objfiles ())
+    {
+      /* Only search primary objfiles; lookup_minimal_symbol will
+	 search the separate debug objfiles for us.  */
+      if (objfile->separate_debug_objfile_backlink == nullptr)
+	{
+	  struct bound_minimal_symbol result
+	    = lookup_minimal_symbol (name, NULL, objfile);
+	  if (result.minsym != nullptr)
+	    return result;
+	}
+    }
+  return {};
 }
 
 /* See common/symbol.h.  */

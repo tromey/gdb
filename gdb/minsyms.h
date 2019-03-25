@@ -177,21 +177,23 @@ unsigned int msymbol_hash_iw (const char *);
 
 
 
-/* Look through all the current minimal symbol tables and find the
-   first minimal symbol that matches NAME.  If OBJF is non-NULL, limit
-   the search to that objfile.  If SFILE is non-NULL, the only
+/* Look through the minimal symbol tables of OBJF and find the first
+   minimal symbol that matches NAME.  If SFILE is non-NULL, the only
    file-scope symbols considered will be from that source file (global
    symbols are still preferred).  Returns a bound minimal symbol that
    matches, or an empty bound minimal symbol if no match is found.  */
 
 struct bound_minimal_symbol lookup_minimal_symbol (const char *,
 						   const char *,
-						   struct objfile *);
+						   struct objfile *)
+  ATTRIBUTE_NONNULL (1)
+  ATTRIBUTE_NONNULL (3);
 
 /* Like lookup_minimal_symbol, but searches all files and
    objfiles.  */
 
-struct bound_minimal_symbol lookup_bound_minimal_symbol (const char *);
+struct bound_minimal_symbol lookup_bound_minimal_symbol (const char *)
+  ATTRIBUTE_NONNULL (1);
 
 /* Look through all the current minimal symbol tables and find the
    first minimal symbol that matches NAME and has text type.  If OBJF
