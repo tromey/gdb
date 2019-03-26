@@ -39,6 +39,7 @@ struct dummy_target : public target_ops
   void fetch_registers (struct regcache *arg0, int arg1) override;
   void store_registers (struct regcache *arg0, int arg1) override;
   void prepare_to_store (struct regcache *arg0) override;
+  bool can_randomly_thread_switch () override;
   void files_info () override;
   int insert_breakpoint (struct gdbarch *arg0, struct bp_target_info *arg1) override;
   int remove_breakpoint (struct gdbarch *arg0, struct bp_target_info *arg1, enum remove_bp_reason arg2) override;
@@ -215,6 +216,7 @@ struct debug_target : public target_ops
   void fetch_registers (struct regcache *arg0, int arg1) override;
   void store_registers (struct regcache *arg0, int arg1) override;
   void prepare_to_store (struct regcache *arg0) override;
+  bool can_randomly_thread_switch () override;
   void files_info () override;
   int insert_breakpoint (struct gdbarch *arg0, struct bp_target_info *arg1) override;
   int remove_breakpoint (struct gdbarch *arg0, struct bp_target_info *arg1, enum remove_bp_reason arg2) override;
@@ -587,6 +589,31 @@ debug_target::prepare_to_store (struct regcache *arg0)
   gdb_printf (gdb_stdlog, "<- %s->prepare_to_store (", this->beneath ()->shortname ());
   target_debug_print_regcache_p (arg0);
   gdb_puts (")\n", gdb_stdlog);
+}
+
+bool
+target_ops::can_randomly_thread_switch ()
+{
+  return this->beneath ()->can_randomly_thread_switch ();
+}
+
+bool
+dummy_target::can_randomly_thread_switch ()
+{
+  return false;
+}
+
+bool
+debug_target::can_randomly_thread_switch ()
+{
+  gdb_printf (gdb_stdlog, "-> %s->can_randomly_thread_switch (...)\n", this->beneath ()->shortname ());
+  bool result
+    = this->beneath ()->can_randomly_thread_switch ();
+  gdb_printf (gdb_stdlog, "<- %s->can_randomly_thread_switch (", this->beneath ()->shortname ());
+  gdb_puts (") = ", gdb_stdlog);
+  target_debug_print_bool (result);
+  gdb_puts ("\n", gdb_stdlog);
+  return result;
 }
 
 void
