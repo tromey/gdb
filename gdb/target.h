@@ -511,6 +511,13 @@ struct target_ops
     virtual void prepare_to_store (struct regcache *)
       TARGET_DEFAULT_NORETURN (noprocess ());
 
+    /* True if single-stepping on this target can cause an
+       un-asked-for thread switch.  This is normal on "green" thread
+       targets, like Ravenscar, when single-stepping through the
+       context-switching code.  */
+    virtual bool can_randomly_thread_switch ()
+      TARGET_DEFAULT_RETURN (false);
+
     virtual void files_info ()
       TARGET_DEFAULT_IGNORE ();
     virtual int insert_breakpoint (struct gdbarch *,
@@ -1494,6 +1501,9 @@ extern void target_resume (ptid_t ptid, int step, enum gdb_signal signal);
    See the description of process_stratum_target::commit_resumed_state
    for more details.  */
 extern void target_commit_resumed ();
+
+/* A wrapper for target_ops::can_randomly_thread_switch.  */
+extern bool target_can_randomly_thread_switch ();
 
 /* For target_read_memory see target/target.h.  */
 

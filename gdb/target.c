@@ -294,6 +294,14 @@ target_can_run_breakpoint_commands ()
 
 /* See target.h.  */
 
+bool
+target_can_randomly_thread_switch ()
+{
+  return current_inferior ()->top_target ()->can_randomly_thread_switch ();
+}
+
+/* See target.h.  */
+
 void
 target_files_info ()
 {

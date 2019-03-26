@@ -5830,7 +5830,8 @@ finish_step_over (struct execution_control_state *ecs)
       /* If we're stepping over a breakpoint with all threads locked,
 	 then only the thread that was stepped should be reporting
 	 back an event.  */
-      gdb_assert (ecs->event_thread->control.trap_expected);
+      gdb_assert (ecs->event_thread->control.trap_expected
+		  || target_can_randomly_thread_switch ());
 
       clear_step_over_info ();
     }
@@ -6045,10 +6046,30 @@ handle_signal_stop (struct execution_control_state *ecs)
 	{
 	  if (single_step_breakpoint_inserted_here_p (aspace, pc))
 	    {
-	      infrun_debug_printf ("[%s] hit another thread's single-step "
-				   "breakpoint",
-				   ecs->ptid.to_string ().c_str ());
-	      ecs->hit_singlestep_breakpoint = 1;
+	      if (target_can_randomly_thread_switch ())
+		{
+		  infrun_debug_printf ("[%s] random thread switch\n",
+				       ecs->ptid.to_string ().c_str ());
+
+		  /* Here the step was intended for some other thread;
+		     but instead we saw a context switch.  This can
+		     happen with "green" threads in Ravenscar, and the
+		     recourse is to pretend we wanted to step the new
+		     thread and got an ordinary stop there.  */
+		  for (thread_info *th : all_threads ())
+		    if (th->control.trap_expected)
+		      {
+			std::swap (th->control, ecs->event_thread->control);
+			break;
+		      }
+		}
+	      else
+		{
+		  infrun_debug_printf ("[%s] hit another thread's single-step "
+				       "breakpoint",
+				       ecs->ptid.to_string ().c_str ());
+		  ecs->hit_singlestep_breakpoint = 1;
+		}
 	    }
 	}
       else
