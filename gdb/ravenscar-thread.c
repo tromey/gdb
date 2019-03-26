@@ -90,6 +90,11 @@ struct ravenscar_thread_target final : public target_ops
   ptid_t wait (ptid_t, struct target_waitstatus *, int) override;
   void resume (ptid_t, int, enum gdb_signal) override;
 
+  bool can_randomly_thread_switch () override
+  {
+    return true;
+  }
+
   void fetch_registers (struct regcache *, int) override;
   void store_registers (struct regcache *, int) override;
 

@@ -1,3 +1,15 @@
+2019-03-26  Tom Tromey  <tromey@adacore.com>
+
+	* infrun.c (finish_step_over): Check
+	target_can_randomly_thread_switch.
+	(handle_signal_stop): Handle random thread switches.
+	* ravenscar-thread.c (struct ravenscar_thread_target)
+	<can_randomly_thread_switch>: New method.
+	* target-delegates.c: Rebuild.
+	* target.h (struct target_ops) <can_randomly_thread_switch>:
+	New method.
+	(target_can_randomly_thread_switch): New define.
+
 2020-08-07  Tom Tromey  <tromey@adacore.com>
 
 	* ravenscar-thread.c
