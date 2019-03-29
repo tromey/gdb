@@ -122,7 +122,7 @@ print_subexp_standard (struct expression *exp, int *pos,
 	const struct block *b;
 
 	(*pos) += 3;
-	b = exp->elts[pc + 1].block;
+	b = exp->elts[pc + 1].block.block;
 	if (b != NULL
 	    && BLOCK_FUNCTION (b) != NULL
 	    && SYMBOL_PRINT_NAME (BLOCK_FUNCTION (b)) != NULL)
@@ -894,7 +894,7 @@ dump_subexp_body_standard (struct expression *exp,
       break;
     case OP_VAR_VALUE:
       fprintf_filtered (stream, "Block @");
-      gdb_print_host_address (exp->elts[elt].block, stream);
+      gdb_print_host_address (exp->elts[elt].block.block, stream);
       fprintf_filtered (stream, ", symbol @");
       gdb_print_host_address (exp->elts[elt + 1].symbol, stream);
       fprintf_filtered (stream, " (%s)",

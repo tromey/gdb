@@ -1309,7 +1309,8 @@ evaluate_subexp_standard (struct type *expect_type,
 	if (TYPE_CODE (SYMBOL_TYPE (var)) == TYPE_CODE_ERROR)
 	  error_unknown_type (SYMBOL_PRINT_NAME (var));
 	if (noside != EVAL_SKIP)
-	    return evaluate_var_value (noside, exp->elts[pc + 1].block, var);
+	    return evaluate_var_value (noside, exp->elts[pc + 1].block.block,
+				       var);
 	else
 	  {
 	    /* Return a dummy value of the correct type when skipping, so
@@ -1373,7 +1374,7 @@ evaluate_subexp_standard (struct type *expect_type,
 	if (sym.symbol == NULL)
 	  error (_("No symbol \"%s\" in specified context."), var);
 
-	return evaluate_var_value (noside, sym.block, sym.symbol);
+	return evaluate_var_value (noside, sym.block.block, sym.symbol);
       }
 
     case OP_LAST:
@@ -3044,7 +3045,7 @@ evaluate_subexp_for_address (struct expression *exp, int *pos,
 	    value_zero (type, not_lval);
 	}
       else
-	return address_of_variable (var, exp->elts[pc + 1].block);
+	return address_of_variable (var, exp->elts[pc + 1].block.block);
 
     case OP_VAR_MSYM_VALUE:
       {
@@ -3128,7 +3129,7 @@ evaluate_subexp_with_coercion (struct expression *exp,
 	  && CAST_IS_CONVERSION (exp->language_defn))
 	{
 	  (*pos) += 4;
-	  val = address_of_variable (var, exp->elts[pc + 1].block);
+	  val = address_of_variable (var, exp->elts[pc + 1].block.block);
 	  return value_cast (lookup_pointer_type (TYPE_TARGET_TYPE (type)),
 			     val);
 	}
@@ -3299,7 +3300,7 @@ evaluate_subexp_for_cast (expression *exp, int *pos,
 	}
       else
 	val = evaluate_var_value (noside,
-				  exp->elts[pc + 1].block,
+				  exp->elts[pc + 1].block.block,
 				  exp->elts[pc + 2].symbol);
 
       if (noside == EVAL_SKIP)

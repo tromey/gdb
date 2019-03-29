@@ -218,7 +218,7 @@ const_expr (union exp_element **pc)
 
     case OP_VAR_VALUE:
       {
-	const struct block *b = (*pc)[1].block;
+	const struct bound_block &b = (*pc)[1].block;
 	struct symbol *s = (*pc)[2].symbol;
 	struct block_symbol bsym = { s, b };
 	struct value *v = const_var_ref (bsym);

@@ -242,7 +242,7 @@ write_exp_elt_msym (struct parser_state *ps, minimal_symbol *expelt)
 }
 
 void
-write_exp_elt_block (struct parser_state *ps, const struct block *b)
+write_exp_elt_block (struct parser_state *ps, const struct bound_block &b)
 {
   union exp_element tmp;
 

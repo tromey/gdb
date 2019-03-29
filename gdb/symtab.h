@@ -31,6 +31,7 @@
 #include "common/gdb_optional.h"
 #include "common/next-iterator.h"
 #include "completer.h"
+#include "block-defs.h"
 
 /* Opaque declarations.  */
 struct ui_file;
@@ -469,7 +470,7 @@ extern CORE_ADDR symbol_overlayed_address (CORE_ADDR, struct obj_section *);
 		   ((symbol)->ginfo.section)))
 extern struct objfile *block_objfile (const struct block *block);
 #define BSYMBOL_VALUE_ADDRESS(sym) \
-  SYMBOL_VALUE_ADDRESS (block_objfile ((sym).block), (sym).symbol)
+  SYMBOL_VALUE_ADDRESS ((sym).block.objfile, (sym).symbol)
 #define SYMBOL_VALUE_RAW_ADDRESS(symbol) ((symbol)->ginfo.value.address + 0)
 #define SET_SYMBOL_VALUE_ADDRESS(symbol, new_value)	\
   ((symbol)->ginfo.value.address = (new_value))
@@ -1163,7 +1164,7 @@ struct block_symbol
 
   /* If SYMBOL is not NULL, then this is the block in which the symbol is
      defined.  */
-  const struct block *block;
+  struct bound_block block;
 };
 
 extern const struct symbol_impl *symbol_impls;

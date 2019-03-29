@@ -912,7 +912,7 @@ collection_list::add_memrange (struct gdbarch *gdbarch,
 /* Add a symbol to a collection list.  */
 
 void
-collection_list::collect_symbol (const struct block *block,
+collection_list::collect_symbol (const struct bound_block &block,
 				 struct symbol *sym,
 				 struct gdbarch *gdbarch,
 				 long frame_regno, long frame_offset,

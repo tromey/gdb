@@ -1054,16 +1054,16 @@ variable:	qualified_name
 	|	COLONCOLON name_not_typename
 			{
 			  char *name = copy_name ($2.stoken);
-			  struct symbol *sym;
+			  struct block_symbol sym;
 			  struct bound_minimal_symbol msymbol;
 
 			  sym
 			    = lookup_symbol (name, (const struct block *) NULL,
-					     VAR_DOMAIN, NULL).symbol;
-			  if (sym)
+					     VAR_DOMAIN, NULL);
+			  if (sym.symbol)
 			    {
 			      write_exp_elt_opcode (pstate, OP_VAR_VALUE);
-			      write_exp_elt_block (pstate, NULL);
+			      write_exp_elt_block (pstate, sym.block);
 			      write_exp_elt_sym (pstate, sym);
 			      write_exp_elt_opcode (pstate, OP_VAR_VALUE);
 			      break;
@@ -2895,7 +2895,7 @@ lex_one_token (struct parser_state *par_state, bool *is_quoted_name)
 
   yylval.ssym.stoken = yylval.sval;
   yylval.ssym.sym.symbol = NULL;
-  yylval.ssym.sym.block = NULL;
+  yylval.ssym.sym.block = {};
   yylval.ssym.is_a_field_of_this = 0;
   return NAME;
 }

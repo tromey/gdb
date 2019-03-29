@@ -1405,7 +1405,7 @@ symbol_cache_mark_found (struct block_symbol_cache *bsc,
   slot->state = SYMBOL_SLOT_FOUND;
   slot->objfile_context = objfile_context;
   slot->value.found.symbol = symbol;
-  slot->value.found.block = block;
+  slot->value.found.block = {block, objfile_context};
 }
 
 /* Mark symbol NAME, DOMAIN as not found in SLOT.

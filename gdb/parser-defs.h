@@ -107,9 +107,7 @@ public:
   void update (const struct block_symbol &bs,
 	       innermost_block_tracker_types t = INNERMOST_BLOCK_FOR_SYMBOLS)
   {
-    /* FIXME - will be fixed in a subsequent patch.  */
-    struct bound_block b = { nullptr, bs.block };
-    update (b, t);
+    update (bs.block, t);
   }
 
   /* Return the stored innermost block.  Can be nullptr if no symbols or
@@ -247,7 +245,8 @@ void write_exp_string_vector (struct parser_state *, int type,
 
 extern void write_exp_bitstring (struct parser_state *, struct stoken);
 
-extern void write_exp_elt_block (struct parser_state *, const struct block *);
+extern void write_exp_elt_block (struct parser_state *,
+				 const struct bound_block &);
 
 extern void write_exp_elt_objfile (struct parser_state *,
 				   struct objfile *objfile);

@@ -85,7 +85,7 @@ union exp_element
     char string;
     struct type *type;
     struct internalvar *internalvar;
-    const struct block *block;
+    struct bound_block block;
     struct objfile *objfile;
   };
 

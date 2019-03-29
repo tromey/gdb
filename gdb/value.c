@@ -2849,7 +2849,7 @@ value_static_field (struct type *type, int fieldno)
 	    retval = value_at_lazy (field_type, BMSYMBOL_VALUE_ADDRESS (msym));
 	}
       else
-	retval = value_of_variable (sym.symbol, sym.block);
+	retval = value_of_variable (sym.symbol, sym.block.block);
       break;
     }
     default:

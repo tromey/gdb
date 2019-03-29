@@ -197,7 +197,7 @@ cp_lookup_bare_symbol (const struct language_defn *langdef,
 	gdbarch = block_gdbarch (block);
       sym.symbol
 	= language_lookup_primitive_type_as_symbol (langdef, gdbarch, name);
-      sym.block = NULL;
+      sym.block = {};
       if (sym.symbol != NULL)
 	return sym;
     }

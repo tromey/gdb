@@ -609,7 +609,7 @@ default_read_var_value (struct symbol *var, const struct block *var_block,
   if (SYMBOL_COMPUTED_OPS (var) != NULL)
     return SYMBOL_COMPUTED_OPS (var)->read_variable (var, frame);
 
-  struct block_symbol bsym = { var, var_block };
+  struct block_symbol bsym = { var, { var_block, nullptr /* FIXME */ } };
 
   switch (SYMBOL_CLASS (var))
     {

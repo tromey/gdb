@@ -128,7 +128,8 @@ static struct value *resolve_subexp (expression_up *, int *, int,
                                      struct type *);
 
 static void replace_operator_with_call (expression_up *, int, int, int,
-                                        struct symbol *, const struct block *);
+                                        struct symbol *,
+					const struct bound_block &);
 
 static int possible_user_operator_p (enum exp_opcode, struct value **);
 
@@ -3421,7 +3422,7 @@ resolve_subexp (expression_up *expp, int *pos, int deprocedure_p,
           n_candidates =
             ada_lookup_symbol_list (SYMBOL_LINKAGE_NAME
                                     (exp->elts[pc + 2].symbol),
-                                    exp->elts[pc + 1].block, VAR_DOMAIN,
+                                    exp->elts[pc + 1].block.block, VAR_DOMAIN,
                                     &candidates);
 
           if (n_candidates > 1)
@@ -3511,8 +3512,8 @@ resolve_subexp (expression_up *expp, int *pos, int deprocedure_p,
             n_candidates =
               ada_lookup_symbol_list (SYMBOL_LINKAGE_NAME
                                       (exp->elts[pc + 5].symbol),
-                                      exp->elts[pc + 4].block, VAR_DOMAIN,
-                                      &candidates);
+                                      exp->elts[pc + 4].block.block,
+				      VAR_DOMAIN, &candidates);
 
             if (n_candidates == 1)
               i = 0;
@@ -4092,7 +4093,7 @@ get_selections (int *choices, int n_choices, int max_results,
 static void
 replace_operator_with_call (expression_up *expp, int pc, int nargs,
                             int oplen, struct symbol *sym,
-                            const struct block *block)
+                            const struct bound_block &block)
 {
   /* A new expression, with 6 more elements (3 for funcall, 4 for function
      symbol, -oplen for operator being replaced).  */
