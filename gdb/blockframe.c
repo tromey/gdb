@@ -131,23 +131,24 @@ get_frame_function (struct frame_info *frame)
 
 
 /* Return the function containing pc value PC in section SECTION.
-   Returns 0 if function is not known.  */
+   Returns an empty symbol if function is not known.  */
 
-struct symbol *
+struct block_symbol
 find_pc_sect_function (CORE_ADDR pc, struct obj_section *section)
 {
-  const struct block *b = block_for_pc_sect (pc, section).block;
+  const struct bound_block b = block_for_pc_sect (pc, section);
 
-  if (b == 0)
-    return 0;
-  return block_linkage_function (b);
+  if (b.block == 0)
+    return {};
+  /* FIXME the block here seems wrong */
+  return { block_linkage_function (b.block), b.block };
 }
 
 /* Return the function containing pc value PC.
-   Returns 0 if function is not known.  
+   Returns an empty symbol if function is not known.  
    Backward compatibility, no section */
 
-struct symbol *
+struct block_symbol
 find_pc_function (CORE_ADDR pc)
 {
   return find_pc_sect_function (pc, find_pc_mapped_section (pc));
@@ -266,7 +267,7 @@ find_pc_partial_function (CORE_ADDR pc, const char **name, CORE_ADDR *address,
 	 address of the function.  This will happen when the function
 	 has more than one range and the entry pc is not within the
 	 lowest range of addresses.  */
-      f = find_pc_sect_function (mapped_pc, section);
+      f = find_pc_sect_function (mapped_pc, section).symbol;
       if (f != NULL
 	  && (msymbol.minsym == NULL
 	      || (XBLOCK_ENTRY_PC (found_objfile, SYMBOL_BLOCK_VALUE (f))
@@ -425,10 +426,11 @@ find_function_entry_range_from_pc (CORE_ADDR pc, const char **name,
 struct type *
 find_function_type (CORE_ADDR pc)
 {
-  struct symbol *sym = find_pc_function (pc);
+  struct block_symbol sym = find_pc_function (pc);
 
-  if (sym != NULL && BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (sym)) == pc)
-    return SYMBOL_TYPE (sym);
+  if (sym.symbol != NULL
+      && BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (sym.symbol)) == pc)
+    return SYMBOL_TYPE (sym.symbol);
 
   return NULL;
 }

@@ -1774,7 +1774,7 @@ evaluate_subexp_standard (struct type *expect_type,
 						       current_top_target ());
 
 	    /* Is it a high_level symbol?  */
-	    sym = find_pc_function (addr);
+	    sym = find_pc_function (addr).symbol;
 	    if (sym != NULL) 
 	      method = value_of_variable (sym, 0);
 	  }

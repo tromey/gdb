@@ -1259,7 +1259,7 @@ sparc32_frame_cache (struct frame_info *this_frame, void **this_cache)
 
   cache = sparc_frame_cache (this_frame, this_cache);
 
-  sym = find_pc_function (cache->pc);
+  sym = find_pc_function (cache->pc).symbol;
   if (sym)
     {
       cache->struct_return_p = sparc32_struct_return_from_sym (sym);
@@ -1557,7 +1557,7 @@ static int
 sparc32_dwarf2_struct_return_p (struct frame_info *this_frame)
 {
   CORE_ADDR pc = get_frame_address_in_block (this_frame);
-  struct symbol *sym = find_pc_function (pc);
+  struct symbol *sym = find_pc_function (pc).symbol;
 
   if (sym)
     return sparc32_struct_return_from_sym (sym);

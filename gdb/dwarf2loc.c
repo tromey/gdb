@@ -869,20 +869,21 @@ call_site_to_target_addr (struct gdbarch *call_site_gdbarch,
 static struct symbol *
 func_addr_to_tail_call_list (struct gdbarch *gdbarch, CORE_ADDR addr)
 {
-  struct symbol *sym = find_pc_function (addr);
+  struct block_symbol sym = find_pc_function (addr);
   struct type *type;
 
-  if (sym == NULL || BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (sym)) != addr)
+  if (sym.symbol == NULL
+      || BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (sym.symbol)) != addr)
     throw_error (NO_ENTRY_VALUE_ERROR,
 		 _("DW_TAG_call_site resolving failed to find function "
 		   "name for address %s"),
 		 paddress (gdbarch, addr));
 
-  type = SYMBOL_TYPE (sym);
+  type = SYMBOL_TYPE (sym.symbol);
   gdb_assert (TYPE_CODE (type) == TYPE_CODE_FUNC);
   gdb_assert (TYPE_SPECIFIC_FIELD (type) == TYPE_SPECIFIC_FUNC);
 
-  return sym;
+  return sym.symbol;
 }
 
 /* Verify function with entry point exact address ADDR can never call itself

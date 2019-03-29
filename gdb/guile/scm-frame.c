@@ -647,7 +647,7 @@ gdbscm_frame_function (SCM self)
     {
       frame = frscm_frame_smob_to_frame (f_smob);
       if (frame != NULL)
-	sym = find_pc_function (get_frame_address_in_block (frame));
+	sym = find_pc_function (get_frame_address_in_block (frame)).symbol;
     }
   CATCH (except, RETURN_MASK_ALL)
     {

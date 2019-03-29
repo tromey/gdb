@@ -556,7 +556,7 @@ ftrace_update_function (struct btrace_thread_info *btinfo, CORE_ADDR pc)
   /* Try to determine the function we're in.  We use both types of symbols
      to avoid surprises when we sometimes get a full symbol and sometimes
      only a minimal symbol.  */
-  fun = find_pc_function (pc);
+  fun = find_pc_function (pc).symbol;
   bmfun = lookup_minimal_symbol_by_pc (pc);
   mfun = bmfun.minsym;
 

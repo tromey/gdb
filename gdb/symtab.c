@@ -3733,7 +3733,7 @@ skip_prologue_sal (struct symtab_and_line *sal)
 
   switch_to_program_space_and_thread (sal->pspace);
 
-  sym = find_pc_sect_function (sal->pc, sal->section);
+  sym = find_pc_sect_function (sal->pc, sal->section).symbol;
   if (sym != NULL)
     {
       fixup_symbol_section (sym, NULL);
@@ -4003,11 +4003,11 @@ find_function_alias_target (bound_minimal_symbol msymbol)
   if (!msymbol_is_function (msymbol.objfile, msymbol.minsym, &func_addr))
     return NULL;
 
-  symbol *sym = find_pc_function (func_addr);
-  if (sym != NULL
-      && SYMBOL_CLASS (sym) == LOC_BLOCK
-      && BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (sym)) == func_addr)
-    return sym;
+  block_symbol sym = find_pc_function (func_addr);
+  if (sym.symbol != NULL
+      && SYMBOL_CLASS (sym.symbol) == LOC_BLOCK
+      && BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (sym.symbol)) == func_addr)
+    return sym.symbol;
 
   return NULL;
 }

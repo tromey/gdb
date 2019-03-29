@@ -914,7 +914,7 @@ set_step_frame (void)
 
   CORE_ADDR pc = get_frame_pc (frame);
   thread_info *tp = inferior_thread ();
-  tp->control.step_start_function = find_pc_function (pc);
+  tp->control.step_start_function = find_pc_function (pc).symbol;
 }
 
 /* Step until outside of current statement.  */
@@ -1213,7 +1213,7 @@ jump_command (const char *arg, int from_tty)
 
   /* See if we are trying to jump to another function.  */
   fn = get_frame_function (get_current_frame ()).symbol;
-  sfn = find_pc_function (sal.pc);
+  sfn = find_pc_function (sal.pc).symbol;
   if (fn != NULL && sfn != fn)
     {
       if (!query (_("Line %d is not in `%s'.  Jump anyway? "), sal.line,
@@ -1450,7 +1450,7 @@ until_next_command (int from_tty)
 {
   struct frame_info *frame;
   CORE_ADDR pc;
-  struct symbol *func;
+  struct block_symbol func;
   struct symtab_and_line sal;
   struct thread_info *tp = inferior_thread ();
   int thread = tp->global_num;
@@ -1468,7 +1468,7 @@ until_next_command (int from_tty)
   pc = get_frame_pc (frame);
   func = find_pc_function (pc);
 
-  if (!func)
+  if (!func.symbol)
     {
       struct bound_minimal_symbol msymbol = lookup_minimal_symbol_by_pc (pc);
 
@@ -1484,7 +1484,8 @@ until_next_command (int from_tty)
     {
       sal = find_pc_line (pc, 0);
 
-      tp->control.step_range_start = BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (func));
+      tp->control.step_range_start
+	= BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (func.symbol));
       tp->control.step_range_end = sal.end;
     }
   tp->control.may_range_step = 1;
@@ -1929,7 +1930,8 @@ finish_command (const char *arg, int from_tty)
 
   /* Find the function we will return from.  */
 
-  sm->function = find_pc_function (get_frame_pc (get_selected_frame (NULL)));
+  sm->function
+    = find_pc_function (get_frame_pc (get_selected_frame (NULL))).symbol;
 
   /* Print info on the selected frame, including level number but not
      source.  */
