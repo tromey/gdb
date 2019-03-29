@@ -2493,7 +2493,7 @@ find_frame_sal (frame_info *frame)
       struct symbol *sym;
 
       if (next_frame)
-	sym = get_frame_function (next_frame);
+	sym = get_frame_function (next_frame).symbol;
       else
 	sym = inline_skipped_symbol (inferior_thread ());
 

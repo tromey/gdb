@@ -139,7 +139,7 @@ inline_frame_this_id (struct frame_info *this_frame,
 		      void **this_cache,
 		      struct frame_id *this_id)
 {
-  struct symbol *func;
+  struct block_symbol func;
 
   /* In order to have a stable frame ID for a given inline function,
      we must get the stack / special addresses from the underlying
@@ -165,8 +165,8 @@ inline_frame_this_id (struct frame_info *this_frame,
      possible.  If this attribute is available, we should use it
      in the frame ID (and eventually, to set breakpoints).  */
   func = get_frame_function (this_frame);
-  gdb_assert (func != NULL);
-  (*this_id).code_addr = BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (func));
+  gdb_assert (func.symbol != NULL);
+  (*this_id).code_addr = BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (func.symbol));
   (*this_id).artificial_depth++;
 }
 

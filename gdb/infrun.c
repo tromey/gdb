@@ -7406,7 +7406,7 @@ check_exception_resume (struct execution_control_state *ecs,
       return;
     }
 
-  func = get_frame_function (frame);
+  func = get_frame_function (frame).symbol;
   if (!func)
     return;
 

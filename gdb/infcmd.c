@@ -1212,7 +1212,7 @@ jump_command (const char *arg, int from_tty)
   resolve_sal_pc (&sal);	/* May error out.  */
 
   /* See if we are trying to jump to another function.  */
-  fn = get_frame_function (get_current_frame ());
+  fn = get_frame_function (get_current_frame ()).symbol;
   sfn = find_pc_function (sal.pc);
   if (fn != NULL && sfn != fn)
     {

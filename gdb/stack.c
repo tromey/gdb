@@ -1046,7 +1046,7 @@ gdb::unique_xmalloc_ptr<char>
 find_frame_funname (struct frame_info *frame, enum language *funlang,
 		    struct symbol **funcp)
 {
-  struct symbol *func;
+  struct block_symbol func;
   gdb::unique_xmalloc_ptr<char> funname;
 
   *funlang = language_unknown;
@@ -1054,7 +1054,7 @@ find_frame_funname (struct frame_info *frame, enum language *funlang,
     *funcp = NULL;
 
   func = get_frame_function (frame);
-  if (func)
+  if (func.symbol)
     {
       /* In certain pathological cases, the symtabs give the wrong
          function (when we are in the first function in a file which
@@ -1078,7 +1078,7 @@ find_frame_funname (struct frame_info *frame, enum language *funlang,
 
       /* Don't attempt to do this for inlined functions, which do not
 	 have a corresponding minimal symbol.  */
-      if (!block_inlined_p (SYMBOL_BLOCK_VALUE (func)))
+      if (!block_inlined_p (SYMBOL_BLOCK_VALUE (func.symbol)))
 	msymbol
 	  = lookup_minimal_symbol_by_pc (get_frame_address_in_block (frame));
       else
@@ -1086,21 +1086,21 @@ find_frame_funname (struct frame_info *frame, enum language *funlang,
 
       if (msymbol.minsym != NULL
 	  && (BMSYMBOL_VALUE_ADDRESS (msymbol)
-	      > BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (func))))
+	      > BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (func.symbol))))
 	{
 	  /* We also don't know anything about the function besides
 	     its address and name.  */
-	  func = 0;
+	  func = {};
 	  funname.reset (xstrdup (MSYMBOL_PRINT_NAME (msymbol.minsym)));
 	  *funlang = MSYMBOL_LANGUAGE (msymbol.minsym);
 	}
       else
 	{
-	  const char *print_name = SYMBOL_PRINT_NAME (func);
+	  const char *print_name = SYMBOL_PRINT_NAME (func.symbol);
 
-	  *funlang = SYMBOL_LANGUAGE (func);
+	  *funlang = SYMBOL_LANGUAGE (func.symbol);
 	  if (funcp)
-	    *funcp = func;
+	    *funcp = func.symbol;
 	  if (*funlang == language_cplus)
 	    {
 	      /* It seems appropriate to use SYMBOL_PRINT_NAME() here,
@@ -1324,7 +1324,7 @@ info_frame_command_core (struct frame_info *fi, bool selected_frame_p)
     pc_regname = "pc";
 
   frame_pc_p = get_frame_pc_if_available (fi, &frame_pc);
-  func = get_frame_function (fi);
+  func = get_frame_function (fi).symbol;
   symtab_and_line sal = find_frame_sal (fi);
   s = sal.symtab;
   gdb::unique_xmalloc_ptr<char> func_only;
@@ -2224,7 +2224,7 @@ print_frame_arg_vars (struct frame_info *frame,
       return;
     }
 
-  func = get_frame_function (frame);
+  func = get_frame_function (frame).symbol;
   if (func == NULL)
     {
       if (!quiet)
@@ -2421,7 +2421,7 @@ return_command (const char *retval_exp, int from_tty)
   const char *query_prefix = "";
 
   thisframe = get_selected_frame ("No selected frame.");
-  thisfun = get_frame_function (thisframe);
+  thisfun = get_frame_function (thisframe).symbol;
   gdbarch = get_frame_arch (thisframe);
 
   if (get_frame_type (get_current_frame ()) == INLINE_FRAME)

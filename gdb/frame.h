@@ -735,7 +735,7 @@ extern struct bound_block get_frame_block (struct frame_info *,
 
 extern struct bound_block get_selected_block (CORE_ADDR *addr_in_block);
 
-extern struct symbol *get_frame_function (struct frame_info *);
+extern struct block_symbol get_frame_function (struct frame_info *);
 
 extern CORE_ADDR get_pc_function_start (CORE_ADDR);
 

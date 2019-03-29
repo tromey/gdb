@@ -4865,7 +4865,7 @@ watchpoint_check (bpstat bs)
 	{
 	  struct symbol *function;
 
-	  function = get_frame_function (fr);
+	  function = get_frame_function (fr).symbol;
 	  if (function == NULL
 	      || !contained_in (b->exp_valid_block.block,
 				SYMBOL_BLOCK_VALUE (function)))
