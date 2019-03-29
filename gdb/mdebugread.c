@@ -1174,11 +1174,11 @@ parse_symbol (SYMR *sh, union aux_ext *ax, char *ext_sh, int bigend,
 	      struct block *b_bad = BLOCKVECTOR_BLOCK (bv, i);
 
 	      if (BLOCK_SUPERBLOCK (b_bad) == cblock
-		  && BLOCK_START (b_bad) == top_stack->procadr
-		  && BLOCK_END (b_bad) == top_stack->procadr)
+		  && BLOCK_RAW_START (b_bad) == top_stack->procadr
+		  && BLOCK_RAW_END (b_bad) == top_stack->procadr)
 		{
-		  b_bad->startaddr = BLOCK_START (cblock);
-		  b_bad->endaddr = BLOCK_END (cblock);
+		  b_bad->startaddr = BLOCK_RAW_START (cblock);
+		  b_bad->endaddr = BLOCK_RAW_END (cblock);
 		}
 	    }
 
@@ -2005,10 +2005,10 @@ parse_procedure (PDR *pr, struct compunit_symtab *search_symtab,
       b = new_block (2);
       SYMBOL_BLOCK_VALUE (s) = b;
       BLOCK_FUNCTION (b) = s;
-      BLOCK_START (b) = pr->adr;
+      BLOCK_RAW_START (b) = pr->adr;
       /* BOUND used to be the end of procedure's text, but the
          argument is no longer passed in.  */
-      BLOCK_END (b) = bound;
+      BLOCK_RAW_END (b) = bound;
       BLOCK_SUPERBLOCK (b) = top_stack->cur_block;
       add_block (b, top_stack->cur_st);
 #endif
@@ -2033,7 +2033,8 @@ parse_procedure (PDR *pr, struct compunit_symtab *search_symtab,
          e->pdr.adr is sometimes offset by a bogus value.
          To work around these problems, we replace e->pdr.adr with
          the start address of the function.  */
-      e->pdr.adr = BLOCK_START (b);
+      /* FIXME double-check that RAW is ok here.  */
+      e->pdr.adr = BLOCK_RAW_START (b);
     }
 
   /* It would be reasonable that functions that have been compiled
@@ -4571,9 +4572,9 @@ compare_blocks (const void *arg1, const void *arg2)
   struct block **b1 = (struct block **) arg1;
   struct block **b2 = (struct block **) arg2;
 
-  addr_diff = (BLOCK_START ((*b1))) - (BLOCK_START ((*b2)));
+  addr_diff = (BLOCK_RAW_START ((*b1))) - (BLOCK_RAW_START ((*b2)));
   if (addr_diff == 0)
-    return (BLOCK_END ((*b2))) - (BLOCK_END ((*b1)));
+    return (BLOCK_RAW_END ((*b2))) - (BLOCK_RAW_END ((*b1)));
   return addr_diff;
 }
 
@@ -4591,9 +4592,9 @@ sort_blocks (struct symtab *s)
   if (BLOCKVECTOR_NBLOCKS (bv) <= FIRST_LOCAL_BLOCK)
     {
       /* Cosmetic */
-      if (BLOCK_END (BLOCKVECTOR_BLOCK (bv, GLOBAL_BLOCK)) == 0)
+      if (BLOCK_RAW_END (BLOCKVECTOR_BLOCK (bv, GLOBAL_BLOCK)) == 0)
 	BLOCKVECTOR_BLOCK (bv, GLOBAL_BLOCK)->startaddr = 0;
-      if (BLOCK_END (BLOCKVECTOR_BLOCK (bv, STATIC_BLOCK)) == 0)
+      if (BLOCK_RAW_END (BLOCKVECTOR_BLOCK (bv, STATIC_BLOCK)) == 0)
 	BLOCKVECTOR_BLOCK (bv, STATIC_BLOCK)->endaddr = 0;
       return;
     }
@@ -4614,18 +4615,18 @@ sort_blocks (struct symtab *s)
     int i, j = BLOCKVECTOR_NBLOCKS (bv);
 
     for (i = FIRST_LOCAL_BLOCK; i < j; i++)
-      if (high < BLOCK_END (BLOCKVECTOR_BLOCK (bv, i)))
-	high = BLOCK_END (BLOCKVECTOR_BLOCK (bv, i));
+      if (high < BLOCK_RAW_END (BLOCKVECTOR_BLOCK (bv, i)))
+	high = BLOCK_RAW_END (BLOCKVECTOR_BLOCK (bv, i));
     BLOCKVECTOR_BLOCK (bv, GLOBAL_BLOCK)->endaddr = high;
   }
 
   BLOCKVECTOR_BLOCK (bv, GLOBAL_BLOCK)->startaddr =
-    BLOCK_START (BLOCKVECTOR_BLOCK (bv, FIRST_LOCAL_BLOCK));
+    BLOCK_RAW_START (BLOCKVECTOR_BLOCK (bv, FIRST_LOCAL_BLOCK));
 
   BLOCKVECTOR_BLOCK (bv, STATIC_BLOCK)->startaddr =
-    BLOCK_START (BLOCKVECTOR_BLOCK (bv, GLOBAL_BLOCK));
+    BLOCK_RAW_START (BLOCKVECTOR_BLOCK (bv, GLOBAL_BLOCK));
   BLOCKVECTOR_BLOCK (bv, STATIC_BLOCK)->endaddr =
-    BLOCK_END (BLOCKVECTOR_BLOCK (bv, GLOBAL_BLOCK));
+    BLOCK_RAW_END (BLOCKVECTOR_BLOCK (bv, GLOBAL_BLOCK));
 }
 
 
