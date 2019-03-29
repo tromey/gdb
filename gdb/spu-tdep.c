@@ -1973,7 +1973,8 @@ spu_catch_start (struct objfile *objfile)
       if (sym)
 	{
 	  fixup_symbol_section (sym, objfile);
-	  sal = find_function_start_sal (sym, 1);
+	  /* FIXME the block may be confusing here */
+	  sal = find_function_start_sal ({sym, block}, 1);
 	  pc = sal.pc;
 	}
     }

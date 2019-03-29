@@ -3926,7 +3926,7 @@ See set/show multiple-symbol."));
       if (SYMBOL_CLASS (syms[i].symbol) == LOC_BLOCK)
         {
           struct symtab_and_line sal =
-            find_function_start_sal (syms[i].symbol, 1);
+            find_function_start_sal (syms[i], 1);
 
 	  printf_filtered ("[%d] ", i + first_choice);
 	  ada_print_symbol_signature (gdb_stdout, syms[i].symbol,
@@ -13205,7 +13205,7 @@ ada_exception_sal (enum ada_exception_catchpoint_kind ex,
   /* Set OPS.  */
   *ops = ada_exception_breakpoint_ops (ex);
 
-  return find_function_start_sal (sym, 1);
+  return find_function_start_sal ({sym, nullptr /* FIXME */}, 1);
 }
 
 /* Create an Ada exception catchpoint.

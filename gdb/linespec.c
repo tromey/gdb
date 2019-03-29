@@ -4458,7 +4458,7 @@ symbol_to_sal (struct symtab_and_line *result,
 {
   if (SYMBOL_CLASS (sym.symbol) == LOC_BLOCK)
     {
-      *result = find_function_start_sal (sym.symbol, funfirstline);
+      *result = find_function_start_sal (sym, funfirstline);
       return 1;
     }
   else

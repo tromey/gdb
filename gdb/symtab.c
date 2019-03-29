@@ -3655,14 +3655,15 @@ find_function_start_sal (CORE_ADDR func_addr, obj_section *section,
 /* See symtab.h.  */
 
 symtab_and_line
-find_function_start_sal (symbol *sym, bool funfirstline)
+find_function_start_sal (const block_symbol &sym, bool funfirstline)
 {
-  fixup_symbol_section (sym, NULL);
+  fixup_symbol_section (sym.symbol, NULL);
   symtab_and_line sal
-    = find_function_start_sal_1 (BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (sym)),
-				 SYMBOL_OBJ_SECTION (symbol_objfile (sym), sym),
+    = find_function_start_sal_1 (BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (sym.symbol)),
+				 SYMBOL_OBJ_SECTION (symbol_objfile (sym.symbol),
+						     sym.symbol),
 				 funfirstline);
-  sal.symbol = sym;
+  sal.symbol = sym.symbol;
   return sal;
 }
 

@@ -1958,8 +1958,8 @@ extern struct symtab *find_line_symtab (struct symtab *, int, int *, int *);
 /* Given a function symbol SYM, find the symtab and line for the start
    of the function.  If FUNFIRSTLINE is true, we want the first line
    of real code inside the function.  */
-extern symtab_and_line find_function_start_sal (symbol *sym, bool
-						funfirstline);
+extern symtab_and_line find_function_start_sal (const block_symbol &sym,
+						bool funfirstline);
 
 /* Same, but start with a function address/section instead of a
    symbol.  */
