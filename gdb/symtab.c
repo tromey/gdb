@@ -3295,7 +3295,8 @@ find_pc_sect_line (CORE_ADDR pc, struct obj_section *section, int notcurrent)
       else if (alt)
 	val.end = alt->pc;
       else
-	val.end = BLOCK_END (BLOCKVECTOR_BLOCK (bv, GLOBAL_BLOCK));
+	val.end = XBLOCK_END (section->objfile,
+			      BLOCKVECTOR_BLOCK (bv, GLOBAL_BLOCK));
     }
   val.section = section;
   return val;
