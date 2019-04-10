@@ -48,8 +48,6 @@
 #include "parser-defs.h"
 #include "language.h"
 #include "f-lang.h"
-#include "bfd.h" /* Required by objfiles.h.  */
-#include "symfile.h" /* Required by objfiles.h.  */
 #include "objfiles.h" /* For have_full_symbols and have_partial_symbols */
 #include "block.h"
 #include <ctype.h>
