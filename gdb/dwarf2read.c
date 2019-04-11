@@ -1191,6 +1191,8 @@ struct partial_die_info : public allocate_on_obstack
     struct partial_die_info *die_child = nullptr;
     struct partial_die_info *die_sibling = nullptr;
 
+    unsigned lookup_count = 0;
+
     friend struct partial_die_info *
     dwarf2_cu::find_partial_die (sect_offset sect_off);
 
@@ -7983,6 +7985,10 @@ struct process_psymtab_comp_unit_data
   enum language pretend_language;
 };
 
+static std::vector<unsigned> histo;
+
+static unsigned double_lookup_count;
+
 /* die_reader_func for process_psymtab_comp_unit.  */
 
 static void
@@ -8078,6 +8084,23 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
   pst->set_text_high (gdbarch_adjust_dwarf2_addr (gdbarch,
 						  best_highpc + baseaddr)
 		      - baseaddr);
+
+  if (cu->partial_dies)
+    {
+      htab_traverse_noresize (cu->partial_dies,
+			      [] (void **slot, void *hh)
+			      {
+				struct partial_die_info *pdi
+				  = (struct partial_die_info *) *slot;
+				std::vector<unsigned> *hp
+				  = (std::vector<unsigned> *) hh;
+				if (pdi->lookup_count >= hp->size ())
+				  hp->resize (pdi->lookup_count + 1);
+				++(*hp)[pdi->lookup_count];
+				return 1;
+			      },
+			      (void *) &histo);
+    }
 
   end_psymtab_common (objfile, pst);
 
@@ -8522,6 +8545,12 @@ dwarf2_build_psymtabs_hard (struct dwarf2_per_objfile *dwarf2_per_objfile)
 			    objfile->partial_symtabs->obstack ());
   /* At this point we want to keep the address map.  */
   save_psymtabs_addrmap.release ();
+
+  for (int i = 0; i < histo.size (); ++i)
+    printf_unfiltered ("[%3d] -> %5d\n", i, histo[i]);
+  printf_unfiltered ("+++ double_lookup_count = %d\n", double_lookup_count);
+  histo.resize (0);
+  double_lookup_count = 0;
 
   if (dwarf_read_debug)
     fprintf_unfiltered (gdb_stdlog, "Done building psymtabs of %s\n",
@@ -18860,9 +18889,19 @@ dwarf2_cu::find_partial_die (sect_offset sect_off)
   struct partial_die_info *lookup_die = NULL;
   struct partial_die_info part_die (sect_off);
 
+  static sect_offset last_off;
+
   lookup_die = ((struct partial_die_info *)
 		htab_find_with_hash (partial_dies, &part_die,
 				     to_underlying (sect_off)));
+
+  if (lookup_die != nullptr)
+    {
+      ++lookup_die->lookup_count;
+      if (last_off == sect_off)
+	++double_lookup_count;
+      last_off = sect_off;
+    }
 
   return lookup_die;
 }
