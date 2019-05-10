@@ -58,7 +58,7 @@ env_execute_cli_command (const char *cmd, const char *args)
 /* Print working directory.  */
 
 void
-mi_cmd_env_pwd (const char *command, char **argv, int argc)
+mi_cmd_env_pwd (const char *command, const char **argv, int argc)
 {
   struct ui_out *uiout = current_uiout;
 
@@ -84,7 +84,7 @@ mi_cmd_env_pwd (const char *command, char **argv, int argc)
 /* Change working directory.  */
 
 void
-mi_cmd_env_cd (const char *command, char **argv, int argc)
+mi_cmd_env_cd (const char *command, const char **argv, int argc)
 {
   if (argc == 0 || argc > 1)
     error (_("-environment-cd: Usage DIRECTORY"));
@@ -106,7 +106,7 @@ env_mod_path (const char *dirname, char **which_path)
 /* Add one or more directories to start of executable search path.  */
 
 void
-mi_cmd_env_path (const char *command, char **argv, int argc)
+mi_cmd_env_path (const char *command, const char **argv, int argc)
 {
   struct ui_out *uiout = current_uiout;
   char *exec_path;
@@ -114,7 +114,7 @@ mi_cmd_env_path (const char *command, char **argv, int argc)
   int reset = 0;
   int oind = 0;
   int i;
-  char *oarg;
+  const char *oarg;
   enum opt
     {
       RESET_OPT
@@ -181,13 +181,13 @@ mi_cmd_env_path (const char *command, char **argv, int argc)
 /* Add zero or more directories to the front of the source path.  */
 
 void
-mi_cmd_env_dir (const char *command, char **argv, int argc)
+mi_cmd_env_dir (const char *command, const char **argv, int argc)
 {
   struct ui_out *uiout = current_uiout;
   int i;
   int oind = 0;
   int reset = 0;
-  char *oarg;
+  const char *oarg;
   enum opt
     {
       RESET_OPT
@@ -242,7 +242,7 @@ mi_cmd_env_dir (const char *command, char **argv, int argc)
 /* Set the inferior terminal device name.  */
 
 void
-mi_cmd_inferior_tty_set (const char *command, char **argv, int argc)
+mi_cmd_inferior_tty_set (const char *command, const char **argv, int argc)
 {
   set_inferior_io_terminal (argv[0]);
 }
@@ -250,7 +250,7 @@ mi_cmd_inferior_tty_set (const char *command, char **argv, int argc)
 /* Print the inferior terminal device name.  */
 
 void
-mi_cmd_inferior_tty_show (const char *command, char **argv, int argc)
+mi_cmd_inferior_tty_show (const char *command, const char **argv, int argc)
 {
   const char *inferior_io_terminal = get_inferior_io_terminal ();
   

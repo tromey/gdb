@@ -1,3 +1,10 @@
+2019-05-09  Tom Tromey  <tom@tromey.com>
+
+	* mi/mi-getopt.c (mi_getopt_1, mi_getopt)
+	(mi_getopt_allow_unknown, mi_valid_noargs): Add const.
+	* mi/mi-getopt.h (mi_getopt, mi_getopt_allow_unknown)
+	(mi_valid_noargs): Add const.
+
 2020-01-11  Tom Tromey  <tom@tromey.com>
 
 	* tui/tui-wingeneral.c (box_win): Check cli_styling.
