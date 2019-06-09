@@ -50,6 +50,12 @@ public:
 	    size_t nmatch, regmatch_t pmatch[],
 	    int eflags) const;
 
+  /* A wrapper for ::regexec that assumes REG_NOSUB was given.  */
+  int exec (const char *string) const
+  {
+    return exec (string, 0, nullptr, 0);
+  }
+
   /* Wrapper around ::re_search.  (Not const because re_search's
      regex_t parameter isn't either.)  */
   int search (const char *string, int size, int startpos,

@@ -135,13 +135,9 @@ mi_cmd_file_list_shared_libraries (const char *command, char **argv, int argc)
       error (_("Usage: -file-list-shared-libraries [REGEXP]"));
     }
 
+  gdb::optional<compiled_regex> regex;
   if (pattern != NULL)
-    {
-      const char *re_err = re_comp (pattern);
-
-      if (re_err != NULL)
-	error (_("Invalid regexp: %s"), re_err);
-    }
+    regex.emplace (pattern, REG_NOSUB, _("Invalid regexp"));
 
   update_solib_list (1);
 
@@ -152,7 +148,7 @@ mi_cmd_file_list_shared_libraries (const char *command, char **argv, int argc)
     {
       if (so->so_name[0] == '\0')
 	continue;
-      if (pattern != NULL && !re_exec (so->so_name))
+      if (pattern != NULL && regex->exec (so->so_name))
 	continue;
 
       ui_out_emit_tuple tuple_emitter (uiout, NULL);

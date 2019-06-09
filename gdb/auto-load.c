@@ -1178,12 +1178,16 @@ auto_load_new_objfile (struct objfile *objfile)
 struct collect_matching_scripts_data
 {
   collect_matching_scripts_data (std::vector<loaded_script *> *scripts_p_,
-				 const extension_language_defn *language_)
-  : scripts_p (scripts_p_), language (language_)
+				 const extension_language_defn *language_,
+				 gdb::optional<compiled_regex> &regex_)
+    : scripts_p (scripts_p_),
+      language (language_),
+      regex (regex_)
   {}
 
   std::vector<loaded_script *> *scripts_p;
   const struct extension_language_defn *language;
+  gdb::optional<compiled_regex> &regex;
 };
 
 /* Traversal function for htab_traverse.
@@ -1196,7 +1200,9 @@ collect_matching_scripts (void **slot, void *info)
   struct collect_matching_scripts_data *data
     = (struct collect_matching_scripts_data *) info;
 
-  if (script->language == data->language && re_exec (script->name))
+  if (script->language == data->language
+      && (!data->regex.has_value ()
+	  || !data->regex->exec (script->name)))
     data->scripts_p->push_back (script);
 
   return 1;
@@ -1263,17 +1269,9 @@ auto_load_info_scripts (const char *pattern, int from_tty,
 
   pspace_info = get_auto_load_pspace_data (current_program_space);
 
+  gdb::optional<compiled_regex> regex;
   if (pattern && *pattern)
-    {
-      char *re_err = re_comp (pattern);
-
-      if (re_err)
-	error (_("Invalid regexp: %s"), re_err);
-    }
-  else
-    {
-      re_comp ("");
-    }
+    regex.emplace (pattern, REG_NOSUB, _("Invalid regexp"));
 
   /* We need to know the number of rows before we build the table.
      Plus we want to sort the scripts by name.
@@ -1283,7 +1281,7 @@ auto_load_info_scripts (const char *pattern, int from_tty,
 
   if (pspace_info != NULL && pspace_info->loaded_script_files != NULL)
     {
-      collect_matching_scripts_data data (&script_files, language);
+      collect_matching_scripts_data data (&script_files, language, regex);
 
       /* Pass a pointer to scripts as VEC_safe_push can realloc space.  */
       htab_traverse_noresize (pspace_info->loaded_script_files,
@@ -1295,7 +1293,7 @@ auto_load_info_scripts (const char *pattern, int from_tty,
 
   if (pspace_info != NULL && pspace_info->loaded_script_texts != NULL)
     {
-      collect_matching_scripts_data data (&script_texts, language);
+      collect_matching_scripts_data data (&script_texts, language, regex);
 
       /* Pass a pointer to scripts as VEC_safe_push can realloc space.  */
       htab_traverse_noresize (pspace_info->loaded_script_texts,

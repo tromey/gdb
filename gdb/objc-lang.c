@@ -564,7 +564,6 @@ static void
 info_selectors_command (const char *regexp, int from_tty)
 {
   const char            *name;
-  char                  *val;
   int                    matches = 0;
   int                    maxlen  = 0;
   int                    ix;
@@ -598,12 +597,9 @@ info_selectors_command (const char *regexp, int from_tty)
 	}
     }
 
+  gdb::optional<compiled_regex> c_regex;
   if (regexp != NULL)
-    {
-      val = re_comp (myregexp);
-      if (val != 0)
-	error (_("Invalid regexp (%s): %s"), val, regexp);
-    }
+    c_regex.emplace (regexp, REG_NOSUB, _("Invalid regexp"));
 
   /* First time thru is JUST to get max length and count.  */
   for (objfile *objfile : current_program_space->objfiles ())
@@ -627,7 +623,7 @@ info_selectors_command (const char *regexp, int from_tty)
 			     MSYMBOL_NATURAL_NAME (msymbol));
 		  continue;
 		}
-	      if (regexp == NULL || re_exec(++name) != 0)
+	      if (regexp == NULL || c_regex->exec(++name) == 0)
 		{ 
 		  const char *mystart = name;
 		  const char *myend   = strchr (mystart, ']');
@@ -661,7 +657,7 @@ info_selectors_command (const char *regexp, int from_tty)
 		    continue;
 		  /* Find selector part.  */
 		  name = (char *) strchr(name+2, ' ');
-		  if (regexp == NULL || re_exec(++name) != 0)
+		  if (regexp == NULL || c_regex->exec(++name) == 0)
 		    sym_arr[matches++] = (struct symbol *) msymbol;
 		}
 	    }
@@ -729,7 +725,6 @@ static void
 info_classes_command (const char *regexp, int from_tty)
 {
   const char            *name;
-  char                  *val;
   int                    matches = 0;
   int                    maxlen  = 0;
   int                    ix;
@@ -752,12 +747,9 @@ info_classes_command (const char *regexp, int from_tty)
 	strcat(myregexp, ".* ");
     }
 
+  gdb::optional<compiled_regex> c_regex;
   if (regexp != NULL)
-    {
-      val = re_comp (myregexp);
-      if (val != 0)
-	error (_("Invalid regexp (%s): %s"), val, regexp);
-    }
+    c_regex.emplace (regexp, REG_NOSUB, _("Invalid regexp"));
 
   /* First time thru is JUST to get max length and count.  */
   for (objfile *objfile : current_program_space->objfiles ())
@@ -769,7 +761,7 @@ info_classes_command (const char *regexp, int from_tty)
 	  if (name &&
 	      (name[0] == '-' || name[0] == '+') &&
 	      name[1] == '[')			/* Got a method name.  */
-	    if (regexp == NULL || re_exec(name+2) != 0)
+	    if (regexp == NULL || c_regex->exec(name+2) == 0)
 	      { 
 		/* Compute length of classname part.  */
 		const char *mystart = name + 2;
@@ -796,7 +788,7 @@ info_classes_command (const char *regexp, int from_tty)
 	      if (name &&
 		  (name[0] == '-' || name[0] == '+') &&
 		  name[1] == '[') /* Got a method name.  */
-		if (regexp == NULL || re_exec(name+2) != 0)
+		if (regexp == NULL || c_regex->exec(name+2) == 0)
 		  sym_arr[matches++] = (struct symbol *) msymbol;
 	    }
 	}

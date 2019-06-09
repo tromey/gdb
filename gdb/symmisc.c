@@ -738,21 +738,22 @@ maintenance_print_msymbols (const char *args, int from_tty)
 }
 
 static void
-maintenance_print_objfiles (const char *regexp, int from_tty)
+maintenance_print_objfiles (const char *pattern, int from_tty)
 {
   struct program_space *pspace;
 
   dont_repeat ();
 
-  if (regexp)
-    re_comp (regexp);
+  gdb::optional<compiled_regex> regex;
+  if (pattern)
+    regex.emplace (pattern, REG_NOSUB, _("Invalid regexp"));
 
   ALL_PSPACES (pspace)
     for (objfile *objfile : pspace->objfiles ())
       {
 	QUIT;
-	if (! regexp
-	    || re_exec (objfile_name (objfile)))
+	if (! pattern
+	    || !regex->exec (objfile_name (objfile)))
 	  dump_objfile (objfile);
       }
 }
@@ -760,14 +761,15 @@ maintenance_print_objfiles (const char *regexp, int from_tty)
 /* List all the symbol tables whose names match REGEXP (optional).  */
 
 static void
-maintenance_info_symtabs (const char *regexp, int from_tty)
+maintenance_info_symtabs (const char *pattern, int from_tty)
 {
   struct program_space *pspace;
 
   dont_repeat ();
 
-  if (regexp)
-    re_comp (regexp);
+  gdb::optional<compiled_regex> regex;
+  if (pattern)
+    regex.emplace (pattern, REG_NOSUB, _("Invalid regexp"));
 
   ALL_PSPACES (pspace)
     for (objfile *objfile : pspace->objfiles ())
@@ -784,8 +786,8 @@ maintenance_info_symtabs (const char *regexp, int from_tty)
 	      {
 		QUIT;
 
-		if (! regexp
-		    || re_exec (symtab_to_filename_for_display (symtab)))
+		if (! pattern
+		    || !regex->exec (symtab_to_filename_for_display (symtab)))
 		  {
 		    if (! printed_objfile_start)
 		      {
@@ -901,7 +903,7 @@ static void
 maintenance_expand_symtabs (const char *args, int from_tty)
 {
   struct program_space *pspace;
-  char *regexp = NULL;
+  char *pattern = NULL;
 
   /* We use buildargv here so that we handle spaces in the regexp
      in a way that allows adding more arguments later.  */
@@ -911,14 +913,15 @@ maintenance_expand_symtabs (const char *args, int from_tty)
     {
       if (argv[0] != NULL)
 	{
-	  regexp = argv[0];
+	  pattern = argv[0];
 	  if (argv[1] != NULL)
 	    error (_("Extra arguments after regexp."));
 	}
     }
 
-  if (regexp)
-    re_comp (regexp);
+  gdb::optional<compiled_regex> regex;
+  if (pattern)
+    regex.emplace (pattern, REG_NOSUB, _("Invalid regexp"));
 
   ALL_PSPACES (pspace)
     for (objfile *objfile : pspace->objfiles ())
@@ -931,7 +934,7 @@ maintenance_expand_symtabs (const char *args, int from_tty)
 	       {
 		 /* KISS: Only apply the regexp to the complete file name.  */
 		 return (!basenames
-			 && (regexp == NULL || re_exec (filename)));
+			 && (pattern == NULL || !regex->exec (filename)));
 	       },
 	       lookup_name_info::match_any (),
 	       [] (const char *symname)
@@ -1012,14 +1015,15 @@ maintenance_print_one_line_table (struct symtab *symtab, void *data)
 /* Implement the 'maint info line-table' command.  */
 
 static void
-maintenance_info_line_tables (const char *regexp, int from_tty)
+maintenance_info_line_tables (const char *pattern, int from_tty)
 {
   struct program_space *pspace;
 
   dont_repeat ();
 
-  if (regexp != NULL)
-    re_comp (regexp);
+  gdb::optional<compiled_regex> regex;
+  if (pattern != NULL)
+    regex.emplace (pattern, REG_NOSUB, _("Invalid regexp"));
 
   ALL_PSPACES (pspace)
     for (objfile *objfile : pspace->objfiles ())
@@ -1030,8 +1034,8 @@ maintenance_info_line_tables (const char *regexp, int from_tty)
 	      {
 		QUIT;
 
-		if (regexp == NULL
-		    || re_exec (symtab_to_filename_for_display (symtab)))
+		if (pattern == NULL
+		    || !regex->exec (symtab_to_filename_for_display (symtab)))
 		  maintenance_print_one_line_table (symtab, NULL);
 	      }
 	  }

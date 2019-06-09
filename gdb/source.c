@@ -1538,11 +1538,9 @@ info_line_command (const char *arg, int from_tty)
    backward/reverse.  */
 
 static void
-search_command_helper (const char *regex, int from_tty, bool forward)
+search_command_helper (const char *pattern, int from_tty, bool forward)
 {
-  const char *msg = re_comp (regex);
-  if (msg)
-    error (("%s"), msg);
+  compiled_regex regex (pattern, REG_NOSUB, _("Invalid regexp"));
 
   if (current_source_symtab == 0)
     select_source_symtab (0);
@@ -1595,7 +1593,7 @@ search_command_helper (const char *regex, int from_tty, bool forward)
 
       /* We now have a source line in buf, null terminate and match.  */
       buf.push_back ('\0');
-      if (re_exec (buf.data ()) > 0)
+      if (!regex.exec (buf.data ()))
 	{
 	  /* Match!  */
 	  print_source_lines (current_source_symtab, line, line + 1, 0);

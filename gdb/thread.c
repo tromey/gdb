@@ -1736,14 +1736,12 @@ thread_find_command (const char *arg, int from_tty)
   if (arg == NULL || *arg == '\0')
     error (_("Command requires an argument."));
 
-  tmp = re_comp (arg);
-  if (tmp != 0)
-    error (_("Invalid regexp (%s): %s"), tmp, arg);
+  compiled_regex regex (arg, REG_NOSUB, _("Invalid regexp"));
 
   update_thread_list ();
   for (thread_info *tp : all_threads ())
     {
-      if (tp->name != NULL && re_exec (tp->name))
+      if (tp->name != NULL && !regex.exec (tp->name))
 	{
 	  printf_filtered (_("Thread %s has name '%s'\n"),
 			   print_thread_id (tp), tp->name);
@@ -1751,7 +1749,7 @@ thread_find_command (const char *arg, int from_tty)
 	}
 
       tmp = target_thread_name (tp);
-      if (tmp != NULL && re_exec (tmp))
+      if (tmp != NULL && !regex.exec (tmp))
 	{
 	  printf_filtered (_("Thread %s has target name '%s'\n"),
 			   print_thread_id (tp), tmp);
@@ -1759,7 +1757,7 @@ thread_find_command (const char *arg, int from_tty)
 	}
 
       std::string name = target_pid_to_str (tp->ptid);
-      if (!name.empty () && re_exec (name.c_str ()))
+      if (!name.empty () && !regex.exec (name.c_str ()))
 	{
 	  printf_filtered (_("Thread %s has target id '%s'\n"),
 			   print_thread_id (tp), name.c_str ());
@@ -1767,7 +1765,7 @@ thread_find_command (const char *arg, int from_tty)
 	}
 
       tmp = target_extra_thread_info (tp);
-      if (tmp != NULL && re_exec (tmp))
+      if (tmp != NULL && !regex.exec (tmp))
 	{
 	  printf_filtered (_("Thread %s has extra info '%s'\n"),
 			   print_thread_id (tp), tmp);

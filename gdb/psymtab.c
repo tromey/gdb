@@ -1981,12 +1981,13 @@ maintenance_print_psymbols (const char *args, int from_tty)
 /* List all the partial symbol tables whose names match REGEXP (optional).  */
 
 static void
-maintenance_info_psymtabs (const char *regexp, int from_tty)
+maintenance_info_psymtabs (const char *pattern, int from_tty)
 {
   struct program_space *pspace;
 
-  if (regexp)
-    re_comp (regexp);
+  gdb::optional<compiled_regex> regex;
+  if (pattern)
+    regex.emplace (pattern, REG_NOSUB, _("Invalid regexp"));
 
   ALL_PSPACES (pspace)
     for (objfile *objfile : pspace->objfiles ())
@@ -2001,8 +2002,8 @@ maintenance_info_psymtabs (const char *regexp, int from_tty)
 	  {
 	    QUIT;
 
-	    if (! regexp
-		|| re_exec (psymtab->filename))
+	    if (! pattern
+		|| !regex->exec (psymtab->filename))
 	      {
 		if (! printed_objfile_start)
 		  {

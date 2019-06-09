@@ -12017,11 +12017,13 @@ is_known_support_routine (struct frame_info *frame)
 
   for (i = 0; known_runtime_file_name_patterns[i] != NULL; i += 1)
     {
-      re_comp (known_runtime_file_name_patterns[i]);
-      if (re_exec (lbasename (sal.symtab->filename)))
+      compiled_regex regex (known_runtime_file_name_patterns[i],
+			    REG_NOSUB, _("Invalid regexp"));
+
+      if (regex.exec (lbasename (sal.symtab->filename)))
         return 1;
       if (SYMTAB_OBJFILE (sal.symtab) != NULL
-          && re_exec (objfile_name (SYMTAB_OBJFILE (sal.symtab))))
+          && !regex.exec (objfile_name (SYMTAB_OBJFILE (sal.symtab))))
         return 1;
     }
 
@@ -12034,8 +12036,10 @@ is_known_support_routine (struct frame_info *frame)
 
   for (i = 0; known_auxiliary_function_name_patterns[i] != NULL; i += 1)
     {
-      re_comp (known_auxiliary_function_name_patterns[i]);
-      if (re_exec (func_name.get ()))
+      compiled_regex regex (known_auxiliary_function_name_patterns[i],
+			    REG_NOSUB, _("Invalid regexp"));
+
+      if (!regex.exec (func_name.get ()))
 	return 1;
     }
 

@@ -1,5 +1,26 @@
 2019-06-09  Tom Tromey  <tom@tromey.com>
 
+	* thread.c (thread_find_command): Use compiled_regex.
+	* symmisc.c (maintenance_print_objfiles)
+	(maintenance_info_symtabs, maintenance_expand_symtabs)
+	(maintenance_info_line_tables): Use compiled_regex.
+	* source.c (search_command_helper): Use compiled_regex.
+	* solib.c (solib_add, info_sharedlibrary_command): Use
+	compiled_regex.
+	* psymtab.c (maintenance_info_psymtabs): Use compiled_regex.
+	* objc-lang.c (info_selectors_command, info_classes_command): Use
+	compiled_regex.
+	* mi/mi-cmd-file.c (mi_cmd_file_list_shared_libraries): Use
+	compiled_regex.
+	* gdb_regex.h (class compiled_regex) <exec>: New overload.
+	* auto-load.c (struct collect_matching_scripts_data) <regex>: New
+	member.
+	(collect_matching_scripts): Update.
+	(auto_load_info_scripts): Use compiled_regex.
+	* ada-lang.c (is_known_support_routine): Use compiled_regex.
+
+2019-06-09  Tom Tromey  <tom@tromey.com>
+
 	* stack.c: Include gdb_regex.h.
 	* ui-style.c: Include gdb_regex.h.
 	* symtab.h: Don't include gdb_regex.h.

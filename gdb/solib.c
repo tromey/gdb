@@ -958,13 +958,9 @@ solib_add (const char *pattern, int from_tty, int readsyms)
 
   current_program_space->solib_add_generation++;
 
+  gdb::optional<compiled_regex> regex;
   if (pattern)
-    {
-      char *re_err = re_comp (pattern);
-
-      if (re_err)
-	error (_("Invalid regexp: %s"), re_err);
-    }
+    regex.emplace (pattern, REG_NOSUB, _("Invalid regexp"));
 
   update_solib_list (from_tty);
 
@@ -980,7 +976,7 @@ solib_add (const char *pattern, int from_tty, int readsyms)
         add_flags |= SYMFILE_VERBOSE;
 
     for (gdb = so_list_head; gdb; gdb = gdb->next)
-      if (! pattern || re_exec (gdb->so_name))
+      if (! pattern || !regex->exec (gdb->so_name))
 	{
           /* Normally, we would read the symbols from that library
              only if READSYMS is set.  However, we're making a small
@@ -1037,13 +1033,9 @@ info_sharedlibrary_command (const char *pattern, int from_tty)
   struct gdbarch *gdbarch = target_gdbarch ();
   struct ui_out *uiout = current_uiout;
 
+  gdb::optional<compiled_regex> regex;
   if (pattern)
-    {
-      char *re_err = re_comp (pattern);
-
-      if (re_err)
-	error (_("Invalid regexp: %s"), re_err);
-    }
+    regex.emplace (pattern, REG_NOSUB, _("Invalid regexp"));
 
   /* "0x", a little whitespace, and two hex digits per byte of pointers.  */
   addr_width = 4 + (gdbarch_ptr_bit (gdbarch) / 4);
@@ -1057,7 +1049,7 @@ info_sharedlibrary_command (const char *pattern, int from_tty)
     {
       if (so->so_name[0])
 	{
-	  if (pattern && ! re_exec (so->so_name))
+	  if (pattern && regex->exec (so->so_name))
 	    continue;
 	  ++nr_libs;
 	}
@@ -1078,7 +1070,7 @@ info_sharedlibrary_command (const char *pattern, int from_tty)
       {
 	if (! so->so_name[0])
 	  continue;
-	if (pattern && ! re_exec (so->so_name))
+	if (pattern && regex->exec (so->so_name))
 	  continue;
 
 	ui_out_emit_tuple tuple_emitter (uiout, "lib");
