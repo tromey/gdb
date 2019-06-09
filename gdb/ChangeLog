@@ -1,5 +1,10 @@
 2019-06-09  Tom Tromey  <tom@tromey.com>
 
+	* source.c (_initialize_source): Don't call re_set_syntax.
+	* defs.h (re_comp): Don't declare.
+
+2019-06-09  Tom Tromey  <tom@tromey.com>
+
 	* thread.c (thread_find_command): Use compiled_regex.
 	* symmisc.c (maintenance_print_objfiles)
 	(maintenance_info_symtabs, maintenance_expand_symtabs)

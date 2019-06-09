@@ -1880,12 +1880,6 @@ _initialize_source (void)
   current_source_symtab = 0;
   init_source_path ();
 
-  /* The intention is to use POSIX Basic Regular Expressions.
-     Always use the GNU regex routine for consistency across all hosts.
-     Our current GNU regex.c does not have all the POSIX features, so this is
-     just an approximation.  */
-  re_set_syntax (RE_SYNTAX_GREP);
-
   c = add_cmd ("directory", class_files, directory_command, _("\
 Add directory DIR to beginning of search path for source files.\n\
 Forget cached info on source file locations and line positions.\n\
