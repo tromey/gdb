@@ -52,6 +52,7 @@
 #include "extension.h"
 #include "observable.h"
 #include "common/def-vector.h"
+#include "gdb_regex.h"
 
 /* The possible choices of "set print frame-arguments", and the value
    of this setting.  */

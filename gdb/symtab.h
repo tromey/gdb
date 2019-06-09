@@ -25,7 +25,6 @@
 #include <string>
 #include "common/gdb_vecs.h"
 #include "gdbtypes.h"
-#include "gdb_regex.h"
 #include "common/enum-flags.h"
 #include "common/function-view.h"
 #include "common/gdb_optional.h"
@@ -49,6 +48,7 @@ struct obj_section;
 struct cmd_list_element;
 class probe;
 struct lookup_name_info;
+class compiled_regex;
 
 /* How to match a lookup name against a symbol search name.  */
 enum class symbol_name_match_type
