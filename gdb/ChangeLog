@@ -1,3 +1,10 @@
+2019-09-18  Tom Tromey  <tromey@adacore.com>
+
+	* inferior.c (inferior_ptr): New typedef.
+	(current_inferior_): Now an inferior_ptr.
+	(current_inferior, set_current_inferior, initialize_inferiors):
+	Update.
+
 2019-09-18  Christian Groessler  <chris@groessler.org>
 
 	* alpha-linux-nat.c: Include gdbarch.h.
