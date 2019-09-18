@@ -1,5 +1,10 @@
 2019-09-18  Tom Tromey  <tromey@adacore.com>
 
+	* thread.c (~scoped_restore_current_thread): Update.
+	(scoped_restore_current_thread::scoped_restore_current_thread):
+	Update.
+	* gdbthread.h (class scoped_restore_current_thread) <m_inf>:
+	Change type.
 	* inferior.c (inferior_ptr): New typedef.
 	(current_inferior_): Now an inferior_ptr.
 	(current_inferior, set_current_inferior, initialize_inferiors):

@@ -48,9 +48,6 @@ static int highest_inferior_num;
 /* See inferior.h.  */
 bool print_inferior_events = true;
 
-/* A convenient typedef for an automatic refcounted inferior.  */
-typedef gdb::ref_ptr<inferior, refcounted_object_ref_policy> inferior_ptr;
-
 /* The Current Inferior.  This is a strong reference.  I.e., whenever
    an inferior is the current inferior, its refcount is
    incremented.  */

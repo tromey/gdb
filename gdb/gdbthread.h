@@ -650,7 +650,7 @@ private:
   /* Use the "class" keyword here, because of a clash with a "thread_info"
      function in the Darwin API.  */
   class thread_info *m_thread;
-  inferior *m_inf;
+  inferior_ptr m_inf;
   frame_id m_selected_frame_id;
   int m_selected_frame_level;
   bool m_was_stopped;

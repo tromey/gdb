@@ -1390,7 +1390,7 @@ scoped_restore_current_thread::~scoped_restore_current_thread ()
   else
     {
       switch_to_no_thread ();
-      set_current_inferior (m_inf);
+      set_current_inferior (m_inf.get ());
     }
 
   /* The running state of the originally selected thread may have
@@ -1405,13 +1405,12 @@ scoped_restore_current_thread::~scoped_restore_current_thread ()
 
   if (m_thread != NULL)
     m_thread->decref ();
-  m_inf->decref ();
 }
 
 scoped_restore_current_thread::scoped_restore_current_thread ()
 {
   m_thread = NULL;
-  m_inf = current_inferior ();
+  m_inf = inferior_ptr::new_reference (current_inferior ());
 
   if (inferior_ptid != null_ptid)
     {
@@ -1440,8 +1439,6 @@ scoped_restore_current_thread::scoped_restore_current_thread ()
       tp->incref ();
       m_thread = tp;
     }
-
-  m_inf->incref ();
 }
 
 /* See gdbthread.h.  */

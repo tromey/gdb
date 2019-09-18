@@ -528,6 +528,9 @@ public:
 
 DECLARE_REGISTRY (inferior);
 
+/* A convenient typedef for an automatically refcounted inferior.  */
+typedef gdb::ref_ptr<inferior, refcounted_object_ref_policy> inferior_ptr;
+
 /* Add an inferior to the inferior list, print a message that a new
    inferior is found, and return the pointer to the new inferior.
    Caller may use this pointer to initialize the private inferior
