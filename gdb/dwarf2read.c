@@ -2162,6 +2162,24 @@ dwarf2_per_objfile::dwarf2_per_objfile (struct objfile *objfile_,
 
   for (asection *sec = obfd->sections; sec != NULL; sec = sec->next)
     locate_sections (obfd, sec, *names);
+
+  dwarf2_read_section (objfile, &info);
+  dwarf2_read_section (objfile, &abbrev);
+  dwarf2_read_section (objfile, &line);
+  dwarf2_read_section (objfile, &loc);
+  dwarf2_read_section (objfile, &loclists);
+  dwarf2_read_section (objfile, &macinfo);
+  dwarf2_read_section (objfile, &macro);
+  dwarf2_read_section (objfile, &str);
+  dwarf2_read_section (objfile, &line_str);
+  dwarf2_read_section (objfile, &ranges);
+  dwarf2_read_section (objfile, &rnglists);
+  dwarf2_read_section (objfile, &addr);
+  dwarf2_read_section (objfile, &frame);
+  dwarf2_read_section (objfile, &eh_frame);
+  dwarf2_read_section (objfile, &gdb_index);
+  dwarf2_read_section (objfile, &debug_names);
+  dwarf2_read_section (objfile, &debug_aranges);
 }
 
 dwarf2_per_objfile::~dwarf2_per_objfile ()
