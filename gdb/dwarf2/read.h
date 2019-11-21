@@ -82,12 +82,13 @@ struct dwarf2_queue_item
 
 struct dwarf2_per_bfd
 {
-  /* Construct a dwarf2_per_bfd for OBFD.  NAMES points to the
+  /* Construct a dwarf2_per_bfd for OBJFILE.  NAMES points to the
      dwarf2 section names, or is NULL if the standard ELF names are
      used.  CAN_COPY is true for formats where symbol
      interposition is possible and so symbol values must follow copy
      relocation rules.  */
-  dwarf2_per_bfd (bfd *obfd, const dwarf2_debug_sections *names, bool can_copy);
+  dwarf2_per_bfd (struct objfile *objfile, const dwarf2_debug_sections *names,
+		  bool can_copy);
 
   ~dwarf2_per_bfd ();
 

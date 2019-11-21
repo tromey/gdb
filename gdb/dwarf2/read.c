@@ -1787,9 +1787,10 @@ line_header_eq_voidp (const void *item_lhs, const void *item_rhs)
 
 /* See declaration.  */
 
-dwarf2_per_bfd::dwarf2_per_bfd (bfd *obfd, const dwarf2_debug_sections *names,
+dwarf2_per_bfd::dwarf2_per_bfd (struct objfile *objfile,
+				const dwarf2_debug_sections *names,
 				bool can_copy_)
-  : obfd (obfd),
+  : obfd (objfile->obfd),
     can_copy (can_copy_)
 {
   if (names == NULL)
@@ -1797,6 +1798,24 @@ dwarf2_per_bfd::dwarf2_per_bfd (bfd *obfd, const dwarf2_debug_sections *names,
 
   for (asection *sec = obfd->sections; sec != NULL; sec = sec->next)
     locate_sections (obfd, sec, *names);
+
+  info.read (objfile);
+  abbrev.read (objfile);
+  line.read (objfile);
+  loc.read (objfile);
+  loclists.read (objfile);
+  macinfo.read (objfile);
+  macro.read (objfile);
+  str.read (objfile);
+  line_str.read (objfile);
+  ranges.read (objfile);
+  rnglists.read (objfile);
+  addr.read (objfile);
+  frame.read (objfile);
+  eh_frame.read (objfile);
+  gdb_index.read (objfile);
+  debug_names.read (objfile);
+  debug_aranges.read (objfile);
 }
 
 dwarf2_per_bfd::~dwarf2_per_bfd ()
@@ -1910,14 +1929,14 @@ dwarf2_has_info (struct objfile *objfile,
 	  if (per_bfd == nullptr)
 	    {
 	      /* No, create it now.  */
-	      per_bfd = new dwarf2_per_bfd (objfile->obfd, names, can_copy);
+	      per_bfd = new dwarf2_per_bfd (objfile, names, can_copy);
 	      dwarf2_per_bfd_bfd_data_key.set (objfile->obfd, per_bfd);
 	    }
 	}
       else
 	{
 	  /* No sharing possible, create one specifically for this objfile.  */
-	  per_bfd = new dwarf2_per_bfd (objfile->obfd, names, can_copy);
+	  per_bfd = new dwarf2_per_bfd (objfile, names, can_copy);
 	  dwarf2_per_bfd_objfile_data_key.set (objfile, per_bfd);
 	}
 
@@ -7950,7 +7969,7 @@ process_psymtab_comp_unit (dwarf2_per_cu_data *this_cu,
   this_cu->lang = reader.cu->language;
 
   /* Age out any secondary CUs.  */
-  per_objfile->age_comp_units ();
+  /* per_objfile->age_comp_units (); */
 }
 
 /* Reader function for build_type_psymtabs.  */
@@ -8356,8 +8375,11 @@ dwarf2_build_psymtabs_hard (dwarf2_per_objfile *per_objfile)
     }
 
   for (dwarf2_per_cu_data *per_cu : per_objfile->per_bfd->all_comp_units)
-    process_psymtab_comp_unit (per_cu, per_objfile, false, language_minimal,
-			       queue);
+    gdb::thread_pool::g_thread_pool->post_task ([=] ()
+    {
+      process_psymtab_comp_unit (per_cu, per_objfile, false, language_minimal,
+				 queue);
+    });
 
   if (queue != nullptr)
     creation_done.wait ();
