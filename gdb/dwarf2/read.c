@@ -1786,6 +1786,24 @@ dwarf2_per_objfile::dwarf2_per_objfile (struct objfile *objfile_,
 
   for (asection *sec = obfd->sections; sec != NULL; sec = sec->next)
     locate_sections (obfd, sec, *names);
+
+  info.read (objfile);
+  abbrev.read (objfile);
+  line.read (objfile);
+  loc.read (objfile);
+  loclists.read (objfile);
+  macinfo.read (objfile);
+  macro.read (objfile);
+  str.read (objfile);
+  line.read (objfile);
+  ranges.read (objfile);
+  rnglists.read (objfile);
+  addr.read (objfile);
+  frame.read (objfile);
+  eh_frame.read (objfile);
+  gdb_index.read (objfile);
+  debug_names.read (objfile);
+  debug_aranges.read (objfile);
 }
 
 dwarf2_per_objfile::~dwarf2_per_objfile ()

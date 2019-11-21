@@ -1,3 +1,7 @@
+2019-12-19  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2read.c: Eagerly read debuginfo sections.
+
 2020-02-19  Tom Tromey  <tom@tromey.com>
 
 	* symtab.c (general_symbol_info::compute_and_set_names): Use
