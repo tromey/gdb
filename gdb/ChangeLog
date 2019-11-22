@@ -1,5 +1,10 @@
 2019-12-15  Tom Tromey  <tom@tromey.com>
 
+	* psymtab.c (psym_forget_cached_source_info): Don't call
+	require_partial_symbols.
+
+2019-12-15  Tom Tromey  <tom@tromey.com>
+
 	* gdbsupport/print-utils.c (get_print_cell): Make "buf" and "cell"
 	thread_local.
 

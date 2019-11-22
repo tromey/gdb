@@ -816,7 +816,9 @@ psym_find_last_source_symtab (struct objfile *ofp)
 static void
 psym_forget_cached_source_info (struct objfile *objfile)
 {
-  for (partial_symtab *pst : require_partial_symbols (objfile, true))
+  /* Note that we don't call require_partial_symbols here.  There is
+     no need to pre-emptively read the symbols here.  */
+  for (partial_symtab *pst : objfile->psymtabs ())
     {
       if (pst->fullname != NULL)
 	{
