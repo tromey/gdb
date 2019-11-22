@@ -32,6 +32,9 @@
 namespace gdb
 {
 
+/* gdb's main thread.  */
+extern const std::thread::id main_thread;
+
 /* A thread pool.
 
    There is a single global thread pool, see g_thread_pool.  Tasks can

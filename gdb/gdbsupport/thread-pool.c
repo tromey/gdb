@@ -60,6 +60,9 @@ set_thread_name (void (*set_name) (const char *), const char *name)
 namespace gdb
 {
 
+/* See thread-pool.h.  */
+const std::thread::id main_thread = std::this_thread::get_id ();
+
 /* The thread pool detach()s its threads, so that the threads will not
    prevent the process from exiting.  However, it was discovered that
    if any detached threads were still waiting on a condition variable,
