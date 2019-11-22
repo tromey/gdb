@@ -22,6 +22,8 @@
 #include "command.h"
 #include "gdbcmd.h"
 #include <unordered_map>
+#include "gdbsupport/thread-pool.h"
+#include "run-on-main-thread.h"
 
 /* Map format strings to counters.  */
 
@@ -39,6 +41,23 @@ void
 complaint_internal (const char *fmt, ...)
 {
   va_list args;
+
+  if (gdb::main_thread != std::this_thread::get_id ())
+    {
+      va_start (args, fmt);
+      /* C++14: move captures would avoid a copy here.  */
+      std::string value = string_vprintf (fmt, args);
+      va_end (args);
+
+      run_on_main_thread ([=] ()
+        {
+	  if (++counters[fmt] > stop_whining)
+	    return;
+	  /* Do we care about deprecated_warning_hook!?  */
+	  fprintf_filtered (gdb_stderr, _("During symbol reading: %s\n"),
+			    value.c_str ());
+	});
+    }
 
   if (++counters[fmt] > stop_whining)
     return;
