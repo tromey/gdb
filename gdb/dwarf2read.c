@@ -3475,12 +3475,12 @@ read_gdb_index_from_buffer (struct objfile *objfile,
      indices.  */
   if (version < 4)
     {
-      static int warning_printed = 0;
+      static std::atomic<bool> warning_printed;
       if (!warning_printed)
 	{
 	  warning (_("Skipping obsolete .gdb_index section in %s."),
 		   filename);
-	  warning_printed = 1;
+	  warning_printed = true;
 	}
       return 0;
     }
@@ -3494,7 +3494,7 @@ read_gdb_index_from_buffer (struct objfile *objfile,
      "set use-deprecated-index-sections on".  */
   if (version < 6 && !deprecated_ok)
     {
-      static int warning_printed = 0;
+      static std::atomic<bool> warning_printed;
       if (!warning_printed)
 	{
 	  warning (_("\
@@ -3502,7 +3502,7 @@ Skipping deprecated .gdb_index section in %s.\n\
 Do \"set use-deprecated-index-sections on\" before the file is read\n\
 to use the section anyway."),
 		   filename);
-	  warning_printed = 1;
+	  warning_printed = true;
 	}
       return 0;
     }
