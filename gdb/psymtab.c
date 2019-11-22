@@ -93,8 +93,8 @@ psymtab_storage::allocate_psymtab ()
 
 /* See psymtab.h.  */
 
-psymtab_storage::partial_symtab_range
-require_partial_symbols (struct objfile *objfile, bool verbose)
+void
+start_reading_partial_symbols (struct objfile *objfile, bool verbose)
 {
   if ((objfile->flags & OBJF_PSYMTABS_READ) == 0)
     {
@@ -117,6 +117,17 @@ require_partial_symbols (struct objfile *objfile, bool verbose)
 			     objfile_name (objfile));
 	}
     }
+}
+
+/* Ensure that the partial symbols for OBJFILE have been loaded.  If
+   VERBOSE is non-zero, then this will print a message when symbols
+   are loaded.  This function returns a range adapter suitable for
+   iterating over the psymtabs of OBJFILE.  */
+
+static psymtab_storage::partial_symtab_range
+require_partial_symbols (struct objfile *objfile, int verbose)
+{
+  start_reading_partial_symbols (objfile, verbose);
 
   return objfile->psymtabs ();
 }

@@ -1,5 +1,14 @@
 2019-12-15  Tom Tromey  <tom@tromey.com>
 
+	* symfile.c (read_symbols): Call start_reading_partial_symbols.
+	* psymtab.h (require_partial_symbols): Don't declare.
+	(start_reading_partial_symbols): Declare.
+	* psymtab.c (start_reading_partial_symbols): New function, from
+	require_partial_symbols.
+	(require_partial_symbols): Rewrite.  Now static.
+
+2019-12-15  Tom Tromey  <tom@tromey.com>
+
 	* psymtab.c (psym_forget_cached_source_info): Don't call
 	require_partial_symbols.
 
