@@ -1,3 +1,8 @@
+2019-12-15  Tom Tromey  <tom@tromey.com>
+
+	* gdbsupport/print-utils.c (get_print_cell): Make "buf" and "cell"
+	thread_local.
+
 2019-12-19  Tom Tromey  <tom@tromey.com>
 
 	* dwarf2read.c: Eagerly read debuginfo sections.
