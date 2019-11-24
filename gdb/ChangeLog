@@ -1,5 +1,12 @@
 2019-12-15  Tom Tromey  <tom@tromey.com>
 
+	* language.h (language_demangle): Rename "current_language"
+	parameter.
+	* language.c (language_demangle): Rename "current_language"
+	parameter.
+
+2019-12-15  Tom Tromey  <tom@tromey.com>
+
 	* progspace.h (struct program_space) <reference_objfile>:
 	Declare.
 	* progspace.c (program_space::reference_objfile): New method.

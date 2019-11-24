@@ -617,11 +617,11 @@ skip_language_trampoline (struct frame_info *frame, CORE_ADDR pc)
    FIXME: Sometimes the demangler is invoked when we don't know the
    language, so we can't use this everywhere.  */
 char *
-language_demangle (const struct language_defn *current_language, 
-				const char *mangled, int options)
+language_demangle (const struct language_defn *lang,
+		   const char *mangled, int options)
 {
-  if (current_language != NULL && current_language->la_demangle)
-    return current_language->la_demangle (mangled, options);
+  if (lang != NULL && lang->la_demangle)
+    return lang->la_demangle (mangled, options);
   return NULL;
 }
 
