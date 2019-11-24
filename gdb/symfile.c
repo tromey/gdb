@@ -1233,7 +1233,7 @@ symbol_file_add_main_1 (const char *args, symfile_add_flags add_flags,
   reinit_frame_cache ();
 
   if ((add_flags & SYMFILE_NO_READ) == 0)
-    set_initial_language ();
+    lazily_set_initial_language ();
 }
 
 void
@@ -1673,41 +1673,6 @@ symbol_file_command (const char *args, int from_tty)
       /* Now it's safe to re-add the breakpoints.  */
       breakpoint_re_set ();
     }
-}
-
-/* Set the initial language.
-
-   FIXME: A better solution would be to record the language in the
-   psymtab when reading partial symbols, and then use it (if known) to
-   set the language.  This would be a win for formats that encode the
-   language in an easily discoverable place, such as DWARF.  For
-   stabs, we can jump through hoops looking for specially named
-   symbols or try to intuit the language from the specific type of
-   stabs we find, but we can't do that until later when we read in
-   full symbols.  */
-
-void
-set_initial_language (void)
-{
-  enum language lang = main_language ();
-
-  if (lang == language_unknown)
-    {
-      const char *name = main_name ();
-      struct symbol *sym = lookup_symbol (name, NULL, VAR_DOMAIN, NULL).symbol;
-
-      if (sym != NULL)
-	lang = sym->language ();
-    }
-
-  if (lang == language_unknown)
-    {
-      /* Make C the default language */
-      lang = language_c;
-    }
-
-  set_language (lang);
-  expected_language = current_language; /* Don't warn the user.  */
 }
 
 /* Open the file specified by NAME and hand it off to BFD for

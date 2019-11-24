@@ -1028,7 +1028,10 @@ gdbpy_before_prompt_hook (const struct extension_language_defn *extlang,
   if (!gdb_python_initialized)
     return EXT_LANG_RC_NOP;
 
-  gdbpy_enter enter_py (get_current_arch (), current_language);
+  /* We don't want to preemptively set the initial language if it
+     isn't already set here -- and it's fine to run this hook with the
+     Python "current language" being the unknown language.  */
+  gdbpy_enter enter_py (get_current_arch (), get_current_language_no_set ());
 
   if (!evregpy_no_listeners_p (gdb_py_events.before_prompt)
       && evpy_emit_event (NULL, gdb_py_events.before_prompt) < 0)
@@ -1544,7 +1547,9 @@ finalize_python (void *ignore)
 
   (void) PyGILState_Ensure ();
   python_gdbarch = target_gdbarch ();
-  python_language = current_language;
+  /* We don't want to require the current language to be discovered
+     when shutting down, so just pick a reasonable language.  */
+  python_language = &c_language_defn;
 
   Py_Finalize ();
 

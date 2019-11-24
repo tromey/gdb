@@ -461,7 +461,14 @@ struct language_defn
    the language of symbol files (e.g. detecting when ".c" files are
    C++), it should be a separate setting from the current_language.  */
 
-extern const struct language_defn *current_language;
+extern const struct language_defn *get_current_language ();
+#define current_language get_current_language ()
+
+/* Like get_current_language, but don't try to set the current
+   language if it is not already set.  Only code that needs to
+   specially handle lazily language setting should call this.  */
+
+extern const struct language_defn *get_current_language_no_set ();
 
 /* Pointer to the language_defn expected by the user, e.g. the language
    of main(), or the language we last mentioned in a message, or C.  */
@@ -521,6 +528,12 @@ struct symbol *
 extern void language_info (int);
 
 extern enum language set_language (enum language);
+
+/* Indicate that the initial language is now unset and should be reset
+   again upon request.  */
+
+extern void lazily_set_initial_language ();
+
 
 
 /* This page contains functions that return things that are
@@ -680,13 +693,18 @@ class scoped_restore_current_language
 public:
 
   explicit scoped_restore_current_language ()
-    : m_lang (current_language->la_language)
+    /* Don't cause the language to be set here if it is not already
+       set.  */
+    : m_lang (get_current_language_no_set ()->la_language)
   {
   }
 
   ~scoped_restore_current_language ()
   {
-    set_language (m_lang);
+    /* This special case is also in support of lazily setting the
+       initial language.  */
+    if (m_lang != language_unknown)
+      set_language (m_lang);
   }
 
   scoped_restore_current_language (const scoped_restore_current_language &)

@@ -1,5 +1,32 @@
 2019-12-15  Tom Tromey  <tom@tromey.com>
 
+	* symfile.h (set_initial_language): Don't declare.
+	* symfile.c (symbol_file_add_main_1): Call
+	lazily_set_initial_language.
+	(set_initial_language): Remove.
+	* python/python.c (gdbpy_before_prompt_hook): Use
+	get_current_language_no_set.
+	(finalize_python): Use c_language_defn.
+	* language.h (get_current_language): Declare.
+	(current_language): Now a #define.
+	(get_current_language_no_set): Declare.
+	(lazily_set_initial_language): Declare.
+	(scoped_restore_current_language): Use
+	get_current_language_no_set.
+	(~scoped_restore_current_language): Don't call 	set_language for
+	language_unknown.
+	* language.c (real_current_language): New global.
+	(set_language_command): Call lazily_set_initial_language.  Use
+	real_current_language.
+	(set_range_case): Use real_current_language.
+	(set_language): Use real_current_language.
+	(initial_language_set): New global.
+	(lazily_set_initial_language): New function.
+	(get_current_language): New function.
+	(get_current_language_no_set): New function.
+
+2019-12-15  Tom Tromey  <tom@tromey.com>
+
 	* language.h (language_demangle): Rename "current_language"
 	parameter.
 	* language.c (language_demangle): Rename "current_language"
