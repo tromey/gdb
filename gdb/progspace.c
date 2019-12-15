@@ -174,6 +174,20 @@ program_space::free_all_objfiles ()
 
 /* See progspace.h.  */
 
+std::shared_ptr<struct objfile>
+program_space::reference_objfile (struct objfile *objfile)
+{
+  for (const auto &ptr : objfiles_list)
+    {
+      if (ptr.get () == objfile)
+	return ptr;
+    }
+
+  gdb_assert_not_reached (_("Could not find objfile"));
+}
+
+/* See progspace.h.  */
+
 void
 program_space::add_objfile (std::shared_ptr<objfile> &&objfile,
 			    struct objfile *before)

@@ -256,6 +256,9 @@ struct program_space
   /* Free all the objfiles associated with this program space.  */
   void free_all_objfiles ();
 
+  /* Return a new reference to OBJFILE.  OBJFILE must exist on this
+     program space's list of objfiles.  */
+  std::shared_ptr<struct objfile> reference_objfile (struct objfile *objfile);
 
   /* Pointer to next in linked list.  */
   struct program_space *next = NULL;
