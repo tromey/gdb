@@ -74,6 +74,8 @@
 #include "gdbsupport/scope-exit.h"
 #include "gdbarch.h"
 #include "cli-out.h"
+#include "gdbsupport/thread-pool.h"
+#include "run-on-main-thread.h"
 
 void (*deprecated_error_begin_hook) (void);
 
@@ -140,7 +142,17 @@ show_pagination_enabled (struct ui_file *file, int from_tty,
 void
 vwarning (const char *string, va_list args)
 {
-  if (deprecated_warning_hook)
+  if (gdb::main_thread != std::this_thread::get_id ())
+    {
+      std::string value = string_vprintf (string, args);
+
+      /* C++14: move captures would avoid a copy here.  */
+      run_on_main_thread ([=] ()
+        {
+	  warning ("%s", value.c_str ());
+	});
+    }
+  else if (deprecated_warning_hook)
     (*deprecated_warning_hook) (string, args);
   else
     {
