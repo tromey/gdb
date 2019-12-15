@@ -99,6 +99,13 @@ public:
     return partial_symtab_range (psymtabs);
   }
 
+  /* Return true if there are no psymtabs yet.  */
+
+  bool empty () const
+  {
+    return psymtabs == nullptr;
+  }
+
 
   /* Each objfile points to a linked list of partial symtabs derived from
      this file, one partial symtab structure for each compilation unit

@@ -1,5 +1,9 @@
 2019-12-15  Tom Tromey  <tom@tromey.com>
 
+	* psymtab.h (class psymtab_storage) <empty>: New method.
+
+2019-12-15  Tom Tromey  <tom@tromey.com>
+
 	* symfile.c (read_symbols): Call start_reading_partial_symbols.
 	* psymtab.h (require_partial_symbols): Don't declare.
 	(start_reading_partial_symbols): Declare.
