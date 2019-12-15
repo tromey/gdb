@@ -91,6 +91,22 @@ psymtab_storage::allocate_psymtab ()
 
 
 
+/* A helper function that is called when the process of reading
+   psymtabs has been finished.  */
+
+static void
+done_reading_psymtabs (struct objfile *objfile, bool verbose)
+{
+  /* Partial symbols list are not expected to changed after this
+     point.  */
+  objfile->partial_symtabs->global_psymbols.shrink_to_fit ();
+  objfile->partial_symtabs->static_psymbols.shrink_to_fit ();
+
+  if (verbose && !objfile_has_symbols (objfile))
+    printf_filtered (_("(No debugging symbols found in %s)\n"),
+		     objfile_name (objfile));
+}
+
 /* See psymtab.h.  */
 
 void
@@ -107,14 +123,8 @@ start_reading_partial_symbols (struct objfile *objfile, bool verbose)
 			     objfile_name (objfile));
 	  (*objfile->sf->sym_read_psymbols) (objfile);
 
-	  /* Partial symbols list are not expected to changed after this
-	     point.  */
-	  objfile->partial_symtabs->global_psymbols.shrink_to_fit ();
-	  objfile->partial_symtabs->static_psymbols.shrink_to_fit ();
-
-	  if (verbose && !objfile_has_symbols (objfile))
-	    printf_filtered (_("(No debugging symbols found in %s)\n"),
-			     objfile_name (objfile));
+	  if (!objfile->partial_symtab_future.valid ())
+	    done_reading_psymtabs (objfile, verbose);
 	}
     }
 }
@@ -128,6 +138,12 @@ static psymtab_storage::partial_symtab_range
 require_partial_symbols (struct objfile *objfile, int verbose)
 {
   start_reading_partial_symbols (objfile, verbose);
+
+  if (objfile->partial_symtab_future.valid ())
+    {
+      objfile->partial_symtab_future.wait ();
+      done_reading_psymtabs (objfile, verbose);
+    }
 
   return objfile->psymtabs ();
 }
@@ -1378,6 +1394,8 @@ psym_expand_symtabs_matching
 static int
 psym_has_symbols (struct objfile *objfile)
 {
+  if (objfile->partial_symtab_future.valid ())
+    return 1;
   return objfile->partial_symtabs->psymtabs != NULL;
 }
 

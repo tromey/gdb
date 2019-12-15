@@ -1,5 +1,15 @@
 2019-12-15  Tom Tromey  <tom@tromey.com>
 
+	* psymtab.c (done_reading_psymtabs): New function.
+	(start_reading_partial_symbols): Check partial_symtab_future.
+	Call done_reading_psymtabs.
+	(require_partial_symbols): Likewise.
+	(psym_has_symbols): Check partial_symtab_future.
+	* objfiles.h (struct objfile) <partial_symtab_future>: New
+	member.
+
+2019-12-15  Tom Tromey  <tom@tromey.com>
+
 	* psymtab.h (class psymtab_storage) <empty>: New method.
 
 2019-12-15  Tom Tromey  <tom@tromey.com>

@@ -28,8 +28,8 @@
 #include "registry.h"
 #include "gdb_bfd.h"
 #include "psymtab.h"
-#include <atomic>
 #include <bitset>
+#include <future>
 #include <vector>
 #include "gdbsupport/next-iterator.h"
 #include "gdbsupport/safe-iterator.h"
@@ -519,6 +519,12 @@ public:
   /* The partial symbol tables.  */
 
   std::unique_ptr<psymtab_storage> partial_symtabs;
+
+  /* If this is valid, then the partial symtabs are still being read.
+     Calling "wait" on this will pause until the partial symtabs are
+     available.  */
+
+  std::future<void> partial_symtab_future;
 
   /* The object file's BFD.  Can be null if the objfile contains only
      minimal symbols, e.g. the run time common symbols for SunOS4.  */
