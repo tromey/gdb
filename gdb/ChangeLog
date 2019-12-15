@@ -1,5 +1,11 @@
 2019-12-15  Tom Tromey  <tom@tromey.com>
 
+	* dwarf2read.c (dwarf2_do_build_psymtabs): Rename from
+	dwarf2_build_psymtabs.
+	(dwarf2_build_psymtabs): New function.
+
+2019-12-15  Tom Tromey  <tom@tromey.com>
+
 	* symfile.h (set_initial_language): Don't declare.
 	* symfile.c (symbol_file_add_main_1): Call
 	lazily_set_initial_language.

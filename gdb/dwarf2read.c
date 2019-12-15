@@ -77,6 +77,7 @@
 #include "gdbsupport/selftest.h"
 #include "rust-lang.h"
 #include "gdbsupport/pathstuff.h"
+#include "gdbsupport/thread-pool.h"
 
 /* When == 1, print basic high level tracing messages.
    When > 1, be more verbose.
@@ -6378,10 +6379,8 @@ dwarf2_initialize_objfile (struct objfile *objfile, dw_index_kind *index_kind)
 
 
 
-/* Build a partial symbol table.  */
-
-void
-dwarf2_build_psymtabs (struct objfile *objfile)
+static void
+dwarf2_do_build_psymtabs (struct objfile *objfile)
 {
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
@@ -6404,6 +6403,28 @@ dwarf2_build_psymtabs (struct objfile *objfile)
     {
       exception_print (gdb_stderr, except);
     }
+}
+
+/* Build a partial symbol table.  */
+
+void
+dwarf2_build_psymtabs (struct objfile *objfile)
+{
+  /* We have to ensure that the objfile remains live while reading the
+     DWARF.  */
+  std::shared_ptr<struct objfile> objfile_ref
+    = current_program_space->reference_objfile (objfile);
+
+  /* We don't currently support multiple background readers.  */
+  gdb_assert (!objfile->partial_symtab_future.valid ());
+
+  /* C++14: we could micro-optimize this a little using move
+     captures.  */
+  objfile->partial_symtab_future
+    = gdb::thread_pool::g_thread_pool->post_task ([=] ()
+    {
+      dwarf2_do_build_psymtabs (objfile_ref.get ());
+    });
 }
 
 /* Return the total length of the CU described by HEADER.  */
