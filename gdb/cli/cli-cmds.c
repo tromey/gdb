@@ -1350,7 +1350,7 @@ print_disassembly (struct gdbarch *gdbarch, const char *name,
 		   gdb_disassembly_flags flags)
 {
 #if defined(TUI)
-  if (tui_is_window_visible (DISASSEM_WIN))
+  if (tui_active)
     tui_show_assembly (gdbarch, low);
   else
 #endif

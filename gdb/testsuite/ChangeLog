@@ -1,3 +1,7 @@
+2019-12-27  Tom Tromey  <tom@tromey.com>
+
+	* gdb.tui/disasm.exp: New file.
+
 2020-01-19  Tom Tromey  <tom@tromey.com>
 
 	* gdb.tui/main.exp: Add check for plain "file".
