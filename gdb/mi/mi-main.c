@@ -2728,7 +2728,7 @@ mi_cmd_fix_multi_location_breakpoint_output (const char *command,
 /* Implement the "-complete" command.  */
 
 void
-mi_cmd_complete (const char *command, char **argv, int argc)
+mi_cmd_complete (const char *command, const char *const *argv, int argc)
 {
   if (argc != 1)
     error (_("Usage: -complete COMMAND"));
