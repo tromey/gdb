@@ -29,7 +29,8 @@
    in ascending PC order.  */
 
 void
-mi_cmd_symbol_list_lines (const char *command, const char **argv, int argc)
+mi_cmd_symbol_list_lines (const char *command, const char *const *argv,
+			  int argc)
 {
   struct gdbarch *gdbarch;
   const char *filename;
@@ -172,9 +173,9 @@ mi_symbol_info (enum search_domain kind, const char *name_regexp,
    the parsed value.  If the text can't be parsed then an error is thrown.  */
 
 static size_t
-parse_max_results_option (char *arg)
+parse_max_results_option (const char *arg)
 {
-  char *ptr = arg;
+  char *ptr;
   long long val = strtoll (arg, &ptr, 10);
   if (arg == ptr || *ptr != '\0' || val > SIZE_MAX || val < 0)
     error (_("invalid value for --max-results argument"));
@@ -187,7 +188,8 @@ parse_max_results_option (char *arg)
    Processes command line options from ARGV and ARGC.  */
 
 static void
-mi_info_functions_or_variables (enum search_domain kind, char **argv, int argc)
+mi_info_functions_or_variables (enum search_domain kind,
+				const char *const *argv, int argc)
 {
   size_t max_results = SIZE_MAX;
   const char *regexp = nullptr;
@@ -208,7 +210,7 @@ mi_info_functions_or_variables (enum search_domain kind, char **argv, int argc)
   };
 
   int oind = 0;
-  char *oarg = nullptr;
+  const char *oarg = nullptr;
 
   while (1)
     {
@@ -313,7 +315,7 @@ output_module_symbols_in_single_module
 
 static void
 mi_info_module_functions_or_variables (enum search_domain kind,
-					char **argv, int argc)
+					const char *const *argv, int argc)
 {
   const char *module_regexp = nullptr;
   const char *regexp = nullptr;
@@ -334,7 +336,7 @@ mi_info_module_functions_or_variables (enum search_domain kind,
   };
 
   int oind = 0;
-  char *oarg = nullptr;
+  const char *oarg = nullptr;
 
   while (1)
     {
@@ -378,7 +380,8 @@ mi_info_module_functions_or_variables (enum search_domain kind,
 /* Implement -symbol-info-functions command.  */
 
 void
-mi_cmd_symbol_info_functions (const char *command, char **argv, int argc)
+mi_cmd_symbol_info_functions (const char *command, const char *const *argv,
+			      int argc)
 {
   mi_info_functions_or_variables (FUNCTIONS_DOMAIN, argv, argc);
 }
@@ -386,8 +389,8 @@ mi_cmd_symbol_info_functions (const char *command, char **argv, int argc)
 /* Implement -symbol-info-module-functions command.  */
 
 void
-mi_cmd_symbol_info_module_functions (const char *command, char **argv,
-				     int argc)
+mi_cmd_symbol_info_module_functions (const char *command,
+				     const char *const *argv, int argc)
 {
   mi_info_module_functions_or_variables (FUNCTIONS_DOMAIN, argv, argc);
 }
@@ -395,8 +398,8 @@ mi_cmd_symbol_info_module_functions (const char *command, char **argv,
 /* Implement -symbol-info-module-variables command.  */
 
 void
-mi_cmd_symbol_info_module_variables (const char *command, char **argv,
-				     int argc)
+mi_cmd_symbol_info_module_variables (const char *command,
+				     const char *const *argv, int argc)
 {
   mi_info_module_functions_or_variables (VARIABLES_DOMAIN, argv, argc);
 }
@@ -404,7 +407,8 @@ mi_cmd_symbol_info_module_variables (const char *command, char **argv,
 /* Implement -symbol-inf-modules command.  */
 
 void
-mi_cmd_symbol_info_modules (const char *command, char **argv, int argc)
+mi_cmd_symbol_info_modules (const char *command, const char *const *argv,
+			    int argc)
 {
   size_t max_results = SIZE_MAX;
   const char *regexp = nullptr;
@@ -421,7 +425,7 @@ mi_cmd_symbol_info_modules (const char *command, char **argv, int argc)
   };
 
   int oind = 0;
-  char *oarg = nullptr;
+  const char *oarg = nullptr;
 
   while (1)
     {
@@ -446,7 +450,8 @@ mi_cmd_symbol_info_modules (const char *command, char **argv, int argc)
 /* Implement -symbol-info-types command.  */
 
 void
-mi_cmd_symbol_info_types (const char *command, char **argv, int argc)
+mi_cmd_symbol_info_types (const char *command, const char *const *argv,
+			  int argc)
 {
   size_t max_results = SIZE_MAX;
   const char *regexp = nullptr;
@@ -463,7 +468,7 @@ mi_cmd_symbol_info_types (const char *command, char **argv, int argc)
   };
 
   int oind = 0;
-  char *oarg = nullptr;
+  const char *oarg = nullptr;
 
   while (true)
     {
@@ -488,7 +493,8 @@ mi_cmd_symbol_info_types (const char *command, char **argv, int argc)
 /* Implement -symbol-info-variables command.  */
 
 void
-mi_cmd_symbol_info_variables (const char *command, char **argv, int argc)
+mi_cmd_symbol_info_variables (const char *command, const char *const *argv,
+			      int argc)
 {
   mi_info_functions_or_variables (VARIABLES_DOMAIN, argv, argc);
 }

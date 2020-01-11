@@ -24,7 +24,7 @@
 /* Get a file from the target.  */
 
 void
-mi_cmd_target_file_get (const char *command, const char **argv, int argc)
+mi_cmd_target_file_get (const char *command, const char *const *argv, int argc)
 {
   int oind = 0;
   const char *oarg;
@@ -48,7 +48,7 @@ mi_cmd_target_file_get (const char *command, const char **argv, int argc)
 /* Send a file to the target.  */
 
 void
-mi_cmd_target_file_put (const char *command, const char **argv, int argc)
+mi_cmd_target_file_put (const char *command, const char *const *argv, int argc)
 {
   int oind = 0;
   const char *oarg;
@@ -72,7 +72,8 @@ mi_cmd_target_file_put (const char *command, const char **argv, int argc)
 /* Delete a file on the target.  */
 
 void
-mi_cmd_target_file_delete (const char *command, const char **argv, int argc)
+mi_cmd_target_file_delete (const char *command, const char *const *argv,
+			   int argc)
 {
   int oind = 0;
   const char *oarg;

@@ -51,7 +51,7 @@
          5 -- disassembly, source (pc-centric) and opcodes.  */
 
 void
-mi_cmd_disassemble (const char *command, const char **argv, int argc)
+mi_cmd_disassemble (const char *command, const char *const *argv, int argc)
 {
   struct gdbarch *gdbarch = get_current_arch ();
   struct ui_out *uiout = current_uiout;

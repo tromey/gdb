@@ -50,11 +50,11 @@ struct mi_opt
    ``error("%s: Unknown option %c", prefix, option)'' while
    mi_getopt_allow_unknown returns -1.  */
 
-extern int mi_getopt (const char *prefix, int argc, const char **argv,
+extern int mi_getopt (const char *prefix, int argc, const char *const *argv,
 		      const struct mi_opt *opt, int *optind,
 		      const char **optarg);
 extern int mi_getopt_allow_unknown (const char *prefix, int argc,
-				    const char **argv,
+				    const char *const *argv,
 				    const struct mi_opt *opts,
 				    int *oind, const char **oarg);
 
@@ -76,6 +76,6 @@ extern int mi_getopt_allow_unknown (const char *prefix, int argc,
    and the appropriate error message is displayed by mi_getopt.  */
 
 extern int mi_valid_noargs (const char *prefix, int argc,
-			    const char **argv);
+			    const char *const *argv);
 
 #endif /* MI_MI_GETOPT_H */

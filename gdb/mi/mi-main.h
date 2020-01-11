@@ -57,7 +57,7 @@ extern struct mi_suppress_notification mi_suppress_notification;
 /* Implementation of -fix-multi-location-breakpoint-output.  */
 
 extern void mi_cmd_fix_multi_location_breakpoint_output (const char *command,
-							 const char **argv,
+							 const char *const *argv,
 							 int argc);
 
 #endif /* MI_MI_MAIN_H */

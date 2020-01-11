@@ -96,7 +96,7 @@ setup_breakpoint_reporting (void)
    and return it.  */
 
 static std::string
-mi_argv_to_format (const char **argv, int argc)
+mi_argv_to_format (const char *const *argv, int argc)
 {
   int i;
   std::string result;
@@ -165,8 +165,8 @@ mi_argv_to_format (const char **argv, int argc)
    If not, it will insert other type breakpoint.  */
 
 static void
-mi_cmd_break_insert_1 (int dprintf, const char *command, const char **argv,
-		       int argc)
+mi_cmd_break_insert_1 (int dprintf, const char *command,
+		       const char *const *argv, int argc)
 {
   const char *address = NULL;
   int hardware = 0;
@@ -357,7 +357,7 @@ mi_cmd_break_insert_1 (int dprintf, const char *command, const char **argv,
    See the MI manual for the list of possible options.  */
 
 void
-mi_cmd_break_insert (const char *command, const char **argv, int argc)
+mi_cmd_break_insert (const char *command, const char *const *argv, int argc)
 {
   mi_cmd_break_insert_1 (0, command, argv, argc);
 }
@@ -366,7 +366,7 @@ mi_cmd_break_insert (const char *command, const char **argv, int argc)
    See the MI manual for the list of possible options.  */
 
 void
-mi_cmd_dprintf_insert (const char *command, const char **argv, int argc)
+mi_cmd_dprintf_insert (const char *command, const char *const *argv, int argc)
 {
   mi_cmd_break_insert_1 (1, command, argv, argc);
 }
@@ -379,7 +379,8 @@ enum wp_type
 };
 
 void
-mi_cmd_break_passcount (const char *command, const char **argv, int argc)
+mi_cmd_break_passcount (const char *command, const char *const *argv,
+			int argc)
 {
   int n;
   int p;
@@ -410,7 +411,7 @@ mi_cmd_break_passcount (const char *command, const char **argv, int argc)
    -break-watch -a <expr> --> insert an access wp.  */
 
 void
-mi_cmd_break_watch (const char *command, const char **argv, int argc)
+mi_cmd_break_watch (const char *command, const char *const *argv, int argc)
 {
   const char *expr = NULL;
   enum wp_type type = REG_WP;
@@ -470,7 +471,7 @@ mi_cmd_break_watch (const char *command, const char **argv, int argc)
 }
 
 void
-mi_cmd_break_commands (const char *command, const char **argv, int argc)
+mi_cmd_break_commands (const char *command, const char *const *argv, int argc)
 {
   counted_command_line break_command;
   char *endptr;

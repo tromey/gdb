@@ -24,7 +24,7 @@
    throw an error, otherwise return -1.  */
 
 static int
-mi_getopt_1 (const char *prefix, int argc, const char **argv,
+mi_getopt_1 (const char *prefix, int argc, const char *const *argv,
 	     const struct mi_opt *opts, int *oind, const char **oarg,
 	     int error_on_unknown)
 {
@@ -81,7 +81,7 @@ mi_getopt_1 (const char *prefix, int argc, const char **argv,
 
 int
 mi_getopt (const char *prefix,
-	   int argc, const char **argv,
+	   int argc, const char *const *argv,
 	   const struct mi_opt *opts,
 	   int *oind, const char **oarg)
 {
@@ -89,7 +89,8 @@ mi_getopt (const char *prefix,
 }
 
 int
-mi_getopt_allow_unknown (const char *prefix, int argc, const char **argv,
+mi_getopt_allow_unknown (const char *prefix, int argc,
+			 const char *const *argv,
 			 const struct mi_opt *opts, int *oind,
 			 const char **oarg)
 {
@@ -97,7 +98,7 @@ mi_getopt_allow_unknown (const char *prefix, int argc, const char **argv,
 }
 
 int 
-mi_valid_noargs (const char *prefix, int argc, const char **argv)
+mi_valid_noargs (const char *prefix, int argc, const char *const *argv)
 {
   int oind = 0;
   const char *oarg;

@@ -93,7 +93,7 @@ static void mi_cmd_execute (struct mi_parse *parse);
 static void mi_execute_cli_command (const char *cmd, int args_p,
 				    const char *args);
 static void mi_execute_async_cli_command (const char *cli_command,
-					  const char **argv, int argc);
+					  const char *const *argv, int argc);
 static bool register_changed_p (int regnum, readonly_detached_regcache *,
 			       readonly_detached_regcache *);
 static void output_register (struct frame_info *, int regnum, int format,
@@ -148,7 +148,7 @@ static void print_diff (struct ui_file *file, struct mi_timestamp *start,
 			struct mi_timestamp *end);
 
 void
-mi_cmd_gdb_exit (const char *command, const char **argv, int argc)
+mi_cmd_gdb_exit (const char *command, const char *const *argv, int argc)
 {
   struct mi_interp *mi = (struct mi_interp *) current_interpreter ();
 
@@ -163,7 +163,7 @@ mi_cmd_gdb_exit (const char *command, const char **argv, int argc)
 }
 
 void
-mi_cmd_exec_next (const char *command, const char **argv, int argc)
+mi_cmd_exec_next (const char *command, const char *const *argv, int argc)
 {
   /* FIXME: Should call a libgdb function, not a cli wrapper.  */
   if (argc > 0 && strcmp(argv[0], "--reverse") == 0)
@@ -173,7 +173,8 @@ mi_cmd_exec_next (const char *command, const char **argv, int argc)
 }
 
 void
-mi_cmd_exec_next_instruction (const char *command, const char **argv, int argc)
+mi_cmd_exec_next_instruction (const char *command, const char *const *argv,
+			      int argc)
 {
   /* FIXME: Should call a libgdb function, not a cli wrapper.  */
   if (argc > 0 && strcmp(argv[0], "--reverse") == 0)
@@ -183,7 +184,7 @@ mi_cmd_exec_next_instruction (const char *command, const char **argv, int argc)
 }
 
 void
-mi_cmd_exec_step (const char *command, const char **argv, int argc)
+mi_cmd_exec_step (const char *command, const char *const *argv, int argc)
 {
   /* FIXME: Should call a libgdb function, not a cli wrapper.  */
   if (argc > 0 && strcmp(argv[0], "--reverse") == 0)
@@ -193,7 +194,8 @@ mi_cmd_exec_step (const char *command, const char **argv, int argc)
 }
 
 void
-mi_cmd_exec_step_instruction (const char *command, const char **argv, int argc)
+mi_cmd_exec_step_instruction (const char *command, const char *const *argv,
+			      int argc)
 {
   /* FIXME: Should call a libgdb function, not a cli wrapper.  */
   if (argc > 0 && strcmp(argv[0], "--reverse") == 0)
@@ -203,7 +205,7 @@ mi_cmd_exec_step_instruction (const char *command, const char **argv, int argc)
 }
 
 void
-mi_cmd_exec_finish (const char *command, const char **argv, int argc)
+mi_cmd_exec_finish (const char *command, const char *const *argv, int argc)
 {
   /* FIXME: Should call a libgdb function, not a cli wrapper.  */
   if (argc > 0 && strcmp(argv[0], "--reverse") == 0)
@@ -213,7 +215,7 @@ mi_cmd_exec_finish (const char *command, const char **argv, int argc)
 }
 
 void
-mi_cmd_exec_return (const char *command, const char **argv, int argc)
+mi_cmd_exec_return (const char *command, const char *const *argv, int argc)
 {
   /* This command doesn't really execute the target, it just pops the
      specified number of frames.  */
@@ -232,7 +234,7 @@ mi_cmd_exec_return (const char *command, const char **argv, int argc)
 }
 
 void
-mi_cmd_exec_jump (const char *args, const char **argv, int argc)
+mi_cmd_exec_jump (const char *args, const char *const *argv, int argc)
 {
   /* FIXME: Should call a libgdb function, not a cli wrapper.  */
   mi_execute_async_cli_command ("jump", argv, argc);
@@ -262,7 +264,7 @@ proceed_thread_callback (struct thread_info *thread, void *arg)
 }
 
 static void
-exec_continue (const char **argv, int argc)
+exec_continue (const char *const *argv, int argc)
 {
   prepare_execution_command (current_top_target (), mi_async_p ());
 
@@ -314,7 +316,7 @@ exec_continue (const char **argv, int argc)
 }
 
 static void
-exec_reverse_continue (const char **argv, int argc)
+exec_reverse_continue (const char *const *argv, int argc)
 {
   enum exec_direction_kind dir = execution_direction;
 
@@ -330,7 +332,7 @@ exec_reverse_continue (const char **argv, int argc)
 }
 
 void
-mi_cmd_exec_continue (const char *command, const char **argv, int argc)
+mi_cmd_exec_continue (const char *command, const char *const *argv, int argc)
 {
   if (argc > 0 && strcmp (argv[0], "--reverse") == 0)
     exec_reverse_continue (argv + 1, argc - 1);
@@ -360,7 +362,7 @@ interrupt_thread_callback (struct thread_info *thread, void *arg)
    mi_cmd_execute.  */
 
 void
-mi_cmd_exec_interrupt (const char *command, const char **argv, int argc)
+mi_cmd_exec_interrupt (const char *command, const char *const *argv, int argc)
 {
   /* In all-stop mode, everything stops, so we don't need to try
      anything specific.  */
@@ -421,7 +423,7 @@ run_one_inferior (struct inferior *inf, void *arg)
 }
 
 void
-mi_cmd_exec_run (const char *command, const char **argv, int argc)
+mi_cmd_exec_run (const char *command, const char *const *argv, int argc)
 {
   int start_p = 0;
 
@@ -488,7 +490,7 @@ find_thread_of_process (struct thread_info *ti, void *p)
 }
 
 void
-mi_cmd_target_detach (const char *command, const char **argv, int argc)
+mi_cmd_target_detach (const char *command, const char *const *argv, int argc)
 {
   if (argc != 0 && argc != 1)
     error (_("Usage: -target-detach [pid | thread-group]"));
@@ -536,13 +538,14 @@ mi_cmd_target_detach (const char *command, const char **argv, int argc)
 }
 
 void
-mi_cmd_target_flash_erase (const char *command, const char **argv, int argc)
+mi_cmd_target_flash_erase (const char *command, const char *const *argv,
+			   int argc)
 {
   flash_erase_command (NULL, 0);
 }
 
 void
-mi_cmd_thread_select (const char *command, const char **argv, int argc)
+mi_cmd_thread_select (const char *command, const char *const *argv, int argc)
 {
   if (argc != 1)
     error (_("-thread-select: USAGE: threadnum."));
@@ -568,7 +571,7 @@ mi_cmd_thread_select (const char *command, const char **argv, int argc)
 }
 
 void
-mi_cmd_thread_list_ids (const char *command, const char **argv, int argc)
+mi_cmd_thread_list_ids (const char *command, const char *const *argv, int argc)
 {
   if (argc != 0)
     error (_("-thread-list-ids: No arguments required."));
@@ -597,7 +600,7 @@ mi_cmd_thread_list_ids (const char *command, const char **argv, int argc)
 }
 
 void
-mi_cmd_thread_info (const char *command, const char **argv, int argc)
+mi_cmd_thread_info (const char *command, const char *const *argv, int argc)
 {
   if (argc != 0 && argc != 1)
     error (_("Invalid MI command"));
@@ -776,7 +779,8 @@ list_available_thread_groups (const std::set<int> &ids, int recurse)
 }
 
 void
-mi_cmd_list_thread_groups (const char *command, const char **argv, int argc)
+mi_cmd_list_thread_groups (const char *command, const char *const *argv,
+			   int argc)
 {
   struct ui_out *uiout = current_uiout;
   int available = 0;
@@ -869,7 +873,7 @@ mi_cmd_list_thread_groups (const char *command, const char **argv, int argc)
 }
 
 void
-mi_cmd_data_list_register_names (const char *command, const char **argv,
+mi_cmd_data_list_register_names (const char *command, const char *const *argv,
 				 int argc)
 {
   struct gdbarch *gdbarch;
@@ -919,8 +923,8 @@ mi_cmd_data_list_register_names (const char *command, const char **argv,
 }
 
 void
-mi_cmd_data_list_changed_registers (const char *command, const char **argv,
-				    int argc)
+mi_cmd_data_list_changed_registers (const char *command,
+				    const char *const *argv, int argc)
 {
   static std::unique_ptr<readonly_detached_regcache> this_regs;
   struct ui_out *uiout = current_uiout;
@@ -1021,7 +1025,7 @@ register_changed_p (int regnum, readonly_detached_regcache *prev_regs,
    their values is returned.  */
 
 void
-mi_cmd_data_list_register_values (const char *command, const char **argv,
+mi_cmd_data_list_register_values (const char *command, const char *const *argv,
 				  int argc)
 {
   struct ui_out *uiout = current_uiout;
@@ -1146,8 +1150,8 @@ output_register (struct frame_info *frame, int regnum, int format,
    -data-write-register-values <format>
                                [<regnum1> <value1>...<regnumN> <valueN>] */
 void
-mi_cmd_data_write_register_values (const char *command, const char **argv,
-				   int argc)
+mi_cmd_data_write_register_values (const char *command,
+				   const char *const *argv, int argc)
 {
   struct regcache *regcache;
   struct gdbarch *gdbarch;
@@ -1204,7 +1208,7 @@ mi_cmd_data_write_register_values (const char *command, const char **argv,
    included in double quotes.  */
 
 void
-mi_cmd_data_evaluate_expression (const char *command, const char **argv,
+mi_cmd_data_evaluate_expression (const char *command, const char *const *argv,
 				 int argc)
 {
   struct value *val;
@@ -1249,7 +1253,7 @@ mi_cmd_data_evaluate_expression (const char *command, const char **argv,
    The number of bytes read is SIZE*ROW*COL.  */
 
 void
-mi_cmd_data_read_memory (const char *command, const char **argv,
+mi_cmd_data_read_memory (const char *command, const char *const *argv,
 			 int argc)
 {
   struct gdbarch *gdbarch = get_current_arch ();
@@ -1425,7 +1429,7 @@ mi_cmd_data_read_memory (const char *command, const char **argv,
 }
 
 void
-mi_cmd_data_read_memory_bytes (const char *command, const char **argv,
+mi_cmd_data_read_memory_bytes (const char *command, const char *const *argv,
 			       int argc)
 {
   struct gdbarch *gdbarch = get_current_arch ();
@@ -1508,7 +1512,7 @@ mi_cmd_data_read_memory_bytes (const char *command, const char **argv,
    Prints nothing.  */
 
 void
-mi_cmd_data_write_memory (const char *command, const char **argv,
+mi_cmd_data_write_memory (const char *command, const char *const *argv,
 			  int argc)
 {
   struct gdbarch *gdbarch = get_current_arch ();
@@ -1577,7 +1581,7 @@ mi_cmd_data_write_memory (const char *command, const char **argv,
    COUNT: number of bytes to be filled (decimal integer).  */
 
 void
-mi_cmd_data_write_memory_bytes (const char *command, const char **argv,
+mi_cmd_data_write_memory_bytes (const char *command, const char *const *argv,
 				int argc)
 {
   CORE_ADDR addr;
@@ -1646,7 +1650,7 @@ mi_cmd_data_write_memory_bytes (const char *command, const char **argv,
 }
 
 void
-mi_cmd_enable_timings (const char *command, const char **argv, int argc)
+mi_cmd_enable_timings (const char *command, const char *const *argv, int argc)
 {
   if (argc == 0)
     do_timings = 1;
@@ -1669,7 +1673,7 @@ mi_cmd_enable_timings (const char *command, const char **argv, int argc)
 }
 
 void
-mi_cmd_list_features (const char *command, const char **argv, int argc)
+mi_cmd_list_features (const char *command, const char *const *argv, int argc)
 {
   if (argc == 0)
     {
@@ -1698,7 +1702,8 @@ mi_cmd_list_features (const char *command, const char **argv, int argc)
 }
 
 void
-mi_cmd_list_target_features (const char *command, const char **argv, int argc)
+mi_cmd_list_target_features (const char *command, const char *const *argv,
+			     int argc)
 {
   if (argc == 0)
     {
@@ -1716,7 +1721,7 @@ mi_cmd_list_target_features (const char *command, const char **argv, int argc)
 }
 
 void
-mi_cmd_add_inferior (const char *command, const char **argv, int argc)
+mi_cmd_add_inferior (const char *command, const char *const *argv, int argc)
 {
   struct inferior *inf;
 
@@ -1741,7 +1746,7 @@ get_other_inferior (struct inferior *inf, void *arg)
 }
 
 void
-mi_cmd_remove_inferior (const char *command, const char **argv, int argc)
+mi_cmd_remove_inferior (const char *command, const char *const *argv, int argc)
 {
   int id;
   struct inferior *inf;
@@ -2149,7 +2154,7 @@ mi_execute_cli_command (const char *cmd, int args_p, const char *args)
 }
 
 void
-mi_execute_async_cli_command (const char *cli_command, const char **argv,
+mi_execute_async_cli_command (const char *cli_command, const char *const *argv,
 			      int argc)
 {
   std::string run = cli_command;
@@ -2272,7 +2277,7 @@ print_diff (struct ui_file *file, struct mi_timestamp *start,
 }
 
 void
-mi_cmd_trace_define_variable (const char *command, const char **argv,
+mi_cmd_trace_define_variable (const char *command, const char *const *argv,
 			      int argc)
 {
   LONGEST initval = 0;
@@ -2299,7 +2304,7 @@ mi_cmd_trace_define_variable (const char *command, const char **argv,
 }
 
 void
-mi_cmd_trace_list_variables (const char *command, const char **argv,
+mi_cmd_trace_list_variables (const char *command, const char *const *argv,
 			     int argc)
 {
   if (argc != 0)
@@ -2309,7 +2314,7 @@ mi_cmd_trace_list_variables (const char *command, const char **argv,
 }
 
 void
-mi_cmd_trace_find (const char *command, const char **argv, int argc)
+mi_cmd_trace_find (const char *command, const char *const *argv, int argc)
 {
   const char *mode;
 
@@ -2385,7 +2390,7 @@ mi_cmd_trace_find (const char *command, const char **argv, int argc)
 }
 
 void
-mi_cmd_trace_save (const char *command, const char **argv, int argc)
+mi_cmd_trace_save (const char *command, const char *const *argv, int argc)
 {
   int target_saves = 0;
   int generate_ctf = 0;
@@ -2435,19 +2440,19 @@ mi_cmd_trace_save (const char *command, const char **argv, int argc)
 }
 
 void
-mi_cmd_trace_start (const char *command, const char **argv, int argc)
+mi_cmd_trace_start (const char *command, const char *const *argv, int argc)
 {
   start_tracing (NULL);
 }
 
 void
-mi_cmd_trace_status (const char *command, const char **argv, int argc)
+mi_cmd_trace_status (const char *command, const char *const *argv, int argc)
 {
   trace_status_mi (0);
 }
 
 void
-mi_cmd_trace_stop (const char *command, const char **argv, int argc)
+mi_cmd_trace_stop (const char *command, const char *const *argv, int argc)
 {
   stop_tracing (NULL);
   trace_status_mi (1);
@@ -2456,7 +2461,7 @@ mi_cmd_trace_stop (const char *command, const char **argv, int argc)
 /* Implement the "-ada-task-info" command.  */
 
 void
-mi_cmd_ada_task_info (const char *command, const char **argv, int argc)
+mi_cmd_ada_task_info (const char *command, const char *const *argv, int argc)
 {
   if (argc != 0 && argc != 1)
     error (_("Invalid MI command"));
@@ -2521,7 +2526,8 @@ print_variable_or_computed (const char *expression, enum print_values values)
 /* Implement the "-trace-frame-collected" command.  */
 
 void
-mi_cmd_trace_frame_collected (const char *command, const char **argv, int argc)
+mi_cmd_trace_frame_collected (const char *command, const char *const *argv,
+			      int argc)
 {
   struct bp_location *tloc;
   int stepping_frame;
@@ -2713,7 +2719,7 @@ mi_cmd_trace_frame_collected (const char *command, const char **argv, int argc)
 
 void
 mi_cmd_fix_multi_location_breakpoint_output (const char *command,
-					     const char **argv,
+					     const char *const *argv,
 					     int argc)
 {
   fix_multi_location_breakpoint_output_globally = true;
