@@ -331,7 +331,7 @@ objfile::objfile (bfd *abfd, const char *name, objfile_flags flags_)
   : flags (flags_),
     pspace (current_program_space),
     partial_symtabs (new psymtab_storage ()),
-    obfd (abfd)
+    obfd (gdb_bfd_ref_ptr::new_reference (abfd).release ())
 {
   /* We could use obstack_specify_allocation here instead, but
      gdb_obstack.h specifies the alloc/dealloc functions.  */
@@ -359,7 +359,6 @@ objfile::objfile (bfd *abfd, const char *name, objfile_flags flags_)
      that any data that is reference is saved in the per-objfile data
      region.  */
 
-  gdb_bfd_ref (abfd);
   if (abfd != NULL)
     {
       mtime = bfd_get_mtime (abfd);
