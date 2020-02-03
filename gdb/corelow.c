@@ -160,10 +160,6 @@ core_target::~core_target ()
 
 static struct core_fns *core_file_fns = NULL;
 
-static int gdb_check_format (bfd *);
-
-static void add_to_thread_list (bfd *, asection *, void *);
-
 /* An arbitrary identifier for the core inferior.  */
 #define CORELOW_PID 1
 
