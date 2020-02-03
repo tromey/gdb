@@ -535,11 +535,9 @@ public:
 
   /* The object file's original name as specified by the user,
      made absolute, and tilde-expanded.  However, it is not canonicalized
-     (i.e., it has not been passed through gdb_realpath).
-     This pointer is never NULL.  This does not have to be freed; it is
-     guaranteed to have a lifetime at least as long as the objfile.  */
+     (i.e., it has not been passed through gdb_realpath).  */
 
-  const char *original_name = nullptr;
+  std::string original_name;
 
   CORE_ADDR addr_low = 0;
 

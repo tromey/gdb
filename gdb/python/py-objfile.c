@@ -93,7 +93,7 @@ objfpy_get_username (PyObject *self, void *closure)
 
   if (obj->objfile)
     {
-      const char *username = obj->objfile->original_name;
+      const char *username = obj->objfile->original_name.c_str ();
 
       return host_string_to_python_string (username).release ();
     }
@@ -578,7 +578,7 @@ objfpy_lookup_objfile_by_name (const char *name)
       filename = objfile_filename (objfile);
       if (filename != NULL && compare_filenames_for_search (filename, name))
 	return objfile;
-      if (compare_filenames_for_search (objfile->original_name, name))
+      if (compare_filenames_for_search (objfile->original_name.c_str (), name))
 	return objfile;
     }
 

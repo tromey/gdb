@@ -333,8 +333,6 @@ objfile::objfile (bfd *abfd, const char *name, objfile_flags flags_)
     partial_symtabs (new psymtab_storage ()),
     obfd (abfd)
 {
-  const char *expanded_name;
-
   /* We could use obstack_specify_allocation here instead, but
      gdb_obstack.h specifies the alloc/dealloc functions.  */
   obstack_init (&objfile_obstack);
@@ -346,17 +344,16 @@ objfile::objfile (bfd *abfd, const char *name, objfile_flags flags_)
     {
       gdb_assert (abfd == NULL);
       gdb_assert ((flags & OBJF_NOT_FILENAME) != 0);
-      expanded_name = "<<anonymous objfile>>";
+      original_name = "<<anonymous objfile>>";
     }
   else if ((flags & OBJF_NOT_FILENAME) != 0
 	   || is_target_filename (name))
-    expanded_name = name;
+    original_name = name;
   else
     {
       name_holder = gdb_abspath (name);
-      expanded_name = name_holder.get ();
+      original_name = name_holder.get ();
     }
-  original_name = obstack_strdup (&objfile_obstack, expanded_name);
 
   /* Update the per-objfile information that comes from the bfd, ensuring
      that any data that is reference is saved in the per-objfile data
@@ -1380,7 +1377,7 @@ objfile_name (const struct objfile *objfile)
   if (objfile->obfd != NULL)
     return bfd_get_filename (objfile->obfd);
 
-  return objfile->original_name;
+  return objfile->original_name.c_str ();
 }
 
 /* See objfiles.h.  */
@@ -1399,7 +1396,7 @@ objfile_filename (const struct objfile *objfile)
 const char *
 objfile_debug_name (const struct objfile *objfile)
 {
-  return lbasename (objfile->original_name);
+  return lbasename (objfile->original_name.c_str ());
 }
 
 /* See objfiles.h.  */

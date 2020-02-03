@@ -2537,8 +2537,6 @@ reread_symbols (void)
 	      error (_("Can't open %s to read symbols."), obfd_filename);
 	  }
 
-	  std::string original_name = objfile->original_name;
-
 	  /* bfd_openr sets cacheable to true, which is what we want.  */
 	  if (!bfd_check_format (objfile->obfd, bfd_object))
 	    error (_("Can't read symbols from %s: %s."), objfile_name (objfile),
@@ -2564,9 +2562,6 @@ reread_symbols (void)
 	     multiple users is not possible), so it's important to
 	     do it *after* the obstack has been initialized.  */
 	  set_objfile_per_bfd (objfile);
-
-	  objfile->original_name
-	    = obstack_strdup (&objfile->objfile_obstack, original_name);
 
 	  /* Reset the sym_fns pointer.  The ELF reader can change it
 	     based on whether .gdb_index is present, and we need it to

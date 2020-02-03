@@ -1190,7 +1190,7 @@ ctf_start_symtab (ctf_psymtab *pst,
 
   ccp = pst->context;
   ccp->builder = new buildsym_compunit
-		       (of, of->original_name, NULL,
+		       (of, of->original_name.c_str (), NULL,
 		       language_c, text_offset);
   ccp->builder->record_debugformat ("ctf");
 }

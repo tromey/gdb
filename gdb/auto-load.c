@@ -1149,7 +1149,7 @@ load_auto_scripts_for_objfile (struct objfile *objfile)
      on the local filesystem.  */
   if (!global_auto_load
       || (objfile->flags & OBJF_NOT_FILENAME) != 0
-      || is_target_filename (objfile->original_name))
+      || is_target_filename (objfile->original_name.c_str ()))
     return;
 
   /* Load any extension language scripts for this objfile.

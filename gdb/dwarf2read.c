@@ -13189,9 +13189,10 @@ open_and_init_dwp_file (struct dwarf2_per_objfile *dwarf2_per_objfile)
   if (objfile->separate_debug_objfile_backlink != NULL)
     {
       struct objfile *backlink = objfile->separate_debug_objfile_backlink;
-      const char *backlink_basename = lbasename (backlink->original_name);
+      const char *backlink_basename = lbasename (backlink->original_name.c_str ());
 
-      dwp_name = ldirname (objfile->original_name) + SLASH_STRING + backlink_basename;
+      dwp_name = (ldirname (objfile->original_name.c_str ())
+		  + SLASH_STRING + backlink_basename);
     }
   else
     dwp_name = objfile->original_name;
@@ -13199,8 +13200,7 @@ open_and_init_dwp_file (struct dwarf2_per_objfile *dwarf2_per_objfile)
   dwp_name += ".dwp";
 
   gdb_bfd_ref_ptr dbfd (open_dwp_file (dwarf2_per_objfile, dwp_name.c_str ()));
-  if (dbfd == NULL
-      && strcmp (objfile->original_name, objfile_name (objfile)) != 0)
+  if (dbfd == NULL && objfile->original_name == objfile_name (objfile))
     {
       /* Try to find .dwp for the binary file after gdb_realpath resolving.  */
       dwp_name = objfile_name (objfile);
