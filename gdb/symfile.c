@@ -215,21 +215,19 @@ find_lowest_section (bfd *abfd, asection *sect, void *obj)
    an existing section table.  */
 
 section_addr_info
-build_section_addr_info_from_section_table (const struct target_section *start,
-                                            const struct target_section *end)
+build_section_addr_info_from_section_table
+  (const std::vector<struct target_section> &table)
 {
-  const struct target_section *stp;
-
   section_addr_info sap;
 
-  for (stp = start; stp != end; stp++)
+  for (const auto &stp : table)
     {
-      struct bfd_section *asect = stp->the_bfd_section;
+      struct bfd_section *asect = stp.the_bfd_section;
       bfd *abfd = asect->owner;
 
       if (bfd_section_flags (asect) & (SEC_ALLOC | SEC_LOAD)
-	  && sap.size () < end - start)
-	sap.emplace_back (stp->addr,
+	  && sap.size () < table.size ())
+	sap.emplace_back (stp.addr,
 			  bfd_section_name (asect),
 			  gdb_bfd_section_index (abfd, asect));
     }

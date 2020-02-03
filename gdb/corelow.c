@@ -63,7 +63,7 @@ class core_target final : public process_stratum_target
 {
 public:
   core_target ();
-  ~core_target () override;
+  ~core_target () override = default;
 
   const target_info &info () const override
   { return core_target_info; }
@@ -119,7 +119,7 @@ private: /* per-core data */
      shared library bfds.  The core bfd sections are an implementation
      detail of the core target, just like ptrace is for unix child
      targets.  */
-  target_section_table m_core_section_table {};
+  std::vector<struct target_section> m_core_section_table;
 
   /* FIXME: kettenis/20031023: Eventually this field should
      disappear.  */
@@ -136,16 +136,9 @@ core_target::core_target ()
 	   bfd_get_filename (core_bfd));
 
   /* Find the data section */
-  if (build_section_table (core_bfd,
-			   &m_core_section_table.sections,
-			   &m_core_section_table.sections_end))
+  if (build_section_table (core_bfd, &m_core_section_table))
     error (_("\"%s\": Can't find sections: %s"),
 	   bfd_get_filename (core_bfd), bfd_errmsg (bfd_get_error ()));
-}
-
-core_target::~core_target ()
-{
-  xfree (m_core_section_table.sections);
 }
 
 static void add_to_thread_list (bfd *, asection *, void *);
@@ -602,7 +595,7 @@ core_target::fetch_registers (struct regcache *regcache, int regno)
 void
 core_target::files_info ()
 {
-  print_section_info (&m_core_section_table, core_bfd);
+  print_section_info (m_core_section_table, core_bfd);
 }
 
 enum target_xfer_status
@@ -616,8 +609,7 @@ core_target::xfer_partial (enum target_object object, const char *annex,
       return (section_table_xfer_memory_partial
 	      (readbuf, writebuf,
 	       offset, len, xfered_len,
-	       m_core_section_table.sections,
-	       m_core_section_table.sections_end,
+	       &m_core_section_table,
 	       NULL));
 
     case TARGET_OBJECT_AUXV:

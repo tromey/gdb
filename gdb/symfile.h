@@ -444,11 +444,8 @@ extern std::string find_separate_debug_file_by_debuglink (struct objfile *);
 /* Build (allocate and populate) a section_addr_info struct from an
    existing section table.  */
 
-extern section_addr_info
-   build_section_addr_info_from_section_table (const struct target_section
-					       *start,
-					       const struct target_section
-					       *end);
+extern section_addr_info build_section_addr_info_from_section_table
+  (const std::vector<struct target_section> &table);
 
 			/*   Variables   */
 

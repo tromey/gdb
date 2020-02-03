@@ -77,7 +77,7 @@ struct dummy_target : public target_ops
   void rcmd (const char *arg0, struct ui_file *arg1) override;
   char *pid_to_exec_file (int arg0) override;
   void log_command (const char *arg0) override;
-  struct target_section_table *get_section_table () override;
+  std::vector<target_section> *get_section_table () override;
   thread_control_capabilities get_thread_control_capabilities () override;
   bool attach_no_wait () override;
   bool can_async_p () override;
@@ -246,7 +246,7 @@ struct debug_target : public target_ops
   void rcmd (const char *arg0, struct ui_file *arg1) override;
   char *pid_to_exec_file (int arg0) override;
   void log_command (const char *arg0) override;
-  struct target_section_table *get_section_table () override;
+  std::vector<target_section> *get_section_table () override;
   thread_control_capabilities get_thread_control_capabilities () override;
   bool attach_no_wait () override;
   bool can_async_p () override;
@@ -2017,27 +2017,27 @@ debug_target::log_command (const char *arg0)
   fputs_unfiltered (")\n", gdb_stdlog);
 }
 
-struct target_section_table *
+std::vector<target_section> *
 target_ops::get_section_table ()
 {
   return this->beneath ()->get_section_table ();
 }
 
-struct target_section_table *
+std::vector<target_section> *
 dummy_target::get_section_table ()
 {
   return NULL;
 }
 
-struct target_section_table *
+std::vector<target_section> *
 debug_target::get_section_table ()
 {
-  struct target_section_table * result;
+  std::vector<target_section> * result;
   fprintf_unfiltered (gdb_stdlog, "-> %s->get_section_table (...)\n", this->beneath ()->shortname ());
   result = this->beneath ()->get_section_table ();
   fprintf_unfiltered (gdb_stdlog, "<- %s->get_section_table (", this->beneath ()->shortname ());
   fputs_unfiltered (") = ", gdb_stdlog);
-  target_debug_print_struct_target_section_table_p (result);
+  target_debug_print_std_vector_target_section_p (result);
   fputs_unfiltered ("\n", gdb_stdlog);
   return result;
 }

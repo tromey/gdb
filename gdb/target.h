@@ -29,7 +29,6 @@ struct target_ops;
 struct bp_location;
 struct bp_target_info;
 struct regcache;
-struct target_section_table;
 struct trace_state_variable;
 struct trace_status;
 struct uploaded_tsv;
@@ -370,6 +369,25 @@ extern ULONGEST get_target_memory_unsigned (struct target_ops *ops,
 
 struct thread_info;		/* fwd decl for parameter list below: */
 
+/* Struct target_section maps address ranges to file sections.  It is
+   mostly used with BFD files, but can be used without (e.g. for handling
+   raw disks, or files not in formats handled by BFD).  */
+
+struct target_section
+  {
+    CORE_ADDR addr;		/* Lowest address in section */
+    CORE_ADDR endaddr;		/* 1+highest address in section */
+
+    struct bfd_section *the_bfd_section;
+
+    /* The "owner" of the section.
+       It can be any unique value.  It is set by add_target_sections
+       and used by remove_target_sections.
+       For example, for executables it is a pointer to exec_bfd and
+       for shlibs it is the so_list pointer.  */
+    void *owner;
+  };
+
 /* The type of the callback to the to_async method.  */
 
 typedef void async_callback_ftype (enum inferior_event_type event_type,
@@ -680,7 +698,7 @@ struct target_ops
       TARGET_DEFAULT_RETURN (NULL);
     virtual void log_command (const char *)
       TARGET_DEFAULT_IGNORE ();
-    virtual struct target_section_table *get_section_table ()
+    virtual std::vector<target_section> *get_section_table ()
       TARGET_DEFAULT_RETURN (NULL);
 
     /* Provide default values for all "must have" methods.  */
@@ -2402,33 +2420,6 @@ extern bool target_is_pushed (target_ops *t);
 extern CORE_ADDR target_translate_tls_address (struct objfile *objfile,
 					       CORE_ADDR offset);
 
-/* Struct target_section maps address ranges to file sections.  It is
-   mostly used with BFD files, but can be used without (e.g. for handling
-   raw disks, or files not in formats handled by BFD).  */
-
-struct target_section
-  {
-    CORE_ADDR addr;		/* Lowest address in section */
-    CORE_ADDR endaddr;		/* 1+highest address in section */
-
-    struct bfd_section *the_bfd_section;
-
-    /* The "owner" of the section.
-       It can be any unique value.  It is set by add_target_sections
-       and used by remove_target_sections.
-       For example, for executables it is a pointer to exec_bfd and
-       for shlibs it is the so_list pointer.  */
-    void *owner;
-  };
-
-/* Holds an array of target sections.  Defined by [SECTIONS..SECTIONS_END[.  */
-
-struct target_section_table
-{
-  struct target_section *sections;
-  struct target_section *sections_end;
-};
-
 /* Return the "section" containing the specified address.  */
 struct target_section *target_section_by_addr (struct target_ops *target,
 					       CORE_ADDR addr);
@@ -2436,7 +2427,7 @@ struct target_section *target_section_by_addr (struct target_ops *target,
 /* Return the target section table this target (or the targets
    beneath) currently manipulate.  */
 
-extern struct target_section_table *target_get_section_table
+extern std::vector<struct target_section> *target_get_section_table
   (struct target_ops *target);
 
 /* From mem-break.c */
