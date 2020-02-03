@@ -25,8 +25,6 @@
 #include "memrange.h"
 #include "symfile-add-flags.h"
 
-struct target_section;
-struct target_ops;
 struct bfd;
 struct objfile;
 
@@ -37,12 +35,8 @@ struct objfile;
 /* Builds a section table, given args BFD, SECTABLE_PTR, SECEND_PTR.
    Returns 0 if OK, 1 on error.  */
 
-extern int build_section_table (struct bfd *, struct target_section **,
-				struct target_section **);
-
-/* Remove all entries from TABLE.  */
-
-extern void clear_section_table (struct target_section_table *table);
+extern int build_section_table (struct bfd *,
+				std::vector<struct target_section> *);
 
 /* The current inferior is a child vforked and its program space is
    shared with its parent.  This pushes the exec target on the
@@ -81,8 +75,7 @@ extern enum target_xfer_status
   section_table_xfer_memory_partial (gdb_byte *,
 				     const gdb_byte *,
 				     ULONGEST, ULONGEST, ULONGEST *,
-				     struct target_section *,
-				     struct target_section *,
+				     const std::vector<struct target_section> *,
 				     const char *);
 
 /* Read from mappable read-only sections of BFD executable files.
@@ -103,9 +96,8 @@ extern void remove_target_sections (void *owner);
 /* Add the sections array defined by [SECTIONS..SECTIONS_END[ to the
    current set of target sections.  */
 
-extern void add_target_sections (void *owner,
-				 struct target_section *sections,
-				 struct target_section *sections_end);
+extern void add_target_sections
+  (void *owner, const std::vector<struct target_section> &sections);
 
 /* Add the sections of OBJFILE to the current set of target sections.
  * OBJFILE owns the new target sections.  */
@@ -116,8 +108,8 @@ extern void add_target_sections_of_objfile (struct objfile *objfile);
    special cased --- it's filename is omitted; if it is the executable
    file, its entry point is printed.  */
 
-extern void print_section_info (struct target_section_table *table,
-				bfd *abfd);
+extern void print_section_info
+  (const std::vector<struct target_section> &table, bfd *abfd);
 
 extern void exec_close (void);
 

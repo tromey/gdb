@@ -8821,28 +8821,27 @@ remote_target::remote_xfer_live_readonly_partial (gdb_byte *readbuf,
 						  ULONGEST *xfered_len)
 {
   struct target_section *secp;
-  struct target_section_table *table;
 
   secp = target_section_by_addr (this, memaddr);
   if (secp != NULL
       && (bfd_section_flags (secp->the_bfd_section) & SEC_READONLY))
     {
-      struct target_section *p;
       ULONGEST memend = memaddr + len;
 
-      table = target_get_section_table (this);
+      std::vector<struct target_section> *table
+	= target_get_section_table (this);
 
-      for (p = table->sections; p < table->sections_end; p++)
+      for (const auto &sect : *table)
 	{
-	  if (memaddr >= p->addr)
+	  if (memaddr >= sect.addr)
 	    {
-	      if (memend <= p->endaddr)
+	      if (memend <= sect.endaddr)
 		{
 		  /* Entire transfer is within this section.  */
 		  return remote_read_bytes_1 (memaddr, readbuf, len, unit_size,
 					      xfered_len);
 		}
-	      else if (memaddr >= p->endaddr)
+	      else if (memaddr >= sect.endaddr)
 		{
 		  /* This section ends before the transfer starts.  */
 		  continue;
@@ -8850,7 +8849,7 @@ remote_target::remote_xfer_live_readonly_partial (gdb_byte *readbuf,
 	      else
 		{
 		  /* This section overlaps the transfer.  Just do half.  */
-		  len = p->endaddr - memaddr;
+		  len = sect.endaddr - memaddr;
 		  return remote_read_bytes_1 (memaddr, readbuf, len, unit_size,
 					      xfered_len);
 		}

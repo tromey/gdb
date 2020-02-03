@@ -407,7 +407,6 @@ scan_dyntag (int dyntag, bfd *abfd, CORE_ADDR *ptr)
   Elf32_External_Dyn *x_dynp_32;
   Elf64_External_Dyn *x_dynp_64;
   struct bfd_section *sect;
-  struct target_section *target_section;
 
   if (abfd == NULL)
     return 0;
@@ -424,10 +423,8 @@ scan_dyntag (int dyntag, bfd *abfd, CORE_ADDR *ptr)
   if (sect == NULL)
     return 0;
 
-  for (target_section = current_target_sections->sections;
-       target_section < current_target_sections->sections_end;
-       target_section++)
-    if (sect == target_section->the_bfd_section)
+  for (const auto &target_section : current_target_sections)
+    if (sect == target_section.the_bfd_section)
       break;
   if (target_section < current_target_sections->sections_end)
     dyn_addr = target_section->addr;

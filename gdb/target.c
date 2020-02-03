@@ -892,7 +892,7 @@ done:
   return nbytes_read;
 }
 
-struct target_section_table *
+std::vector<struct target_section> *
 target_get_section_table (struct target_ops *target)
 {
   return target->get_section_table ();
@@ -903,16 +903,16 @@ target_get_section_table (struct target_ops *target)
 struct target_section *
 target_section_by_addr (struct target_ops *target, CORE_ADDR addr)
 {
-  struct target_section_table *table = target_get_section_table (target);
-  struct target_section *secp;
+  std::vector<struct target_section> *table
+    = target_get_section_table (target);
 
   if (table == NULL)
     return NULL;
 
-  for (secp = table->sections; secp < table->sections_end; secp++)
+  for (auto &sec : *table)
     {
-      if (addr >= secp->addr && addr < secp->endaddr)
-	return secp;
+      if (addr >= sec.addr && addr < sec.endaddr)
+	return &sec;
     }
   return NULL;
 }
@@ -1043,15 +1043,14 @@ memory_xfer_partial_1 (struct target_ops *ops, enum target_object object,
 
       if (pc_in_unmapped_range (memaddr, section))
 	{
-	  struct target_section_table *table
+	  std::vector<struct target_section> *table
 	    = target_get_section_table (ops);
 	  const char *section_name = section->the_bfd_section->name;
 
 	  memaddr = overlay_mapped_address (memaddr, section);
 	  return section_table_xfer_memory_partial (readbuf, writebuf,
 						    memaddr, len, xfered_len,
-						    table->sections,
-						    table->sections_end,
+						    table,
 						    section_name);
 	}
     }
@@ -1060,18 +1059,16 @@ memory_xfer_partial_1 (struct target_ops *ops, enum target_object object,
   if (readbuf != NULL && trust_readonly)
     {
       struct target_section *secp;
-      struct target_section_table *table;
 
       secp = target_section_by_addr (ops, memaddr);
       if (secp != NULL
 	  && (bfd_section_flags (secp->the_bfd_section) & SEC_READONLY))
 	{
-	  table = target_get_section_table (ops);
+	  std::vector<struct target_section> *table
+	    = target_get_section_table (ops);
 	  return section_table_xfer_memory_partial (readbuf, writebuf,
 						    memaddr, len, xfered_len,
-						    table->sections,
-						    table->sections_end,
-						    NULL);
+						    table, NULL);
 	}
     }
 

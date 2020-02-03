@@ -29,7 +29,7 @@ struct target_ops;
 struct bp_location;
 struct bp_target_info;
 struct regcache;
-struct target_section_table;
+struct target_section;
 struct trace_state_variable;
 struct trace_status;
 struct uploaded_tsv;
@@ -680,7 +680,7 @@ struct target_ops
       TARGET_DEFAULT_RETURN (NULL);
     virtual void log_command (const char *)
       TARGET_DEFAULT_IGNORE ();
-    virtual struct target_section_table *get_section_table ()
+    virtual std::vector<struct target_section> *get_section_table ()
       TARGET_DEFAULT_RETURN (NULL);
 
     /* Provide default values for all "must have" methods.  */
@@ -2418,14 +2418,6 @@ struct target_section
     void *owner;
   };
 
-/* Holds an array of target sections.  Defined by [SECTIONS..SECTIONS_END[.  */
-
-struct target_section_table
-{
-  struct target_section *sections;
-  struct target_section *sections_end;
-};
-
 /* Return the "section" containing the specified address.  */
 struct target_section *target_section_by_addr (struct target_ops *target,
 					       CORE_ADDR addr);
@@ -2433,7 +2425,7 @@ struct target_section *target_section_by_addr (struct target_ops *target,
 /* Return the target section table this target (or the targets
    beneath) currently manipulate.  */
 
-extern struct target_section_table *target_get_section_table
+extern std::vector<struct target_section> *target_get_section_table
   (struct target_ops *target);
 
 /* From mem-break.c */

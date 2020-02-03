@@ -170,8 +170,7 @@ struct record_full_core_buf_entry
 
 /* Record buf with core target.  */
 static detached_regcache *record_full_core_regbuf = NULL;
-static struct target_section *record_full_core_start;
-static struct target_section *record_full_core_end;
+static std::vector<struct target_section> record_full_core_sections;
 static struct record_full_core_buf_entry *record_full_core_buf_list = NULL;
 
 /* The following variables are used for managing the linked list that
@@ -924,8 +923,7 @@ record_full_core_open_1 (const char *name, int from_tty)
     record_full_core_regbuf->raw_supply (i, *regcache);
 
   /* Get record_full_core_start and record_full_core_end.  */
-  if (build_section_table (core_bfd, &record_full_core_start,
-			   &record_full_core_end))
+  if (build_section_table (core_bfd, &record_full_core_sections))
     {
       delete record_full_core_regbuf;
       record_full_core_regbuf = NULL;
@@ -2146,27 +2144,25 @@ record_full_core_target::xfer_partial (enum target_object object,
     {
       if (record_full_gdb_operation_disable || !writebuf)
 	{
-	  struct target_section *p;
-
-	  for (p = record_full_core_start; p < record_full_core_end; p++)
+	  for (const auto &p : record_full_core_sections)
 	    {
-	      if (offset >= p->addr)
+	      if (offset >= p.addr)
 		{
 		  struct record_full_core_buf_entry *entry;
 		  ULONGEST sec_offset;
 
-		  if (offset >= p->endaddr)
+		  if (offset >= p.endaddr)
 		    continue;
 
-		  if (offset + len > p->endaddr)
-		    len = p->endaddr - offset;
+		  if (offset + len > p.endaddr)
+		    len = p.endaddr - offset;
 
-		  sec_offset = offset - p->addr;
+		  sec_offset = offset - p.addr;
 
 		  /* Read readbuf or write writebuf p, offset, len.  */
 		  /* Check flags.  */
-		  if (p->the_bfd_section->flags & SEC_CONSTRUCTOR
-		      || (p->the_bfd_section->flags & SEC_HAS_CONTENTS) == 0)
+		  if (p.the_bfd_section->flags & SEC_CONSTRUCTOR
+		      || (p.the_bfd_section->flags & SEC_HAS_CONTENTS) == 0)
 		    {
 		      if (readbuf)
 			memset (readbuf, 0, len);
@@ -2177,7 +2173,7 @@ record_full_core_target::xfer_partial (enum target_object object,
 		  /* Get record_full_core_buf_entry.  */
 		  for (entry = record_full_core_buf_list; entry;
 		       entry = entry->prev)
-		    if (entry->p == p)
+		    if (entry->p == &p)
 		      break;
 		  if (writebuf)
 		    {
@@ -2185,10 +2181,10 @@ record_full_core_target::xfer_partial (enum target_object object,
 			{
 			  /* Add a new entry.  */
 			  entry = XNEW (struct record_full_core_buf_entry);
-			  entry->p = p;
+			  entry->p = &p;
 			  if (!bfd_malloc_and_get_section
-			        (p->the_bfd_section->owner,
-				 p->the_bfd_section,
+			        (p.the_bfd_section->owner,
+				 p.the_bfd_section,
 				 &entry->buf))
 			    {
 			      xfree (entry);

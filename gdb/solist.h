@@ -76,8 +76,7 @@ struct so_list
      the file cannot be found or after the command "nosharedlibrary".  */
   struct objfile *objfile;
 
-  struct target_section *sections;
-  struct target_section *sections_end;
+  std::vector<struct target_section> sections;
 
   /* Record the range of addresses belonging to this shared library.
      There may not be just one (e.g. if two segments are relocated
