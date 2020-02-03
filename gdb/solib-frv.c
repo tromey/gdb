@@ -394,7 +394,7 @@ frv_current_sos (void)
 	      break;
 	    }
 
-	  sop = XCNEW (struct so_list);
+	  sop = new struct so_list;
 	  lm_info_frv *li = new lm_info_frv;
 	  sop->lm_info = li;
 	  li->map = loadmap;

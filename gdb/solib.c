@@ -624,6 +624,24 @@ clear_so (struct so_list *so)
     ops->clear_so (so);
 }
 
+/* Copy an existing so_list.  Note we't want to initialize the 'next'
+   or 'lm_info' fields to nullptr here, which is done inline in the
+   class.  */
+
+so_list::so_list (const so_list *other)
+  : pspace (other->pspace),
+    abfd (other->abfd),		/* FIXME a new ref!? */
+    symbols_loaded (other->symbols_loaded),
+    objfile (other->objfile),
+    sections (other->sections),
+    sections_end (other->sections_end),
+    addr_low (other->addr_low),
+    addr_high (other->addr_high)
+{
+  memcpy (so_original_name, other->so_original_name, SO_NAME_MAX_PATH_SIZE);
+  memcpy (so_name, other->so_name, SO_NAME_MAX_PATH_SIZE);
+}
+
 /* Free the storage associated with the `struct so_list' object SO.
    If we have opened a BFD for SO, close it.
 
@@ -635,15 +653,12 @@ clear_so (struct so_list *so)
    objfile associated with SO that needs to be removed, the caller is
    responsible for taking care of that.  */
 
-void
-free_so (struct so_list *so)
+so_list::~so_list ()
 {
   const struct target_so_ops *ops = solib_ops (target_gdbarch ());
 
-  clear_so (so);
-  ops->free_so (so);
-
-  xfree (so);
+  clear_so (this);
+  ops->free_so (this);
 }
 
 
@@ -807,7 +822,7 @@ update_solib_list (int from_tty)
       if (i)
 	{
 	  *i_link = i->next;
-	  free_so (i);
+	  delete i;
 	  gdb_link = &gdb->next;
 	  gdb = *gdb_link;
 	}
@@ -832,7 +847,7 @@ update_solib_list (int from_tty)
 	     sections from so->abfd; remove them.  */
 	  remove_target_sections (gdb);
 
-	  free_so (gdb);
+	  delete gdb;
 	  gdb = *gdb_link;
 	}
     }
@@ -1181,7 +1196,7 @@ clear_solib (void)
       current_program_space->so_list = so->next;
       gdb::observers::solib_unloaded.notify (so);
       remove_target_sections (so);
-      free_so (so);
+      delete so;
     }
 
   ops->clear_solib ();

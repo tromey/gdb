@@ -803,7 +803,7 @@ windows_make_so (const char *name, LPVOID load_addr)
 #endif
     }
 #endif
-  so = XCNEW (struct so_list);
+  so = new struct so_list;
   lm_info_windows *li = new lm_info_windows;
   so->lm_info = li;
   li->load_addr = load_addr;
@@ -890,7 +890,7 @@ windows_free_so (struct so_list *so)
   lm_info_windows *li = (lm_info_windows *) so->lm_info;
 
   delete li;
-  xfree (so);
+  delete so;
 }
 
 /* See nat/windows-nat.h.  */

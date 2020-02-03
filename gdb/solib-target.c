@@ -248,7 +248,7 @@ solib_target_current_sos (void)
   /* Build a struct so_list for each entry on the list.  */
   for (auto &&info : library_list)
     {
-      new_solib = XCNEW (struct so_list);
+      new_solib = new struct so_list;
       strncpy (new_solib->so_name, info->name.c_str (),
 	       SO_NAME_MAX_PATH_SIZE - 1);
       new_solib->so_name[SO_NAME_MAX_PATH_SIZE - 1] = '\0';

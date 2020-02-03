@@ -695,7 +695,7 @@ dsbt_current_sos (void)
 	      break;
 	    }
 
-	  sop = XCNEW (struct so_list);
+	  sop = new struct so_list;
 	  lm_info_dsbt *li = new lm_info_dsbt;
 	  sop->lm_info = li;
 	  li->map = loadmap;
