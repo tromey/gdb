@@ -4027,7 +4027,7 @@ remote_target::connection_string ()
 void
 remote_target::open (const char *name, int from_tty)
 {
-  open_1 (name, from_tty, 0);
+  open_1 (name, from_tty, 0, [] () { return new remote_target (); });
 }
 
 /* Open a connection to a remote debugger using the extended
@@ -4036,7 +4036,8 @@ remote_target::open (const char *name, int from_tty)
 void
 extended_remote_target::open (const char *name, int from_tty)
 {
-  open_1 (name, from_tty, 1 /*extended_p */);
+  open_1 (name, from_tty, 1 /*extended_p */,
+	  [] () -> remote_target * { return new extended_remote_target (); });
 }
 
 /* Reset all packets back to "unknown support".  Called when opening a
@@ -4664,7 +4665,8 @@ remote_unpush_and_throw (remote_target *target)
 }
 
 void
-remote_target::open_1 (const char *name, int from_tty, int extended_p)
+remote_target::open_1 (const char *name, int from_tty, int extended_p,
+		       remote_target *(*create) ())
 {
   remote_target *curr_remote = get_current_remote_target ();
 
@@ -4690,8 +4692,7 @@ remote_target::open_1 (const char *name, int from_tty, int extended_p)
   reopen_exec_file ();
   reread_symbols ();
 
-  remote_target *remote
-    = (extended_p ? new extended_remote_target () : new remote_target ());
+  remote_target *remote = create ();
   target_ops_up target_holder (remote);
 
   remote_state *rs = remote->get_remote_state ();

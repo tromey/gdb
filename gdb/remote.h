@@ -663,7 +663,6 @@ public: /* Remote specific methods.  */
 
   char *append_pending_thread_resumptions (char *p, char *endp,
 					   ptid_t ptid);
-  static void open_1 (const char *name, int from_tty, int extended_p);
   void start_remote (int from_tty, int extended_p);
   void remote_detach_1 (struct inferior *inf, int from_tty);
 
@@ -874,6 +873,11 @@ public: /* Remote specific methods.  */
   bool vcont_r_supported ();
 
   void packet_command (const char *args, int from_tty);
+
+protected:
+
+  static void open_1 (const char *name, int from_tty, int extended_p,
+		      remote_target *(*create) ());
 
 private: /* data fields */
 
