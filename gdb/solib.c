@@ -552,12 +552,7 @@ solib_map_sections (struct so_list *so)
     error (_("Shared library file name is too long."));
   strcpy (so->so_name, bfd_get_filename (so->abfd));
 
-  if (build_section_table (so->abfd, &so->sections))
-    {
-      error (_("Can't find the file sections in `%s': %s"),
-	     bfd_get_filename (so->abfd), bfd_errmsg (bfd_get_error ()));
-    }
-
+  so->sections = build_section_table (so->abfd);
   for (auto &sect : so->sections)
     {
       /* Relocate the section binding addresses as recorded in the shared

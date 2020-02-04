@@ -453,16 +453,8 @@ exec_file_attach (const char *filename, int from_tty)
 		 gdb_bfd_errmsg (bfd_get_error (), matching).c_str ());
 	}
 
-      std::vector<struct target_section> sections;
-      if (build_section_table (exec_bfd, &sections))
-	{
-	  /* Make sure to close exec_bfd, or else "run" might try to use
-	     it.  */
-	  exec_close ();
-	  error (_("\"%ps\": can't find the file sections: %s"),
-		 styled_string (file_name_style.style (), scratch_pathname),
-		 bfd_errmsg (bfd_get_error ()));
-	}
+      std::vector<struct target_section> sections
+	= build_section_table (exec_bfd);
 
       exec_bfd_mtime = bfd_get_mtime (exec_bfd);
 
@@ -566,16 +558,14 @@ add_to_section_table (bfd *abfd, struct bfd_section *asect,
   item.endaddr = item.addr + bfd_section_size (asect);
 }
 
-/* Builds a section table, given args BFD, SECTABLE_PTR, SECEND_PTR.
-   Returns 0 if OK, 1 on error.  */
+/* See exec.h.  */
 
-int
-build_section_table (struct bfd *some_bfd,
-		     std::vector<struct target_section> *sections)
+std::vector<struct target_section>
+build_section_table (struct bfd *some_bfd)
 {
-  sections->clear ();
-  bfd_map_over_sections (some_bfd, add_to_section_table, (void *) sections);
-  return 0;
+  std::vector<struct target_section> sections;
+  bfd_map_over_sections (some_bfd, add_to_section_table, (void *) &sections);
+  return sections;
 }
 
 /* Add the sections array defined by [SECTIONS..SECTIONS_END[ to the

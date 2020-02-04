@@ -32,11 +32,9 @@ struct objfile;
 #define exec_bfd_mtime current_program_space->ebfd_mtime
 #define exec_filename current_program_space->pspace_exec_filename
 
-/* Builds a section table, given a BFD.  Returns 0 if OK, 1 on
-   error.  */
+/* Builds a section table, given a BFD.  */
 
-extern int build_section_table (struct bfd *,
-				std::vector<struct target_section> *);
+extern std::vector<struct target_section> build_section_table (struct bfd *);
 
 /* The current inferior is a child vforked and its program space is
    shared with its parent.  This pushes the exec target on the
