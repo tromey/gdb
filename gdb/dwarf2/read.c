@@ -7406,7 +7406,9 @@ process_psymtab_comp_unit (struct dwarf2_per_cu_data *this_cu,
 				      pretend_language);
 
   /* Age out any secondary CUs.  */
+#if 0 // maybe we can just acquire some mutex for this too?
   age_cached_comp_units (this_cu->dwarf2_per_objfile);
+#endif
 }
 
 /* Reader function for build_type_psymtabs.  */
