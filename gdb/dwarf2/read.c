@@ -7367,8 +7367,10 @@ process_psymtab_comp_unit (struct dwarf2_per_cu_data *this_cu,
      necessary because we skipped some symbols when we first
      read in the compilation unit (see load_partial_dies).
      This problem could be avoided, but the benefit is unclear.  */
+#if 0
   if (this_cu->cu != NULL)
     free_one_cached_comp_unit (this_cu);
+#endif
 
   cutu_reader reader (this_cu, NULL, 0, false);
 
