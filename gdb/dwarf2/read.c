@@ -7973,7 +7973,11 @@ scan_partial_symbols (struct partial_die_info *first_die, CORE_ADDR *lowpc,
 
 		/* Go read the partial unit, if needed.  */
 		if (per_cu->v.psymtab == NULL)
-		  process_psymtab_comp_unit (per_cu, true, cu->language);
+		  {
+		    std::lock_guard<std::recursive_mutex> locker
+		      (cu->per_cu->dwarf2_per_objfile->psym_mutex);
+		    process_psymtab_comp_unit (per_cu, true, cu->language);
+		  }
 
 		cu->per_cu->imported_symtabs_push (per_cu);
 	      }

@@ -20,6 +20,7 @@
 #ifndef DWARF2READ_H
 #define DWARF2READ_H
 
+#include <mutex>
 #include <queue>
 #include <unordered_map>
 #include "dwarf2/index-cache.h"
@@ -208,6 +209,14 @@ public:
   /* Set during partial symbol reading, to prevent queueing of full
      symbols.  */
   bool reading_partial_symbols = false;
+
+  /* This is held when reading a DW_TAG_partial_unit when
+     parallel-processing partial symbols.  Although in theory the
+     graph of CU imports is a DAG, it still seemed safest to use a
+     single recursive mutex.  FIXME: this may interact badly with dwz
+     -- must check this.  Maybe a more complicated scheme is
+     needed.  */
+  std::recursive_mutex psym_mutex;
 
   /* Table mapping type DIEs to their struct type *.
      This is NULL if not allocated yet.
