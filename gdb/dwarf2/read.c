@@ -7355,7 +7355,7 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
 
   psym_reader.intern_names (objfile);
 
-  dwarf2_psymtab *pst = create_partial_symtab (per_cu, filename);
+  dwarf2_psymtab *pst = create_partial_symtab (per_cu, psym_reader.filename);
 
   psym_reader.create_symbols (objfile);
 
