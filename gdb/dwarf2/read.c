@@ -81,6 +81,7 @@
 #include <unordered_map>
 #include "gdbsupport/selftest.h"
 #include "rust-lang.h"
+#include "gdbsupport/job-queue.h"
 #include "gdbsupport/pathstuff.h"
 #include "count-one-bits.h"
 
@@ -7343,7 +7344,8 @@ static void
 process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
 				  const gdb_byte *info_ptr,
 				  struct die_info *comp_unit_die,
-				  enum language pretend_language)
+				  enum language pretend_language,
+				  job_queue<std::unique_ptr<dwarf_psym_reader>> &to_intern)
 {
   struct dwarf2_cu *cu = reader->cu;
   struct objfile *objfile = cu->per_cu->dwarf2_per_objfile->objfile;
@@ -7427,9 +7429,7 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
 			paddress (gdbarch, best_highpc),
 			(int) psym_reader.symbols.size ());
 
-  psym_reader.intern_names (objfile);
-
-  psym_reader.create_psymtab (per_cu, objfile);
+  to_intern.push (std::move (psym_reader));
 }
 
 /* Subroutine of dwarf2_build_psymtabs_hard to simplify it.
@@ -7438,7 +7438,8 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
 static void
 process_psymtab_comp_unit (struct dwarf2_per_cu_data *this_cu,
 			   bool want_partial_unit,
-			   enum language pretend_language)
+			   enum language pretend_language,
+			   job_queue<std::unique_ptr<dwarf_psym_reader>> &to_intern)
 {
   /* If this compilation unit was already read in, free the
      cached copy in order to read it in again.	This is
@@ -7463,7 +7464,8 @@ process_psymtab_comp_unit (struct dwarf2_per_cu_data *this_cu,
 	   || reader.comp_unit_die->tag != DW_TAG_partial_unit)
     process_psymtab_comp_unit_reader (&reader, reader.info_ptr,
 				      reader.comp_unit_die,
-				      pretend_language);
+				      pretend_language,
+				      to_intern);
 
   /* Age out any secondary CUs.  */
 #if 0 // maybe we can just acquire some mutex for this too?
@@ -7787,6 +7789,26 @@ set_partial_user (struct dwarf2_per_objfile *dwarf2_per_objfile)
     }
 }
 
+static void
+intern_names_for_psymtab (job_queue<std::unique_ptr<dwarf_psym_reader>> &to_intern,
+			  job_queue<std::unique_ptr<dwarf_psym_reader>> &to_create,
+{
+  std::unique_ptr<dwarf_psym_reader> job;
+  while (to_intern.pop (job))
+    {
+      job->intern_names ();
+      to_create.post (std::move (job));
+    }
+}
+
+static void
+create_psymtabs (job_queue<std::unique_ptr<dwarf_psym_reader>> &to_create)
+{
+  std::unique_ptr<dwarf_psym_reader> job;
+  while (to_create.pop (job))
+    job->create_psymtabs ();
+}
+
 /* Build the partial symbol table by doing a quick pass through the
    .debug_info and .debug_abbrev sections.  */
 
@@ -7821,8 +7843,24 @@ dwarf2_build_psymtabs_hard (struct dwarf2_per_objfile *dwarf2_per_objfile)
     = make_scoped_restore (&objfile->partial_symtabs->psymtabs_addrmap,
 			   addrmap_create_mutable (&temp_obstack));
 
+  job_queue<std::unique_ptr<dwarf_psym_reader>> to_intern;
+  job_queue<std::unique_ptr<dwarf_psym_reader>> to_create;
+
+  g_thread_pool.post_task ([&] ()
+    {
+      intern_names_for_psymtab (to_intern, to_create);
+    });
+  auto creation_done = g_thread_pool.post_task ([&] ()
+    {
+      intern_names_for_psymtab (to_create);
+    });
+
   for (dwarf2_per_cu_data *per_cu : dwarf2_per_objfile->all_comp_units)
-    process_psymtab_comp_unit (per_cu, false, language_minimal);
+    process_psymtab_comp_unit (per_cu, false, language_minimal, to_intern);
+
+  to_intern.shutdown ();
+  to_create.shutdown ();
+  creation_done.wait ();
 
   /* This has to wait until we read the CUs, we need the list of DWOs.  */
   process_skeletonless_type_units (dwarf2_per_objfile);
