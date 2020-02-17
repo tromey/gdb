@@ -1,3 +1,27 @@
+2020-06-20  Tom Tromey  <tom@tromey.com>
+
+	* psymtab.h (class psymtab_storage) <current_global_psymbols,
+	current_static_psymbols>: Remove.
+	* psymtab.c (partial_symtab::partial_symtab): Don't create new
+	vectors.
+	(concat): Reove.
+	(end_psymtab_common): Simplify.
+	(add_psymbol_to_list): Likewise.
+	* dwarf2/read.c (struct dwarf_partial_symbol): New.
+	(struct dwarf_psym_reader) <symbols>: New member.
+	<load_partial_dies, do_add_psymbol_to_list, create_symbols>:
+	New methods.
+	(process_psymtab_comp_unit_reader, build_type_psymtabs_reader)
+	(load_partial_comp_unit): Update.
+	(dwarf_psym_reader::create_symbols): New method.
+	(process_psymtab_comp_unit_reader, build_type_psymtabs_reader)
+	(load_partial_comp_unit): Update.
+	(dwarf_psym_reader::do_add_psymbol_to_list): New method.
+	(dwarf_psym_reader::add_partial_symbol): Use
+	do_add_psymbol_to_list.
+	(dwarf_psym_reader::load_partial_dies): Rename from
+	load_partial_dies.  Use do_add_psymbol_to_list.
+
 2020-02-20  Tom Tromey  <tom@tromey.com>
 
 	* dwarf2/read.c (process_psymtab_comp_unit_reader): Create partial

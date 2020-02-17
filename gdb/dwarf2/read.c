@@ -1269,9 +1269,6 @@ static void dwarf2_build_psymtabs_hard (dwarf2_per_objfile *per_objfile);
 
 static unsigned int peek_abbrev_code (bfd *, const gdb_byte *);
 
-static struct partial_die_info *load_partial_dies
-  (const struct die_reader_specs *, const gdb_byte *, int);
-
 /* A pair of partial_die_info and compilation unit.  */
 struct cu_partial_die_info
 {
@@ -7620,6 +7617,19 @@ create_partial_symtab (dwarf2_per_cu_data *per_cu,
   return pst;
 }
 
+/* This stores the parameters that are eventually used to build a
+   partial symbol.  */
+
+struct dwarf_partial_symbol
+{
+  /* The symbol.  */
+  partial_symbol psym;
+  /* If NAME was allocated on the heap, this holds the storage.  */
+  gdb::unique_xmalloc_ptr<char> built_actual_name;
+  /* Whether the symbol is global or static.  */
+  psymbol_placement where;
+};
+
 /* An instance of this is created when reading partial symbols for a
    given CU.  */
 
@@ -7651,6 +7661,19 @@ struct dwarf_psym_reader
 
   /* Addresses that should be added to the address map.  */
   std::vector<std::pair<CORE_ADDR, CORE_ADDR>> addresses;
+
+  /* Symbols that we create.  */
+  std::vector<dwarf_partial_symbol> symbols;
+
+  struct partial_die_info *load_partial_dies (const struct die_reader_specs *,
+					      const gdb_byte *, int);
+
+  void do_add_psymbol_to_list (const partial_symbol &psym,
+			       gdb::unique_xmalloc_ptr<char> &&built_actual_name,
+			       psymbol_placement where);
+
+  /* Create partial symbols from the entries in SYMBOLS.  */
+  void create_symbols ();
 
   void scan (struct partial_die_info *first_die);
   void add_partial_symbol (struct partial_die_info *pdi);
@@ -7713,7 +7736,7 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
     {
       struct partial_die_info *first_die;
 
-      first_die = load_partial_dies (reader, info_ptr, 1);
+      first_die = psym_reader.load_partial_dies (reader, info_ptr, 1);
 
       psym_reader.set_addrmap = cu_bounds_kind <= PC_BOUNDS_INVALID;
       psym_reader.scan (first_die);
@@ -7733,6 +7756,8 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
     }
 
   dwarf2_psymtab *pst = create_partial_symtab (per_cu, per_objfile, filename);
+
+  psym_reader.create_symbols ();
 
   /* This must be done before calling dwarf2_build_include_psymtabs.  */
   pst->dirname = dwarf2_string_attr (comp_unit_die, DW_AT_comp_dir, cu);
@@ -7877,11 +7902,12 @@ build_type_psymtabs_reader (const struct die_reader_specs *reader,
   pst = create_partial_symtab (per_cu, per_objfile, "");
   pst->anonymous = true;
 
-  first_die = load_partial_dies (reader, info_ptr, 1);
-
   dwarf_psym_reader psym_reader (cu);
 
+  first_die = psym_reader.load_partial_dies (reader, info_ptr, 1);
+
   psym_reader.scan (first_die);
+  psym_reader.create_symbols ();
 
   pst->end ();
 }
@@ -8237,7 +8263,10 @@ load_partial_comp_unit (dwarf2_per_cu_data *this_cu,
 	 If so, read the rest of the partial symbols from this comp unit.
 	 If not, there's no more debug_info for this comp unit.  */
       if (reader.comp_unit_die->has_children)
-	load_partial_dies (&reader, reader.info_ptr, 0);
+	{
+	  dwarf_psym_reader psym_reader (reader.cu);
+	  psym_reader.load_partial_dies (&reader, reader.info_ptr, 0);
+	}
 
       reader.keep ();
     }
@@ -8564,6 +8593,26 @@ partial_die_full_name (struct partial_die_info *pdi,
 }
 
 void
+dwarf_psym_reader::create_symbols ()
+{
+  struct objfile *objfile = cu->per_objfile->objfile;
+  for (const auto &symbol : symbols)
+    cu->per_cu->v.psymtab->add_psymbol (symbol.psym, symbol.where, objfile);
+}
+
+void
+dwarf_psym_reader::do_add_psymbol_to_list (const partial_symbol &psym,
+					   gdb::unique_xmalloc_ptr<char> &&built_actual_name,
+					   psymbol_placement where)
+{
+  symbols.emplace_back ();
+  dwarf_partial_symbol &sym = symbols.back ();
+  sym.psym = psym;
+  sym.built_actual_name = std::move (built_actual_name);
+  sym.where = where;
+}
+
+void
 dwarf_psym_reader::add_partial_symbol (struct partial_die_info *pdi)
 {
   dwarf2_per_objfile *per_objfile = cu->per_objfile;
@@ -8747,11 +8796,12 @@ dwarf_psym_reader::add_partial_symbol (struct partial_die_info *pdi)
 	psymbol.ginfo.set_linkage_name (actual_name);
       else
 	{
+	  /* FIXME !? */
 	  psymbol.ginfo.set_demangled_name (actual_name,
 					    &objfile->objfile_obstack);
 	  psymbol.ginfo.set_linkage_name (pdi->linkage_name);
 	}
-      cu->per_cu->v.psymtab->add_psymbol (psymbol, *where, objfile);
+      do_add_psymbol_to_list (psymbol, std::move (built_actual_name), *where);
     }
 }
 
@@ -19320,9 +19370,10 @@ is_type_tag_for_partial (int tag, enum language lang)
 
 /* Load all DIEs that are interesting for partial symbols into memory.  */
 
-static struct partial_die_info *
-load_partial_dies (const struct die_reader_specs *reader,
-		   const gdb_byte *info_ptr, int building_psymtab)
+struct partial_die_info *
+dwarf_psym_reader::load_partial_dies (const struct die_reader_specs *reader,
+				      const gdb_byte *info_ptr,
+				      int building_psymtab)
 {
   struct dwarf2_cu *cu = reader->cu;
   struct objfile *objfile = cu->per_objfile->objfile;
