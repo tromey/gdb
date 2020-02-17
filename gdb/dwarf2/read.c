@@ -7270,7 +7270,7 @@ struct dwarf_psym_reader
 			       short section,
 			       psymbol_placement where,
 			       CORE_ADDR coreaddr);
-  void intern_names (struct objfile *objfile);
+  void intern_names ();
   void create_symbols ();
   void create_psymtab (struct dwarf2_per_cu_data *per_cu,
 		       struct objfile *objfile);
@@ -7517,7 +7517,7 @@ build_type_psymtabs_reader (const struct die_reader_specs *reader,
   first_die = psym_reader.load_partial_dies (reader, info_ptr, 1);
 
   psym_reader.scan (first_die);
-  psym_reader.intern_names (objfile);
+  psym_reader.intern_names ();
   psym_reader.create_symbols ();
 
   end_psymtab_common (objfile, pst);
@@ -8224,8 +8224,9 @@ partial_die_full_name (struct partial_die_info *pdi,
 }
 
 void
-dwarf_psym_reader::intern_names (struct objfile *objfile)
+dwarf_psym_reader::intern_names ()
 {
+  struct objfile *objfile = per_cu->dwarf2_per_objfile->objfile;
   for (auto &symbol : symbols)
     {
       if (symbol.built_actual_name != nullptr)
