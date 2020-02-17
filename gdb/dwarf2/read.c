@@ -7287,15 +7287,14 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
       filename = debug_filename.get ();
     }
 
+  dwarf_psym_reader psym_reader (cu);
+
   pst = create_partial_symtab (per_cu, filename);
 
   /* This must be done before calling dwarf2_build_include_psymtabs.  */
   pst->dirname = dwarf2_string_attr (comp_unit_die, DW_AT_comp_dir, cu);
 
-
   dwarf2_find_base_address (comp_unit_die, cu);
-
-  dwarf_psym_reader psym_reader (cu);
 
   /* Possibly set the default values of LOWPC and HIGHPC from
      `DW_AT_ranges'.  */
