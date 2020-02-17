@@ -1,3 +1,11 @@
+2020-02-19  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2/read.c (struct dwarf_psym_reader) <create_psymtab>:
+	Declare method.
+	(dwarf_psym_reader::create_psymtab): New method, from...
+	(process_psymtab_comp_unit_reader): ... here.  Call
+	create_psymtab.
+
 2020-02-22  Tom Tromey  <tom@tromey.com>
 
 	* dwarf2/read.c (create_type_unit_group): Intern "name".
