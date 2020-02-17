@@ -7258,6 +7258,9 @@ struct dwarf_psym_reader
 			       psymbol_placement where,
 			       CORE_ADDR coreaddr);
 
+  /* For each symbol in SYMBOLS, if the name needs to be copied,
+     "intern" it into the appropriate bcache.  */
+  void intern_names ();
   /* Create partial symbols from the entries in SYMBOLS.  */
   void create_symbols ();
 
@@ -7339,6 +7342,8 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
 	  best_highpc = psym_reader.highpc;
 	}
     }
+
+  psym_reader.intern_names ();
 
   dwarf2_psymtab *pst = create_partial_symtab (per_cu, filename);
 
@@ -7481,6 +7486,7 @@ build_type_psymtabs_reader (const struct die_reader_specs *reader,
   first_die = psym_reader.load_partial_dies (reader, info_ptr, 1);
 
   psym_reader.scan (first_die);
+  psym_reader.intern_names ();
   psym_reader.create_symbols ();
 
   end_psymtab_common (objfile, pst);
@@ -8171,11 +8177,27 @@ partial_die_full_name (struct partial_die_info *pdi,
 }
 
 void
+dwarf_psym_reader::intern_names ()
+{
+  struct objfile *objfile = per_cu->dwarf2_per_objfile->objfile;
+  for (auto &symbol : symbols)
+    {
+      if (symbol.built_actual_name != nullptr)
+	{
+	  symbol.name
+	    = ((const char *) objfile->per_bfd->filename_cache
+	       .insert (symbol.name, strlen (symbol.name) + 1));
+	  symbol.built_actual_name = nullptr;
+	}
+    }
+}
+
+void
 dwarf_psym_reader::create_symbols ()
 {
   struct objfile *objfile = per_cu->dwarf2_per_objfile->objfile;
   for (const auto &symbol : symbols)
-    add_psymbol_to_list (symbol.name, symbol.built_actual_name != nullptr,
+    add_psymbol_to_list (symbol.name, false,
 			 symbol.domain, symbol.theclass, symbol.section,
 			 symbol.where, symbol.coreaddr, language,
 			 objfile);
