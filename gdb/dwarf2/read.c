@@ -7225,11 +7225,15 @@ struct dwarf_psym_reader
 {
   explicit dwarf_psym_reader (dwarf2_cu *cu_)
     : cu (cu_),
+      per_cu (cu->per_cu),
       language (cu->language)
   {
   }
 
   struct dwarf2_cu *cu;
+
+  /* The per-cu object for which we're reading.  */
+  struct dwarf2_per_cu_data *per_cu;
 
   /* If SET_ADDRMAP is true, record the covered ranges in the addrmap.
      Set LOWPC and HIGHPC to the lowest and highest PC values found in
