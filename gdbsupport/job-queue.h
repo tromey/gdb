@@ -47,12 +47,12 @@ class job_queue
 public:
   DISABLE_COPY_AND_ASSIGN (job_queue);
 
-  /* Post a job to the queue.  */
-  void post (T &&job)
+  /* Push a job on the queue.  */
+  void push (T &&job)
   {
     gdb_assert (!m_shutdown);
     std::lock_guard<std::mutex> guard (m_jobs_mutex);
-    m_jobs.push_back (std::move (job));
+    m_jobs.emplace (std::move (job));
     /* If we wanted multiple readers, we'd have to notify all
        here.  */
     m_jobs_cv.notify_one ();
