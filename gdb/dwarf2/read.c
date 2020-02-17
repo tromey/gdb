@@ -963,9 +963,6 @@ struct partial_die_info : public allocate_on_obstack
     /* Flag set if the DIE has a DW_AT_const_value attribute.  */
     unsigned int has_const_value : 1;
 
-    /* Flag set if any of the DIE's children are template arguments.  */
-    unsigned int has_template_arguments : 1;
-
     /* Flag set if fixup has been called on this die.  */
     unsigned int fixup_called : 1;
 
@@ -1042,7 +1039,6 @@ struct partial_die_info : public allocate_on_obstack
       scope_set = 0;
       has_byte_size = 0;
       has_const_value = 0;
-      has_template_arguments = 0;
       fixup_called = 0;
       is_dwz = 0;
       spec_is_dwz = 0;
@@ -8113,30 +8109,6 @@ partial_die_full_name (struct partial_die_info *pdi,
 		       struct dwarf2_cu *cu)
 {
   const char *parent_scope;
-
-  /* If this is a template instantiation, we can not work out the
-     template arguments from partial DIEs.  So, unfortunately, we have
-     to go through the full DIEs.  At least any work we do building
-     types here will be reused if full symbols are loaded later.  */
-  if (pdi->has_template_arguments)
-    {
-      pdi->fixup (cu);
-
-      if (pdi->name != NULL && strchr (pdi->name, '<') == NULL)
-	{
-	  struct die_info *die;
-	  struct attribute attr;
-	  struct dwarf2_cu *ref_cu = cu;
-
-	  /* DW_FORM_ref_addr is using section offset.  */
-	  attr.name = (enum dwarf_attribute) 0;
-	  attr.form = DW_FORM_ref_addr;
-	  attr.u.unsnd = to_underlying (pdi->sect_off);
-	  die = follow_die_ref (NULL, &attr, &ref_cu);
-
-	  return make_unique_xstrdup (dwarf2_full_name (NULL, die, ref_cu));
-	}
-    }
 
   parent_scope = partial_die_parent_scope (pdi, cu);
   if (parent_scope == NULL)
@@ -17659,34 +17631,6 @@ load_partial_dies (const struct die_reader_specs *reader,
 	  continue;
 	}
 
-      /* Check for template arguments.  We never save these; if
-	 they're seen, we just mark the parent, and go on our way.  */
-      if (parent_die != NULL
-	  && cu->language == language_cplus
-	  && (abbrev->tag == DW_TAG_template_type_param
-	      || abbrev->tag == DW_TAG_template_value_param))
-	{
-	  parent_die->has_template_arguments = 1;
-
-	  if (!load_all)
-	    {
-	      /* We don't need a partial DIE for the template argument.  */
-	      info_ptr = skip_one_die (reader, info_ptr + bytes_read, abbrev);
-	      continue;
-	    }
-	}
-
-      /* We only recurse into c++ subprograms looking for template arguments.
-	 Skip their other children.  */
-      if (!load_all
-	  && cu->language == language_cplus
-	  && parent_die != NULL
-	  && parent_die->tag == DW_TAG_subprogram)
-	{
-	  info_ptr = skip_one_die (reader, info_ptr + bytes_read, abbrev);
-	  continue;
-	}
-
       /* Check whether this DIE is interesting enough to save.  Normally
 	 we would not be interested in members here, but there may be
 	 later variables referencing them via DW_AT_specification (for
@@ -17855,10 +17799,6 @@ load_partial_dies (const struct die_reader_specs *reader,
 	      || last_die->tag == DW_TAG_namespace
 	      || last_die->tag == DW_TAG_module
 	      || last_die->tag == DW_TAG_enumeration_type
-	      || (cu->language == language_cplus
-		  && last_die->tag == DW_TAG_subprogram
-		  && (last_die->name == NULL
-		      || strchr (last_die->name, '<') == NULL))
 	      || (cu->language != language_c
 		  && (last_die->tag == DW_TAG_class_type
 		      || last_die->tag == DW_TAG_interface_type
