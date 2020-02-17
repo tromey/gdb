@@ -1339,8 +1339,9 @@ static struct die_info *die_specification (struct die_info *die,
 static line_header_up dwarf_decode_line_header (sect_offset sect_off,
 						struct dwarf2_cu *cu);
 
+struct dwarf_psym_reader;
 static void dwarf_decode_lines (struct line_header *, const char *,
-				struct dwarf2_cu *, dwarf2_psymtab *,
+				struct dwarf2_cu *, dwarf_psym_reader *,
 				CORE_ADDR, int decode_mapping);
 
 static void dwarf2_start_subfile (struct dwarf2_cu *, const char *,
@@ -6357,7 +6358,6 @@ static void
 dwarf2_create_include_psymtab (const char *name, dwarf2_psymtab *pst,
 			       struct objfile *objfile)
 {
-  name = objfile->intern (name);
   dwarf2_include_psymtab *subpst = new dwarf2_include_psymtab (name, objfile);
 
   if (!IS_ABSOLUTE_PATH (subpst->filename))
@@ -6375,7 +6375,8 @@ dwarf2_create_include_psymtab (const char *name, dwarf2_psymtab *pst,
 static void
 dwarf2_build_include_psymtabs (struct dwarf2_cu *cu,
 			       struct die_info *die,
-			       dwarf2_psymtab *pst)
+			       const char *dirname,
+			       dwarf_psym_reader *psym_reader)
 {
   line_header_up lh;
   struct attribute *attr;
@@ -6386,12 +6387,11 @@ dwarf2_build_include_psymtabs (struct dwarf2_cu *cu,
   if (lh == NULL)
     return;  /* No linetable, so no includes.  */
 
-  /* NOTE: pst->dirname is DW_AT_comp_dir (if present).  Also note
-     that we pass in the raw text_low here; that is ok because we're
+  /* NOTE: psym_reader->dirname is DW_AT_comp_dir (if present).  Also note
+     that we pass in the 0 for the address; that is ok because we're
      only decoding the line table to make include partial symtabs, and
      so the addresses aren't really used.  */
-  dwarf_decode_lines (lh.get (), pst->dirname, cu, pst,
-		      pst->raw_text_low (), 1);
+  dwarf_decode_lines (lh.get (), dirname, cu, psym_reader, 0, 1);
 }
 
 static hashval_t
@@ -7665,6 +7665,14 @@ struct dwarf_psym_reader
   /* Symbols that we create.  */
   std::vector<dwarf_partial_symbol> symbols;
 
+  /* Include file names and storage for same.  */
+  std::vector<const char *> include_names;
+  std::vector<gdb::unique_xmalloc_ptr<char>> name_storage;
+
+  /* File and directory name.  */
+  std::string filename;
+  const char *dirname;
+
   struct partial_die_info *load_partial_dies (const struct die_reader_specs *,
 					      const gdb_byte *, int);
 
@@ -7707,21 +7715,22 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
 
   prepare_one_comp_unit (cu, comp_unit_die, pretend_language);
 
-  /* Allocate a new partial symbol table structure.  */
-  gdb::unique_xmalloc_ptr<char> debug_filename;
+  dwarf_psym_reader psym_reader (cu);
+
   static const char artificial[] = "<artificial>";
   filename = dwarf2_string_attr (comp_unit_die, DW_AT_name, cu);
   if (filename == NULL)
-    filename = "";
-  else if (strcmp (filename, artificial) == 0)
     {
-      debug_filename.reset (concat (artificial, "@",
-				    sect_offset_str (per_cu->sect_off),
-				    (char *) NULL));
-      filename = debug_filename.get ();
+      /* Nothing.  */
     }
+  else if (strcmp (filename, artificial) == 0)
+    psym_reader.filename = (std::string (artificial)
+			    + "@"
+			    + sect_offset_str (per_cu->sect_off));
+  else
+    psym_reader.filename = filename;
 
-  dwarf_psym_reader psym_reader (cu);
+  psym_reader.dirname = dwarf2_string_attr (comp_unit_die, DW_AT_comp_dir, cu);
 
   dwarf2_find_base_address (comp_unit_die, cu);
 
@@ -7758,14 +7767,20 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
 	}
     }
 
+  /* Get the list of files included in the current compilation
+     unit.  */
+  dwarf2_build_include_psymtabs (cu, comp_unit_die, psym_reader.dirname,
+				 &psym_reader);
+
   psym_reader.intern_names ();
 
-  dwarf2_psymtab *pst = create_partial_symtab (per_cu, per_objfile, filename);
+  dwarf2_psymtab *pst = create_partial_symtab (per_cu, per_objfile,
+					       psym_reader.filename.c_str ());
 
   psym_reader.create_symbols ();
 
   /* This must be done before calling dwarf2_build_include_psymtabs.  */
-  pst->dirname = dwarf2_string_attr (comp_unit_die, DW_AT_comp_dir, cu);
+  pst->dirname = psym_reader.dirname;
 
   CORE_ADDR baseaddr = objfile->text_section_offset ();
 
@@ -7811,9 +7826,8 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
       cu->per_cu->imported_symtabs_free ();
     }
 
-  /* Get the list of files included in the current compilation unit,
-     and build a psymtab for each of them.  */
-  dwarf2_build_include_psymtabs (cu, comp_unit_die, pst);
+  for (const char *include_name : psym_reader.include_names)
+    dwarf2_create_include_psymtab (include_name, pst, objfile);
 
   dwarf_read_debug_printf ("Psymtab for %s unit @%s: %s - %s"
 			   ", %d global, %d static syms",
@@ -8622,6 +8636,9 @@ dwarf_psym_reader::intern_names ()
 	  symbol.built_actual_name = nullptr;
 	}
     }
+
+  for (int i = 0; i < include_names.size (); ++i)
+    include_names[i] = objfile->intern (include_names[i]);
 }
 
 void
@@ -21132,7 +21149,7 @@ dwarf_decode_line_header (sect_offset sect_off, struct dwarf2_cu *cu)
 
 static const char *
 psymtab_include_file_name (const struct line_header *lh, const file_entry &fe,
-			   const dwarf2_psymtab *pst,
+			   const dwarf_psym_reader *psym_reader,
 			   const char *comp_dir,
 			   gdb::unique_xmalloc_ptr<char> *name_holder)
 {
@@ -21183,11 +21200,11 @@ psymtab_include_file_name (const struct line_header *lh, const file_entry &fe,
 	}
     }
 
-  pst_filename = pst->filename;
+  pst_filename = psym_reader->filename.c_str ();
   gdb::unique_xmalloc_ptr<char> copied_name;
-  if (!IS_ABSOLUTE_PATH (pst_filename) && pst->dirname != NULL)
+  if (!IS_ABSOLUTE_PATH (pst_filename) && psym_reader->dirname != NULL)
     {
-      copied_name.reset (concat (pst->dirname, SLASH_STRING,
+      copied_name.reset (concat (psym_reader->dirname, SLASH_STRING,
 				 pst_filename, (char *) NULL));
       pst_filename = copied_name.get ();
     }
@@ -21884,11 +21901,10 @@ dwarf_decode_lines_1 (struct line_header *lh, struct dwarf2_cu *cu,
 
 static void
 dwarf_decode_lines (struct line_header *lh, const char *comp_dir,
-		    struct dwarf2_cu *cu, dwarf2_psymtab *pst,
+		    struct dwarf2_cu *cu, dwarf_psym_reader *psym_reader,
 		    CORE_ADDR lowpc, int decode_mapping)
 {
-  struct objfile *objfile = cu->per_objfile->objfile;
-  const int decode_for_pst_p = (pst != NULL);
+  const int decode_for_pst_p = (psym_reader != NULL);
 
   if (decode_mapping)
     dwarf_decode_lines_1 (lh, cu, decode_for_pst_p, lowpc);
@@ -21902,11 +21918,16 @@ dwarf_decode_lines (struct line_header *lh, const char *comp_dir,
 	  {
 	    gdb::unique_xmalloc_ptr<char> name_holder;
 	    const char *include_name =
-	      psymtab_include_file_name (lh, file_entry, pst,
+	      psymtab_include_file_name (lh, file_entry, psym_reader,
 					 comp_dir, &name_holder);
 	    if (include_name != NULL)
-	      dwarf2_create_include_psymtab (include_name, pst, objfile);
-	  }
+	      {
+		psym_reader->include_names.push_back (include_name);
+		if (name_holder != nullptr)
+		  psym_reader->name_storage.push_back
+		    (std::move (name_holder));
+	      }
+          }
     }
   else
     {

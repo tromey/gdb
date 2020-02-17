@@ -1,3 +1,18 @@
+2020-02-20  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2/read.c (dwarf2_build_include_psymtabs): Add "dirname"
+	and "psym_reader" parameters.  Remove "pst" parameter.
+	(struct dwarf_psym_reader) <include_names, name_storage, filename,
+	dirname>: New members.
+	(process_psymtab_comp_unit_reader): Set new members.  Call
+	dwarf2_build_include_psymtabs earlier.  Create include psymtabs at
+	end.
+	(psymtab_include_file_name): Change "pst" parameter to
+	"psym_reader".
+	(dwarf_decode_lines): Likewise.
+	(dwarf2_create_include_psymtab): Don't intern "name".
+	(dwarf_psym_reader::intern_names): Intern include names.
+
 2020-02-19  Tom Tromey  <tom@tromey.com>
 
 	* dwarf2/read.c (struct dwarf_psym_reader) <intern_names>:
