@@ -7697,12 +7697,6 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
 
   dwarf_psym_reader psym_reader (cu);
 
-  dwarf2_psymtab *pst = create_partial_symtab (per_cu, per_objfile, filename);
-
-  /* This must be done before calling dwarf2_build_include_psymtabs.  */
-  pst->dirname = dwarf2_string_attr (comp_unit_die, DW_AT_comp_dir, cu);
-
-
   dwarf2_find_base_address (comp_unit_die, cu);
 
   /* Possibly set the default values of LOWPC and HIGHPC from
@@ -7737,6 +7731,11 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
 	  best_highpc = psym_reader.highpc;
 	}
     }
+
+  dwarf2_psymtab *pst = create_partial_symtab (per_cu, per_objfile, filename);
+
+  /* This must be done before calling dwarf2_build_include_psymtabs.  */
+  pst->dirname = dwarf2_string_attr (comp_unit_die, DW_AT_comp_dir, cu);
 
   CORE_ADDR baseaddr = objfile->text_section_offset ();
 
