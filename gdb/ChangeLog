@@ -1,3 +1,20 @@
+2020-02-20  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2/read.c (psym_queue): New typedef.
+	(struct dwarf_psym_reader) <dwarf_psym_reader>: Add queue
+	parameter.
+	<job_queue>: New member.
+	(process_psymtab_comp_unit_reader): Add to_intern parameter.
+	Create dwarf_psym_reader on heap.
+	(process_psymtab_comp_unit): Add to_intern parameter.
+	(build_type_psymtabs_reader): Update.
+	(intern_names_for_psymtab, create_psymtabs): New functions.
+	(dwarf2_build_psymtabs_hard): Do some processing on background
+	threads.
+	(build_type_psymtabs_reader): Add to_intern parameter.  Create
+	dwarf_psym_reader on the heap.
+	(build_type_psymtabs_1, process_skeletonless_type_unit): Update.
+
 2020-02-19  Tom Tromey  <tom@tromey.com>
 
 	* dwarf2/read.c (struct partial_die_info) <copy_name>: New
