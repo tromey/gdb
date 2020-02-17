@@ -84,7 +84,9 @@
 #include <unordered_map>
 #include "gdbsupport/selftest.h"
 #include "rust-lang.h"
+#include "gdbsupport/job-queue.h"
 #include "gdbsupport/pathstuff.h"
+#include "gdbsupport/thread-pool.h"
 #include "count-one-bits.h"
 #include "debuginfod-support.h"
 
@@ -1265,10 +1267,6 @@ static void dwarf2_find_base_address (struct die_info *die,
 static dwarf2_psymtab *create_partial_symtab
   (dwarf2_per_cu_data *per_cu, dwarf2_per_objfile *per_objfile,
    const char *name);
-
-static void build_type_psymtabs_reader (const struct die_reader_specs *reader,
-					const gdb_byte *info_ptr,
-					struct die_info *type_unit_die);
 
 static void dwarf2_build_psymtabs_hard (dwarf2_per_objfile *per_objfile);
 
@@ -7637,15 +7635,21 @@ struct dwarf_partial_symbol
   psymbol_placement where;
 };
 
+/* A job queue that passes (pointers to) dwarf_psym_reader
+   objects.  */
+
+typedef gdb::job_queue<std::unique_ptr<dwarf_psym_reader>> psym_queue;
+
 /* An instance of this is created when reading partial symbols for a
    given CU.  */
 
 struct dwarf_psym_reader
 {
-  explicit dwarf_psym_reader (dwarf2_cu *cu_)
+  explicit dwarf_psym_reader (dwarf2_cu *cu_, psym_queue *queue)
     : cu (cu_),
       per_cu (cu->per_cu),
-      language (cu->language)
+      language (cu->language),
+      job_queue (queue)
   {
   }
 
@@ -7688,6 +7692,11 @@ struct dwarf_psym_reader
 
   /* If not empty, the name of a "main" function that was found.  */
   std::string main_name;
+
+  /* If non-null, a job queue where dwarf_psym_reader should be sent
+     once reading has completed.  If null, no other threads are
+     running, and processing should be done synchronously.  */
+  psym_queue *job_queue;
 
   struct partial_die_info *load_partial_dies (const struct die_reader_specs *,
 					      const gdb_byte *, int);
@@ -7788,7 +7797,8 @@ static void
 process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
 				  const gdb_byte *info_ptr,
 				  struct die_info *comp_unit_die,
-				  enum language pretend_language)
+				  enum language pretend_language,
+				  psym_queue *to_intern)
 {
   struct dwarf2_cu *cu = reader->cu;
   dwarf2_per_objfile *per_objfile = cu->per_objfile;
@@ -7803,7 +7813,8 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
 
   prepare_one_comp_unit (cu, comp_unit_die, pretend_language);
 
-  dwarf_psym_reader psym_reader (cu);
+  std::unique_ptr<dwarf_psym_reader> psym_reader
+    (new dwarf_psym_reader (cu, to_intern));
 
   static const char artificial[] = "<artificial>";
   filename = dwarf2_string_attr (comp_unit_die, DW_AT_name, cu);
@@ -7812,22 +7823,23 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
       /* Nothing.  */
     }
   else if (strcmp (filename, artificial) == 0)
-    psym_reader.filename = (std::string (artificial)
-			    + "@"
-			    + sect_offset_str (per_cu->sect_off));
+    psym_reader->filename = (std::string (artificial)
+			     + "@"
+			     + sect_offset_str (per_cu->sect_off));
   else
-    psym_reader.filename = filename;
+    psym_reader->filename = filename;
 
-  psym_reader.dirname = dwarf2_string_attr (comp_unit_die, DW_AT_comp_dir, cu);
+  psym_reader->dirname = dwarf2_string_attr (comp_unit_die, DW_AT_comp_dir,
+					     cu);
 
   dwarf2_find_base_address (comp_unit_die, cu);
 
   /* Possibly set the default values of LOWPC and HIGHPC from
      `DW_AT_ranges'.  */
   cu_bounds_kind = dwarf2_get_pc_bounds (comp_unit_die, &best_lowpc,
-					 &best_highpc, cu, &psym_reader);
+					 &best_highpc, cu, psym_reader.get ());
   if (cu_bounds_kind == PC_BOUNDS_HIGH_LOW && best_lowpc < best_highpc)
-    psym_reader.addresses.emplace_back (best_lowpc, best_highpc);
+    psym_reader->addresses.emplace_back (best_lowpc, best_highpc);
 
   /* Check if comp unit has_children.
      If so, read the rest of the partial symbols from this comp unit.
@@ -7836,32 +7848,32 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
     {
       struct partial_die_info *first_die;
 
-      first_die = psym_reader.load_partial_dies (reader, info_ptr, 1);
+      first_die = psym_reader->load_partial_dies (reader, info_ptr, 1);
 
-      psym_reader.set_addrmap = cu_bounds_kind <= PC_BOUNDS_INVALID;
-      psym_reader.scan (first_die);
+      psym_reader->set_addrmap = cu_bounds_kind <= PC_BOUNDS_INVALID;
+      psym_reader->scan (first_die);
 
       /* If we didn't find a lowpc, set it to highpc to avoid
 	 complaints from `maint check'.	 */
-      if (psym_reader.lowpc == ((CORE_ADDR) -1))
-	psym_reader.lowpc = psym_reader.highpc;
+      if (psym_reader->lowpc == ((CORE_ADDR) -1))
+	psym_reader->lowpc = psym_reader->highpc;
 
       /* If the compilation unit didn't have an explicit address range,
 	 then use the information extracted from its child dies.  */
       if (cu_bounds_kind <= PC_BOUNDS_INVALID)
 	{
-	  best_lowpc = psym_reader.lowpc;
-	  best_highpc = psym_reader.highpc;
+	  best_lowpc = psym_reader->lowpc;
+	  best_highpc = psym_reader->highpc;
 	}
     }
 
-  psym_reader.lowpc = best_lowpc;
-  psym_reader.highpc = best_highpc;
+  psym_reader->lowpc = best_lowpc;
+  psym_reader->highpc = best_highpc;
 
   /* Get the list of files included in the current compilation
      unit.  */
-  dwarf2_build_include_psymtabs (cu, comp_unit_die, psym_reader.dirname,
-				 &psym_reader);
+  dwarf2_build_include_psymtabs (cu, comp_unit_die, psym_reader->dirname,
+				 psym_reader.get ());
 
   dwarf_read_debug_printf ("Psymtab for %s unit @%s: %s - %s"
 			   ", %d syms\n",
@@ -7869,12 +7881,26 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
 			   sect_offset_str (per_cu->sect_off),
 			   paddress (gdbarch, best_lowpc),
 			   paddress (gdbarch, best_highpc),
-			   (int) psym_reader.symbols.size ());
+			   (int) psym_reader->symbols.size ());
 
-  psym_reader.intern_names ();
+  /* Make sure the next stages can't refer to this.  */
+  psym_reader->cu = nullptr;
 
-  psym_reader.create_psymtab ();
+  if (to_intern == nullptr)
+    {
+      /* We must do all the work synchronously -- no threads are
+	 running.  */
+        psym_reader->intern_names ();
+	psym_reader->create_psymtab ();
+    }
+  else
+    to_intern->push (std::move (psym_reader));
 }
+
+static void build_type_psymtabs_reader (const struct die_reader_specs *reader,
+					const gdb_byte *info_ptr,
+					struct die_info *type_unit_die,
+					psym_queue *);
 
 /* Subroutine of dwarf2_build_psymtabs_hard to simplify it.
    Process compilation unit THIS_CU for a psymtab.  */
@@ -7883,7 +7909,8 @@ static void
 process_psymtab_comp_unit (dwarf2_per_cu_data *this_cu,
 			   dwarf2_per_objfile *per_objfile,
 			   bool want_partial_unit,
-			   enum language pretend_language)
+			   enum language pretend_language,
+			   psym_queue *to_intern)
 {
   /* If this compilation unit was already read in, free the
      cached copy in order to read it in again.	This is
@@ -7912,12 +7939,13 @@ process_psymtab_comp_unit (dwarf2_per_cu_data *this_cu,
     }
   else if (this_cu->is_debug_types)
     build_type_psymtabs_reader (&reader, reader.info_ptr,
-				reader.comp_unit_die);
+				reader.comp_unit_die, to_intern);
   else if (want_partial_unit
 	   || reader.comp_unit_die->tag != DW_TAG_partial_unit)
     process_psymtab_comp_unit_reader (&reader, reader.info_ptr,
 				      reader.comp_unit_die,
-				      pretend_language);
+				      pretend_language,
+				      to_intern);
 
   this_cu->lang = reader.cu->language;
 
@@ -7930,7 +7958,8 @@ process_psymtab_comp_unit (dwarf2_per_cu_data *this_cu,
 static void
 build_type_psymtabs_reader (const struct die_reader_specs *reader,
 			    const gdb_byte *info_ptr,
-			    struct die_info *type_unit_die)
+			    struct die_info *type_unit_die,
+			    psym_queue *to_intern)
 {
   struct dwarf2_cu *cu = reader->cu;
   struct dwarf2_per_cu_data *per_cu = cu->per_cu;
@@ -7954,14 +7983,23 @@ build_type_psymtabs_reader (const struct die_reader_specs *reader,
 
   prepare_one_comp_unit (cu, type_unit_die, language_minimal);
 
-  dwarf_psym_reader psym_reader (cu);
-  psym_reader.is_type_unit = true;
+  std::unique_ptr<dwarf_psym_reader> psym_reader
+    (new dwarf_psym_reader (cu, to_intern));
+  psym_reader->is_type_unit = true;
 
-  first_die = psym_reader.load_partial_dies (reader, info_ptr, 1);
+  first_die = psym_reader->load_partial_dies (reader, info_ptr, 1);
 
-  psym_reader.scan (first_die);
-  psym_reader.intern_names ();
-  psym_reader.create_psymtab ();
+  psym_reader->scan (first_die);
+
+  if (to_intern == nullptr)
+    {
+      /* We must do all the work synchronously -- no threads are
+	 running.  */
+        psym_reader->intern_names ();
+	psym_reader->create_psymtab ();
+    }
+  else
+    to_intern->push (std::move (psym_reader));
 }
 
 /* Struct used to sort TUs by their abbreviation table offset.  */
@@ -8069,7 +8107,7 @@ build_type_psymtabs_1 (dwarf2_per_objfile *per_objfile)
 			  abbrev_table.get (), nullptr, false);
       if (!reader.dummy_p)
 	build_type_psymtabs_reader (&reader, reader.info_ptr,
-				    reader.comp_unit_die);
+				    reader.comp_unit_die, nullptr);
     }
 }
 
@@ -8172,7 +8210,7 @@ process_skeletonless_type_unit (void **slot, void *info)
   cutu_reader reader (&entry->per_cu, per_objfile, nullptr, nullptr, false);
   if (!reader.dummy_p)
     build_type_psymtabs_reader (&reader, reader.info_ptr,
-				reader.comp_unit_die);
+				reader.comp_unit_die, nullptr);
 
   return 1;
 }
@@ -8229,6 +8267,34 @@ set_partial_user (dwarf2_per_objfile *per_objfile)
     }
 }
 
+/* Accept dwarf_psym_reader objects from TO_INTERN; intern the names;
+   and then send the objects to TO_CREATE.  */
+
+static void
+intern_names_for_psymtab (psym_queue &to_intern, psym_queue &to_create,
+			  size_t count)
+{
+  for (; count > 0; --count)
+    {
+      std::unique_ptr<dwarf_psym_reader> job = to_intern.pop ();
+      job->intern_names ();
+      to_create.push (std::move (job));
+    }
+}
+
+/* Accept dwarf_psym_reader objects from TO_CREATE and create the
+   partial symtabs.  */
+
+static void
+create_psymtabs (psym_queue &to_create, size_t count)
+{
+  for (; count > 0; --count)
+    {
+      std::unique_ptr<dwarf_psym_reader> job = to_create.pop ();
+      job->create_psymtab ();
+    }
+}
+
 /* Build the partial symbol table by doing a quick pass through the
    .debug_info and .debug_abbrev sections.  */
 
@@ -8262,14 +8328,39 @@ dwarf2_build_psymtabs_hard (dwarf2_per_objfile *per_objfile)
     = make_scoped_restore (&objfile->partial_symtabs->psymtabs_addrmap,
 			   addrmap_create_mutable (&temp_obstack));
 
-  for (dwarf2_per_cu_data *per_cu : per_objfile->per_bfd->all_comp_units)
+  /* Job queues for interning names and for creating psymtabs.  */
+  psym_queue to_intern;
+  psym_queue to_create;
+  psym_queue *queue = nullptr;
+
+  /* This is used to wait for background tasks to be completed, when
+     threading is used.  */
+  std::future<void> creation_done;
+
+  // FIXME
+  size_t count = per_objfile->per_bfd->all_comp_units.size ();
+
+  /* We need at least two worker threads to process the queues.  */
+  if (gdb::thread_pool::g_thread_pool->thread_count () > 2)
     {
-      if (per_cu->v.psymtab != NULL)
-	/* In case a forward DW_TAG_imported_unit has read the CU already.  */
-	continue;
-      process_psymtab_comp_unit (per_cu, per_objfile, false,
-				 language_minimal);
+      gdb::thread_pool::g_thread_pool->post_task ([&] ()
+        {
+	  intern_names_for_psymtab (to_intern, to_create, count);
+	});
+      creation_done = gdb::thread_pool::g_thread_pool->post_task ([&] ()
+        {
+	  create_psymtabs (to_create, count);
+	});
+
+      queue = &to_intern;
     }
+
+  for (dwarf2_per_cu_data *per_cu : per_objfile->per_bfd->all_comp_units)
+    process_psymtab_comp_unit (per_cu, per_objfile, false, language_minimal,
+			       queue);
+
+  if (queue != nullptr)
+    creation_done.wait ();
 
   /* This has to wait until we read the CUs, we need the list of DWOs.  */
   process_skeletonless_type_units (per_objfile);
@@ -8316,7 +8407,7 @@ load_partial_comp_unit (dwarf2_per_cu_data *this_cu,
 	 If not, there's no more debug_info for this comp unit.  */
       if (reader.comp_unit_die->has_children)
 	{
-	  dwarf_psym_reader psym_reader (reader.cu);
+	  dwarf_psym_reader psym_reader (reader.cu, nullptr);
 	  psym_reader.load_partial_dies (&reader, reader.info_ptr, 0);
 	}
 
@@ -8480,7 +8571,7 @@ dwarf_psym_reader::scan (struct partial_die_info *first_die)
 		/* Go read the partial unit, if needed.  */
 		if (per_cu->v.psymtab == NULL)
 		  process_psymtab_comp_unit (per_cu, cu->per_objfile, true,
-					     cu->language);
+					     cu->language, job_queue);
 
 		cu->per_cu->imported_symtabs_push (per_cu);
 	      }
