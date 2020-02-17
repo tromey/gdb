@@ -7272,8 +7272,7 @@ struct dwarf_psym_reader
 			       CORE_ADDR coreaddr);
   void intern_names ();
   void create_symbols ();
-  void create_psymtab (struct dwarf2_per_cu_data *per_cu,
-		       struct objfile *objfile);
+  void create_psymtab ();
 
   void scan (struct partial_die_info *first_die);
   void add_partial_symbol (struct partial_die_info *pdi);
@@ -7284,9 +7283,9 @@ struct dwarf_psym_reader
 };
 
 void
-dwarf_psym_reader::create_psymtab (struct dwarf2_per_cu_data *per_cu,
-				   struct objfile *objfile)
+dwarf_psym_reader::create_psymtab ()
 {
+  struct objfile *objfile = per_cu->dwarf2_per_objfile->objfile;
   struct gdbarch *gdbarch = get_objfile_arch (objfile);
   dwarf2_psymtab *pst = create_partial_symtab (per_cu, filename.c_str ());
 
