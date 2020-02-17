@@ -1184,28 +1184,6 @@ static void build_type_psymtabs_reader (const struct die_reader_specs *reader,
 static void dwarf2_build_psymtabs_hard
   (struct dwarf2_per_objfile *dwarf2_per_objfile);
 
-static void scan_partial_symbols (struct partial_die_info *,
-				  CORE_ADDR *, CORE_ADDR *,
-				  int, struct dwarf2_cu *);
-
-static void add_partial_symbol (struct partial_die_info *,
-				struct dwarf2_cu *);
-
-static void add_partial_namespace (struct partial_die_info *pdi,
-				   CORE_ADDR *lowpc, CORE_ADDR *highpc,
-				   int set_addrmap, struct dwarf2_cu *cu);
-
-static void add_partial_module (struct partial_die_info *pdi, CORE_ADDR *lowpc,
-				CORE_ADDR *highpc, int set_addrmap,
-				struct dwarf2_cu *cu);
-
-static void add_partial_enumeration (struct partial_die_info *enum_pdi,
-				     struct dwarf2_cu *cu);
-
-static void add_partial_subprogram (struct partial_die_info *pdi,
-				    CORE_ADDR *lowpc, CORE_ADDR *highpc,
-				    int need_pc, struct dwarf2_cu *cu);
-
 static unsigned int peek_abbrev_code (bfd *, const gdb_byte *);
 
 static struct partial_die_info *load_partial_dies
@@ -7237,6 +7215,30 @@ create_partial_symtab (struct dwarf2_per_cu_data *per_cu, const char *name)
   return pst;
 }
 
+struct dwarf_psym_reader
+{
+  explicit dwarf_psym_reader (dwarf2_cu *cu_)
+    : cu (cu_)
+  {
+  }
+
+  struct dwarf2_cu *cu;
+
+  /* If SET_ADDRMAP is true, record the covered ranges in the addrmap.
+     Set LOWPC and HIGHPC to the lowest and highest PC values found in
+     PDI.  */
+  bool set_addrmap = false;
+  CORE_ADDR lowpc = (CORE_ADDR) -1;
+  CORE_ADDR highpc = 0;
+
+  void scan (struct partial_die_info *first_die);
+  void add_partial_symbol (struct partial_die_info *pdi);
+  void add_partial_namespace (struct partial_die_info *pdi);
+  void add_partial_module (struct partial_die_info *pdi);
+  void add_partial_subprogram (struct partial_die_info *pdi);
+  void add_partial_enumeration (struct partial_die_info *pdi);
+};
+
 /* DIE reader function for process_psymtab_comp_unit.  */
 
 static void
@@ -7273,6 +7275,8 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
       filename = debug_filename.get ();
     }
 
+  dwarf_psym_reader psym_reader (cu);
+
   pst = create_partial_symtab (per_cu, filename);
 
   /* This must be done before calling dwarf2_build_include_psymtabs.  */
@@ -7306,27 +7310,23 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
   if (comp_unit_die->has_children)
     {
       struct partial_die_info *first_die;
-      CORE_ADDR lowpc, highpc;
-
-      lowpc = ((CORE_ADDR) -1);
-      highpc = ((CORE_ADDR) 0);
 
       first_die = load_partial_dies (reader, info_ptr, 1);
 
-      scan_partial_symbols (first_die, &lowpc, &highpc,
-			    cu_bounds_kind <= PC_BOUNDS_INVALID, cu);
+      psym_reader.set_addrmap = cu_bounds_kind <= PC_BOUNDS_INVALID;
+      psym_reader.scan (first_die);
 
       /* If we didn't find a lowpc, set it to highpc to avoid
 	 complaints from `maint check'.	 */
-      if (lowpc == ((CORE_ADDR) -1))
-	lowpc = highpc;
+      if (psym_reader.lowpc == ((CORE_ADDR) -1))
+	psym_reader.lowpc = psym_reader.highpc;
 
       /* If the compilation unit didn't have an explicit address range,
 	 then use the information extracted from its child dies.  */
       if (cu_bounds_kind <= PC_BOUNDS_INVALID)
 	{
-	  best_lowpc = lowpc;
-	  best_highpc = highpc;
+	  best_lowpc = psym_reader.lowpc;
+	  best_highpc = psym_reader.highpc;
 	}
     }
   pst->set_text_low (gdbarch_adjust_dwarf2_addr (gdbarch,
@@ -7427,7 +7427,6 @@ build_type_psymtabs_reader (const struct die_reader_specs *reader,
   struct type_unit_group *tu_group;
   struct attribute *attr;
   struct partial_die_info *first_die;
-  CORE_ADDR lowpc, highpc;
   dwarf2_psymtab *pst;
 
   gdb_assert (per_cu->is_debug_types);
@@ -7449,9 +7448,9 @@ build_type_psymtabs_reader (const struct die_reader_specs *reader,
 
   first_die = load_partial_dies (reader, info_ptr, 1);
 
-  lowpc = (CORE_ADDR) -1;
-  highpc = (CORE_ADDR) 0;
-  scan_partial_symbols (first_die, &lowpc, &highpc, 0, cu);
+  dwarf_psym_reader psym_reader (cu);
+
+  psym_reader.scan (first_die);
 
   end_psymtab_common (objfile, pst);
 }
@@ -7887,15 +7886,10 @@ create_all_comp_units (struct dwarf2_per_objfile *dwarf2_per_objfile)
 }
 
 /* Process all loaded DIEs for compilation unit CU, starting at
-   FIRST_DIE.  The caller should pass SET_ADDRMAP == 1 if the compilation
-   unit DIE did not have PC info (DW_AT_low_pc and DW_AT_high_pc, or
-   DW_AT_ranges).  See the comments of add_partial_subprogram on how
-   SET_ADDRMAP is used and how *LOWPC and *HIGHPC are updated.  */
+   FIRST_DIE.  */
 
-static void
-scan_partial_symbols (struct partial_die_info *first_die, CORE_ADDR *lowpc,
-		      CORE_ADDR *highpc, int set_addrmap,
-		      struct dwarf2_cu *cu)
+void
+dwarf_psym_reader::scan (struct partial_die_info *first_die)
 {
   struct partial_die_info *pdi;
 
@@ -7922,7 +7916,7 @@ scan_partial_symbols (struct partial_die_info *first_die, CORE_ADDR *lowpc,
 	    {
 	    case DW_TAG_subprogram:
 	    case DW_TAG_inlined_subroutine:
-	      add_partial_subprogram (pdi, lowpc, highpc, set_addrmap, cu);
+	      add_partial_subprogram (pdi);
 	      break;
 	    case DW_TAG_constant:
 	    case DW_TAG_variable:
@@ -7930,7 +7924,7 @@ scan_partial_symbols (struct partial_die_info *first_die, CORE_ADDR *lowpc,
 	    case DW_TAG_union_type:
 	      if (!pdi->is_declaration)
 		{
-		  add_partial_symbol (pdi, cu);
+		  add_partial_symbol (pdi);
 		}
 	      break;
 	    case DW_TAG_class_type:
@@ -7938,29 +7932,28 @@ scan_partial_symbols (struct partial_die_info *first_die, CORE_ADDR *lowpc,
 	    case DW_TAG_structure_type:
 	      if (!pdi->is_declaration)
 		{
-		  add_partial_symbol (pdi, cu);
+		  add_partial_symbol (pdi);
 		}
 	      if ((cu->language == language_rust
 		   || cu->language == language_cplus) && pdi->has_children)
-		scan_partial_symbols (pdi->die_child, lowpc, highpc,
-				      set_addrmap, cu);
+		scan (pdi->die_child);
 	      break;
 	    case DW_TAG_enumeration_type:
 	      if (!pdi->is_declaration)
-		add_partial_enumeration (pdi, cu);
+		add_partial_enumeration (pdi);
 	      break;
 	    case DW_TAG_base_type:
             case DW_TAG_subrange_type:
 	      /* File scope base type definitions are added to the partial
 	         symbol table.  */
-	      add_partial_symbol (pdi, cu);
+	      add_partial_symbol (pdi);
 	      break;
 	    case DW_TAG_namespace:
-	      add_partial_namespace (pdi, lowpc, highpc, set_addrmap, cu);
+	      add_partial_namespace (pdi);
 	      break;
 	    case DW_TAG_module:
 	      if (!pdi->is_declaration)
-		add_partial_module (pdi, lowpc, highpc, set_addrmap, cu);
+		add_partial_module (pdi);
 	      break;
 	    case DW_TAG_imported_unit:
 	      {
@@ -7990,7 +7983,7 @@ scan_partial_symbols (struct partial_die_info *first_die, CORE_ADDR *lowpc,
 	      }
 	      break;
 	    case DW_TAG_imported_declaration:
-	      add_partial_symbol (pdi, cu);
+	      add_partial_symbol (pdi);
 	      break;
 	    default:
 	      break;
@@ -8147,8 +8140,8 @@ partial_die_full_name (struct partial_die_info *pdi,
 							   pdi->name, 0, cu));
 }
 
-static void
-add_partial_symbol (struct partial_die_info *pdi, struct dwarf2_cu *cu)
+void
+dwarf_psym_reader::add_partial_symbol (struct partial_die_info *pdi)
 {
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = cu->per_cu->dwarf2_per_objfile;
@@ -8337,62 +8330,55 @@ add_partial_symbol (struct partial_die_info *pdi, struct dwarf2_cu *cu)
    corresponding to that namespace to the symbol table.  NAMESPACE is
    the name of the enclosing namespace.  */
 
-static void
-add_partial_namespace (struct partial_die_info *pdi,
-		       CORE_ADDR *lowpc, CORE_ADDR *highpc,
-		       int set_addrmap, struct dwarf2_cu *cu)
+void
+dwarf_psym_reader::add_partial_namespace (struct partial_die_info *pdi)
 {
   /* Add a symbol for the namespace.  */
 
-  add_partial_symbol (pdi, cu);
+  add_partial_symbol (pdi);
 
   /* Now scan partial symbols in that namespace.  */
 
   if (pdi->has_children)
-    scan_partial_symbols (pdi->die_child, lowpc, highpc, set_addrmap, cu);
+    scan (pdi->die_child);
 }
 
 /* Read a partial die corresponding to a Fortran module.  */
 
-static void
-add_partial_module (struct partial_die_info *pdi, CORE_ADDR *lowpc,
-		    CORE_ADDR *highpc, int set_addrmap, struct dwarf2_cu *cu)
+void
+dwarf_psym_reader::add_partial_module (struct partial_die_info *pdi)
 {
   /* Add a symbol for the namespace.  */
 
-  add_partial_symbol (pdi, cu);
+  add_partial_symbol (pdi);
 
   /* Now scan partial symbols in that module.  */
 
   if (pdi->has_children)
-    scan_partial_symbols (pdi->die_child, lowpc, highpc, set_addrmap, cu);
+    scan (pdi->die_child);
 }
 
 /* Read a partial die corresponding to a subprogram or an inlined
    subprogram and create a partial symbol for that subprogram.
    When the CU language allows it, this routine also defines a partial
    symbol for each nested subprogram that this subprogram contains.
-   If SET_ADDRMAP is true, record the covered ranges in the addrmap.
-   Set *LOWPC and *HIGHPC to the lowest and highest PC values found in PDI.
 
    PDI may also be a lexical block, in which case we simply search
    recursively for subprograms defined inside that lexical block.
    Again, this is only performed when the CU language allows this
    type of definitions.  */
 
-static void
-add_partial_subprogram (struct partial_die_info *pdi,
-			CORE_ADDR *lowpc, CORE_ADDR *highpc,
-			int set_addrmap, struct dwarf2_cu *cu)
+void
+dwarf_psym_reader::add_partial_subprogram (struct partial_die_info *pdi)
 {
   if (pdi->tag == DW_TAG_subprogram || pdi->tag == DW_TAG_inlined_subroutine)
     {
       if (pdi->has_pc_info)
         {
-          if (pdi->lowpc < *lowpc)
-            *lowpc = pdi->lowpc;
-          if (pdi->highpc > *highpc)
-            *highpc = pdi->highpc;
+          if (pdi->lowpc < lowpc)
+            lowpc = pdi->lowpc;
+          if (pdi->highpc > highpc)
+            highpc = pdi->highpc;
 	  if (set_addrmap)
 	    {
 	      struct objfile *objfile = cu->per_cu->dwarf2_per_objfile->objfile;
@@ -8423,7 +8409,7 @@ add_partial_subprogram (struct partial_die_info *pdi,
 	       illegal.  Do not emit a complaint at this point, we will
 	       do so when we convert this psymtab into a symtab.  */
 	    if (pdi->name)
-	      add_partial_symbol (pdi, cu);
+	      add_partial_symbol (pdi);
         }
     }
 
@@ -8439,7 +8425,7 @@ add_partial_subprogram (struct partial_die_info *pdi,
 	  if (pdi->tag == DW_TAG_subprogram
 	      || pdi->tag == DW_TAG_inlined_subroutine
 	      || pdi->tag == DW_TAG_lexical_block)
-	    add_partial_subprogram (pdi, lowpc, highpc, set_addrmap, cu);
+	    add_partial_subprogram (pdi);
 	  pdi = pdi->die_sibling;
 	}
     }
@@ -8447,14 +8433,13 @@ add_partial_subprogram (struct partial_die_info *pdi,
 
 /* Read a partial die corresponding to an enumeration type.  */
 
-static void
-add_partial_enumeration (struct partial_die_info *enum_pdi,
-			 struct dwarf2_cu *cu)
+void
+dwarf_psym_reader::add_partial_enumeration (struct partial_die_info *enum_pdi)
 {
   struct partial_die_info *pdi;
 
   if (enum_pdi->name != NULL)
-    add_partial_symbol (enum_pdi, cu);
+    add_partial_symbol (enum_pdi);
 
   pdi = enum_pdi->die_child;
   while (pdi)
@@ -8462,7 +8447,7 @@ add_partial_enumeration (struct partial_die_info *enum_pdi,
       if (pdi->tag != DW_TAG_enumerator || pdi->name == NULL)
 	complaint (_("malformed enumerator DIE ignored"));
       else
-	add_partial_symbol (pdi, cu);
+	add_partial_symbol (pdi);
       pdi = pdi->die_sibling;
     }
 }
