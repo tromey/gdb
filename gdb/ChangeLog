@@ -1,3 +1,15 @@
+2020-02-20  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2/read.c (struct dwarf_psym_reader) <addresses>: New
+	member.
+	(process_psymtab_comp_unit_reader): Push addresses on vector.
+	Defer call to addrmap_set_empty.
+	(dwarf_psym_reader::add_partial_subprogram): Push addresses on
+	vector.
+	(dwarf2_ranges_read): Change parameter to dwarf_psym_reader.  Push
+	addresses on vector.
+	(dwarf2_get_pc_bounds): Change parameter to dwarf_psym_reader.
+
 2020-02-19  Tom Tromey  <tom@tromey.com>
 
 	* dwarf2/read.c (struct dwarf_psym_reader): New.
