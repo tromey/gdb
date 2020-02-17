@@ -7809,7 +7809,7 @@ create_psymtabs (job_queue<std::unique_ptr<dwarf_psym_reader>> &to_create)
 {
   std::unique_ptr<dwarf_psym_reader> job;
   while (to_create.pop (job))
-    job->create_psymtabs ();
+    job->create_psymtab ();
 }
 
 /* Build the partial symbol table by doing a quick pass through the
