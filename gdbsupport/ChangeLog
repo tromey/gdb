@@ -1,3 +1,7 @@
+2020-02-19  Tom Tromey  <tom@tromey.com>
+
+	* job-queue.h: New file.
+
 2021-01-23  Lancelot SIX  <lsix@lancelotsix.com>
 
 	* gdb_tilde_expand.cc (gdb_tilde_expand): Improve
