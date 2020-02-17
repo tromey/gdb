@@ -7271,7 +7271,7 @@ struct dwarf_psym_reader
 			       psymbol_placement where,
 			       CORE_ADDR coreaddr);
   void intern_names (struct objfile *objfile);
-  void create_symbols (struct objfile *objfile);
+  void create_symbols ();
   void create_psymtab (struct dwarf2_per_cu_data *per_cu,
 		       struct objfile *objfile);
 
@@ -7290,7 +7290,7 @@ dwarf_psym_reader::create_psymtab (struct dwarf2_per_cu_data *per_cu,
   struct gdbarch *gdbarch = get_objfile_arch (objfile);
   dwarf2_psymtab *pst = create_partial_symtab (per_cu, filename.c_str ());
 
-  create_symbols (objfile);
+  create_symbols ();
 
   pst->dirname = dirname;
 
@@ -7518,7 +7518,7 @@ build_type_psymtabs_reader (const struct die_reader_specs *reader,
 
   psym_reader.scan (first_die);
   psym_reader.intern_names (objfile);
-  psym_reader.create_symbols (objfile);
+  psym_reader.create_symbols ();
 
   end_psymtab_common (objfile, pst);
 }
@@ -8236,12 +8236,14 @@ dwarf_psym_reader::intern_names (struct objfile *objfile)
 }
 
 void
-dwarf_psym_reader::create_symbols (struct objfile *objfile)
+dwarf_psym_reader::create_symbols ()
 {
+  struct objfile *objfile = per_cu->dwarf2_per_objfile->objfile;
   for (const auto &symbol : symbols)
     add_psymbol_to_list (symbol.name, 0,
 			 symbol.domain, symbol.theclass, symbol.section,
-			 symbol.where, symbol.coreaddr, language, objfile);
+			 symbol.where, symbol.coreaddr, language,
+			 objfile);
 }
 
 void
