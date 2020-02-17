@@ -7272,6 +7272,9 @@ struct dwarf_psym_reader
   /* Create partial symbols from the entries in SYMBOLS.  */
   void create_symbols ();
 
+  /* Create the partial symbol table for this reader.  */
+  void create_psymtab ();
+
   void scan (struct partial_die_info *first_die);
   void add_partial_symbol (struct partial_die_info *pdi);
   void add_partial_namespace (struct partial_die_info *pdi);
@@ -7279,6 +7282,65 @@ struct dwarf_psym_reader
   void add_partial_subprogram (struct partial_die_info *pdi);
   void add_partial_enumeration (struct partial_die_info *pdi);
 };
+
+void
+dwarf_psym_reader::create_psymtab ()
+{
+  struct objfile *objfile = per_cu->dwarf2_per_objfile->objfile;
+  struct gdbarch *gdbarch = get_objfile_arch (objfile);
+  dwarf2_psymtab *pst = create_partial_symtab (per_cu, filename.c_str ());
+
+  create_symbols ();
+
+  pst->dirname = dirname;
+
+  CORE_ADDR baseaddr = objfile->text_section_offset ();
+
+  for (auto &pair : addresses)
+    {
+      CORE_ADDR low
+	= (gdbarch_adjust_dwarf2_addr (gdbarch, pair.first + baseaddr)
+	   - baseaddr);
+      CORE_ADDR high
+	= (gdbarch_adjust_dwarf2_addr (gdbarch, pair.second + baseaddr)
+	   - baseaddr - 1);
+      /* Store the contiguous range if it is not empty; it can be
+	 empty for CUs with no code.  */
+      addrmap_set_empty (objfile->partial_symtabs->psymtabs_addrmap,
+			 low, high, pst);
+    }
+
+  pst->set_text_low (gdbarch_adjust_dwarf2_addr (gdbarch,
+						 lowpc + baseaddr)
+		     - baseaddr);
+  pst->set_text_high (gdbarch_adjust_dwarf2_addr (gdbarch,
+						  highpc + baseaddr)
+		      - baseaddr);
+
+  end_psymtab_common (objfile, pst);
+
+  if (!per_cu->imported_symtabs_empty ())
+    {
+      int i;
+      int len = per_cu->imported_symtabs_size ();
+
+      /* Fill in 'dependencies' here; we fill in 'users' in a
+	 post-pass.  */
+      pst->number_of_dependencies = len;
+      pst->dependencies
+	= objfile->partial_symtabs->allocate_dependencies (len);
+      for (i = 0; i < len; ++i)
+	{
+	  pst->dependencies[i]
+	    = per_cu->imported_symtabs->at (i)->v.psymtab;
+	}
+
+      per_cu->imported_symtabs_free ();
+    }
+
+  for (const char *include_name : include_names)
+    dwarf2_create_include_psymtab (include_name, pst, objfile);
+}
 
 /* DIE reader function for process_psymtab_comp_unit.  */
 
@@ -7352,76 +7414,27 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
 	}
     }
 
+  psym_reader.lowpc = best_lowpc;
+  psym_reader.highpc = best_highpc;
+
   /* Get the list of files included in the current compilation
      unit.  */
   dwarf2_build_include_psymtabs (cu, comp_unit_die, psym_reader.dirname,
 				 &psym_reader);
 
-  psym_reader.intern_names ();
-
-  dwarf2_psymtab *pst = create_partial_symtab (per_cu, psym_reader.filename);
-
-  psym_reader.create_symbols ();
-
-  /* This must be done before calling dwarf2_build_include_psymtabs.  */
-  pst->dirname = psym_reader.dirname;
-
-  CORE_ADDR baseaddr = objfile->text_section_offset ();
-
-  for (auto &pair : psym_reader.addresses)
-    {
-      CORE_ADDR low
-	= (gdbarch_adjust_dwarf2_addr (gdbarch, pair.first + baseaddr)
-	   - baseaddr);
-      CORE_ADDR high
-	= (gdbarch_adjust_dwarf2_addr (gdbarch, pair.second + baseaddr)
-	   - baseaddr - 1);
-      /* Store the contiguous range if it is not empty; it can be
-	 empty for CUs with no code.  */
-      addrmap_set_empty (objfile->partial_symtabs->psymtabs_addrmap,
-			 low, high, pst);
-    }
-
-  pst->set_text_low (gdbarch_adjust_dwarf2_addr (gdbarch,
-						 best_lowpc + baseaddr)
-		     - baseaddr);
-  pst->set_text_high (gdbarch_adjust_dwarf2_addr (gdbarch,
-						  best_highpc + baseaddr)
-		      - baseaddr);
-
-  end_psymtab_common (objfile, pst);
-
-  if (!cu->per_cu->imported_symtabs_empty ())
-    {
-      int i;
-      int len = cu->per_cu->imported_symtabs_size ();
-
-      /* Fill in 'dependencies' here; we fill in 'users' in a
-	 post-pass.  */
-      pst->number_of_dependencies = len;
-      pst->dependencies
-	= objfile->partial_symtabs->allocate_dependencies (len);
-      for (i = 0; i < len; ++i)
-	{
-	  pst->dependencies[i]
-	    = cu->per_cu->imported_symtabs->at (i)->v.psymtab;
-	}
-
-      cu->per_cu->imported_symtabs_free ();
-    }
-
-  for (const char *include_name : psym_reader.include_names)
-    dwarf2_create_include_psymtab (include_name, pst, objfile);
-
   if (dwarf_read_debug)
     fprintf_unfiltered (gdb_stdlog,
 			"Psymtab for %s unit @%s: %s - %s"
-			", %d global, %d static syms\n",
+			", %d syms\n",
 			per_cu->is_debug_types ? "type" : "comp",
 			sect_offset_str (per_cu->sect_off),
-			paddress (gdbarch, pst->text_low (objfile)),
-			paddress (gdbarch, pst->text_high (objfile)),
-			pst->n_global_syms, pst->n_static_syms);
+			paddress (gdbarch, best_lowpc),
+			paddress (gdbarch, best_highpc),
+			(int) psym_reader.symbols.size ());
+
+  psym_reader.intern_names ();
+
+  psym_reader.create_psymtab ();
 }
 
 /* Subroutine of dwarf2_build_psymtabs_hard to simplify it.
