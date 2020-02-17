@@ -45,6 +45,8 @@ template<typename T>
 class job_queue
 {
 public:
+  job_queue () = default;
+  ~job_queue () = default;
   DISABLE_COPY_AND_ASSIGN (job_queue);
 
   /* Push a job on the queue.  */
@@ -64,9 +66,9 @@ public:
      either a job is ready, or until shutdown is called.  */
   bool pop (T &result)
   {
-    std::lock_guard<std::mutex> guard (m_jobs_mutex);
+    std::unique_lock<std::mutex> guard (m_jobs_mutex);
     while (!m_shutdown && m_jobs.empty ())
-      m_jobs.cv_wait (guard);
+      m_jobs_cv.wait (guard);
     if (!m_jobs.empty ())
       {
 	result = std::move (m_jobs.front ());
