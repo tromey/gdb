@@ -18295,10 +18295,7 @@ partial_die_info::fixup (struct dwarf2_cu *cu)
   if (fixup_called)
     return;
 
-  /* If we found a reference attribute and the DIE has no name, try
-     to find a name in the referred to DIE.  */
-
-  if (name == NULL && has_specification)
+  if (has_specification)
     {
       struct partial_die_info *spec_die;
 
@@ -18308,14 +18305,15 @@ partial_die_info::fixup (struct dwarf2_cu *cu)
 
       spec_die->fixup (cu);
 
-      if (spec_die->name)
-	{
-	  name = spec_die->name;
+      if (name == NULL)
+	name = spec_die->name;
 
-	  /* Copy DW_AT_external attribute if it is set.  */
-	  if (spec_die->is_external)
-	    is_external = spec_die->is_external;
-	}
+      if (linkage_name == NULL)
+	linkage_name = spec_die->linkage_name;
+
+      /* Copy DW_AT_external attribute if it is set.  */
+      if (spec_die->is_external)
+	is_external = spec_die->is_external;
     }
 
   /* Set default names for some unnamed DIEs.  */
