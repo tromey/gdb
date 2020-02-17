@@ -1,3 +1,16 @@
+2020-02-19  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2/read.c (struct dwarf_psym_reader): New.
+	(process_psymtab_comp_unit_reader): Create a dwarf_psym_reader.
+	(build_type_psymtabs_reader): Likewise.
+	(dwarf_psym_reader::scan): Rename from scan_partial_symbols.
+	Remove parameters.
+	(dwarf_psym_reader::add_partial_symbol)
+	(dwarf_psym_reader::add_partial_namespace)
+	(dwarf_psym_reader::add_partial_module, add_partial_subprogram)
+	(dwarf_psym_reader::add_partial_enumeration): Now methods.  Remove
+	parameters.
+
 2020-02-22  Tom Tromey  <tom@tromey.com>
 
 	* objfiles.h (struct objfile) <intern>: New method.
