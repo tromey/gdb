@@ -7223,7 +7223,8 @@ struct dwarf_partial_symbol
 struct dwarf_psym_reader
 {
   explicit dwarf_psym_reader (dwarf2_cu *cu_)
-    : cu (cu_)
+    : cu (cu_),
+      language (cu->language)
   {
   }
 
@@ -7239,6 +7240,10 @@ struct dwarf_psym_reader
   /* Addresses that should be added to the address map.  */
   std::vector<std::pair<CORE_ADDR, CORE_ADDR>> addresses;
 
+  /* We stash the language so that we don't rely on the CU existing
+     when creating the partial symbols.  */
+  enum language language;
+
   /* Symbols that we create.  */
   std::vector<dwarf_partial_symbol> symbols;
 
@@ -7252,7 +7257,7 @@ struct dwarf_psym_reader
 			       short section,
 			       psymbol_placement where,
 			       CORE_ADDR coreaddr);
-  void create_symbols ();
+  void create_symbols (struct objfile *objfile);
 
   void scan (struct partial_die_info *first_die);
   void add_partial_symbol (struct partial_die_info *pdi);
@@ -7335,7 +7340,7 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
 
   dwarf2_psymtab *pst = create_partial_symtab (per_cu, filename);
 
-  psym_reader.create_symbols ();
+  psym_reader.create_symbols (objfile);
 
   /* This must be done before calling dwarf2_build_include_psymtabs.  */
   pst->dirname = dwarf2_string_attr (comp_unit_die, DW_AT_comp_dir, cu);
@@ -7478,7 +7483,7 @@ build_type_psymtabs_reader (const struct die_reader_specs *reader,
   first_die = psym_reader.load_partial_dies (reader, info_ptr, 1);
 
   psym_reader.scan (first_die);
-  psym_reader.create_symbols ();
+  psym_reader.create_symbols (objfile);
 
   end_psymtab_common (objfile, pst);
 }
@@ -8148,16 +8153,12 @@ partial_die_full_name (struct partial_die_info *pdi,
 }
 
 void
-dwarf_psym_reader::create_symbols ()
+dwarf_psym_reader::create_symbols (struct objfile *objfile)
 {
-  struct dwarf2_per_objfile *dwarf2_per_objfile
-    = cu->per_cu->dwarf2_per_objfile;
-  struct objfile *objfile = dwarf2_per_objfile->objfile;
-
   for (const auto &symbol : symbols)
     add_psymbol_to_list (symbol.name, symbol.built_actual_name != nullptr,
 			 symbol.domain, symbol.theclass, symbol.section,
-			 symbol.where, symbol.coreaddr, cu->language, objfile);
+			 symbol.where, symbol.coreaddr, language, objfile);
 }
 
 void
