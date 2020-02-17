@@ -7387,10 +7387,10 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
 
   end_psymtab_common (objfile, pst);
 
-  if (!cu->per_cu->imported_symtabs_empty ())
+  if (!per_cu->imported_symtabs_empty ())
     {
       int i;
-      int len = cu->per_cu->imported_symtabs_size ();
+      int len = per_cu->imported_symtabs_size ();
 
       /* Fill in 'dependencies' here; we fill in 'users' in a
 	 post-pass.  */
@@ -7400,10 +7400,10 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
       for (i = 0; i < len; ++i)
 	{
 	  pst->dependencies[i]
-	    = cu->per_cu->imported_symtabs->at (i)->v.psymtab;
+	    = per_cu->imported_symtabs->at (i)->v.psymtab;
 	}
 
-      cu->per_cu->imported_symtabs_free ();
+      per_cu->imported_symtabs_free ();
     }
 
   for (const char *include_name : psym_reader.include_names)
