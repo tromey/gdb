@@ -7672,6 +7672,9 @@ struct dwarf_psym_reader
 			       gdb::unique_xmalloc_ptr<char> &&built_actual_name,
 			       psymbol_placement where);
 
+  /* For each symbol in SYMBOLS, if the name needs to be copied,
+     "intern" it into the appropriate bcache.  */
+  void intern_names ();
   /* Create partial symbols from the entries in SYMBOLS.  */
   void create_symbols ();
 
@@ -7754,6 +7757,8 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
 	  best_highpc = psym_reader.highpc;
 	}
     }
+
+  psym_reader.intern_names ();
 
   dwarf2_psymtab *pst = create_partial_symtab (per_cu, per_objfile, filename);
 
@@ -7907,6 +7912,7 @@ build_type_psymtabs_reader (const struct die_reader_specs *reader,
   first_die = psym_reader.load_partial_dies (reader, info_ptr, 1);
 
   psym_reader.scan (first_die);
+  psym_reader.intern_names ();
   psym_reader.create_symbols ();
 
   pst->end ();
@@ -8590,6 +8596,32 @@ partial_die_full_name (struct partial_die_info *pdi,
     return gdb::unique_xmalloc_ptr<char> (typename_concat (NULL, parent_scope,
 							   pdi->name (cu),
 							   0, cu));
+}
+
+void
+dwarf_psym_reader::intern_names ()
+{
+  struct objfile *objfile = cu->per_objfile->objfile;
+  for (auto &symbol : symbols)
+    {
+      if (symbol.built_actual_name != nullptr)
+	{
+	  struct partial_symbol *psym = &symbol.psym;
+	  const char *copy = objfile->intern (symbol.built_actual_name.get ());
+
+	  if (psym->ginfo.linkage_name () == symbol.built_actual_name.get ())
+	    psym->ginfo.set_linkage_name (copy);
+	  else
+	    {
+	      gdb_assert (psym->ginfo.natural_name ()
+			  == symbol.built_actual_name.get ());
+	      psym->ginfo.set_demangled_name (copy,
+					      &objfile->objfile_obstack);
+	    }
+
+	  symbol.built_actual_name = nullptr;
+	}
+    }
 }
 
 void

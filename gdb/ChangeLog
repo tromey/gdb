@@ -1,3 +1,13 @@
+2020-02-19  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2/read.c (struct dwarf_psym_reader) <intern_names>:
+	Declare method.
+	(process_psymtab_comp_unit_reader, build_type_psymtabs_reader):
+	Call intern_names.
+	(dwarf_psym_reader::intern_names): New method.
+	(dwarf_psym_reader::create_symbols): Pass "false" as copy_name to
+	add_psymbol_to_list.
+
 2020-06-20  Tom Tromey  <tom@tromey.com>
 
 	* psymtab.h (class psymtab_storage) <current_global_psymbols,
