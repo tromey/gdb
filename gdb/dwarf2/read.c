@@ -1182,9 +1182,6 @@ static void dwarf2_build_psymtabs_hard
 
 static unsigned int peek_abbrev_code (bfd *, const gdb_byte *);
 
-static struct partial_die_info *load_partial_dies
-  (const struct die_reader_specs *, const gdb_byte *, int);
-
 /* A pair of partial_die_info and compilation unit.  */
 struct cu_partial_die_info
 {
@@ -7212,6 +7209,17 @@ create_partial_symtab (struct dwarf2_per_cu_data *per_cu, const char *name)
   return pst;
 }
 
+struct dwarf_partial_symbol
+{
+  const char *name;
+  gdb::unique_xmalloc_ptr<char> built_actual_name;
+  CORE_ADDR coreaddr;
+  short section;
+  ENUM_BITFIELD(address_class) theclass : SYMBOL_ACLASS_BITS;
+  ENUM_BITFIELD(domain_enum_tag) domain : SYMBOL_DOMAIN_BITS;
+  psymbol_placement where;	/* FIXME can't be bitfield due to gcc warning */
+};
+
 struct dwarf_psym_reader
 {
   explicit dwarf_psym_reader (dwarf2_cu *cu_)
@@ -7230,6 +7238,21 @@ struct dwarf_psym_reader
 
   /* Addresses that should be added to the address map.  */
   std::vector<std::pair<CORE_ADDR, CORE_ADDR>> addresses;
+
+  /* Symbols that we create.  */
+  std::vector<dwarf_partial_symbol> symbols;
+
+  struct partial_die_info *load_partial_dies (const struct die_reader_specs *,
+					      const gdb_byte *, int);
+
+  void do_add_psymbol_to_list (const char *name,
+			       gdb::unique_xmalloc_ptr<char> &&built_actual_name,
+			       domain_enum domain,
+			       enum address_class theclass,
+			       short section,
+			       psymbol_placement where,
+			       CORE_ADDR coreaddr);
+  void create_symbols ();
 
   void scan (struct partial_die_info *first_die);
   void add_partial_symbol (struct partial_die_info *pdi);
@@ -7291,7 +7314,7 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
     {
       struct partial_die_info *first_die;
 
-      first_die = load_partial_dies (reader, info_ptr, 1);
+      first_die = psym_reader.load_partial_dies (reader, info_ptr, 1);
 
       psym_reader.set_addrmap = cu_bounds_kind <= PC_BOUNDS_INVALID;
       psym_reader.scan (first_die);
@@ -7311,6 +7334,8 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
     }
 
   dwarf2_psymtab *pst = create_partial_symtab (per_cu, filename);
+
+  psym_reader.create_symbols ();
 
   /* This must be done before calling dwarf2_build_include_psymtabs.  */
   pst->dirname = dwarf2_string_attr (comp_unit_die, DW_AT_comp_dir, cu);
@@ -7448,11 +7473,12 @@ build_type_psymtabs_reader (const struct die_reader_specs *reader,
   pst = create_partial_symtab (per_cu, "");
   pst->anonymous = true;
 
-  first_die = load_partial_dies (reader, info_ptr, 1);
-
   dwarf_psym_reader psym_reader (cu);
 
+  first_die = psym_reader.load_partial_dies (reader, info_ptr, 1);
+
   psym_reader.scan (first_die);
+  psym_reader.create_symbols ();
 
   end_psymtab_common (objfile, pst);
 }
@@ -7807,7 +7833,10 @@ load_partial_comp_unit (struct dwarf2_per_cu_data *this_cu)
 	 If so, read the rest of the partial symbols from this comp unit.
 	 If not, there's no more debug_info for this comp unit.  */
       if (reader.comp_unit_die->has_children)
-	load_partial_dies (&reader, reader.info_ptr, 0);
+	{
+	  dwarf_psym_reader psym_reader (reader.cu);
+	  psym_reader.load_partial_dies (&reader, reader.info_ptr, 0);
+	}
 
       reader.keep ();
     }
@@ -8119,6 +8148,39 @@ partial_die_full_name (struct partial_die_info *pdi,
 }
 
 void
+dwarf_psym_reader::create_symbols ()
+{
+  struct dwarf2_per_objfile *dwarf2_per_objfile
+    = cu->per_cu->dwarf2_per_objfile;
+  struct objfile *objfile = dwarf2_per_objfile->objfile;
+
+  for (const auto &symbol : symbols)
+    add_psymbol_to_list (symbol.name, symbol.built_actual_name != nullptr,
+			 symbol.domain, symbol.theclass, symbol.section,
+			 symbol.where, symbol.coreaddr, cu->language, objfile);
+}
+
+void
+dwarf_psym_reader::do_add_psymbol_to_list (const char *name,
+					   gdb::unique_xmalloc_ptr<char> &&built_actual_name,
+					   domain_enum domain,
+					   enum address_class theclass,
+					   short section,
+					   psymbol_placement where,
+					   CORE_ADDR coreaddr)
+{
+  symbols.emplace_back ();
+  dwarf_partial_symbol &sym = symbols.back ();
+  sym.name = name;
+  sym.built_actual_name = std::move (built_actual_name);
+  sym.domain = domain;
+  sym.theclass = theclass;
+  sym.section = section;
+  sym.where = where;
+  sym.coreaddr = coreaddr;
+}
+
+void
 dwarf_psym_reader::add_partial_symbol (struct partial_die_info *pdi)
 {
   struct dwarf2_per_objfile *dwarf2_per_objfile
@@ -8155,34 +8217,36 @@ dwarf_psym_reader::add_partial_symbol (struct partial_die_info *pdi)
              But in Ada and Fortran, we want to be able to access nested
              procedures globally.  So all Ada and Fortran subprograms are
              stored in the global scope.  */
-	  add_psymbol_to_list (actual_name,
-			       built_actual_name != NULL,
-			       VAR_DOMAIN, LOC_BLOCK,
-			       SECT_OFF_TEXT (objfile),
-			       psymbol_placement::GLOBAL,
-			       addr,
-			       cu->language, objfile);
+	  do_add_psymbol_to_list (actual_name,
+				  std::move (built_actual_name),
+				  VAR_DOMAIN, LOC_BLOCK,
+				  SECT_OFF_TEXT (objfile),
+				  psymbol_placement::GLOBAL,
+				  addr);
 	}
       else
 	{
-	  add_psymbol_to_list (actual_name,
-			       built_actual_name != NULL,
-			       VAR_DOMAIN, LOC_BLOCK,
-			       SECT_OFF_TEXT (objfile),
-			       psymbol_placement::STATIC,
-			       addr, cu->language, objfile);
+	  do_add_psymbol_to_list (actual_name,
+				  std::move (built_actual_name),
+				  VAR_DOMAIN, LOC_BLOCK,
+				  SECT_OFF_TEXT (objfile),
+				  psymbol_placement::STATIC,
+				  addr);
 	}
 
+#if 0				/* FIXME */
       if (pdi->main_subprogram && actual_name != NULL)
 	set_objfile_main_name (objfile, actual_name, cu->language);
+#endif
       break;
     case DW_TAG_constant:
-      add_psymbol_to_list (actual_name,
-			   built_actual_name != NULL, VAR_DOMAIN, LOC_STATIC,
-			   -1, (pdi->is_external
-				? psymbol_placement::GLOBAL
-				: psymbol_placement::STATIC),
-			   0, cu->language, objfile);
+      do_add_psymbol_to_list (actual_name,
+			      std::move (built_actual_name),
+			      VAR_DOMAIN, LOC_STATIC,
+			      -1, (pdi->is_external
+				   ? psymbol_placement::GLOBAL
+				   : psymbol_placement::STATIC),
+			      0);
       break;
     case DW_TAG_variable:
       if (pdi->d.locdesc)
@@ -8213,12 +8277,12 @@ dwarf_psym_reader::add_partial_symbol (struct partial_die_info *pdi)
 	     table building.  */
 
 	  if (pdi->d.locdesc || pdi->has_type)
-	    add_psymbol_to_list (actual_name,
-				 built_actual_name != NULL,
-				 VAR_DOMAIN, LOC_STATIC,
-				 SECT_OFF_TEXT (objfile),
-				 psymbol_placement::GLOBAL,
-				 addr, cu->language, objfile);
+	    do_add_psymbol_to_list (actual_name,
+				    std::move (built_actual_name),
+				    VAR_DOMAIN, LOC_STATIC,
+				    SECT_OFF_TEXT (objfile),
+				    psymbol_placement::GLOBAL,
+				    addr);
 	}
       else
 	{
@@ -8229,42 +8293,41 @@ dwarf_psym_reader::add_partial_symbol (struct partial_die_info *pdi)
 	  if (!has_loc && !pdi->has_const_value)
 	    return;
 
-	  add_psymbol_to_list (actual_name,
-			       built_actual_name != NULL,
-			       VAR_DOMAIN, LOC_STATIC,
-			       SECT_OFF_TEXT (objfile),
-			       psymbol_placement::STATIC,
-			       has_loc ? addr : 0,
-			       cu->language, objfile);
+	  do_add_psymbol_to_list (actual_name,
+				  std::move (built_actual_name),
+				  VAR_DOMAIN, LOC_STATIC,
+				  SECT_OFF_TEXT (objfile),
+				  psymbol_placement::STATIC,
+				  has_loc ? addr : 0);
 	}
       break;
     case DW_TAG_typedef:
     case DW_TAG_base_type:
     case DW_TAG_subrange_type:
-      add_psymbol_to_list (actual_name,
-			   built_actual_name != NULL,
-			   VAR_DOMAIN, LOC_TYPEDEF, -1,
-			   psymbol_placement::STATIC,
-			   0, cu->language, objfile);
+      do_add_psymbol_to_list (actual_name,
+			      std::move (built_actual_name),
+			      VAR_DOMAIN, LOC_TYPEDEF, -1,
+			      psymbol_placement::STATIC,
+			      0);
       break;
     case DW_TAG_imported_declaration:
     case DW_TAG_namespace:
-      add_psymbol_to_list (actual_name,
-			   built_actual_name != NULL,
-			   VAR_DOMAIN, LOC_TYPEDEF, -1,
-			   psymbol_placement::GLOBAL,
-			   0, cu->language, objfile);
+      do_add_psymbol_to_list (actual_name,
+			      std::move (built_actual_name),
+			      VAR_DOMAIN, LOC_TYPEDEF, -1,
+			      psymbol_placement::GLOBAL,
+			      0);
       break;
     case DW_TAG_module:
       /* With Fortran 77 there might be a "BLOCK DATA" module
          available without any name.  If so, we skip the module as it
          doesn't bring any value.  */
       if (actual_name != nullptr)
-	add_psymbol_to_list (actual_name,
-			     built_actual_name != NULL,
-			     MODULE_DOMAIN, LOC_TYPEDEF, -1,
-			     psymbol_placement::GLOBAL,
-			     0, cu->language, objfile);
+	do_add_psymbol_to_list (actual_name,
+				std::move (built_actual_name),
+				MODULE_DOMAIN, LOC_TYPEDEF, -1,
+				psymbol_placement::GLOBAL,
+				0);
       break;
     case DW_TAG_class_type:
     case DW_TAG_interface_type:
@@ -8281,23 +8344,23 @@ dwarf_psym_reader::add_partial_symbol (struct partial_die_info *pdi)
 
       /* NOTE: carlton/2003-10-07: See comment in new_symbol about
 	 static vs. global.  */
-      add_psymbol_to_list (actual_name,
-			   built_actual_name != NULL,
-			   STRUCT_DOMAIN, LOC_TYPEDEF, -1,
-			   cu->language == language_cplus
-			   ? psymbol_placement::GLOBAL
-			   : psymbol_placement::STATIC,
-			   0, cu->language, objfile);
+      do_add_psymbol_to_list (actual_name,
+			      std::move (built_actual_name),
+			      STRUCT_DOMAIN, LOC_TYPEDEF, -1,
+			      cu->language == language_cplus
+			      ? psymbol_placement::GLOBAL
+			      : psymbol_placement::STATIC,
+			      0);
 
       break;
     case DW_TAG_enumerator:
-      add_psymbol_to_list (actual_name,
-			   built_actual_name != NULL,
-			   VAR_DOMAIN, LOC_CONST, -1,
-			   cu->language == language_cplus
-			   ? psymbol_placement::GLOBAL
-			   : psymbol_placement::STATIC,
-			   0, cu->language, objfile);
+      do_add_psymbol_to_list (actual_name,
+			      std::move (built_actual_name),
+			      VAR_DOMAIN, LOC_CONST, -1,
+			      cu->language == language_cplus
+			      ? psymbol_placement::GLOBAL
+			      : psymbol_placement::STATIC,
+			      0);
       break;
     default:
       break;
@@ -17588,9 +17651,10 @@ is_type_tag_for_partial (int tag)
 
 /* Load all DIEs that are interesting for partial symbols into memory.  */
 
-static struct partial_die_info *
-load_partial_dies (const struct die_reader_specs *reader,
-		   const gdb_byte *info_ptr, int building_psymtab)
+struct partial_die_info *
+dwarf_psym_reader::load_partial_dies (const struct die_reader_specs *reader,
+				      const gdb_byte *info_ptr,
+				      int building_psymtab)
 {
   struct dwarf2_cu *cu = reader->cu;
   struct objfile *objfile = cu->per_cu->dwarf2_per_objfile->objfile;
@@ -17683,10 +17747,10 @@ load_partial_dies (const struct die_reader_specs *reader,
 	      || pdi.tag == DW_TAG_subrange_type))
 	{
 	  if (building_psymtab && pdi.name != NULL)
-	    add_psymbol_to_list (pdi.name, false,
-				 VAR_DOMAIN, LOC_TYPEDEF, -1,
-				 psymbol_placement::STATIC,
-				 0, cu->language, objfile);
+	    do_add_psymbol_to_list (pdi.name, nullptr,
+				    VAR_DOMAIN, LOC_TYPEDEF, -1,
+				    psymbol_placement::STATIC,
+				    0);
 	  info_ptr = locate_pdi_sibling (reader, &pdi, info_ptr);
 	  continue;
 	}
@@ -17717,12 +17781,12 @@ load_partial_dies (const struct die_reader_specs *reader,
 	  if (pdi.name == NULL)
 	    complaint (_("malformed enumerator DIE ignored"));
 	  else if (building_psymtab)
-	    add_psymbol_to_list (pdi.name, false,
-				 VAR_DOMAIN, LOC_CONST, -1,
-				 cu->language == language_cplus
-				 ? psymbol_placement::GLOBAL
-				 : psymbol_placement::STATIC,
-				 0, cu->language, objfile);
+	    do_add_psymbol_to_list (pdi.name, nullptr,
+				    VAR_DOMAIN, LOC_CONST, -1,
+				    cu->language == language_cplus
+				    ? psymbol_placement::GLOBAL
+				    : psymbol_placement::STATIC,
+				    0);
 
 	  info_ptr = locate_pdi_sibling (reader, &pdi, info_ptr);
 	  continue;
