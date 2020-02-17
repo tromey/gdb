@@ -8159,6 +8159,26 @@ partial_die_full_name (struct partial_die_info *pdi,
 							   pdi->name, 0, cu));
 }
 
+static void
+do_add_psymbol_to_list (const char *demangled_name, bool copy_name,
+			const char *linkage_name,
+			domain_enum domain,
+			enum address_class theclass,
+			short section,
+			psymbol_placement where,
+			CORE_ADDR coreaddr,
+			enum language language,
+			struct objfile *objfile)
+{
+  if (copy_name)
+    demangled_name
+      = ((const char *) objfile->per_bfd->filename_cache.insert
+	 (demangled_name, strlen (demangled_name) + 1));
+
+  add_psymbol_to_list (demangled_name, linkage_name, domain, theclass,
+		       section, where, coreaddr, language, objfile);
+}
+
 void
 dwarf_psym_reader::add_partial_symbol (struct partial_die_info *pdi)
 {
@@ -8196,34 +8216,37 @@ dwarf_psym_reader::add_partial_symbol (struct partial_die_info *pdi)
              But in Ada and Fortran, we want to be able to access nested
              procedures globally.  So all Ada and Fortran subprograms are
              stored in the global scope.  */
-	  add_psymbol_to_list (actual_name,
-			       built_actual_name != NULL,
-			       VAR_DOMAIN, LOC_BLOCK,
-			       SECT_OFF_TEXT (objfile),
-			       psymbol_placement::GLOBAL,
-			       addr,
-			       cu->language, objfile);
+	  do_add_psymbol_to_list (actual_name,
+				  built_actual_name != NULL,
+				  pdi->linkage_name,
+				  VAR_DOMAIN, LOC_BLOCK,
+				  SECT_OFF_TEXT (objfile),
+				  psymbol_placement::GLOBAL,
+				  addr,
+				  cu->language, objfile);
 	}
       else
 	{
-	  add_psymbol_to_list (actual_name,
-			       built_actual_name != NULL,
-			       VAR_DOMAIN, LOC_BLOCK,
-			       SECT_OFF_TEXT (objfile),
-			       psymbol_placement::STATIC,
-			       addr, cu->language, objfile);
+	  do_add_psymbol_to_list (actual_name,
+				  built_actual_name != NULL,
+				  pdi->linkage_name,
+				  VAR_DOMAIN, LOC_BLOCK,
+				  SECT_OFF_TEXT (objfile),
+				  psymbol_placement::STATIC,
+				  addr, cu->language, objfile);
 	}
 
       if (pdi->main_subprogram && actual_name != NULL)
 	set_objfile_main_name (objfile, actual_name, cu->language);
       break;
     case DW_TAG_constant:
-      add_psymbol_to_list (actual_name,
-			   built_actual_name != NULL, VAR_DOMAIN, LOC_STATIC,
-			   -1, (pdi->is_external
-				? psymbol_placement::GLOBAL
-				: psymbol_placement::STATIC),
-			   0, cu->language, objfile);
+      do_add_psymbol_to_list (actual_name, built_actual_name != NULL,
+			      pdi->linkage_name,
+			      VAR_DOMAIN, LOC_STATIC,
+			      -1, (pdi->is_external
+				   ? psymbol_placement::GLOBAL
+				   : psymbol_placement::STATIC),
+			      0, cu->language, objfile);
       break;
     case DW_TAG_variable:
       if (pdi->d.locdesc)
@@ -8254,12 +8277,12 @@ dwarf_psym_reader::add_partial_symbol (struct partial_die_info *pdi)
 	     table building.  */
 
 	  if (pdi->d.locdesc || pdi->has_type)
-	    add_psymbol_to_list (actual_name,
-				 built_actual_name != NULL,
-				 VAR_DOMAIN, LOC_STATIC,
-				 SECT_OFF_TEXT (objfile),
-				 psymbol_placement::GLOBAL,
-				 addr, cu->language, objfile);
+	    do_add_psymbol_to_list (actual_name, built_actual_name != NULL,
+				    pdi->linkage_name,
+				    VAR_DOMAIN, LOC_STATIC,
+				    SECT_OFF_TEXT (objfile),
+				    psymbol_placement::GLOBAL,
+				    addr, cu->language, objfile);
 	}
       else
 	{
@@ -8270,42 +8293,42 @@ dwarf_psym_reader::add_partial_symbol (struct partial_die_info *pdi)
 	  if (!has_loc && !pdi->has_const_value)
 	    return;
 
-	  add_psymbol_to_list (actual_name,
-			       built_actual_name != NULL,
-			       VAR_DOMAIN, LOC_STATIC,
-			       SECT_OFF_TEXT (objfile),
-			       psymbol_placement::STATIC,
-			       has_loc ? addr : 0,
-			       cu->language, objfile);
+	 do_add_psymbol_to_list (actual_name, built_actual_name != NULL,
+				 pdi->linkage_name,
+				 VAR_DOMAIN, LOC_STATIC,
+				 SECT_OFF_TEXT (objfile),
+				 psymbol_placement::STATIC,
+				 has_loc ? addr : 0,
+				 cu->language, objfile);
 	}
       break;
     case DW_TAG_typedef:
     case DW_TAG_base_type:
     case DW_TAG_subrange_type:
-      add_psymbol_to_list (actual_name,
-			   built_actual_name != NULL,
-			   VAR_DOMAIN, LOC_TYPEDEF, -1,
-			   psymbol_placement::STATIC,
-			   0, cu->language, objfile);
+      do_add_psymbol_to_list (actual_name, built_actual_name != NULL,
+			      pdi->linkage_name,
+			      VAR_DOMAIN, LOC_TYPEDEF, -1,
+			      psymbol_placement::STATIC,
+			      0, cu->language, objfile);
       break;
     case DW_TAG_imported_declaration:
     case DW_TAG_namespace:
-      add_psymbol_to_list (actual_name,
-			   built_actual_name != NULL,
-			   VAR_DOMAIN, LOC_TYPEDEF, -1,
-			   psymbol_placement::GLOBAL,
-			   0, cu->language, objfile);
+      do_add_psymbol_to_list (actual_name, built_actual_name != NULL,
+			      pdi->linkage_name,
+			      VAR_DOMAIN, LOC_TYPEDEF, -1,
+			      psymbol_placement::GLOBAL,
+			      0, cu->language, objfile);
       break;
     case DW_TAG_module:
       /* With Fortran 77 there might be a "BLOCK DATA" module
          available without any name.  If so, we skip the module as it
          doesn't bring any value.  */
       if (actual_name != nullptr)
-	add_psymbol_to_list (actual_name,
-			     built_actual_name != NULL,
-			     MODULE_DOMAIN, LOC_TYPEDEF, -1,
-			     psymbol_placement::GLOBAL,
-			     0, cu->language, objfile);
+	do_add_psymbol_to_list (actual_name, built_actual_name != NULL,
+				pdi->linkage_name,
+				MODULE_DOMAIN, LOC_TYPEDEF, -1,
+				psymbol_placement::GLOBAL,
+				0, cu->language, objfile);
       break;
     case DW_TAG_class_type:
     case DW_TAG_interface_type:
@@ -8322,23 +8345,23 @@ dwarf_psym_reader::add_partial_symbol (struct partial_die_info *pdi)
 
       /* NOTE: carlton/2003-10-07: See comment in new_symbol about
 	 static vs. global.  */
-      add_psymbol_to_list (actual_name,
-			   built_actual_name != NULL,
-			   STRUCT_DOMAIN, LOC_TYPEDEF, -1,
-			   cu->language == language_cplus
-			   ? psymbol_placement::GLOBAL
-			   : psymbol_placement::STATIC,
-			   0, cu->language, objfile);
+      do_add_psymbol_to_list (actual_name, built_actual_name != NULL,
+			      pdi->linkage_name,
+			      STRUCT_DOMAIN, LOC_TYPEDEF, -1,
+			      cu->language == language_cplus
+			      ? psymbol_placement::GLOBAL
+			      : psymbol_placement::STATIC,
+			      0, cu->language, objfile);
 
       break;
     case DW_TAG_enumerator:
-      add_psymbol_to_list (actual_name,
-			   built_actual_name != NULL,
-			   VAR_DOMAIN, LOC_CONST, -1,
-			   cu->language == language_cplus
-			   ? psymbol_placement::GLOBAL
-			   : psymbol_placement::STATIC,
-			   0, cu->language, objfile);
+      do_add_psymbol_to_list (actual_name, built_actual_name != NULL,
+			      pdi->linkage_name,
+			      VAR_DOMAIN, LOC_CONST, -1,
+			      cu->language == language_cplus
+			      ? psymbol_placement::GLOBAL
+			      : psymbol_placement::STATIC,
+			      0, cu->language, objfile);
       break;
     default:
       break;

@@ -1588,6 +1588,40 @@ add_psymbol_to_bcache (gdb::string_view name, bool copy_name,
 	  (&psymbol, sizeof (struct partial_symbol), added));
 }
 
+static struct partial_symbol *
+add_psymbol_to_bcache (const char *demangled_name,
+		       const char *linkage_name,
+		       domain_enum domain,
+		       enum address_class theclass,
+		       short section,
+		       CORE_ADDR coreaddr,
+		       enum language language, struct objfile *objfile,
+		       int *added)
+{
+  struct partial_symbol psymbol;
+  memset (&psymbol, 0, sizeof (psymbol));
+
+  psymbol.set_unrelocated_address (coreaddr);
+  psymbol.ginfo.section = section;
+  psymbol.domain = domain;
+  psymbol.aclass = theclass;
+  psymbol.ginfo.set_language (language, objfile->partial_symtabs->obstack ());
+
+  if (language == language_ada)
+    psymbol.ginfo.m_name = demangled_name; /* Lies */
+  else
+    {
+      psymbol.ginfo.m_name = linkage_name;
+      if (demangled_name != nullptr)
+	psymbol.ginfo.language_specific.demangled_name = demangled_name;
+    }
+
+  /* Stash the partial symbol away in the cache.  */
+  return ((struct partial_symbol *)
+	  objfile->partial_symtabs->psymbol_cache.insert
+	  (&psymbol, sizeof (struct partial_symbol), added));
+}
+
 /* Helper function, adds partial symbol to the given partial symbol list.  */
 
 static void
@@ -1616,6 +1650,38 @@ add_psymbol_to_list (gdb::string_view name, bool copy_name,
 
   /* Stash the partial symbol away in the cache.  */
   psym = add_psymbol_to_bcache (name, copy_name, domain, theclass,
+				section, coreaddr, language, objfile, &added);
+
+  /* Do not duplicate global partial symbols.  */
+  if (where == psymbol_placement::GLOBAL && !added)
+    return;
+
+  /* Save pointer to partial symbol in psymtab, growing symtab if needed.  */
+  std::vector<partial_symbol *> *list
+    = (where == psymbol_placement::STATIC
+       ? &objfile->partial_symtabs->static_psymbols
+       : &objfile->partial_symtabs->global_psymbols);
+  append_psymbol_to_list (list, psym, objfile);
+}
+
+/* See psympriv.h.  */
+
+void
+add_psymbol_to_list (const char *demangled_name,
+		     const char *linkage_name,
+		     domain_enum domain,
+		     enum address_class theclass,
+		     short section,
+		     psymbol_placement where,
+		     CORE_ADDR coreaddr,
+		     enum language language, struct objfile *objfile)
+{
+  struct partial_symbol *psym;
+
+  int added;
+
+  /* Stash the partial symbol away in the cache.  */
+  psym = add_psymbol_to_bcache (demangled_name, linkage_name, domain, theclass,
 				section, coreaddr, language, objfile, &added);
 
   /* Do not duplicate global partial symbols.  */

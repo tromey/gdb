@@ -415,6 +415,16 @@ extern void add_psymbol_to_list (gdb::string_view name,
 				 enum language language,
 				 struct objfile *objfile);
 
+extern void add_psymbol_to_list (const char *demangled_name,
+				 const char *linkage_name,
+				 domain_enum domain,
+				 enum address_class theclass,
+				 short section,
+				 psymbol_placement where,
+				 CORE_ADDR coreaddr,
+				 enum language language,
+				 struct objfile *objfile);
+
 /* Initialize storage for partial symbols.  If partial symbol storage
    has already been initialized, this does nothing.  TOTAL_SYMBOLS is
    an estimate of how many symbols there will be.  */
