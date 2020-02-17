@@ -1334,8 +1334,9 @@ static void read_call_site_scope (struct die_info *die, struct dwarf2_cu *cu);
 
 static void read_variable (struct die_info *die, struct dwarf2_cu *cu);
 
+struct dwarf_psym_reader;
 static int dwarf2_ranges_read (unsigned, CORE_ADDR *, CORE_ADDR *,
-			       struct dwarf2_cu *, dwarf2_psymtab *);
+			       struct dwarf2_cu *, dwarf_psym_reader *);
 
 /* How dwarf2_get_pc_bounds constructed its *LOWPC and *HIGHPC return
    values.  Keep the items ordered with increasing constraints compliance.  */
@@ -1358,7 +1359,7 @@ enum pc_bounds_kind
 static enum pc_bounds_kind dwarf2_get_pc_bounds (struct die_info *,
 						 CORE_ADDR *, CORE_ADDR *,
 						 struct dwarf2_cu *,
-						 dwarf2_psymtab *);
+						 dwarf_psym_reader *);
 
 static void get_scope_pc_bounds (struct die_info *,
 				 CORE_ADDR *, CORE_ADDR *,
@@ -7226,6 +7227,9 @@ struct dwarf_psym_reader
   CORE_ADDR lowpc = (CORE_ADDR) -1;
   CORE_ADDR highpc = 0;
 
+  /* Addresses that should be added to the address map.  */
+  std::vector<std::pair<CORE_ADDR, CORE_ADDR>> addresses;
+
   void scan (struct partial_die_info *first_die);
   void add_partial_symbol (struct partial_die_info *pdi);
   void add_partial_namespace (struct partial_die_info *pdi);
@@ -7246,9 +7250,7 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
   struct objfile *objfile = cu->per_cu->dwarf2_per_objfile->objfile;
   struct gdbarch *gdbarch = get_objfile_arch (objfile);
   struct dwarf2_per_cu_data *per_cu = cu->per_cu;
-  CORE_ADDR baseaddr;
   CORE_ADDR best_lowpc = 0, best_highpc = 0;
-  dwarf2_psymtab *pst;
   enum pc_bounds_kind cu_bounds_kind;
   const char *filename;
 
@@ -7272,32 +7274,20 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
 
   dwarf_psym_reader psym_reader (cu);
 
-  pst = create_partial_symtab (per_cu, filename);
+  dwarf2_psymtab *pst = create_partial_symtab (per_cu, filename);
 
   /* This must be done before calling dwarf2_build_include_psymtabs.  */
   pst->dirname = dwarf2_string_attr (comp_unit_die, DW_AT_comp_dir, cu);
 
-  baseaddr = objfile->text_section_offset ();
 
   dwarf2_find_base_address (comp_unit_die, cu);
 
   /* Possibly set the default values of LOWPC and HIGHPC from
      `DW_AT_ranges'.  */
   cu_bounds_kind = dwarf2_get_pc_bounds (comp_unit_die, &best_lowpc,
-					 &best_highpc, cu, pst);
+					 &best_highpc, cu, &psym_reader);
   if (cu_bounds_kind == PC_BOUNDS_HIGH_LOW && best_lowpc < best_highpc)
-    {
-      CORE_ADDR low
-	= (gdbarch_adjust_dwarf2_addr (gdbarch, best_lowpc + baseaddr)
-	   - baseaddr);
-      CORE_ADDR high
-	= (gdbarch_adjust_dwarf2_addr (gdbarch, best_highpc + baseaddr)
-	   - baseaddr - 1);
-      /* Store the contiguous range if it is not empty; it can be
-	 empty for CUs with no code.  */
-      addrmap_set_empty (objfile->partial_symtabs->psymtabs_addrmap,
-			 low, high, pst);
-    }
+    psym_reader.addresses.emplace_back (best_lowpc, best_highpc);
 
   /* Check if comp unit has_children.
      If so, read the rest of the partial symbols from this comp unit.
@@ -7324,6 +7314,23 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
 	  best_highpc = psym_reader.highpc;
 	}
     }
+
+  CORE_ADDR baseaddr = objfile->text_section_offset ();
+
+  for (auto &pair : psym_reader.addresses)
+    {
+      CORE_ADDR low
+	= (gdbarch_adjust_dwarf2_addr (gdbarch, pair.first + baseaddr)
+	   - baseaddr);
+      CORE_ADDR high
+	= (gdbarch_adjust_dwarf2_addr (gdbarch, pair.second + baseaddr)
+	   - baseaddr - 1);
+      /* Store the contiguous range if it is not empty; it can be
+	 empty for CUs with no code.  */
+      addrmap_set_empty (objfile->partial_symtabs->psymtabs_addrmap,
+			 low, high, pst);
+    }
+
   pst->set_text_low (gdbarch_adjust_dwarf2_addr (gdbarch,
 						 best_lowpc + baseaddr)
 		     - baseaddr);
@@ -8367,26 +8374,7 @@ dwarf_psym_reader::add_partial_subprogram (struct partial_die_info *pdi)
           if (pdi->highpc > highpc)
             highpc = pdi->highpc;
 	  if (set_addrmap)
-	    {
-	      struct objfile *objfile = cu->per_cu->dwarf2_per_objfile->objfile;
-	      struct gdbarch *gdbarch = get_objfile_arch (objfile);
-	      CORE_ADDR baseaddr;
-	      CORE_ADDR this_highpc;
-	      CORE_ADDR this_lowpc;
-
-	      baseaddr = objfile->text_section_offset ();
-	      this_lowpc
-		= (gdbarch_adjust_dwarf2_addr (gdbarch,
-					       pdi->lowpc + baseaddr)
-		   - baseaddr);
-	      this_highpc
-		= (gdbarch_adjust_dwarf2_addr (gdbarch,
-					       pdi->highpc + baseaddr)
-		   - baseaddr);
-	      addrmap_set_empty (objfile->partial_symtabs->psymtabs_addrmap,
-				 this_lowpc, this_highpc - 1,
-				 cu->per_cu->v.psymtab);
-	    }
+	    addresses.emplace_back (pdi->lowpc, pdi->highpc);
         }
 
       if (pdi->has_pc_info || (!pdi->is_external && pdi->may_be_inlined))
@@ -13713,11 +13701,8 @@ dwarf2_ranges_process (unsigned offset, struct dwarf2_cu *cu,
 static int
 dwarf2_ranges_read (unsigned offset, CORE_ADDR *low_return,
 		    CORE_ADDR *high_return, struct dwarf2_cu *cu,
-		    dwarf2_psymtab *ranges_pst)
+		    dwarf_psym_reader *psym_reader)
 {
-  struct objfile *objfile = cu->per_cu->dwarf2_per_objfile->objfile;
-  struct gdbarch *gdbarch = get_objfile_arch (objfile);
-  const CORE_ADDR baseaddr = objfile->text_section_offset ();
   int low_set = 0;
   CORE_ADDR low = 0;
   CORE_ADDR high = 0;
@@ -13726,20 +13711,8 @@ dwarf2_ranges_read (unsigned offset, CORE_ADDR *low_return,
   retval = dwarf2_ranges_process (offset, cu,
     [&] (CORE_ADDR range_beginning, CORE_ADDR range_end)
     {
-      if (ranges_pst != NULL)
-	{
-	  CORE_ADDR lowpc;
-	  CORE_ADDR highpc;
-
-	  lowpc = (gdbarch_adjust_dwarf2_addr (gdbarch,
-					       range_beginning + baseaddr)
-		   - baseaddr);
-	  highpc = (gdbarch_adjust_dwarf2_addr (gdbarch,
-						range_end + baseaddr)
-		    - baseaddr);
-	  addrmap_set_empty (objfile->partial_symtabs->psymtabs_addrmap,
-			     lowpc, highpc - 1, ranges_pst);
-	}
+      if (psym_reader != NULL)
+	psym_reader->addresses.emplace_back (range_beginning, range_end);
 
       /* FIXME: This is recording everything as a low-high
 	 segment of consecutive addresses.  We should have a
@@ -13781,7 +13754,7 @@ dwarf2_ranges_read (unsigned offset, CORE_ADDR *low_return,
 static enum pc_bounds_kind
 dwarf2_get_pc_bounds (struct die_info *die, CORE_ADDR *lowpc,
 		      CORE_ADDR *highpc, struct dwarf2_cu *cu,
-		      dwarf2_psymtab *pst)
+		      dwarf_psym_reader *psym_reader)
 {
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = cu->per_cu->dwarf2_per_objfile;
@@ -13825,7 +13798,8 @@ dwarf2_get_pc_bounds (struct die_info *die, CORE_ADDR *lowpc,
 
 	  /* Value of the DW_AT_ranges attribute is the offset in the
 	     .debug_ranges section.  */
-	  if (!dwarf2_ranges_read (ranges_offset, &low, &high, cu, pst))
+	  if (!dwarf2_ranges_read (ranges_offset, &low, &high, cu,
+				   psym_reader))
 	    return PC_BOUNDS_INVALID;
 	  /* Found discontinuous range of addresses.  */
 	  ret = PC_BOUNDS_RANGES;
