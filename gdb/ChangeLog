@@ -1,3 +1,10 @@
+2020-02-19  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2/read.c (struct dwarf_psym_reader) <main_name>: New
+	member.
+	(dwarf_psym_reader::create_psymtab): Call set_objfile_main_name.
+	(dwarf_psym_reader::add_partial_symbol): Set main_name.
+
 2020-02-20  Tom Tromey  <tom@tromey.com>
 
 	* dwarf2/read.c (struct dwarf_psym_reader) <is_type_unit>: New

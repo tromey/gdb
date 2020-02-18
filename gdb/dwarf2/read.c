@@ -7258,6 +7258,9 @@ struct dwarf_psym_reader
   std::string filename;
   const char *dirname;
 
+  /* If not empty, the name of a "main" function that was found.  */
+  std::string main_name;
+
   struct partial_die_info *load_partial_dies (const struct die_reader_specs *,
 					      const gdb_byte *, int);
 
@@ -7349,6 +7352,9 @@ dwarf_psym_reader::create_psymtab ()
 
   for (const char *include_name : include_names)
     dwarf2_create_include_psymtab (include_name, pst, objfile);
+
+  if (!main_name.empty ())
+    set_objfile_main_name (objfile, main_name.c_str (), language);
 }
 
 /* DIE reader function for process_psymtab_comp_unit.  */
@@ -8306,7 +8312,7 @@ dwarf_psym_reader::add_partial_symbol (struct partial_die_info *pdi)
 	}
 
       if (pdi->main_subprogram && actual_name != NULL)
-	set_objfile_main_name (objfile, actual_name, cu->language);
+	main_name = actual_name;
       break;
     case DW_TAG_constant:
       do_add_psymbol_to_list (actual_name,
