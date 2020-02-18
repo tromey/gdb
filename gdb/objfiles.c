@@ -164,11 +164,12 @@ void
 set_objfile_main_name (struct objfile *objfile,
 		       const char *name, enum language lang)
 {
-  if (objfile->per_bfd->name_of_main == NULL
-      || strcmp (objfile->per_bfd->name_of_main, name) != 0)
-    objfile->per_bfd->name_of_main
-      = obstack_strdup (&objfile->per_bfd->storage_obstack, name);
-  objfile->per_bfd->language_of_main = lang;
+  if (objfile->per_bfd->name_of_main == NULL)
+    {
+      objfile->per_bfd->name_of_main
+	= obstack_strdup (&objfile->per_bfd->storage_obstack, name);
+      objfile->per_bfd->language_of_main = lang;
+    }
 }
 
 /* Helper structure to map blocks to static link properties in hash tables.  */
