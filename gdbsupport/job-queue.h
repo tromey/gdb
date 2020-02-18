@@ -38,9 +38,12 @@ namespace gdb
    queue; then other code can pop a job off the queue.  A "job" in
    this sense is just an object -- the code that is pushing and poping
    must decide what to do with the objects.
-   
-   Note that while this allows multiple writers, it is only designed
-   with a single reader in mind.  */
+
+   While this allows multiple writers, it is only designed with a
+   single reader in mind.
+
+   There is no built-in support for noticing when a queue is
+   finished.  The user must arrange this.  */
 template<typename T>
 class job_queue
 {
@@ -52,7 +55,6 @@ public:
   /* Push a job on the queue.  */
   void push (T &&job)
   {
-    gdb_assert (!m_shutdown);
     std::lock_guard<std::mutex> guard (m_jobs_mutex);
     m_jobs.emplace (std::move (job));
     /* If we wanted multiple readers, we'd have to notify all
@@ -60,35 +62,21 @@ public:
     m_jobs_cv.notify_one ();
   }
 
-  /* Pop a job from the queue.  This returns true if a job was found;
-     the job is moved into RESULT.  Otherwise, returns false, which
-     indicates that there will be no more jobs.  This blocks until
-     either a job is ready, or until shutdown is called.  */
-  bool pop (T &result)
+  /* Pop a job from the queue.  This blocks until a job is ready.  */
+  T pop ()
   {
     std::unique_lock<std::mutex> guard (m_jobs_mutex);
-    while (!m_shutdown && m_jobs.empty ())
+    while (m_jobs.empty ())
       m_jobs_cv.wait (guard);
-    if (!m_jobs.empty ())
-      {
-	result = std::move (m_jobs.front ());
-	m_jobs.pop ();
-	return true;
-      }
-    return false;
+    T result = std::move (m_jobs.front ());
+    m_jobs.pop ();
+    return std::move (result);
   }
-
-  /* Call to shut down the queue.  This marks the end of the jobs; it
-     is an error to call post after this.  */
-  void shutdown ();
 
 private:
 
   /* The jobs that have not been processed yet.  */
   std::queue<T> m_jobs;
-
-  /* True after shutdown.  */
-  bool m_shutdown = false;
 
   /* A condition variable and mutex that are used for communication
      between the main thread and the worker threads.  */
