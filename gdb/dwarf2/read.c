@@ -7803,10 +7803,14 @@ static void
 intern_names_for_psymtab (gdb::job_queue<std::unique_ptr<dwarf_psym_reader>> &to_intern,
 			  gdb::job_queue<std::unique_ptr<dwarf_psym_reader>> &to_create)
 {
-  std::unique_ptr<dwarf_psym_reader> job;
-  while (to_intern.pop (job))
+  bool done = false;
+  while (!done)
     {
-      job->intern_names ();
+      std::unique_ptr<dwarf_psym_reader> job = to_intern.pop ();
+      if (job != nullptr)
+	job->intern_names ();
+      else
+	done = true;
       to_create.push (std::move (job));
     }
 }
@@ -7814,9 +7818,13 @@ intern_names_for_psymtab (gdb::job_queue<std::unique_ptr<dwarf_psym_reader>> &to
 static void
 create_psymtabs (gdb::job_queue<std::unique_ptr<dwarf_psym_reader>> &to_create)
 {
-  std::unique_ptr<dwarf_psym_reader> job;
-  while (to_create.pop (job))
-    job->create_psymtab ();
+  while (true)
+    {
+      std::unique_ptr<dwarf_psym_reader> job = to_create.pop ();
+      if (job == nullptr)
+	break;
+      job->create_psymtab ();
+    }
 }
 
 /* Build the partial symbol table by doing a quick pass through the
@@ -7867,9 +7875,8 @@ dwarf2_build_psymtabs_hard (struct dwarf2_per_objfile *dwarf2_per_objfile)
 
   for (dwarf2_per_cu_data *per_cu : dwarf2_per_objfile->all_comp_units)
     process_psymtab_comp_unit (per_cu, false, language_minimal, &to_intern);
+  to_intern.push (nullptr);
 
-  to_intern.shutdown ();
-  to_create.shutdown ();
   creation_done.wait ();
 
   /* This has to wait until we read the CUs, we need the list of DWOs.  */
@@ -8248,7 +8255,7 @@ dwarf_psym_reader::create_symbols ()
 {
   struct objfile *objfile = per_cu->dwarf2_per_objfile->objfile;
   for (const auto &symbol : symbols)
-    add_psymbol_to_list (symbol.name, 0,
+    add_psymbol_to_list (symbol.name, false,
 			 symbol.domain, symbol.theclass, symbol.section,
 			 symbol.where, symbol.coreaddr, language,
 			 objfile);
