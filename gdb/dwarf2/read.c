@@ -7275,7 +7275,7 @@ struct dwarf_psym_reader
 			       short section,
 			       psymbol_placement where,
 			       CORE_ADDR coreaddr);
-  void intern_names ();
+  /* void intern_names (); */
   void create_symbols ();
   void create_psymtab ();
 
@@ -7523,7 +7523,7 @@ build_type_psymtabs_reader (const struct die_reader_specs *reader,
   first_die = psym_reader.load_partial_dies (reader, info_ptr, 1);
 
   psym_reader.scan (first_die);
-  psym_reader.intern_names ();
+  /* psym_reader.intern_names (); */
   psym_reader.create_symbols ();
 
   end_psymtab_common (objfile, pst);
@@ -7799,6 +7799,7 @@ set_partial_user (struct dwarf2_per_objfile *dwarf2_per_objfile)
     }
 }
 
+#if 0
 static void
 intern_names_for_psymtab (gdb::job_queue<std::unique_ptr<dwarf_psym_reader>> &to_intern,
 			  gdb::job_queue<std::unique_ptr<dwarf_psym_reader>> &to_create)
@@ -7814,6 +7815,7 @@ intern_names_for_psymtab (gdb::job_queue<std::unique_ptr<dwarf_psym_reader>> &to
       to_create.push (std::move (job));
     }
 }
+#endif
 
 static void
 create_psymtabs (gdb::job_queue<std::unique_ptr<dwarf_psym_reader>> &to_create)
@@ -7861,21 +7863,22 @@ dwarf2_build_psymtabs_hard (struct dwarf2_per_objfile *dwarf2_per_objfile)
     = make_scoped_restore (&objfile->partial_symtabs->psymtabs_addrmap,
 			   addrmap_create_mutable (&temp_obstack));
 
-  gdb::job_queue<std::unique_ptr<dwarf_psym_reader>> to_intern;
+  /* gdb::job_queue<std::unique_ptr<dwarf_psym_reader>> to_intern; */
   gdb::job_queue<std::unique_ptr<dwarf_psym_reader>> to_create;
 
-  gdb::thread_pool::g_thread_pool->post_task ([&] ()
-    {
-      intern_names_for_psymtab (to_intern, to_create);
-    });
+  /* gdb::thread_pool::g_thread_pool->post_task ([&] () */
+  /*   { */
+  /*     intern_names_for_psymtab (to_intern, to_create); */
+  /*   }); */
   auto creation_done = gdb::thread_pool::g_thread_pool->post_task ([&] ()
     {
       create_psymtabs (to_create);
     });
 
   for (dwarf2_per_cu_data *per_cu : dwarf2_per_objfile->all_comp_units)
-    process_psymtab_comp_unit (per_cu, false, language_minimal, &to_intern);
-  to_intern.push (nullptr);
+    process_psymtab_comp_unit (per_cu, false, language_minimal,
+			       &to_create /* to_intern */);
+  to_create /* to_intern */.push (nullptr);
 
   creation_done.wait ();
 
@@ -8237,6 +8240,7 @@ partial_die_full_name (struct partial_die_info *pdi,
 							   pdi->name, 0, cu));
 }
 
+#if 0
 void
 dwarf_psym_reader::intern_names ()
 {
@@ -8252,13 +8256,14 @@ dwarf_psym_reader::intern_names ()
 	}
     }
 }
+#endif
 
 void
 dwarf_psym_reader::create_symbols ()
 {
   struct objfile *objfile = per_cu->dwarf2_per_objfile->objfile;
   for (const auto &symbol : symbols)
-    add_psymbol_to_list (symbol.name, false,
+    add_psymbol_to_list (symbol.name, symbol.built_actual_name != nullptr,
 			 symbol.domain, symbol.theclass, symbol.section,
 			 symbol.where, symbol.coreaddr, language,
 			 objfile);
