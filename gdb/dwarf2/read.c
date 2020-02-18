@@ -8244,9 +8244,12 @@ dwarf_psym_reader::intern_names ()
   for (auto &symbol : symbols)
     {
       if (symbol.built_actual_name != nullptr)
-	symbol.name
-	  = ((const char *) objfile->per_bfd->filename_cache
-	     .insert (symbol.name, strlen (symbol.name)));
+	{
+	  symbol.name
+	    = ((const char *) objfile->per_bfd->filename_cache
+	       .insert (symbol.name, strlen (symbol.name)));
+	  symbol.built_actual_name = nullptr;
+	}
     }
 }
 
