@@ -17865,9 +17865,14 @@ dwarf_psym_reader::load_partial_dies (const struct die_reader_specs *reader,
 	{
 	  if (building_psymtab && pdi.name != NULL)
 	    {
-	      /* This can only happen for structure types.  */
-	      gdb_assert (!pdi.copy_name);
-	      do_add_psymbol_to_list (pdi.name, nullptr,
+	      const char *pdi_name = pdi.name;
+	      gdb::unique_xmalloc_ptr<char> copy;
+	      if (pdi.copy_name)
+		{
+		  copy = make_unique_xstrdup (pdi_name);
+		  pdi_name = copy.get ();
+		}
+	      do_add_psymbol_to_list (pdi_name, std::move (copy),
 				      VAR_DOMAIN, LOC_TYPEDEF, -1,
 				      psymbol_placement::STATIC,
 				      0);
@@ -17903,9 +17908,14 @@ dwarf_psym_reader::load_partial_dies (const struct die_reader_specs *reader,
 	    complaint (_("malformed enumerator DIE ignored"));
 	  else if (building_psymtab)
 	    {
-	      /* This can only happen for structure types.  */
-	      gdb_assert (!pdi.copy_name);
-	      do_add_psymbol_to_list (pdi.name, nullptr,
+	      const char *pdi_name = pdi.name;
+	      gdb::unique_xmalloc_ptr<char> copy;
+	      if (pdi.copy_name)
+		{
+		  copy = make_unique_xstrdup (pdi_name);
+		  pdi_name = copy.get ();
+		}
+	      do_add_psymbol_to_list (pdi_name, std::move (copy),
 				      VAR_DOMAIN, LOC_CONST, -1,
 				      cu->language == language_cplus
 				      ? psymbol_placement::GLOBAL
