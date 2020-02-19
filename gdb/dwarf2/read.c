@@ -18398,7 +18398,7 @@ guess_partial_die_structure_name (struct partial_die_info *struct_pdi,
 	  if (actual_class_name != NULL)
 	    {
 	      struct_pdi->name
-		= obstack_strdup (&u->comp_unit_obstack,
+		= obstack_strdup (&cu->comp_unit_obstack,
 				  actual_class_name.get ());
 	      struct_pdi->copy_name = 1;
 	    }
