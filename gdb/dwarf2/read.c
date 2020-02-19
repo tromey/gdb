@@ -18397,10 +18397,10 @@ guess_partial_die_structure_name (struct partial_die_info *struct_pdi,
 						child_pdi->linkage_name));
 	  if (actual_class_name != NULL)
 	    {
-	      struct objfile *objfile = cu->per_cu->dwarf2_per_objfile->objfile;
 	      struct_pdi->name
-		= obstack_strdup (&objfile->per_bfd->storage_obstack,
+		= obstack_strdup (&u->comp_unit_obstack,
 				  actual_class_name.get ());
+	      struct_pdi->copy_name = 1;
 	    }
 	  break;
 	}
