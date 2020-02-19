@@ -974,6 +974,8 @@ struct partial_die_info : public allocate_on_obstack
     /* Flag set if spec_offset uses DW_FORM_GNU_ref_alt.  */
     unsigned int spec_is_dwz : 1;
 
+    unsigned int copy_name : 1;
+
     /* The name of this DIE.  Normally the value of DW_AT_name, but
        sometimes a default name for unnamed DIEs.  */
     const char *name = nullptr;
@@ -1044,6 +1046,7 @@ struct partial_die_info : public allocate_on_obstack
       fixup_called = 0;
       is_dwz = 0;
       spec_is_dwz = 0;
+      copy_name = 0;
     }
   };
 
@@ -8238,11 +8241,13 @@ partial_die_full_name (struct partial_die_info *pdi,
   const char *parent_scope;
 
   parent_scope = partial_die_parent_scope (pdi, cu);
-  if (parent_scope == NULL)
-    return NULL;
-  else
+  if (parent_scope != NULL)
     return gdb::unique_xmalloc_ptr<char> (typename_concat (NULL, parent_scope,
 							   pdi->name, 0, cu));
+  else if (pdi->copy_name)
+    return make_unique_xstrdup (pdi->name);
+  else
+    return NULL;
 }
 
 #if 0
@@ -17859,10 +17864,14 @@ dwarf_psym_reader::load_partial_dies (const struct die_reader_specs *reader,
 	      || pdi.tag == DW_TAG_subrange_type))
 	{
 	  if (building_psymtab && pdi.name != NULL)
-	    do_add_psymbol_to_list (pdi.name, nullptr,
-				    VAR_DOMAIN, LOC_TYPEDEF, -1,
-				    psymbol_placement::STATIC,
-				    0);
+	    {
+	      /* This can only happen for structure types.  */
+	      gdb_assert (!pdi.copy_name);
+	      do_add_psymbol_to_list (pdi.name, nullptr,
+				      VAR_DOMAIN, LOC_TYPEDEF, -1,
+				      psymbol_placement::STATIC,
+				      0);
+	    }
 	  info_ptr = locate_pdi_sibling (reader, &pdi, info_ptr);
 	  continue;
 	}
@@ -17893,12 +17902,16 @@ dwarf_psym_reader::load_partial_dies (const struct die_reader_specs *reader,
 	  if (pdi.name == NULL)
 	    complaint (_("malformed enumerator DIE ignored"));
 	  else if (building_psymtab)
-	    do_add_psymbol_to_list (pdi.name, nullptr,
-				    VAR_DOMAIN, LOC_CONST, -1,
-				    cu->language == language_cplus
-				    ? psymbol_placement::GLOBAL
-				    : psymbol_placement::STATIC,
-				    0);
+	    {
+	      /* This can only happen for structure types.  */
+	      gdb_assert (!pdi.copy_name);
+	      do_add_psymbol_to_list (pdi.name, nullptr,
+				      VAR_DOMAIN, LOC_CONST, -1,
+				      cu->language == language_cplus
+				      ? psymbol_placement::GLOBAL
+				      : psymbol_placement::STATIC,
+				      0);
+	    }
 
 	  info_ptr = locate_pdi_sibling (reader, &pdi, info_ptr);
 	  continue;
@@ -18460,8 +18473,8 @@ partial_die_info::fixup (struct dwarf2_cu *cu)
 	  else
 	    base = demangled.get ();
 
-	  struct objfile *objfile = cu->per_cu->dwarf2_per_objfile->objfile;
-	  name = obstack_strdup (&objfile->per_bfd->storage_obstack, base);
+	  name = obstack_strdup (&cu->comp_unit_obstack, base);
+	  copy_name = 1;
 	}
     }
 
