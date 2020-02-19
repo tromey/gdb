@@ -279,6 +279,8 @@ struct objfile_per_bfd_storage
 
   gdb::bcache filename_cache;
 
+  gdb::bcache sym_names;
+
   /* Byte cache for macros.  */
 
   gdb::bcache macro_cache;
