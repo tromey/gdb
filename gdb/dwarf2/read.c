@@ -1063,6 +1063,10 @@ struct partial_die_info : public allocate_on_obstack
 
     unsigned int canonical_name : 1;
 
+    /* Flag set if the name was allocated on the comp unit obstack,
+       and so must be copied if it is used as a symbol name.  */
+    unsigned int copy_name : 1;
+
     /* The name of this DIE.  Normally the value of DW_AT_name, but
        sometimes a default name for unnamed DIEs.  */
     const char *raw_name = nullptr;
@@ -1135,6 +1139,7 @@ struct partial_die_info : public allocate_on_obstack
       is_dwz = 0;
       spec_is_dwz = 0;
       canonical_name = 0;
+      copy_name = 0;
     }
   };
 
@@ -8631,12 +8636,14 @@ partial_die_full_name (struct partial_die_info *pdi,
     }
 
   parent_scope = partial_die_parent_scope (pdi, cu);
-  if (parent_scope == NULL)
-    return NULL;
-  else
+  if (parent_scope != NULL)
     return gdb::unique_xmalloc_ptr<char> (typename_concat (NULL, parent_scope,
 							   pdi->name (cu),
 							   0, cu));
+  else if (pdi->copy_name)
+    return make_unique_xstrdup (pdi->name (cu));
+  else
+    return NULL;
 }
 
 void
@@ -20230,9 +20237,8 @@ partial_die_info::fixup (struct dwarf2_cu *cu)
 	  else
 	    base = demangled.get ();
 
-	  struct objfile *objfile = cu->per_objfile->objfile;
-	  raw_name = objfile->intern (base);
-	  canonical_name = 1;
+	  raw_name = obstack_strdup (&cu->comp_unit_obstack, base);
+	  copy_name = 1;
 	}
     }
 

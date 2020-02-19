@@ -1,5 +1,16 @@
 2020-02-19  Tom Tromey  <tom@tromey.com>
 
+	* dwarf2/read.c (struct partial_die_info) <copy_name>: New
+	member.
+	(partial_die_info): Initialize copy_name.
+	(partial_die_full_name): Copy name if needed.
+	(dwarf_psym_reader::load_partial_dies)
+	(dwarf_psym_reader::load_partial_dies): Copy name if needed.
+	(partial_die_info::read, guess_partial_die_structure_name)
+	(partial_die_info::fixup): Use comp_unit_obstack.  Set copy_name.
+
+2020-02-19  Tom Tromey  <tom@tromey.com>
+
 	* dwarf2/read.c (struct dwarf_psym_reader) <main_name>: New
 	member.
 	(dwarf_psym_reader::create_psymtab): Call set_objfile_main_name.
