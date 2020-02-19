@@ -18062,13 +18062,9 @@ partial_die_info::read (const struct die_reader_specs *reader,
 	      name = DW_STRING (&attr);
 	      break;
 	    default:
-	      {
-		struct objfile *objfile = dwarf2_per_objfile->objfile;
-
-		name
-		  = dwarf2_canonicalize_name (DW_STRING (&attr), cu,
-					      &objfile->per_bfd->storage_obstack);
-	      }
+	      name = dwarf2_canonicalize_name (DW_STRING (&attr), cu,
+					       &cu->comp_unit_obstack);
+	      copy_name = 1;
 	      break;
 	    }
 	  break;
