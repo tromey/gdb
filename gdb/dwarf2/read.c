@@ -7654,6 +7654,9 @@ struct dwarf_psym_reader
      when creating the partial symbols.  */
   enum language language;
 
+  /* True if this is a type unit.  */
+  bool is_type_unit = false;
+
   /* If SET_ADDRMAP is true, record the covered ranges in the addrmap.
      Set LOWPC and HIGHPC to the lowest and highest PC values found in
      PDI.  */
@@ -7710,6 +7713,9 @@ dwarf_psym_reader::create_psymtab ()
   dwarf2_psymtab *pst = create_partial_symtab (per_cu, cu->per_objfile,
 					       interned_filename);
 
+  if (is_type_unit)
+    pst->anonymous = true;
+
   create_symbols ();
 
   pst->dirname = dirname;
@@ -7730,12 +7736,15 @@ dwarf_psym_reader::create_psymtab ()
 			 low, high, pst);
     }
 
-  pst->set_text_low (gdbarch_adjust_dwarf2_addr (gdbarch,
-						 lowpc + baseaddr)
-		     - baseaddr);
-  pst->set_text_high (gdbarch_adjust_dwarf2_addr (gdbarch,
-						  highpc + baseaddr)
-		      - baseaddr);
+  if (!is_type_unit)
+    {
+      pst->set_text_low (gdbarch_adjust_dwarf2_addr (gdbarch,
+						     lowpc + baseaddr)
+			 - baseaddr);
+      pst->set_text_high (gdbarch_adjust_dwarf2_addr (gdbarch,
+						      highpc + baseaddr)
+			  - baseaddr);
+    }
 
   pst->end ();
 
@@ -7912,14 +7921,12 @@ build_type_psymtabs_reader (const struct die_reader_specs *reader,
 			    const gdb_byte *info_ptr,
 			    struct die_info *type_unit_die)
 {
-  dwarf2_per_objfile *per_objfile = reader->cu->per_objfile;
   struct dwarf2_cu *cu = reader->cu;
   struct dwarf2_per_cu_data *per_cu = cu->per_cu;
   struct signatured_type *sig_type;
   struct type_unit_group *tu_group;
   struct attribute *attr;
   struct partial_die_info *first_die;
-  dwarf2_psymtab *pst;
 
   gdb_assert (per_cu->is_debug_types);
   sig_type = (struct signatured_type *) per_cu;
@@ -7935,18 +7942,15 @@ build_type_psymtabs_reader (const struct die_reader_specs *reader,
   tu_group->tus->push_back (sig_type);
 
   prepare_one_comp_unit (cu, type_unit_die, language_minimal);
-  pst = create_partial_symtab (per_cu, per_objfile, "");
-  pst->anonymous = true;
 
   dwarf_psym_reader psym_reader (cu);
+  psym_reader.is_type_unit = true;
 
   first_die = psym_reader.load_partial_dies (reader, info_ptr, 1);
 
   psym_reader.scan (first_die);
   psym_reader.intern_names ();
-  psym_reader.create_symbols ();
-
-  pst->end ();
+  psym_reader.create_psymtab ();
 }
 
 /* Struct used to sort TUs by their abbreviation table offset.  */

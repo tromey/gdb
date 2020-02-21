@@ -1,3 +1,10 @@
+2020-02-20  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2/read.c (struct dwarf_psym_reader) <is_type_unit>: New
+	member.
+	(dwarf_psym_reader::create_psymtab): Handle is_type_unit.
+	(build_type_psymtabs_reader): Call create_psymtab.
+
 2020-02-19  Tom Tromey  <tom@tromey.com>
 
 	* dwarf2/read.c (struct dwarf_psym_reader) <create_psymtab>:
