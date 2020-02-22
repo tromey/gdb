@@ -38,6 +38,6 @@ gdb.register_window_type("test", TestWindow)
 
 # A TUI window "constructor" that always fails.
 def failwin(win):
-    raise "Whoops"
+    raise RuntimeError("Whoops")
 
 gdb.register_window_type("fail", failwin)
