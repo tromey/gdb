@@ -1568,13 +1568,12 @@ partial_symtab::add_psymbol (gdb::string_view name, bool copy_name,
 /* See psympriv.h.  */
 
 partial_symtab::partial_symtab (const char *filename_, struct objfile *objfile)
-  : searched_flag (PST_NOT_SEARCHED),
+  : filename (filename_),
+    searched_flag (PST_NOT_SEARCHED),
     text_low_valid (0),
     text_high_valid (0)
 {
   objfile->partial_symtabs->install_psymtab (this);
-
-  filename = objfile->intern (filename_);
 
   if (symtab_create_debug)
     {

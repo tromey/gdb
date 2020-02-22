@@ -363,13 +363,13 @@ struct partial_symtab
 struct standard_psymtab : public partial_symtab
 {
   standard_psymtab (const char *filename, struct objfile *objfile)
-    : partial_symtab (filename, objfile)
+    : partial_symtab (objfile->intern (filename), objfile)
   {
   }
 
   standard_psymtab (const char *filename, struct objfile *objfile,
 		    CORE_ADDR addr)
-    : partial_symtab (filename, objfile, addr)
+    : partial_symtab (objfile->intern (filename), objfile, addr)
   {
   }
 

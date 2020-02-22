@@ -1,3 +1,13 @@
+2020-02-22  Tom Tromey  <tom@tromey.com>
+
+	* objfiles.h (struct objfile) <intern>: New method.
+	* dwarf2/read.c (dwarf2_create_include_psymtab): Intern the name.
+	(create_partial_symtab): Likewise.
+	* psympriv.h (struct standard_psymtab) <standard_psymtab>: Intern
+	filename.
+	* psymtab.c (partial_symtab::partial_symtab): Don't intern the
+	filename.
+
 2021-01-23  Tom Tromey  <tom@tromey.com>
 
 	PR compile/25575

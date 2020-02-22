@@ -6382,6 +6382,7 @@ static void
 dwarf2_create_include_psymtab (const char *name, dwarf2_psymtab *pst,
 			       struct objfile *objfile)
 {
+  name = objfile->intern (name);
   dwarf2_include_psymtab *subpst = new dwarf2_include_psymtab (name, objfile);
 
   if (!IS_ABSOLUTE_PATH (subpst->filename))
@@ -7630,6 +7631,7 @@ create_partial_symtab (dwarf2_per_cu_data *per_cu,
   struct objfile *objfile = per_objfile->objfile;
   dwarf2_psymtab *pst;
 
+  name = objfile->intern (name);
   pst = new dwarf2_psymtab (name, objfile, per_cu);
 
   pst->psymtabs_addrmap_supported = true;
