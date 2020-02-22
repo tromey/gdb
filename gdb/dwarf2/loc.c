@@ -1612,6 +1612,8 @@ rw_pieced_value (struct value *v, struct value *from)
   gdb::byte_vector buffer;
   bool bits_big_endian = type_byte_order (value_type (v)) == BFD_ENDIAN_BIG;
 
+  dwarf2_enter_objfile enterer (c->objfile);
+
   if (from != NULL)
     {
       from_contents = value_contents (from);
@@ -2015,6 +2017,8 @@ indirect_pieced_value (struct value *value)
 {
   struct piece_closure *c
     = (struct piece_closure *) value_computed_closure (value);
+  dwarf2_enter_objfile enterer (c->objfile);
+
   struct type *type;
   struct frame_info *frame;
   int i, bit_length;
@@ -2105,6 +2109,7 @@ coerce_pieced_ref (const struct value *value)
       gdb_assert (closure != NULL);
       gdb_assert (closure->pieces.size () == 1);
 
+      dwarf2_enter_objfile enterer (closure->objfile);
       return indirect_synthetic_pointer
 	(closure->pieces[0].v.ptr.die_sect_off,
 	 closure->pieces[0].v.ptr.offset,
@@ -2474,6 +2479,7 @@ dwarf2_evaluate_property (const struct dynamic_prop *prop,
 	const struct dwarf2_property_baton *baton
 	  = (const struct dwarf2_property_baton *) prop->data.baton;
 	gdb_assert (baton->property_type != NULL);
+	dwarf2_enter_objfile enterer (baton->locexpr.objfile);
 
 	if (dwarf2_locexpr_baton_eval (&baton->locexpr, frame,
 				       addr_stack ? addr_stack->addr : 0,
@@ -3552,6 +3558,8 @@ locexpr_read_variable (struct symbol *symbol, struct frame_info *frame)
 {
   struct dwarf2_locexpr_baton *dlbaton
     = (struct dwarf2_locexpr_baton *) SYMBOL_LOCATION_BATON (symbol);
+  dwarf2_enter_objfile enterer (dlbaton->objfile);
+
   struct value *val;
 
   val = dwarf2_evaluate_loc_desc (SYMBOL_TYPE (symbol), frame, dlbaton->data,
@@ -3569,6 +3577,7 @@ locexpr_read_variable_at_entry (struct symbol *symbol, struct frame_info *frame)
 {
   struct dwarf2_locexpr_baton *dlbaton
     = (struct dwarf2_locexpr_baton *) SYMBOL_LOCATION_BATON (symbol);
+  dwarf2_enter_objfile enterer (dlbaton->objfile);
 
   return value_of_dwarf_block_entry (SYMBOL_TYPE (symbol), frame, dlbaton->data,
 				     dlbaton->size);
@@ -3582,6 +3591,7 @@ locexpr_get_symbol_read_needs (struct symbol *symbol)
 {
   struct dwarf2_locexpr_baton *dlbaton
     = (struct dwarf2_locexpr_baton *) SYMBOL_LOCATION_BATON (symbol);
+  dwarf2_enter_objfile enterer (dlbaton->objfile);
 
   return dwarf2_loc_desc_get_symbol_read_needs (dlbaton->data, dlbaton->size,
 						dlbaton->per_cu);
@@ -4285,6 +4295,8 @@ locexpr_describe_location (struct symbol *symbol, CORE_ADDR addr,
 {
   struct dwarf2_locexpr_baton *dlbaton
     = (struct dwarf2_locexpr_baton *) SYMBOL_LOCATION_BATON (symbol);
+  dwarf2_enter_objfile enterer (dlbaton->objfile);
+
   struct objfile *objfile = dlbaton->objfile;
   unsigned int addr_size = dlbaton->per_cu->addr_size ();
   int offset_size = dlbaton->per_cu->offset_size ();
@@ -4304,6 +4316,8 @@ locexpr_tracepoint_var_ref (struct symbol *symbol, struct agent_expr *ax,
 {
   struct dwarf2_locexpr_baton *dlbaton
     = (struct dwarf2_locexpr_baton *) SYMBOL_LOCATION_BATON (symbol);
+  dwarf2_enter_objfile enterer (dlbaton->objfile);
+
   unsigned int addr_size = dlbaton->per_cu->addr_size ();
 
   if (dlbaton->size == 0)
@@ -4323,6 +4337,8 @@ locexpr_generate_c_location (struct symbol *sym, string_file *stream,
 {
   struct dwarf2_locexpr_baton *dlbaton
     = (struct dwarf2_locexpr_baton *) SYMBOL_LOCATION_BATON (sym);
+  dwarf2_enter_objfile enterer (dlbaton->objfile);
+
   unsigned int addr_size = dlbaton->per_cu->addr_size ();
 
   if (dlbaton->size == 0)
@@ -4357,6 +4373,8 @@ loclist_read_variable (struct symbol *symbol, struct frame_info *frame)
 {
   struct dwarf2_loclist_baton *dlbaton
     = (struct dwarf2_loclist_baton *) SYMBOL_LOCATION_BATON (symbol);
+  dwarf2_enter_objfile enterer (dlbaton->objfile);
+
   struct value *val;
   const gdb_byte *data;
   size_t size;
@@ -4382,6 +4400,8 @@ loclist_read_variable_at_entry (struct symbol *symbol, struct frame_info *frame)
 {
   struct dwarf2_loclist_baton *dlbaton
     = (struct dwarf2_loclist_baton *) SYMBOL_LOCATION_BATON (symbol);
+  dwarf2_enter_objfile enterer (dlbaton->objfile);
+
   const gdb_byte *data;
   size_t size;
   CORE_ADDR pc;
@@ -4421,6 +4441,8 @@ loclist_describe_location (struct symbol *symbol, CORE_ADDR addr,
 {
   struct dwarf2_loclist_baton *dlbaton
     = (struct dwarf2_loclist_baton *) SYMBOL_LOCATION_BATON (symbol);
+  dwarf2_enter_objfile enterer (dlbaton->objfile);
+
   const gdb_byte *loc_ptr, *buf_end;
   struct objfile *objfile = dlbaton->objfile;
   struct gdbarch *gdbarch = get_objfile_arch (objfile);
@@ -4511,6 +4533,8 @@ loclist_tracepoint_var_ref (struct symbol *symbol, struct agent_expr *ax,
 {
   struct dwarf2_loclist_baton *dlbaton
     = (struct dwarf2_loclist_baton *) SYMBOL_LOCATION_BATON (symbol);
+  dwarf2_enter_objfile enterer (dlbaton->objfile);
+
   const gdb_byte *data;
   size_t size;
   unsigned int addr_size = dlbaton->per_cu->addr_size ();
@@ -4533,6 +4557,8 @@ loclist_generate_c_location (struct symbol *sym, string_file *stream,
 {
   struct dwarf2_loclist_baton *dlbaton
     = (struct dwarf2_loclist_baton *) SYMBOL_LOCATION_BATON (sym);
+  dwarf2_enter_objfile enterer (dlbaton->objfile);
+
   unsigned int addr_size = dlbaton->per_cu->addr_size ();
   const gdb_byte *data;
   size_t size;
