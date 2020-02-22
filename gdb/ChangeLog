@@ -1,5 +1,33 @@
 2020-02-21  Tom Tromey  <tom@tromey.com>
 
+	* dwarf2/read.h (struct dwarf2_unshareable) <symtabs>: New
+	member.
+	(struct dwarf2_psymtab): Derive from partial_symtab.
+	<readin_p, get_compunit_symtab>: Declare methods.
+	<resize_symtabs>: New method.
+	<symtab_set_p>: New method.
+	* dwarf2/read.c (struct dwarf2_per_cu_quick_data)
+	<compunit_symtab>: Remove.
+	(dw2_do_instantiate_symtab, dw2_instantiate_symtab)
+	(dw2_map_expand_apply, dw2_map_symtabs_matching_filename)
+	(dw2_symtab_iter_next, dw2_print_stats)
+	(dw2_expand_symtabs_with_fullname)
+	(dw2_expand_symtabs_matching_one)
+	(dw_expand_symtabs_matching_file_matcher)
+	(dw2_find_pc_sect_compunit_symtab, dw2_map_symbol_filenames)
+	(dw2_debug_names_iterator::next, does)
+	(fill_in_sig_entry_from_dwo_entry, dwarf2_psymtab::read_symtab)
+	(process_queue, dwarf2_psymtab::expand_psymtab): Update.
+	(dwarf2_psymtab::readin_p, dwarf2_psymtab::get_compunit_symtab):
+	New methods.
+	(get_compunit_symtab, process_full_comp_unit)
+	(process_full_type_unit): Update.
+	(dwarf2_build_psymtabs): Resize the symtabs vector.
+	(dwarf2_initialize_objfile): Call dwarf2_resize_unshareable.
+	(dwarf2_per_objfile::symtab_set_p): New method.
+
+2020-02-21  Tom Tromey  <tom@tromey.com>
+
 	* dwarf2/read.h (struct dwarf2_per_objfile) <allocate_per_cu,
 	allocate_signatured_type>: Declare new methods.
 	(struct dwarf2_per_cu_data) <index>: New member.

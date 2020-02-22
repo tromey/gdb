@@ -1846,6 +1846,14 @@ private:
   dwarf2_per_objfile *m_per_objfile;
 };
 
+/* See read.h.  */
+
+bool
+dwarf2_per_objfile::symtab_set_p (const dwarf2_per_cu_data *per_cu) const
+{
+  return unshareable->symtabs[per_cu->index].has_value ();
+}
+
 /* Try to locate the sections we need for DWARF 2 debugging
    information and return true if we have enough to do something.
    NAMES points to the dwarf2 section names, or is NULL if the standard
@@ -2206,10 +2214,6 @@ struct dwarf2_per_cu_quick_data
      NOTE: This points into dwarf2_per_objfile->quick_file_names_table.  */
   struct quick_file_names *file_names;
 
-  /* The corresponding symbol table.  This is NULL if symbols for this
-     CU have not yet been read.  */
-  struct compunit_symtab *compunit_symtab;
-
   /* A temporary mark bit used when iterating over all CUs in
      expand_symtabs_matching.  */
   unsigned int mark : 1;
@@ -2333,9 +2337,7 @@ dw2_do_instantiate_symtab (struct dwarf2_per_cu_data *per_cu, bool skip_partial)
      with the dwarf queue empty.  */
   dwarf2_queue_guard q_guard (dwarf2_per_objfile);
 
-  if (dwarf2_per_objfile->using_index
-      ? per_cu->v.quick->compunit_symtab == NULL
-      : (per_cu->v.psymtab == NULL || !per_cu->v.psymtab->readin))
+  if (!dwarf2_per_objfile->symtab_set_p (per_cu))
     {
       queue_comp_unit (per_cu, language_minimal);
       load_cu (per_cu, skip_partial);
@@ -2370,7 +2372,10 @@ dw2_instantiate_symtab (struct dwarf2_per_cu_data *per_cu, bool skip_partial)
   struct dwarf2_per_objfile *dwarf2_per_objfile = per_cu->dwarf2_per_objfile;
 
   gdb_assert (dwarf2_per_objfile->using_index);
-  if (!per_cu->v.quick->compunit_symtab)
+  gdb::optional<compunit_symtab *> &symtab
+    = dwarf2_per_objfile->unshareable->symtabs[per_cu->index];
+
+  if (!symtab.has_value ())
     {
       free_cached_comp_units freer (dwarf2_per_objfile);
       scoped_restore decrementer = increment_reading_symtab ();
@@ -2378,7 +2383,7 @@ dw2_instantiate_symtab (struct dwarf2_per_cu_data *per_cu, bool skip_partial)
       process_cu_includes (dwarf2_per_objfile);
     }
 
-  return per_cu->v.quick->compunit_symtab;
+  return *symtab;
 }
 
 /* See declaration.  */
@@ -3284,7 +3289,9 @@ dw2_map_expand_apply (struct objfile *objfile,
   struct compunit_symtab *last_made = objfile->compunit_symtabs;
 
   /* Don't visit already-expanded CUs.  */
-  if (per_cu->v.quick->compunit_symtab)
+  struct dwarf2_per_objfile *dwarf2_per_objfile
+    = get_dwarf2_per_objfile (objfile);
+  if (dwarf2_per_objfile->symtab_set_p (per_cu))
     return 0;
 
   /* This may expand more than one symtab, and we want to iterate over
@@ -3312,7 +3319,7 @@ dw2_map_symtabs_matching_filename
   for (dwarf2_per_cu_data *per_cu : dwarf2_per_objfile->all_comp_units)
     {
       /* We only need to look at symtabs not already expanded.  */
-      if (per_cu->v.quick->compunit_symtab)
+      if (dwarf2_per_objfile->symtab_set_p (per_cu))
 	continue;
 
       quick_file_names *file_data = dw2_get_file_names (per_cu);
@@ -3454,7 +3461,7 @@ dw2_symtab_iter_next (struct dw2_symtab_iterator *iter)
       dwarf2_per_cu_data *per_cu = dwarf2_per_objfile->get_cutu (cu_index);
 
       /* Skip if already read in.  */
-      if (per_cu->v.quick->compunit_symtab)
+      if (dwarf2_per_objfile->symtab_set_p (per_cu))
 	continue;
 
       /* Check static vs global.  */
@@ -3569,7 +3576,7 @@ dw2_print_stats (struct objfile *objfile)
     {
       dwarf2_per_cu_data *per_cu = dwarf2_per_objfile->get_cutu (i);
 
-      if (!per_cu->v.quick->compunit_symtab)
+      if (!dwarf2_per_objfile->symtab_set_p (per_cu))
 	++count;
     }
   printf_filtered (_("  Number of read CUs: %d\n"), total - count);
@@ -3652,7 +3659,7 @@ dw2_expand_symtabs_with_fullname (struct objfile *objfile,
   for (dwarf2_per_cu_data *per_cu : dwarf2_per_objfile->all_comp_units)
     {
       /* We only need to look at symtabs not already expanded.  */
-      if (per_cu->v.quick->compunit_symtab)
+      if (dwarf2_per_objfile->symtab_set_p (per_cu))
 	continue;
 
       quick_file_names *file_data = dw2_get_file_names (per_cu);
@@ -4451,15 +4458,19 @@ dw2_expand_symtabs_matching_one
 {
   if (file_matcher == NULL || per_cu->v.quick->mark)
     {
-      bool symtab_was_null
-	= (per_cu->v.quick->compunit_symtab == NULL);
+      struct dwarf2_per_objfile *dwarf2_per_objfile
+	= per_cu->dwarf2_per_objfile;
+      gdb::optional<compunit_symtab *> &symtab
+	= dwarf2_per_objfile->unshareable->symtabs[per_cu->index];
+      bool symtab_was_null = !symtab.has_value () || *symtab == nullptr;
 
       dw2_instantiate_symtab (per_cu, false);
 
       if (expansion_notify != NULL
 	  && symtab_was_null
-	  && per_cu->v.quick->compunit_symtab != NULL)
-	expansion_notify (per_cu->v.quick->compunit_symtab);
+	  && symtab.has_value ()
+	  && *symtab != nullptr)
+	expansion_notify (*symtab);
     }
 }
 
@@ -4577,7 +4588,7 @@ dw_expand_symtabs_matching_file_matcher
       per_cu->v.quick->mark = 0;
 
       /* We only need to look at symtabs not already expanded.  */
-      if (per_cu->v.quick->compunit_symtab)
+      if (dwarf2_per_objfile->symtab_set_p (per_cu))
 	continue;
 
       quick_file_names *file_data = dw2_get_file_names (per_cu);
@@ -4703,7 +4714,9 @@ dw2_find_pc_sect_compunit_symtab (struct objfile *objfile,
   if (!data)
     return NULL;
 
-  if (warn_if_readin && data->v.quick->compunit_symtab)
+  struct dwarf2_per_objfile *dwarf2_per_objfile
+    = get_dwarf2_per_objfile (objfile);
+  if (warn_if_readin && dwarf2_per_objfile->symtab_set_p (data))
     warning (_("(Internal error: pc %s in read in CU, but not in symtab.)"),
 	     paddress (get_objfile_arch (objfile), pc));
 
@@ -4736,7 +4749,7 @@ dw2_map_symbol_filenames (struct objfile *objfile, symbol_filename_ftype *fun,
 
       for (dwarf2_per_cu_data *per_cu : dwarf2_per_objfile->all_comp_units)
 	{
-	  if (per_cu->v.quick->compunit_symtab)
+	  if (dwarf2_per_objfile->symtab_set_p (per_cu))
 	    {
 	      void **slot = htab_find_slot (visited.get (),
 					    per_cu->v.quick->file_names,
@@ -4749,7 +4762,7 @@ dw2_map_symbol_filenames (struct objfile *objfile, symbol_filename_ftype *fun,
       for (dwarf2_per_cu_data *per_cu : dwarf2_per_objfile->all_comp_units)
 	{
 	  /* We only need to look at symtabs not already expanded.  */
-	  if (per_cu->v.quick->compunit_symtab)
+	  if (dwarf2_per_objfile->symtab_set_p (per_cu))
 	    continue;
 
 	  quick_file_names *file_data = dw2_get_file_names (per_cu);
@@ -5381,7 +5394,7 @@ dw2_debug_names_iterator::next ()
     }
 
   /* Skip if already read in.  */
-  if (per_cu->v.quick->compunit_symtab)
+  if (dwarf2_per_objfile->symtab_set_p (per_cu))
     goto again;
 
   /* Check static vs global.  */
@@ -5622,11 +5635,12 @@ dw2_debug_names_map_matching_symbols
      the psymtab code does.  */
   for (dwarf2_per_cu_data *per_cu : dwarf2_per_objfile->all_comp_units)
     {
-      struct compunit_symtab *cust = per_cu->v.quick->compunit_symtab;
-      if (cust != nullptr)
+      gdb::optional<compunit_symtab *> &symtab
+	= dwarf2_per_objfile->unshareable->symtabs[per_cu->index];
+      if (symtab.has_value () && *symtab != nullptr)
 	{
 	  const struct block *block
-	    = BLOCKVECTOR_BLOCK (COMPUNIT_BLOCKVECTOR (cust), block_kind);
+	    = BLOCKVECTOR_BLOCK (COMPUNIT_BLOCKVECTOR (*symtab), block_kind);
 	  if (!iterate_over_symbols_terminated (block, name,
 						domain, callback))
 	    break;
@@ -5763,6 +5777,7 @@ dwarf2_initialize_objfile (struct objfile *objfile, dw_index_kind *index_kind)
       dwarf2_per_objfile->quick_file_names_table
 	= create_quick_file_names_table
 	    (dwarf2_per_objfile->all_comp_units.size ());
+      dwarf2_per_objfile->resize_symtabs ();
 
       for (int i = 0; i < (dwarf2_per_objfile->all_comp_units.size ()
 			   + dwarf2_per_objfile->all_type_units.size ()); ++i)
@@ -5783,6 +5798,7 @@ dwarf2_initialize_objfile (struct objfile *objfile, dw_index_kind *index_kind)
   if (dwarf2_read_debug_names (dwarf2_per_objfile))
     {
       *index_kind = dw_index_kind::DEBUG_NAMES;
+      dwarf2_per_objfile->resize_symtabs ();
       return true;
     }
 
@@ -5791,6 +5807,7 @@ dwarf2_initialize_objfile (struct objfile *objfile, dw_index_kind *index_kind)
 			     get_gdb_index_contents_from_section<dwz_file>))
     {
       *index_kind = dw_index_kind::GDB_INDEX;
+      dwarf2_per_objfile->resize_symtabs ();
       return true;
     }
 
@@ -5801,6 +5818,7 @@ dwarf2_initialize_objfile (struct objfile *objfile, dw_index_kind *index_kind)
     {
       global_index_cache.hit ();
       *index_kind = dw_index_kind::GDB_INDEX;
+      dwarf2_per_objfile->resize_symtabs ();
       return true;
     }
 
@@ -5828,6 +5846,8 @@ dwarf2_build_psymtabs (struct objfile *objfile)
       psymtab_discarder psymtabs (objfile);
       dwarf2_build_psymtabs_hard (dwarf2_per_objfile);
       psymtabs.keep ();
+
+      dwarf2_per_objfile->resize_symtabs ();
 
       /* (maybe) store an index in the cache.  */
       global_index_cache.store (dwarf2_per_objfile);
@@ -6254,7 +6274,7 @@ fill_in_sig_entry_from_dwo_entry (struct dwarf2_per_objfile *dwarf2_per_objfile,
   if (dwarf2_per_objfile->using_index)
     {
       gdb_assert (sig_entry->per_cu.v.quick != NULL);
-      gdb_assert (sig_entry->per_cu.v.quick->compunit_symtab == NULL);
+      gdb_assert (!dwarf2_per_objfile->unshareable->symtabs[sig_entry->per_cu.index].has_value ());
     }
   else
       gdb_assert (sig_entry->per_cu.v.psymtab == NULL);
@@ -8681,7 +8701,8 @@ dwarf2_psymtab::read_symtab (struct objfile *objfile)
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
 
-  gdb_assert (!readin);
+  gdb_assert (!dwarf2_per_objfile->symtab_set_p (per_cu_data));
+
   /* If this psymtab is constructed from a debug-only objfile, the
      has_section_at_zero flag will not necessarily be correct.  We
      can get the correct value for this flag by looking at the data
@@ -8777,9 +8798,7 @@ process_queue (struct dwarf2_per_objfile *dwarf2_per_objfile)
     {
       dwarf2_queue_item &item = dwarf2_per_objfile->queue.front ();
 
-      if ((dwarf2_per_objfile->using_index
-	   ? !item.per_cu->v.quick->compunit_symtab
-	   : (item.per_cu->v.psymtab && !item.per_cu->v.psymtab->readin))
+      if (!dwarf2_per_objfile->symtab_set_p (item.per_cu)
 	  /* Skip dummy CUs.  */
 	  && item.per_cu->cu != NULL)
 	{
@@ -8834,24 +8853,52 @@ process_queue (struct dwarf2_per_objfile *dwarf2_per_objfile)
 void
 dwarf2_psymtab::expand_psymtab (struct objfile *objfile)
 {
-  struct dwarf2_per_cu_data *per_cu;
+  struct dwarf2_per_objfile *dwarf2_per_objfile
+    = get_dwarf2_per_objfile (objfile);
 
-  if (readin)
+  if (per_cu_data == NULL)
+    {
+      /* It's an include file, no symbols to read for it.
+         Everything is in the parent symtab.  */
+      return;
+    }
+
+  if (dwarf2_per_objfile->symtab_set_p (per_cu_data))
     return;
 
   read_dependencies (objfile);
 
-  per_cu = per_cu_data;
+  dw2_do_instantiate_symtab (per_cu_data, false);
+}
 
-  if (per_cu == NULL)
-    {
-      /* It's an include file, no symbols to read for it.
-         Everything is in the parent symtab.  */
-      readin = true;
-      return;
-    }
+/* See psympriv.h.  */
 
-  dw2_do_instantiate_symtab (per_cu, false);
+bool
+dwarf2_psymtab::readin_p (struct objfile *objfile) const
+{
+  if (per_cu_data == nullptr)
+    return true;
+
+  dwarf2_per_objfile *dwarf2_per_objfile
+    = get_dwarf2_per_objfile (objfile);
+  return dwarf2_per_objfile->symtab_set_p (per_cu_data);
+}
+
+/* See psympriv.h.  */
+
+compunit_symtab *
+dwarf2_psymtab::get_compunit_symtab (struct objfile *objfile) const
+{
+  if (per_cu_data == nullptr)
+    return nullptr;
+
+  dwarf2_per_objfile *dwarf2_per_objfile
+    = get_dwarf2_per_objfile (objfile);
+  gdb::optional<compunit_symtab *> &symtab
+    = dwarf2_per_objfile->unshareable->symtabs[per_cu_data->index];
+  if (!symtab.has_value ())
+    return nullptr;
+  return *symtab;
 }
 
 /* Trivial hash function for die_info: the hash value of a DIE
@@ -9394,9 +9441,12 @@ rust_union_quirks (struct dwarf2_cu *cu)
 static struct compunit_symtab *
 get_compunit_symtab (struct dwarf2_per_cu_data *per_cu)
 {
-  return (per_cu->dwarf2_per_objfile->using_index
-	  ? per_cu->v.quick->compunit_symtab
-	  : per_cu->v.psymtab->compunit_symtab);
+  struct dwarf2_per_objfile *dwarf2_per_objfile
+    = per_cu->dwarf2_per_objfile;
+  gdb::optional<compunit_symtab *> &symtab
+    = dwarf2_per_objfile->unshareable->symtabs[per_cu->index];
+  gdb_assert (symtab.has_value ());
+  return *symtab;
 }
 
 /* A helper function for computing the list of all symbol tables
@@ -9602,14 +9652,9 @@ process_full_comp_unit (struct dwarf2_per_cu_data *per_cu,
       cust->call_site_htab = cu->call_site_htab;
     }
 
-  if (dwarf2_per_objfile->using_index)
-    per_cu->v.quick->compunit_symtab = cust;
-  else
-    {
-      dwarf2_psymtab *pst = per_cu->v.psymtab;
-      pst->compunit_symtab = cust;
-      pst->readin = true;
-    }
+  gdb::optional<compunit_symtab *> &symtab
+    = dwarf2_per_objfile->unshareable->symtabs[per_cu->index];
+  symtab = cust;
 
   /* Push it for inclusion processing later.  */
   dwarf2_per_objfile->just_read_cus.push_back (per_cu);
@@ -9682,14 +9727,9 @@ process_full_type_unit (struct dwarf2_per_cu_data *per_cu,
       cust = sig_type->type_unit_group->compunit_symtab;
     }
 
-  if (dwarf2_per_objfile->using_index)
-    per_cu->v.quick->compunit_symtab = cust;
-  else
-    {
-      dwarf2_psymtab *pst = per_cu->v.psymtab;
-      pst->compunit_symtab = cust;
-      pst->readin = true;
-    }
+  gdb::optional<compunit_symtab *> &symtab
+    = dwarf2_per_objfile->unshareable->symtabs[per_cu->index];
+  symtab = cust;
 
   /* Not needed any more.  */
   cu->reset_builder ();
