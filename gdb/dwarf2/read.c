@@ -7525,7 +7525,10 @@ create_type_unit_group (struct dwarf2_cu *cu, sect_offset line_offset_struct)
       else
 	name = string_printf ("<type_units_at_0x%x>", line_offset);
 
-      pst = create_partial_symtab (per_cu, per_objfile, name.c_str ());
+      const char *interned
+	= per_objfile->objfile->intern (name.c_str ());
+
+      pst = create_partial_symtab (per_cu, per_objfile, interned);
       pst->anonymous = true;
     }
 
@@ -7606,7 +7609,6 @@ create_partial_symtab (dwarf2_per_cu_data *per_cu,
   struct objfile *objfile = per_objfile->objfile;
   dwarf2_psymtab *pst;
 
-  name = objfile->intern (name);
   pst = new dwarf2_psymtab (name, objfile, per_cu);
 
   pst->psymtabs_addrmap_supported = true;
@@ -7672,6 +7674,9 @@ struct dwarf_psym_reader
   /* File and directory name.  */
   std::string filename;
   const char *dirname;
+
+  /* The file name, after interning.  */
+  const char *interned_filename = nullptr;
 
   struct partial_die_info *load_partial_dies (const struct die_reader_specs *,
 					      const gdb_byte *, int);
@@ -7775,7 +7780,7 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
   psym_reader.intern_names ();
 
   dwarf2_psymtab *pst = create_partial_symtab (per_cu, per_objfile,
-					       psym_reader.filename.c_str ());
+					       psym_reader.interned_filename);
 
   psym_reader.create_symbols ();
 
@@ -8639,6 +8644,8 @@ dwarf_psym_reader::intern_names ()
 
   for (int i = 0; i < include_names.size (); ++i)
     include_names[i] = objfile->intern (include_names[i]);
+
+  interned_filename = objfile->intern (filename.c_str ());
 }
 
 void

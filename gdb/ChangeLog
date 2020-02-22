@@ -1,3 +1,11 @@
+2020-02-22  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2/read.c (create_type_unit_group): Intern "name".
+	(create_partial_symtab): Don't intern "name".
+	(struct dwarf_psym_reader) <interned_filename>: New member.
+	(process_psymtab_comp_unit_reader): Use interned_filename.
+	(dwarf_psym_reader::intern_names): Set interned_filename.
+
 2020-02-20  Tom Tromey  <tom@tromey.com>
 
 	* dwarf2/read.c (dwarf2_build_include_psymtabs): Add "dirname"
