@@ -1755,6 +1755,7 @@ save_gdb_index_command (const char *arg, int from_tty)
 
       struct dwarf2_per_objfile *dwarf2_per_objfile
 	= get_dwarf2_per_objfile (objfile);
+      dwarf2_enter_objfile enterer (objfile);
 
       if (dwarf2_per_objfile != NULL)
 	{

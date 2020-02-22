@@ -296,6 +296,30 @@ private:
 
 dwarf2_per_objfile *get_dwarf2_per_objfile (struct objfile *objfile);
 
+/* The "objfile" member of a dwarf2_per_objfile is normally nullptr,
+   and temporarily set when calling into the DWARF code.  This class
+   is used "enter" a particular objfile.  */
+
+class dwarf2_enter_objfile
+{
+public:
+
+  dwarf2_enter_objfile (struct objfile *objfile)
+    : m_per_objfile (get_dwarf2_per_objfile (objfile)),
+      m_restore_objfile (&m_per_objfile->objfile, objfile)
+  {
+  }
+
+  ~dwarf2_enter_objfile () = default;
+
+  DISABLE_COPY_AND_ASSIGN (dwarf2_enter_objfile);
+
+private:
+
+  dwarf2_per_objfile *m_per_objfile;
+  scoped_restore_tmpl<struct objfile *> m_restore_objfile;
+};
+
 /* A partial symtab specialized for DWARF.  */
 struct dwarf2_psymtab : public partial_symtab
 {

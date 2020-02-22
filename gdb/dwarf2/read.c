@@ -3231,6 +3231,7 @@ dw2_get_real_path (struct dwarf2_per_objfile *dwarf2_per_objfile,
 static struct symtab *
 dw2_find_last_source_symtab (struct objfile *objfile)
 {
+  dwarf2_enter_objfile enterer (objfile);
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
   dwarf2_per_cu_data *dwarf_cu = dwarf2_per_objfile->all_comp_units.back ();
@@ -3305,6 +3306,7 @@ dw2_map_symtabs_matching_filename
   (struct objfile *objfile, const char *name, const char *real_path,
    gdb::function_view<bool (symtab *)> callback)
 {
+  dwarf2_enter_objfile enterer (objfile);
   const char *name_basename = lbasename (name);
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
@@ -3520,6 +3522,7 @@ static struct compunit_symtab *
 dw2_lookup_symbol (struct objfile *objfile, block_enum block_index,
 		   const char *name, domain_enum domain)
 {
+  dwarf2_enter_objfile enterer (objfile);
   struct compunit_symtab *stab_best = NULL;
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
@@ -3562,6 +3565,7 @@ dw2_lookup_symbol (struct objfile *objfile, block_enum block_index,
 static void
 dw2_print_stats (struct objfile *objfile)
 {
+  dwarf2_enter_objfile enterer (objfile);
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
   int total = (dwarf2_per_objfile->all_comp_units.size ()
@@ -3606,6 +3610,7 @@ static void
 dw2_expand_symtabs_for_function (struct objfile *objfile,
 				 const char *func_name)
 {
+  dwarf2_enter_objfile enterer (objfile);
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
 
@@ -3622,6 +3627,7 @@ dw2_expand_symtabs_for_function (struct objfile *objfile,
 static void
 dw2_expand_all_symtabs (struct objfile *objfile)
 {
+  dwarf2_enter_objfile enterer (objfile);
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
   int total_units = (dwarf2_per_objfile->all_comp_units.size ()
@@ -3644,6 +3650,7 @@ static void
 dw2_expand_symtabs_with_fullname (struct objfile *objfile,
 				  const char *fullname)
 {
+  dwarf2_enter_objfile enterer (objfile);
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
 
@@ -4642,6 +4649,7 @@ dw2_expand_symtabs_matching
    gdb::function_view<expand_symtabs_exp_notify_ftype> expansion_notify,
    enum search_domain kind)
 {
+  dwarf2_enter_objfile enterer (objfile);
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
 
@@ -4710,6 +4718,7 @@ dw2_find_pc_sect_compunit_symtab (struct objfile *objfile,
   if (!data)
     return NULL;
 
+  dwarf2_enter_objfile enterer (objfile);
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
   if (warn_if_readin && dwarf2_per_objfile->symtab_set_p (data))
@@ -4728,6 +4737,7 @@ static void
 dw2_map_symbol_filenames (struct objfile *objfile, symbol_filename_ftype *fun,
 			  void *data, int need_fullname)
 {
+  dwarf2_enter_objfile enterer (objfile);
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
 
@@ -5504,6 +5514,7 @@ static struct compunit_symtab *
 dw2_debug_names_lookup_symbol (struct objfile *objfile, block_enum block_index,
 			       const char *name, domain_enum domain)
 {
+  dwarf2_enter_objfile enterer (objfile);
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
 
@@ -5570,6 +5581,7 @@ static void
 dw2_debug_names_expand_symtabs_for_function (struct objfile *objfile,
 					     const char *func_name)
 {
+  dwarf2_enter_objfile enterer (objfile);
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
 
@@ -5594,6 +5606,7 @@ dw2_debug_names_map_matching_symbols
    gdb::function_view<symbol_found_callback_ftype> callback,
    symbol_compare_ftype *ordered_compare)
 {
+  dwarf2_enter_objfile enterer (objfile);
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
 
@@ -5653,6 +5666,7 @@ dw2_debug_names_expand_symtabs_matching
    gdb::function_view<expand_symtabs_exp_notify_ftype> expansion_notify,
    enum search_domain kind)
 {
+  dwarf2_enter_objfile enterer (objfile);
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
 
@@ -5760,6 +5774,7 @@ dwarf2_initialize_objfile (struct objfile *objfile, dw_index_kind *index_kind)
 {
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
+  dwarf2_enter_objfile enterer (objfile);
 
   /* If we're about to read full symbols, don't bother with the
      indices.  In this case we also don't care if some other debug
@@ -5829,6 +5844,8 @@ dwarf2_initialize_objfile (struct objfile *objfile, dw_index_kind *index_kind)
 void
 dwarf2_build_psymtabs (struct objfile *objfile)
 {
+  dwarf2_enter_objfile enterer (objfile);
+
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
 
@@ -8694,6 +8711,7 @@ locate_pdi_sibling (const struct die_reader_specs *reader,
 void
 dwarf2_psymtab::read_symtab (struct objfile *objfile)
 {
+  dwarf2_enter_objfile enterer (objfile);
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
 
@@ -8849,6 +8867,7 @@ process_queue (struct dwarf2_per_objfile *dwarf2_per_objfile)
 void
 dwarf2_psymtab::expand_psymtab (struct objfile *objfile)
 {
+  dwarf2_enter_objfile enterer (objfile);
   struct dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
 
@@ -8875,6 +8894,7 @@ dwarf2_psymtab::readin_p (struct objfile *objfile) const
   if (per_cu_data == nullptr)
     return true;
 
+  dwarf2_enter_objfile enterer (objfile);
   dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
   return dwarf2_per_objfile->symtab_set_p (per_cu_data);
@@ -8888,6 +8908,7 @@ dwarf2_psymtab::get_compunit_symtab (struct objfile *objfile) const
   if (per_cu_data == nullptr)
     return nullptr;
 
+  dwarf2_enter_objfile enterer (objfile);
   dwarf2_per_objfile *dwarf2_per_objfile
     = get_dwarf2_per_objfile (objfile);
   gdb::optional<compunit_symtab *> &symtab
