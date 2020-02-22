@@ -1,5 +1,12 @@
 2020-02-21  Tom Tromey  <tom@tromey.com>
 
+	* dwarf2read.c (dwarf2_build_psymtabs_hard): Use
+	make_scoped_restore.
+	(dwarf2_psymtab::read_symtab): Don't clear
+	reading_partial_symbols.
+
+2020-02-21  Tom Tromey  <tom@tromey.com>
+
 	* psympriv.h (struct partial_symtab): Update comment.
 
 2020-02-21  Tom Tromey  <tromey@adacore.com>
