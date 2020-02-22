@@ -47,6 +47,7 @@ struct dwarf2_per_cu_data;
 struct mapped_index;
 struct mapped_debug_names;
 struct signatured_type;
+struct type_unit_group;
 
 /* One item on the queue of compilation units to read in full symbols
    for.  */
@@ -64,6 +65,30 @@ struct dwarf2_queue_item
 
   struct dwarf2_per_cu_data *per_cu;
   enum language pretend_language;
+};
+
+/* This is the per-objfile data associated with a type_unit_group.  */
+
+struct type_unit_unshareable
+{
+  /* The compunit symtab.
+     Type units in a group needn't all be defined in the same source file,
+     so we create an essentially anonymous symtab as the compunit symtab.  */
+  struct compunit_symtab *compunit_symtab = nullptr;
+
+  /* The number of symtabs from the line header.
+     The value here must match line_header.num_file_names.  */
+  unsigned int num_symtabs = 0;
+
+  /* The symbol tables for this TU (obtained from the files listed in
+     DW_AT_stmt_list).
+     WARNING: The order of entries here must match the order of entries
+     in the line header.  After the first TU using this type_unit_group, the
+     line header for the subsequent TUs is recreated from this.  This is done
+     because we need to use the same symtabs for each TU using the same
+     DW_AT_stmt_list value.  Also note that symtabs may be repeated here,
+     there's no guarantee the line header doesn't have duplicate entries.  */
+  struct symtab **symtabs = nullptr;
 };
 
 /* Some DWARF data cannot (currently) be shared across objfiles.  Such
@@ -86,6 +111,11 @@ struct dwarf2_unshareable
   /* Hold the corresponding compunit_symtab for each CU or TU.  This
      is indexed by dwarf2_per_cu_data::index.  */
   std::vector<gdb::optional<compunit_symtab *>> symtabs;
+
+  /* Map from a type unit group to the corresponding unshared
+     structure.  */
+  std::unordered_map<type_unit_group *, std::unique_ptr<type_unit_unshareable>>
+    type_units;
 };
 
 /* Collection of data recorded per objfile.

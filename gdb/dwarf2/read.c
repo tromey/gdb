@@ -581,27 +581,8 @@ struct type_unit_group
      and is deleted afterwards and not used again.  */
   std::vector<signatured_type *> *tus;
 
-  /* The compunit symtab.
-     Type units in a group needn't all be defined in the same source file,
-     so we create an essentially anonymous symtab as the compunit symtab.  */
-  struct compunit_symtab *compunit_symtab;
-
   /* The data used to construct the hash key.  */
   struct stmt_list_hash hash;
-
-  /* The number of symtabs from the line header.
-     The value here must match line_header.num_file_names.  */
-  unsigned int num_symtabs;
-
-  /* The symbol tables for this TU (obtained from the files listed in
-     DW_AT_stmt_list).
-     WARNING: The order of entries here must match the order of entries
-     in the line header.  After the first TU using this type_unit_group, the
-     line header for the subsequent TUs is recreated from this.  This is done
-     because we need to use the same symtabs for each TU using the same
-     DW_AT_stmt_list value.  Also note that symtabs may be repeated here,
-     there's no guarantee the line header doesn't have duplicate entries.  */
-  struct symtab **symtabs;
 };
 
 /* These sections are what may appear in a (real or virtual) DWO file.  */
@@ -9456,6 +9437,22 @@ rust_union_quirks (struct dwarf2_cu *cu)
   cu->rust_unions.clear ();
 }
 
+/* Get the type_unit_unshareable corresponding to TU_GROUP.  If one
+   does not exist, create it.  */
+
+static type_unit_unshareable *
+get_type_unit_group_unshareable (dwarf2_per_objfile *dwarf2_per_objfile,
+				 type_unit_group *tu_group)
+{
+  auto iter = dwarf2_per_objfile->unshareable->type_units.find (tu_group);
+  if (iter != dwarf2_per_objfile->unshareable->type_units.end ())
+    return iter->second.get ();
+  std::unique_ptr<type_unit_unshareable> uniq (new type_unit_unshareable);
+  type_unit_unshareable *result = uniq.get ();
+  dwarf2_per_objfile->unshareable->type_units[tu_group] = std::move (uniq);
+  return result;
+}
+
 /* Return the symtab for PER_CU.  This works properly regardless of
    whether we're using the index or psymtabs.  */
 
@@ -9725,11 +9722,14 @@ process_full_type_unit (struct dwarf2_per_cu_data *per_cu,
      If this is the first TU to use this symtab, complete the construction
      of it with end_expandable_symtab.  Otherwise, complete the addition of
      this TU's symbols to the existing symtab.  */
-  if (sig_type->type_unit_group->compunit_symtab == NULL)
+  type_unit_unshareable *tu_unshare
+    = get_type_unit_group_unshareable (dwarf2_per_objfile,
+				       sig_type->type_unit_group);
+  if (tu_unshare->compunit_symtab == NULL)
     {
       buildsym_compunit *builder = cu->get_builder ();
       cust = builder->end_expandable_symtab (0, SECT_OFF_TEXT (objfile));
-      sig_type->type_unit_group->compunit_symtab = cust;
+      tu_unshare->compunit_symtab = cust;
 
       if (cust != NULL)
 	{
@@ -9745,7 +9745,7 @@ process_full_type_unit (struct dwarf2_per_cu_data *per_cu,
   else
     {
       cu->get_builder ()->augment_type_symtab ();
-      cust = sig_type->type_unit_group->compunit_symtab;
+      cust = tu_unshare->compunit_symtab;
     }
 
   gdb::optional<compunit_symtab *> &symtab
@@ -10879,7 +10879,10 @@ dwarf2_cu::setup_type_unit_groups (struct die_info *die)
      do it again, we could fake it and just recreate the part we need
      (file name,index -> symtab mapping).  If data shows this optimization
      is useful we can do it then.  */
-  first_time = tu_group->compunit_symtab == NULL;
+  struct dwarf2_per_objfile *dwarf2_per_objfile = per_cu->dwarf2_per_objfile;
+  type_unit_unshareable *tu_unshare
+    = get_type_unit_group_unshareable (dwarf2_per_objfile, tu_group);
+  first_time = tu_unshare->compunit_symtab == NULL;
 
   /* We have to handle the case of both a missing DW_AT_stmt_list or bad
      debug info.  */
@@ -10895,9 +10898,9 @@ dwarf2_cu::setup_type_unit_groups (struct die_info *die)
 	start_symtab ("", NULL, 0);
       else
 	{
-	  gdb_assert (tu_group->symtabs == NULL);
+	  gdb_assert (tu_unshare->symtabs == NULL);
 	  gdb_assert (m_builder == nullptr);
-	  struct compunit_symtab *cust = tu_group->compunit_symtab;
+	  struct compunit_symtab *cust = tu_unshare->compunit_symtab;
 	  m_builder.reset (new struct buildsym_compunit
 			   (COMPUNIT_OBJFILE (cust), "",
 			    COMPUNIT_DIRNAME (cust),
@@ -10919,9 +10922,9 @@ dwarf2_cu::setup_type_unit_groups (struct die_info *die)
 	 process_full_type_unit still needs to know if this is the first
 	 time.  */
 
-      tu_group->num_symtabs = line_header->file_names_size ();
-      tu_group->symtabs = XNEWVEC (struct symtab *,
-				   line_header->file_names_size ());
+      tu_unshare->num_symtabs = line_header->file_names_size ();
+      tu_unshare->symtabs = XNEWVEC (struct symtab *,
+				     line_header->file_names_size ());
 
       auto &file_names = line_header->file_names ();
       for (i = 0; i < file_names.size (); ++i)
@@ -10942,13 +10945,13 @@ dwarf2_cu::setup_type_unit_groups (struct die_info *die)
 	    }
 
 	  fe.symtab = b->get_current_subfile ()->symtab;
-	  tu_group->symtabs[i] = fe.symtab;
+	  tu_unshare->symtabs[i] = fe.symtab;
 	}
     }
   else
     {
       gdb_assert (m_builder == nullptr);
-      struct compunit_symtab *cust = tu_group->compunit_symtab;
+      struct compunit_symtab *cust = tu_unshare->compunit_symtab;
       m_builder.reset (new struct buildsym_compunit
 		       (COMPUNIT_OBJFILE (cust), "",
 			COMPUNIT_DIRNAME (cust),
@@ -10959,7 +10962,7 @@ dwarf2_cu::setup_type_unit_groups (struct die_info *die)
       for (i = 0; i < file_names.size (); ++i)
 	{
 	  file_entry &fe = file_names[i];
-	  fe.symtab = tu_group->symtabs[i];
+	  fe.symtab = tu_unshare->symtabs[i];
 	}
     }
 

@@ -1,5 +1,15 @@
 2020-02-21  Tom Tromey  <tom@tromey.com>
 
+	* dwarf2/read.h (struct type_unit_unshareable): New.
+	(struct dwarf2_unshareable) <type_units>: New member.
+	* dwarf2/read.c (struct type_unit_group) <compunit_symtab,
+	num_symtabs, symtabs>: Remove; move to type_unit_unshareable.
+	(get_type_unit_group_unshareable): New function.
+	(process_full_type_unit, dwarf2_cu::setup_type_unit_groups)
+	(dwarf2_cu::setup_type_unit_groups): Use type_unit_unshareable.
+
+2020-02-21  Tom Tromey  <tom@tromey.com>
+
 	* dwarf2/read.h (class dwarf2_enter_objfile): New.
 	* dwarf2/read.c (dw2_find_last_source_symtab)
 	(dw2_map_symtabs_matching_filename, dw2_lookup_symbol)
