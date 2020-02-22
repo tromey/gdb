@@ -1771,7 +1771,10 @@ dwarf2_per_objfile::dwarf2_per_objfile (struct objfile *objfile_,
 					const dwarf2_debug_sections *names,
 					bool can_copy_)
   : objfile (objfile_),
-    can_copy (can_copy_)
+    can_copy (can_copy_),
+    /* Temporarily just allocate one per objfile -- we don't have
+       sharing yet.  */
+    unshareable (new dwarf2_unshareable)
 {
   if (names == NULL)
     names = &dwarf2_elf_names;
@@ -1792,6 +1795,8 @@ dwarf2_per_objfile::~dwarf2_per_objfile ()
 
   for (signatured_type *sig_type : all_type_units)
     sig_type->per_cu.imported_symtabs_free ();
+
+  delete unshareable;
 
   /* Everything else should be on the objfile obstack.  */
 }
@@ -24498,8 +24503,8 @@ set_die_type (struct die_info *die, struct type *type, struct dwarf2_cu *cu)
 			    cu->per_cu->addr_type ()))
     add_dyn_prop (DYN_PROP_DATA_LOCATION, prop, type);
 
-  if (dwarf2_per_objfile->die_type_hash == NULL)
-    dwarf2_per_objfile->die_type_hash
+  if (dwarf2_per_objfile->unshareable->die_type_hash == NULL)
+    dwarf2_per_objfile->unshareable->die_type_hash
       = htab_up (htab_create_alloc (127,
 				    per_cu_offset_and_type_hash,
 				    per_cu_offset_and_type_eq,
@@ -24509,7 +24514,8 @@ set_die_type (struct die_info *die, struct type *type, struct dwarf2_cu *cu)
   ofs.sect_off = die->sect_off;
   ofs.type = type;
   slot = (struct dwarf2_per_cu_offset_and_type **)
-    htab_find_slot (dwarf2_per_objfile->die_type_hash.get (), &ofs, INSERT);
+    htab_find_slot (dwarf2_per_objfile->unshareable->die_type_hash.get (),
+		    &ofs, INSERT);
   if (*slot)
     complaint (_("A problem internal to GDB: DIE %s has type already set"),
 	       sect_offset_str (die->sect_off));
@@ -24529,13 +24535,14 @@ get_die_type_at_offset (sect_offset sect_off,
   struct dwarf2_per_cu_offset_and_type *slot, ofs;
   struct dwarf2_per_objfile *dwarf2_per_objfile = per_cu->dwarf2_per_objfile;
 
-  if (dwarf2_per_objfile->die_type_hash == NULL)
+  if (dwarf2_per_objfile->unshareable->die_type_hash == NULL)
     return NULL;
 
   ofs.per_cu = per_cu;
   ofs.sect_off = sect_off;
   slot = ((struct dwarf2_per_cu_offset_and_type *)
-	  htab_find (dwarf2_per_objfile->die_type_hash.get (), &ofs));
+	  htab_find (dwarf2_per_objfile->unshareable->die_type_hash.get (),
+		     &ofs));
   if (slot)
     return slot->type;
   else

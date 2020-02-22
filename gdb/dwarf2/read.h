@@ -66,6 +66,24 @@ struct dwarf2_queue_item
   enum language pretend_language;
 };
 
+/* Some DWARF data cannot (currently) be shared across objfiles.  Such
+   data is stored in this object.
+
+   dwarf2_per_objfile holds a pointer to an instance of this object.
+   This pointer is temporarily set when expanding CUs.  This hackish
+   approach is due to the history of the DWARF reader.  In the past,
+   all objects were stored per-objfile, and this object was introduced
+   in the process of separating out the shareable and per-objfile
+   state.  */
+
+struct dwarf2_unshareable
+{
+  /* Table mapping type DIEs to their struct type *.
+     This is nullptr if not allocated yet.
+     The mapping is done via (CU/TU + DIE offset) -> type.  */
+  htab_up die_type_hash;
+};
+
 /* Collection of data recorded per objfile.
    This hangs off of dwarf2_objfile_data_key.  */
 
@@ -225,11 +243,6 @@ public:
      symbols.  */
   bool reading_partial_symbols = false;
 
-  /* Table mapping type DIEs to their struct type *.
-     This is NULL if not allocated yet.
-     The mapping is done via (CU/TU + DIE offset) -> type.  */
-  htab_up die_type_hash;
-
   /* The CUs we recently read.  */
   std::vector<dwarf2_per_cu_data *> just_read_cus;
 
@@ -252,6 +265,11 @@ public:
 
   /* CUs that are queued to be read.  */
   std::queue<dwarf2_queue_item> queue;
+
+  /* State that cannot be shared across objfiles.  This is normally
+     nullptr and is temporarily set to the correct value at the entry
+     points of the reader.  */
+  dwarf2_unshareable *unshareable = nullptr;
 
 private:
 

@@ -1,5 +1,16 @@
 2020-02-21  Tom Tromey  <tom@tromey.com>
 
+	* dwarf2/read.h (struct dwarf2_unshareable): New type.
+	(struct dwarf2_per_objfile) <die_type_hash>: Move to
+	dwarf2_unshareable.
+	<unshareable>: New member.
+	* dwarf2/read.c (dwarf2_per_objfile::dwarf2_per_objfile):
+	Initialize "unshareable".
+	(dwarf2_per_objfile::~dwarf2_per_objfile): Delete unshareable.
+	(set_die_type, get_die_type_at_offset): Update.
+
+2020-02-21  Tom Tromey  <tom@tromey.com>
+
 	* dwarf2/loc.c (struct piece_closure) <objfile>: New member.
 	(allocate_piece_closure): Set "objfile" member.
 	(dwarf2_find_location_expression, dwarf2_locexpr_baton_eval)
