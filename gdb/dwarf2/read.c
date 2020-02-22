@@ -10922,9 +10922,10 @@ dwarf2_cu::setup_type_unit_groups (struct die_info *die)
 	 process_full_type_unit still needs to know if this is the first
 	 time.  */
 
-      tu_unshare->num_symtabs = line_header->file_names_size ();
-      tu_unshare->symtabs = XNEWVEC (struct symtab *,
-				     line_header->file_names_size ());
+      tu_unshare->symtabs
+	= XOBNEWVEC (&COMPUNIT_OBJFILE (cust)->objfile_obstack,
+		     struct symtab *,
+		     line_header->file_names_size ());
 
       auto &file_names = line_header->file_names ();
       for (i = 0; i < file_names.size (); ++i)

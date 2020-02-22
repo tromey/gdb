@@ -76,10 +76,6 @@ struct type_unit_unshareable
      so we create an essentially anonymous symtab as the compunit symtab.  */
   struct compunit_symtab *compunit_symtab = nullptr;
 
-  /* The number of symtabs from the line header.
-     The value here must match line_header.num_file_names.  */
-  unsigned int num_symtabs = 0;
-
   /* The symbol tables for this TU (obtained from the files listed in
      DW_AT_stmt_list).
      WARNING: The order of entries here must match the order of entries
