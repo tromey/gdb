@@ -30,6 +30,7 @@
 #include "tui/tui-layout.h"
 #include "tui/tui-wingeneral.h"
 #include "tui/tui-winsource.h"
+#include "target/target.h"
 
 class tui_py_window;
 
@@ -85,6 +86,9 @@ public:
   {
     if (is_visible ())
       {
+	target_terminal::scoped_restore_terminal_state term_state;
+	target_terminal::ours_for_output ();
+
 	werase (handle.get ());
 	check_and_display_highlight_if_needed ();
 	cursor_x = 0;
@@ -191,6 +195,9 @@ tui_py_window::do_scroll_vertical (int num_to_scroll)
 void
 tui_py_window::output (const char *text)
 {
+  target_terminal::scoped_restore_terminal_state term_state;
+  target_terminal::ours_for_output ();
+
   int vwidth = viewport_width ();
 
   while (cursor_y < viewport_height () && *text != '\0')

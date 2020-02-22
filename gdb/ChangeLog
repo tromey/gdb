@@ -1,5 +1,11 @@
 2020-02-22  Tom Tromey  <tom@tromey.com>
 
+	* python/py-tui.c (tui_py_window::erase): Use
+	target_terminal::ours_for_output.
+	(tui_py_window::output): Likewise.
+
+2020-02-22  Tom Tromey  <tom@tromey.com>
+
 	* dwarf2/loc.h (dwarf2_compile_expr_to_ax): Don't declare.
 	* dwarf2/loc.c (dwarf2_compile_expr_to_ax): Now static.
 
