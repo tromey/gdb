@@ -1,5 +1,21 @@
 2020-02-21  Tom Tromey  <tom@tromey.com>
 
+	* dwarf2/loc.c (struct piece_closure) <objfile>: New member.
+	(allocate_piece_closure): Set "objfile" member.
+	(dwarf2_find_location_expression, dwarf2_locexpr_baton_eval)
+	(locexpr_describe_location, loclist_describe_location): Use new
+	member.
+	* dwarf2/read.c (read_call_site_scope)
+	(mark_common_block_symbol_computed, attr_to_dynamic_prop)
+	(dwarf2_const_value_attr, dwarf2_fetch_die_loc_sect_off)
+	(fill_in_loclist_baton, dwarf2_symbol_mark_computed): Set objfile
+	member.
+	* dwarf2/loc.h (struct dwarf2_locexpr_baton) <objfile>: New
+	member.
+	(struct dwarf2_loclist_baton) <objfile>: New member.
+
+2020-02-21  Tom Tromey  <tom@tromey.com>
+
 	* dwarf2/read.h (struct dwarf2_unshareable) <symtabs>: New
 	member.
 	(struct dwarf2_psymtab): Derive from partial_symtab.

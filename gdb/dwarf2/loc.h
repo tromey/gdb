@@ -166,6 +166,9 @@ struct dwarf2_locexpr_baton
      directly.  */
   bool is_reference;
 
+  /* The objfile that was used when creating this.  */
+  struct objfile *objfile;
+
   /* The compilation unit containing the symbol whose location
      we're computing.  */
   struct dwarf2_per_cu_data *per_cu;
@@ -182,6 +185,9 @@ struct dwarf2_loclist_baton
 
   /* Length of the location list.  */
   size_t size;
+
+  /* The objfile that was used when creating this.  */
+  struct objfile *objfile;
 
   /* The compilation unit containing the symbol whose location
      we're computing.  */
