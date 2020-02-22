@@ -1,5 +1,12 @@
 2020-02-21  Tom Tromey  <tom@tromey.com>
 
+	* dwarf2/read.h (struct dwarf2_unshareable) <type_map>: New
+	member.
+	(struct signatured_type) <type>: Remove.
+	* dwarf2/read.c (get_signatured_type): Use type_map.
+
+2020-02-21  Tom Tromey  <tom@tromey.com>
+
 	* dwarf2/read.h (struct type_unit_unshareable) <num_symtabs>:
 	Remove.
 	* dwarf2/read.c (dwarf2_cu::setup_type_unit_groups): Use

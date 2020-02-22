@@ -22717,8 +22717,9 @@ get_signatured_type (struct die_info *die, ULONGEST signature,
     }
 
   /* If we already know the type we're done.  */
-  if (sig_type->type != NULL)
-    return sig_type->type;
+  auto iter = dwarf2_per_objfile->unshareable->type_map.find (sig_type);
+  if (iter != dwarf2_per_objfile->unshareable->type_map.end ())
+    return iter->second;
 
   type_cu = cu;
   type_die = follow_die_sig_1 (die, sig_type, &type_cu);
@@ -22745,7 +22746,7 @@ get_signatured_type (struct die_info *die, ULONGEST signature,
 		 objfile_name (dwarf2_per_objfile->objfile));
       type = build_error_marker_type (cu, die);
     }
-  sig_type->type = type;
+  dwarf2_per_objfile->unshareable->type_map[sig_type] = type;
 
   return type;
 }

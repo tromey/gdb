@@ -112,6 +112,9 @@ struct dwarf2_unshareable
      structure.  */
   std::unordered_map<type_unit_group *, std::unique_ptr<type_unit_unshareable>>
     type_units;
+
+  /* Map from signatured types to the corresponding struct type.  */
+  std::unordered_map<signatured_type *, struct type *> type_map;
 };
 
 /* Collection of data recorded per objfile.
@@ -585,11 +588,6 @@ struct signatured_type
   /* Type units are grouped by their DW_AT_stmt_list entry so that they
      can share them.  This points to the containing symtab.  */
   struct type_unit_group *type_unit_group;
-
-  /* The type.
-     The first time we encounter this type we fully read it in and install it
-     in the symbol tables.  Subsequent times we only need the type.  */
-  struct type *type;
 
   /* Containing DWO unit.
      This field is valid iff per_cu.reading_dwo_directly.  */
