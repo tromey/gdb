@@ -296,6 +296,9 @@ mi_ui_out::mi_ui_out (int mi_version)
 {
   string_file *stream = new string_file ();
   m_streams.push_back (stream);
+
+  if (mi_version >= 3)
+    varobj_enable_pretty_printing ();
 }
 
 mi_ui_out::~mi_ui_out ()
