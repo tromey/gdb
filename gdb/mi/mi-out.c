@@ -21,12 +21,14 @@
 
 #include "defs.h"
 #include "mi-out.h"
+#include "mi-cmds.h"
 
 #include <vector>
 
 #include "interps.h"
 #include "ui-out.h"
 #include "utils.h"
+#include "varobj.h"
 
 /* Mark beginning of a table.  */
 
@@ -298,7 +300,10 @@ mi_ui_out::mi_ui_out (int mi_version)
   m_streams.push_back (stream);
 
   if (mi_version >= 3)
-    varobj_enable_pretty_printing ();
+    {
+      varobj_enable_pretty_printing ();
+      mi_cmd_enable_frame_filters (nullptr, nullptr, 0);
+    }
 }
 
 mi_ui_out::~mi_ui_out ()
