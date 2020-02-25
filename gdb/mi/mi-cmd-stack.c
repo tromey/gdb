@@ -46,14 +46,14 @@ static void list_args_or_locals (const frame_print_options &fp_opts,
 				 int skip_unavailable);
 
 /* True if we want to allow Python-based frame filters.  */
-static int frame_filters = 0;
+static bool frame_filters = false;
 
 void
 mi_cmd_enable_frame_filters (const char *command, char **argv, int argc)
 {
   if (argc != 0)
     error (_("-enable-frame-filters: no arguments allowed"));
-  frame_filters = 1;
+  frame_filters = true;
 }
 
 /* Like apply_ext_lang_frame_filter, but take a print_values */
