@@ -35,6 +35,7 @@ class compiled_regex;
 /* String utilities.  */
 
 extern bool sevenbit_strings;
+extern bool printchar_mi3;
 
 /* Modes of operation for strncmp_iw_with_mode.  */
 

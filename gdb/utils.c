@@ -102,6 +102,10 @@ static std::chrono::steady_clock::duration prompt_for_continue_wait_time;
 
 static bool debug_timestamp = false;
 
+/* True means that printchar should work in MI-3 mode.  This reduces
+   the amount of escaping that is done.  */
+bool printchar_mi3;
+
 /* True means that strings with character values >0x7F should be printed
    as octal escapes.  False means just print the value (e.g. it's an
    international character, and the terminal or window can cope.)  */
@@ -1093,10 +1097,16 @@ printchar (int c, do_fputc_ftype do_fputc, ui_file *stream, int quoter)
 {
   c &= 0xFF;			/* Avoid sign bit follies */
 
-  if (c < 0x20 ||		/* Low control chars */
-      (c >= 0x7F && c < 0xA0) ||	/* DEL, High controls */
-      (sevenbit_strings && c >= 0x80))
-    {				/* high order bit set */
+  bool do_quote;
+  if (printchar_mi3)
+    do_quote = c == '\n';
+  else
+    do_quote = (c < 0x20		      /* Low control chars */
+		|| (c >= 0x7F && c < 0xA0)    /* DEL, High controls */
+		|| (sevenbit_strings && c >= 0x80)); /* high order bit set */
+
+  if (do_quote)
+    {
       do_fputc ('\\', stream);
 
       switch (c)

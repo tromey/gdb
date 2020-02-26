@@ -321,6 +321,9 @@ mi_interp::pre_command_loop ()
      high bit set is printed using C's octal format.  */
   sevenbit_strings = true;
 
+  if (mi_version (mi_uiout) >= 3)
+    printchar_mi3 = true;
+
   /* Tell the world that we're alive.  */
   display_mi_prompt (mi);
 }
