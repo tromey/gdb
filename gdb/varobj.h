@@ -328,6 +328,8 @@ extern void varobj_set_visualizer (struct varobj *var,
 
 extern void varobj_enable_pretty_printing (void);
 
+extern void varobj_disable_cxx_pseudo_children ();
+
 extern bool varobj_has_more (const struct varobj *var, int to);
 
 extern bool varobj_is_dynamic_p (const struct varobj *var);

@@ -767,3 +767,12 @@ mi_cmd_var_set_update_range (const char *command, char **argv, int argc)
 
   varobj_set_child_range (var, from, to);
 }
+
+void
+mi_cmd_disable_pseudo_children (const char *command, char **argv, int argc)
+{
+  if (argc != 0)
+    error (_("-disable-pseudo-children: no arguments allowed"));
+
+  varobj_disable_cxx_pseudo_children ();
+}

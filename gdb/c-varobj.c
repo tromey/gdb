@@ -944,20 +944,81 @@ cplus_value_of_variable (const struct varobj *var,
 }
 
 
-/* varobj operations for c++.  */
+static bool pseudo_children = true;
+
+static int
+compat_number_of_children (const struct varobj *parent)
+{
+  return (pseudo_children
+	  ? cplus_number_of_children
+	  : c_number_of_children) (parent);
+}
+
+static std::string
+compat_name_of_variable (const struct varobj *parent)
+{
+  return (pseudo_children
+	  ? cplus_name_of_variable
+	  : c_name_of_variable) (parent);
+}
+
+static std::string
+compat_name_of_child (const struct varobj *parent, int index)
+{
+  return (pseudo_children
+	  ? cplus_name_of_child
+	  : c_name_of_child) (parent, index);
+}
+
+static std::string
+compat_path_expr_of_child (const struct varobj *child)
+{
+  return (pseudo_children
+	  ? cplus_path_expr_of_child
+	  : c_path_expr_of_child) (child);
+}
+
+static struct value *
+compat_value_of_child (const struct varobj *parent, int index)
+{
+  return (pseudo_children
+	  ? cplus_value_of_child
+	  : c_value_of_child) (parent, index);
+}
+
+static struct type *
+compat_type_of_child (const struct varobj *parent, int index)
+{
+  return (pseudo_children
+	  ? cplus_type_of_child
+	  : c_type_of_child) (parent, index);
+}
+
+static std::string
+compat_value_of_variable (const struct varobj *parent,
+			  enum varobj_display_formats format)
+{
+  return (pseudo_children
+	  ? cplus_value_of_variable
+	  : c_value_of_variable) (parent, format);
+}
 
 const struct lang_varobj_ops cplus_varobj_ops =
 {
-   cplus_number_of_children,
-   cplus_name_of_variable,
-   cplus_name_of_child,
-   cplus_path_expr_of_child,
-   cplus_value_of_child,
-   cplus_type_of_child,
-   cplus_value_of_variable,
+   compat_number_of_children,
+   compat_name_of_variable,
+   compat_name_of_child,
+   compat_path_expr_of_child,
+   compat_value_of_child,
+   compat_type_of_child,
+   compat_value_of_variable,
    varobj_default_value_is_changeable_p,
    NULL, /* value_has_mutated */
    c_is_path_expr_parent  /* is_path_expr_parent */
 };
 
-
+void
+varobj_disable_cxx_pseudo_children ()
+{
+  pseudo_children = false;
+}
