@@ -22533,9 +22533,24 @@ dwarf_decode_macros (struct dwarf2_cu *cu, unsigned int offset,
       return;
     }
 
+  dwarf2_per_objfile->str.read (objfile);
+
+  const dwarf2_section_info *dwz_macro = nullptr;
+  const dwarf2_section_info *dwz_str = nullptr;
+  struct dwz_file *dwz = dwarf2_get_dwz_file (dwarf2_per_objfile);
+  if (dwz != nullptr)
+    {
+      /* Make sure the sections are read here in the main thread.  */
+      dwz->macro.read (objfile);
+      dwz_macro = &dwz->macro;
+      dwz->str.read (objfile);
+      dwz_str = &dwz->str;
+    }
+
   buildsym_compunit *builder = cu->get_builder ();
 
-  dwarf_decode_macros (dwarf2_per_objfile, builder, section, lh,
+  dwarf_decode_macros (builder, section, &dwarf2_per_objfile->str,
+		       dwz_macro, dwz_str, lh,
 		       offset_size, offset, section_is_gnu);
 }
 

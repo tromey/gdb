@@ -31,7 +31,6 @@
 #include "dwarf2/line-header.h"
 #include "dwarf2/section.h"
 #include "dwarf2/macro.h"
-#include "dwarf2/dwz.h"
 #include "buildsym.h"
 #include "macrotab.h"
 #include "complaints.h"
@@ -418,18 +417,19 @@ dwarf_parse_macro_header (const gdb_byte **opcode_definitions,
    including DW_MACRO_import.  */
 
 static void
-dwarf_decode_macro_bytes (struct dwarf2_per_objfile *dwarf2_per_objfile,
-			  buildsym_compunit *builder,
+dwarf_decode_macro_bytes (buildsym_compunit *builder,
 			  bfd *abfd,
 			  const gdb_byte *mac_ptr, const gdb_byte *mac_end,
 			  struct macro_source_file *current_file,
 			  const struct line_header *lh,
 			  const struct dwarf2_section_info *section,
+			  const dwarf2_section_info *str_sect,
+			  const dwarf2_section_info *dwz_sect,
+			  const dwarf2_section_info *dwz_str_sect,
 			  int section_is_gnu, int section_is_dwz,
 			  unsigned int offset_size,
 			  htab_t include_hash)
 {
-  struct objfile *objfile = dwarf2_per_objfile->objfile;
   enum dwarf_macro_record_type macinfo_type;
   int at_commandline;
   const gdb_byte *opcode_definitions[256];
@@ -505,16 +505,9 @@ dwarf_decode_macro_bytes (struct dwarf2_per_objfile *dwarf2_per_objfile,
 		if (macinfo_type == DW_MACRO_define_sup
 		    || macinfo_type == DW_MACRO_undef_sup
 		    || section_is_dwz)
-		  {
-		    struct dwz_file *dwz
-		      = dwarf2_get_dwz_file (dwarf2_per_objfile);
-
-		    body = dwz->read_string (objfile, str_offset);
-		  }
+		  body = dwz_str_sect->read_string (str_offset, "dwz macro");
 		else
-		  body = dwarf2_per_objfile->str.read_string (objfile,
-							      str_offset,
-							      "DW_FORM_strp");
+		  body = str_sect->read_string (str_offset, "DW_FORM_strp");
 	      }
 
 	    is_define = (macinfo_type == DW_MACRO_define
@@ -644,13 +637,10 @@ dwarf_decode_macro_bytes (struct dwarf2_per_objfile *dwarf2_per_objfile,
 
 	    if (macinfo_type == DW_MACRO_import_sup)
 	      {
-		struct dwz_file *dwz = dwarf2_get_dwz_file (dwarf2_per_objfile);
-
-		dwz->macro.read (objfile);
-
-		include_section = &dwz->macro;
+		include_section = dwz_sect;
 		include_bfd = include_section->get_bfd_owner ();
-		include_mac_end = dwz->macro.buffer + dwz->macro.size;
+		include_mac_end = (include_section->buffer
+				   + include_section->size);
 		is_dwz = 1;
 	      }
 
@@ -668,10 +658,11 @@ dwarf_decode_macro_bytes (struct dwarf2_per_objfile *dwarf2_per_objfile,
 	      {
 		*slot = (void *) new_mac_ptr;
 
-		dwarf_decode_macro_bytes (dwarf2_per_objfile, builder,
+		dwarf_decode_macro_bytes (builder,
 					  include_bfd, new_mac_ptr,
 					  include_mac_end, current_file, lh,
-					  section, section_is_gnu, is_dwz,
+					  section, str_sect, dwz_sect,
+					  dwz_str_sect, section_is_gnu, is_dwz,
 					  offset_size, include_hash);
 
 		htab_remove_elt (include_hash, (void *) new_mac_ptr);
@@ -709,9 +700,11 @@ dwarf_decode_macro_bytes (struct dwarf2_per_objfile *dwarf2_per_objfile,
 }
 
 void
-dwarf_decode_macros (struct dwarf2_per_objfile *dwarf2_per_objfile,
-		     buildsym_compunit *builder,
+dwarf_decode_macros (buildsym_compunit *builder,
 		     const dwarf2_section_info *section,
+		     const dwarf2_section_info *str_sect,
+		     const dwarf2_section_info *dwz_sect,
+		     const dwarf2_section_info *dwz_str_sect,
 		     const struct line_header *lh, unsigned int offset_size,
 		     unsigned int offset, int section_is_gnu)
 {
@@ -860,9 +853,10 @@ dwarf_decode_macros (struct dwarf2_per_objfile *dwarf2_per_objfile,
   mac_ptr = section->buffer + offset;
   slot = htab_find_slot (include_hash.get (), mac_ptr, INSERT);
   *slot = (void *) mac_ptr;
-  dwarf_decode_macro_bytes (dwarf2_per_objfile, builder,
+  dwarf_decode_macro_bytes (builder,
 			    abfd, mac_ptr, mac_end,
 			    current_file, lh, section,
+			    str_sect, dwz_sect, dwz_str_sect,
 			    section_is_gnu, 0, offset_size,
 			    include_hash.get ());
 }
