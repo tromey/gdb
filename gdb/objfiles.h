@@ -279,6 +279,10 @@ struct objfile_per_bfd_storage
 
   gdb::bcache string_cache;
 
+  /* Macro cache.  */
+
+  gdb::bcache macro_cache;
+
   /* The gdbarch associated with the BFD.  Note that this gdbarch is
      determined solely from BFD information, without looking at target
      information.  The gdbarch determined from a running target may
