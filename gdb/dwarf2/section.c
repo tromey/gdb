@@ -189,7 +189,8 @@ dwarf2_section_info::read (struct objfile *objfile)
 }
 
 const char *
-dwarf2_section_info::read_string (LONGEST str_offset, const char *form_name)
+dwarf2_section_info::read_string (LONGEST str_offset,
+				  const char *form_name) const
 {
   if (buffer == NULL)
     error (_("%s used without %s section [in module %s]"),
