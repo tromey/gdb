@@ -103,6 +103,11 @@ struct dwarf2_section_info
   const char *read_string (struct objfile *objfile, LONGEST str_offset,
 			   const char *form_name);
 
+  /* Return pointer to string in this section at offset STR_OFFSET
+     with error reporting string FORM_NAME.  This overload requires
+     that the section already have been read in.  */
+  const char *read_string (LONGEST str_offset, const char *form_name) const;
+
   union
   {
     /* If this is a real section, the bfd section.  */
