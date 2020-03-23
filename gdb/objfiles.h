@@ -281,6 +281,7 @@ struct objfile_per_bfd_storage
 
   /* Macro cache.  */
 
+  auto_obstack macro_obstack;
   gdb::bcache macro_cache;
 
   /* The gdbarch associated with the BFD.  Note that this gdbarch is
