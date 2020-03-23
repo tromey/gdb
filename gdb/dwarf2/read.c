@@ -87,6 +87,7 @@
 #include "gdbsupport/pathstuff.h"
 #include "count-one-bits.h"
 #include "debuginfod-support.h"
+#include "gdbsupport/thread-pool.h"
 
 /* When == 1, print basic high level tracing messages.
    When > 1, be more verbose.
@@ -1452,7 +1453,8 @@ static struct dwarf_block *dwarf_alloc_block (struct dwarf2_cu *);
 
 static struct die_info *dwarf_alloc_die (struct dwarf2_cu *, int);
 
-static void dwarf_decode_macros (struct dwarf2_cu *, unsigned int, int);
+static std::future<void> dwarf_decode_macros (struct dwarf2_cu *,
+					      unsigned int, int);
 
 static void fill_in_loclist_baton (struct dwarf2_cu *cu,
 				   struct dwarf2_loclist_baton *baton,
@@ -10717,6 +10719,35 @@ read_file_scope (struct die_info *die, struct dwarf2_cu *cu)
      for DW_AT_decl_file.  */
   handle_DW_AT_stmt_list (die, cu, fnd.comp_dir, lowpc);
 
+  /* Decode macro information, if present.  Dwarf 2 macro information
+     refers to information in the line number info statement program
+     header, so we can only read it if we've read the header
+     successfully.  This is done before processing children, so that
+     we can read the macro information in the background.  */
+  std::future<void> macro_task;
+  if (cu->line_header != nullptr)
+    {
+      attr = dwarf2_attr (die, DW_AT_macros, cu);
+      if (attr == NULL)
+	attr = dwarf2_attr (die, DW_AT_GNU_macros, cu);
+      if (attr)
+	{
+	  if (dwarf2_attr (die, DW_AT_macro_info, cu))
+	    complaint (_("CU refers to both DW_AT_macros and DW_AT_macro_info"));
+
+	  macro_task = dwarf_decode_macros (cu, DW_UNSND (attr), 1);
+	}
+      else
+	{
+	  attr = dwarf2_attr (die, DW_AT_macro_info, cu);
+	  if (attr)
+	    {
+	      unsigned int macro_offset = DW_UNSND (attr);
+
+	      macro_task = dwarf_decode_macros (cu, macro_offset, 0);
+	    }
+	}
+    }
   /* Process all dies in compilation unit.  */
   if (die->child != NULL)
     {
@@ -10728,30 +10759,8 @@ read_file_scope (struct die_info *die, struct dwarf2_cu *cu)
 	}
     }
 
-  /* Decode macro information, if present.  Dwarf 2 macro information
-     refers to information in the line number info statement program
-     header, so we can only read it if we've read the header
-     successfully.  */
-  attr = dwarf2_attr (die, DW_AT_macros, cu);
-  if (attr == NULL)
-    attr = dwarf2_attr (die, DW_AT_GNU_macros, cu);
-  if (attr && cu->line_header)
-    {
-      if (dwarf2_attr (die, DW_AT_macro_info, cu))
-	complaint (_("CU refers to both DW_AT_macros and DW_AT_macro_info"));
-
-      dwarf_decode_macros (cu, DW_UNSND (attr), 1);
-    }
-  else
-    {
-      attr = dwarf2_attr (die, DW_AT_macro_info, cu);
-      if (attr && cu->line_header)
-	{
-	  unsigned int macro_offset = DW_UNSND (attr);
-
-	  dwarf_decode_macros (cu, macro_offset, 0);
-	}
-    }
+  if (macro_task.valid ())
+    macro_task.wait ();
 }
 
 void
@@ -22487,7 +22496,7 @@ dwarf_alloc_die (struct dwarf2_cu *cu, int num_attrs)
 /* An overload of dwarf_decode_macros that finds the correct section
    and ensures it is read in before calling the other overload.  */
 
-static void
+static std::future<void>
 dwarf_decode_macros (struct dwarf2_cu *cu, unsigned int offset,
 		     int section_is_gnu)
 {
@@ -22530,7 +22539,7 @@ dwarf_decode_macros (struct dwarf2_cu *cu, unsigned int offset,
   if (section->buffer == nullptr)
     {
       complaint (_("missing %s section"), section_name);
-      return;
+      return {};
     }
 
   dwarf2_per_objfile->str.read (objfile);
@@ -22549,9 +22558,12 @@ dwarf_decode_macros (struct dwarf2_cu *cu, unsigned int offset,
 
   buildsym_compunit *builder = cu->get_builder ();
 
-  dwarf_decode_macros (builder, section, &dwarf2_per_objfile->str,
-		       dwz_macro, dwz_str, lh,
-		       offset_size, offset, section_is_gnu);
+  return gdb::thread_pool::g_thread_pool->post_task ([=] ()
+    {
+      dwarf_decode_macros (builder, section, &dwarf2_per_objfile->str,
+			   dwz_macro, dwz_str, lh,
+			   offset_size, offset, section_is_gnu);
+    });
 }
 
 /* Return the .debug_loc section to use for CU.
