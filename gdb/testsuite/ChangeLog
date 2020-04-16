@@ -1,5 +1,12 @@
 2020-04-24  Tom Tromey  <tromey@adacore.com>
 
+	* gdb.base/page.exp: Update expected output.
+	* lib/gdb.exp (test_class_help): Update expected output.
+	(test_prefix_command_help): Likewise.
+	* gdb.base/default.exp: Update expected output.
+
+2020-04-24  Tom Tromey  <tromey@adacore.com>
+
 	* gdb.ada/frame_arg_lang.exp: Run with multiple -fgnat-encodings
 	values.
 	* gdb.ada/funcall_ref.exp: Run with multiple -fgnat-encodings

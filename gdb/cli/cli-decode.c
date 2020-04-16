@@ -1200,29 +1200,26 @@ help_list (struct cmd_list_element *list, const char *cmdtype,
 
   if (theclass == all_classes)
     {
-      fprintf_filtered (stream, "\n\
-Type \"help%s\" followed by a class name for a list of commands in ",
-			cmdtype1);
-      wrap_here ("");
-      fprintf_filtered (stream, "that class.");
+      fprintf_filtered (stream, _("\n\
+Type \"%p[help%s%p]\" followed by a class name for a list of commands "
+				  "in that class.\n"),
+			title_style.style ().ptr (), cmdtype1, nullptr);
 
-      fprintf_filtered (stream, "\n\
-Type \"help all\" for the list of all commands.");
+      fprintf_filtered (stream,
+			_("Type \"%ps\" for the list of all commands."),
+			styled_string (title_style.style (), "help all"));
     }
 
-  fprintf_filtered (stream, "\nType \"help%s\" followed by %scommand name ",
-		    cmdtype1, cmdtype2);
-  wrap_here ("");
-  fputs_filtered ("for ", stream);
-  wrap_here ("");
-  fputs_filtered ("full ", stream);
-  wrap_here ("");
-  fputs_filtered ("documentation.\n", stream);
-  fputs_filtered ("Type \"apropos word\" to search "
-		  "for commands related to \"word\".\n", stream);
-  fputs_filtered ("Type \"apropos -v word\" for full documentation", stream);
-  wrap_here ("");
-  fputs_filtered (" of commands related to \"word\".\n", stream);
+  fprintf_filtered (stream, _("\nType \"%p[help%s%p]\" followed by a "
+			      "command name for full documentation.\n"),
+		    title_style.style ().ptr (), cmdtype1, nullptr);
+
+  fprintf_filtered (stream, _("Type \"%ps word\" to search "
+			      "for commands related to \"word\".\n"),
+		    styled_string (title_style.style (), "apropos"));
+  fprintf_filtered (stream, _("Type \"%ps word\" for full documentation"
+			      " of commands related to \"word\".\n"),
+		    styled_string (title_style.style (), "apropos -v"));
   fputs_filtered ("Command name abbreviations are allowed if unambiguous.\n",
 		  stream);
 }
