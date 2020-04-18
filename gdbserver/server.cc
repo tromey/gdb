@@ -1335,7 +1335,7 @@ parse_debug_format_options (const char *arg, int is_monitor)
 /* Handle monitor commands not handled by target-specific handlers.  */
 
 static void
-handle_monitor_command (char *mon, char *own_buf)
+handle_monitor_command (const char *mon, char *own_buf)
 {
   if (strcmp (mon, "set debug 1") == 0)
     {
