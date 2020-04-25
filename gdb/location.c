@@ -30,7 +30,7 @@
 #include <string.h>
 
 /* An event location used to set a stop event in the inferior.
-   This structure is an amalgam of the various ways
+   This structure is the base class for the various ways
    to specify where a stop event should be set.  */
 
 struct event_location
@@ -38,29 +38,37 @@ struct event_location
   /* The type of this breakpoint specification.  */
   enum event_location_type m_type;
 
-  union
-  {
-    /* A probe.  */
-    char *m_addr_string;
-#define EL_PROBE(P) ((P)->u.m_addr_string)
-
-    /* A "normal" linespec.  */
-    struct linespec_location m_linespec_location;
-#define EL_LINESPEC(P) (&(P)->u.m_linespec_location)
-
-    /* An address in the inferior.  */
-    CORE_ADDR m_address;
-#define EL_ADDRESS(P) (P)->u.m_address
-
-    /* An explicit location.  */
-    struct explicit_location m_explicit_loc;
-#define EL_EXPLICIT(P) (&((P)->u.m_explicit_loc))
-  } u;
-
   /* Cached string representation of this location.  This is used, e.g., to
      save stop event locations to file.  Malloc'd.  */
   char *m_as_string;
-#define EL_STRING(P) ((P)->m_as_string)
+};
+
+/* A "normal" linespec.  */
+struct linespec_location_internal : public event_location
+{
+  struct linespec_location m_linespec_location;
+#define EL_LINESPEC(P) (&((linespec_location_internal *) P)->m_linespec_location)
+};
+
+/* A probe.  */
+struct probe_location : public event_location
+{
+  char *m_addr_string;
+#define EL_PROBE(P) (((probe_location *) P)->m_addr_string)
+};
+
+/* An address in the inferior.  */
+struct address_location : public event_location
+{
+  CORE_ADDR m_address;
+#define EL_ADDRESS(P) (((address_location *) P)->m_address)
+};
+
+/* An explicit location.  */
+struct explicit_location_internal : public event_location
+{
+  struct explicit_location m_explicit_loc;
+#define EL_EXPLICIT(P) (&(((explicit_location_internal *) P)->m_explicit_loc))
 };
 
 /* See description in location.h.  */
@@ -87,9 +95,9 @@ event_location_up
 new_linespec_location (const char **linespec,
 		       symbol_name_match_type match_type)
 {
-  struct event_location *location;
+  linespec_location_internal *location;
 
-  location = new event_location;
+  location = new linespec_location_internal;
   location->m_type = LINESPEC_LOCATION;
   EL_LINESPEC (location)->match_type = match_type;
   if (*linespec != NULL)
@@ -120,9 +128,9 @@ event_location_up
 new_address_location (CORE_ADDR addr, const char *addr_string,
 		      int addr_string_len)
 {
-  struct event_location *location;
+  address_location *location;
 
-  location = new event_location;
+  location = new address_location;
   location->m_type = ADDRESS_LOCATION;
   EL_ADDRESS (location) = addr;
   if (addr_string != NULL)
@@ -153,9 +161,9 @@ get_address_string_location (const struct event_location *location)
 event_location_up
 new_probe_location (const char *probe)
 {
-  struct event_location *location;
+  probe_location *location;
 
-  location = new event_location;
+  location = new probe_location;
   location->m_type = PROBE_LOCATION;
   if (probe != NULL)
     EL_PROBE (location) = xstrdup (probe);
@@ -176,34 +184,34 @@ get_probe_location (const struct event_location *location)
 event_location_up
 new_explicit_location (const struct explicit_location *explicit_loc)
 {
-  struct event_location tmp;
+  explicit_location_internal *tmp = new explicit_location_internal;
+  event_location_up result (tmp);
 
-  memset (&tmp, 0, sizeof (struct event_location));
-  tmp.m_type = EXPLICIT_LOCATION;
-  initialize_explicit_location (EL_EXPLICIT (&tmp));
+  tmp->m_type = EXPLICIT_LOCATION;
+  initialize_explicit_location (EL_EXPLICIT (tmp));
   if (explicit_loc != NULL)
     {
-      EL_EXPLICIT (&tmp)->func_name_match_type
+      EL_EXPLICIT (tmp)->func_name_match_type
 	= explicit_loc->func_name_match_type;
 
       if (explicit_loc->source_filename != NULL)
 	{
-	  EL_EXPLICIT (&tmp)->source_filename
+	  EL_EXPLICIT (tmp)->source_filename
 	    = explicit_loc->source_filename;
 	}
 
       if (explicit_loc->function_name != NULL)
-	EL_EXPLICIT (&tmp)->function_name
+	EL_EXPLICIT (tmp)->function_name
 	  = explicit_loc->function_name;
 
       if (explicit_loc->label_name != NULL)
-	EL_EXPLICIT (&tmp)->label_name = explicit_loc->label_name;
+	EL_EXPLICIT (tmp)->label_name = explicit_loc->label_name;
 
       if (explicit_loc->line_offset.sign != LINE_OFFSET_UNKNOWN)
-	EL_EXPLICIT (&tmp)->line_offset = explicit_loc->line_offset;
+	EL_EXPLICIT (tmp)->line_offset = explicit_loc->line_offset;
     }
 
-  return copy_event_location (&tmp);
+  return result;
 }
 
 /* See description in location.h.  */
@@ -307,14 +315,10 @@ copy_event_location (const struct event_location *src)
 {
   struct event_location *dst;
 
-  dst = new event_location;
-  dst->m_type = src->m_type;
-  if (src->m_as_string != NULL)
-    dst->m_as_string = xstrdup (src->m_as_string);
-
   switch (src->m_type)
     {
     case LINESPEC_LOCATION:
+      dst = new linespec_location_internal;
       EL_LINESPEC (dst)->match_type = EL_LINESPEC (src)->match_type;
       if (EL_LINESPEC (src)->spec_string != NULL)
 	EL_LINESPEC (dst)->spec_string
@@ -322,10 +326,12 @@ copy_event_location (const struct event_location *src)
       break;
 
     case ADDRESS_LOCATION:
+      dst = new address_location;
       EL_ADDRESS (dst) = EL_ADDRESS (src);
       break;
 
     case EXPLICIT_LOCATION:
+      dst = new explicit_location_internal;
       EL_EXPLICIT (dst)->func_name_match_type
 	= EL_EXPLICIT (src)->func_name_match_type;
       if (EL_EXPLICIT (src)->source_filename != NULL)
@@ -344,6 +350,7 @@ copy_event_location (const struct event_location *src)
 
 
     case PROBE_LOCATION:
+      dst = new probe_location;
       if (EL_PROBE (src) != NULL)
 	EL_PROBE (dst) = xstrdup (EL_PROBE (src));
       break;
@@ -351,6 +358,10 @@ copy_event_location (const struct event_location *src)
     default:
       gdb_assert_not_reached ("unknown event location type");
     }
+
+  dst->m_type = src->m_type;
+  if (src->m_as_string != NULL)
+    dst->m_as_string = xstrdup (src->m_as_string);
 
   return event_location_up (dst);
 }
@@ -800,17 +811,17 @@ string_to_explicit_location (const char **argp,
 	{
 	  set_oarg (explicit_location_lex_one (argp, language,
 					       completion_info));
-	  EL_EXPLICIT (location)->source_filename = oarg.release ();
+	  EL_EXPLICIT (location.get ())->source_filename = oarg.release ();
 	}
       else if (strncmp (opt.get (), "-function", len) == 0)
 	{
 	  set_oarg (explicit_location_lex_one_function (argp, language,
 							completion_info));
-	  EL_EXPLICIT (location)->function_name = oarg.release ();
+	  EL_EXPLICIT (location.get ())->function_name = oarg.release ();
 	}
       else if (strncmp (opt.get (), "-qualified", len) == 0)
 	{
-	  EL_EXPLICIT (location)->func_name_match_type
+	  EL_EXPLICIT (location.get ())->func_name_match_type
 	    = symbol_name_match_type::FULL;
 	}
       else if (strncmp (opt.get (), "-line", len) == 0)
@@ -819,7 +830,7 @@ string_to_explicit_location (const char **argp,
 	  *argp = skip_spaces (*argp);
 	  if (have_oarg)
 	    {
-	      EL_EXPLICIT (location)->line_offset
+	      EL_EXPLICIT (location.get ())->line_offset
 		= linespec_parse_line_offset (oarg.get ());
 	      continue;
 	    }
@@ -827,7 +838,7 @@ string_to_explicit_location (const char **argp,
       else if (strncmp (opt.get (), "-label", len) == 0)
 	{
 	  set_oarg (explicit_location_lex_one (argp, language, completion_info));
-	  EL_EXPLICIT (location)->label_name = oarg.release ();
+	  EL_EXPLICIT (location.get ())->label_name = oarg.release ();
 	}
       /* Only emit an "invalid argument" error for options
 	 that look like option strings.  */
@@ -857,10 +868,10 @@ string_to_explicit_location (const char **argp,
 
   /* One special error check:  If a source filename was given
      without offset, function, or label, issue an error.  */
-  if (EL_EXPLICIT (location)->source_filename != NULL
-      && EL_EXPLICIT (location)->function_name == NULL
-      && EL_EXPLICIT (location)->label_name == NULL
-      && (EL_EXPLICIT (location)->line_offset.sign == LINE_OFFSET_UNKNOWN)
+  if (EL_EXPLICIT (location.get ())->source_filename != NULL
+      && EL_EXPLICIT (location.get ())->function_name == NULL
+      && EL_EXPLICIT (location.get ())->label_name == NULL
+      && (EL_EXPLICIT (location.get ())->line_offset.sign == LINE_OFFSET_UNKNOWN)
       && completion_info == NULL)
     {
       error (_("Source filename requires function, label, or "
@@ -936,7 +947,7 @@ string_to_event_location (const char **stringp,
 	 "-qualified", otherwise string_to_explicit_location would
 	 have thrown an error.  Save the flags for "basic" linespec
 	 parsing below and discard the explicit location.  */
-      match_type = EL_EXPLICIT (location)->func_name_match_type;
+      match_type = EL_EXPLICIT (location.get ())->func_name_match_type;
     }
 
   /* Everything else is a "basic" linespec, address, or probe
