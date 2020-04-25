@@ -41,20 +41,20 @@ struct event_location
   union
   {
     /* A probe.  */
-    char *addr_string;
-#define EL_PROBE(P) ((P)->u.addr_string)
+    char *m_addr_string;
+#define EL_PROBE(P) ((P)->u.m_addr_string)
 
     /* A "normal" linespec.  */
-    struct linespec_location linespec_location;
-#define EL_LINESPEC(P) (&(P)->u.linespec_location)
+    struct linespec_location m_linespec_location;
+#define EL_LINESPEC(P) (&(P)->u.m_linespec_location)
 
     /* An address in the inferior.  */
-    CORE_ADDR address;
-#define EL_ADDRESS(P) (P)->u.address
+    CORE_ADDR m_address;
+#define EL_ADDRESS(P) (P)->u.m_address
 
     /* An explicit location.  */
-    struct explicit_location explicit_loc;
-#define EL_EXPLICIT(P) (&((P)->u.explicit_loc))
+    struct explicit_location m_explicit_loc;
+#define EL_EXPLICIT(P) (&((P)->u.m_explicit_loc))
   } u;
 
   /* Cached string representation of this location.  This is used, e.g., to
