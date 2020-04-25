@@ -9175,7 +9175,7 @@ breakpoint_ops_for_event_location (const struct event_location *location,
 
 int
 create_breakpoint (struct gdbarch *gdbarch,
-		   const struct event_location *location,
+		   event_location_up &&location,
 		   const char *cond_string,
 		   int thread, const char *extra_string,
 		   int parse_extra,
@@ -9199,7 +9199,8 @@ create_breakpoint (struct gdbarch *gdbarch,
 
   try
     {
-      ops->create_sals_from_location (location, &canonical, type_wanted);
+      ops->create_sals_from_location (location.get (), &canonical,
+				      type_wanted);
     }
   catch (const gdb_exception_error &e)
     {
@@ -9302,7 +9303,7 @@ create_breakpoint (struct gdbarch *gdbarch,
       std::unique_ptr <breakpoint> b = new_breakpoint_from_type (type_wanted);
 
       init_raw_breakpoint_without_location (b.get (), gdbarch, type_wanted, ops);
-      b->location = copy_event_location (location);
+      b->location = std::move (location);
 
       if (parse_extra)
 	b->cond_string = NULL;
@@ -9358,7 +9359,7 @@ break_command_1 (const char *arg, int flag, int from_tty)
     (location.get (), false /* is_tracepoint */);
 
   create_breakpoint (get_current_arch (),
-		     location.get (),
+		     std::move (location),
 		     NULL, 0, arg, 1 /* parse arg */,
 		     tempflag, type_wanted,
 		     0 /* Ignore count */,
@@ -9546,7 +9547,7 @@ dprintf_command (const char *arg, int from_tty)
     }
 
   create_breakpoint (get_current_arch (),
-		     location.get (),
+		     std::move (location),
 		     NULL, 0, arg, 1 /* parse arg */,
 		     0, bp_dprintf,
 		     0 /* Ignore count */,
@@ -14482,7 +14483,7 @@ trace_command (const char *arg, int from_tty)
     (location.get (), true /* is_tracepoint */);
 
   create_breakpoint (get_current_arch (),
-		     location.get (),
+		     std::move (location),
 		     NULL, 0, arg, 1 /* parse arg */,
 		     0 /* tempflag */,
 		     bp_tracepoint /* type_wanted */,
@@ -14500,7 +14501,7 @@ ftrace_command (const char *arg, int from_tty)
   event_location_up location = string_to_event_location (&arg,
 							 current_language);
   create_breakpoint (get_current_arch (),
-		     location.get (),
+		     std::move (location),
 		     NULL, 0, arg, 1 /* parse arg */,
 		     0 /* tempflag */,
 		     bp_fast_tracepoint /* type_wanted */,
@@ -14534,7 +14535,7 @@ strace_command (const char *arg, int from_tty)
     }
 
   create_breakpoint (get_current_arch (),
-		     location.get (),
+		     std::move (location),
 		     NULL, 0, arg, 1 /* parse arg */,
 		     0 /* tempflag */,
 		     bp_static_tracepoint /* type_wanted */,
@@ -14603,7 +14604,7 @@ create_tracepoint_from_upload (struct uploaded_tp *utp)
   event_location_up location = string_to_event_location (&addr_str,
 							 current_language);
   if (!create_breakpoint (get_current_arch (),
-			  location.get (),
+			  std::move (location),
 			  utp->cond_string.get (), -1, addr_str,
 			  0 /* parse cond/thread */,
 			  0 /* tempflag */,

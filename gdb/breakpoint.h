@@ -1386,7 +1386,7 @@ enum breakpoint_create_flags
    Returns true if any breakpoint was created; false otherwise.  */
 
 extern int create_breakpoint (struct gdbarch *gdbarch,
-			      const struct event_location *location,
+			      event_location_up &&location,
 			      const char *cond_string, int thread,
 			      const char *extra_string,
 			      int parse_extra,
