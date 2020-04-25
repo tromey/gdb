@@ -37,7 +37,6 @@ struct event_location
 {
   /* The type of this breakpoint specification.  */
   enum event_location_type m_type;
-#define EL_TYPE(P) (P)->m_type
 
   union
   {
@@ -69,7 +68,7 @@ struct event_location
 enum event_location_type
 event_location_type (const struct event_location *location)
 {
-  return EL_TYPE (location);
+  return location->m_type;
 }
 
 /* See description in location.h.  */
@@ -91,7 +90,7 @@ new_linespec_location (const char **linespec,
   struct event_location *location;
 
   location = new event_location;
-  EL_TYPE (location) = LINESPEC_LOCATION;
+  location->m_type = LINESPEC_LOCATION;
   EL_LINESPEC (location)->match_type = match_type;
   if (*linespec != NULL)
     {
@@ -111,7 +110,7 @@ new_linespec_location (const char **linespec,
 const linespec_location *
 get_linespec_location (const struct event_location *location)
 {
-  gdb_assert (EL_TYPE (location) == LINESPEC_LOCATION);
+  gdb_assert (location->m_type == LINESPEC_LOCATION);
   return EL_LINESPEC (location);
 }
 
@@ -124,10 +123,10 @@ new_address_location (CORE_ADDR addr, const char *addr_string,
   struct event_location *location;
 
   location = new event_location;
-  EL_TYPE (location) = ADDRESS_LOCATION;
+  location->m_type = ADDRESS_LOCATION;
   EL_ADDRESS (location) = addr;
   if (addr_string != NULL)
-    EL_STRING (location) = xstrndup (addr_string, addr_string_len);
+    location->m_as_string = xstrndup (addr_string, addr_string_len);
   return event_location_up (location);
 }
 
@@ -136,7 +135,7 @@ new_address_location (CORE_ADDR addr, const char *addr_string,
 CORE_ADDR
 get_address_location (const struct event_location *location)
 {
-  gdb_assert (EL_TYPE (location) == ADDRESS_LOCATION);
+  gdb_assert (location->m_type == ADDRESS_LOCATION);
   return EL_ADDRESS (location);
 }
 
@@ -145,8 +144,8 @@ get_address_location (const struct event_location *location)
 const char *
 get_address_string_location (const struct event_location *location)
 {
-  gdb_assert (EL_TYPE (location) == ADDRESS_LOCATION);
-  return EL_STRING (location);
+  gdb_assert (location->m_type == ADDRESS_LOCATION);
+  return location->m_as_string;
 }
 
 /* See description in location.h.  */
@@ -157,7 +156,7 @@ new_probe_location (const char *probe)
   struct event_location *location;
 
   location = new event_location;
-  EL_TYPE (location) = PROBE_LOCATION;
+  location->m_type = PROBE_LOCATION;
   if (probe != NULL)
     EL_PROBE (location) = xstrdup (probe);
   return event_location_up (location);
@@ -168,7 +167,7 @@ new_probe_location (const char *probe)
 const char *
 get_probe_location (const struct event_location *location)
 {
-  gdb_assert (EL_TYPE (location) == PROBE_LOCATION);
+  gdb_assert (location->m_type == PROBE_LOCATION);
   return EL_PROBE (location);
 }
 
@@ -180,7 +179,7 @@ new_explicit_location (const struct explicit_location *explicit_loc)
   struct event_location tmp;
 
   memset (&tmp, 0, sizeof (struct event_location));
-  EL_TYPE (&tmp) = EXPLICIT_LOCATION;
+  tmp.m_type = EXPLICIT_LOCATION;
   initialize_explicit_location (EL_EXPLICIT (&tmp));
   if (explicit_loc != NULL)
     {
@@ -212,7 +211,7 @@ new_explicit_location (const struct explicit_location *explicit_loc)
 struct explicit_location *
 get_explicit_location (struct event_location *location)
 {
-  gdb_assert (EL_TYPE (location) == EXPLICIT_LOCATION);
+  gdb_assert (location->m_type == EXPLICIT_LOCATION);
   return EL_EXPLICIT (location);
 }
 
@@ -221,7 +220,7 @@ get_explicit_location (struct event_location *location)
 const struct explicit_location *
 get_explicit_location_const (const struct event_location *location)
 {
-  gdb_assert (EL_TYPE (location) == EXPLICIT_LOCATION);
+  gdb_assert (location->m_type == EXPLICIT_LOCATION);
   return EL_EXPLICIT (location);
 }
 
@@ -309,11 +308,11 @@ copy_event_location (const struct event_location *src)
   struct event_location *dst;
 
   dst = new event_location;
-  EL_TYPE (dst) = EL_TYPE (src);
-  if (EL_STRING (src) != NULL)
-    EL_STRING (dst) = xstrdup (EL_STRING (src));
+  dst->m_type = src->m_type;
+  if (src->m_as_string != NULL)
+    dst->m_as_string = xstrdup (src->m_as_string);
 
-  switch (EL_TYPE (src))
+  switch (src->m_type)
     {
     case LINESPEC_LOCATION:
       EL_LINESPEC (dst)->match_type = EL_LINESPEC (src)->match_type;
@@ -361,9 +360,9 @@ event_location_deleter::operator() (event_location *location) const
 {
   if (location != NULL)
     {
-      xfree (EL_STRING (location));
+      xfree (location->m_as_string);
 
-      switch (EL_TYPE (location))
+      switch (location->m_type)
 	{
 	case LINESPEC_LOCATION:
 	  xfree (EL_LINESPEC (location)->spec_string);
@@ -396,9 +395,9 @@ event_location_deleter::operator() (event_location *location) const
 const char *
 event_location_to_string (struct event_location *location)
 {
-  if (EL_STRING (location) == NULL)
+  if (location->m_as_string == NULL)
     {
-      switch (EL_TYPE (location))
+      switch (location->m_type)
 	{
 	case LINESPEC_LOCATION:
 	  if (EL_LINESPEC (location)->spec_string != NULL)
@@ -406,27 +405,27 @@ event_location_to_string (struct event_location *location)
 	      linespec_location *ls = EL_LINESPEC (location);
 	      if (ls->match_type == symbol_name_match_type::FULL)
 		{
-		  EL_STRING (location)
+		  location->m_as_string
 		    = concat ("-qualified ", ls->spec_string, (char *) NULL);
 		}
 	      else
-		EL_STRING (location) = xstrdup (ls->spec_string);
+		location->m_as_string = xstrdup (ls->spec_string);
 	    }
 	  break;
 
 	case ADDRESS_LOCATION:
-	  EL_STRING (location)
+	  location->m_as_string
 	    = xstrprintf ("*%s",
 			  core_addr_to_string (EL_ADDRESS (location)));
 	  break;
 
 	case EXPLICIT_LOCATION:
-	  EL_STRING (location)
+	  location->m_as_string
 	    = explicit_location_to_string (EL_EXPLICIT (location));
 	  break;
 
 	case PROBE_LOCATION:
-	  EL_STRING (location) = xstrdup (EL_PROBE (location));
+	  location->m_as_string = xstrdup (EL_PROBE (location));
 	  break;
 
 	default:
@@ -434,7 +433,7 @@ event_location_to_string (struct event_location *location)
 	}
     }
 
-  return EL_STRING (location);
+  return location->m_as_string;
 }
 
 /* Find an instance of the quote character C in the string S that is
@@ -950,7 +949,7 @@ string_to_event_location (const char **stringp,
 int
 event_location_empty_p (const struct event_location *location)
 {
-  switch (EL_TYPE (location))
+  switch (location->m_type)
     {
     case LINESPEC_LOCATION:
       /* Linespecs are never "empty."  (NULL is a valid linespec)  */
@@ -981,6 +980,6 @@ void
 set_event_location_string (struct event_location *location,
 			   const char *string)
 {
-  xfree (EL_STRING (location));
-  EL_STRING (location) = string == NULL ?  NULL : xstrdup (string);
+  xfree (location->m_as_string);
+  location->m_as_string = string == NULL ?  NULL : xstrdup (string);
 }
