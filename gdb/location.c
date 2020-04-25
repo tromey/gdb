@@ -90,7 +90,7 @@ new_linespec_location (const char **linespec,
 {
   struct event_location *location;
 
-  location = XCNEW (struct event_location);
+  location = new event_location;
   EL_TYPE (location) = LINESPEC_LOCATION;
   EL_LINESPEC (location)->match_type = match_type;
   if (*linespec != NULL)
@@ -123,7 +123,7 @@ new_address_location (CORE_ADDR addr, const char *addr_string,
 {
   struct event_location *location;
 
-  location = XCNEW (struct event_location);
+  location = new event_location;
   EL_TYPE (location) = ADDRESS_LOCATION;
   EL_ADDRESS (location) = addr;
   if (addr_string != NULL)
@@ -156,7 +156,7 @@ new_probe_location (const char *probe)
 {
   struct event_location *location;
 
-  location = XCNEW (struct event_location);
+  location = new event_location;
   EL_TYPE (location) = PROBE_LOCATION;
   if (probe != NULL)
     EL_PROBE (location) = xstrdup (probe);
@@ -308,7 +308,7 @@ copy_event_location (const struct event_location *src)
 {
   struct event_location *dst;
 
-  dst = XCNEW (struct event_location);
+  dst = new event_location;
   EL_TYPE (dst) = EL_TYPE (src);
   if (EL_STRING (src) != NULL)
     EL_STRING (dst) = xstrdup (EL_STRING (src));
@@ -387,7 +387,7 @@ event_location_deleter::operator() (event_location *location) const
 	  gdb_assert_not_reached ("unknown event location type");
 	}
 
-      xfree (location);
+      delete location;
     }
 }
 
