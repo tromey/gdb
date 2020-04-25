@@ -3146,16 +3146,9 @@ event_location_to_sals (linespec_parser *parser,
     case LINESPEC_LOCATION:
       {
 	PARSER_STATE (parser)->is_linespec = 1;
-	try
-	  {
-	    const linespec_location *ls = get_linespec_location (location);
-	    result = parse_linespec (parser,
-				     ls->spec_string, ls->match_type);
-	  }
-	catch (const gdb_exception_error &except)
-	  {
-	    throw;
-	  }
+	const linespec_location *ls = get_linespec_location (location);
+	result = parse_linespec (parser,
+				 ls->spec_string, ls->match_type);
       }
       break;
 
