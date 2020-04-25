@@ -36,8 +36,8 @@
 struct event_location
 {
   /* The type of this breakpoint specification.  */
-  enum event_location_type type;
-#define EL_TYPE(P) (P)->type
+  enum event_location_type m_type;
+#define EL_TYPE(P) (P)->m_type
 
   union
   {
@@ -60,8 +60,8 @@ struct event_location
 
   /* Cached string representation of this location.  This is used, e.g., to
      save stop event locations to file.  Malloc'd.  */
-  char *as_string;
-#define EL_STRING(P) ((P)->as_string)
+  char *m_as_string;
+#define EL_STRING(P) ((P)->m_as_string)
 };
 
 /* See description in location.h.  */
