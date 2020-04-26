@@ -173,6 +173,8 @@ struct probe_location : public event_location
     return to_string () == nullptr;
   }
 
+protected:
+
   gdb::unique_xmalloc_ptr<char> compute_name () const override
   {
     gdb_assert_not_reached (_("name should be non-null by construction"));
@@ -287,10 +289,13 @@ struct explicit_location_internal : public event_location
     return &m_explicit_loc;
   }
 
+protected:
+
   gdb::unique_xmalloc_ptr<char> compute_name () const override;
 
+private:
+
   struct explicit_location m_explicit_loc;
-#define EL_EXPLICIT(P) (&(((explicit_location_internal *) P)->m_explicit_loc))
 };
 
 /* See description in location.h.  */
