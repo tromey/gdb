@@ -193,7 +193,7 @@ re_set_exception_catchpoint (struct breakpoint *self)
   try
     {
       event_location_up location
-	= new_probe_location (exception_functions[kind].probe);
+	(new probe_location (exception_functions[kind].probe));
       sals = parse_probes (location.get (), filter_pspace, NULL);
     }
   catch (const gdb_exception_error &e)
@@ -206,7 +206,8 @@ re_set_exception_catchpoint (struct breakpoint *self)
 
 	  explicit_loc.function_name
 	    = ASTRDUP (exception_functions[kind].function);
-	  event_location_up location = new_explicit_location (&explicit_loc);
+	  event_location_up location
+	    (new explicit_location_internal (&explicit_loc));
 	  sals = self->ops->decode_location (self, location.get (),
 					     filter_pspace);
 	}

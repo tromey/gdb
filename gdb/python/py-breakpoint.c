@@ -824,7 +824,8 @@ bppy_init (PyObject *self, PyObject *args, PyObject *kwargs)
 
 		explicit_loc.func_name_match_type = func_name_match_type;
 
-		location = new_explicit_location (&explicit_loc);
+		location.reset
+		  (new explicit_location_internal (&explicit_loc));
 	      }
 
 	    const struct breakpoint_ops *ops =

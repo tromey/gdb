@@ -331,7 +331,7 @@ mi_cmd_break_insert_1 (int dprintf, const char *command, char **argv, int argc)
 	error (_("-%s-insert: --source option requires --function, --label,"
 		 " or --line"), dprintf ? "dprintf" : "break");
 
-      location = new_explicit_location (&explicit_loc);
+      location.reset (new explicit_location_internal (&explicit_loc));
     }
   else
     {

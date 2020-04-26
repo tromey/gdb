@@ -48,16 +48,6 @@ linespec_location_internal::linespec_location_internal
 
 /* See description in location.h.  */
 
-event_location_up
-new_linespec_location (const char **linespec,
-		       symbol_name_match_type match_type)
-{
-  return event_location_up (new linespec_location_internal (linespec,
-							    match_type));
-}
-
-/* See description in location.h.  */
-
 const linespec_location *
 get_linespec_location (const struct event_location *location)
 {
@@ -65,16 +55,6 @@ get_linespec_location (const struct event_location *location)
   const linespec_location_internal *loc
     = dynamic_cast<const linespec_location_internal *> (location);
   return loc->get_location ();
-}
-
-/* See description in location.h.  */
-
-event_location_up
-new_address_location (CORE_ADDR addr,
-		      gdb::unique_xmalloc_ptr<char> &&addr_string)
-{
-  return event_location_up (new address_location (addr,
-						  std::move (addr_string)));
 }
 
 /* See description in location.h.  */
@@ -99,27 +79,11 @@ get_address_string_location (const struct event_location *location)
 
 /* See description in location.h.  */
 
-event_location_up
-new_probe_location (const char *probe)
-{
-  return event_location_up (new probe_location (probe));
-}
-
-/* See description in location.h.  */
-
 const char *
 get_probe_location (const struct event_location *location)
 {
   gdb_assert (location->type () == PROBE_LOCATION);
   return location->to_string ();
-}
-
-/* See description in location.h.  */
-
-event_location_up
-new_explicit_location (const struct explicit_location *explicit_loc)
-{
-  return event_location_up (new explicit_location_internal (explicit_loc));
 }
 
 /* See description in location.h.  */
@@ -216,13 +180,6 @@ gdb::unique_xmalloc_ptr<char>
 explicit_location_to_linespec (const struct explicit_location *explicit_loc)
 {
   return explicit_to_string_internal (1, explicit_loc);
-}
-
-void
-event_location_deleter::operator() (event_location *location) const
-{
-  if (location != NULL)
-    delete location;
 }
 
 /* Find an instance of the quote character C in the string S that is
@@ -667,7 +624,7 @@ string_to_event_location_basic (const char **stringp,
   cs = *stringp;
   if (cs != NULL && probe_linespec_to_static_ops (&cs) != NULL)
     {
-      location = new_probe_location (*stringp);
+      location.reset (new probe_location (*stringp));
       *stringp += strlen (*stringp);
     }
   else
@@ -680,15 +637,16 @@ string_to_event_location_basic (const char **stringp,
 
 	  orig = arg = *stringp;
 	  addr = linespec_expression_to_pc (&arg);
-	  location
-	    = new_address_location (addr, make_unique_xstrndup (orig,
-								arg - orig));
+	  location.reset
+	    (new address_location (addr, make_unique_xstrndup (orig,
+							       arg - orig)));
 	  *stringp += arg - orig;
 	}
       else
 	{
 	  /* Everything else is a linespec.  */
-	  location = new_linespec_location (stringp, match_type);
+	  location.reset (new linespec_location_internal (stringp,
+							  match_type));
 	}
     }
 

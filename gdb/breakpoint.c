@@ -3205,7 +3205,7 @@ create_overlay_event_breakpoint (void)
                                       bp_overlay_event,
 				      &internal_breakpoint_ops);
       explicit_loc.function_name = ASTRDUP (func_name);
-      b->location = new_explicit_location (&explicit_loc);
+      b->location.reset (new explicit_location_internal (&explicit_loc));
 
       if (overlay_debugging == ovly_auto)
         {
@@ -3272,7 +3272,8 @@ create_longjmp_master_breakpoint (void)
 						p->get_relocated_address (objfile),
 						bp_longjmp_master,
 						&internal_breakpoint_ops);
-		b->location = new_probe_location ("-probe-stap libc:longjmp");
+		b->location.reset
+		  (new probe_location ("-probe-stap libc:longjmp"));
 		b->enable_state = bp_disabled;
 	      }
 
@@ -3311,7 +3312,7 @@ create_longjmp_master_breakpoint (void)
 	    b = create_internal_breakpoint (gdbarch, addr, bp_longjmp_master,
 					    &internal_breakpoint_ops);
 	    explicit_loc.function_name = ASTRDUP (func_name);
-	    b->location = new_explicit_location (&explicit_loc);
+	    b->location.reset (new explicit_location_internal (&explicit_loc));
 	    b->enable_state = bp_disabled;
 	  }
       }
@@ -3364,7 +3365,7 @@ create_std_terminate_master_breakpoint (void)
 					bp_std_terminate_master,
 					&internal_breakpoint_ops);
 	explicit_loc.function_name = ASTRDUP (func_name);
-	b->location = new_explicit_location (&explicit_loc);
+	b->location.reset (new explicit_location_internal (&explicit_loc));
 	b->enable_state = bp_disabled;
       }
   }
@@ -3419,7 +3420,8 @@ create_exception_master_breakpoint (void)
 					      p->get_relocated_address (objfile),
 					      bp_exception_master,
 					      &internal_breakpoint_ops);
-	      b->location = new_probe_location ("-probe-stap libgcc:unwind");
+	      b->location.reset
+		(new probe_location ("-probe-stap libgcc:unwind"));
 	      b->enable_state = bp_disabled;
 	    }
 
@@ -3453,7 +3455,7 @@ create_exception_master_breakpoint (void)
       b = create_internal_breakpoint (gdbarch, addr, bp_exception_master,
 				      &internal_breakpoint_ops);
       explicit_loc.function_name = ASTRDUP (func_name);
-      b->location = new_explicit_location (&explicit_loc);
+      b->location.reset (new explicit_location_internal (&explicit_loc));
       b->enable_state = bp_disabled;
     }
 }
@@ -7365,7 +7367,7 @@ create_thread_event_breakpoint (struct gdbarch *gdbarch, CORE_ADDR address)
 
   b->enable_state = bp_enabled;
   /* location has to be used or breakpoint_re_set will delete me.  */
-  b->location = new_address_location (b->loc->address, nullptr);
+  b->location.reset (new address_location (b->loc->address, nullptr));
 
   update_global_location_list_nothrow (UGLL_MAY_INSERT);
 
@@ -8812,7 +8814,7 @@ init_breakpoint_sal (struct breakpoint *b, struct gdbarch *gdbarch,
   if (location != NULL)
     b->location = std::move (location);
   else
-    b->location = new_address_location (b->loc->address, nullptr);
+    b->location.reset (new address_location (b->loc->address, nullptr));
   b->filter = std::move (filter);
 }
 
@@ -12914,8 +12916,8 @@ strace_marker_create_sals_from_location (const struct event_location *location,
 
   std::string str (arg_start, arg - arg_start);
   const char *ptr = str.c_str ();
-  canonical->location
-    = new_linespec_location (&ptr, symbol_name_match_type::FULL);
+  canonical->location.reset
+    (new linespec_location_internal (&ptr, symbol_name_match_type::FULL));
 
   lsal.canonical = xstrdup (canonical->location->to_string ());
   canonical->lsals.push_back (std::move (lsal));
@@ -13331,7 +13333,7 @@ update_static_tracepoint (struct breakpoint *b, struct symtab_and_line sal)
 	    = ASTRDUP (symtab_to_filename_for_display (sal2.symtab));
 	  explicit_loc.line_offset.offset = b->loc->line_number;
 	  explicit_loc.line_offset.sign = LINE_OFFSET_NONE;
-	  b->location = new_explicit_location (&explicit_loc);
+	  b->location.reset (new explicit_location_internal (&explicit_loc));
 
 	  /* Might be nice to check if function changed, and warn if
 	     so.  */
@@ -14515,7 +14517,8 @@ strace_command (const char *arg, int from_tty)
   if (arg && startswith (arg, "-m") && isspace (arg[2]))
     {
       ops = &strace_marker_breakpoint_ops;
-      location = new_linespec_location (&arg, symbol_name_match_type::FULL);
+      location.reset
+	(new linespec_location_internal (&arg, symbol_name_match_type::FULL));
     }
   else
     {

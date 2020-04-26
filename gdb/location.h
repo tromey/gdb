@@ -79,16 +79,8 @@ struct linespec_location
   char *spec_string;
 };
 
-/* A deleter for a struct event_location.  */
-
-struct event_location_deleter
-{
-  void operator() (event_location *location) const;
-};
-
 /* A unique pointer for event_location.  */
-typedef std::unique_ptr<event_location, event_location_deleter>
-     event_location_up;
+typedef std::unique_ptr<event_location> event_location_up;
 
 /* An explicit location.  This structure is used to bypass the
    parsing done on linespecs.  It still has the same requirements
@@ -389,24 +381,11 @@ private:
 extern gdb::unique_xmalloc_ptr<char>
   explicit_location_to_linespec (const struct explicit_location *explicit_loc);
 
-/* Create a new linespec location.  */
-
-extern event_location_up new_linespec_location
-  (const char **linespec, symbol_name_match_type match_type);
-
 /* Return the linespec location of the given event_location (which
    must be of type LINESPEC_LOCATION).  */
 
 extern const linespec_location *
   get_linespec_location (const struct event_location *location);
-
-/* Create a new address location.  ADDR is the address corresponding
-   to this event_location.  ADDR_STRING is the expression that was
-   parsed to determine the address ADDR.  Ownership is transferred to
-   this function.  Note that ADDR_STRING may be NULL.  */
-
-extern event_location_up new_address_location
-  (CORE_ADDR addr, gdb::unique_xmalloc_ptr<char> &&addr_string);
 
 /* Return the address location (a CORE_ADDR) of the given event_location
    (which must be of type ADDRESS_LOCATION).  */
@@ -420,22 +399,11 @@ extern CORE_ADDR
 extern const char *
   get_address_string_location (const struct event_location *location);
 
-/* Create a new probe location.  */
-
-extern event_location_up new_probe_location (const char *probe)
-  ATTRIBUTE_NONNULL (1);
-
 /* Return the probe location (a string) of the given event_location
    (which must be of type PROBE_LOCATION).  */
 
 extern const char *
   get_probe_location (const struct event_location *location);
-
-/* Create a new explicit location.  If not NULL, EXPLICIT is checked for
-   validity.  If invalid, an exception is thrown.  */
-
-extern event_location_up
-  new_explicit_location (const struct explicit_location *explicit_loc);
 
 /* Return the explicit location of the given event_location
    (which must be of type EXPLICIT_LOCATION).  */

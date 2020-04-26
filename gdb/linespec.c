@@ -2051,8 +2051,8 @@ canonicalize_linespec (struct linespec_state *state, const linespec_p ls)
     return;
 
   /* Save everything as an explicit location.  */
-  state->canonical->location
-    = new_explicit_location (&ls->explicit_loc);
+  state->canonical->location.reset
+    (new explicit_location_internal (&ls->explicit_loc));
   canon = state->canonical->location.get ();
   explicit_loc = get_explicit_location (canon);
 
@@ -3427,8 +3427,9 @@ decode_objc (struct linespec_state *self, linespec_p ls, const char *arg)
 	  else
 	    str = saved_arg;
 
-	  self->canonical->location
-	    = new_linespec_location (&str, symbol_name_match_type::FULL);
+	  self->canonical->location.reset
+	    (new linespec_location_internal (&str,
+					     symbol_name_match_type::FULL));
 	}
     }
 

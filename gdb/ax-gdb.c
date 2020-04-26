@@ -2635,7 +2635,7 @@ agent_command_1 (const char *exp, int eval)
       struct linespec_result canonical;
 
       event_location_up location
-	= new_linespec_location (&exp, symbol_name_match_type::WILD);
+	(new linespec_location_internal (&exp, symbol_name_match_type::WILD));
       decode_line_full (location.get (), DECODE_LINE_FUNFIRSTLINE, NULL,
 			NULL, 0, &canonical,
 			NULL, NULL);
