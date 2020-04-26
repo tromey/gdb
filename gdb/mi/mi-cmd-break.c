@@ -213,8 +213,6 @@ mi_cmd_break_insert_1 (int dprintf, const char *command, char **argv, int argc)
   int oind = 0;
   char *oarg;
 
-  initialize_explicit_location (&explicit_loc);
-
   while (1)
     {
       int opt = mi_getopt ("-break-insert", argc, argv,

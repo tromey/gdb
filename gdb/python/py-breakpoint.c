@@ -814,7 +814,6 @@ bppy_init (PyObject *self, PyObject *args, PyObject *kwargs)
 	      {
 		struct explicit_location explicit_loc;
 
-		initialize_explicit_location (&explicit_loc);
 		explicit_loc.source_filename = source;
 		explicit_loc.function_name = function;
 		explicit_loc.label_name = label;

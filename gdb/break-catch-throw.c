@@ -204,7 +204,6 @@ re_set_exception_catchpoint (struct breakpoint *self)
 	{
 	  struct explicit_location explicit_loc;
 
-	  initialize_explicit_location (&explicit_loc);
 	  explicit_loc.function_name
 	    = ASTRDUP (exception_functions[kind].function);
 	  event_location_up location = new_explicit_location (&explicit_loc);

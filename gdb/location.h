@@ -87,21 +87,21 @@ struct linespec_location
 struct explicit_location
 {
   /* The source filename. Malloc'd.  */
-  char *source_filename;
+  char *source_filename = nullptr;
 
   /* The function name.  Malloc'd.  */
-  char *function_name;
+  char *function_name = nullptr;
 
   /* Whether the function name is fully-qualified or not.  */
-  symbol_name_match_type func_name_match_type;
+  symbol_name_match_type func_name_match_type = symbol_name_match_type::WILD;
 
   /* The name of a label.  Malloc'd.  */
-  char *label_name;
+  char *label_name = nullptr;
 
   /* A line offset relative to the start of the symbol
      identified by the above fields or the current symtab
      if the other fields are NULL.  */
-  struct line_offset line_offset;
+  struct line_offset line_offset = {0, LINE_OFFSET_UNKNOWN};
 };
 
 /* Return the type of the given event location.  */
@@ -175,11 +175,6 @@ extern event_location_up new_probe_location (const char *probe);
 
 extern const char *
   get_probe_location (const struct event_location *location);
-
-/* Initialize the given explicit location.  */
-
-extern void
-  initialize_explicit_location (struct explicit_location *explicit_loc);
 
 /* Create a new explicit location.  If not NULL, EXPLICIT is checked for
    validity.  If invalid, an exception is thrown.  */

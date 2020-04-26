@@ -246,7 +246,7 @@ struct explicit_location_internal : public event_location
 
   gdb::unique_xmalloc_ptr<char> compute_name () const override;
 
-  struct explicit_location m_explicit_loc {};
+  struct explicit_location m_explicit_loc;
 #define EL_EXPLICIT(P) (&(((explicit_location_internal *) P)->m_explicit_loc))
 };
 
@@ -256,16 +256,6 @@ enum event_location_type
 event_location_type (const struct event_location *location)
 {
   return location->m_type;
-}
-
-/* See description in location.h.  */
-
-void
-initialize_explicit_location (struct explicit_location *explicit_loc)
-{
-  memset (explicit_loc, 0, sizeof (struct explicit_location));
-  explicit_loc->line_offset.sign = LINE_OFFSET_UNKNOWN;
-  explicit_loc->func_name_match_type = symbol_name_match_type::WILD;
 }
 
 /* See description in location.h.  */
@@ -358,7 +348,6 @@ new_explicit_location (const struct explicit_location *explicit_loc)
   explicit_location_internal *tmp = new explicit_location_internal;
   event_location_up result (tmp);
 
-  initialize_explicit_location (EL_EXPLICIT (tmp));
   if (explicit_loc != NULL)
     {
       EL_EXPLICIT (tmp)->func_name_match_type

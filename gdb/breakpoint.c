@@ -3204,7 +3204,6 @@ create_overlay_event_breakpoint (void)
       b = create_internal_breakpoint (objfile->arch (), addr,
                                       bp_overlay_event,
 				      &internal_breakpoint_ops);
-      initialize_explicit_location (&explicit_loc);
       explicit_loc.function_name = ASTRDUP (func_name);
       b->location = new_explicit_location (&explicit_loc);
 
@@ -3311,7 +3310,6 @@ create_longjmp_master_breakpoint (void)
 	    addr = BMSYMBOL_VALUE_ADDRESS (bp_objfile_data->longjmp_msym[i]);
 	    b = create_internal_breakpoint (gdbarch, addr, bp_longjmp_master,
 					    &internal_breakpoint_ops);
-	    initialize_explicit_location (&explicit_loc);
 	    explicit_loc.function_name = ASTRDUP (func_name);
 	    b->location = new_explicit_location (&explicit_loc);
 	    b->enable_state = bp_disabled;
@@ -3365,7 +3363,6 @@ create_std_terminate_master_breakpoint (void)
 	b = create_internal_breakpoint (objfile->arch (), addr,
 					bp_std_terminate_master,
 					&internal_breakpoint_ops);
-	initialize_explicit_location (&explicit_loc);
 	explicit_loc.function_name = ASTRDUP (func_name);
 	b->location = new_explicit_location (&explicit_loc);
 	b->enable_state = bp_disabled;
@@ -3455,7 +3452,6 @@ create_exception_master_breakpoint (void)
 						 current_top_target ());
       b = create_internal_breakpoint (gdbarch, addr, bp_exception_master,
 				      &internal_breakpoint_ops);
-      initialize_explicit_location (&explicit_loc);
       explicit_loc.function_name = ASTRDUP (func_name);
       b->location = new_explicit_location (&explicit_loc);
       b->enable_state = bp_disabled;
@@ -13337,7 +13333,6 @@ update_static_tracepoint (struct breakpoint *b, struct symtab_and_line sal)
 	  b->loc->symtab = sym != NULL ? sal2.symtab : NULL;
 
 	  b->location.reset (NULL);
-	  initialize_explicit_location (&explicit_loc);
 	  explicit_loc.source_filename
 	    = ASTRDUP (symtab_to_filename_for_display (sal2.symtab));
 	  explicit_loc.line_offset.offset = b->loc->line_number;
