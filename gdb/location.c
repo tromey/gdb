@@ -59,12 +59,21 @@ struct event_location
 
   virtual bool empty_p () const = 0;
 
+  const char *to_string () const
+  {
+    if (m_as_string == nullptr)
+      m_as_string = compute_name ();
+    return m_as_string.get ();
+  }
+
+  virtual gdb::unique_xmalloc_ptr<char> compute_name () const = 0;
+
   /* The type of this breakpoint specification.  */
   enum event_location_type m_type;
 
   /* Cached string representation of this location.  This is used, e.g., to
      save stop event locations to file.  Malloc'd.  */
-  gdb::unique_xmalloc_ptr<char> m_as_string;
+  mutable gdb::unique_xmalloc_ptr<char> m_as_string;
 };
 
 /* A "normal" linespec.  */
@@ -97,6 +106,20 @@ struct linespec_location_internal : public event_location
   {
     /* Linespecs are never "empty."  (NULL is a valid linespec)  */
     return true;
+  }
+
+  gdb::unique_xmalloc_ptr<char> compute_name () const override
+  {
+    if (m_linespec_location.spec_string != nullptr)
+      {
+	if (m_linespec_location.match_type == symbol_name_match_type::FULL)
+	  return (gdb::unique_xmalloc_ptr<char>
+		  (concat ("-qualified ", m_linespec_location.spec_string,
+			   (char *) NULL)));
+	else
+	  return make_unique_xstrdup (m_linespec_location.spec_string);
+      }
+    return {};
   }
 
   struct linespec_location m_linespec_location {};
@@ -132,6 +155,11 @@ struct probe_location : public event_location
     return m_addr_string == nullptr;
   }
 
+  gdb::unique_xmalloc_ptr<char> compute_name () const override
+  {
+    return make_unique_xstrdup (m_addr_string);
+  }
+
   char *m_addr_string = nullptr;
 #define EL_PROBE(P) (((probe_location *) P)->m_addr_string)
 };
@@ -154,6 +182,12 @@ struct address_location : public event_location
   bool empty_p () const override
   {
     return false;
+  }
+
+  gdb::unique_xmalloc_ptr<char> compute_name () const override
+  {
+    return (gdb::unique_xmalloc_ptr<char>
+	    (xstrprintf ("*%s", core_addr_to_string (m_address))));
   }
 
   CORE_ADDR m_address;
@@ -201,6 +235,8 @@ struct explicit_location_internal : public event_location
 	    && m_explicit_loc.label_name == NULL
 	    && m_explicit_loc.line_offset.sign == LINE_OFFSET_UNKNOWN);
   }
+
+  gdb::unique_xmalloc_ptr<char> compute_name () const override;
 
   struct explicit_location m_explicit_loc {};
 #define EL_EXPLICIT(P) (&(((explicit_location_internal *) P)->m_explicit_loc))
@@ -424,13 +460,10 @@ explicit_to_string_internal (int as_linespec,
   return make_unique_xstrdup (buf.c_str ());
 }
 
-/* Return a malloc'd explicit string representation of the given
-   explicit location.  The location must already be canonicalized/valid.  */
-
-static gdb::unique_xmalloc_ptr<char>
-explicit_location_to_string (const struct explicit_location *explicit_loc)
+gdb::unique_xmalloc_ptr<char>
+explicit_location_internal::compute_name () const
 {
-  return explicit_to_string_internal (0, explicit_loc);
+  return explicit_to_string_internal (0, &m_explicit_loc);
 }
 
 /* See description in location.h.  */
@@ -461,46 +494,7 @@ event_location_deleter::operator() (event_location *location) const
 const char *
 event_location_to_string (struct event_location *location)
 {
-  if (location->m_as_string == NULL)
-    {
-      switch (location->m_type)
-	{
-	case LINESPEC_LOCATION:
-	  if (EL_LINESPEC (location)->spec_string != NULL)
-	    {
-	      linespec_location *ls = EL_LINESPEC (location);
-	      if (ls->match_type == symbol_name_match_type::FULL)
-		{
-		  location->m_as_string.reset (concat ("-qualified ",
-						       ls->spec_string,
-						       (char *) NULL));
-		}
-	      else
-		location->m_as_string = make_unique_xstrdup (ls->spec_string);
-	    }
-	  break;
-
-	case ADDRESS_LOCATION:
-	  location->m_as_string.reset
-	    (xstrprintf ("*%s",
-			 core_addr_to_string (EL_ADDRESS (location))));
-	  break;
-
-	case EXPLICIT_LOCATION:
-	  location->m_as_string
-	    = explicit_location_to_string (EL_EXPLICIT (location));
-	  break;
-
-	case PROBE_LOCATION:
-	  location->m_as_string = make_unique_xstrdup (EL_PROBE (location));
-	  break;
-
-	default:
-	  gdb_assert_not_reached ("unknown event location type");
-	}
-    }
-
-  return location->m_as_string.get ();
+  return location->to_string ();
 }
 
 /* Find an instance of the quote character C in the string S that is
