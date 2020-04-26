@@ -372,18 +372,15 @@ new_explicit_location (const struct explicit_location *explicit_loc)
       EL_EXPLICIT (tmp)->func_name_match_type
 	= explicit_loc->func_name_match_type;
 
-      if (explicit_loc->source_filename != NULL)
-	{
-	  EL_EXPLICIT (tmp)->source_filename
-	    = explicit_loc->source_filename;
-	}
+      EL_EXPLICIT (tmp)->source_filename
+	= maybe_copy (explicit_loc->source_filename);
 
-      if (explicit_loc->function_name != NULL)
-	EL_EXPLICIT (tmp)->function_name
-	  = explicit_loc->function_name;
+      EL_EXPLICIT (tmp)->function_name
+	= maybe_copy (explicit_loc->function_name);
 
       if (explicit_loc->label_name != NULL)
-	EL_EXPLICIT (tmp)->label_name = explicit_loc->label_name;
+	EL_EXPLICIT (tmp)->label_name
+	  = maybe_copy (explicit_loc->label_name);
 
       if (explicit_loc->line_offset.sign != LINE_OFFSET_UNKNOWN)
 	EL_EXPLICIT (tmp)->line_offset = explicit_loc->line_offset;
