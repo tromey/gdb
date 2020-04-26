@@ -41,7 +41,7 @@ maybe_copy (const char *s)
 
 struct event_location
 {
-  event_location (enum event_location_type type)
+  explicit event_location (enum event_location_type type)
     : m_type (type)
   {
   }
