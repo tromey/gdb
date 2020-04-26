@@ -57,6 +57,8 @@ struct event_location
 
   virtual event_location_up clone () const = 0;
 
+  virtual bool empty_p () const = 0;
+
   /* The type of this breakpoint specification.  */
   enum event_location_type m_type;
 
@@ -91,6 +93,12 @@ struct linespec_location_internal : public event_location
     return event_location_up (new linespec_location_internal (*this));
   }
 
+  bool empty_p () const override
+  {
+    /* Linespecs are never "empty."  (NULL is a valid linespec)  */
+    return true;
+  }
+
   struct linespec_location m_linespec_location {};
 #define EL_LINESPEC(P) (&((linespec_location_internal *) P)->m_linespec_location)
 };
@@ -119,6 +127,11 @@ struct probe_location : public event_location
     return event_location_up (new probe_location (*this));
   }
 
+  bool empty_p () const override
+  {
+    return m_addr_string == nullptr;
+  }
+
   char *m_addr_string = nullptr;
 #define EL_PROBE(P) (((probe_location *) P)->m_addr_string)
 };
@@ -136,6 +149,11 @@ struct address_location : public event_location
   event_location_up clone () const override
   {
     return event_location_up (new address_location (*this));
+  }
+
+  bool empty_p () const override
+  {
+    return false;
   }
 
   CORE_ADDR m_address;
@@ -176,7 +194,15 @@ struct explicit_location_internal : public event_location
     return event_location_up (new explicit_location_internal (*this));
   }
 
-  struct explicit_location m_explicit_loc;
+  bool empty_p () const override
+  {
+    return (m_explicit_loc.source_filename == NULL
+	    && m_explicit_loc.function_name == NULL
+	    && m_explicit_loc.label_name == NULL
+	    && m_explicit_loc.line_offset.sign == LINE_OFFSET_UNKNOWN);
+  }
+
+  struct explicit_location m_explicit_loc {};
 #define EL_EXPLICIT(P) (&(((explicit_location_internal *) P)->m_explicit_loc))
 };
 
@@ -990,29 +1016,7 @@ string_to_event_location (const char **stringp,
 bool
 event_location_empty_p (const struct event_location *location)
 {
-  switch (location->m_type)
-    {
-    case LINESPEC_LOCATION:
-      /* Linespecs are never "empty."  (NULL is a valid linespec)  */
-      return 0;
-
-    case ADDRESS_LOCATION:
-      return 0;
-
-    case EXPLICIT_LOCATION:
-      return (EL_EXPLICIT (location) == NULL
-	      || (EL_EXPLICIT (location)->source_filename == NULL
-		  && EL_EXPLICIT (location)->function_name == NULL
-		  && EL_EXPLICIT (location)->label_name == NULL
-		  && (EL_EXPLICIT (location)->line_offset.sign
-		      == LINE_OFFSET_UNKNOWN)));
-
-    case PROBE_LOCATION:
-      return EL_PROBE (location) == NULL;
-
-    default:
-      gdb_assert_not_reached ("unknown event location type");
-    }
+  return location->empty_p ();
 }
 
 /* See description in location.h.  */
