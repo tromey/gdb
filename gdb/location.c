@@ -83,7 +83,11 @@ struct event_location
     return m_type;
   }
 
+protected:
+
   virtual gdb::unique_xmalloc_ptr<char> compute_name () const = 0;
+
+private:
 
   /* The type of this breakpoint specification.  */
   enum event_location_type m_type;
