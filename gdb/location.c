@@ -73,6 +73,11 @@ struct event_location
     return m_as_string.get ();
   }
 
+  void set_string (gdb::unique_xmalloc_ptr<char> &&str)
+  {
+    m_as_string = std::move (str);
+  }
+
   virtual gdb::unique_xmalloc_ptr<char> compute_name () const = 0;
 
   /* The type of this breakpoint specification.  */
@@ -1003,5 +1008,5 @@ void
 set_event_location_string (struct event_location *location,
 			   gdb::unique_xmalloc_ptr<char> &&string)
 {
-  location->m_as_string = std::move (string);
+  location->set_string (std::move (string));
 }
