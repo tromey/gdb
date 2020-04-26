@@ -127,6 +127,13 @@ struct linespec_location_internal : public event_location
     return true;
   }
 
+  const linespec_location *get_location () const
+  {
+    return &m_linespec_location;
+  }
+
+protected:
+
   gdb::unique_xmalloc_ptr<char> compute_name () const override
   {
     if (m_linespec_location.spec_string != nullptr)
@@ -141,8 +148,9 @@ struct linespec_location_internal : public event_location
     return {};
   }
 
+private:
+
   struct linespec_location m_linespec_location {};
-#define EL_LINESPEC(P) (&((linespec_location_internal *) P)->m_linespec_location)
 };
 
 /* A probe.  */
@@ -299,7 +307,9 @@ const linespec_location *
 get_linespec_location (const struct event_location *location)
 {
   gdb_assert (location->type () == LINESPEC_LOCATION);
-  return EL_LINESPEC (location);
+  const linespec_location_internal *loc
+    = dynamic_cast<const linespec_location_internal *> (location);
+  return loc->get_location ();
 }
 
 /* See description in location.h.  */
