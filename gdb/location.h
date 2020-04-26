@@ -383,11 +383,6 @@ private:
   struct explicit_location m_explicit_loc;
 };
 
-/* Return the type of the given event location.  */
-
-extern enum event_location_type
-  event_location_type (const struct event_location *);
-
 /* Return a malloc'd linespec string representation of the given
    explicit location.  The location must already be canonicalized/valid.  */
 

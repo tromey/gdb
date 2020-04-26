@@ -3141,7 +3141,7 @@ event_location_to_sals (linespec_parser *parser,
 {
   std::vector<symtab_and_line> result;
 
-  switch (event_location_type (location))
+  switch (location->type ())
     {
     case LINESPEC_LOCATION:
       {

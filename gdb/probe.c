@@ -122,7 +122,7 @@ parse_probes (const struct event_location *location,
   char *objfile_namestr = NULL, *provider = NULL, *name, *p;
   const char *arg_start, *cs;
 
-  gdb_assert (event_location_type (location) == PROBE_LOCATION);
+  gdb_assert (location->type () == PROBE_LOCATION);
   arg_start = get_probe_location (location);
 
   cs = arg_start;

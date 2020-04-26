@@ -8911,7 +8911,7 @@ parse_breakpoint_sals (const struct event_location *location,
 {
   struct symtab_and_line cursal;
 
-  if (event_location_type (location) == LINESPEC_LOCATION)
+  if (location->type () == LINESPEC_LOCATION)
     {
       const char *spec = get_linespec_location (location)->spec_string;
 
@@ -8963,7 +8963,7 @@ parse_breakpoint_sals (const struct event_location *location,
     {
       const char *spec = NULL;
 
-      if (event_location_type (location) == LINESPEC_LOCATION)
+      if (location->type () == LINESPEC_LOCATION)
 	spec = get_linespec_location (location)->spec_string;
 
       if (!cursal.symtab
@@ -9163,7 +9163,7 @@ breakpoint_ops_for_event_location (const struct event_location *location,
 {
   if (location != nullptr)
     return breakpoint_ops_for_event_location_type
-      (event_location_type (location), is_tracepoint);
+      (location->type (), is_tracepoint);
   return is_tracepoint ? &tracepoint_breakpoint_ops : &bkpt_breakpoint_ops;
 }
 

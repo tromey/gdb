@@ -29,14 +29,6 @@
 #include <ctype.h>
 #include <string.h>
 
-/* See description in location.h.  */
-
-enum event_location_type
-event_location_type (const struct event_location *location)
-{
-  return location->type ();
-}
-
 linespec_location_internal::linespec_location_internal
   (const char **linespec, symbol_name_match_type match_type)
     : event_location (LINESPEC_LOCATION)
