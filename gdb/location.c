@@ -29,12 +29,6 @@
 #include <ctype.h>
 #include <string.h>
 
-static char *
-maybe_copy (const char *s)
-{
-  return s == nullptr ? nullptr : xstrdup (s);
-}
-
 /* An event location used to set a stop event in the inferior.
    This structure is the base class for the various ways
    to specify where a stop event should be set.  */
@@ -86,6 +80,11 @@ struct event_location
 protected:
 
   virtual gdb::unique_xmalloc_ptr<char> compute_name () const = 0;
+
+  char *maybe_copy (const char *s)
+  {
+    return s == nullptr ? nullptr : xstrdup (s);
+  }
 
 private:
 
