@@ -149,16 +149,11 @@ struct linespec_location_internal : public event_location
 struct probe_location : public event_location
 {
   explicit probe_location (const char *name)
-    : event_location (PROBE_LOCATION),
-      m_addr_string (make_unique_xstrdup (name))
+    : event_location (PROBE_LOCATION, make_unique_xstrdup (name))
   {
   }
 
-  probe_location (const probe_location &other)
-    : event_location (other),
-      m_addr_string (make_unique_xstrdup (other.m_addr_string.get ()))
-  {
-  }
+  probe_location (const probe_location &other) = default;
 
   event_location_up clone () const override
   {
@@ -167,16 +162,13 @@ struct probe_location : public event_location
 
   bool empty_p () const override
   {
-    return m_addr_string == nullptr;
+    return to_string () == nullptr;
   }
 
   gdb::unique_xmalloc_ptr<char> compute_name () const override
   {
-    return make_unique_xstrdup (m_addr_string.get ());
+    gdb_assert_not_reached (_("name should be non-null by construction"));
   }
-
-  gdb::unique_xmalloc_ptr<char> m_addr_string;
-#define EL_PROBE(P) (((probe_location *) P)->m_addr_string)
 };
 
 /* An address in the inferior.  */
@@ -344,7 +336,7 @@ const char *
 get_probe_location (const struct event_location *location)
 {
   gdb_assert (location->type () == PROBE_LOCATION);
-  return EL_PROBE (location).get ();
+  return location->to_string ();
 }
 
 /* See description in location.h.  */
