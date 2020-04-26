@@ -29,6 +29,12 @@
 #include <ctype.h>
 #include <string.h>
 
+static char *
+maybe_copy (const char *s)
+{
+  return s == nullptr ? nullptr : xstrdup (s);
+}
+
 /* An event location used to set a stop event in the inferior.
    This structure is the base class for the various ways
    to specify where a stop event should be set.  */
@@ -39,6 +45,17 @@ struct event_location
     : m_type (type)
   {
   }
+
+  event_location (const event_location &other)
+    : m_type (other.m_type)
+  {
+    if (other.m_as_string != nullptr)
+      m_as_string = make_unique_xstrdup (other.m_as_string.get ());
+  }
+
+  virtual ~event_location () = default;
+
+  virtual event_location_up clone () const = 0;
 
   /* The type of this breakpoint specification.  */
   enum event_location_type m_type;
@@ -56,7 +73,25 @@ struct linespec_location_internal : public event_location
   {
   }
 
-  struct linespec_location m_linespec_location;
+  linespec_location_internal (const linespec_location_internal &other)
+    : event_location (other)
+  {
+    m_linespec_location.match_type = other.m_linespec_location.match_type;
+    m_linespec_location.spec_string
+      = maybe_copy (other.m_linespec_location.spec_string);
+  }
+
+  ~linespec_location_internal () override
+  {
+    xfree (m_linespec_location.spec_string);
+  }
+
+  event_location_up clone () const override
+  {
+    return event_location_up (new linespec_location_internal (*this));
+  }
+
+  struct linespec_location m_linespec_location {};
 #define EL_LINESPEC(P) (&((linespec_location_internal *) P)->m_linespec_location)
 };
 
@@ -68,7 +103,23 @@ struct probe_location : public event_location
   {
   }
 
-  char *m_addr_string;
+  probe_location (const probe_location &other)
+    : event_location (other),
+      m_addr_string (maybe_copy (other.m_addr_string))
+  {
+  }
+
+  ~probe_location () override
+  {
+    xfree (m_addr_string);
+  }
+
+  event_location_up clone () const override
+  {
+    return event_location_up (new probe_location (*this));
+  }
+
+  char *m_addr_string = nullptr;
 #define EL_PROBE(P) (((probe_location *) P)->m_addr_string)
 };
 
@@ -78,6 +129,13 @@ struct address_location : public event_location
   address_location ()
     : event_location (ADDRESS_LOCATION)
   {
+  }
+
+  address_location (const address_location &other) = default;
+
+  event_location_up clone () const override
+  {
+    return event_location_up (new address_location (*this));
   }
 
   CORE_ADDR m_address;
@@ -90,6 +148,32 @@ struct explicit_location_internal : public event_location
   explicit_location_internal ()
     : event_location (EXPLICIT_LOCATION)
   {
+  }
+
+  explicit_location_internal (const explicit_location_internal &other)
+    : event_location (other)
+  {
+    m_explicit_loc.source_filename
+      = maybe_copy (other.m_explicit_loc.source_filename);
+    m_explicit_loc.function_name
+      = maybe_copy (other.m_explicit_loc.function_name);
+    m_explicit_loc.func_name_match_type
+      = other.m_explicit_loc.func_name_match_type;
+    m_explicit_loc.label_name
+      = maybe_copy (other.m_explicit_loc.label_name);
+    m_explicit_loc.line_offset = other.m_explicit_loc.line_offset;
+  }
+
+  ~explicit_location_internal () override
+  {
+    xfree (m_explicit_loc.source_filename);
+    xfree (m_explicit_loc.function_name);
+    xfree (m_explicit_loc.label_name);
+  }
+
+  event_location_up clone () const override
+  {
+    return event_location_up (new explicit_location_internal (*this));
   }
 
   struct explicit_location m_explicit_loc;
@@ -336,89 +420,14 @@ explicit_location_to_linespec (const struct explicit_location *explicit_loc)
 event_location_up
 copy_event_location (const struct event_location *src)
 {
-  struct event_location *dst;
-
-  switch (src->m_type)
-    {
-    case LINESPEC_LOCATION:
-      dst = new linespec_location_internal;
-      EL_LINESPEC (dst)->match_type = EL_LINESPEC (src)->match_type;
-      if (EL_LINESPEC (src)->spec_string != NULL)
-	EL_LINESPEC (dst)->spec_string
-	  = xstrdup (EL_LINESPEC (src)->spec_string);
-      break;
-
-    case ADDRESS_LOCATION:
-      dst = new address_location;
-      EL_ADDRESS (dst) = EL_ADDRESS (src);
-      break;
-
-    case EXPLICIT_LOCATION:
-      dst = new explicit_location_internal;
-      EL_EXPLICIT (dst)->func_name_match_type
-	= EL_EXPLICIT (src)->func_name_match_type;
-      if (EL_EXPLICIT (src)->source_filename != NULL)
-	EL_EXPLICIT (dst)->source_filename
-	  = xstrdup (EL_EXPLICIT (src)->source_filename);
-
-      if (EL_EXPLICIT (src)->function_name != NULL)
-	EL_EXPLICIT (dst)->function_name
-	  = xstrdup (EL_EXPLICIT (src)->function_name);
-
-      if (EL_EXPLICIT (src)->label_name != NULL)
-	EL_EXPLICIT (dst)->label_name = xstrdup (EL_EXPLICIT (src)->label_name);
-
-      EL_EXPLICIT (dst)->line_offset = EL_EXPLICIT (src)->line_offset;
-      break;
-
-
-    case PROBE_LOCATION:
-      dst = new probe_location;
-      if (EL_PROBE (src) != NULL)
-	EL_PROBE (dst) = xstrdup (EL_PROBE (src));
-      break;
-
-    default:
-      gdb_assert_not_reached ("unknown event location type");
-    }
-
-  if (src->m_as_string != NULL)
-    dst->m_as_string = make_unique_xstrdup (src->m_as_string.get ());
-
-  return event_location_up (dst);
+  return src->clone ();
 }
 
 void
 event_location_deleter::operator() (event_location *location) const
 {
   if (location != NULL)
-    {
-      switch (location->m_type)
-	{
-	case LINESPEC_LOCATION:
-	  xfree (EL_LINESPEC (location)->spec_string);
-	  break;
-
-	case ADDRESS_LOCATION:
-	  /* Nothing to do.  */
-	  break;
-
-	case EXPLICIT_LOCATION:
-	  xfree (EL_EXPLICIT (location)->source_filename);
-	  xfree (EL_EXPLICIT (location)->function_name);
-	  xfree (EL_EXPLICIT (location)->label_name);
-	  break;
-
-	case PROBE_LOCATION:
-	  xfree (EL_PROBE (location));
-	  break;
-
-	default:
-	  gdb_assert_not_reached ("unknown event location type");
-	}
-
-      delete location;
-    }
+    delete location;
 }
 
 /* See description in location.h.  */
