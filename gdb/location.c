@@ -316,7 +316,7 @@ const char *
 get_address_string_location (const struct event_location *location)
 {
   gdb_assert (location->m_type == ADDRESS_LOCATION);
-  return location->m_as_string.get ();
+  return location->to_string ();
 }
 
 /* See description in location.h.  */
