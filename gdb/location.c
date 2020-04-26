@@ -100,10 +100,8 @@ private:
 /* A "normal" linespec.  */
 struct linespec_location_internal : public event_location
 {
-  linespec_location_internal ()
-    : event_location (LINESPEC_LOCATION)
-  {
-  }
+  linespec_location_internal (const char **linespec,
+			      symbol_name_match_type match_type);
 
   linespec_location_internal (const linespec_location_internal &other)
     : event_location (other)
@@ -268,16 +266,11 @@ event_location_type (const struct event_location *location)
   return location->type ();
 }
 
-/* See description in location.h.  */
-
-event_location_up
-new_linespec_location (const char **linespec,
-		       symbol_name_match_type match_type)
+linespec_location_internal::linespec_location_internal
+  (const char **linespec, symbol_name_match_type match_type)
+    : event_location (LINESPEC_LOCATION)
 {
-  linespec_location_internal *location;
-
-  location = new linespec_location_internal;
-  EL_LINESPEC (location)->match_type = match_type;
+  m_linespec_location.match_type = match_type;
   if (*linespec != NULL)
     {
       const char *p;
@@ -286,9 +279,18 @@ new_linespec_location (const char **linespec,
       linespec_lex_to_end (linespec);
       p = remove_trailing_whitespace (orig, *linespec);
       if ((p - orig) > 0)
-	EL_LINESPEC (location)->spec_string = savestring (orig, p - orig);
+	m_linespec_location.spec_string = savestring (orig, p - orig);
     }
-  return event_location_up (location);
+}
+
+/* See description in location.h.  */
+
+event_location_up
+new_linespec_location (const char **linespec,
+		       symbol_name_match_type match_type)
+{
+  return event_location_up (new linespec_location_internal (linespec,
+							    match_type));
 }
 
 /* See description in location.h.  */
