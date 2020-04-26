@@ -273,7 +273,7 @@ extern event_location_up
 
 /* A convenience function for testing for unset locations.  */
 
-extern int event_location_empty_p (const struct event_location *location);
+extern bool event_location_empty_p (const struct event_location *location);
 
 /* Set the location's string representation.  If STRING is NULL, clear
    the string representation.  */

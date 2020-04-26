@@ -987,7 +987,7 @@ string_to_event_location (const char **stringp,
 
 /* See description in location.h.  */
 
-int
+bool
 event_location_empty_p (const struct event_location *location)
 {
   switch (location->m_type)
