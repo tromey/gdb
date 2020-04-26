@@ -2074,10 +2074,10 @@ canonicalize_linespec (struct linespec_state *state, const linespec_p ls)
      representation of it for display and saving to file.  */
   if (state->is_linespec)
     {
-      char *linespec = explicit_location_to_linespec (explicit_loc);
+      gdb::unique_xmalloc_ptr<char> linespec
+	= explicit_location_to_linespec (explicit_loc);
 
-      set_event_location_string (canon, linespec);
-      xfree (linespec);
+      set_event_location_string (canon, std::move (linespec));
     }
 }
 

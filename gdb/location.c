@@ -40,7 +40,7 @@ struct event_location
 
   /* Cached string representation of this location.  This is used, e.g., to
      save stop event locations to file.  Malloc'd.  */
-  char *m_as_string;
+  gdb::unique_xmalloc_ptr<char> m_as_string;
 };
 
 /* A "normal" linespec.  */
@@ -134,7 +134,8 @@ new_address_location (CORE_ADDR addr, const char *addr_string,
   location->m_type = ADDRESS_LOCATION;
   EL_ADDRESS (location) = addr;
   if (addr_string != NULL)
-    location->m_as_string = xstrndup (addr_string, addr_string_len);
+    location->m_as_string
+      = make_unique_xstrndup (addr_string, addr_string_len);
   return event_location_up (location);
 }
 
@@ -153,7 +154,7 @@ const char *
 get_address_string_location (const struct event_location *location)
 {
   gdb_assert (location->m_type == ADDRESS_LOCATION);
-  return location->m_as_string;
+  return location->m_as_string.get ();
 }
 
 /* See description in location.h.  */
@@ -238,7 +239,7 @@ get_explicit_location_const (const struct event_location *location)
    AS_LINESPEC is non-zero if this string should be a linespec.
    Otherwise it will be output in explicit form.  */
 
-static char *
+static gdb::unique_xmalloc_ptr<char>
 explicit_to_string_internal (int as_linespec,
 			     const struct explicit_location *explicit_loc)
 {
@@ -289,12 +290,13 @@ explicit_to_string_internal (int as_linespec,
 		  explicit_loc->line_offset.offset);
     }
 
-  return xstrdup (buf.c_str ());
+  return make_unique_xstrdup (buf.c_str ());
 }
 
-/* See description in location.h.  */
+/* Return a malloc'd explicit string representation of the given
+   explicit location.  The location must already be canonicalized/valid.  */
 
-char *
+static gdb::unique_xmalloc_ptr<char>
 explicit_location_to_string (const struct explicit_location *explicit_loc)
 {
   return explicit_to_string_internal (0, explicit_loc);
@@ -302,7 +304,7 @@ explicit_location_to_string (const struct explicit_location *explicit_loc)
 
 /* See description in location.h.  */
 
-char *
+gdb::unique_xmalloc_ptr<char>
 explicit_location_to_linespec (const struct explicit_location *explicit_loc)
 {
   return explicit_to_string_internal (1, explicit_loc);
@@ -361,7 +363,7 @@ copy_event_location (const struct event_location *src)
 
   dst->m_type = src->m_type;
   if (src->m_as_string != NULL)
-    dst->m_as_string = xstrdup (src->m_as_string);
+    dst->m_as_string = make_unique_xstrdup (src->m_as_string.get ());
 
   return event_location_up (dst);
 }
@@ -371,8 +373,6 @@ event_location_deleter::operator() (event_location *location) const
 {
   if (location != NULL)
     {
-      xfree (location->m_as_string);
-
       switch (location->m_type)
 	{
 	case LINESPEC_LOCATION:
@@ -416,18 +416,19 @@ event_location_to_string (struct event_location *location)
 	      linespec_location *ls = EL_LINESPEC (location);
 	      if (ls->match_type == symbol_name_match_type::FULL)
 		{
-		  location->m_as_string
-		    = concat ("-qualified ", ls->spec_string, (char *) NULL);
+		  location->m_as_string.reset (concat ("-qualified ",
+						       ls->spec_string,
+						       (char *) NULL));
 		}
 	      else
-		location->m_as_string = xstrdup (ls->spec_string);
+		location->m_as_string = make_unique_xstrdup (ls->spec_string);
 	    }
 	  break;
 
 	case ADDRESS_LOCATION:
-	  location->m_as_string
-	    = xstrprintf ("*%s",
-			  core_addr_to_string (EL_ADDRESS (location)));
+	  location->m_as_string.reset
+	    (xstrprintf ("*%s",
+			 core_addr_to_string (EL_ADDRESS (location))));
 	  break;
 
 	case EXPLICIT_LOCATION:
@@ -436,7 +437,7 @@ event_location_to_string (struct event_location *location)
 	  break;
 
 	case PROBE_LOCATION:
-	  location->m_as_string = xstrdup (EL_PROBE (location));
+	  location->m_as_string = make_unique_xstrdup (EL_PROBE (location));
 	  break;
 
 	default:
@@ -444,7 +445,7 @@ event_location_to_string (struct event_location *location)
 	}
     }
 
-  return location->m_as_string;
+  return location->m_as_string.get ();
 }
 
 /* Find an instance of the quote character C in the string S that is
@@ -989,8 +990,7 @@ event_location_empty_p (const struct event_location *location)
 
 void
 set_event_location_string (struct event_location *location,
-			   const char *string)
+			   gdb::unique_xmalloc_ptr<char> &&string)
 {
-  xfree (location->m_as_string);
-  location->m_as_string = string == NULL ?  NULL : xstrdup (string);
+  location->m_as_string = std::move (string);
 }
