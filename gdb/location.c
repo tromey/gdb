@@ -221,9 +221,26 @@ private:
 /* An explicit location.  */
 struct explicit_location_internal : public event_location
 {
-  explicit_location_internal ()
-    : event_location (EXPLICIT_LOCATION)
+  explicit explicit_location_internal
+    (const struct explicit_location *explicit_loc)
+      : event_location (EXPLICIT_LOCATION)
   {
+    if (explicit_loc != nullptr)
+      {
+	m_explicit_loc.func_name_match_type
+	  = explicit_loc->func_name_match_type;
+
+	m_explicit_loc.source_filename
+	  = maybe_copy (explicit_loc->source_filename);
+
+	m_explicit_loc.function_name
+	  = maybe_copy (explicit_loc->function_name);
+
+	m_explicit_loc.label_name
+	  = maybe_copy (explicit_loc->label_name);
+
+	m_explicit_loc.line_offset = explicit_loc->line_offset;
+      }
   }
 
   explicit_location_internal (const explicit_location_internal &other)
@@ -364,29 +381,7 @@ get_probe_location (const struct event_location *location)
 event_location_up
 new_explicit_location (const struct explicit_location *explicit_loc)
 {
-  explicit_location_internal *tmp = new explicit_location_internal;
-  event_location_up result (tmp);
-
-  if (explicit_loc != NULL)
-    {
-      EL_EXPLICIT (tmp)->func_name_match_type
-	= explicit_loc->func_name_match_type;
-
-      EL_EXPLICIT (tmp)->source_filename
-	= maybe_copy (explicit_loc->source_filename);
-
-      EL_EXPLICIT (tmp)->function_name
-	= maybe_copy (explicit_loc->function_name);
-
-      if (explicit_loc->label_name != NULL)
-	EL_EXPLICIT (tmp)->label_name
-	  = maybe_copy (explicit_loc->label_name);
-
-      if (explicit_loc->line_offset.sign != LINE_OFFSET_UNKNOWN)
-	EL_EXPLICIT (tmp)->line_offset = explicit_loc->line_offset;
-    }
-
-  return result;
+  return event_location_up (new explicit_location_internal (explicit_loc));
 }
 
 /* See description in location.h.  */
