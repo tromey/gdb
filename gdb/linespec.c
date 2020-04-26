@@ -2077,7 +2077,7 @@ canonicalize_linespec (struct linespec_state *state, const linespec_p ls)
       gdb::unique_xmalloc_ptr<char> linespec
 	= explicit_location_to_linespec (explicit_loc);
 
-      set_event_location_string (canon, std::move (linespec));
+      canon->set_string (std::move (linespec));
     }
 }
 

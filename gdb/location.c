@@ -730,12 +730,3 @@ string_to_event_location (const char **stringp,
      location.  */
   return string_to_event_location_basic (stringp, language, match_type);
 }
-
-/* See description in location.h.  */
-
-void
-set_event_location_string (struct event_location *location,
-			   gdb::unique_xmalloc_ptr<char> &&string)
-{
-  location->set_string (std::move (string));
-}

@@ -515,11 +515,4 @@ extern event_location_up
 			       const struct language_defn *language,
 			       explicit_completion_info *completion_info);
 
-/* Set the location's string representation.  If STRING is NULL, clear
-   the string representation.  */
-
-extern void
-  set_event_location_string (struct event_location *location,
-			     gdb::unique_xmalloc_ptr<char> &&string);
-
 #endif /* LOCATION_H */
