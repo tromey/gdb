@@ -515,10 +515,6 @@ extern event_location_up
 			       const struct language_defn *language,
 			       explicit_completion_info *completion_info);
 
-/* A convenience function for testing for unset locations.  */
-
-extern bool event_location_empty_p (const struct event_location *location);
-
 /* Set the location's string representation.  If STRING is NULL, clear
    the string representation.  */
 

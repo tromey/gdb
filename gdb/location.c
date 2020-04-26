@@ -714,7 +714,7 @@ string_to_event_location (const char **stringp,
       *stringp += arg - orig;
 
       /* If the user really specified a location, then we're done.  */
-      if (!event_location_empty_p (location.get ()))
+      if (!location->empty_p ())
 	return location;
 
       /* Otherwise, the user _only_ specified optional flags like
@@ -729,14 +729,6 @@ string_to_event_location (const char **stringp,
   /* Everything else is a "basic" linespec, address, or probe
      location.  */
   return string_to_event_location_basic (stringp, language, match_type);
-}
-
-/* See description in location.h.  */
-
-bool
-event_location_empty_p (const struct event_location *location)
-{
-  return location->empty_p ();
 }
 
 /* See description in location.h.  */

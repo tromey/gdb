@@ -3463,7 +3463,7 @@ create_exception_master_breakpoint (void)
 static int
 breakpoint_event_location_empty_p (const struct breakpoint *b)
 {
-  return b->location != NULL && event_location_empty_p (b->location.get ());
+  return b->location != NULL && b->location->empty_p ();
 }
 
 void
