@@ -146,14 +146,13 @@ extern event_location_up new_linespec_location
 extern const linespec_location *
   get_linespec_location (const struct event_location *location);
 
-/* Create a new address location.
-   ADDR is the address corresponding to this event_location.
-   ADDR_STRING, a string of ADDR_STRING_LEN characters, is
-   the expression that was parsed to determine the address ADDR.  */
+/* Create a new address location.  ADDR is the address corresponding
+   to this event_location.  ADDR_STRING is the expression that was
+   parsed to determine the address ADDR.  Ownership is transferred to
+   this function.  Note that ADDR_STRING may be NULL.  */
 
-extern event_location_up new_address_location (CORE_ADDR addr,
-					       const char *addr_string,
-					       int addr_string_len);
+extern event_location_up new_address_location
+  (CORE_ADDR addr, gdb::unique_xmalloc_ptr<char> &&addr_string);
 
 /* Return the address location (a CORE_ADDR) of the given event_location
    (which must be of type ADDRESS_LOCATION).  */

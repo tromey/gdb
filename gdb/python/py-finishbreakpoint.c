@@ -292,7 +292,7 @@ bpfinishpy_init (PyObject *self, PyObject *args, PyObject *kwargs)
     {
       /* Set a breakpoint on the return address.  */
       event_location_up location
-	= new_address_location (get_frame_pc (prev_frame), NULL, 0);
+	= new_address_location (get_frame_pc (prev_frame), nullptr);
       create_breakpoint (python_gdbarch,
                          std::move (location), NULL, thread, NULL,
                          0,

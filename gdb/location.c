@@ -295,16 +295,14 @@ get_linespec_location (const struct event_location *location)
 /* See description in location.h.  */
 
 event_location_up
-new_address_location (CORE_ADDR addr, const char *addr_string,
-		      int addr_string_len)
+new_address_location (CORE_ADDR addr,
+		      gdb::unique_xmalloc_ptr<char> &&addr_string)
 {
   address_location *location;
 
   location = new address_location;
   EL_ADDRESS (location) = addr;
-  if (addr_string != NULL)
-    location->m_as_string
-      = make_unique_xstrndup (addr_string, addr_string_len);
+  location->m_as_string = std::move (addr_string);
   return event_location_up (location);
 }
 
@@ -958,7 +956,9 @@ string_to_event_location_basic (const char **stringp,
 
 	  orig = arg = *stringp;
 	  addr = linespec_expression_to_pc (&arg);
-	  location = new_address_location (addr, orig, arg - orig);
+	  location
+	    = new_address_location (addr, make_unique_xstrndup (orig,
+								arg - orig));
 	  *stringp += arg - orig;
 	}
       else

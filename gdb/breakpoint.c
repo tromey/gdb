@@ -7370,7 +7370,7 @@ create_thread_event_breakpoint (struct gdbarch *gdbarch, CORE_ADDR address)
 
   b->enable_state = bp_enabled;
   /* location has to be used or breakpoint_re_set will delete me.  */
-  b->location = new_address_location (b->loc->address, NULL, 0);
+  b->location = new_address_location (b->loc->address, nullptr);
 
   update_global_location_list_nothrow (UGLL_MAY_INSERT);
 
@@ -8818,7 +8818,7 @@ init_breakpoint_sal (struct breakpoint *b, struct gdbarch *gdbarch,
   if (location != NULL)
     b->location = std::move (location);
   else
-    b->location = new_address_location (b->loc->address, NULL, 0);
+    b->location = new_address_location (b->loc->address, nullptr);
   b->filter = std::move (filter);
 }
 
