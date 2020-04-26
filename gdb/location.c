@@ -35,6 +35,11 @@
 
 struct event_location
 {
+  event_location (enum event_location_type type)
+    : m_type (type)
+  {
+  }
+
   /* The type of this breakpoint specification.  */
   enum event_location_type m_type;
 
@@ -46,6 +51,11 @@ struct event_location
 /* A "normal" linespec.  */
 struct linespec_location_internal : public event_location
 {
+  linespec_location_internal ()
+    : event_location (LINESPEC_LOCATION)
+  {
+  }
+
   struct linespec_location m_linespec_location;
 #define EL_LINESPEC(P) (&((linespec_location_internal *) P)->m_linespec_location)
 };
@@ -53,6 +63,11 @@ struct linespec_location_internal : public event_location
 /* A probe.  */
 struct probe_location : public event_location
 {
+  probe_location ()
+    : event_location (PROBE_LOCATION)
+  {
+  }
+
   char *m_addr_string;
 #define EL_PROBE(P) (((probe_location *) P)->m_addr_string)
 };
@@ -60,6 +75,11 @@ struct probe_location : public event_location
 /* An address in the inferior.  */
 struct address_location : public event_location
 {
+  address_location ()
+    : event_location (ADDRESS_LOCATION)
+  {
+  }
+
   CORE_ADDR m_address;
 #define EL_ADDRESS(P) (((address_location *) P)->m_address)
 };
@@ -67,6 +87,11 @@ struct address_location : public event_location
 /* An explicit location.  */
 struct explicit_location_internal : public event_location
 {
+  explicit_location_internal ()
+    : event_location (EXPLICIT_LOCATION)
+  {
+  }
+
   struct explicit_location m_explicit_loc;
 #define EL_EXPLICIT(P) (&(((explicit_location_internal *) P)->m_explicit_loc))
 };
@@ -98,7 +123,6 @@ new_linespec_location (const char **linespec,
   linespec_location_internal *location;
 
   location = new linespec_location_internal;
-  location->m_type = LINESPEC_LOCATION;
   EL_LINESPEC (location)->match_type = match_type;
   if (*linespec != NULL)
     {
@@ -131,7 +155,6 @@ new_address_location (CORE_ADDR addr, const char *addr_string,
   address_location *location;
 
   location = new address_location;
-  location->m_type = ADDRESS_LOCATION;
   EL_ADDRESS (location) = addr;
   if (addr_string != NULL)
     location->m_as_string
@@ -165,7 +188,6 @@ new_probe_location (const char *probe)
   probe_location *location;
 
   location = new probe_location;
-  location->m_type = PROBE_LOCATION;
   if (probe != NULL)
     EL_PROBE (location) = xstrdup (probe);
   return event_location_up (location);
@@ -188,7 +210,6 @@ new_explicit_location (const struct explicit_location *explicit_loc)
   explicit_location_internal *tmp = new explicit_location_internal;
   event_location_up result (tmp);
 
-  tmp->m_type = EXPLICIT_LOCATION;
   initialize_explicit_location (EL_EXPLICIT (tmp));
   if (explicit_loc != NULL)
     {
@@ -361,7 +382,6 @@ copy_event_location (const struct event_location *src)
       gdb_assert_not_reached ("unknown event location type");
     }
 
-  dst->m_type = src->m_type;
   if (src->m_as_string != NULL)
     dst->m_as_string = make_unique_xstrdup (src->m_as_string.get ());
 
