@@ -78,6 +78,11 @@ struct event_location
     m_as_string = std::move (str);
   }
 
+  enum event_location_type type () const
+  {
+    return m_type;
+  }
+
   virtual gdb::unique_xmalloc_ptr<char> compute_name () const = 0;
 
   /* The type of this breakpoint specification.  */
@@ -256,7 +261,7 @@ struct explicit_location_internal : public event_location
 enum event_location_type
 event_location_type (const struct event_location *location)
 {
-  return location->m_type;
+  return location->type ();
 }
 
 /* See description in location.h.  */
@@ -287,7 +292,7 @@ new_linespec_location (const char **linespec,
 const linespec_location *
 get_linespec_location (const struct event_location *location)
 {
-  gdb_assert (location->m_type == LINESPEC_LOCATION);
+  gdb_assert (location->type () == LINESPEC_LOCATION);
   return EL_LINESPEC (location);
 }
 
@@ -306,7 +311,7 @@ new_address_location (CORE_ADDR addr,
 CORE_ADDR
 get_address_location (const struct event_location *location)
 {
-  gdb_assert (location->m_type == ADDRESS_LOCATION);
+  gdb_assert (location->type () == ADDRESS_LOCATION);
   return EL_ADDRESS (location);
 }
 
@@ -315,7 +320,7 @@ get_address_location (const struct event_location *location)
 const char *
 get_address_string_location (const struct event_location *location)
 {
-  gdb_assert (location->m_type == ADDRESS_LOCATION);
+  gdb_assert (location->type () == ADDRESS_LOCATION);
   return location->to_string ();
 }
 
@@ -332,7 +337,7 @@ new_probe_location (const char *probe)
 const char *
 get_probe_location (const struct event_location *location)
 {
-  gdb_assert (location->m_type == PROBE_LOCATION);
+  gdb_assert (location->type () == PROBE_LOCATION);
   return EL_PROBE (location).get ();
 }
 
@@ -374,7 +379,7 @@ new_explicit_location (const struct explicit_location *explicit_loc)
 struct explicit_location *
 get_explicit_location (struct event_location *location)
 {
-  gdb_assert (location->m_type == EXPLICIT_LOCATION);
+  gdb_assert (location->type () == EXPLICIT_LOCATION);
   return EL_EXPLICIT (location);
 }
 
@@ -383,7 +388,7 @@ get_explicit_location (struct event_location *location)
 const struct explicit_location *
 get_explicit_location_const (const struct event_location *location)
 {
-  gdb_assert (location->m_type == EXPLICIT_LOCATION);
+  gdb_assert (location->type () == EXPLICIT_LOCATION);
   return EL_EXPLICIT (location);
 }
 
