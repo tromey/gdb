@@ -277,6 +277,16 @@ struct explicit_location_internal : public event_location
 	    && m_explicit_loc.line_offset.sign == LINE_OFFSET_UNKNOWN);
   }
 
+  const explicit_location *get_location () const
+  {
+    return &m_explicit_loc;
+  }
+
+  explicit_location *get_location ()
+  {
+    return &m_explicit_loc;
+  }
+
   gdb::unique_xmalloc_ptr<char> compute_name () const override;
 
   struct explicit_location m_explicit_loc;
@@ -390,7 +400,9 @@ struct explicit_location *
 get_explicit_location (struct event_location *location)
 {
   gdb_assert (location->type () == EXPLICIT_LOCATION);
-  return EL_EXPLICIT (location);
+  explicit_location_internal *loc
+    = dynamic_cast<explicit_location_internal *> (location);
+  return loc->get_location ();
 }
 
 /* See description in location.h.  */
@@ -399,7 +411,9 @@ const struct explicit_location *
 get_explicit_location_const (const struct event_location *location)
 {
   gdb_assert (location->type () == EXPLICIT_LOCATION);
-  return EL_EXPLICIT (location);
+  const explicit_location_internal *loc
+    = dynamic_cast<const explicit_location_internal *> (location);
+  return loc->get_location ();
 }
 
 /* This convenience function returns a malloc'd string which
