@@ -1009,7 +1009,9 @@ string_to_event_location (const char **stringp,
 	 "-qualified", otherwise string_to_explicit_location would
 	 have thrown an error.  Save the flags for "basic" linespec
 	 parsing below and discard the explicit location.  */
-      match_type = EL_EXPLICIT (location.get ())->func_name_match_type;
+      const explicit_location_internal *loc
+	= dynamic_cast<const explicit_location_internal *> (location.get ());
+      match_type = loc->get_location ()->func_name_match_type;
     }
 
   /* Everything else is a "basic" linespec, address, or probe
