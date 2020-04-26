@@ -46,6 +46,13 @@ struct event_location
   {
   }
 
+  event_location (enum event_location_type type,
+		  gdb::unique_xmalloc_ptr<char> &&name)
+    : m_type (type),
+      m_as_string (std::move (name))
+  {
+  }
+
   event_location (const event_location &other)
     : m_type (other.m_type)
   {
@@ -167,8 +174,9 @@ struct probe_location : public event_location
 /* An address in the inferior.  */
 struct address_location : public event_location
 {
-  address_location ()
-    : event_location (ADDRESS_LOCATION)
+  address_location (CORE_ADDR addr, gdb::unique_xmalloc_ptr<char> &&name)
+    : event_location (ADDRESS_LOCATION, std::move (name)),
+      m_address (addr)
   {
   }
 
@@ -298,12 +306,8 @@ event_location_up
 new_address_location (CORE_ADDR addr,
 		      gdb::unique_xmalloc_ptr<char> &&addr_string)
 {
-  address_location *location;
-
-  location = new address_location;
-  EL_ADDRESS (location) = addr;
-  location->m_as_string = std::move (addr_string);
-  return event_location_up (location);
+  return event_location_up (new address_location (addr,
+						  std::move (addr_string)));
 }
 
 /* See description in location.h.  */
