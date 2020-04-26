@@ -192,14 +192,22 @@ struct address_location : public event_location
     return false;
   }
 
+  CORE_ADDR address () const
+  {
+    return m_address;
+  }
+
+protected:
+
   gdb::unique_xmalloc_ptr<char> compute_name () const override
   {
     return (gdb::unique_xmalloc_ptr<char>
 	    (xstrprintf ("*%s", core_addr_to_string (m_address))));
   }
 
+private:
+
   CORE_ADDR m_address;
-#define EL_ADDRESS(P) (((address_location *) P)->m_address)
 };
 
 /* An explicit location.  */
@@ -310,7 +318,9 @@ CORE_ADDR
 get_address_location (const struct event_location *location)
 {
   gdb_assert (location->type () == ADDRESS_LOCATION);
-  return EL_ADDRESS (location);
+  const address_location *loc
+    = dynamic_cast<const address_location *> (location);
+  return loc->address ();
 }
 
 /* See description in location.h.  */
