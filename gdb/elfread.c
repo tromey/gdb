@@ -1034,7 +1034,7 @@ elf_gnu_ifunc_resolver_return_stop (struct breakpoint *b)
   resolved_pc = gdbarch_addr_bits_remove (gdbarch, resolved_pc);
 
   gdb_assert (current_program_space == b->pspace || b->pspace == NULL);
-  elf_gnu_ifunc_record_cache (event_location_to_string (b->location.get ()),
+  elf_gnu_ifunc_record_cache (b->location->to_string (),
 			      resolved_pc);
 
   b->type = bp_breakpoint;

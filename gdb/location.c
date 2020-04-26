@@ -233,14 +233,6 @@ event_location_deleter::operator() (event_location *location) const
     delete location;
 }
 
-/* See description in location.h.  */
-
-const char *
-event_location_to_string (struct event_location *location)
-{
-  return location->to_string ();
-}
-
 /* Find an instance of the quote character C in the string S that is
    outside of all single- and double-quoted strings (i.e., any quoting
    other than C).  */

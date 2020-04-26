@@ -389,15 +389,6 @@ private:
 extern gdb::unique_xmalloc_ptr<char>
   explicit_location_to_linespec (const struct explicit_location *explicit_loc);
 
-/* Return a string representation of the LOCATION.
-   This function may return NULL for unspecified linespecs,
-   e.g, LINESPEC_LOCATION and spec_string is NULL.
-
-   The result is cached in LOCATION.  */
-
-extern const char *
-  event_location_to_string (struct event_location *location);
-
 /* Create a new linespec location.  */
 
 extern event_location_up new_linespec_location

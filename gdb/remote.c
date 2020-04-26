@@ -13032,7 +13032,7 @@ remote_target::download_tracepoint (struct bp_location *loc)
 	    error ("%s", err_msg);
 
 	  encode_source_string (b->number, loc->address, "at",
-				event_location_to_string (b->location.get ()),
+				b->location->to_string (),
 				buf.data () + strlen (buf.data ()),
 				buf.size () - strlen (buf.data ()));
 	  putpkt (buf.data ());

@@ -386,7 +386,7 @@ bppy_get_location (PyObject *self, void *closure)
   if (obj->bp->type != bp_breakpoint)
     Py_RETURN_NONE;
 
-  const char *str = event_location_to_string (obj->bp->location.get ());
+  const char *str = obj->bp->location->to_string ();
   if (! str)
     str = "";
   return host_string_to_python_string (str).release ();

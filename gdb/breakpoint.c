@@ -5811,7 +5811,7 @@ print_breakpoint_location (struct breakpoint *b,
     set_current_program_space (loc->pspace);
 
   if (b->display_canonical)
-    uiout->field_string ("what", event_location_to_string (b->location.get ()));
+    uiout->field_string ("what", b->location->to_string ());
   else if (loc && loc->symtab)
     {
       const struct symbol *sym = loc->symbol;
@@ -5846,7 +5846,7 @@ print_breakpoint_location (struct breakpoint *b,
   else
     {
       uiout->field_string ("pending",
-			   event_location_to_string (b->location.get ()));
+			   b->location->to_string ());
       /* If extra_string is available, it could be holding a condition
 	 or dprintf arguments.  In either case, make sure it is printed,
 	 too, but only for non-MI streams.  */
@@ -6272,10 +6272,9 @@ print_one_breakpoint_location (struct breakpoint *b,
 
 	  uiout->field_string ("original-location", w->exp_string);
 	}
-      else if (b->location != NULL
-	       && event_location_to_string (b->location.get ()) != NULL)
+      else if (b->location != NULL && b->location->to_string () != NULL)
 	uiout->field_string ("original-location",
-			     event_location_to_string (b->location.get ()));
+			     b->location->to_string ());
     }
 }
 
@@ -8751,8 +8750,7 @@ init_breakpoint_sal (struct breakpoint *b, struct gdbarch *gdbarch,
 		{
 		  /* We already know the marker exists, otherwise, we
 		     wouldn't see a sal for it.  */
-		  const char *p
-		    = &event_location_to_string (b->location.get ())[3];
+		  const char *p = b->location->to_string () + 3;
 		  const char *endp;
 
 		  p = skip_spaces (p);
@@ -9695,8 +9693,8 @@ static void
 print_recreate_ranged_breakpoint (struct breakpoint *b, struct ui_file *fp)
 {
   fprintf_unfiltered (fp, "break-range %s, %s",
-		      event_location_to_string (b->location.get ()),
-		      event_location_to_string (b->location_range_end.get ()));
+		      b->location->to_string (),
+		      b->location_range_end->to_string ());
   print_recreate_thread (b, fp);
 }
 
@@ -12057,18 +12055,18 @@ say_where (struct breakpoint *b)
       if (b->extra_string == NULL)
 	{
 	  printf_filtered (_(" (%s) pending."),
-			   event_location_to_string (b->location.get ()));
+			   b->location->to_string ());
 	}
       else if (b->type == bp_dprintf)
 	{
 	  printf_filtered (_(" (%s,%s) pending."),
-			   event_location_to_string (b->location.get ()),
+			   b->location->to_string (),
 			   b->extra_string);
 	}
       else
 	{
 	  printf_filtered (_(" (%s %s) pending."),
-			   event_location_to_string (b->location.get ()),
+			   b->location->to_string (),
 			   b->extra_string);
 	}
     }
@@ -12097,7 +12095,7 @@ say_where (struct breakpoint *b)
 	       different file name, and this at least reflects the
 	       real situation somewhat.  */
 	    printf_filtered (": %s.",
-			     event_location_to_string (b->location.get ()));
+			     b->location->to_string ());
 	}
 
       if (b->loc->next)
@@ -12449,7 +12447,7 @@ bkpt_print_recreate (struct breakpoint *tp, struct ui_file *fp)
 		    _("unhandled breakpoint type %d"), (int) tp->type);
 
   fprintf_unfiltered (fp, " %s",
-		      event_location_to_string (tp->location.get ()));
+		      tp->location->to_string ());
 
   /* Print out extra_string if this breakpoint is pending.  It might
      contain, for example, conditions that were set by the user.  */
@@ -12671,8 +12669,7 @@ bkpt_probe_create_sals_from_location (const struct event_location *location,
   struct linespec_sals lsal;
 
   lsal.sals = parse_probes (location, NULL, canonical);
-  lsal.canonical
-    = xstrdup (event_location_to_string (canonical->location.get ()));
+  lsal.canonical = xstrdup (canonical->location->to_string ());
   canonical->lsals.push_back (std::move (lsal));
 }
 
@@ -12763,8 +12760,7 @@ tracepoint_print_recreate (struct breakpoint *self, struct ui_file *fp)
     internal_error (__FILE__, __LINE__,
 		    _("unhandled tracepoint type %d"), (int) self->type);
 
-  fprintf_unfiltered (fp, " %s",
-		      event_location_to_string (self->location.get ()));
+  fprintf_unfiltered (fp, " %s", self->location->to_string ());
   print_recreate_thread (self, fp);
 
   if (tp->pass_count)
@@ -12862,7 +12858,7 @@ static void
 dprintf_print_recreate (struct breakpoint *tp, struct ui_file *fp)
 {
   fprintf_unfiltered (fp, "dprintf %s,%s",
-		      event_location_to_string (tp->location.get ()),
+		      tp->location->to_string (),
 		      tp->extra_string);
   print_recreate_thread (tp, fp);
 }
@@ -12921,8 +12917,7 @@ strace_marker_create_sals_from_location (const struct event_location *location,
   canonical->location
     = new_linespec_location (&ptr, symbol_name_match_type::FULL);
 
-  lsal.canonical
-    = xstrdup (event_location_to_string (canonical->location.get ()));
+  lsal.canonical = xstrdup (canonical->location->to_string ());
   canonical->lsals.push_back (std::move (lsal));
 }
 
