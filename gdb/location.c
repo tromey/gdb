@@ -796,8 +796,6 @@ string_to_explicit_location (const char **argp,
 			     const struct language_defn *language,
 			     explicit_completion_info *completion_info)
 {
-  event_location_up location;
-
   /* It is assumed that input beginning with '-' and a non-digit
      character is an explicit location.  "-p" is reserved, though,
      for probe locations.  */
@@ -808,7 +806,9 @@ string_to_explicit_location (const char **argp,
       || ((*argp)[0] == '-' && (*argp)[1] == 'p'))
     return NULL;
 
-  location = new_explicit_location (NULL);
+  explicit_location_internal *xloc = new explicit_location_internal (nullptr);
+  event_location_up location (xloc);
+  explicit_location *loc = xloc->get_location ();
 
   /* Process option/argument pairs.  dprintf_command
      requires that processing stop on ','.  */
@@ -877,34 +877,30 @@ string_to_explicit_location (const char **argp,
 	{
 	  set_oarg (explicit_location_lex_one (argp, language,
 					       completion_info));
-	  EL_EXPLICIT (location.get ())->source_filename = oarg.release ();
+	  loc->source_filename = oarg.release ();
 	}
       else if (strncmp (opt.get (), "-function", len) == 0)
 	{
 	  set_oarg (explicit_location_lex_one_function (argp, language,
 							completion_info));
-	  EL_EXPLICIT (location.get ())->function_name = oarg.release ();
+	  loc->function_name = oarg.release ();
 	}
       else if (strncmp (opt.get (), "-qualified", len) == 0)
-	{
-	  EL_EXPLICIT (location.get ())->func_name_match_type
-	    = symbol_name_match_type::FULL;
-	}
+	loc->func_name_match_type = symbol_name_match_type::FULL;
       else if (strncmp (opt.get (), "-line", len) == 0)
 	{
 	  set_oarg (explicit_location_lex_one (argp, language, NULL));
 	  *argp = skip_spaces (*argp);
 	  if (have_oarg)
 	    {
-	      EL_EXPLICIT (location.get ())->line_offset
-		= linespec_parse_line_offset (oarg.get ());
+	      loc->line_offset = linespec_parse_line_offset (oarg.get ());
 	      continue;
 	    }
 	}
       else if (strncmp (opt.get (), "-label", len) == 0)
 	{
 	  set_oarg (explicit_location_lex_one (argp, language, completion_info));
-	  EL_EXPLICIT (location.get ())->label_name = oarg.release ();
+	  loc->label_name = oarg.release ();
 	}
       /* Only emit an "invalid argument" error for options
 	 that look like option strings.  */
@@ -934,15 +930,13 @@ string_to_explicit_location (const char **argp,
 
   /* One special error check:  If a source filename was given
      without offset, function, or label, issue an error.  */
-  if (EL_EXPLICIT (location.get ())->source_filename != NULL
-      && EL_EXPLICIT (location.get ())->function_name == NULL
-      && EL_EXPLICIT (location.get ())->label_name == NULL
-      && (EL_EXPLICIT (location.get ())->line_offset.sign == LINE_OFFSET_UNKNOWN)
+  if (loc->source_filename != NULL
+      && loc->function_name == NULL
+      && loc->label_name == NULL
+      && loc->line_offset.sign == LINE_OFFSET_UNKNOWN
       && completion_info == NULL)
-    {
-      error (_("Source filename requires function, label, or "
-	       "line offset."));
-    }
+    error (_("Source filename requires function, label, or "
+	     "line offset."));
 
   return location;
 }
