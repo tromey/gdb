@@ -448,11 +448,6 @@ extern struct explicit_location *
 extern const struct explicit_location *
   get_explicit_location_const (const struct event_location *location);
 
-/* Return a copy of the given SRC location.  */
-
-extern event_location_up
-  copy_event_location (const struct event_location *src);
-
 /* Attempt to convert the input string in *ARGP into an event_location.
    ARGP is advanced past any processed input.  Returns an event_location
    (malloc'd) if an event location was successfully found in *ARGP,

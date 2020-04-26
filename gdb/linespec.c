@@ -3162,7 +3162,7 @@ event_location_to_sals (linespec_parser *parser,
 	    addr = linespec_expression_to_pc (&addr_string);
 	    if (PARSER_STATE (parser)->canonical != NULL)
 	      PARSER_STATE (parser)->canonical->location
-		= copy_event_location (location);
+		= location->clone ();
 	  }
 
 	result = convert_address_location_to_sals (PARSER_STATE (parser),

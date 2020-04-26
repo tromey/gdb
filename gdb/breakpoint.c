@@ -8879,7 +8879,7 @@ create_breakpoints_sal (struct gdbarch *gdbarch,
 	 'break', without arguments.  */
       event_location_up location
 	= (canonical->location != NULL
-	   ? copy_event_location (canonical->location.get ()) : NULL);
+	   ? canonical->location->clone () : NULL);
       gdb::unique_xmalloc_ptr<char> filter_string
 	(lsal.canonical != NULL ? xstrdup (lsal.canonical) : NULL);
 
@@ -12945,8 +12945,7 @@ strace_marker_create_breakpoints_sal (struct gdbarch *gdbarch,
 
   for (size_t i = 0; i < lsal.sals.size (); i++)
     {
-      event_location_up location
-	= copy_event_location (canonical->location.get ());
+      event_location_up location = canonical->location->clone ();
 
       std::unique_ptr<tracepoint> tp (new tracepoint ());
       init_breakpoint_sal (tp.get (), gdbarch, lsal.sals[i],

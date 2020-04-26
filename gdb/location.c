@@ -218,14 +218,6 @@ explicit_location_to_linespec (const struct explicit_location *explicit_loc)
   return explicit_to_string_internal (1, explicit_loc);
 }
 
-/* See description in location.h.  */
-
-event_location_up
-copy_event_location (const struct event_location *src)
-{
-  return src->clone ();
-}
-
 void
 event_location_deleter::operator() (event_location *location) const
 {
