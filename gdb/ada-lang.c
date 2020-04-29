@@ -6187,18 +6187,15 @@ ada_add_block_symbols (struct obstack *obstackp,
 		       const lookup_name_info &lookup_name,
 		       domain_enum domain, struct objfile *objfile)
 {
-  struct block_iterator iter;
   /* A matching argument symbol, if any.  */
   struct symbol *arg_sym;
   /* Set true when we find a matching non-argument symbol.  */
   int found_sym;
-  struct symbol *sym;
 
   arg_sym = NULL;
   found_sym = 0;
-  for (sym = block_iter_match_first (block, lookup_name, &iter);
-       sym != NULL;
-       sym = block_iter_match_next (lookup_name, &iter))
+  /* FIXME */
+  for (struct symbol *sym : block_iter_match_range (block, lookup_name))
     {
       if (symbol_matches_domain (sym->language (), SYMBOL_DOMAIN (sym), domain))
 	{
@@ -6237,7 +6234,7 @@ ada_add_block_symbols (struct obstack *obstackp,
       const char *name = ada_lookup_name.c_str ();
       size_t name_len = ada_lookup_name.size ();
 
-      ALL_BLOCK_SYMBOLS (block, iter, sym)
+      for (struct symbol *sym : block_iter_range (block))
       {
         if (symbol_matches_domain (sym->language (),
                                    SYMBOL_DOMAIN (sym), domain))
@@ -6378,7 +6375,6 @@ ada_collect_symbol_completion_matches (completion_tracker &tracker,
 				       const char *text, const char *word,
 				       enum type_code code)
 {
-  struct symbol *sym;
   const struct block *b, *surrounding_static_block = 0;
   struct block_iterator iter;
 
@@ -6439,7 +6435,7 @@ ada_collect_symbol_completion_matches (completion_tracker &tracker,
       if (!BLOCK_SUPERBLOCK (b))
         surrounding_static_block = b;   /* For elmin of dups */
 
-      ALL_BLOCK_SYMBOLS (b, iter, sym)
+      for (struct symbol *sym : block_iter_range (b))
       {
 	if (completion_skip_symbol (mode, sym))
 	  continue;
@@ -6460,7 +6456,7 @@ ada_collect_symbol_completion_matches (completion_tracker &tracker,
 	{
 	  QUIT;
 	  b = BLOCKVECTOR_BLOCK (COMPUNIT_BLOCKVECTOR (s), GLOBAL_BLOCK);
-	  ALL_BLOCK_SYMBOLS (b, iter, sym)
+	  for (struct symbol *sym : block_iter_range (b))
 	    {
 	      if (completion_skip_symbol (mode, sym))
 		continue;
@@ -6482,7 +6478,7 @@ ada_collect_symbol_completion_matches (completion_tracker &tracker,
 	  /* Don't do this block twice.  */
 	  if (b == surrounding_static_block)
 	    continue;
-	  ALL_BLOCK_SYMBOLS (b, iter, sym)
+	  for (struct symbol *sym : block_iter_range (b))
 	    {
 	      if (completion_skip_symbol (mode, sym))
 		continue;
@@ -13216,10 +13212,7 @@ ada_add_exceptions_from_frame (compiled_regex *preg,
 
   while (block != 0)
     {
-      struct block_iterator iter;
-      struct symbol *sym;
-
-      ALL_BLOCK_SYMBOLS (block, iter, sym)
+      for (struct symbol *sym : block_iter_range (block))
 	{
 	  switch (SYMBOL_CLASS (sym))
 	    {
@@ -13298,10 +13291,8 @@ ada_add_global_exceptions (compiled_regex *preg,
 	  for (i = GLOBAL_BLOCK; i <= STATIC_BLOCK; i++)
 	    {
 	      const struct block *b = BLOCKVECTOR_BLOCK (bv, i);
-	      struct block_iterator iter;
-	      struct symbol *sym;
 
-	      ALL_BLOCK_SYMBOLS (b, iter, sym)
+	      for (struct symbol *sym : block_iter_range (b))
 		if (ada_is_non_standard_exception_sym (sym)
 		    && name_matches_regex (sym->natural_name (), preg))
 		  {

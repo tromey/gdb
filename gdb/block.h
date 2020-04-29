@@ -278,12 +278,50 @@ extern void set_block_compunit_symtab (struct block *,
 
 extern struct dynamic_prop *block_static_link (const struct block *block);
 
-/* A block iterator.  This structure should be treated as though it
-   were opaque; it is only defined here because we want to support
-   stack allocation of iterators.  */
-
-struct block_iterator
+class block_iterator_base
 {
+public:
+
+  typedef block_iterator_base self_type;
+  typedef struct symbol *value_type;
+  typedef struct symbol *&reference;
+  typedef struct symbol **pointer;
+  typedef std::forward_iterator_tag iterator_category;
+
+  bool operator== (const block_iterator_base &other) const;
+
+  bool operator!= (const block_iterator_base &other) const
+  {
+    return !(*this == other);
+  }
+
+  value_type operator* () const
+  {
+    return m_sym;
+  }
+
+  self_type &operator++ ()
+  {
+    step (false);
+    return *this;
+  }
+
+protected:
+
+  block_iterator_base () = default;
+  explicit block_iterator_base (const struct block *block);
+
+  void post_init ()
+  {
+    step (true);
+  }
+
+  virtual struct symbol *dict_first (const struct block *) = 0;
+  virtual struct symbol *dict_next () = 0;
+
+  void step (bool first);
+  struct compunit_symtab *find_compunit_symtab ();
+
   /* If we're iterating over a single block, this holds the block.
      Otherwise, it holds the canonical compunit.  */
 
@@ -291,57 +329,135 @@ struct block_iterator
   {
     struct compunit_symtab *compunit_symtab;
     const struct block *block;
-  } d;
+  } m_d {};
 
   /* If we're iterating over a single block, this is always -1.
      Otherwise, it holds the index of the current "included" symtab in
      the canonical symtab (that is, d.symtab->includes[idx]), with -1
      meaning the canonical symtab itself.  */
 
-  int idx;
+  int m_idx = -1;
 
   /* Which block, either static or global, to iterate over.  If this
      is FIRST_LOCAL_BLOCK, then we are iterating over a single block.
      This is used to select which field of 'd' is in use.  */
 
-  enum block_enum which;
+  enum block_enum m_which = FIRST_LOCAL_BLOCK;
 
   /* The underlying multidictionary iterator.  */
 
-  struct mdict_iterator mdict_iter;
+  struct mdict_iterator m_dict_iter {};
+
+  /* The next symbol to return.  This is nullptr for the end
+     iterator.  */
+  struct symbol *m_sym = nullptr;
 };
 
-/* Initialize ITERATOR to point at the first symbol in BLOCK, and
-   return that first symbol, or NULL if BLOCK is empty.  */
+/* A block iterator.  */
 
-extern struct symbol *block_iterator_first (const struct block *block,
-					    struct block_iterator *iterator);
+class block_iterator final : public block_iterator_base
+{
+public:
 
-/* Advance ITERATOR, and return the next symbol, or NULL if there are
-   no more symbols.  Don't call this if you've previously received
-   NULL from block_iterator_first or block_iterator_next on this
-   iteration.  */
+  block_iterator () = default;
 
-extern struct symbol *block_iterator_next (struct block_iterator *iterator);
+  explicit block_iterator (const struct block *block)
+    : block_iterator_base (block)
+  {
+    post_init ();
+  }
 
-/* Initialize ITERATOR to point at the first symbol in BLOCK whose
-   search_name () matches NAME, and return that first symbol, or
-   NULL if there are no such symbols.  */
+private:
 
-extern struct symbol *block_iter_match_first (const struct block *block,
-					      const lookup_name_info &name,
-					      struct block_iterator *iterator);
+  struct symbol *dict_first (const struct block *block) override
+  {
+    return mdict_iterator_first (block->multidict, &m_dict_iter);
+  }
 
-/* Advance ITERATOR to point at the next symbol in BLOCK whose
-   search_name () matches NAME, or NULL if there are no more such
-   symbols.  Don't call this if you've previously received NULL from
-   block_iterator_match_first or block_iterator_match_next on this
-   iteration.  And don't call it unless ITERATOR was created by a
-   previous call to block_iter_match_first with the same NAME.  */
+  struct symbol *dict_next () override
+  {
+    return mdict_iterator_next (&m_dict_iter);
+  }
+};
 
-extern struct symbol *block_iter_match_next
-  (const lookup_name_info &name, struct block_iterator *iterator);
+/* A block iterator that only looks for matching names.  */
 
+class block_match_iterator final : public block_iterator_base
+{
+public:
+
+  block_match_iterator () = default;
+
+  block_match_iterator (const struct block *block,
+			const lookup_name_info *name)
+    : block_iterator_base (block),
+      m_name (name)
+  {
+    post_init ();
+  }
+
+private:
+
+  struct symbol *dict_first (const struct block *block) override
+  {
+    return mdict_iter_match_first (block->multidict, *m_name, &m_dict_iter);
+  }
+
+  struct symbol *dict_next () override
+  {
+    return mdict_iter_match_next (*m_name, &m_dict_iter);
+  }
+
+  const lookup_name_info *m_name = nullptr;
+};
+
+struct block_iter_range
+{
+  explicit block_iter_range (const struct block *block)
+    : m_block (block)
+  {
+  }
+
+  block_iterator begin () const
+  {
+    return block_iterator (m_block);
+  }
+
+  block_iterator end () const
+  {
+    return block_iterator ();
+  }
+
+private:
+
+  const struct block *m_block;
+};
+
+struct block_iter_match_range
+{
+  explicit block_iter_match_range (const struct block *block,
+				   const lookup_name_info &name)
+    : m_block (block),
+      m_name (name)
+  {
+  }
+
+  block_match_iterator begin () const
+  {
+    return block_match_iterator (m_block, &m_name);
+  }
+
+  block_match_iterator end () const
+  {
+    return block_match_iterator ();
+  }
+
+private:
+
+  const struct block *m_block;
+  const lookup_name_info &m_name;
+};
+    
 /* Return true if symbol A is the best match possible for DOMAIN.  */
 
 extern bool best_symbol (struct symbol *a, const domain_enum domain);
@@ -400,25 +516,6 @@ extern int block_find_non_opaque_type (struct symbol *sym, void *data);
 
 extern int block_find_non_opaque_type_preferred (struct symbol *sym,
 						 void *data);
-
-/* Macro to loop through all symbols in BLOCK, in no particular
-   order.  ITER helps keep track of the iteration, and must be a
-   struct block_iterator.  SYM points to the current symbol.  */
-
-#define ALL_BLOCK_SYMBOLS(block, iter, sym)		\
-  for ((sym) = block_iterator_first ((block), &(iter));	\
-       (sym);						\
-       (sym) = block_iterator_next (&(iter)))
-
-/* Macro to loop through all symbols in BLOCK with a name that matches
-   NAME, in no particular order.  ITER helps keep track of the
-   iteration, and must be a struct block_iterator.  SYM points to the
-   current symbol.  */
-
-#define ALL_BLOCK_SYMBOLS_WITH_NAME(block, name, iter, sym)		\
-  for ((sym) = block_iter_match_first ((block), (name), &(iter));	\
-       (sym) != NULL;							\
-       (sym) = block_iter_match_next ((name), &(iter)))
 
 /* Given a vector of pairs, allocate and build an obstack allocated
    blockranges struct for a block.  */

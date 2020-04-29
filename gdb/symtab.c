@@ -2870,10 +2870,7 @@ iterate_over_symbols (const struct block *block,
 		      const domain_enum domain,
 		      gdb::function_view<symbol_found_callback_ftype> callback)
 {
-  struct block_iterator iter;
-  struct symbol *sym;
-
-  ALL_BLOCK_SYMBOLS_WITH_NAME (block, name, iter, sym)
+  for (struct symbol *sym : block_iter_match_range (block, name))
     {
       if (symbol_matches_domain (sym->language (), SYMBOL_DOMAIN (sym), domain))
 	{
@@ -2972,17 +2969,20 @@ find_pc_sect_compunit_symtab (CORE_ADDR pc, struct obj_section *section)
 	      if (section != 0)
 		{
 		  struct block_iterator iter;
-		  struct symbol *sym = NULL;
+		  struct symbol *found = nullptr;
 
-		  ALL_BLOCK_SYMBOLS (b, iter, sym)
+		  for (struct symbol *sym : block_iter_range (b))
 		    {
 		      fixup_symbol_section (sym, obj_file);
 		      if (matching_obj_sections (SYMBOL_OBJ_SECTION (obj_file,
 								     sym),
 						 section))
-			break;
+			{
+			  sym = sym;
+			  break;
+			}
 		    }
-		  if (sym == NULL)
+		  if (found == nullptr)
 		    continue;		/* No symbol in this symtab matches
 					   section.  */
 		}
@@ -3044,10 +3044,8 @@ find_symbol_at_address (CORE_ADDR address)
 	  for (int i = GLOBAL_BLOCK; i <= STATIC_BLOCK; ++i)
 	    {
 	      const struct block *b = BLOCKVECTOR_BLOCK (bv, i);
-	      struct block_iterator iter;
-	      struct symbol *sym;
 
-	      ALL_BLOCK_SYMBOLS (b, iter, sym)
+	      for (struct symbol *sym : block_iter_range (b))
 		{
 		  if (SYMBOL_CLASS (sym) == LOC_STATIC
 		      && SYMBOL_VALUE_ADDRESS (sym) == address)
@@ -4629,11 +4627,9 @@ global_symbol_searcher::add_matching_symbols
 
       for (block_enum block : { GLOBAL_BLOCK, STATIC_BLOCK })
 	{
-	  struct block_iterator iter;
-	  struct symbol *sym;
 	  const struct block *b = BLOCKVECTOR_BLOCK (bv, block);
 
-	  ALL_BLOCK_SYMBOLS (b, iter, sym)
+	  for (struct symbol *sym : block_iter_range (b))
 	    {
 	      struct symtab *real_symtab = symbol_symtab (sym);
 
@@ -5590,9 +5586,7 @@ add_symtab_completions (struct compunit_symtab *cust,
 			const char *text, const char *word,
 			enum type_code code)
 {
-  struct symbol *sym;
   const struct block *b;
-  struct block_iterator iter;
   int i;
 
   if (cust == NULL)
@@ -5602,7 +5596,7 @@ add_symtab_completions (struct compunit_symtab *cust,
     {
       QUIT;
       b = BLOCKVECTOR_BLOCK (COMPUNIT_BLOCKVECTOR (cust), i);
-      ALL_BLOCK_SYMBOLS (b, iter, sym)
+      for (struct symbol *sym : block_iter_range (b))
 	{
 	  if (completion_skip_symbol (mode, sym))
 	    continue;
@@ -5628,10 +5622,8 @@ default_collect_symbol_completion_matches_break_on
      frees them.  I'm not going to worry about this; hopefully there
      won't be that many.  */
 
-  struct symbol *sym;
   const struct block *b;
   const struct block *surrounding_static_block, *surrounding_global_block;
-  struct block_iterator iter;
   /* The symbol we are completing on.  Points in same buffer as text.  */
   const char *sym_text;
 
@@ -5750,7 +5742,7 @@ default_collect_symbol_completion_matches_break_on
       {
 	QUIT;
 
-	ALL_BLOCK_SYMBOLS (b, iter, sym)
+	for (struct symbol *sym : block_iter_range (b))
 	  {
 	    if (code == TYPE_CODE_UNDEF)
 	      {
@@ -5778,12 +5770,12 @@ default_collect_symbol_completion_matches_break_on
   if (code == TYPE_CODE_UNDEF)
     {
       if (surrounding_static_block != NULL)
-	ALL_BLOCK_SYMBOLS (surrounding_static_block, iter, sym)
+	for (struct symbol *sym : block_iter_range (surrounding_static_block))
 	  completion_list_add_fields (tracker, sym, lookup_name,
 				      sym_text, word);
 
       if (surrounding_global_block != NULL)
-	ALL_BLOCK_SYMBOLS (surrounding_global_block, iter, sym)
+	for (struct symbol *sym : block_iter_range (surrounding_global_block))
 	  completion_list_add_fields (tracker, sym, lookup_name,
 				      sym_text, word);
     }

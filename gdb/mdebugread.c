@@ -1180,18 +1180,15 @@ parse_symbol (SYMR *sh, union aux_ext *ax, char *ext_sh, int bigend,
 	         type.  Set that from the type of the parameter symbols.  */
 	      int nparams = top_stack->numargs;
 	      int iparams;
-	      struct symbol *sym;
 
 	      if (nparams > 0)
 		{
-		  struct block_iterator iter;
-
 		  TYPE_NFIELDS (ftype) = nparams;
 		  TYPE_FIELDS (ftype) = (struct field *)
 		    TYPE_ALLOC (ftype, nparams * sizeof (struct field));
 
 		  iparams = 0;
-		  ALL_BLOCK_SYMBOLS (cblock, iter, sym)
+		  for (struct symbol *sym : block_iter_range (cblock))
 		    {
 		      if (iparams == nparams)
 			break;
@@ -4442,12 +4439,10 @@ static struct symbol *
 mylookup_symbol (const char *name, const struct block *block,
 		 domain_enum domain, enum address_class theclass)
 {
-  struct block_iterator iter;
   int inc;
-  struct symbol *sym;
 
   inc = name[0];
-  ALL_BLOCK_SYMBOLS (block, iter, sym)
+  for (struct symbol *sym : block_iter_range (block))
     {
       if (sym->linkage_name ()[0] == inc
 	  && SYMBOL_DOMAIN (sym) == domain

@@ -567,8 +567,6 @@ list_args_or_locals (const frame_print_options &fp_opts,
 		     struct frame_info *fi, int skip_unavailable)
 {
   const struct block *block;
-  struct symbol *sym;
-  struct block_iterator iter;
   struct type *type;
   const char *name_of_result;
   struct ui_out *uiout = current_uiout;
@@ -595,7 +593,7 @@ list_args_or_locals (const frame_print_options &fp_opts,
 
   while (block != 0)
     {
-      ALL_BLOCK_SYMBOLS (block, iter, sym)
+      for (struct symbol *sym : block_iter_range (block))
 	{
           int print_me = 0;
 

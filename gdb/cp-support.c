@@ -1212,12 +1212,9 @@ add_symbol_overload_list_block (const char *name,
 				const struct block *block,
 				std::vector<symbol *> *overload_list)
 {
-  struct block_iterator iter;
-  struct symbol *sym;
-
   lookup_name_info lookup_name (name, symbol_name_match_type::FULL);
 
-  ALL_BLOCK_SYMBOLS_WITH_NAME (block, lookup_name, iter, sym)
+  for (struct symbol *sym : block_iter_match_range (block, lookup_name))
     overload_list_add_symbol (sym, name, overload_list);
 }
 

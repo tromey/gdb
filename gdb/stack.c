@@ -747,10 +747,8 @@ print_frame_args (const frame_print_options &fp_opts,
   if (func)
     {
       const struct block *b = SYMBOL_BLOCK_VALUE (func);
-      struct block_iterator iter;
-      struct symbol *sym;
 
-      ALL_BLOCK_SYMBOLS (b, iter, sym)
+      for (struct symbol *sym : block_iter_range (b))
         {
 	  struct frame_arg arg, entryarg;
 
@@ -2230,10 +2228,7 @@ iterate_over_block_locals (const struct block *b,
 			   iterate_over_block_arg_local_vars_cb cb,
 			   void *cb_data)
 {
-  struct block_iterator iter;
-  struct symbol *sym;
-
-  ALL_BLOCK_SYMBOLS (b, iter, sym)
+  for (struct symbol *sym : block_iter_range (b))
     {
       switch (SYMBOL_CLASS (sym))
 	{
@@ -2271,11 +2266,9 @@ static int
 print_block_frame_labels (struct gdbarch *gdbarch, struct block *b,
 			  int *have_default, struct ui_file *stream)
 {
-  struct block_iterator iter;
-  struct symbol *sym;
   int values_printed = 0;
 
-  ALL_BLOCK_SYMBOLS (b, iter, sym)
+  for (struct symbol *sym : block_iter_range (b))
     {
       if (strcmp (sym->linkage_name (), "default") == 0)
 	{
@@ -2535,10 +2528,9 @@ iterate_over_block_arg_vars (const struct block *b,
 			     iterate_over_block_arg_local_vars_cb cb,
 			     void *cb_data)
 {
-  struct block_iterator iter;
-  struct symbol *sym, *sym2;
+  struct symbol *sym2;
 
-  ALL_BLOCK_SYMBOLS (b, iter, sym)
+  for (struct symbol *sym : block_iter_range (b))
     {
       /* Don't worry about things which aren't arguments.  */
       if (SYMBOL_IS_ARGUMENT (sym))

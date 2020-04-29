@@ -456,31 +456,26 @@ get_block_compunit_symtab (const struct block *block)
    or, for static and global blocks, all the included symtabs as
    well.  */
 
-static void
-initialize_block_iterator (const struct block *block,
-			   struct block_iterator *iter)
+block_iterator_base::block_iterator_base (const struct block *block)
 {
-  enum block_enum which;
   struct compunit_symtab *cu;
-
-  iter->idx = -1;
 
   if (BLOCK_SUPERBLOCK (block) == NULL)
     {
-      which = GLOBAL_BLOCK;
+      m_which = GLOBAL_BLOCK;
       cu = get_block_compunit_symtab (block);
     }
   else if (BLOCK_SUPERBLOCK (BLOCK_SUPERBLOCK (block)) == NULL)
     {
-      which = STATIC_BLOCK;
+      m_which = STATIC_BLOCK;
       cu = get_block_compunit_symtab (BLOCK_SUPERBLOCK (block));
     }
   else
     {
-      iter->d.block = block;
+      m_d.block = block;
       /* A signal value meaning that we're iterating over a single
 	 block.  */
-      iter->which = FIRST_LOCAL_BLOCK;
+      m_which = FIRST_LOCAL_BLOCK;
       return;
     }
 
@@ -495,166 +490,84 @@ initialize_block_iterator (const struct block *block,
      directly.  */
   if (cu->includes == NULL)
     {
-      iter->d.block = block;
+      m_d.block = block;
       /* A signal value meaning that we're iterating over a single
 	 block.  */
-      iter->which = FIRST_LOCAL_BLOCK;
+      m_which = FIRST_LOCAL_BLOCK;
     }
   else
-    {
-      iter->d.compunit_symtab = cu;
-      iter->which = which;
-    }
+    m_d.compunit_symtab = cu;
 }
 
 /* A helper function that finds the current compunit over whose static
    or global block we should iterate.  */
 
-static struct compunit_symtab *
-find_iterator_compunit_symtab (struct block_iterator *iterator)
+struct compunit_symtab *
+block_iterator_base::find_compunit_symtab ()
 {
-  if (iterator->idx == -1)
-    return iterator->d.compunit_symtab;
-  return iterator->d.compunit_symtab->includes[iterator->idx];
+  if (m_idx == -1)
+    return m_d.compunit_symtab;
+  return m_d.compunit_symtab->includes[m_idx];
 }
 
 /* Perform a single step for a plain block iterator, iterating across
    symbol tables as needed.  Returns the next symbol, or NULL when
    iteration is complete.  */
 
-static struct symbol *
-block_iterator_step (struct block_iterator *iterator, int first)
+void
+block_iterator_base::step (bool first)
 {
-  struct symbol *sym;
+  gdb_assert (m_which != FIRST_LOCAL_BLOCK);
 
-  gdb_assert (iterator->which != FIRST_LOCAL_BLOCK);
+  if (m_which == FIRST_LOCAL_BLOCK)
+    {
+      if (first)
+	m_sym = dict_first (m_d.block);
+      else
+	m_sym = dict_next ();
+      return;
+    }
 
-  while (1)
+  while (true)
     {
       if (first)
 	{
-	  struct compunit_symtab *cust
-	    = find_iterator_compunit_symtab (iterator);
+	  struct compunit_symtab *cust = find_compunit_symtab ();
 	  const struct block *block;
 
 	  /* Iteration is complete.  */
-	  if (cust == NULL)
-	    return  NULL;
+	  if (cust == nullptr)
+	    return;
 
-	  block = BLOCKVECTOR_BLOCK (COMPUNIT_BLOCKVECTOR (cust),
-				     iterator->which);
-	  sym = mdict_iterator_first (BLOCK_MULTIDICT (block),
-				      &iterator->mdict_iter);
+	  block = BLOCKVECTOR_BLOCK (COMPUNIT_BLOCKVECTOR (cust), m_which);
+	  m_sym = dict_first (block);
 	}
       else
-	sym = mdict_iterator_next (&iterator->mdict_iter);
+	m_sym = dict_next ();
 
-      if (sym != NULL)
-	return sym;
+      if (m_sym != nullptr)
+	return;
 
       /* We have finished iterating the appropriate block of one
 	 symtab.  Now advance to the next symtab and begin iteration
 	 there.  */
-      ++iterator->idx;
-      first = 1;
+      ++m_idx;
+      first = true;
     }
 }
 
-/* See block.h.  */
-
-struct symbol *
-block_iterator_first (const struct block *block,
-		      struct block_iterator *iterator)
+bool
+block_iterator_base::operator== (const block_iterator_base &other) const
 {
-  initialize_block_iterator (block, iterator);
-
-  if (iterator->which == FIRST_LOCAL_BLOCK)
-    return mdict_iterator_first (block->multidict, &iterator->mdict_iter);
-
-  return block_iterator_step (iterator, 1);
-}
-
-/* See block.h.  */
-
-struct symbol *
-block_iterator_next (struct block_iterator *iterator)
-{
-  if (iterator->which == FIRST_LOCAL_BLOCK)
-    return mdict_iterator_next (&iterator->mdict_iter);
-
-  return block_iterator_step (iterator, 0);
-}
-
-/* Perform a single step for a "match" block iterator, iterating
-   across symbol tables as needed.  Returns the next symbol, or NULL
-   when iteration is complete.  */
-
-static struct symbol *
-block_iter_match_step (struct block_iterator *iterator,
-		       const lookup_name_info &name,
-		       int first)
-{
-  struct symbol *sym;
-
-  gdb_assert (iterator->which != FIRST_LOCAL_BLOCK);
-
-  while (1)
-    {
-      if (first)
-	{
-	  struct compunit_symtab *cust
-	    = find_iterator_compunit_symtab (iterator);
-	  const struct block *block;
-
-	  /* Iteration is complete.  */
-	  if (cust == NULL)
-	    return  NULL;
-
-	  block = BLOCKVECTOR_BLOCK (COMPUNIT_BLOCKVECTOR (cust),
-				     iterator->which);
-	  sym = mdict_iter_match_first (BLOCK_MULTIDICT (block), name,
-					&iterator->mdict_iter);
-	}
-      else
-	sym = mdict_iter_match_next (name, &iterator->mdict_iter);
-
-      if (sym != NULL)
-	return sym;
-
-      /* We have finished iterating the appropriate block of one
-	 symtab.  Now advance to the next symtab and begin iteration
-	 there.  */
-      ++iterator->idx;
-      first = 1;
-    }
-}
-
-/* See block.h.  */
-
-struct symbol *
-block_iter_match_first (const struct block *block,
-			const lookup_name_info &name,
-			struct block_iterator *iterator)
-{
-  initialize_block_iterator (block, iterator);
-
-  if (iterator->which == FIRST_LOCAL_BLOCK)
-    return mdict_iter_match_first (block->multidict, name,
-				   &iterator->mdict_iter);
-
-  return block_iter_match_step (iterator, name, 1);
-}
-
-/* See block.h.  */
-
-struct symbol *
-block_iter_match_next (const lookup_name_info &name,
-		       struct block_iterator *iterator)
-{
-  if (iterator->which == FIRST_LOCAL_BLOCK)
-    return mdict_iter_match_next (name, &iterator->mdict_iter);
-
-  return block_iter_match_step (iterator, name, 0);
+  if (m_sym == nullptr)
+    return other.m_sym == nullptr;
+  if (other.m_sym == nullptr)
+    return false;
+  if (m_which != other.m_which || m_idx != other.m_idx)
+    return false;
+  if (m_which == FIRST_LOCAL_BLOCK)
+    return m_d.block == other.m_d.block;
+  return m_d.compunit_symtab == other.m_d.compunit_symtab;
 }
 
 /* See block.h.  */
@@ -709,16 +622,13 @@ block_lookup_symbol (const struct block *block, const char *name,
 		     symbol_name_match_type match_type,
 		     const domain_enum domain)
 {
-  struct block_iterator iter;
-  struct symbol *sym;
-
   lookup_name_info lookup_name (name, match_type);
 
   if (!BLOCK_FUNCTION (block))
     {
       struct symbol *other = NULL;
 
-      ALL_BLOCK_SYMBOLS_WITH_NAME (block, lookup_name, iter, sym)
+      for (struct symbol *sym : block_iter_match_range (block, lookup_name))
 	{
 	  /* See comment related to PR gcc/debug/91507 in
 	     block_lookup_symbol_primary.  */
@@ -747,7 +657,7 @@ block_lookup_symbol (const struct block *block, const char *name,
 
       struct symbol *sym_found = NULL;
 
-      ALL_BLOCK_SYMBOLS_WITH_NAME (block, lookup_name, iter, sym)
+      for (struct symbol *sym : block_iter_match_range (block, lookup_name))
 	{
 	  if (symbol_matches_domain (sym->language (),
 				     SYMBOL_DOMAIN (sym), domain))
@@ -832,16 +742,13 @@ block_find_symbol (const struct block *block, const char *name,
 		   const domain_enum domain,
 		   block_symbol_matcher_ftype *matcher, void *data)
 {
-  struct block_iterator iter;
-  struct symbol *sym;
-
   lookup_name_info lookup_name (name, symbol_name_match_type::FULL);
 
   /* Verify BLOCK is STATIC_BLOCK or GLOBAL_BLOCK.  */
   gdb_assert (BLOCK_SUPERBLOCK (block) == NULL
 	      || BLOCK_SUPERBLOCK (BLOCK_SUPERBLOCK (block)) == NULL);
 
-  ALL_BLOCK_SYMBOLS_WITH_NAME (block, lookup_name, iter, sym)
+  for (struct symbol *sym : block_iter_match_range (block, lookup_name))
     {
       /* MATCHER is deliberately called second here so that it never sees
 	 a non-domain-matching symbol.  */

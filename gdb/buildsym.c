@@ -1057,7 +1057,7 @@ buildsym_compunit::end_symtab_with_blockvector (struct block *static_block,
 
 	/* Note that we only want to fix up symbols from the local
 	   blocks, not blocks coming from included symtabs.  That is why
-	   we use ALL_DICT_SYMBOLS here and not ALL_BLOCK_SYMBOLS.  */
+	   we use ALL_DICT_SYMBOLS here and not the block iterator.  */
 	ALL_DICT_SYMBOLS (BLOCK_MULTIDICT (block), miter, sym)
 	  if (symbol_symtab (sym) == NULL)
 	    symbol_set_symtab (sym, symtab);
