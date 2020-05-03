@@ -282,8 +282,6 @@ static void fill_symbuf (bfd *);
 
 static void dbx_symfile_init (struct objfile *);
 
-static void dbx_new_init (struct objfile *);
-
 static void dbx_symfile_read (struct objfile *, symfile_add_flags);
 
 static void dbx_symfile_finish (struct objfile *);
@@ -556,18 +554,6 @@ dbx_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
   reader.install ();
 }
 
-/* Initialize anything that needs initializing when a completely new
-   symbol file is specified (not just adding some symbols from another
-   file, e.g. a shared library).  */
-
-static void
-dbx_new_init (struct objfile *ignore)
-{
-  stabsread_new_init ();
-  init_header_files ();
-}
-
-
 /* dbx_symfile_init ()
    is the dbx-specific initialization routine for reading symbols.
    It is passed a struct objfile which contains, among other things,
@@ -591,6 +577,10 @@ dbx_symfile_init (struct objfile *objfile)
   const char *name = bfd_get_filename (sym_bfd);
   asection *text_sect;
   unsigned char size_temp[DBX_STRINGTAB_SIZE_SIZE];
+
+  stabsread_init ();
+  free_header_files ();
+  init_header_files ();
 
   /* Allocate struct to keep track of the symfile.  */
   dbx_objfile_data_key.emplace (objfile);
@@ -2936,7 +2926,7 @@ coffstab_build_psymtabs (struct objfile *objfile,
   if (val != stabstrsize)
     perror_with_name (name);
 
-  stabsread_new_init ();
+  stabsread_init ();
   free_header_files ();
   init_header_files ();
 
@@ -2997,7 +2987,7 @@ elfstab_build_psymtabs (struct objfile *objfile, asection *stabsect,
   bfd *sym_bfd = objfile->obfd;
   const char *name = bfd_get_filename (sym_bfd);
 
-  stabsread_new_init ();
+  stabsread_init ();
 
   /* Allocate struct to keep track of stab reading.  */
   dbx_objfile_data_key.emplace (objfile);
@@ -3029,7 +3019,7 @@ elfstab_build_psymtabs (struct objfile *objfile, asection *stabsect,
   if (val != stabstrsize)
     perror_with_name (name);
 
-  stabsread_new_init ();
+  stabsread_init ();
   free_header_files ();
   init_header_files ();
 
@@ -3128,7 +3118,7 @@ stabsect_build_psymtabs (struct objfile *objfile, char *stab_name,
   if (!val)
     perror_with_name (name);
 
-  stabsread_new_init ();
+  stabsread_init ();
   free_header_files ();
   init_header_files ();
 
@@ -3140,7 +3130,6 @@ stabsect_build_psymtabs (struct objfile *objfile, char *stab_name,
 
 static const struct sym_fns aout_sym_fns =
 {
-  dbx_new_init,			/* init anything gbl to entire symtab */
   dbx_symfile_init,		/* read initial info, setup for sym_read() */
   dbx_symfile_read,		/* read a symbol file into symtab */
   dbx_symfile_finish,		/* finished with file, cleanup */

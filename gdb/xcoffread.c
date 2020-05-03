@@ -218,8 +218,6 @@ static void init_stringtab (bfd *, file_ptr, struct objfile *);
 
 static void xcoff_symfile_init (struct objfile *);
 
-static void xcoff_new_init (struct objfile *);
-
 static void xcoff_symfile_finish (struct objfile *);
 
 static char *coff_getfilename (union internal_auxent *, struct objfile *);
@@ -1858,12 +1856,6 @@ xcoff_read_symtab (legacy_psymtab *self, struct objfile *objfile)
     }
 }
 
-static void
-xcoff_new_init (struct objfile *objfile)
-{
-  stabsread_new_init ();
-}
-
 /* Do initialization in preparation for reading symbols from OBJFILE.
 
    We will only be called if this is an XCOFF or XCOFF-like file.
@@ -1873,6 +1865,8 @@ xcoff_new_init (struct objfile *objfile)
 static void
 xcoff_symfile_init (struct objfile *objfile)
 {
+  stabsread_init ();
+
   /* Allocate struct to keep track of the symfile.  */
   xcoff_objfile_data_key.emplace (objfile);
 
@@ -3016,7 +3010,6 @@ static const struct sym_fns xcoff_sym_fns =
      xcoffread.c reads all the symbols and does in fact randomly access them
      (in C_BSTAT and line number processing).  */
 
-  xcoff_new_init,		/* init anything gbl to entire symtab */
   xcoff_symfile_init,		/* read initial info, setup for sym_read() */
   xcoff_initial_scan,		/* read a symbol file into symtab */
   xcoff_symfile_finish,		/* finished with file, cleanup */

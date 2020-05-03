@@ -45,21 +45,12 @@ static void
 read_alphacoff_dynamic_symtab (minimal_symbol_reader &,
 			       struct objfile *objfile);
 
-/* Initialize anything that needs initializing when a completely new
-   symbol file is specified (not just adding some symbols from another
-   file, e.g. a shared library).  */
-
-static void
-mipscoff_new_init (struct objfile *ignore)
-{
-  stabsread_new_init ();
-}
-
 /* Initialize to read a symbol file (nothing to do).  */
 
 static void
 mipscoff_symfile_init (struct objfile *objfile)
 {
+  stabsread_init ();
 }
 
 /* Read a symbol file from a file.  */
@@ -366,7 +357,6 @@ read_alphacoff_dynamic_symtab (minimal_symbol_reader &reader,
 
 static const struct sym_fns ecoff_sym_fns =
 {
-  mipscoff_new_init,		/* init anything gbl to entire symtab */
   mipscoff_symfile_init,	/* read initial info, setup for sym_read() */
   mipscoff_symfile_read,	/* read a symbol file into symtab */
   mipscoff_symfile_finish,	/* finished with file, cleanup */

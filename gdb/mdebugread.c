@@ -339,7 +339,7 @@ mdebug_build_psymtabs (minimal_symbol_reader &reader,
   debug_swap = swap;
   debug_info = info;
 
-  stabsread_new_init ();
+  stabsread_init ();
   free_header_files ();
   init_header_files ();
 	

@@ -4647,15 +4647,6 @@ scan_file_globals (struct objfile *objfile)
 void
 stabsread_init (void)
 {
-}
-
-/* Initialize anything that needs initializing when a completely new
-   symbol file is specified (not just adding some symbols from another
-   file, e.g. a shared library).  */
-
-void
-stabsread_new_init (void)
-{
   /* Empty the hash table of global syms looking for values.  */
   memset (global_sym_chain, 0, sizeof (global_sym_chain));
 }

@@ -70,11 +70,6 @@ struct oso_el
 };
 
 static void
-macho_new_init (struct objfile *objfile)
-{
-}
-
-static void
 macho_symfile_init (struct objfile *objfile)
 {
   objfile->flags |= OBJF_REORDERED;
@@ -948,7 +943,6 @@ macho_symfile_offsets (struct objfile *objfile,
 }
 
 static const struct sym_fns macho_sym_fns = {
-  macho_new_init,               /* init anything gbl to entire symtab */
   macho_symfile_init,           /* read initial info, setup for sym_read() */
   macho_symfile_read,           /* read a symbol file into symtab */
   macho_symfile_finish,         /* finished with file, cleanup */

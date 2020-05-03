@@ -160,8 +160,6 @@ extern struct symbol *define_symbol (CORE_ADDR, const char *, int, int,
 
 extern void stabsread_init (void);
 
-extern void stabsread_new_init (void);
-
 extern void start_stabs (void);
 
 extern void end_stabs (void);
