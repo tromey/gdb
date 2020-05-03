@@ -297,7 +297,7 @@ static legacy_psymtab *start_psymtab (psymtab_storage *, struct objfile *,
 
 /* Free up old header file tables.  */
 
-void
+static void
 free_header_files (void)
 {
   if (this_object_header_files)
@@ -313,6 +313,7 @@ free_header_files (void)
 void
 init_header_files (void)
 {
+  free_header_files ();
   n_allocated_this_object_header_files = 10;
   this_object_header_files = XNEWVEC (int, 10);
 }
@@ -575,7 +576,6 @@ dbx_symfile_init (struct objfile *objfile)
   unsigned char size_temp[DBX_STRINGTAB_SIZE_SIZE];
 
   stabsread_init ();
-  free_header_files ();
   init_header_files ();
 
   /* Allocate struct to keep track of the symfile.  */
@@ -2923,7 +2923,6 @@ coffstab_build_psymtabs (struct objfile *objfile,
     perror_with_name (name);
 
   stabsread_init ();
-  free_header_files ();
   init_header_files ();
 
   processing_acc_compilation = 1;
@@ -3016,7 +3015,6 @@ elfstab_build_psymtabs (struct objfile *objfile, asection *stabsect,
     perror_with_name (name);
 
   stabsread_init ();
-  free_header_files ();
   init_header_files ();
 
   processing_acc_compilation = 1;
@@ -3115,7 +3113,6 @@ stabsect_build_psymtabs (struct objfile *objfile, char *stab_name,
     perror_with_name (name);
 
   stabsread_init ();
-  free_header_files ();
   init_header_files ();
 
   /* Now, do an incremental load.  */
