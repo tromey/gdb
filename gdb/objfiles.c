@@ -733,7 +733,6 @@ objfile_relocate1 (struct objfile *objfile,
   get_objfile_pspace_data (objfile->pspace)->section_map_dirty = 1;
 
   /* Update the table in exec_ops, used to read memory.  */
-  struct obj_section *s;
   ALL_OBJFILE_OSECTIONS (objfile, s)
     {
       int idx = s - objfile->sections;
@@ -971,8 +970,6 @@ sort_cmp (const struct obj_section *sect1, const obj_section *sect2)
 	     second case shouldn't occur during normal use, but std::sort
 	     does check that '!(a < a)' when compiled in debug mode.  */
 
-	  const struct obj_section *osect;
-
 	  ALL_OBJFILE_OSECTIONS (objfile1, osect)
 	    if (osect == sect2)
 	      return false;
@@ -1160,7 +1157,7 @@ update_section_map (struct program_space *pspace,
 {
   struct objfile_pspace_info *pspace_info;
   int alloc_size, map_size, i;
-  struct obj_section *s, **map;
+  struct obj_section **map;
 
   pspace_info = get_objfile_pspace_data (pspace);
   gdb_assert (pspace_info->section_map_dirty != 0
@@ -1309,8 +1306,6 @@ inhibit_section_map_updates (struct program_space *pspace)
 int
 is_addr_in_objfile (CORE_ADDR addr, const struct objfile *objfile)
 {
-  struct obj_section *osect;
-
   if (objfile == NULL)
     return 0;
 

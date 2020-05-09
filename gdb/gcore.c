@@ -410,7 +410,6 @@ gcore_create_callback (CORE_ADDR vaddr, unsigned long size, int read,
     {
       /* See if this region of memory lies inside a known file on disk.
 	 If so, we can avoid copying its contents by clearing SEC_LOAD.  */
-      struct obj_section *objsec;
 
       for (objfile *objfile : current_program_space->objfiles ())
 	ALL_OBJFILE_OSECTIONS (objfile, objsec)
@@ -474,7 +473,6 @@ objfile_find_memory_regions (struct target_ops *self,
 			     find_memory_region_ftype func, void *obfd)
 {
   /* Use objfile data to create memory sections.  */
-  struct obj_section *objsec;
   bfd_vma temp_bottom, temp_top;
 
   /* Call callback function for each objfile section.  */

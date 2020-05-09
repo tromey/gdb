@@ -611,7 +611,6 @@ void
 add_target_sections_of_objfile (struct objfile *objfile)
 {
   std::vector<struct target_section> *table = current_target_sections;
-  struct obj_section *osect;
   unsigned count = 0;
 
   if (objfile == NULL)

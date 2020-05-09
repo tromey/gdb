@@ -924,7 +924,7 @@ static CORE_ADDR
 hppa64_convert_code_addr_to_fptr (struct gdbarch *gdbarch, CORE_ADDR code)
 {
   enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
-  struct obj_section *sec, *opd;
+  struct obj_section *sec, *opd = nullptr;
 
   sec = find_pc_section (code);
 
@@ -935,13 +935,16 @@ hppa64_convert_code_addr_to_fptr (struct gdbarch *gdbarch, CORE_ADDR code)
   if (!(sec->the_bfd_section->flags & SEC_CODE))
     return code;
 
-  ALL_OBJFILE_OSECTIONS (sec->objfile, opd)
+  ALL_OBJFILE_OSECTIONS (sec->objfile, iter)
     {
-      if (strcmp (opd->the_bfd_section->name, ".opd") == 0)
-	break;
+      if (strcmp (iter->the_bfd_section->name, ".opd") == 0)
+	{
+	  opd = iter;
+	  break;
+	}
     }
 
-  if (opd < sec->objfile->sections_end)
+  if (opd != nullptr)
     {
       CORE_ADDR addr;
 

@@ -505,10 +505,13 @@ maintenance_translate_address (const char *arg, int from_tty)
       p = skip_spaces (p + 1);
 
       for (objfile *objfile : current_program_space->objfiles ())
-	ALL_OBJFILE_OSECTIONS (objfile, sect)
+	ALL_OBJFILE_OSECTIONS (objfile, iter)
 	  {
-	    if (strncmp (sect->the_bfd_section->name, arg, arg_len) == 0)
-	      goto found;
+	    if (strncmp (iter->the_bfd_section->name, arg, arg_len) == 0)
+	      {
+		sect = iter;
+		goto found;
+	      }
 	  }
 
       error (_("Unknown section %s."), arg);

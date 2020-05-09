@@ -546,19 +546,22 @@ xstormy16_find_jmp_table_entry (struct gdbarch *gdbarch, CORE_ADDR faddr)
 
   if (faddr_sect)
     {
-      struct obj_section *osect;
+      struct obj_section *osect = nullptr;
 
       /* Return faddr if it's already a pointer to a jump table entry.  */
       if (!strcmp (faddr_sect->the_bfd_section->name, ".plt"))
 	return faddr;
 
-      ALL_OBJFILE_OSECTIONS (faddr_sect->objfile, osect)
+      ALL_OBJFILE_OSECTIONS (faddr_sect->objfile, iter)
       {
-	if (!strcmp (osect->the_bfd_section->name, ".plt"))
-	  break;
+	if (!strcmp (iter->the_bfd_section->name, ".plt"))
+	  {
+	    osect = iter;
+	    break;
+	  }
       }
 
-      if (osect < faddr_sect->objfile->sections_end)
+      if (osect != nullptr)
 	{
 	  CORE_ADDR addr, endaddr;
 

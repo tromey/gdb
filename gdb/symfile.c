@@ -843,7 +843,6 @@ init_entry_point_info (struct objfile *objfile)
 
   if (ei->entry_point_p)
     {
-      struct obj_section *osect;
       CORE_ADDR entry_point =  ei->entry_point;
       int found;
 
@@ -2963,8 +2962,6 @@ section_is_overlay (struct obj_section *section)
 static void
 overlay_invalidate_all (void)
 {
-  struct obj_section *sect;
-
   for (objfile *objfile : current_program_space->objfiles ())
     ALL_OBJFILE_OSECTIONS (objfile, sect)
       if (section_is_overlay (sect))
@@ -3138,7 +3135,7 @@ symbol_overlayed_address (CORE_ADDR address, struct obj_section *section)
 struct obj_section *
 find_pc_overlay (CORE_ADDR pc)
 {
-  struct obj_section *osect, *best_match = NULL;
+  struct obj_section *best_match = NULL;
 
   if (overlay_debugging)
     {
@@ -3167,8 +3164,6 @@ find_pc_overlay (CORE_ADDR pc)
 struct obj_section *
 find_pc_mapped_section (CORE_ADDR pc)
 {
-  struct obj_section *osect;
-
   if (overlay_debugging)
     {
       for (objfile *objfile : current_program_space->objfiles ())
@@ -3187,7 +3182,6 @@ static void
 list_overlays_command (const char *args, int from_tty)
 {
   int nmapped = 0;
-  struct obj_section *osect;
 
   if (overlay_debugging)
     {
@@ -3228,8 +3222,6 @@ list_overlays_command (const char *args, int from_tty)
 static void
 map_overlay_command (const char *args, int from_tty)
 {
-  struct obj_section *sec, *sec2;
-
   if (!overlay_debugging)
     error (_("Overlay debugging not enabled.  Use "
 	     "either the 'overlay auto' or\n"
@@ -3274,8 +3266,6 @@ map_overlay_command (const char *args, int from_tty)
 static void
 unmap_overlay_command (const char *args, int from_tty)
 {
-  struct obj_section *sec = NULL;
-
   if (!overlay_debugging)
     error (_("Overlay debugging not enabled.  "
 	     "Use either the 'overlay auto' or\n"
@@ -3546,17 +3536,17 @@ simple_overlay_update (struct obj_section *osect)
 
   /* Now may as well update all sections, even if only one was requested.  */
   for (objfile *objfile : current_program_space->objfiles ())
-    ALL_OBJFILE_OSECTIONS (objfile, osect)
-      if (section_is_overlay (osect))
+    ALL_OBJFILE_OSECTIONS (objfile, iter)
+      if (section_is_overlay (iter))
 	{
 	  int i;
-	  asection *bsect = osect->the_bfd_section;
+	  asection *bsect = iter->the_bfd_section;
 
 	  for (i = 0; i < cache_novlys; i++)
 	    if (cache_ovly_table[i][VMA] == bfd_section_vma (bsect)
 		&& cache_ovly_table[i][LMA] == bfd_section_lma (bsect))
 	      { /* obj_section matches i'th entry in ovly_table.  */
-		osect->ovly_mapped = cache_ovly_table[i][MAPPED];
+		iter->ovly_mapped = cache_ovly_table[i][MAPPED];
 		break;		/* finished with inner for loop: break out.  */
 	      }
 	}

@@ -652,8 +652,6 @@ solib_aix_bfd_open (const char *pathname)
 static struct obj_section *
 data_obj_section_from_objfile (struct objfile *objfile)
 {
-  struct obj_section *osect;
-
   ALL_OBJFILE_OSECTIONS (objfile, osect)
     if (strcmp (bfd_section_name (osect->the_bfd_section), ".data") == 0)
       return osect;

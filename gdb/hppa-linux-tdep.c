@@ -361,15 +361,18 @@ hppa_linux_find_global_pointer (struct gdbarch *gdbarch,
   faddr_sect = find_pc_section (faddr);
   if (faddr_sect != NULL)
     {
-      struct obj_section *osect;
+      struct obj_section *osect = nullptr;
 
-      ALL_OBJFILE_OSECTIONS (faddr_sect->objfile, osect)
+      ALL_OBJFILE_OSECTIONS (faddr_sect->objfile, iter)
 	{
-	  if (strcmp (osect->the_bfd_section->name, ".dynamic") == 0)
-	    break;
+	  if (strcmp (iter->the_bfd_section->name, ".dynamic") == 0)
+	    {
+	      osect = iter;
+	      break;
+	    }
 	}
 
-      if (osect < faddr_sect->objfile->sections_end)
+      if (osect != nullptr)
 	{
 	  CORE_ADDR addr, endaddr;
 

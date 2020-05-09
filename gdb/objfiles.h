@@ -155,12 +155,14 @@ struct obj_section
    + bfd_section_size ((s)->the_bfd_section)				\
    + obj_section_offset (s))
 
-#define ALL_OBJFILE_OSECTIONS(objfile, osect)	\
-  for (osect = objfile->sections; osect < objfile->sections_end; osect++) \
-    if (osect->the_bfd_section == NULL)					\
-      {									\
-	/* Nothing.  */							\
-      }									\
+#define ALL_OBJFILE_OSECTIONS(objfile, osect)		\
+  for (struct obj_section *osect = objfile->sections;	\
+       osect < objfile->sections_end;			\
+       osect++)						\
+    if (osect->the_bfd_section == NULL)			\
+      {							\
+	/* Nothing.  */					\
+      }							\
     else
 
 #define SECT_OFF_DATA(objfile) \

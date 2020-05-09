@@ -902,7 +902,6 @@ dsbt_relocate_main_executable (void)
 {
   struct int_elf32_dsbt_loadmap *ldm;
   int changed;
-  struct obj_section *osect;
   struct dsbt_info *info = get_dsbt_info ();
 
   dsbt_get_initial_loadmaps ();

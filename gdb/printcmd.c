@@ -1316,7 +1316,6 @@ static void
 info_symbol_command (const char *arg, int from_tty)
 {
   struct minimal_symbol *msymbol;
-  struct obj_section *osect;
   CORE_ADDR addr, sect_addr;
   int matches = 0;
   unsigned int offset;

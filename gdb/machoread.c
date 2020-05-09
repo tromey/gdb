@@ -903,7 +903,6 @@ macho_symfile_offsets (struct objfile *objfile,
                        const section_addr_info &addrs)
 {
   unsigned int i;
-  struct obj_section *osect;
 
   /* Allocate section_offsets.  */
   objfile->section_offsets.assign (bfd_count_sections (objfile->obfd), 0);

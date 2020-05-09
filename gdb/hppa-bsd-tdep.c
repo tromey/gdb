@@ -54,15 +54,18 @@ hppabsd_find_global_pointer (struct gdbarch *gdbarch, struct value *function)
   faddr_sec = find_pc_section (faddr);
   if (faddr_sec != NULL)
     {
-      struct obj_section *sec;
+      struct obj_section *sec = nullptr;
 
-      ALL_OBJFILE_OSECTIONS (faddr_sec->objfile, sec)
+      ALL_OBJFILE_OSECTIONS (faddr_sec->objfile, iter)
 	{
-	  if (strcmp (sec->the_bfd_section->name, ".dynamic") == 0)
-	    break;
+	  if (strcmp (iter->the_bfd_section->name, ".dynamic") == 0)
+	    {
+	      sec = iter;
+	      break;
+	    }
 	}
 
-      if (sec < faddr_sec->objfile->sections_end)
+      if (sec != nullptr)
 	{
 	  CORE_ADDR addr = obj_section_addr (sec);
 	  CORE_ADDR endaddr = obj_section_endaddr (sec);

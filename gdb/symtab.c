@@ -1682,7 +1682,6 @@ fixup_section (struct general_symbol_info *ginfo,
 	 this reason, we still attempt a lookup by name prior to doing
 	 a search of the section table.  */
 
-      struct obj_section *s;
       int fallback = -1;
 
       ALL_OBJFILE_OSECTIONS (objfile, s)
