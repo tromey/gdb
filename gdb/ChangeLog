@@ -1,5 +1,14 @@
 2020-05-09  Tom Tromey  <tom@tromey.com>
 
+	* symfile.c (section_is_overlay, pc_in_unmapped_range)
+	(pc_in_mapped_range, sections_overlap, overlay_unmapped_address)
+	(overlay_mapped_address): Make parameter const.
+	* symfile.h (section_is_overlay, pc_in_mapped_range)
+	(pc_in_unmapped_range, overlay_mapped_address)
+	(overlay_unmapped_address): Make parameter const.
+
+2020-05-09  Tom Tromey  <tom@tromey.com>
+
 	* symtab.c (fixup_section): Update.
 	* solib-aix.c (data_obj_section_from_objfile): Update.
 	* ia64-tdep.c (ia64_find_global_pointer_from_dynamic_section)

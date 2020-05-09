@@ -2942,7 +2942,7 @@ int overlay_cache_invalid = 0;	/* True if need to refresh mapped state.  */
    SECTION is loaded at an address different from where it will "run".  */
 
 int
-section_is_overlay (struct obj_section *section)
+section_is_overlay (const struct obj_section *section)
 {
   if (overlay_debugging && section)
     {
@@ -3014,7 +3014,7 @@ section_is_mapped (struct obj_section *osect)
    If PC falls into the lma range of SECTION, return true, else false.  */
 
 CORE_ADDR
-pc_in_unmapped_range (CORE_ADDR pc, struct obj_section *section)
+pc_in_unmapped_range (CORE_ADDR pc, const struct obj_section *section)
 {
   if (section_is_overlay (section))
     {
@@ -3036,7 +3036,7 @@ pc_in_unmapped_range (CORE_ADDR pc, struct obj_section *section)
    If PC falls into the vma range of SECTION, return true, else false.  */
 
 CORE_ADDR
-pc_in_mapped_range (CORE_ADDR pc, struct obj_section *section)
+pc_in_mapped_range (CORE_ADDR pc, const struct obj_section *section)
 {
   if (section_is_overlay (section))
     {
@@ -3052,7 +3052,7 @@ pc_in_mapped_range (CORE_ADDR pc, struct obj_section *section)
    otherwise.  */
 
 static int
-sections_overlap (struct obj_section *a, struct obj_section *b)
+sections_overlap (const struct obj_section *a, const struct obj_section *b)
 {
   CORE_ADDR a_start = obj_section_addr (a);
   CORE_ADDR a_end = obj_section_endaddr (a);
@@ -3067,7 +3067,7 @@ sections_overlap (struct obj_section *a, struct obj_section *b)
    May be the same as PC.  */
 
 CORE_ADDR
-overlay_unmapped_address (CORE_ADDR pc, struct obj_section *section)
+overlay_unmapped_address (CORE_ADDR pc, const struct obj_section *section)
 {
   if (section_is_overlay (section) && pc_in_mapped_range (pc, section))
     {
@@ -3085,7 +3085,7 @@ overlay_unmapped_address (CORE_ADDR pc, struct obj_section *section)
    May be the same as PC.  */
 
 CORE_ADDR
-overlay_mapped_address (CORE_ADDR pc, struct obj_section *section)
+overlay_mapped_address (CORE_ADDR pc, const struct obj_section *section)
 {
   if (section_is_overlay (section) && pc_in_unmapped_range (pc, section))
     {
