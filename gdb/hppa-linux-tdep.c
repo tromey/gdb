@@ -363,11 +363,11 @@ hppa_linux_find_global_pointer (struct gdbarch *gdbarch,
     {
       struct obj_section *osect = nullptr;
 
-      ALL_OBJFILE_OSECTIONS (faddr_sect->objfile, iter)
+      for (obj_section &iter : faddr_sect->objfile->sections)
 	{
-	  if (strcmp (iter->the_bfd_section->name, ".dynamic") == 0)
+	  if (strcmp (iter.the_bfd_section->name, ".dynamic") == 0)
 	    {
-	      osect = iter;
+	      osect = &iter;
 	      break;
 	    }
 	}

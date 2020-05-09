@@ -728,12 +728,12 @@ objfile_relocate1 (struct objfile *objfile,
   get_objfile_pspace_data (objfile->pspace)->section_map_dirty = 1;
 
   /* Update the table in exec_ops, used to read memory.  */
-  ALL_OBJFILE_OSECTIONS (objfile, s)
+  for (obj_section &s : objfile->sections)
     {
-      int idx = s - objfile->sections.data ();
+      int idx = &s - objfile->sections.data ();
 
       exec_set_section_address (bfd_get_filename (objfile->obfd), idx,
-				obj_section_addr (s));
+				obj_section_addr (&s));
     }
 
   /* Data changed.  */
@@ -965,10 +965,10 @@ sort_cmp (const struct obj_section *sect1, const obj_section *sect2)
 	     second case shouldn't occur during normal use, but std::sort
 	     does check that '!(a < a)' when compiled in debug mode.  */
 
-	  ALL_OBJFILE_OSECTIONS (objfile1, osect)
-	    if (osect == sect2)
+	  for (const obj_section &osect : objfile1->sections)
+	    if (&osect == sect2)
 	      return false;
-	    else if (osect == sect1)
+	    else if (&osect == sect1)
 	      return true;
 
 	  /* We should have found one of the sections before getting here.  */
@@ -1163,8 +1163,8 @@ update_section_map (struct program_space *pspace,
 
   alloc_size = 0;
   for (objfile *objfile : pspace->objfiles ())
-    ALL_OBJFILE_OSECTIONS (objfile, s)
-      if (insert_section_p (objfile->obfd, s->the_bfd_section))
+    for (obj_section &s : objfile->sections)
+      if (insert_section_p (objfile->obfd, s.the_bfd_section))
 	alloc_size += 1;
 
   /* This happens on detach/attach (e.g. in gdb.base/attach.exp).  */
@@ -1179,9 +1179,9 @@ update_section_map (struct program_space *pspace,
 
   i = 0;
   for (objfile *objfile : pspace->objfiles ())
-    ALL_OBJFILE_OSECTIONS (objfile, s)
-      if (insert_section_p (objfile->obfd, s->the_bfd_section))
-	map[i++] = s;
+    for (obj_section &s : objfile->sections)
+      if (insert_section_p (objfile->obfd, s.the_bfd_section))
+	map[i++] = &s;
 
   std::sort (map, map + alloc_size, sort_cmp);
   map_size = filter_debuginfo_sections(map, alloc_size);
@@ -1304,13 +1304,13 @@ is_addr_in_objfile (CORE_ADDR addr, struct objfile *objfile)
   if (objfile == NULL)
     return 0;
 
-  ALL_OBJFILE_OSECTIONS (objfile, osect)
+  for (obj_section &osect : objfile->sections)
     {
-      if (section_is_overlay (osect) && !section_is_mapped (osect))
+      if (section_is_overlay (&osect) && !section_is_mapped (&osect))
 	continue;
 
-      if (obj_section_addr (osect) <= addr
-	  && addr < obj_section_endaddr (osect))
+      if (obj_section_addr (&osect) <= addr
+	  && addr < obj_section_endaddr (&osect))
 	return 1;
     }
   return 0;

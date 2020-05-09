@@ -412,13 +412,13 @@ gcore_create_callback (CORE_ADDR vaddr, unsigned long size, int read,
 	 If so, we can avoid copying its contents by clearing SEC_LOAD.  */
 
       for (objfile *objfile : current_program_space->objfiles ())
-	ALL_OBJFILE_OSECTIONS (objfile, objsec)
+	for (obj_section &objsec : objfile->sections)
 	  {
 	    bfd *abfd = objfile->obfd;
-	    asection *asec = objsec->the_bfd_section;
+	    asection *asec = objsec.the_bfd_section;
 	    bfd_vma align = (bfd_vma) 1 << bfd_section_alignment (asec);
-	    bfd_vma start = obj_section_addr (objsec) & -align;
-	    bfd_vma end = (obj_section_endaddr (objsec) + align - 1) & -align;
+	    bfd_vma start = obj_section_addr (&objsec) & -align;
+	    bfd_vma end = (obj_section_endaddr (&objsec) + align - 1) & -align;
 
 	    /* Match if either the entire memory region lies inside the
 	       section (i.e. a mapping covering some pages of a large
@@ -477,9 +477,9 @@ objfile_find_memory_regions (struct target_ops *self,
 
   /* Call callback function for each objfile section.  */
   for (objfile *objfile : current_program_space->objfiles ())
-    ALL_OBJFILE_OSECTIONS (objfile, objsec)
+    for (obj_section &objsec : objfile->sections)
       {
-	asection *isec = objsec->the_bfd_section;
+	asection *isec = objsec.the_bfd_section;
 	flagword flags = bfd_section_flags (isec);
 
 	/* Separate debug info files are irrelevant for gcore.  */
@@ -491,7 +491,7 @@ objfile_find_memory_regions (struct target_ops *self,
 	    int size = bfd_section_size (isec);
 	    int ret;
 
-	    ret = (*func) (obj_section_addr (objsec), size, 
+	    ret = (*func) (obj_section_addr (&objsec), size, 
 			   1, /* All sections will be readable.  */
 			   (flags & SEC_READONLY) == 0, /* Writable.  */
 			   (flags & SEC_CODE) != 0, /* Executable.  */

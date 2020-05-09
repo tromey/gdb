@@ -935,11 +935,11 @@ hppa64_convert_code_addr_to_fptr (struct gdbarch *gdbarch, CORE_ADDR code)
   if (!(sec->the_bfd_section->flags & SEC_CODE))
     return code;
 
-  ALL_OBJFILE_OSECTIONS (sec->objfile, iter)
+  for (obj_section &iter : sec->objfile->sections)
     {
-      if (strcmp (iter->the_bfd_section->name, ".opd") == 0)
+      if (strcmp (iter.the_bfd_section->name, ".opd") == 0)
 	{
-	  opd = iter;
+	  opd = &iter;
 	  break;
 	}
     }

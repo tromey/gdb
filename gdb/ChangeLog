@@ -1,5 +1,34 @@
 2020-05-09  Tom Tromey  <tom@tromey.com>
 
+	* symtab.c (fixup_section): Update.
+	* solib-aix.c (data_obj_section_from_objfile): Update.
+	* ia64-tdep.c (ia64_find_global_pointer_from_dynamic_section)
+	(find_extant_func_descr): Update.
+	* minsyms.c (frob_address): Update.
+	* maint.c (maintenance_translate_address): Update.
+	* machoread.c (macho_symfile_offsets): Update.
+	* printcmd.c (info_symbol_command): Update.
+	* solib-frv.c (frv_relocate_main_executable): Update
+	* hppa-linux-tdep.c (hppa_linux_find_global_pointer): Update.
+	* symfile.c (init_entry_point_info, overlay_invalidate_all)
+	(find_pc_overlay, find_pc_mapped_section, list_overlays_command)
+	(map_overlay_command, unmap_overlay_command)
+	(simple_overlay_update): Update.
+	* solib-dsbt.c (dsbt_relocate_main_executable): Update.
+	* exec.c (add_target_sections_of_objfile): Update.
+	* arm-tdep.c (arm_obj_section_from_vma): Update.
+	* hppa-bsd-tdep.c (hppabsd_find_global_pointer): Update.
+	* objfiles.c (objfile_relocate1, sort_cmp, update_section_map)
+	(is_addr_in_objfile): Update.
+	* hppa-tdep.c (hppa64_convert_code_addr_to_fptr): Update.
+	* xstormy16-tdep.c (xstormy16_find_jmp_table_entry): Update.
+	* gcore.c (gcore_create_callback, objfile_find_memory_regions):
+	Update.
+	* objfiles.h (ALL_OBJFILE_OSECTIONS): Remove.
+	(obj_section_addr, obj_section_endaddr): Add parentheses.
+
+2020-05-09  Tom Tromey  <tom@tromey.com>
+
 	* progspace.h (current_target_sections): Remove.
 	* solib-svr4.c (scan_dyntag): Don't use current_target_sections.
 	* solib-dsbt.c (scan_dyntag): Don't use current_target_sections.

@@ -918,13 +918,13 @@ macho_symfile_offsets (struct objfile *objfile,
 
   for (i = 0; i < addrs.size (); i++)
     {
-      ALL_OBJFILE_OSECTIONS (objfile, osect)
+      for (obj_section &osect : objfile->sections)
 	{
-	  const char *bfd_sect_name = osect->the_bfd_section->name;
+	  const char *bfd_sect_name = osect.the_bfd_section->name;
 
 	  if (bfd_sect_name == addrs[i].name)
 	    {
-	      obj_section_offset (osect) = addrs[i].addr;
+	      obj_section_offset (&osect) = addrs[i].addr;
 	      break;
 	    }
 	}
@@ -932,10 +932,10 @@ macho_symfile_offsets (struct objfile *objfile,
 
   objfile->sect_index_text = 0;
 
-  ALL_OBJFILE_OSECTIONS (objfile, osect)
+  for (obj_section &osect : objfile->sections)
     {
-      const char *bfd_sect_name = osect->the_bfd_section->name;
-      int sect_index = osect - objfile->sections.data ();
+      const char *bfd_sect_name = osect.the_bfd_section->name;
+      int sect_index = &osect - objfile->sections.data ();
 
       if (startswith (bfd_sect_name, "LC_SEGMENT."))
 	bfd_sect_name += 11;

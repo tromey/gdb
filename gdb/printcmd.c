@@ -1325,28 +1325,28 @@ info_symbol_command (const char *arg, int from_tty)
 
   addr = parse_and_eval_address (arg);
   for (objfile *objfile : current_program_space->objfiles ())
-    ALL_OBJFILE_OSECTIONS (objfile, osect)
+    for (obj_section &osect : objfile->sections)
       {
 	/* Only process each object file once, even if there's a separate
 	   debug file.  */
 	if (objfile->separate_debug_objfile_backlink)
 	  continue;
 
-	sect_addr = overlay_mapped_address (addr, osect);
+	sect_addr = overlay_mapped_address (addr, &osect);
 
-	if (obj_section_addr (osect) <= sect_addr
-	    && sect_addr < obj_section_endaddr (osect)
+	if (obj_section_addr (&osect) <= sect_addr
+	    && sect_addr < obj_section_endaddr (&osect)
 	    && (msymbol
 		= lookup_minimal_symbol_by_pc_section (sect_addr,
-						       osect).minsym))
+						       &osect).minsym))
 	  {
 	    const char *obj_name, *mapped, *sec_name, *msym_name;
 	    const char *loc_string;
 
 	    matches = 1;
 	    offset = sect_addr - MSYMBOL_VALUE_ADDRESS (objfile, msymbol);
-	    mapped = section_is_mapped (osect) ? _("mapped") : _("unmapped");
-	    sec_name = osect->the_bfd_section->name;
+	    mapped = section_is_mapped (&osect) ? _("mapped") : _("unmapped");
+	    sec_name = osect.the_bfd_section->name;
 	    msym_name = msymbol->print_name ();
 
 	    /* Don't print the offset if it is zero.
@@ -1360,12 +1360,12 @@ info_symbol_command (const char *arg, int from_tty)
 	    else
 	      loc_string = msym_name;
 
-	    gdb_assert (osect->objfile && objfile_name (osect->objfile));
-	    obj_name = objfile_name (osect->objfile);
+	    gdb_assert (osect.objfile && objfile_name (osect.objfile));
+	    obj_name = objfile_name (osect.objfile);
 
 	    if (current_program_space->multi_objfile_p ())
-	      if (pc_in_unmapped_range (addr, osect))
-		if (section_is_overlay (osect))
+	      if (pc_in_unmapped_range (addr, &osect))
+		if (section_is_overlay (&osect))
 		  printf_filtered (_("%s in load address range of "
 				     "%s overlay section %s of %s\n"),
 				   loc_string, mapped, sec_name, obj_name);
@@ -1374,15 +1374,15 @@ info_symbol_command (const char *arg, int from_tty)
 				     "section %s of %s\n"),
 				   loc_string, sec_name, obj_name);
 	      else
-		if (section_is_overlay (osect))
+		if (section_is_overlay (&osect))
 		  printf_filtered (_("%s in %s overlay section %s of %s\n"),
 				   loc_string, mapped, sec_name, obj_name);
 		else
 		  printf_filtered (_("%s in section %s of %s\n"),
 				   loc_string, sec_name, obj_name);
 	    else
-	      if (pc_in_unmapped_range (addr, osect))
-		if (section_is_overlay (osect))
+	      if (pc_in_unmapped_range (addr, &osect))
+		if (section_is_overlay (&osect))
 		  printf_filtered (_("%s in load address range of %s overlay "
 				     "section %s\n"),
 				   loc_string, mapped, sec_name);
@@ -1391,7 +1391,7 @@ info_symbol_command (const char *arg, int from_tty)
 		    (_("%s in load address range of section %s\n"),
 		     loc_string, sec_name);
 	      else
-		if (section_is_overlay (osect))
+		if (section_is_overlay (&osect))
 		  printf_filtered (_("%s in %s overlay section %s\n"),
 				   loc_string, mapped, sec_name);
 		else

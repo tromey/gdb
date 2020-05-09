@@ -145,20 +145,15 @@ struct obj_section
 
 /* The memory address of section S (vma + offset).  */
 #define obj_section_addr(s)				      		\
-  (bfd_section_vma (s->the_bfd_section)					\
+  (bfd_section_vma ((s)->the_bfd_section)				\
    + obj_section_offset (s))
 
 /* The one-passed-the-end memory address of section S
    (vma + size + offset).  */
 #define obj_section_endaddr(s)						\
-  (bfd_section_vma (s->the_bfd_section)					\
+  (bfd_section_vma ((s)->the_bfd_section)				\
    + bfd_section_size ((s)->the_bfd_section)				\
    + obj_section_offset (s))
-
-#define ALL_OBJFILE_OSECTIONS(objfile, osect)				\
-  for (auto *osect = objfile->sections.data ();		\
-       osect < objfile->sections.data () + objfile->sections.size ();	\
-       osect++)
 
 #define SECT_OFF_DATA(objfile) \
      ((objfile->sect_index_data == -1) \

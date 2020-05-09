@@ -552,14 +552,14 @@ xstormy16_find_jmp_table_entry (struct gdbarch *gdbarch, CORE_ADDR faddr)
       if (!strcmp (faddr_sect->the_bfd_section->name, ".plt"))
 	return faddr;
 
-      ALL_OBJFILE_OSECTIONS (faddr_sect->objfile, iter)
-      {
-	if (!strcmp (iter->the_bfd_section->name, ".plt"))
-	  {
-	    osect = iter;
-	    break;
-	  }
-      }
+      for (obj_section &iter : faddr_sect->objfile->sections)
+	{
+	  if (!strcmp (iter.the_bfd_section->name, ".plt"))
+	    {
+	      osect = &iter;
+	      break;
+	    }
+	}
 
       if (osect != nullptr)
 	{

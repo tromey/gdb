@@ -631,11 +631,11 @@ lookup_minimal_symbol_by_pc_name (CORE_ADDR pc, const char *name,
 static int
 frob_address (struct objfile *objfile, CORE_ADDR *pc)
 {
-  ALL_OBJFILE_OSECTIONS (objfile, iter)
+  for (obj_section &iter : objfile->sections)
     {
-      if (*pc >= obj_section_addr (iter) && *pc < obj_section_endaddr (iter))
+      if (*pc >= obj_section_addr (&iter) && *pc < obj_section_endaddr (&iter))
 	{
-	  *pc -= obj_section_offset (iter);
+	  *pc -= obj_section_offset (&iter);
 	  return 1;
 	}
     }
