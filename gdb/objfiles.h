@@ -158,12 +158,7 @@ struct obj_section
 #define ALL_OBJFILE_OSECTIONS(objfile, osect)				\
   for (auto *osect = objfile->sections.data ();		\
        osect < objfile->sections.data () + objfile->sections.size ();	\
-       osect++)								\
-    if (osect->the_bfd_section == NULL)					\
-      {									\
-	/* Nothing.  */							\
-      }									\
-    else
+       osect++)
 
 #define SECT_OFF_DATA(objfile) \
      ((objfile->sect_index_data == -1) \

@@ -1,5 +1,9 @@
 2020-05-09  Tom Tromey  <tom@tromey.com>
 
+	* objfiles.h (ALL_OBJFILE_OSECTIONS): Remove the "if".
+
+2020-05-09  Tom Tromey  <tom@tromey.com>
+
 	* symtab.c (fixup_section): Update.
 	* symmisc.c (dump_msymbols): Update.
 	* symfile.c (reread_symbols): Update.
