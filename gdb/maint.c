@@ -364,16 +364,11 @@ maint_obj_section_from_bfd_section (bfd *abfd,
 				    asection *asection,
 				    objfile *ofile)
 {
-  if (ofile->sections == nullptr)
+  int idx = gdb_bfd_section_index (abfd, asection);
+  if (idx < 0 || idx >= ofile->sections.size ())
     return nullptr;
 
-  obj_section *osect
-    = &ofile->sections[gdb_bfd_section_index (abfd, asection)];
-
-  if (osect >= ofile->sections_end)
-    return nullptr;
-
-  return osect;
+  return &ofile->sections[idx];
 }
 
 /* Print information about ASECT from ABFD.  DATUM holds a pointer to a
@@ -388,7 +383,7 @@ print_bfd_section_info_maybe_relocated (bfd *abfd,
   maint_print_section_data *print_data = (maint_print_section_data *) datum;
   objfile *objfile = print_data->objfile;
 
-  gdb_assert (objfile->sections != NULL);
+  gdb_assert (!objfile->sections.empty ());
   obj_section *osect
     = maint_obj_section_from_bfd_section (abfd, asect, objfile);
 

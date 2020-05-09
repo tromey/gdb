@@ -2542,7 +2542,7 @@ reread_symbols (void)
 	  /* NB: after this call to obstack_free, objfiles_changed
 	     will need to be called (see discussion below).  */
 	  obstack_free (&objfile->objfile_obstack, 0);
-	  objfile->sections = NULL;
+	  objfile->sections.clear ();
 	  objfile->compunit_symtabs = NULL;
 	  objfile->template_symbols = NULL;
 	  objfile->static_links.reset (nullptr);

@@ -155,14 +155,14 @@ struct obj_section
    + bfd_section_size ((s)->the_bfd_section)				\
    + obj_section_offset (s))
 
-#define ALL_OBJFILE_OSECTIONS(objfile, osect)		\
-  for (struct obj_section *osect = objfile->sections;	\
-       osect < objfile->sections_end;			\
-       osect++)						\
-    if (osect->the_bfd_section == NULL)			\
-      {							\
-	/* Nothing.  */					\
-      }							\
+#define ALL_OBJFILE_OSECTIONS(objfile, osect)				\
+  for (auto *osect = objfile->sections.data ();		\
+       osect < objfile->sections.data () + objfile->sections.size ();	\
+       osect++)								\
+    if (osect->the_bfd_section == NULL)					\
+      {									\
+	/* Nothing.  */							\
+      }									\
     else
 
 #define SECT_OFF_DATA(objfile) \
@@ -642,17 +642,12 @@ public:
   int sect_index_bss = -1;
   int sect_index_rodata = -1;
 
-  /* These pointers are used to locate the section table, which
-     among other things, is used to map pc addresses into sections.
-     SECTIONS points to the first entry in the table, and
-     SECTIONS_END points to the first location past the last entry
-     in the table.  The table is stored on the objfile_obstack.  The
-     sections are indexed by the BFD section index; but the
-     structure data is only valid for certain sections
-     (e.g. non-empty, SEC_ALLOC).  */
+  /* The section table, which among other things, is used to map pc
+     addresses into sections.  The sections are indexed by the BFD
+     section index; but the structure data is only valid for certain
+     sections (e.g. non-empty, SEC_ALLOC).  */
 
-  struct obj_section *sections = nullptr;
-  struct obj_section *sections_end = nullptr;
+  std::vector<struct obj_section> sections;
 
   /* GDB allows to have debug symbols in separate object files.  This is
      used by .gnu_debuglink, ELF build id note and Mach-O OSO.
@@ -743,7 +738,7 @@ extern void objfile_set_sym_fns (struct objfile *objfile,
 
 extern void objfiles_changed (void);
 
-extern int is_addr_in_objfile (CORE_ADDR addr, const struct objfile *objfile);
+extern int is_addr_in_objfile (CORE_ADDR addr, struct objfile *objfile);
 
 /* Return true if ADDRESS maps into one of the sections of a
    OBJF_SHARED objfile of PSPACE and false otherwise.  */

@@ -793,7 +793,7 @@ frv_relocate_main_executable (void)
       int osect_idx;
       int seg;
       
-      osect_idx = osect - symfile_objfile->sections;
+      osect_idx = osect - symfile_objfile->sections.data ();
 
       /* Current address of section.  */
       addr = obj_section_addr (osect);

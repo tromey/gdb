@@ -1,5 +1,23 @@
 2020-05-09  Tom Tromey  <tom@tromey.com>
 
+	* symtab.c (fixup_section): Update.
+	* symmisc.c (dump_msymbols): Update.
+	* symfile.c (reread_symbols): Update.
+	* solib-frv.c (frv_relocate_main_executable): Update.
+	* solib-dsbt.c (dsbt_relocate_main_executable): Update.
+	* maint.c (maint_obj_section_from_bfd_section)
+	(print_bfd_section_info_maybe_relocated): Update.
+	* machoread.c (macho_symfile_offsets): Update.
+	* objfiles.h (ALL_OBJFILE_OSECTIONS): Rewrite iteration.
+	(struct objfile) <sections>: Now a std::vector.
+	<sections_end>: Remove.
+	(is_addr_in_objfile): Remove "const".
+	* objfiles.c (add_to_objfile_sections_full): Update comment.
+	(build_objfile_section_table): Update.
+	(is_addr_in_objfile): Remove "const".
+
+2020-05-09  Tom Tromey  <tom@tromey.com>
+
 	* symfile.c (section_is_overlay, pc_in_unmapped_range)
 	(pc_in_mapped_range, sections_overlap, overlay_unmapped_address)
 	(overlay_mapped_address): Make parameter const.

@@ -258,9 +258,7 @@ objfile_lookup_static_link (struct objfile *objfile,
 
 
 /* Called via bfd_map_over_sections to build up the section table that
-   the objfile references.  The objfile contains pointers to the start
-   of the table (objfile->sections) and to the first location after
-   the end of the table (objfile->sections_end).  */
+   the objfile references.  */
 
 static void
 add_to_objfile_sections_full (struct bfd *abfd, struct bfd_section *asect,
@@ -300,10 +298,7 @@ build_objfile_section_table (struct objfile *objfile)
 {
   int count = gdb_bfd_count_sections (objfile->obfd);
 
-  objfile->sections = OBSTACK_CALLOC (&objfile->objfile_obstack,
-				      count,
-				      struct obj_section);
-  objfile->sections_end = (objfile->sections + count);
+  objfile->sections.resize (count);
   bfd_map_over_sections (objfile->obfd,
 			 add_to_objfile_sections, (void *) objfile);
 
@@ -735,7 +730,7 @@ objfile_relocate1 (struct objfile *objfile,
   /* Update the table in exec_ops, used to read memory.  */
   ALL_OBJFILE_OSECTIONS (objfile, s)
     {
-      int idx = s - objfile->sections;
+      int idx = s - objfile->sections.data ();
 
       exec_set_section_address (bfd_get_filename (objfile->obfd), idx,
 				obj_section_addr (s));
@@ -1304,7 +1299,7 @@ inhibit_section_map_updates (struct program_space *pspace)
    otherwise.  */
 
 int
-is_addr_in_objfile (CORE_ADDR addr, const struct objfile *objfile)
+is_addr_in_objfile (CORE_ADDR addr, struct objfile *objfile)
 {
   if (objfile == NULL)
     return 0;
