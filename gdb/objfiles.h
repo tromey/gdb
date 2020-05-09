@@ -137,23 +137,17 @@ struct obj_section
 
   /* True if this "overlay section" is mapped into an "overlay region".  */
   int ovly_mapped;
+
+  /* Return the offset applied to this section.  */
+  CORE_ADDR offset () const;
+
+  /* Return the address of this section -- the VMA plus the
+     offset.  */
+  CORE_ADDR addr () const;
+
+  /* Return the address just past the end of this section.  */
+  CORE_ADDR endaddr () const;
 };
-
-/* Relocation offset applied to S.  */
-#define obj_section_offset(s)						\
-  (((s)->objfile->section_offsets)[gdb_bfd_section_index ((s)->objfile->obfd, (s)->the_bfd_section)])
-
-/* The memory address of section S (vma + offset).  */
-#define obj_section_addr(s)				      		\
-  (bfd_section_vma (s->the_bfd_section)					\
-   + obj_section_offset (s))
-
-/* The one-passed-the-end memory address of section S
-   (vma + size + offset).  */
-#define obj_section_endaddr(s)						\
-  (bfd_section_vma (s->the_bfd_section)					\
-   + bfd_section_size ((s)->the_bfd_section)				\
-   + obj_section_offset (s))
 
 #define ALL_OBJFILE_OSECTIONS(objfile, osect)				\
   for (auto *osect = objfile->sections.data ();		\
@@ -827,5 +821,24 @@ extern void objfile_register_static_link
 
 extern const struct dynamic_prop *objfile_lookup_static_link
   (struct objfile *objfile, const struct block *block);
+
+inline CORE_ADDR
+obj_section::offset () const
+{
+  return objfile->section_offsets[gdb_bfd_section_index (objfile->obfd,
+							 the_bfd_section)];
+}
+
+inline CORE_ADDR
+obj_section::addr () const
+{
+  return bfd_section_vma (the_bfd_section) + offset ();
+}
+
+inline CORE_ADDR
+obj_section::endaddr () const
+{
+  return addr () + bfd_section_size (the_bfd_section);
+}
 
 #endif /* !defined (OBJFILES_H) */

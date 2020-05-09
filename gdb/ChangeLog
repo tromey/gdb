@@ -1,5 +1,39 @@
 2020-05-09  Tom Tromey  <tom@tromey.com>
 
+	* symtab.c (fixup_section): Update.
+	* solib-aix.c (solib_aix_get_toc_value): Update.
+	* ia64-tdep.c (ia64_get_dyn_info_list)
+	(ia64_find_global_pointer_from_dynamic_section)
+	(find_extant_func_descr): Update.
+	* minsyms.c (minimal_symbol_upper_bound, frob_address): Update.
+	* maint.c (print_objfile_section_info): Update.
+	* hppa-linux-tdep.c (hppa_linux_find_global_pointer): Update.
+	* machoread.c (macho_symfile_offsets): Update.
+	* printcmd.c (info_symbol_command): Update.
+	* solib-frv.c (frv_relocate_main_executable): Update.
+	* symfile.c (pc_in_unmapped_range, pc_in_mapped_range)
+	(sections_overlap): Update.
+	* solib-dsbt.c (dsbt_relocate_main_executable): Update.
+	* exec.c (add_target_sections_of_objfile): Update.
+	* tui/tui-disasm.c (tui_find_backward_disassembly_start_address):
+	Update.
+	* arm-tdep.c (arm_find_mapping_symbol, arm_exidx_new_objfile)
+	(arm_find_exidx_entry): Update.
+	* hppa-bsd-tdep.c (hppabsd_find_global_pointer): Update.
+	* objfiles.c (is_addr_in_objfile, sort_cmp)
+	(filter_debuginfo_sections, filter_overlapping_sections)
+	(bsearch_cmp, preferred_obj_section): Update.
+	* hppa-tdep.c (hppa64_convert_code_addr_to_fptr): Update.
+	* tilegx-tdep.c (tilegx_skip_prologue): Update.
+	* xstormy16-tdep.c (xstormy16_find_jmp_table_entry): Update.
+	* gcore.c (gcore_create_callback, objfile_find_memory_regions):
+	Update.
+	* objfiles.h (obj_section_offset, obj_section_addr)
+	(obj_section_endaddr): Remove.
+	(struct obj_section) <offset, addr, endaddr>: New methods.
+
+2020-05-09  Tom Tromey  <tom@tromey.com>
+
 	* progspace.h (current_target_sections): Remove.
 	* solib-svr4.c (scan_dyntag): Don't use current_target_sections.
 	* solib-dsbt.c (scan_dyntag): Don't use current_target_sections.
