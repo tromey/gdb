@@ -424,7 +424,7 @@ scan_dyntag (int dyntag, bfd *abfd, CORE_ADDR *ptr)
   if (sect == NULL)
     return 0;
 
-  for (const auto &iter : *current_target_sections)
+  for (const auto &iter : current_program_space->target_sections)
     if (sect == iter.the_bfd_section)
       {
 	target_section = &iter;

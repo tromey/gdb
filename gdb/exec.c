@@ -182,7 +182,7 @@ exec_target::close ()
   for (struct program_space *ss : program_spaces)
     {
       set_current_program_space (ss);
-      current_target_sections->clear ();
+      ss->target_sections.clear ();
       exec_close ();
     }
 }
@@ -575,14 +575,15 @@ void
 add_target_sections (void *owner,
 		     const std::vector<struct target_section> &sections)
 {
-  std::vector<struct target_section> *table = current_target_sections;
+  std::vector<struct target_section> &table
+    = current_program_space->target_sections;
 
   if (!sections.empty ())
     {
       for (const auto &sect : sections)
 	{
-	  table->push_back (sect);
-	  table->back ().owner = owner;
+	  table.push_back (sect);
+	  table.back ().owner = owner;
 	}
 
       scoped_restore_current_pspace_and_thread restore_pspace_thread;
@@ -610,7 +611,8 @@ add_target_sections (void *owner,
 void
 add_target_sections_of_objfile (struct objfile *objfile)
 {
-  std::vector<struct target_section> *table = current_target_sections;
+  std::vector<struct target_section> &table
+    = current_program_space->target_sections;
   unsigned count = 0;
 
   if (objfile == NULL)
@@ -632,8 +634,8 @@ add_target_sections_of_objfile (struct objfile *objfile)
       if (bfd_section_size (osect->the_bfd_section) == 0)
 	continue;
 
-      table->emplace_back ();
-      struct target_section &ts = table->back ();
+      table.emplace_back ();
+      struct target_section &ts = table.back ();
       ts.addr = obj_section_addr (osect);
       ts.endaddr = obj_section_endaddr (osect);
       ts.the_bfd_section = osect->the_bfd_section;
@@ -647,20 +649,21 @@ add_target_sections_of_objfile (struct objfile *objfile)
 void
 remove_target_sections (void *owner)
 {
-  std::vector<struct target_section> *table = current_target_sections;
+  std::vector<struct target_section> &table
+    = current_program_space->target_sections;
 
   gdb_assert (owner != NULL);
-  table->erase (std::remove_if (table->begin (), table->end (),
-				[&] (const struct target_section &item)
-				{
-				  return item.owner == owner;
-				}),
-		table->end ());
+  table.erase (std::remove_if (table.begin (), table.end (),
+			       [&] (const struct target_section &item)
+			       {
+				 return item.owner == owner;
+			       }),
+	       table.end ());
 
   /* If we don't have any more sections to read memory from, remove
      the file_stratum target from the stack of each inferior sharing
      the program space.  */
-  if (table->empty ())
+  if (table.empty ())
     {
       scoped_restore_current_pspace_and_thread restore_pspace_thread;
       program_space *curr_pspace = current_program_space;
@@ -895,7 +898,7 @@ section_table_xfer_memory_partial
 std::vector<target_section> *
 exec_target::get_section_table ()
 {
-  return current_target_sections;
+  return &current_program_space->target_sections;
 }
 
 enum target_xfer_status
@@ -993,7 +996,7 @@ void
 exec_target::files_info ()
 {
   if (exec_bfd)
-    print_section_info (*current_target_sections, exec_bfd);
+    print_section_info (current_program_space->target_sections, exec_bfd);
   else
     puts_filtered (_("\t<no file loaded>\n"));
 }
@@ -1017,8 +1020,7 @@ set_section_command (const char *args, int from_tty)
   /* Parse out new virtual address.  */
   secaddr = parse_and_eval_address (args);
 
-  std::vector<struct target_section> *table = current_target_sections;
-  for (auto &sect : *table)
+  for (auto &sect : current_program_space->target_sections)
     {
       if (!strncmp (secname, bfd_section_name (sect.the_bfd_section), seclen)
 	  && bfd_section_name (sect.the_bfd_section)[seclen] == '\0')
@@ -1044,8 +1046,7 @@ set_section_command (const char *args, int from_tty)
 void
 exec_set_section_address (const char *filename, int index, CORE_ADDR address)
 {
-  std::vector<struct target_section> *table = current_target_sections;
-  for (auto &sect : *table)
+  for (auto &sect : current_program_space->target_sections)
     {
       if (filename_cmp (filename, sect.the_bfd_section->owner->filename) == 0
 	  && index == sect.the_bfd_section->index)
@@ -1061,7 +1062,7 @@ exec_target::has_memory ()
 {
   /* We can provide memory if we have any file/target sections to read
      from.  */
-  return !current_target_sections->empty ();
+  return !current_program_space->target_sections.empty ();
 }
 
 char *
