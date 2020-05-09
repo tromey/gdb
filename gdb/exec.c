@@ -636,8 +636,8 @@ add_target_sections_of_objfile (struct objfile *objfile)
 
       table.emplace_back ();
       struct target_section &ts = table.back ();
-      ts.addr = obj_section_addr (&osect);
-      ts.endaddr = obj_section_endaddr (&osect);
+      ts.addr = osect.addr ();
+      ts.endaddr = osect.endaddr ();
       ts.the_bfd_section = osect.the_bfd_section;
       ts.owner = (void *) objfile;
     }

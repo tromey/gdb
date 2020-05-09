@@ -348,8 +348,8 @@ print_objfile_section_info (bfd *abfd,
       print_section_index (abfd, asect->the_bfd_section,
 			   print_data->index_digits);
       maint_print_section_info (name, flags,
-				obj_section_addr (asect),
-				obj_section_endaddr (asect),
+				asect->addr (),
+				asect->endaddr (),
 				asect->the_bfd_section->filepos,
 				addr_size);
     }

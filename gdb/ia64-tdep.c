@@ -2857,7 +2857,7 @@ ia64_get_dyn_info_list (unw_addr_space_t as,
       void *buf = NULL;
 
       text_sec = objfile->sections + SECT_OFF_TEXT (objfile);
-      ip = obj_section_addr (text_sec);
+      ip = text_sec->addr ();
       ret = ia64_find_unwind_table (objfile, ip, &di, &buf);
       if (ret >= 0)
 	{
@@ -3435,8 +3435,8 @@ ia64_find_global_pointer_from_dynamic_section (struct gdbarch *gdbarch,
 	{
 	  CORE_ADDR addr, endaddr;
 
-	  addr = obj_section_addr (osect);
-	  endaddr = obj_section_endaddr (osect);
+	  addr = osect->addr ();
+	  endaddr = osect->endaddr ();
 
 	  while (addr < endaddr)
 	    {
@@ -3521,8 +3521,8 @@ find_extant_func_descr (struct gdbarch *gdbarch, CORE_ADDR faddr)
 	{
 	  CORE_ADDR addr, endaddr;
 
-	  addr = obj_section_addr (osect);
-	  endaddr = obj_section_endaddr (osect);
+	  addr = osect->addr ();
+	  endaddr = osect->endaddr ();
 
 	  while (addr < endaddr)
 	    {

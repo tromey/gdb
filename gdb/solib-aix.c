@@ -680,7 +680,7 @@ solib_aix_get_toc_value (CORE_ADDR pc)
 	     "(%s has no data section)"),
 	   core_addr_to_string (pc), objfile_name (pc_osect->objfile));
 
-  result = (obj_section_addr (data_osect)
+  result = (data_osect->addr ()
 	    + xcoff_get_toc_offset (pc_osect->objfile));
   if (solib_aix_debug)
     fprintf_unfiltered (gdb_stdlog,

@@ -1692,8 +1692,8 @@ fixup_section (struct general_symbol_info *ginfo,
 	  if (fallback == -1)
 	    fallback = idx;
 
-	  if (obj_section_addr (&s) - offset <= addr
-	      && addr < obj_section_endaddr (&s) - offset)
+	  if (s.addr () - offset <= addr
+	      && addr < s.endaddr () - offset)
 	    {
 	      ginfo->section = idx;
 	      return;
