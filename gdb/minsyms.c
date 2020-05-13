@@ -631,7 +631,7 @@ lookup_minimal_symbol_by_pc_name (CORE_ADDR pc, const char *name,
 static int
 frob_address (struct objfile *objfile, CORE_ADDR *pc)
 {
-  ALL_OBJFILE_OSECTIONS (objfile, iter)
+  for (obj_section *iter : objfile->obj_sections ())
     {
       if (*pc >= iter->addr () && *pc < iter->endaddr ())
 	{

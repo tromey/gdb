@@ -1325,7 +1325,7 @@ info_symbol_command (const char *arg, int from_tty)
 
   addr = parse_and_eval_address (arg);
   for (objfile *objfile : current_program_space->objfiles ())
-    ALL_OBJFILE_OSECTIONS (objfile, osect)
+    for (obj_section *osect : objfile->obj_sections ())
       {
 	/* Only process each object file once, even if there's a separate
 	   debug file.  */

@@ -149,16 +149,6 @@ struct obj_section
   CORE_ADDR endaddr () const;
 };
 
-#define ALL_OBJFILE_OSECTIONS(objfile, osect)				\
-  for (auto *osect = objfile->sections.data ();		\
-       osect < objfile->sections.data () + objfile->sections.size ();	\
-       osect++)								\
-    if (osect->the_bfd_section == NULL)					\
-      {									\
-	/* Nothing.  */							\
-      }									\
-    else
-
 #define SECT_OFF_DATA(objfile) \
      ((objfile->sect_index_data == -1) \
       ? (internal_error (__FILE__, __LINE__, \
@@ -252,6 +242,76 @@ struct minimal_symbol_iterator
 
 private:
   struct minimal_symbol *m_msym;
+};
+
+/* An iterator for obj_sections, that skips NULL sections and that
+   returns a pointer to the section, not a reference.  */
+
+template<typename I>
+struct obj_section_iterator
+{
+  typedef obj_section_iterator self_type;
+  typedef typename I::value_type *value_type;
+  typedef value_type &reference;
+  typedef value_type *pointer;
+  typedef std::forward_iterator_tag iterator_category;
+  typedef int difference_type;
+
+  explicit obj_section_iterator (const I &iter)
+    : m_iter (iter)
+  {
+  }
+
+  value_type operator* () const
+  {
+    return &*m_iter;
+  }
+
+  bool operator== (const self_type &other) const
+  {
+    return m_iter == other.m_iter;
+  }
+
+  bool operator!= (const self_type &other) const
+  {
+    return m_iter != other.m_iter;
+  }
+
+  self_type &operator++ ()
+  {
+    ++m_iter;
+    return *this;
+  }
+
+private:
+
+  /* The underlying iterator.  */
+  I m_iter;
+};
+
+/* An adapter that makes it simple to use obj_section_iterator.  */
+
+template<typename I>
+struct obj_section_iterator_adapter
+{
+  obj_section_iterator_adapter (V &vec)
+    : m_vec (vec)
+  {
+  }
+
+  obj_section_iterator<V> begin () const
+  {
+    return obj_section_iterator<V::iterator> (m_vec.begin ());
+  }
+
+  obj_section_iterator<V> end () const
+  {
+    return obj_section_iterator<V> (m_vec.end ());
+  }
+
+private:
+
+  V &m_vec;
 };
 
 /* Some objfile data is hung off the BFD.  This enables sharing of the
@@ -544,6 +604,21 @@ public:
   struct gdbarch *arch () const
   {
     return per_bfd->gdbarch;
+  }
+
+  typedef obj_section_iterator_adapter<std::vector<obj_section>> adapter;
+  typedef obj_section_iterator_adapter<const std::vector<obj_section>>
+    const_adapter;
+
+  /* Return an adapter for iterating over the obj_section table.  */
+  adapter obj_sections ()
+  {
+    return adapter (sections);
+  }
+
+  const_adapter obj_sections () const
+  {
+    return const_adapter (sections);
   }
 
 

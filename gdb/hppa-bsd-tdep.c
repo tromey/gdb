@@ -56,7 +56,7 @@ hppabsd_find_global_pointer (struct gdbarch *gdbarch, struct value *function)
     {
       struct obj_section *sec = nullptr;
 
-      ALL_OBJFILE_OSECTIONS (faddr_sec->objfile, iter)
+      for (obj_section *iter : faddr_sec->objfile->obj_sections ())
 	{
 	  if (strcmp (iter->the_bfd_section->name, ".dynamic") == 0)
 	    {

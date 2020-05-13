@@ -619,7 +619,7 @@ add_target_sections_of_objfile (struct objfile *objfile)
     return;
 
   /* Compute the number of sections to add.  */
-  ALL_OBJFILE_OSECTIONS (objfile, osect)
+  for (obj_section *osect : objfile->obj_sections ())
     {
       if (bfd_section_size (osect->the_bfd_section) == 0)
 	continue;
@@ -629,7 +629,7 @@ add_target_sections_of_objfile (struct objfile *objfile)
   if (count == 0)
     return;
 
-  ALL_OBJFILE_OSECTIONS (objfile, osect)
+  for (obj_section *osect : objfile->obj_sections ())
     {
       if (bfd_section_size (osect->the_bfd_section) == 0)
 	continue;

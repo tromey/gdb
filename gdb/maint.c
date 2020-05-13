@@ -500,7 +500,7 @@ maintenance_translate_address (const char *arg, int from_tty)
       p = skip_spaces (p + 1);
 
       for (objfile *objfile : current_program_space->objfiles ())
-	ALL_OBJFILE_OSECTIONS (objfile, iter)
+	for (obj_section *iter : objfile->obj_sections ())
 	  {
 	    if (strncmp (iter->the_bfd_section->name, arg, arg_len) == 0)
 	      {

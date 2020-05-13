@@ -3422,7 +3422,7 @@ ia64_find_global_pointer_from_dynamic_section (struct gdbarch *gdbarch,
     {
       struct obj_section *osect = nullptr;
 
-      ALL_OBJFILE_OSECTIONS (faddr_sect->objfile, iter)
+      for (obj_section *iter : faddr_sect->objfile->obj_sections ())
 	{
 	  if (strcmp (iter->the_bfd_section->name, ".dynamic") == 0)
 	    {
@@ -3508,7 +3508,7 @@ find_extant_func_descr (struct gdbarch *gdbarch, CORE_ADDR faddr)
   if (faddr_sect != NULL)
     {
       struct obj_section *osect = nullptr;
-      ALL_OBJFILE_OSECTIONS (faddr_sect->objfile, iter)
+      for (obj_section *iter : faddr_sect->objfile->obj_sections ())
 	{
 	  if (strcmp (iter->the_bfd_section->name, ".opd") == 0)
 	    {

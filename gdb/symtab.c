@@ -1684,7 +1684,7 @@ fixup_section (struct general_symbol_info *ginfo,
 
       int fallback = -1;
 
-      ALL_OBJFILE_OSECTIONS (objfile, s)
+      for (obj_section *s : objfile->obj_sections ())
 	{
 	  int idx = s - objfile->sections.data ();
 	  CORE_ADDR offset = objfile->section_offsets[idx];

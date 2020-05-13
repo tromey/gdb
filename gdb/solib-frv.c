@@ -787,7 +787,7 @@ frv_relocate_main_executable (void)
   section_offsets new_offsets (symfile_objfile->section_offsets.size ());
   changed = 0;
 
-  ALL_OBJFILE_OSECTIONS (symfile_objfile, osect)
+  for (obj_section *osect : symfile_objfile->obj_sections ())
     {
       CORE_ADDR orig_addr, addr, offset;
       int osect_idx;

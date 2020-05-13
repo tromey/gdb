@@ -918,7 +918,7 @@ macho_symfile_offsets (struct objfile *objfile,
 
   for (i = 0; i < addrs.size (); i++)
     {
-      ALL_OBJFILE_OSECTIONS (objfile, osect)
+      for (obj_section *osect : objfile->obj_sections ())
 	{
 	  const char *bfd_sect_name = osect->the_bfd_section->name;
 
@@ -934,7 +934,7 @@ macho_symfile_offsets (struct objfile *objfile,
 
   objfile->sect_index_text = 0;
 
-  ALL_OBJFILE_OSECTIONS (objfile, osect)
+  for (obj_section *osect : objfile->obj_sections ())
     {
       const char *bfd_sect_name = osect->the_bfd_section->name;
       int sect_index = osect - objfile->sections.data ();
