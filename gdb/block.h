@@ -90,6 +90,24 @@ struct blockranges
 
 struct block
 {
+  /* Set the start and end addresses of this block.  */
+
+  void set_addresses (CORE_ADDR start, CORE_ADDR end)
+  {
+    startaddr = start;
+    endaddr = end;
+  }
+
+  void set_start (CORE_ADDR start)
+  {
+    startaddr = start;
+  }
+
+  void set_end (CORE_ADDR end)
+  {
+    endaddr = end;
+  }
+
 
   /* Addresses in the executable code that are in this block.  */
 
@@ -139,8 +157,8 @@ struct global_block
   struct compunit_symtab *compunit_symtab;
 };
 
-#define BLOCK_START(bl)		(bl)->startaddr
-#define BLOCK_END(bl)		(bl)->endaddr
+#define BLOCK_START(bl)		((bl)->startaddr + 0)
+#define BLOCK_END(bl)		((bl)->endaddr + 0)
 #define BLOCK_FUNCTION(bl)	(bl)->function
 #define BLOCK_SUPERBLOCK(bl)	(bl)->superblock
 #define BLOCK_MULTIDICT(bl)	(bl)->multidict

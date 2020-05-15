@@ -1,3 +1,14 @@
+2020-05-15  Tom Tromey  <tom@tromey.com>
+
+	* objfiles.c (objfile_relocate1): Update.
+	* mips-tdep.c (mips_make_symbol_special): Update.
+	* mdebugread.c (parse_symbol, mdebug_expand_psymtab)
+	(sort_blocks): Update.
+	* jit.c (finalize_symtab): Update.
+	* buildsym.c (buildsym_compunit::finish_block_internal): Update.
+	* block.h (struct block) <set_addresses>: New method.
+	(BLOCK_START, BLOCK_END): Now an rvalue.
+
 2020-05-16  Simon Marchi  <simon.marchi@efficios.com>
 
 	* gdbtypes.h (TYPE_NAME): Remove.  Change all cal sites to use
