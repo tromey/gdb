@@ -1,3 +1,30 @@
+2020-05-17  Tom Tromey  <tom@tromey.com>
+
+	* alpha-mdebug-tdep.c (find_proc_desc): Update.
+	* block.c (find_block_in_blockvector): Update.
+	* block.h (BLOCK_ENTRY_PC): Update.
+	(struct block) <start, end>: New methods.
+	(BLOCK_START, BLOCK_END): Remove.
+	* blockframe.c (find_pc_partial_function): Update.
+	* buildsym.c (buildsym_compunit): Update.
+	* compile/compile-cplus-symbols.c (convert_one_symbol)
+	(gcc_cplus_symbol_address): Update.
+	* compile/compile-cplus-types.c
+	(compile_cplus_convert_struct_or_union_methods): Update.
+	* guile/scm-block.c (bkscm_print_block_smob, gdbscm_block_start)
+	(gdbscm_block_end): Update.
+	* jit.c (finalize_symtab): Update.
+	* mdebugread.c (parse_symbol, parse_procedure)
+	(block_is_less_than, sort_blocks): Update.
+	* mips-tdep.c (mips_make_symbol_special): Update.
+	* objfiles.c (objfile_relocate1): Update.
+	* psymtab.c (maintenance_check_psymtabs): Update.
+	* python/py-block.c (blpy_get_start, blpy_get_end): Update.
+	* symmisc.c (dump_symtab_1, print_symbol): Update.
+	* symtab.c (find_pc_sect_compunit_symtab, find_pc_sect_line)
+	(skip_prologue_sal): Update.
+	* varobj.c (check_scope): Update.
+
 2020-05-15  Tom Tromey  <tom@tromey.com>
 
 	* objfiles.c (objfile_relocate1): Update.

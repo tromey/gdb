@@ -2921,10 +2921,10 @@ find_pc_sect_compunit_symtab (CORE_ADDR pc, struct obj_section *section)
 	  bv = COMPUNIT_BLOCKVECTOR (cust);
 	  b = BLOCKVECTOR_BLOCK (bv, GLOBAL_BLOCK);
 
-	  if (BLOCK_START (b) <= pc
-	      && BLOCK_END (b) > pc
+	  if (b->start () <= pc
+	      && b->end () > pc
 	      && (distance == 0
-		  || BLOCK_END (b) - BLOCK_START (b) < distance))
+		  || b->end () - b->start () < distance))
 	    {
 	      /* For an objfile that has its functions reordered,
 		 find_pc_psymtab will find the proper partial symbol table
@@ -2962,7 +2962,7 @@ find_pc_sect_compunit_symtab (CORE_ADDR pc, struct obj_section *section)
 		    continue;		/* No symbol in this symtab matches
 					   section.  */
 		}
-	      distance = BLOCK_END (b) - BLOCK_START (b);
+	      distance = b->end () - b->start ();
 	      best_cust = cust;
 	    }
 	}
@@ -3315,7 +3315,7 @@ find_pc_sect_line (CORE_ADDR pc, struct obj_section *section, int notcurrent)
       else if (alt)
 	val.end = alt->pc;
       else
-	val.end = BLOCK_END (BLOCKVECTOR_BLOCK (bv, GLOBAL_BLOCK));
+	val.end = BLOCKVECTOR_BLOCK (bv, GLOBAL_BLOCK)->end ();
     }
   val.section = section;
   return val;
@@ -3836,7 +3836,7 @@ skip_prologue_sal (struct symtab_and_line *sal)
 	 line is still part of the same function.  */
       if (skip && start_sal.pc != pc
 	  && (sym ? (BLOCK_ENTRY_PC (SYMBOL_BLOCK_VALUE (sym)) <= start_sal.end
-		     && start_sal.end < BLOCK_END (SYMBOL_BLOCK_VALUE (sym)))
+		     && start_sal.end < SYMBOL_BLOCK_VALUE (sym)->end ())
 	      : (lookup_minimal_symbol_by_pc_section (start_sal.end, section).minsym
 		 == lookup_minimal_symbol_by_pc_section (pc, section).minsym)))
 	{

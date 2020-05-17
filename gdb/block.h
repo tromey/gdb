@@ -108,6 +108,17 @@ struct block
     endaddr = end;
   }
 
+  /* Accessor for the starting address.  */
+  CORE_ADDR start () const
+  {
+    return startaddr;
+  }
+
+  /* Accessor for the ending address.  */
+  CORE_ADDR end () const
+  {
+    return endaddr;
+  }
 
   /* Addresses in the executable code that are in this block.  */
 
@@ -157,8 +168,6 @@ struct global_block
   struct compunit_symtab *compunit_symtab;
 };
 
-#define BLOCK_START(bl)		((bl)->startaddr + 0)
-#define BLOCK_END(bl)		((bl)->endaddr + 0)
 #define BLOCK_FUNCTION(bl)	(bl)->function
 #define BLOCK_SUPERBLOCK(bl)	(bl)->superblock
 #define BLOCK_MULTIDICT(bl)	(bl)->multidict
@@ -204,7 +213,7 @@ struct global_block
    too).  BLOCK_ENTRY_PC can then be redefined to be less DWARF-centric.  */
 
 #define BLOCK_ENTRY_PC(bl)	(BLOCK_CONTIGUOUS_P (bl) \
-				 ? BLOCK_START (bl) \
+				 ? bl->start () \
 				 : BLOCK_RANGE_START (bl,0))
 
 struct blockvector

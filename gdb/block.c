@@ -155,7 +155,7 @@ find_block_in_blockvector (const struct blockvector *bl, CORE_ADDR pc)
     {
       half = (top - bot + 1) >> 1;
       b = BLOCKVECTOR_BLOCK (bl, bot + half);
-      if (BLOCK_START (b) <= pc)
+      if (b->start () <= pc)
 	bot += half;
       else
 	top = bot + half;
@@ -166,7 +166,7 @@ find_block_in_blockvector (const struct blockvector *bl, CORE_ADDR pc)
   while (bot >= STATIC_BLOCK)
     {
       b = BLOCKVECTOR_BLOCK (bl, bot);
-      if (BLOCK_END (b) > pc)
+      if (b->end () > pc)
 	return b;
       bot--;
     }
