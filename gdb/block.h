@@ -94,36 +94,36 @@ struct block
 
   void set_addresses (CORE_ADDR start, CORE_ADDR end)
   {
-    startaddr = start;
-    endaddr = end;
+    m_startaddr = start;
+    m_endaddr = end;
   }
 
   void set_start (CORE_ADDR start)
   {
-    startaddr = start;
+    m_startaddr = start;
   }
 
   void set_end (CORE_ADDR end)
   {
-    endaddr = end;
+    m_endaddr = end;
   }
 
   /* Accessor for the starting address.  */
   CORE_ADDR start () const
   {
-    return startaddr;
+    return m_startaddr;
   }
 
   /* Accessor for the ending address.  */
   CORE_ADDR end () const
   {
-    return endaddr;
+    return m_endaddr;
   }
 
   /* Addresses in the executable code that are in this block.  */
 
-  CORE_ADDR startaddr;
-  CORE_ADDR endaddr;
+  CORE_ADDR m_startaddr;
+  CORE_ADDR m_endaddr;
 
   /* The symbol that names this block, if the block is the body of a
      function (real or inlined); otherwise, zero.  */
@@ -149,7 +149,7 @@ struct block
 
   /* Address ranges for blocks with non-contiguous ranges.  If this
      is NULL, then there is only one range which is specified by
-     startaddr and endaddr above.  */
+     m_startaddr and m_endaddr above.  */
 
   struct blockranges *ranges;
 };

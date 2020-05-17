@@ -1,5 +1,11 @@
 2020-05-17  Tom Tromey  <tom@tromey.com>
 
+	* block.h (struct block) <m_startaddr, m_endaddr>: Rename.  Update
+	methods.
+	* csky-tdep.c (csky_frame_unwind_cache): Update.
+
+2020-05-17  Tom Tromey  <tom@tromey.com>
+
 	* alpha-mdebug-tdep.c (find_proc_desc): Update.
 	* block.c (find_block_in_blockvector): Update.
 	* block.h (BLOCK_ENTRY_PC): Update.
