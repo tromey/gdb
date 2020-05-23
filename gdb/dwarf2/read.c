@@ -19556,7 +19556,16 @@ dwarf2_attr (struct die_info *die, unsigned int name, struct dwarf2_cu *cu)
       if (!spec)
 	break;
 
-      die = follow_die_ref (die, spec, &cu);
+      if (die->ref != nullptr)
+	die = die->ref;
+      else
+	{
+	  struct dwarf2_cu *save_cu = cu;
+	  struct die_info *ref = follow_die_ref (die, spec, &cu);
+	  if (cu == save_cu)
+	    die->ref = ref;
+	  die = ref;
+	}
     }
 
   return NULL;

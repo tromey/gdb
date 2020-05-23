@@ -94,6 +94,11 @@ struct die_info
   struct die_info *sibling;	/* Its next sibling, if any.  */
   struct die_info *parent;	/* Its parent, if any.  */
 
+  /* If the DIE has a DW_AT_specification or DW_AT_abstract_origin,
+     and the referenced DIE appears in the same CU as this DIE, then
+     this caches the referenced DIE.  */
+  struct die_info *ref;
+
   /* An array of attributes, with NUM_ATTRS elements.  There may be
      zero, but it's not common and zero-sized arrays are not
      sufficiently portable C.  */
