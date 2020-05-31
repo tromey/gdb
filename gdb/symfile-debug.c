@@ -496,25 +496,6 @@ debug_sym_read_linetable (struct objfile *objfile)
   debug_data->real_sf->sym_read_linetable (objfile);
 }
 
-static bfd_byte *
-debug_sym_relocate (asection *sectp, bfd_byte *buf)
-{
-  const struct debug_sym_fns_data *debug_data
-    = symfile_debug_objfile_data_key.get (objfile);
-  bfd_byte *retval;
-
-  retval = debug_data->real_sf->sym_relocate (sectp, buf);
-
-  fprintf_filtered (gdb_stdlog,
-		    "sf->sym_relocate (%s, %s, %s) = %s\n",
-		    objfile_debug_name (objfile),
-		    host_address_to_string (sectp),
-		    host_address_to_string (buf),
-		    host_address_to_string (retval));
-
-  return retval;
-}
-
 /* Template of debugging version of struct sym_fns.
    A copy is made, with sym_flavour updated, and a pointer to the real table
    installed in real_sf, and then a pointer to the copy is installed in the
@@ -530,7 +511,7 @@ static const struct sym_fns debug_sym_fns =
   debug_sym_offsets,
   debug_sym_segments,
   debug_sym_read_linetable,
-  debug_sym_relocate,
+  nullptr,
   &debug_sym_probe_fns,
   &debug_sym_quick_functions
 };
@@ -568,7 +549,7 @@ install_symfile_debug_logging (struct objfile *objfile)
   COPY_SF_PTR (real_sf, debug_data, sym_segments, debug_sym_segments);
   COPY_SF_PTR (real_sf, debug_data, sym_read_linetable,
 	       debug_sym_read_linetable);
-  COPY_SF_PTR (real_sf, debug_data, sym_relocate, debug_sym_relocate);
+  COPY_SF_PTR (real_sf, debug_data, sym_relocate, real_sf->sym_relocate);
   if (real_sf->sym_probe_fns)
     debug_data->debug_sf.sym_probe_fns = &debug_sym_probe_fns;
   debug_data->debug_sf.qf = &debug_sym_quick_functions;
