@@ -149,7 +149,7 @@ dwarf2_section_info::read (sym_relocate_ftype *relocator)
 		   " supported in section %s [in module %s]"),
 		 get_name (), get_file_name ());
 	}
-      containing_section->read (objfile);
+      containing_section->read (relocator);
       /* Other code should have already caught virtual sections that don't
 	 fit.  */
       gdb_assert (virtual_offset + size <= containing_section->size);
@@ -175,7 +175,7 @@ dwarf2_section_info::read (sym_relocate_ftype *relocator)
      http://sourceware.org/ml/gdb-patches/2002-04/msg00136.html .
      We never compress sections in .o files, so we only need to
      try this when the section is not compressed.  */
-  retbuf = relocater (sectp, buf);
+  retbuf = relocator (sectp, buf);
   if (retbuf != NULL)
     {
       buffer = retbuf;
@@ -212,10 +212,11 @@ dwarf2_section_info::read_string (struct objfile *objfile, LONGEST str_offset,
 }
 
 void
-dwarf2_section_info::initialize (struct objfile *objfile, asection *sect)
+dwarf2_section_info::initialize (sym_relocate_ftype *relocator, asection *sect)
 {
-  if (s.section != nullptr)
+  if (readin)
     return;
   s.section = sect;
   size = bfd_section_size (sect);
+  read (relocator);
 }
