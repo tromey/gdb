@@ -3583,11 +3583,8 @@ symfile_dummy_outputs (bfd *abfd, asection *sectp, void *dummy)
 /* Default implementation for sym_relocate.  */
 
 bfd_byte *
-default_symfile_relocate (struct objfile *objfile, asection *sectp,
-                          bfd_byte *buf)
+default_symfile_relocate (asection *sectp, bfd_byte *buf)
 {
-  /* Use sectp->owner instead of objfile->obfd.  sectp may point to a
-     DWO file.  */
   bfd *abfd = sectp->owner;
 
   /* We're only interested in sections with relocation
@@ -3622,7 +3619,7 @@ symfile_relocate_debug_section (struct objfile *objfile,
 {
   gdb_assert (objfile->sf->sym_relocate);
 
-  return (*objfile->sf->sym_relocate) (objfile, sectp, buf);
+  return (*objfile->sf->sym_relocate) (sectp, buf);
 }
 
 symfile_segment_data_up

@@ -876,10 +876,9 @@ macho_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
 }
 
 static bfd_byte *
-macho_symfile_relocate (struct objfile *objfile, asection *sectp,
-                        bfd_byte *buf)
+macho_symfile_relocate (asection *sectp, bfd_byte *buf)
 {
-  bfd *abfd = objfile->obfd;
+  bfd *abfd = sectp->owner;
 
   /* We're only interested in sections with relocation
      information.  */
@@ -888,7 +887,7 @@ macho_symfile_relocate (struct objfile *objfile, asection *sectp,
 
   if (mach_o_debug_level > 0)
     printf_unfiltered (_("Relocate section '%s' of %s\n"),
-                       sectp->name, objfile_name (objfile));
+                       sectp->name, bfd_get_filename (abfd));
 
   return bfd_simple_get_relocated_section_contents (abfd, sectp, buf, NULL);
 }

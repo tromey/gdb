@@ -316,6 +316,8 @@ struct sym_probe_fns
     (struct objfile *);
 };
 
+typedef bfd_byte *sym_relocate_ftype (asection *sectp, bfd_byte *buf);
+
 /* Structure to keep track of symbol reading functions for various
    object file types.  */
 
@@ -378,7 +380,7 @@ struct sym_fns
      contents are stored in BUF if it is non-NULL, or returned in a
      malloc'd buffer otherwise.  */
 
-  bfd_byte *(*sym_relocate) (struct objfile *, asection *sectp, bfd_byte *buf);
+  sym_relocate_ftype *sym_relocate;
 
   /* If non-NULL, this objfile has probe support, and all the probe
      functions referred to here will be non-NULL.  */
@@ -412,8 +414,7 @@ extern symfile_segment_data_up default_symfile_segments (bfd *abfd);
 /* The default version of sym_fns.sym_relocate for readers that don't
    do anything special.  */
 
-extern bfd_byte *default_symfile_relocate (struct objfile *objfile,
-                                           asection *sectp, bfd_byte *buf);
+extern bfd_byte *default_symfile_relocate (asection *sectp, bfd_byte *buf);
 
 extern struct symtab *allocate_symtab (struct compunit_symtab *, const char *)
   ATTRIBUTE_NONNULL (1);
