@@ -497,7 +497,7 @@ debug_sym_read_linetable (struct objfile *objfile)
 }
 
 static bfd_byte *
-debug_sym_relocate (struct objfile *objfile, asection *sectp, bfd_byte *buf)
+debug_sym_relocate (asection *sectp, bfd_byte *buf)
 {
   const struct debug_sym_fns_data *debug_data
     = symfile_debug_objfile_data_key.get (objfile);
