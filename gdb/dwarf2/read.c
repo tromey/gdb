@@ -1758,7 +1758,8 @@ line_header_eq_voidp (const void *item_lhs, const void *item_rhs)
 
 /* See declaration.  */
 
-dwarf2_per_bfd::dwarf2_per_bfd (bfd *obfd, const dwarf2_debug_sections *names,
+dwarf2_per_bfd::dwarf2_per_bfd (struct objfile *objfile, bfd *obfd,
+				const dwarf2_debug_sections *names,
 				bool can_copy_)
   : obfd (obfd),
     can_copy (can_copy_)
@@ -1767,7 +1768,7 @@ dwarf2_per_bfd::dwarf2_per_bfd (bfd *obfd, const dwarf2_debug_sections *names,
     names = &dwarf2_elf_names;
 
   for (asection *sec = obfd->sections; sec != NULL; sec = sec->next)
-    locate_sections (obfd, sec, *names);
+    locate_sections (objfile, obfd, sec, *names);
 }
 
 dwarf2_per_bfd::~dwarf2_per_bfd ()
@@ -1881,14 +1882,16 @@ dwarf2_has_info (struct objfile *objfile,
 	  if (per_bfd == nullptr)
 	    {
 	      /* No, create it now.  */
-	      per_bfd = new dwarf2_per_bfd (objfile->obfd, names, can_copy);
+	      per_bfd = new dwarf2_per_bfd (objfile, objfile->obfd, names,
+					    can_copy);
 	      dwarf2_per_bfd_bfd_data_key.set (objfile->obfd, per_bfd);
 	    }
 	}
       else
 	{
 	  /* No sharing possible, create one specifically for this objfile.  */
-	  per_bfd = new dwarf2_per_bfd (objfile->obfd, names, can_copy);
+	  per_bfd = new dwarf2_per_bfd (objfile, objfile->obfd, names,
+					can_copy);
 	  dwarf2_per_bfd_objfile_data_key.set (objfile, per_bfd);
 	}
 
@@ -1920,7 +1923,8 @@ section_is_p (const char *section_name,
 /* See declaration.  */
 
 void
-dwarf2_per_bfd::locate_sections (bfd *abfd, asection *sectp,
+dwarf2_per_bfd::locate_sections (struct objfile *objfile, bfd *abfd,
+				 asection *sectp,
 				 const dwarf2_debug_sections &names)
 {
   flagword aflag = bfd_section_flags (sectp);
@@ -1938,105 +1942,50 @@ dwarf2_per_bfd::locate_sections (bfd *abfd, asection *sectp,
 	       bfd_get_filename (abfd));
     }
   else if (section_is_p (sectp->name, &names.info))
-    {
-      this->info.s.section = sectp;
-      this->info.size = bfd_section_size (sectp);
-    }
+    this->info.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names.abbrev))
-    {
-      this->abbrev.s.section = sectp;
-      this->abbrev.size = bfd_section_size (sectp);
-    }
+    this->abbrev.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names.line))
-    {
-      this->line.s.section = sectp;
-      this->line.size = bfd_section_size (sectp);
-    }
+    this->line.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names.loc))
-    {
-      this->loc.s.section = sectp;
-      this->loc.size = bfd_section_size (sectp);
-    }
+    this->loc.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names.loclists))
-    {
-      this->loclists.s.section = sectp;
-      this->loclists.size = bfd_section_size (sectp);
-    }
+    this->loclists.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names.macinfo))
-    {
-      this->macinfo.s.section = sectp;
-      this->macinfo.size = bfd_section_size (sectp);
-    }
+    this->macinfo.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names.macro))
-    {
-      this->macro.s.section = sectp;
-      this->macro.size = bfd_section_size (sectp);
-    }
+    this->macro.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names.str))
-    {
-      this->str.s.section = sectp;
-      this->str.size = bfd_section_size (sectp);
-    }
+    this->str.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names.str_offsets))
-    {
-      this->str_offsets.s.section = sectp;
-      this->str_offsets.size = bfd_section_size (sectp);
-    }
+    this->str_offsets.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names.line_str))
-    {
-      this->line_str.s.section = sectp;
-      this->line_str.size = bfd_section_size (sectp);
-    }
+    this->line_str.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names.addr))
-    {
-      this->addr.s.section = sectp;
-      this->addr.size = bfd_section_size (sectp);
-    }
+    this->addr.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names.frame))
-    {
-      this->frame.s.section = sectp;
-      this->frame.size = bfd_section_size (sectp);
-    }
+    this->frame.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names.eh_frame))
-    {
-      this->eh_frame.s.section = sectp;
-      this->eh_frame.size = bfd_section_size (sectp);
-    }
+    this->eh_frame.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names.ranges))
-    {
-      this->ranges.s.section = sectp;
-      this->ranges.size = bfd_section_size (sectp);
-    }
+    this->ranges.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names.rnglists))
-    {
-      this->rnglists.s.section = sectp;
-      this->rnglists.size = bfd_section_size (sectp);
-    }
+    this->rnglists.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names.types))
     {
       struct dwarf2_section_info type_section;
 
       memset (&type_section, 0, sizeof (type_section));
-      type_section.s.section = sectp;
-      type_section.size = bfd_section_size (sectp);
+      type_section.initialize (objfile, sectp);
 
       this->types.push_back (type_section);
     }
   else if (section_is_p (sectp->name, &names.gdb_index))
-    {
-      this->gdb_index.s.section = sectp;
-      this->gdb_index.size = bfd_section_size (sectp);
-    }
+    this->gdb_index.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names.debug_names))
-    {
-      this->debug_names.s.section = sectp;
-      this->debug_names.size = bfd_section_size (sectp);
-    }
+    this->debug_names.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names.debug_aranges))
-    {
-      this->debug_aranges.s.section = sectp;
-      this->debug_aranges.size = bfd_section_size (sectp);
-    }
+    this->debug_aranges.initialize (objfile, sectp);
 
   if ((bfd_section_flags (sectp) & (SEC_LOAD | SEC_ALLOC))
       && bfd_section_vma (sectp) == 0)
@@ -2086,47 +2035,26 @@ dwarf2_get_section_info (struct objfile *objfile,
 /* A helper function to find the sections for a .dwz file.  */
 
 static void
-locate_dwz_sections (bfd *abfd, asection *sectp, void *arg)
+locate_dwz_sections (struct objfile *objfile, bfd *abfd, asection *sectp,
+		     struct dwz_file *dwz_file)
 {
-  struct dwz_file *dwz_file = (struct dwz_file *) arg;
 
   /* Note that we only support the standard ELF names, because .dwz
      is ELF-only (at the time of writing).  */
   if (section_is_p (sectp->name, &dwarf2_elf_names.abbrev))
-    {
-      dwz_file->abbrev.s.section = sectp;
-      dwz_file->abbrev.size = bfd_section_size (sectp);
-    }
+    dwz_file->abbrev.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &dwarf2_elf_names.info))
-    {
-      dwz_file->info.s.section = sectp;
-      dwz_file->info.size = bfd_section_size (sectp);
-    }
+    dwz_file->info.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &dwarf2_elf_names.str))
-    {
-      dwz_file->str.s.section = sectp;
-      dwz_file->str.size = bfd_section_size (sectp);
-    }
+    dwz_file->str.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &dwarf2_elf_names.line))
-    {
-      dwz_file->line.s.section = sectp;
-      dwz_file->line.size = bfd_section_size (sectp);
-    }
+    dwz_file->line.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &dwarf2_elf_names.macro))
-    {
-      dwz_file->macro.s.section = sectp;
-      dwz_file->macro.size = bfd_section_size (sectp);
-    }
+    dwz_file->macro.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &dwarf2_elf_names.gdb_index))
-    {
-      dwz_file->gdb_index.s.section = sectp;
-      dwz_file->gdb_index.size = bfd_section_size (sectp);
-    }
+    dwz_file->gdb_index.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &dwarf2_elf_names.debug_names))
-    {
-      dwz_file->debug_names.s.section = sectp;
-      dwz_file->debug_names.size = bfd_section_size (sectp);
-    }
+    dwz_file->debug_names.initialize (objfile, sectp);
 }
 
 /* See dwarf2read.h.  */
@@ -2211,6 +2139,12 @@ dwarf2_get_dwz_file (dwarf2_per_bfd *per_bfd)
 
   std::unique_ptr<struct dwz_file> result
     (new struct dwz_file (std::move (dwz_bfd)));
+
+  for (asection *sec = result->dwz_bfd->sections; sec != NULL; sec = sec->next)
+    locate_dwz_sections (o
+
+-    locate_sections (obfd, sec, *names);
++    locate_sections (objfile, obfd, sec, *names);
 
   bfd_map_over_sections (result->dwz_bfd.get (), locate_dwz_sections,
 			 result.get ());
@@ -11748,62 +11682,20 @@ locate_v1_virtual_dwo_sections (asection *sectp,
   const struct dwop_section_names *names = &dwop_section_names;
 
   if (section_is_p (sectp->name, &names->abbrev_dwo))
-    {
-      /* There can be only one.  */
-      if (sections->abbrev.s.section != NULL)
-	return 0;
-      sections->abbrev.s.section = sectp;
-      sections->abbrev.size = bfd_section_size (sectp);
-    }
+    sections->abbrev.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names->info_dwo)
 	   || section_is_p (sectp->name, &names->types_dwo))
-    {
-      /* There can be only one.  */
-      if (sections->info_or_types.s.section != NULL)
-	return 0;
-      sections->info_or_types.s.section = sectp;
-      sections->info_or_types.size = bfd_section_size (sectp);
-    }
+    sections->info_or_types.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names->line_dwo))
-    {
-      /* There can be only one.  */
-      if (sections->line.s.section != NULL)
-	return 0;
-      sections->line.s.section = sectp;
-      sections->line.size = bfd_section_size (sectp);
-    }
+    sections->line.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names->loc_dwo))
-    {
-      /* There can be only one.  */
-      if (sections->loc.s.section != NULL)
-	return 0;
-      sections->loc.s.section = sectp;
-      sections->loc.size = bfd_section_size (sectp);
-    }
+    sections->loc.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names->macinfo_dwo))
-    {
-      /* There can be only one.  */
-      if (sections->macinfo.s.section != NULL)
-	return 0;
-      sections->macinfo.s.section = sectp;
-      sections->macinfo.size = bfd_section_size (sectp);
-    }
+    sections->macinfo.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names->macro_dwo))
-    {
-      /* There can be only one.  */
-      if (sections->macro.s.section != NULL)
-	return 0;
-      sections->macro.s.section = sectp;
-      sections->macro.size = bfd_section_size (sectp);
-    }
+    sections->macro.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names->str_offsets_dwo))
-    {
-      /* There can be only one.  */
-      if (sections->str_offsets.s.section != NULL)
-	return 0;
-      sections->str_offsets.s.section = sectp;
-      sections->str_offsets.size = bfd_section_size (sectp);
-    }
+    sections->str_offsets.initialize (objfile, sectp);
   else
     {
       /* No other kind of section is valid.  */
@@ -12363,57 +12255,29 @@ dwarf2_locate_dwo_sections (bfd *abfd, asection *sectp, void *dwo_sections_ptr)
   const struct dwop_section_names *names = &dwop_section_names;
 
   if (section_is_p (sectp->name, &names->abbrev_dwo))
-    {
-      dwo_sections->abbrev.s.section = sectp;
-      dwo_sections->abbrev.size = bfd_section_size (sectp);
-    }
+    dwo_sections->abbrev.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names->info_dwo))
-    {
-      dwo_sections->info.s.section = sectp;
-      dwo_sections->info.size = bfd_section_size (sectp);
-    }
+    dwo_sections->info.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names->line_dwo))
-    {
-      dwo_sections->line.s.section = sectp;
-      dwo_sections->line.size = bfd_section_size (sectp);
-    }
+    dwo_sections->line.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names->loc_dwo))
-    {
-      dwo_sections->loc.s.section = sectp;
-      dwo_sections->loc.size = bfd_section_size (sectp);
-    }
+    dwo_sections->loc.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names->loclists_dwo))
-    {
-      dwo_sections->loclists.s.section = sectp;
-      dwo_sections->loclists.size = bfd_section_size (sectp);
-    }
+    dwo_sections->loclists.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names->macinfo_dwo))
-    {
-      dwo_sections->macinfo.s.section = sectp;
-      dwo_sections->macinfo.size = bfd_section_size (sectp);
-    }
+    dwo_sections->macinfo.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names->macro_dwo))
-    {
-      dwo_sections->macro.s.section = sectp;
-      dwo_sections->macro.size = bfd_section_size (sectp);
-    }
+    dwo_sections->macro.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names->str_dwo))
-    {
-      dwo_sections->str.s.section = sectp;
-      dwo_sections->str.size = bfd_section_size (sectp);
-    }
+    dwo_sections->str.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names->str_offsets_dwo))
-    {
-      dwo_sections->str_offsets.s.section = sectp;
-      dwo_sections->str_offsets.size = bfd_section_size (sectp);
-    }
+    dwo_sections->str_offsets.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names->types_dwo))
     {
       struct dwarf2_section_info type_section;
 
       memset (&type_section, 0, sizeof (type_section));
-      type_section.s.section = sectp;
-      type_section.size = bfd_section_size (sectp);
+      type_section.initialize (objfile, sectp);
       dwo_sections->types.push_back (type_section);
     }
 }
@@ -12475,20 +12339,11 @@ dwarf2_locate_common_dwp_sections (bfd *abfd, asection *sectp,
 
   /* Look for specific sections that we need.  */
   if (section_is_p (sectp->name, &names->str_dwo))
-    {
-      dwp_file->sections.str.s.section = sectp;
-      dwp_file->sections.str.size = bfd_section_size (sectp);
-    }
+    dwp_file->sections.str.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names->cu_index))
-    {
-      dwp_file->sections.cu_index.s.section = sectp;
-      dwp_file->sections.cu_index.size = bfd_section_size (sectp);
-    }
+    dwp_file->sections.cu_index.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names->tu_index))
-    {
-      dwp_file->sections.tu_index.s.section = sectp;
-      dwp_file->sections.tu_index.size = bfd_section_size (sectp);
-    }
+    dwp_file->sections.tu_index.initialize (objfile, sectp);
 }
 
 /* This function is mapped across the sections and remembers the offset and
@@ -12510,45 +12365,21 @@ dwarf2_locate_v2_dwp_sections (bfd *abfd, asection *sectp, void *dwp_file_ptr)
 
   /* Look for specific sections that we need.  */
   if (section_is_p (sectp->name, &names->abbrev_dwo))
-    {
-      dwp_file->sections.abbrev.s.section = sectp;
-      dwp_file->sections.abbrev.size = bfd_section_size (sectp);
-    }
+    dwp_file->sections.abbrev.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names->info_dwo))
-    {
-      dwp_file->sections.info.s.section = sectp;
-      dwp_file->sections.info.size = bfd_section_size (sectp);
-    }
+    dwp_file->sections.info.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names->line_dwo))
-    {
-      dwp_file->sections.line.s.section = sectp;
-      dwp_file->sections.line.size = bfd_section_size (sectp);
-    }
+    dwp_file->sections.line.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names->loc_dwo))
-    {
-      dwp_file->sections.loc.s.section = sectp;
-      dwp_file->sections.loc.size = bfd_section_size (sectp);
-    }
+    dwp_file->sections.loc.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names->macinfo_dwo))
-    {
-      dwp_file->sections.macinfo.s.section = sectp;
-      dwp_file->sections.macinfo.size = bfd_section_size (sectp);
-    }
+    dwp_file->sections.macinfo.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names->macro_dwo))
-    {
-      dwp_file->sections.macro.s.section = sectp;
-      dwp_file->sections.macro.size = bfd_section_size (sectp);
-    }
+    dwp_file->sections.macro.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names->str_offsets_dwo))
-    {
-      dwp_file->sections.str_offsets.s.section = sectp;
-      dwp_file->sections.str_offsets.size = bfd_section_size (sectp);
-    }
+    dwp_file->sections.str_offsets.initialize (objfile, sectp);
   else if (section_is_p (sectp->name, &names->types_dwo))
-    {
-      dwp_file->sections.types.s.section = sectp;
-      dwp_file->sections.types.size = bfd_section_size (sectp);
-    }
+    dwp_file->sections.types.initialize (objfile, sectp);
 }
 
 /* Hash function for dwp_file loaded CUs/TUs.  */

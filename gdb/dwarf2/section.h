@@ -83,6 +83,8 @@ struct dwarf2_section_info
 
   void read (sym_relocate_ftype *relocator);
 
+  void initialize (struct objfile *objfile, asection *sect);
+
   /* A helper function that returns the size of a section in a safe way.
      If you are positive that the section has been read before using the
      size, then it is safe to refer to the dwarf2_section_info object's

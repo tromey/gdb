@@ -210,3 +210,12 @@ dwarf2_section_info::read_string (struct objfile *objfile, LONGEST str_offset,
     return NULL;
   return (const char *) (buffer + str_offset);
 }
+
+void
+dwarf2_section_info::initialize (struct objfile *objfile, asection *sect)
+{
+  if (s.section != nullptr)
+    return;
+  s.section = sect;
+  size = bfd_section_size (sect);
+}
