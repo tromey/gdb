@@ -116,6 +116,12 @@ dwarf2_section_info::empty () const
 void
 dwarf2_section_info::read (struct objfile *objfile)
 {
+  read (objfile->sf->sym_relocate);
+}
+
+void
+dwarf2_section_info::read (sym_relocate_ftype *relocator)
+{
   asection *sectp;
   bfd *abfd;
   gdb_byte *buf, *retbuf;
@@ -169,7 +175,7 @@ dwarf2_section_info::read (struct objfile *objfile)
      http://sourceware.org/ml/gdb-patches/2002-04/msg00136.html .
      We never compress sections in .o files, so we only need to
      try this when the section is not compressed.  */
-  retbuf = objfile->sf->sym_relocate (sectp, buf);
+  retbuf = relocater (sectp, buf);
   if (retbuf != NULL)
     {
       buffer = retbuf;
