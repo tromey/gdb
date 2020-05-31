@@ -503,7 +503,7 @@ debug_sym_relocate (struct objfile *objfile, asection *sectp, bfd_byte *buf)
     = symfile_debug_objfile_data_key.get (objfile);
   bfd_byte *retval;
 
-  retval = debug_data->real_sf->sym_relocate (objfile, sectp, buf);
+  retval = debug_data->real_sf->sym_relocate (sectp, buf);
 
   fprintf_filtered (gdb_stdlog,
 		    "sf->sym_relocate (%s, %s, %s) = %s\n",
