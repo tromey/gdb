@@ -1758,17 +1758,17 @@ line_header_eq_voidp (const void *item_lhs, const void *item_rhs)
 
 /* See declaration.  */
 
-dwarf2_per_bfd::dwarf2_per_bfd (struct objfile *objfile, bfd *obfd,
-				const dwarf2_debug_sections *names,
-				bool can_copy_)
+dwarf2_per_bfd::dwarf2_per_bfd (bfd *obfd, const dwarf2_debug_sections *names,
+				bool can_copy_, sym_relocate_ftype *relocator_)
   : obfd (obfd),
-    can_copy (can_copy_)
+    can_copy (can_copy_),
+    relocator (relocator_)
 {
   if (names == NULL)
     names = &dwarf2_elf_names;
 
   for (asection *sec = obfd->sections; sec != NULL; sec = sec->next)
-    locate_sections (objfile, obfd, sec, *names);
+    locate_sections (obfd, sec, *names);
 }
 
 dwarf2_per_bfd::~dwarf2_per_bfd ()
@@ -1882,16 +1882,16 @@ dwarf2_has_info (struct objfile *objfile,
 	  if (per_bfd == nullptr)
 	    {
 	      /* No, create it now.  */
-	      per_bfd = new dwarf2_per_bfd (objfile, objfile->obfd, names,
-					    can_copy);
+	      per_bfd = new dwarf2_per_bfd (objfile->obfd, names, can_copy,
+					    objfile->sf->sym_relocate);
 	      dwarf2_per_bfd_bfd_data_key.set (objfile->obfd, per_bfd);
 	    }
 	}
       else
 	{
 	  /* No sharing possible, create one specifically for this objfile.  */
-	  per_bfd = new dwarf2_per_bfd (objfile, objfile->obfd, names,
-					can_copy);
+	  per_bfd = new dwarf2_per_bfd (objfile->obfd, names, can_copy,
+					objfile->sf->sym_relocate);
 	  dwarf2_per_bfd_objfile_data_key.set (objfile, per_bfd);
 	}
 
@@ -1923,8 +1923,7 @@ section_is_p (const char *section_name,
 /* See declaration.  */
 
 void
-dwarf2_per_bfd::locate_sections (struct objfile *objfile, bfd *abfd,
-				 asection *sectp,
+dwarf2_per_bfd::locate_sections (bfd *abfd, asection *sectp,
 				 const dwarf2_debug_sections &names)
 {
   flagword aflag = bfd_section_flags (sectp);
@@ -1942,50 +1941,50 @@ dwarf2_per_bfd::locate_sections (struct objfile *objfile, bfd *abfd,
 	       bfd_get_filename (abfd));
     }
   else if (section_is_p (sectp->name, &names.info))
-    this->info.initialize (objfile, sectp);
+    this->info.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names.abbrev))
-    this->abbrev.initialize (objfile, sectp);
+    this->abbrev.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names.line))
-    this->line.initialize (objfile, sectp);
+    this->line.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names.loc))
-    this->loc.initialize (objfile, sectp);
+    this->loc.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names.loclists))
-    this->loclists.initialize (objfile, sectp);
+    this->loclists.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names.macinfo))
-    this->macinfo.initialize (objfile, sectp);
+    this->macinfo.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names.macro))
-    this->macro.initialize (objfile, sectp);
+    this->macro.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names.str))
-    this->str.initialize (objfile, sectp);
+    this->str.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names.str_offsets))
-    this->str_offsets.initialize (objfile, sectp);
+    this->str_offsets.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names.line_str))
-    this->line_str.initialize (objfile, sectp);
+    this->line_str.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names.addr))
-    this->addr.initialize (objfile, sectp);
+    this->addr.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names.frame))
-    this->frame.initialize (objfile, sectp);
+    this->frame.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names.eh_frame))
-    this->eh_frame.initialize (objfile, sectp);
+    this->eh_frame.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names.ranges))
-    this->ranges.initialize (objfile, sectp);
+    this->ranges.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names.rnglists))
-    this->rnglists.initialize (objfile, sectp);
+    this->rnglists.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names.types))
     {
       struct dwarf2_section_info type_section;
 
       memset (&type_section, 0, sizeof (type_section));
-      type_section.initialize (objfile, sectp);
+      type_section.initialize (relocator, sectp);
 
       this->types.push_back (type_section);
     }
   else if (section_is_p (sectp->name, &names.gdb_index))
-    this->gdb_index.initialize (objfile, sectp);
+    this->gdb_index.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names.debug_names))
-    this->debug_names.initialize (objfile, sectp);
+    this->debug_names.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names.debug_aranges))
-    this->debug_aranges.initialize (objfile, sectp);
+    this->debug_aranges.initialize (relocator, sectp);
 
   if ((bfd_section_flags (sectp) & (SEC_LOAD | SEC_ALLOC))
       && bfd_section_vma (sectp) == 0)
@@ -2035,26 +2034,26 @@ dwarf2_get_section_info (struct objfile *objfile,
 /* A helper function to find the sections for a .dwz file.  */
 
 static void
-locate_dwz_sections (struct objfile *objfile, bfd *abfd, asection *sectp,
-		     struct dwz_file *dwz_file)
+locate_dwz_sections (bfd *abfd, asection *sectp, struct dwz_file *dwz_file,
+		     sym_relocate_ftype *relocator)
 {
 
   /* Note that we only support the standard ELF names, because .dwz
      is ELF-only (at the time of writing).  */
   if (section_is_p (sectp->name, &dwarf2_elf_names.abbrev))
-    dwz_file->abbrev.initialize (objfile, sectp);
+    dwz_file->abbrev.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &dwarf2_elf_names.info))
-    dwz_file->info.initialize (objfile, sectp);
+    dwz_file->info.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &dwarf2_elf_names.str))
-    dwz_file->str.initialize (objfile, sectp);
+    dwz_file->str.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &dwarf2_elf_names.line))
-    dwz_file->line.initialize (objfile, sectp);
+    dwz_file->line.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &dwarf2_elf_names.macro))
-    dwz_file->macro.initialize (objfile, sectp);
+    dwz_file->macro.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &dwarf2_elf_names.gdb_index))
-    dwz_file->gdb_index.initialize (objfile, sectp);
+    dwz_file->gdb_index.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &dwarf2_elf_names.debug_names))
-    dwz_file->debug_names.initialize (objfile, sectp);
+    dwz_file->debug_names.initialize (relocator, sectp);
 }
 
 /* See dwarf2read.h.  */
@@ -2141,13 +2140,8 @@ dwarf2_get_dwz_file (dwarf2_per_bfd *per_bfd)
     (new struct dwz_file (std::move (dwz_bfd)));
 
   for (asection *sec = result->dwz_bfd->sections; sec != NULL; sec = sec->next)
-    locate_dwz_sections (o
-
--    locate_sections (obfd, sec, *names);
-+    locate_sections (objfile, obfd, sec, *names);
-
-  bfd_map_over_sections (result->dwz_bfd.get (), locate_dwz_sections,
-			 result.get ());
+    locate_dwz_sections (result->dwz_bfd.get (), sec, result.get (),
+			 per_bfd->relocator);
 
   gdb_bfd_record_inclusion (per_bfd->obfd, result->dwz_bfd.get ());
   per_bfd->dwz_file = std::move (result);
@@ -11677,25 +11671,26 @@ create_dwp_hash_table (dwarf2_per_objfile *per_objfile,
 
 static int
 locate_v1_virtual_dwo_sections (asection *sectp,
-				struct virtual_v1_dwo_sections *sections)
+				struct virtual_v1_dwo_sections *sections,
+				sym_relocate_ftype *relocator)
 {
   const struct dwop_section_names *names = &dwop_section_names;
 
   if (section_is_p (sectp->name, &names->abbrev_dwo))
-    sections->abbrev.initialize (objfile, sectp);
+    sections->abbrev.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names->info_dwo)
 	   || section_is_p (sectp->name, &names->types_dwo))
-    sections->info_or_types.initialize (objfile, sectp);
+    sections->info_or_types.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names->line_dwo))
-    sections->line.initialize (objfile, sectp);
+    sections->line.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names->loc_dwo))
-    sections->loc.initialize (objfile, sectp);
+    sections->loc.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names->macinfo_dwo))
-    sections->macinfo.initialize (objfile, sectp);
+    sections->macinfo.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names->macro_dwo))
-    sections->macro.initialize (objfile, sectp);
+    sections->macro.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names->str_offsets_dwo))
-    sections->str_offsets.initialize (objfile, sectp);
+    sections->str_offsets.initialize (relocator, sectp);
   else
     {
       /* No other kind of section is valid.  */
@@ -11770,7 +11765,8 @@ create_dwo_unit_in_dwp_v1 (dwarf2_per_objfile *per_objfile,
 	}
 
       sectp = dwp_file->elf_sections[section_nr];
-      if (! locate_v1_virtual_dwo_sections (sectp, &sections))
+      if (! locate_v1_virtual_dwo_sections (sectp, &sections,
+					    per_objfile->per_bfd->relocator))
 	{
 	  error (_("Dwarf Error: bad DWP hash table, invalid section found"
 		   " [in module %s]"),
@@ -12249,35 +12245,36 @@ open_dwo_file (dwarf2_per_objfile *per_objfile,
    size of each of the DWO debugging sections we are interested in.  */
 
 static void
-dwarf2_locate_dwo_sections (bfd *abfd, asection *sectp, void *dwo_sections_ptr)
+dwarf2_locate_dwo_sections (bfd *abfd, asection *sectp,
+			    struct dwo_sections *dwo_sections,
+			    sym_relocate_ftype *relocator)
 {
-  struct dwo_sections *dwo_sections = (struct dwo_sections *) dwo_sections_ptr;
   const struct dwop_section_names *names = &dwop_section_names;
 
   if (section_is_p (sectp->name, &names->abbrev_dwo))
-    dwo_sections->abbrev.initialize (objfile, sectp);
+    dwo_sections->abbrev.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names->info_dwo))
-    dwo_sections->info.initialize (objfile, sectp);
+    dwo_sections->info.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names->line_dwo))
-    dwo_sections->line.initialize (objfile, sectp);
+    dwo_sections->line.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names->loc_dwo))
-    dwo_sections->loc.initialize (objfile, sectp);
+    dwo_sections->loc.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names->loclists_dwo))
-    dwo_sections->loclists.initialize (objfile, sectp);
+    dwo_sections->loclists.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names->macinfo_dwo))
-    dwo_sections->macinfo.initialize (objfile, sectp);
+    dwo_sections->macinfo.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names->macro_dwo))
-    dwo_sections->macro.initialize (objfile, sectp);
+    dwo_sections->macro.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names->str_dwo))
-    dwo_sections->str.initialize (objfile, sectp);
+    dwo_sections->str.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names->str_offsets_dwo))
-    dwo_sections->str_offsets.initialize (objfile, sectp);
+    dwo_sections->str_offsets.initialize (relocator, sectp);
   else if (section_is_p (sectp->name, &names->types_dwo))
     {
       struct dwarf2_section_info type_section;
 
       memset (&type_section, 0, sizeof (type_section));
-      type_section.initialize (objfile, sectp);
+      type_section.initialize (relocator, sectp);
       dwo_sections->types.push_back (type_section);
     }
 }
@@ -12305,8 +12302,10 @@ open_and_init_dwo_file (dwarf2_cu *cu, const char *dwo_name,
   dwo_file->comp_dir = comp_dir;
   dwo_file->dbfd = std::move (dbfd);
 
-  bfd_map_over_sections (dwo_file->dbfd.get (), dwarf2_locate_dwo_sections,
-			 &dwo_file->sections);
+  for (asection *sec = dwo_file->dbfd->sections; sec != NULL; sec = sec->next)
+    dwarf2_locate_dwo_sections (dwo_file->dbfd.get (), sec,
+				&dwo_file->sections,
+				per_objfile->per_bfd->relocator);
 
   create_cus_hash_table (per_objfile, cu, *dwo_file, dwo_file->sections.info,
 			 dwo_file->cus);

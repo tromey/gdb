@@ -86,8 +86,8 @@ struct dwarf2_per_bfd
      used.  CAN_COPY is true for formats where symbol
      interposition is possible and so symbol values must follow copy
      relocation rules.  */
-  dwarf2_per_bfd (struct objfile *objfile, bfd *obfd,
-		  const dwarf2_debug_sections *names, bool can_copy);
+  dwarf2_per_bfd (bfd *obfd, const dwarf2_debug_sections *names,
+		  bool can_copy, sym_relocate_ftype *relocator);
 
   ~dwarf2_per_bfd ();
 
@@ -136,7 +136,7 @@ private:
   /* This function is mapped across the sections and remembers the
      offset and size of each of the debugging sections we are
      interested in.  */
-  void locate_sections (struct objfile *objfile, bfd *abfd, asection *sectp,
+  void locate_sections (bfd *abfd, asection *sectp,
 			const dwarf2_debug_sections &names);
 
 public:
@@ -256,6 +256,8 @@ public:
      are sharing them between objfiles.  This is only set after
      partial symbols have been read the first time.  */
   std::shared_ptr<psymtab_storage> partial_symtabs;
+
+  sym_relocate_ftype *relocator;
 
 private:
 

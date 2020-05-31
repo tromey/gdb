@@ -27,6 +27,8 @@
 #ifndef GDB_DWARF2_SECTION_H
 #define GDB_DWARF2_SECTION_H
 
+#include "symfile.h"
+
 /* A descriptor for dwarf sections.
 
    S.ASECTION, SIZE are typically initialized when the objfile is first
@@ -83,7 +85,7 @@ struct dwarf2_section_info
 
   void read (sym_relocate_ftype *relocator);
 
-  void initialize (struct objfile *objfile, asection *sect);
+  void initialize (sym_relocate_ftype *relocator, asection *sect);
 
   /* A helper function that returns the size of a section in a safe way.
      If you are positive that the section has been read before using the
