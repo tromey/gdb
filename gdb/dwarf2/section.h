@@ -79,7 +79,7 @@ struct dwarf2_section_info
      the section comes from.  E.g., for DWO files the bfd of INFO is the bfd
      of the DWO file.
      If the section is compressed, uncompress it before returning.  */
-  void read (struct objfile *objfile)
+  void read (struct objfile *objfile);
 
   void read (sym_relocate_ftype *relocator);
 
