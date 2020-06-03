@@ -86,7 +86,7 @@ print_demangler_list (FILE *stream)
   for (demangler = libiberty_demanglers + 1;
        demangler->demangling_style != unknown_demangling;
        ++demangler)
-    fprintf (stream, ",%s", demangler->demangling_style_name);
+    fprintf (stream, "|%s", demangler->demangling_style_name);
 
   fprintf (stream, "}");
 }
@@ -95,33 +95,39 @@ ATTRIBUTE_NORETURN static void
 usage (FILE *stream, int status)
 {
   fprintf (stream, "\
-Usage: %s [options] [mangled names]\n", program_name);
+Usage: %s [OPTION]... [NAME]...\n", program_name);
+  fprintf (stream, "\nDemangle names.\n\n");
   fprintf (stream, "\
 Options are:\n\
-  [-_|--strip-underscore]     Ignore first leading underscore%s\n",
+  -_, --strip-underscore      Ignore first leading underscore%s\n",
 	   TARGET_PREPENDS_UNDERSCORE ? " (default)" : "");
   fprintf (stream, "\
-  [-n|--no-strip-underscore]  Do not ignore a leading underscore%s\n",
+  -n, --no-strip-underscore   Do not ignore a leading underscore%s\n",
 	   TARGET_PREPENDS_UNDERSCORE ? "" : " (default)");
   fprintf (stream, "\
-  [-p|--no-params]            Do not display function arguments\n\
-  [-i|--no-verbose]           Do not show implementation details (if any)\n\
-  [-R|--recurse-limit]        Enable a limit on recursion whilst demangling.  [Default]\n\
-  ]-r|--no-recurse-limit]     Disable a limit on recursion whilst demangling\n\
-  [-t|--types]                Also attempt to demangle type encodings\n\
-  [-s|--format ");
+  -p, --no-params             Do not display function arguments\n\
+  -i, --no-verbose            Do not show implementation details (if any)\n\
+  -R, --recurse-limit         Enable a limit on recursion whilst demangling\n\
+                              (default)\n\
+  -r, --no-recurse-limit      Disable a limit on recursion whilst demangling\n\
+  -t, --types                 Also attempt to demangle type encodings\n\
+  -s, --format ");
   print_demangler_list (stream);
-  fprintf (stream, "]\n");
-
+  fprintf (stream, "\n");
   fprintf (stream, "\
-  [@<file>]                   Read extra options from <file>\n\
-  [-h|--help]                 Display this information\n\
-  [-v|--version]              Show the version information\n\
+                              Select demangling method (default 'auto')\n");
+
+  fprintf (stream, "\n\
+  -h, --help                  Display this information\n\
+  -v, --version               Show the version information\n\
+\n\
+@FILE can be used to read extra options from FILE.\n\
+\n\
 Demangled names are displayed to stdout.\n\
 If a name cannot be demangled it is just echoed to stdout.\n\
 If no names are provided on the command line, stdin is read.\n");
   if (REPORT_BUGS_TO[0] && status == 0)
-    fprintf (stream, _("Report bugs to %s.\n"), REPORT_BUGS_TO);
+    fprintf (stream, _("\nReport bugs to %s.\n"), REPORT_BUGS_TO);
   exit (status);
 }
 

@@ -1,3 +1,9 @@
+2020-06-03  Tom Tromey  <tromey@adacore.com>
+
+	* cxxfilt.c (print_demangler_list): Separate with |.
+	(usage): Change formatting.  Use upper-case for metasyntactic
+	variables.
+
 2020-06-02  Alan Modra  <amodra@gmail.com>
 
 	* testsuite/binutils-all/ar.exp (obj): Set up object file name
