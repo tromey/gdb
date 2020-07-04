@@ -29,7 +29,9 @@
 #include "ax.h"
 #include "tdesc.h"
 
+#ifndef IN_PROCESS_AGENT
 #define IPA_SYM_STRUCT_NAME ipa_sym_addresses
+#endif
 #include "gdbsupport/agent.h"
 
 #define DEFAULT_TRACE_BUFFER_SIZE 5242880 /* 5*1024*1024 */
@@ -1150,12 +1152,16 @@ A GDBserver update of `trace_buffer_ctrl_curr' does:
 /* `trace_buffer_ctrl_curr' contains two counters.  The `previous'
    counter, and the `current' counter.  */
 
+#ifdef IN_PROCESS_AGENT
 #define GDBSERVER_FLUSH_COUNT_MASK_PREV   0x7ff00000
+#endif
 #define GDBSERVER_FLUSH_COUNT_MASK_CURR   0x0007ff00
 
+#ifndef IN_PROCESS_AGENT
 /* When GDBserver update the IP agent's `trace_buffer_ctrl_curr', it
    always stamps this bit as set.  */
 #define GDBSERVER_UPDATED_FLUSH_COUNT_BIT 0x80000000
+#endif
 
 #ifdef IN_PROCESS_AGENT
 IP_AGENT_EXPORT_VAR struct trace_buffer_control trace_buffer_ctrl[3];
@@ -1183,6 +1189,8 @@ struct trace_buffer_control trace_buffer_ctrl[1];
 #define trace_buffer_wrap (trace_buffer_ctrl[TRACE_BUFFER_CTRL_CURR].wrap)
 
 
+#ifndef IN_PROCESS_AGENT
+
 /* Macro that returns a pointer to the first traceframe in the buffer.  */
 
 #define FIRST_TRACEFRAME() ((struct traceframe *) trace_buffer_start)
@@ -1200,6 +1208,8 @@ struct trace_buffer_control trace_buffer_ctrl[1];
 			     ? (trace_buffer_wrap - trace_buffer_lo)	\
 			     : 0)))
 
+#endif
+
 /* The difference between these counters represents the total number
    of complete traceframes present in the trace buffer.  The IP agent
    writes to the write count, GDBserver writes to read count.  */
@@ -1209,8 +1219,10 @@ IP_AGENT_EXPORT_VAR unsigned int traceframe_read_count;
 
 /* Convenience macro.  */
 
+#ifndef IN_PROCESS_AGENT
 #define traceframe_count \
   ((unsigned int) (traceframe_write_count - traceframe_read_count))
+#endif
 
 /* The count of all traceframes created in the current run, including
    ones that were discarded to make room.  */
@@ -1392,6 +1404,7 @@ static void clone_fast_tracepoint (struct tracepoint *to,
 
 static LONGEST get_timestamp (void);
 
+#ifdef IN_PROCESS_AGENT
 #if defined(__GNUC__)
 #  define memory_barrier() asm volatile ("" : : : "memory")
 #else
@@ -1403,6 +1416,8 @@ static LONGEST get_timestamp (void);
    unconditionally.  */
 #define cmpxchg(mem, oldval, newval) \
   __sync_val_compare_and_swap (mem, oldval, newval)
+
+#endif
 
 /* Record that an error occurred during expression evaluation.  */
 
@@ -6115,7 +6130,6 @@ download_tracepoint_1 (struct tracepoint *tpoint)
     }
 }
 
-#define IPA_PROTO_FAST_TRACE_FLAG 0
 #define IPA_PROTO_FAST_TRACE_ADDR_ON_TARGET 2
 #define IPA_PROTO_FAST_TRACE_JUMP_PAD 10
 #define IPA_PROTO_FAST_TRACE_FJUMP_SIZE 18

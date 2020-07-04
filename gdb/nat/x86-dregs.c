@@ -76,11 +76,13 @@
 #define DR_RW_WRITE	(0x1)	/* Break on data writes.  */
 #define DR_RW_READ	(0x3)	/* Break on data reads or writes.  */
 
+#if 0
 /* This is here for completeness.  No platform supports this
    functionality yet (as of March 2001).  Note that the DE flag in the
    CR4 register needs to be set to support this.  */
 #ifndef DR_RW_IORW
 #define DR_RW_IORW	(0x2)	/* Break on I/O reads or writes.  */
+#endif
 #endif
 
 /* Watchpoint/breakpoint length fields in DR7.  The 2-bit left shift
@@ -102,7 +104,6 @@
    enable them globally, read the comment which pertains to this in
    x86_insert_aligned_watchpoint below.  */
 #define DR_LOCAL_ENABLE_SHIFT	0 /* Extra shift to the local enable bit.  */
-#define DR_GLOBAL_ENABLE_SHIFT	1 /* Extra shift to the global enable bit.  */
 #define DR_ENABLE_SIZE		2 /* Two enable bits per debug register.  */
 
 /* Local and global exact breakpoint enable flags (a.k.a. slowdown
@@ -111,7 +112,7 @@
    later processors do that automatically.  We set these flags for
    backwards compatibility.  */
 #define DR_LOCAL_SLOWDOWN	(0x100)
-#define DR_GLOBAL_SLOWDOWN	(0x200)
+/* #define DR_GLOBAL_SLOWDOWN	(0x200) */
 
 /* Fields reserved by Intel.  This includes the GD (General Detect
    Enable) flag, which causes a debug exception to be generated when a
@@ -135,13 +136,6 @@
   do { \
     (state)->dr_control_mirror |= \
       (1 << (DR_LOCAL_ENABLE_SHIFT + DR_ENABLE_SIZE * (i))); \
-  } while (0)
-
-/* Globally enable the break/watchpoint in the I'th debug register.  */
-#define X86_DR_GLOBAL_ENABLE(state, i) \
-  do { \
-    (state)->dr_control_mirror |= \
-      (1 << (DR_GLOBAL_ENABLE_SHIFT + DR_ENABLE_SIZE * (i))); \
   } while (0)
 
 /* Disable the break/watchpoint in the I'th debug register.  */

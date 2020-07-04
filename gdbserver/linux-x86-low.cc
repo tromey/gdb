@@ -86,8 +86,6 @@ static const char *xmltarget_amd64_linux_no_xml = "@<target>\
 /* The following definitions come from prctl.h, but may be absent
    for certain configurations.  */
 #ifndef ARCH_GET_FS
-#define ARCH_SET_GS 0x1001
-#define ARCH_SET_FS 0x1002
 #define ARCH_GET_FS 0x1003
 #define ARCH_GET_GS 0x1004
 #endif
