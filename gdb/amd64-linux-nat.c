@@ -39,12 +39,6 @@
 #include "nat/linux-ptrace.h"
 #include "nat/amd64-linux-siginfo.h"
 
-/* This definition comes from prctl.h.  Kernels older than 2.5.64
-   do not have it.  */
-#ifndef PTRACE_ARCH_PRCTL
-#define PTRACE_ARCH_PRCTL      30
-#endif
-
 struct amd64_linux_nat_target final : public x86_linux_nat_target
 {
   /* Add our register access methods.  */

@@ -62,7 +62,7 @@
 
 #define RECORD_SEMOP		1
 #define RECORD_SEMGET		2
-#define RECORD_SEMCTL		3
+/* #define RECORD_SEMCTL		3 */
 #define RECORD_SEMTIMEDOP	4
 #define RECORD_MSGSND		11
 #define RECORD_MSGRCV		12

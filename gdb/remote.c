@@ -2909,17 +2909,6 @@ struct gdb_ext_thread_info
 				   whatever.  */
   };
 
-/* The volume of remote transfers can be limited by submitting
-   a mask containing bits specifying the desired information.
-   Use a union of these values as the 'selection' parameter to
-   get_thread_info.  FIXME: Make these TAG names more thread specific.  */
-
-#define TAG_THREADID 1
-#define TAG_EXISTS 2
-#define TAG_DISPLAY 4
-#define TAG_THREADNAME 8
-#define TAG_MOREDISPLAY 16
-
 #define BUF_THREAD_ID_SIZE (OPAQUETHREADBYTES * 2)
 
 static char *unpack_nibble (char *buf, int *val);

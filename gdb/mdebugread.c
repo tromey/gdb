@@ -167,9 +167,6 @@ unexpected_type_code_complaint (const char *arg1)
 /* Puns: hard to find whether -g was used and how.  */
 
 #define MIN_GLEVEL GLEVEL_0
-#define compare_glevel(a,b)					\
-	(((a) == GLEVEL_3) ? ((b) < GLEVEL_3) :			\
-	 ((b) == GLEVEL_3) ? -1 : (int)((b) - (a)))
 
 /* Things that really are local to this module.  */
 
@@ -358,20 +355,6 @@ mdebug_build_psymtabs (minimal_symbol_reader &reader,
     }
 
   parse_partial_symbols (reader, objfile);
-
-#if 0
-  /* Check to make sure file was compiled with -g.  If not, warn the
-     user of this limitation.  */
-  if (compare_glevel (max_glevel, GLEVEL_2) < 0)
-    {
-      if (max_gdbinfo == 0)
-	printf_unfiltered (_("\n%s not compiled with -g, "
-			     "debugging support is limited.\n"),
-			   objfile->name);
-      printf_unfiltered (_("You should compile with -g2 or "
-			   "-g3 for best debugging support.\n"));
-    }
-#endif
 }
 
 /* Local utilities */

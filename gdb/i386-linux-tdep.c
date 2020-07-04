@@ -103,7 +103,6 @@ i386_linux_register_reggroup_p (struct gdbarch *gdbarch, int regnum,
    supported too.  */
 
 #define LINUX_SIGTRAMP_INSN0	0x58	/* pop %eax */
-#define LINUX_SIGTRAMP_OFFSET0	0
 #define LINUX_SIGTRAMP_INSN1	0xb8	/* mov $NNNN, %eax */
 #define LINUX_SIGTRAMP_OFFSET1	1
 #define LINUX_SIGTRAMP_INSN2	0xcd	/* int */
@@ -174,7 +173,6 @@ i386_linux_sigtramp_start (struct frame_info *this_frame)
    The effect is to call the system call rt_sigreturn.  */
 
 #define LINUX_RT_SIGTRAMP_INSN0		0xb8 /* mov $NNNN, %eax */
-#define LINUX_RT_SIGTRAMP_OFFSET0	0
 #define LINUX_RT_SIGTRAMP_INSN1		0xcd /* int */
 #define LINUX_RT_SIGTRAMP_OFFSET1	5
 

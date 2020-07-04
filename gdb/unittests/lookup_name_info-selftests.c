@@ -68,12 +68,6 @@ run_tests ()
 #define CHECK(LANG, NAME, EXPECTED)		\
   CHECK_1(false, LANG, NAME, EXPECTED)
 
-  /* Similar, but used when NAME is incomplete -- i.e., NAME has
-     unbalanced parentheses.  In this case, looking for the exact name
-     should fail / return empty.  */
-#define CHECK_INCOMPL(LANG, NAME, EXPECTED)				\
-  CHECK_1 (true, LANG, NAME, EXPECTED)
-
   /* None of these languages support function overloading like C++
      does, so building a nameless lookup name ends up being just the
      same as any other lookup name.  Mainly this serves as smoke test

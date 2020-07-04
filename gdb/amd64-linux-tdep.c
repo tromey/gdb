@@ -106,7 +106,7 @@ int amd64_linux_gregset_reg_offset[] =
 /* Support for signal handlers.  */
 
 #define LINUX_SIGTRAMP_INSN0	0x48	/* mov $NNNNNNNN, %rax */
-#define LINUX_SIGTRAMP_OFFSET0	0
+/* #define LINUX_SIGTRAMP_OFFSET0	0 */
 #define LINUX_SIGTRAMP_INSN1	0x0f	/* syscall */
 #define LINUX_SIGTRAMP_OFFSET1	7
 
