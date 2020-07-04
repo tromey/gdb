@@ -123,7 +123,6 @@ agent_get_helper_thread_id (void)
 #ifdef HAVE_SYS_UN_H
 #include <sys/socket.h>
 #include <sys/un.h>
-#define SOCK_DIR P_tmpdir
 
 #ifndef UNIX_PATH_MAX
 #define UNIX_PATH_MAX sizeof(((struct sockaddr_un *) NULL)->sun_path)

@@ -53,6 +53,7 @@ build_warnings="-Wall -Wpointer-arith \
 -Wmissing-declarations \
 -Wmissing-prototypes \
 -Wstrict-null-sentinel \
+-Wunused-macros \
 "
 
 case "${host}" in
