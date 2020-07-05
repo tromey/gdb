@@ -252,6 +252,10 @@ struct cmd_list_element
 
 extern void help_cmd (const char *, struct ui_file *);
 
+extern void help_completer (struct cmd_list_element *cmd,
+			    completion_tracker &tracker,
+			    const char *text, const char *word);
+
 extern void apropos_cmd (struct ui_file *, struct cmd_list_element *,
 			 bool verbose, compiled_regex &, const char *);
 

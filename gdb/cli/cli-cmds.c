@@ -2330,7 +2330,7 @@ The optional expression EXPR, if present, is evaluated and the result\n\
 used as GDB's exit code.  The default is zero."));
   c = add_com ("help", class_support, help_command,
 	       _("Print list of commands."));
-  set_cmd_completer (c, command_completer);
+  set_cmd_completer (c, help_completer);
   add_com_alias ("q", "quit", class_support, 1);
   add_com_alias ("h", "help", class_support, 1);
 

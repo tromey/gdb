@@ -25,6 +25,7 @@
 #include "cli/cli-decode.h"
 #include "cli/cli-style.h"
 #include "gdbsupport/gdb_optional.h"
+#include "gdbsupport/scoped_fd.h"
 
 /* Prototypes for local functions.  */
 
@@ -1191,6 +1192,20 @@ apropos_cmd (struct ui_file *stream,
     }
 }
 
+/* Implement "help news".  */
+
+static void
+help_news (struct ui_file *stream)
+{
+  std::string news_name = std::string (gdb_datadir) + SLASH_STRING + "NEWS";
+  scoped_fd fd (gdb_open_cloexec (news_name.c_str (), O_RDONLY | O_BINARY, 0));
+  if (fd.get () < 0)
+    perror_with_name (_("could not open the NEWS file"));
+
+  std::string contents = read_entire_file (news_name.c_str (), fd.get ());
+  fputs_filtered (contents.c_str (), stream);
+}
+
 /* This command really has to deal with two things:
    1) I want documentation on *this string* (usually called by
       "help commandname").
@@ -1213,9 +1228,16 @@ help_cmd (const char *command, struct ui_file *stream)
       return;
     }
 
+  /* Note that if you add another clause here, you must also update
+     help_completer.  */
   if (strcmp (command, "all") == 0)
     {
       help_all (stream);
+      return;
+    }
+  else if (strcmp (command, "news") == 0)
+    {
+      help_news (stream);
       return;
     }
 
@@ -1272,6 +1294,25 @@ help_cmd (const char *command, struct ui_file *stream)
                     c->hook_post->name);
 }
 
+/* Completer function for "help".  */
+
+void
+help_completer (struct cmd_list_element *cmd,
+		completion_tracker &tracker,
+		const char *text, const char *word)
+{
+  /* Special words recognized by help_cmd.  */
+  static const char *const help_cmd_words[] =
+    {
+      "all",
+      "news",
+      NULL
+    };
+
+  complete_on_enum (tracker, help_cmd_words, text, word);
+  command_completer (cmd, tracker, text, word);
+}
+
 /*
  * Get a specific kind of help on a command list.
  *
@@ -1324,6 +1365,9 @@ Type \"help%s\" followed by a class name for a list of commands in ",
 
       fprintf_filtered (stream, "\n\
 Type \"help all\" for the list of all commands.");
+
+      fprintf_filtered (stream, "\n\
+Type \"help news\" to see what is new in GDB.");
     }
 
   fprintf_filtered (stream, "\nType \"help%s\" followed by %scommand name ",

@@ -2164,6 +2164,10 @@ the command name and all its aliases separated by commas.
 This first line will be followed by the full definition of all aliases
 having default arguments.
 
+@item help news
+Show the news file.  Notable features in each release are documented
+in this file.
+
 @kindex apropos
 @item apropos [-v] @var{regexp}
 The @code{apropos} command searches through all of the @value{GDBN}

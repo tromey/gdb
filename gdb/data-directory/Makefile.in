@@ -139,6 +139,8 @@ SYSTEM_GDBINIT_FILES = \
 	elinos.py \
 	wrs-linux.py
 
+GDB_FILES = NEWS
+
 FLAGS_TO_PASS = \
 	"prefix=$(prefix)" \
 	"exec_prefix=$(exec_prefix)" \
@@ -172,7 +174,7 @@ FLAGS_TO_PASS = \
 	"RUNTESTFLAGS=$(RUNTESTFLAGS)"
 
 .PHONY: all
-all: stamp-syscalls stamp-python stamp-guile stamp-system-gdbinit
+all: stamp-syscalls stamp-python stamp-guile stamp-system-gdbinit gdb-files
 
 %.xml: @MAINTAINER_MODE_TRUE@ %.xml.in apply-defaults.xsl linux-defaults.xml.in
 	$(XSLTPROC) -o $(SYSCALLS_SRCDIR)/$@ $(SYSCALLS_SRCDIR)/apply-defaults.xsl\
@@ -232,6 +234,26 @@ uninstall-syscalls:
 	    file="$$slashdir" ; \
 	    slashdir=`echo "$$file" | sed 's,/[^/]*$$,,'` ; \
 	  done \
+	done
+
+gdb-files: $(addprefix $(srcdir)/../,$(GDB_FILES))
+	files='$(GDB_FILES)'; \
+	for file in $$files; do \
+	  cp $(srcdir)/../$$file .; \
+	done
+
+.PHONY: install-gdb-files
+install-gdb-files:
+	files='$(GDB_FILES)'; \
+	for file in $$files; do \
+	  $(INSTALL_DATA) $(srcdir)/../$$file  $(DESTDIR)$(GDB_DATADIR); \
+	done
+
+.PHONY: uninstall-gdb-files
+uninstall-gdb-files:
+	files='$(GDB_FILES)'; \
+	for file in $$files; do \
+	  rm -f $(DESTDIR)$(GDB_DATADIR)/$$file; \
 	done
 
 stamp-python: Makefile $(PYTHON_FILES)
@@ -379,11 +401,11 @@ install: all
 
 .PHONY: install-only
 install-only: install-syscalls install-python install-guile \
-	install-system-gdbinit
+	install-system-gdbinit install-gdb-files
 
 .PHONY: uninstall
 uninstall: uninstall-syscalls uninstall-python uninstall-guile \
-	uninstall-system-gdbinit
+	uninstall-system-gdbinit uninstall-gdb-files
 
 .PHONY: clean
 clean: clean-syscalls clean-python clean-guile clean-system-gdbinit

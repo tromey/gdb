@@ -1,3 +1,17 @@
+2020-07-11  Tom Tromey  <tom@tromey.com>
+
+	* cli/cli-decode.h (help_completer): Declare.
+	* cli/cli-cmds.c (_initialize_cli_cmds): Use help_completer.
+	* NEWS: Add entry.
+	* data-directory/Makefile.in (GDB_FILES): New variable.
+	(all): Add gdb-files.
+	(gdb-files, install-gdb-files, uninstall-gdb-files): New targets.
+	(install-only, uninstall): Update.
+	* cli/cli-decode.c (help_news): New file.
+	(help_cmd): Handle "news".
+	(help_list): Mention "help news".
+	(help_completer): New function.
+
 2020-07-05  Tom Tromey  <tom@tromey.com>
 
 	* utils.h (myread): Don't declare.

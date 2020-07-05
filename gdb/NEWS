@@ -65,6 +65,9 @@
 
 * New commands
 
+help news
+  Show this NEWS file.
+
 set exec-file-mismatch -- Set exec-file-mismatch handling (ask|warn|off).
 show exec-file-mismatch -- Show exec-file-mismatch handling (ask|warn|off).
   Set or show the option 'exec-file-mismatch'.  When GDB attaches to a
