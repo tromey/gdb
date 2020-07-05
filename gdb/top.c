@@ -56,6 +56,8 @@
 #include "gdbarch.h"
 #include "gdbsupport/pathstuff.h"
 #include "cli/cli-style.h"
+#include "gdbsupport/scoped_fd.h"
+#include <random>
 
 /* readline include files.  */
 #include "readline/readline.h"
@@ -127,6 +129,14 @@ current_ui_current_uiout_ptr ()
 }
 
 int inhibit_gdbinit = 0;
+
+/* The style used for informational messages at startup.  */
+static ui_file_style startup_style =
+{
+  ui_file_style::MAGENTA,
+  ui_file_style::NONE,
+  ui_file_style::BOLD
+};
 
 /* Flag for whether we want to confirm potentially dangerous
    operations.  Default is yes.  */
@@ -1389,6 +1399,59 @@ command_line_input (const char *prompt_arg, const char *annotation_suffix)
   return cmd;
 }
 
+
+/* Print a useful tip to STREAM.  */
+
+static void
+print_tip (struct ui_file *stream)
+{
+  std::string tip_name = std::string (gdb_datadir) + SLASH_STRING + "tips";
+  scoped_fd fd (gdb_open_cloexec (tip_name.c_str (), O_RDONLY | O_BINARY, 0));
+  if (fd.get () < 0)
+    {
+      perror_warning_with_name ((std::string (_("Could not open tip file "))
+				 + tip_name).c_str ());
+      return;
+    }
+
+  std::string lines;
+  try
+    {
+      lines = read_entire_file (tip_name.c_str (), fd.get ());
+    }
+  catch (const gdb_exception &exc)
+    {
+      exception_print (stream, exc);
+      return;
+    }
+
+  std::vector<gdb::string_view> strings;
+  size_t offset = lines.find ("%\n");
+  if (offset == std::string::npos)
+    return;
+  while (offset != std::string::npos)
+    {
+      offset += 2;
+      size_t next_offset = lines.find ("%\n", offset);
+
+      if (next_offset == std::string::npos)
+	strings.emplace_back (lines.c_str () + offset);
+      else
+	strings.emplace_back (lines.c_str () + offset, next_offset - offset);
+
+      offset = next_offset;
+    }
+
+  std::random_device rd;
+  std::mt19937 mt (rd ());
+  std::uniform_int_distribution<> distr (0, strings.size () - 1);
+  int index = distr (mt);
+  /* Note that the string will include a newline.  */
+  fprintf_styled (stream, startup_style, "\n%.*s",
+		  (int) strings[index].size (),
+		  strings[index].data ());
+}
+
 /* See top.h.  */
 void
 print_gdb_version (struct ui_file *stream, bool interactive)
@@ -1399,11 +1462,7 @@ print_gdb_version (struct ui_file *stream, bool interactive)
 
   ui_file_style style;
   if (interactive)
-    {
-      ui_file_style nstyle = { ui_file_style::MAGENTA, ui_file_style::NONE,
-			       ui_file_style::BOLD };
-      style = nstyle;
-    }
+    style = startup_style;
   fprintf_styled (stream, style, "GNU gdb %s%s\n", PKGVERSION, version);
 
   /* Second line is a copyright notice.  */
@@ -1441,9 +1500,6 @@ There is NO WARRANTY, to the extent permitted by law.");
     }
   fprintf_filtered (stream, "\".\n");
 
-  fprintf_filtered (stream, _("Type \"show configuration\" "
-			      "for configuration details.\n"));
-
   if (REPORT_BUGS_TO[0])
     {
       fprintf_filtered (stream,
@@ -1455,9 +1511,9 @@ There is NO WARRANTY, to the extent permitted by law.");
 resources online at:\n    <http://www.gnu.org/software/gdb/documentation/>."));
   fprintf_filtered (stream, "\n\n");
   fprintf_filtered (stream, _("For help, type \"help\".\n"));
-  fprintf_filtered (stream,
-		    _("Type \"apropos word\" to search for commands \
-related to \"word\"."));
+
+  if (interactive)
+    print_tip (stream);
 }
 
 /* Print the details of GDB build-time configuration.  */

@@ -139,7 +139,7 @@ SYSTEM_GDBINIT_FILES = \
 	elinos.py \
 	wrs-linux.py
 
-GDB_FILES = NEWS
+GDB_FILES = NEWS tips
 
 FLAGS_TO_PASS = \
 	"prefix=$(prefix)" \

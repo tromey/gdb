@@ -1,5 +1,9 @@
 2020-07-05  Tom Tromey  <tom@tromey.com>
 
+	* gdb.texinfo (Help): Mention tips.
+
+2020-07-05  Tom Tromey  <tom@tromey.com>
+
 	* gdb.texinfo (Help): Mention help news.
 
 2020-07-11  Philippe Waroquiers  <philippe.waroquiers@skynet.be>

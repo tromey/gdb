@@ -1,3 +1,13 @@
+2020-07-05  Tom Tromey  <tom@tromey.com>
+
+	* NEWS: Add entry.
+	* top.c (startup_style): New global.
+	(print_tip): New function.
+	(print_gdb_version): Update.  Don't print "show configuration"
+	or "apropos" info.  Call print_tip.
+	* tips: New file.
+	* data-directory/Makefile.in (GDB_FILES): Add "tips".
+
 2020-07-11  Tom Tromey  <tom@tromey.com>
 
 	* cli/cli-decode.h (help_completer): Declare.

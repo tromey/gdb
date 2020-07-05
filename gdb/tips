@@ -1,0 +1,9 @@
+This file is in the old "fortune" format.  Each entry is separated by
+a percent character on a line of its own.  Anything before the first
+percent will never be shown.
+%
+You can use "help news" to see what has changed in GDB.
+%
+Type "apropos word" to search for commands related to "word".
+%
+Type "show configuration" for configuration details.

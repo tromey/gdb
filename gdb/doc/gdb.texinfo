@@ -2325,6 +2325,9 @@ automatically by @command{configure}.  When reporting a @value{GDBN}
 bug (@pxref{GDB Bugs}), it is important to include this information in
 your report.
 
+Finally, unless @code{--quiet} is used, @value{GDBN} will print a
+helpful tip at startup.
+
 @end table
 
 @node Running
