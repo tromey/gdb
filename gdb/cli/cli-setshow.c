@@ -21,6 +21,8 @@
 #include <ctype.h>
 #include "arch-utils.h"
 #include "observable.h"
+#include "gdbsupport/pathstuff.h"
+#include <vector>
 
 #include "ui-out.h"
 
@@ -29,6 +31,84 @@
 #include "cli/cli-setshow.h"
 #include "cli/cli-utils.h"
 
+/* File name for startup style.  */
+
+#define STARTUP_FILE "startup-commands"
+
+/* Callbacks that will be called to write out startup settings.  */
+static std::vector<write_startup_setting_ftype *> write_startup_functions;
+
+/* True after gdb has read the startup file.  */
+static bool startup_file_read;
+
+/* See cli-setshow.h.  */
+
+void
+write_startup_file ()
+{
+  std::string config_dir = get_standard_config_dir ();
+
+  if (config_dir.empty ())
+    {
+      warning (_("Couldn't determine a path for the startup settings."));
+      return;
+    }
+
+  if (!mkdir_recursive (config_dir.c_str ()))
+    {
+      warning (_("Could not make config directory: %s"),
+	       safe_strerror (errno));
+      return;
+    }
+
+  std::string fullname = config_dir + "/" + STARTUP_FILE;
+  stdio_file outfile;
+
+  if (!outfile.open (fullname.c_str (), FOPEN_WT))
+    perror_with_name (fullname.c_str ());
+
+  fprintf_unfiltered (&outfile, "\
+# This file is written by gdb whenever the relevant settings are changed.\n\
+# Any edits you make here may be overwritten by gdb.\n");
+
+  for (auto &callback : write_startup_functions)
+    callback (&outfile);
+}
+
+/* See cli-setshow.h.  */
+
+void
+add_startup_writer (write_startup_setting_ftype *callback)
+{
+  write_startup_functions.push_back (callback);
+}
+
+/* See cli-setshow.h.  */
+
+void
+read_startup_file ()
+{
+  std::string config_dir = get_standard_config_dir ();
+
+  if (!config_dir.empty ())
+    {
+      std::string filename = config_dir + "/" + STARTUP_FILE;
+      try
+	{
+	  source_script (filename.c_str (), 1);
+	  /* If reading fails, we don't want to write the file -- it
+	     might overwrite something.  So, we set this flag after
+	     reading.  */
+	  startup_file_read = true;
+	}
+      catch (const gdb_exception &)
+	{
+	  /* Ignore errors.  */
+	}
+    }
+}
+
+
 /* Return true if the change of command parameter should be notified.  */
 
 static int

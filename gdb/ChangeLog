@@ -1,5 +1,16 @@
 2020-07-05  Tom Tromey  <tom@tromey.com>
 
+	* main.c (captured_main_1): Call read_startup_file.
+	* cli/cli-setshow.h (write_startup_functions, add_startup_writer)
+	(read_startup_file): Declare.
+	(write_startup_setting_ftype): New typedef.
+	* cli/cli-setshow.c (STARTUP_FILE): New define.
+	(write_startup_functions, startup_file_read): New globals.
+	(write_startup_file, add_startup_writer, read_startup_file): New
+	functions.
+
+2020-07-05  Tom Tromey  <tom@tromey.com>
+
 	* NEWS: Add entry.
 	* top.c (startup_style): New global.
 	(print_tip): New function.

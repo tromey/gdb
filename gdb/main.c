@@ -35,6 +35,7 @@
 #include "main.h"
 #include "source.h"
 #include "cli/cli-cmds.h"
+#include "cli/cli-setshow.h"
 #include "objfiles.h"
 #include "auto-load.h"
 #include "maint.h"
@@ -932,6 +933,10 @@ captured_main_1 (struct captured_main_args *context)
 
   /* Initialize all files.  */
   gdb_init (gdb_program_name);
+
+  /* Set the startup style.  */
+  if (!inhibit_gdbinit && !inhibit_home_gdbinit)
+    read_startup_file ();
 
   /* Now that gdb_init has created the initial inferior, we're in
      position to set args for that inferior.  */

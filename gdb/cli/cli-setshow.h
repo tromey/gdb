@@ -62,4 +62,25 @@ extern std::string get_setshow_command_value_string (const cmd_list_element *c);
 
 extern void cmd_show_list (struct cmd_list_element *list, int from_tty);
 
+/* Write the file of gdb "set" commands that is read early in the
+   startup sequence.  */
+
+extern void write_startup_file ();
+
+/* The type of a callback function that is used when writing the
+   startup file.  */
+
+class ui_file;
+typedef void write_startup_setting_ftype (ui_file *);
+
+/* Add a callback function that will be called when writing the
+   startup sequence.  */
+
+extern void add_startup_writer (write_startup_setting_ftype *callback);
+
+/* Read the startup file.  This should only be called by the gdb
+   startup sequence.  */
+
+extern void read_startup_file ();
+
 #endif /* CLI_CLI_SETSHOW_H */
