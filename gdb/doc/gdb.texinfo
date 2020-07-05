@@ -1124,6 +1124,21 @@ in your home directory.
 ``Quiet''.  Do not print the introductory and copyright messages.  These
 messages are also suppressed in batch mode.
 
+@kindex set startup-quietly
+@kindex show startup-quietly
+This can also be enabled using @code{set startup-quietly on}.  The
+default is @code{off}.  Use @code{show startup-quietly} to see the
+current setting.  Changing this setting will cause it to automatically
+be saved in a special configuration file, which is read by
+@value{GDBN} early in its startup.
+
+The directory in which this file appears depends on the host platform.
+On most systems, the file is in the @file{gdb} subdirectory of the
+directory pointed to by the @env{XDG_CONFIG_HOME} environment
+variable, if it is defined, else in the @file{.config/gdb}
+subdirectory of your home directory.  However, on some systems, the
+default may differ according to local convention.
+
 @item -batch
 @cindex @code{--batch}
 Run in batch mode.  Exit with status @code{0} after processing all the

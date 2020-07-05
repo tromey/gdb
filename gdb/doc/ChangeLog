@@ -1,5 +1,9 @@
 2020-07-05  Tom Tromey  <tom@tromey.com>
 
+	* gdb.texinfo (Mode Options): Mention "set startup-quietly".
+
+2020-07-05  Tom Tromey  <tom@tromey.com>
+
 	* gdb.texinfo (Output Styling): Document "set style startup"
 	commands.
 

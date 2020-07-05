@@ -87,6 +87,13 @@ set style startup intensity VALUE
   a special configuration file, so that it can be read during startup
   and applied.
 
+set startup-quietly on|off
+show startup-quietly
+  When enabled, this causes GDB to act as if "-silent" were always
+  passed on the command line.  This saves the setting into a special
+  configuration file, so that it can be read during startup and
+  applied.
+
 tui new-layout NAME WINDOW WEIGHT [WINDOW WEIGHT]...
   Define a new TUI layout, specifying its name and the windows that
   will be displayed.

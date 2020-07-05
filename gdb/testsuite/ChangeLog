@@ -1,5 +1,9 @@
 2020-07-05  Tom Tromey  <tom@tromey.com>
 
+	* gdb.base/persist.exp: Add startup-quietly test.
+
+2020-07-05  Tom Tromey  <tom@tromey.com>
+
 	* gdb.base/persist.exp: New file.
 
 2020-07-10  Pedro Alves  <pedro@palves.net>

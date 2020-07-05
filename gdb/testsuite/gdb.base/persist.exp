@@ -61,4 +61,5 @@ save_vars { env(XDG_CONFIG_HOME) } {
     set contents [require_changed "set style startup foreground green" $filename $contents]
     set contents [require_changed "set style startup background green" $filename $contents]
     set contents [require_changed "set style startup intensity dim" $filename $contents]
+    set contents [require_changed "set startup-quietly on" $filename $contents]
 }

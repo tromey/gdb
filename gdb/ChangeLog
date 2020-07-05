@@ -2,6 +2,17 @@
 
 	* tips: Add a tip.
 	* NEWS: Add entry.
+	* top.h (check_quiet_mode): Declare.
+	* top.c (startup_quiet): New global.
+	(check_quiet_mode, set_startup_quiet, show_startup_quiet)
+	(write_startup_quietly): New functions.
+	(init_main): Register new command and callback.
+	* main.c (captured_main_1): Call check_quiet_mode.
+
+2020-07-05  Tom Tromey  <tom@tromey.com>
+
+	* tips: Add a tip.
+	* NEWS: Add entry.
 	* top.c (startup_style): Remove.
 	(print_tip, print_gdb_version): Update.
 	* cli/cli-style.h (class cli_style_option) <cli_style_option>: Add

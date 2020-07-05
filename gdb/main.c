@@ -936,7 +936,12 @@ captured_main_1 (struct captured_main_args *context)
 
   /* Set the startup style.  */
   if (!inhibit_gdbinit && !inhibit_home_gdbinit)
-    read_startup_file ();
+    {
+      read_startup_file ();
+
+      if (!quiet)
+	quiet = check_quiet_mode ();
+    }
 
   /* Now that gdb_init has created the initial inferior, we're in
      position to set args for that inferior.  */
