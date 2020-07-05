@@ -18,6 +18,7 @@
 
 #include "defs.h"
 #include "source-cache.h"
+#include "gdbsupport/filestuff.h"
 #include "gdbsupport/scoped_fd.h"
 #include "source.h"
 #include "cli/cli-style.h"
@@ -56,14 +57,9 @@ source_cache::get_plain_source_lines (struct symtab *s,
   if (desc.get () < 0)
     perror_with_name (symtab_to_filename_for_display (s));
 
-  struct stat st;
-  if (fstat (desc.get (), &st) < 0)
-    perror_with_name (symtab_to_filename_for_display (s));
-
-  std::string lines;
-  lines.resize (st.st_size);
-  if (myread (desc.get (), &lines[0], lines.size ()) < 0)
-    perror_with_name (symtab_to_filename_for_display (s));
+  time_t file_mtime;
+  std::string lines = read_entire_file (symtab_to_filename_for_display (s),
+					desc.get (), &file_mtime);
 
   time_t mtime = 0;
   if (SYMTAB_OBJFILE (s) != NULL && SYMTAB_OBJFILE (s)->obfd != NULL)
@@ -71,7 +67,7 @@ source_cache::get_plain_source_lines (struct symtab *s,
   else if (exec_bfd)
     mtime = exec_bfd_mtime;
 
-  if (mtime && mtime < st.st_mtime)
+  if (mtime && mtime < file_mtime)
     warning (_("Source file is more recent than executable."));
 
   std::vector<off_t> offsets;

@@ -1,3 +1,10 @@
+2020-07-05  Tom Tromey  <tom@tromey.com>
+
+	* utils.h (myread): Don't declare.
+	* utils.c (myread): Remove.
+	* source-cache.c (source_cache::get_plain_source_lines): Use
+	read_entire_file.
+
 2020-07-11  Philippe Waroquiers  <philippe.waroquiers@skynet.be>
 
 	* exec.c (_initialize_exec): Update exec-file-mismatch help.

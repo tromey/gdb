@@ -1,3 +1,8 @@
+2020-07-05  Tom Tromey  <tom@tromey.com>
+
+	* filestuff.h (read_entire_file): Declare.
+	* filestuff.cc (read_entire_file): New function.
+
 2020-06-30  Tom Tromey  <tromey@adacore.com>
 
 	PR build/26183:

@@ -540,8 +540,6 @@ void dummy_obstack_deallocate (void *object, void *data);
 extern pid_t wait_to_die_with_timeout (pid_t pid, int *status, int timeout);
 #endif
 
-extern int myread (int, char *, int);
-
 /* Resource limits used by getrlimit and setrlimit.  */
 
 enum resource_limit_kind

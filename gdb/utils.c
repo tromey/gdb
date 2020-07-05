@@ -687,28 +687,6 @@ flush_streams ()
   gdb_stderr->flush ();
 }
 
-/* My replacement for the read system call.
-   Used like `read' but keeps going if `read' returns too soon.  */
-
-int
-myread (int desc, char *addr, int len)
-{
-  int val;
-  int orglen = len;
-
-  while (len > 0)
-    {
-      val = read (desc, addr, len);
-      if (val < 0)
-	return val;
-      if (val == 0)
-	return orglen - len;
-      len -= val;
-      addr += val;
-    }
-  return orglen;
-}
-
 void
 print_spaces (int n, struct ui_file *file)
 {

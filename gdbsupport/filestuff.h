@@ -139,4 +139,13 @@ extern bool is_regular_file (const char *name, int *errno_ptr);
 
 extern bool mkdir_recursive (const char *dir);
 
+/* Read and return the entire contents of a file.  The file must
+   already be open on FD.  NAME is the file name it is used when
+   reporting errors, which is done by throwing an exception.  The
+   mtime of the file is optionally stored in *MTIME; if MTIME is
+   nullptr, this is ignored.  */
+
+extern std::string read_entire_file (const char *name, int fd,
+				     time_t *mtime = nullptr);
+
 #endif /* COMMON_FILESTUFF_H */

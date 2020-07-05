@@ -501,3 +501,36 @@ mkdir_recursive (const char *dir)
       component_start = component_end;
     }
 }
+
+/* See filestuff.h.  */
+
+std::string
+read_entire_file (const char *name, int fd, time_t *mtime)
+{
+  struct stat st;
+  if (fstat (fd, &st) < 0)
+    perror_with_name (name);
+  size_t len = st.st_size;
+
+  std::string lines;
+  lines.resize (len);
+  char *addr = &lines[0];
+
+  while (len > 0)
+    {
+      int val = read (fd, addr, len);
+      if (val < 0)
+	perror_with_name (name);
+      if (val == 0)
+	break;
+      len -= val;
+      addr += val;
+    }
+
+  if (mtime != nullptr)
+    *mtime = st.st_mtime;
+
+  /* Just in case we really did end up short.  */
+  lines.resize (st.st_size - len);
+  return lines;
+}
