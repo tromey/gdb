@@ -1,5 +1,20 @@
 2020-07-05  Tom Tromey  <tom@tromey.com>
 
+	* tips: Add a tip.
+	* NEWS: Add entry.
+	* top.c (startup_style): Remove.
+	(print_tip, print_gdb_version): Update.
+	* cli/cli-style.h (class cli_style_option) <cli_style_option>: Add
+	intensity parameter.
+	<write>: Declare new method.
+	(startup_style): Declare.
+	* cli/cli-style.c (startup_style): New global.
+	(cli_style_option): Add intensity parameter.
+	(cli_style_option::write): New method.
+	(_initialize_cli_style): Register new style and callbacks.
+
+2020-07-05  Tom Tromey  <tom@tromey.com>
+
 	* main.c (captured_main_1): Call read_startup_file.
 	* cli/cli-setshow.h (write_startup_functions, add_startup_writer)
 	(read_startup_file): Declare.

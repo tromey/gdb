@@ -19,6 +19,7 @@
 
 #include "defs.h"
 #include "cli/cli-cmds.h"
+#include "cli/cli-setshow.h"
 #include "cli/cli-style.h"
 #include "source-cache.h"
 #include "observable.h"
@@ -98,13 +99,19 @@ cli_style_option metadata_style ("metadata", ui_file_style::DIM);
 
 /* See cli-style.h.  */
 
+cli_style_option startup_style ("startup", ui_file_style::MAGENTA,
+				ui_file_style::BOLD);
+
+/* See cli-style.h.  */
+
 cli_style_option::cli_style_option (const char *name,
-				    ui_file_style::basic_color fg)
+				    ui_file_style::basic_color fg,
+				    ui_file_style::intensity intensity)
   : changed (name),
     m_name (name),
     m_foreground (cli_colors[fg - ui_file_style::NONE]),
     m_background (cli_colors[0]),
-    m_intensity (cli_intensities[ui_file_style::NORMAL])
+    m_intensity (cli_intensities[intensity])
 {
 }
 
@@ -253,6 +260,17 @@ cli_style_option::add_setshow_commands (enum command_class theclass,
 			  &m_set_list, &m_show_list, (void *) this);
 }
 
+void
+cli_style_option::write (ui_file *outfile)
+{
+  fprintf_unfiltered (outfile, "set style %s background %s\n",
+		      m_name, m_background);
+  fprintf_unfiltered (outfile, "set style %s foreground %s\n",
+		      m_name, m_foreground);
+  fprintf_unfiltered (outfile, "set style %s intensity %s\n",
+		      m_name, m_intensity);
+}
+
 static cmd_list_element *style_set_list;
 static cmd_list_element *style_show_list;
 
@@ -382,4 +400,18 @@ TUI window that does have the focus."),
 						&style_set_list,
 						&style_show_list,
 						true);
+
+  startup_style.add_setshow_commands (no_class, _("\
+Startup display styling.\n\
+Configure colors used in some startup text."),
+				      &style_set_list, &style_show_list,
+				      false);
+  /* Ensure that the startup style is written to the startup file.  */
+  add_startup_writer ([] (ui_file *outfile)
+    {
+      startup_style.write (outfile);
+    });
+  /* Arrange to write the startup file whenever a startup style
+     setting changes.  */
+  startup_style.changed.attach (write_startup_file);
 }

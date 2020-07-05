@@ -30,7 +30,8 @@ class cli_style_option
 public:
 
   /* Construct a CLI style option with a foreground color.  */
-  cli_style_option (const char *name, ui_file_style::basic_color fg);
+  cli_style_option (const char *name, ui_file_style::basic_color fg,
+		    ui_file_style::intensity = ui_file_style::NORMAL);
 
   /* Construct a CLI style option with an intensity.  */
   cli_style_option (const char *name, ui_file_style::intensity i);
@@ -55,6 +56,9 @@ public:
 
   /* Same as SET_LIST but for the show command list.  */
   struct cmd_list_element *show_list () { return m_show_list; };
+
+  /* Write this style to FILE.  */
+  void write (ui_file *outfile);
 
   /* This style can be observed for any changes.  */
   gdb::observers::observable<> changed;
@@ -123,6 +127,9 @@ extern cli_style_option tui_border_style;
 
 /* The border style of a TUI window that does have the focus.  */
 extern cli_style_option tui_active_border_style;
+
+/* The style to use for (some) startup text.  */
+extern cli_style_option startup_style;
 
 /* True if source styling is enabled.  */
 extern bool source_styling;

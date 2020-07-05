@@ -1,0 +1,64 @@
+# Copyright 2020 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+
+# This test relies on XDG_CONFIG_HOME, which does not work on all
+# platforms; so limit it to Linux native.
+if {![istarget "*-*-linux*"]} then {
+    continue
+}
+if { [target_info gdb_protocol] != "" } {
+    continue
+}
+
+# Check that the contents of FILENAME changed and that the contents
+# now contain the given command.  CONTENTS is the old contents.
+# COMMAND is the command to run, and also used to name the test.
+# Returns the new contents.
+proc require_changed {command filename contents} {
+    gdb_test_no_output $command
+
+    set fd [open $filename r]
+    set new [read $fd]
+    close $fd
+
+    set testname "$command check"
+    if {$contents == $new || [string first $command $new] == -1} {
+	fail $testname
+    } else {
+	pass $testname
+    }
+
+    return $new
+}
+
+save_vars { env(XDG_CONFIG_HOME) } {
+    set dirname [standard_output_file .]
+    file mkdir $dirname/gdb
+    set filename $dirname/gdb/startup-commands
+
+    # Create the file as empty.
+    set fd [open $filename w]
+    close $fd
+
+    # Current contents.
+    set contents ""
+
+    setenv XDG_CONFIG_HOME $dirname
+    clean_restart
+
+    set contents [require_changed "set style startup foreground green" $filename $contents]
+    set contents [require_changed "set style startup background green" $filename $contents]
+    set contents [require_changed "set style startup intensity dim" $filename $contents]
+}

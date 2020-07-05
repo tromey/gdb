@@ -7,3 +7,6 @@ You can use "help news" to see what has changed in GDB.
 Type "apropos word" to search for commands related to "word".
 %
 Type "show configuration" for configuration details.
+%
+You can use the "set style startup" family of commands to change the
+style used for tips.

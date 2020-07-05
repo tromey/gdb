@@ -130,14 +130,6 @@ current_ui_current_uiout_ptr ()
 
 int inhibit_gdbinit = 0;
 
-/* The style used for informational messages at startup.  */
-static ui_file_style startup_style =
-{
-  ui_file_style::MAGENTA,
-  ui_file_style::NONE,
-  ui_file_style::BOLD
-};
-
 /* Flag for whether we want to confirm potentially dangerous
    operations.  Default is yes.  */
 
@@ -1447,7 +1439,7 @@ print_tip (struct ui_file *stream)
   std::uniform_int_distribution<> distr (0, strings.size () - 1);
   int index = distr (mt);
   /* Note that the string will include a newline.  */
-  fprintf_styled (stream, startup_style, "\n%.*s",
+  fprintf_styled (stream, startup_style.style (), "\n%.*s",
 		  (int) strings[index].size (),
 		  strings[index].data ());
 }
@@ -1462,7 +1454,7 @@ print_gdb_version (struct ui_file *stream, bool interactive)
 
   ui_file_style style;
   if (interactive)
-    style = startup_style;
+    style = startup_style.style ();
   fprintf_styled (stream, style, "GNU gdb %s%s\n", PKGVERSION, version);
 
   /* Second line is a copyright notice.  */

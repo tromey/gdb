@@ -1,5 +1,10 @@
 2020-07-05  Tom Tromey  <tom@tromey.com>
 
+	* gdb.texinfo (Output Styling): Document "set style startup"
+	commands.
+
+2020-07-05  Tom Tromey  <tom@tromey.com>
+
 	* gdb.texinfo (Help): Mention tips.
 
 2020-07-05  Tom Tromey  <tom@tromey.com>

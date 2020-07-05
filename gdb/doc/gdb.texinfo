@@ -25676,6 +25676,21 @@ Control the styling of addresses.  These are managed with the
 @code{set style address} family of commands.  By default, this style's
 foreground color is blue.
 
+@item startup
+Control the styling of some text that is printed at startup.  These
+are managed with the @code{set style startup} family of commands.  By
+default, this style's foreground color is magenta and it has bold
+intensity.  Changing these settings will cause them to automatically
+be saved in a special configuration file, which is read by
+@value{GDBN} early in its startup.
+
+The directory in which this file appears depends on the host platform.
+On most systems, the file is in the @file{gdb} subdirectory of the
+directory pointed to by the @env{XDG_CONFIG_HOME} environment
+variable, if it is defined, else in the @file{.config/gdb}
+subdirectory of your home directory.  However, on some systems, the
+default may differ according to local convention.
+
 @item title
 Control the styling of titles.  These are managed with the
 @code{set style title} family of commands.  By default, this style's
