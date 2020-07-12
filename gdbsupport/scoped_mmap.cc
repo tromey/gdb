@@ -17,9 +17,9 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#include "common-defs.h"
-#include "scoped_mmap.h"
-#include "scoped_fd.h"
+#include "gdbsupport/common-defs.h"
+#include "gdbsupport/scoped_mmap.h"
+#include "gdbsupport/scoped_fd.h"
 #include "gdbsupport/filestuff.h"
 
 #ifdef HAVE_SYS_MMAN_H

@@ -18,7 +18,7 @@
 #ifndef GDBSUPPORT_ARRAY_VIEW_H
 #define GDBSUPPORT_ARRAY_VIEW_H
 
-#include "traits.h"
+#include "gdbsupport/traits.h"
 #include <type_traits>
 
 /* An array_view is an abstraction that provides a non-owning view

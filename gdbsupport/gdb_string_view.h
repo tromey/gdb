@@ -46,7 +46,7 @@ namespace gdb {
 
 #include <string>
 #include <limits>
-#include "gdb_assert.h"
+#include "gdbsupport/gdb_assert.h"
 
 namespace gdb {
 
@@ -549,7 +549,7 @@ namespace gdb {
   using string_view = basic_string_view<char>;
 } /* namespace gdb */
 
-#include "gdb_string_view.tcc"
+#include "gdbsupport/gdb_string_view.tcc"
 
 #endif // __cplusplus < 201703L
 

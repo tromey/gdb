@@ -21,7 +21,7 @@
 #define GDBSUPPORT_SCOPED_FD_H
 
 #include <unistd.h>
-#include "filestuff.h"
+#include "gdbsupport/filestuff.h"
 
 /* A smart-pointer-like class to automatically close a file descriptor.  */
 

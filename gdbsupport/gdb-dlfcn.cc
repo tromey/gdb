@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#include "common-defs.h"
-#include "gdb-dlfcn.h"
+#include "gdbsupport/common-defs.h"
+#include "gdbsupport/gdb-dlfcn.h"
 
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>

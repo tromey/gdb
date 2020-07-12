@@ -17,14 +17,14 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#include "common-defs.h"
+#include "gdbsupport/common-defs.h"
 #include "target/target.h"
 #include "gdbsupport/symbol.h"
 #include <unistd.h>
-#include "filestuff.h"
+#include "gdbsupport/filestuff.h"
 
 #define IPA_SYM_STRUCT_NAME ipa_sym_addresses_common
-#include "agent.h"
+#include "gdbsupport/agent.h"
 
 bool debug_agent = false;
 

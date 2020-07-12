@@ -20,7 +20,7 @@
 #ifndef GDBSUPPORT_POISON_H
 #define GDBSUPPORT_POISON_H
 
-#include "traits.h"
+#include "gdbsupport/traits.h"
 #include "obstack.h"
 
 /* Poison memset of non-POD types.  The idea is catching invalid

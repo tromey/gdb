@@ -16,8 +16,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#include "common-defs.h"
-#include "run-time-clock.h"
+#include "gdbsupport/common-defs.h"
+#include "gdbsupport/run-time-clock.h"
 #if defined HAVE_SYS_RESOURCE_H
 #include <sys/resource.h>
 #endif

@@ -23,7 +23,7 @@
 #include <string>
 #include <vector>
 
-#include "poison.h"
+#include "gdbsupport/poison.h"
 
 /* If possible, define FUNCTION_NAME, a macro containing the name of
    the function being defined.  Since this macro may not always be
@@ -43,7 +43,7 @@
 #endif
 #endif
 
-#include "gdb_string_view.h"
+#include "gdbsupport/gdb_string_view.h"
 
 /* xmalloc(), xrealloc() and xcalloc() have already been declared in
    "libiberty.h". */

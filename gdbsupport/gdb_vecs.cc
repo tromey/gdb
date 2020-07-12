@@ -17,9 +17,9 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#include "common-defs.h"
-#include "gdb_vecs.h"
-#include "host-defs.h"
+#include "gdbsupport/common-defs.h"
+#include "gdbsupport/gdb_vecs.h"
+#include "gdbsupport/host-defs.h"
 
 /* Worker function to split character delimiter separated string of fields
    STR into a char pointer vector.  */

@@ -17,9 +17,9 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#include "common-defs.h"
-#include "xml-utils.h"
-#include "buffer.h"
+#include "gdbsupport/common-defs.h"
+#include "gdbsupport/xml-utils.h"
+#include "gdbsupport/buffer.h"
 #include "inttypes.h"
 void
 buffer_grow (struct buffer *buffer, const char *data, size_t size)

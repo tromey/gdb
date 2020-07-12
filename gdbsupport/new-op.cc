@@ -23,8 +23,8 @@
 #endif
 
 #if !__has_feature(address_sanitizer) && !defined(__SANITIZE_ADDRESS__)
-#include "common-defs.h"
-#include "host-defs.h"
+#include "gdbsupport/common-defs.h"
+#include "gdbsupport/host-defs.h"
 #include <new>
 
 /* Override operator new / operator new[], in order to internal_error

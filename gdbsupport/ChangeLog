@@ -1,5 +1,48 @@
 2020-07-12  Tom Tromey  <tom@tromey.com>
 
+	* agent.cc: Fix gdbsupport/ includes.
+	* array-view.h: Fix gdbsupport/ includes.
+	* btrace-common.cc: Fix gdbsupport/ includes.
+	* buffer.cc: Fix gdbsupport/ includes.
+	* cleanups.cc: Fix gdbsupport/ includes.
+	* common-debug.cc: Fix gdbsupport/ includes.
+	* common-defs.h: Fix gdbsupport/ includes.
+	* common-exceptions.cc: Fix gdbsupport/ includes.
+	* common-regcache.cc: Fix gdbsupport/ includes.
+	* common-utils.cc: Fix gdbsupport/ includes.
+	* common-utils.h: Fix gdbsupport/ includes.
+	* environ.cc: Fix gdbsupport/ includes.
+	* errors.cc: Fix gdbsupport/ includes.
+	* fileio.cc: Fix gdbsupport/ includes.
+	* filestuff.cc: Fix gdbsupport/ includes.
+	* format.cc: Fix gdbsupport/ includes.
+	* gdb-dlfcn.cc: Fix gdbsupport/ includes.
+	* gdb_assert.h: Fix gdbsupport/ includes.
+	* gdb_string_view.h: Fix gdbsupport/ includes.
+	* gdb_tilde_expand.cc: Fix gdbsupport/ includes.
+	* gdb_vecs.cc: Fix gdbsupport/ includes.
+	* gdb_wait.cc: Fix gdbsupport/ includes.
+	* job-control.cc: Fix gdbsupport/ includes.
+	* netstuff.cc: Fix gdbsupport/ includes.
+	* new-op.cc: Fix gdbsupport/ includes.
+	* pathstuff.cc: Fix gdbsupport/ includes.
+	* poison.h: Fix gdbsupport/ includes.
+	* print-utils.cc: Fix gdbsupport/ includes.
+	* ptid.cc: Fix gdbsupport/ includes.
+	* rsp-low.cc: Fix gdbsupport/ includes.
+	* run-time-clock.cc: Fix gdbsupport/ includes.
+	* safe-strerror.cc: Fix gdbsupport/ includes.
+	* scoped_fd.h: Fix gdbsupport/ includes.
+	* scoped_mmap.cc: Fix gdbsupport/ includes.
+	* selftest.cc: Fix gdbsupport/ includes.
+	* signals-state-save-restore.cc: Fix gdbsupport/ includes.
+	* signals.cc: Fix gdbsupport/ includes.
+	* tdesc.cc: Fix gdbsupport/ includes.
+	* thread-pool.cc: Fix gdbsupport/ includes.
+	* xml-utils.cc: Fix gdbsupport/ includes.
+
+2020-07-12  Tom Tromey  <tom@tromey.com>
+
 	* agent.h: Rename include guard.
 	* array-view.h: Rename include guard.
 	* break-common.h: Rename include guard.

@@ -19,7 +19,7 @@
 #ifndef GDBSUPPORT_GDB_ASSERT_H
 #define GDBSUPPORT_GDB_ASSERT_H
 
-#include "errors.h"
+#include "gdbsupport/errors.h"
 
 /* A static assertion.  This will cause a compile-time error if EXPR,
    which must be a compile-time constant, is false.  */
