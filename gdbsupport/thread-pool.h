@@ -20,13 +20,15 @@
 #ifndef GDBSUPPORT_THREAD_POOL_H
 #define GDBSUPPORT_THREAD_POOL_H
 
+#include <condition_variable>
+#include <functional>
+#include <future>
+#include <mutex>
 #include <queue>
 #include <thread>
 #include <vector>
-#include <functional>
-#include <mutex>
-#include <condition_variable>
-#include <future>
+
+/* Local includes.  */
 #include "gdbsupport/gdb_optional.h"
 
 namespace gdb

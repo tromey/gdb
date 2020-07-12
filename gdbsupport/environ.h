@@ -17,8 +17,8 @@
 #ifndef GDBSUPPORT_ENVIRON_H
 #define GDBSUPPORT_ENVIRON_H
 
-#include <vector>
 #include <set>
+#include <vector>
 
 /* Class that represents the environment variables as seen by the
    inferior.  */

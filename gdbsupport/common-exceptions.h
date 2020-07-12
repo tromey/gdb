@@ -21,8 +21,10 @@
 #define GDBSUPPORT_COMMON_EXCEPTIONS_H
 
 #include <setjmp.h>
-#include <new>
+
+/* Standard C++ includes.  */
 #include <memory>
+#include <new>
 #include <string>
 
 /* Reasons for calling throw_exceptions().  NOTE: all reason values

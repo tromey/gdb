@@ -19,8 +19,10 @@
 
 #include "gdbsupport/common-defs.h"
 #include "gdbsupport/scoped_mmap.h"
-#include "gdbsupport/scoped_fd.h"
+
+/* Local includes.  */
 #include "gdbsupport/filestuff.h"
+#include "gdbsupport/scoped_fd.h"
 
 #ifdef HAVE_SYS_MMAN_H
 

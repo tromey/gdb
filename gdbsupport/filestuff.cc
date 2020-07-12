@@ -18,12 +18,18 @@
 
 #include "gdbsupport/common-defs.h"
 #include "gdbsupport/filestuff.h"
-#include "gdbsupport/gdb_vecs.h"
+
+/* System C includes.  */
 #include <fcntl.h>
-#include <unistd.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+/* Standard C++ includes.  */
 #include <algorithm>
+
+/* Local includes.  */
+#include "gdbsupport/gdb_vecs.h"
 
 #ifdef USE_WIN32API
 #include <winsock2.h>

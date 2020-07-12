@@ -19,6 +19,8 @@
 
 #include "gdbsupport/common-defs.h"
 #include "gdbsupport/common-exceptions.h"
+
+/* Standard C++ includes.  */
 #include <forward_list>
 
 /* Possible catcher states.  */

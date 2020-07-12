@@ -17,10 +17,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "gdbsupport/common-defs.h"
-#include "gdbsupport/common-exceptions.h"
-#include "gdbsupport/common-debug.h"
 #include "gdbsupport/selftest.h"
+
+/* Standard C++ includes.  */
 #include <map>
+
+/* Local includes.  */
+#include "gdbsupport/common-debug.h"
+#include "gdbsupport/common-exceptions.h"
 
 namespace selftests
 {

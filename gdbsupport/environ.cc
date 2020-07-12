@@ -17,6 +17,8 @@
 
 #include "gdbsupport/common-defs.h"
 #include "gdbsupport/environ.h"
+
+/* Standard C++ includes.  */
 #include <algorithm>
 #include <utility>
 

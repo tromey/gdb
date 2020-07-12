@@ -20,6 +20,8 @@
 
 #include <functional>
 #include <type_traits>
+
+/* Local includes.  */
 #include "gdbsupport/preprocessor.h"
 
 /* scope_exit is a general-purpose scope guard that calls its exit

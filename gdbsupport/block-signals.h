@@ -22,6 +22,7 @@
 
 #include <signal.h>
 
+/* Local includes.  */
 #include "gdbsupport/gdb-sigmask.h"
 
 namespace gdb

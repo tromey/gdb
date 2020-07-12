@@ -19,10 +19,12 @@
 
 #include "gdbsupport/common-defs.h"
 
+/* System C includes.  */
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
 #endif
 
+/* Local includes.  */
 #include "gdbsupport/gdb_signals.h"
 
 struct gdbarch;

@@ -18,6 +18,8 @@
 
 #include "gdbsupport/common-defs.h"
 #include "gdbsupport/run-time-clock.h"
+
+/* System C includes.  */
 #if defined HAVE_SYS_RESOURCE_H
 #include <sys/resource.h>
 #endif

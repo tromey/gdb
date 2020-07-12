@@ -17,9 +17,12 @@
 
 #include "gdbsupport/common-defs.h"
 #include "gdbsupport/signals-state-save-restore.h"
-#include "gdbsupport/gdb-sigmask.h"
 
+/* System C includes.  */
 #include <signal.h>
+
+/* Local includes.  */
+#include "gdbsupport/gdb-sigmask.h"
 
 /* The original signal actions and mask.  */
 

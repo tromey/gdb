@@ -1,5 +1,41 @@
 2020-07-12  Tom Tromey  <tom@tromey.com>
 
+	* agent.cc: Sort headers.
+	* array-view.h: Sort headers.
+	* block-signals.h: Sort headers.
+	* buffer.cc (buffer_grow): Sort headers.
+	* common-exceptions.cc: Sort headers.
+	* common-exceptions.h: Sort headers.
+	* common-utils.cc: Sort headers.
+	* common-utils.h: Sort headers.
+	* def-vector.h: Sort headers.
+	* environ.cc: Sort headers.
+	* environ.h: Sort headers.
+	* event-loop.cc: Sort headers.
+	* fileio.cc: Sort headers.
+	* fileio.h: Sort headers.
+	* filestuff.cc: Sort headers.
+	* forward-scope-exit.h: Sort headers.
+	* gdb_tilde_expand.cc: Sort headers.
+	* gdb_vecs.cc: Sort headers.
+	* gdb_wait.cc: Sort headers.
+	* job-control.cc: Sort headers.
+	* netstuff.cc: Sort headers.
+	* pathstuff.cc: Sort headers.
+	* poison.h: Sort headers.
+	* run-time-clock.cc: Sort headers.
+	* safe-strerror.cc: Sort headers.
+	* scope-exit.h: Sort headers.
+	* scoped_fd.h: Sort headers.
+	* scoped_mmap.cc: Sort headers.
+	* selftest.cc: Sort headers.
+	* signals-state-save-restore.cc: Sort headers.
+	* signals.cc: Sort headers.
+	* thread-pool.cc: Sort headers.
+	* thread-pool.h: Sort headers.
+
+2020-07-12  Tom Tromey  <tom@tromey.com>
+
 	* agent.cc: Fix gdbsupport/ includes.
 	* array-view.h: Fix gdbsupport/ includes.
 	* btrace-common.cc: Fix gdbsupport/ includes.

@@ -18,6 +18,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "gdbsupport/common-defs.h"
+#include "gdbsupport/thread-pool.h"
 
 #if CXX_STD_THREAD
 

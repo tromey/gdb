@@ -20,8 +20,10 @@
 #ifndef GDBSUPPORT_FILEIO_H
 #define GDBSUPPORT_FILEIO_H
 
-#include "gdb/fileio.h"
 #include <sys/stat.h>
+
+/* Local non-gdb includes.  */
+#include "gdb/fileio.h"
 
 /* Convert a host-format errno value to a File-I/O error number.  */
 

@@ -18,8 +18,10 @@
 #ifndef GDBSUPPORT_FORWARD_SCOPE_EXIT_H
 #define GDBSUPPORT_FORWARD_SCOPE_EXIT_H
 
-#include "gdbsupport/scope-exit.h"
 #include <functional>
+
+/* Local includes.  */
+#include "gdbsupport/scope-exit.h"
 
 /* A forward_scope_exit is like scope_exit, but instead of giving it a
    callable, you instead specialize it for a given cleanup function,

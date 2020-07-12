@@ -19,8 +19,12 @@
 
 #include "gdbsupport/common-defs.h"
 #include "gdbsupport/common-utils.h"
-#include "gdbsupport/host-defs.h"
+
+/* System C includes.  */
 #include <ctype.h>
+
+/* Local includes.  */
+#include "gdbsupport/host-defs.h"
 
 void *
 xzalloc (size_t size)

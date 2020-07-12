@@ -18,10 +18,17 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "gdbsupport/common-defs.h"
-#include "target/target.h"
-#include "gdbsupport/symbol.h"
+#include "gdbsupport/agent.h"
+
+/* System C includes.  */
 #include <unistd.h>
+
+/* Local non-gdb includes.  */
+#include "target/target.h"
+
+/* Local includes.  */
 #include "gdbsupport/filestuff.h"
+#include "gdbsupport/symbol.h"
 
 #define IPA_SYM_STRUCT_NAME ipa_sym_addresses_common
 #include "gdbsupport/agent.h"

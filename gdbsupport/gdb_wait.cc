@@ -18,7 +18,6 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "gdbsupport/common-defs.h"
-
 #include "gdbsupport/gdb_wait.h"
 
 #ifdef __MINGW32__

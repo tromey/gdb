@@ -19,8 +19,10 @@
 
 #include "gdbsupport/common-defs.h"
 #include "gdbsupport/fileio.h"
-#include <sys/stat.h>
+
+/* System C includes.  */
 #include <fcntl.h>
+#include <sys/stat.h>
 
 /* See fileio.h.  */
 

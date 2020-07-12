@@ -18,9 +18,14 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "gdbsupport/common-defs.h"
-#include "gdbsupport/xml-utils.h"
 #include "gdbsupport/buffer.h"
+
+/* Local non-gdb includes.  */
 #include "inttypes.h"
+
+/* Local includes.  */
+#include "gdbsupport/xml-utils.h"
+
 void
 buffer_grow (struct buffer *buffer, const char *data, size_t size)
 {

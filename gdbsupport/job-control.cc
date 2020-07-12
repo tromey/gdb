@@ -20,6 +20,8 @@
 
 #include "gdbsupport/common-defs.h"
 #include "gdbsupport/job-control.h"
+
+/* System C includes.  */
 #ifdef HAVE_TERMIOS_H
 #include <termios.h>
 #endif

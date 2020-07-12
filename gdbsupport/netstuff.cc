@@ -18,6 +18,8 @@
 
 #include "gdbsupport/common-defs.h"
 #include "gdbsupport/netstuff.h"
+
+/* Standard C++ includes.  */
 #include <algorithm>
 
 #ifdef USE_WIN32API

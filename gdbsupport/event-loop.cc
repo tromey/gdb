@@ -20,6 +20,7 @@
 #include "gdbsupport/common-defs.h"
 #include "gdbsupport/event-loop.h"
 
+/* Standard C++ includes.  */
 #include <chrono>
 
 #ifdef HAVE_POLL

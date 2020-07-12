@@ -19,6 +19,8 @@
 
 #include "gdbsupport/common-defs.h"
 #include "gdbsupport/gdb_vecs.h"
+
+/* Local includes.  */
 #include "gdbsupport/host-defs.h"
 
 /* Worker function to split character delimiter separated string of fields

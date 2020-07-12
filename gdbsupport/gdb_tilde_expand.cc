@@ -19,6 +19,8 @@
 
 #include "gdbsupport/common-defs.h"
 #include "gdbsupport/gdb_tilde_expand.h"
+
+/* System C includes.  */
 #include <glob.h>
 
 /* RAII-style class wrapping "glob".  */

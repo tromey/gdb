@@ -18,6 +18,8 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "gdbsupport/common-defs.h"
+
+/* System C includes.  */
 #include <string.h>
 
 /* There are two different versions of strerror_r; one is GNU-specific, the

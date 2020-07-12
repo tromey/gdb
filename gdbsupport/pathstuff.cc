@@ -19,9 +19,13 @@
 
 #include "gdbsupport/common-defs.h"
 #include "gdbsupport/pathstuff.h"
-#include "gdbsupport/host-defs.h"
+
+/* Local non-gdb includes.  */
 #include "filenames.h"
+
+/* Local includes.  */
 #include "gdbsupport/gdb_tilde_expand.h"
+#include "gdbsupport/host-defs.h"
 
 #ifdef USE_WIN32API
 #include <windows.h>
