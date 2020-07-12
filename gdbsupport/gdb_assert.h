@@ -16,8 +16,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef COMMON_GDB_ASSERT_H
-#define COMMON_GDB_ASSERT_H
+#ifndef GDBSUPPORT_GDB_ASSERT_H
+#define GDBSUPPORT_GDB_ASSERT_H
 
 #include "errors.h"
 
@@ -58,4 +58,4 @@
   internal_error (__FILE__, __LINE__, _(message))
 #endif
 
-#endif /* COMMON_GDB_ASSERT_H */
+#endif /* GDBSUPPORT_GDB_ASSERT_H */

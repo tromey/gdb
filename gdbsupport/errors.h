@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef COMMON_ERRORS_H
-#define COMMON_ERRORS_H
+#ifndef GDBSUPPORT_ERRORS_H
+#define GDBSUPPORT_ERRORS_H
 
 /* A problem was detected, but the requested operation can still
    proceed.  A warning message is constructed using a printf- or
@@ -91,4 +91,4 @@ extern void malloc_failure (long size) ATTRIBUTE_NORETURN;
 
 extern void flush_streams ();
 
-#endif /* COMMON_ERRORS_H */
+#endif /* GDBSUPPORT_ERRORS_H */

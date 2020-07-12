@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef EVENT_LOOP_H
-#define EVENT_LOOP_H
+#ifndef GDBSUPPORT_EVENT_LOOP_H
+#define GDBSUPPORT_EVENT_LOOP_H
 
 /* An event loop listens for events from multiple event sources.  When
    an event arrives, it is queued and processed by calling the
@@ -99,4 +99,4 @@ extern int invoke_async_signal_handlers ();
 
 extern int check_async_event_handlers ();
 
-#endif /* EVENT_LOOP_H */
+#endif /* GDBSUPPORT_EVENT_LOOP_H */

@@ -16,8 +16,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef COMMON_CLEANUPS_H
-#define COMMON_CLEANUPS_H
+#ifndef GDBSUPPORT_CLEANUPS_H
+#define GDBSUPPORT_CLEANUPS_H
 
 /* Outside of cleanups.c, this is an opaque type.  */
 struct cleanup;
@@ -36,4 +36,4 @@ extern struct cleanup *make_final_cleanup (make_cleanup_ftype *, void *);
 
 extern void do_final_cleanups ();
 
-#endif /* COMMON_CLEANUPS_H */
+#endif /* GDBSUPPORT_CLEANUPS_H */

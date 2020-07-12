@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef COMMON_COMMON_EXCEPTIONS_H
-#define COMMON_COMMON_EXCEPTIONS_H
+#ifndef GDBSUPPORT_COMMON_EXCEPTIONS_H
+#define GDBSUPPORT_COMMON_EXCEPTIONS_H
 
 #include <setjmp.h>
 #include <new>
@@ -301,4 +301,4 @@ extern void throw_error (enum errors error, const char *fmt, ...)
 extern void throw_quit (const char *fmt, ...)
      ATTRIBUTE_NORETURN ATTRIBUTE_PRINTF (1, 2);
 
-#endif /* COMMON_COMMON_EXCEPTIONS_H */
+#endif /* GDBSUPPORT_COMMON_EXCEPTIONS_H */

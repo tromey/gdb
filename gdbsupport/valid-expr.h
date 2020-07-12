@@ -17,14 +17,15 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
+#ifndef GDBSUPPORT_VALID_EXPR_H
+#define GDBSUPPORT_VALID_EXPR_H
+
 /* Helper macros used to build compile-time unit tests that make sure
    that invalid expressions that should not compile would not compile,
    and that expressions that should compile do compile, and have the
    right type.  This is mainly used to verify that some utility's API
    is really as safe as intended.  */
 
-#ifndef COMMON_VALID_EXPR_H
-#define COMMON_VALID_EXPR_H
 
 #include "gdbsupport/preprocessor.h"
 #include "gdbsupport/traits.h"
@@ -105,4 +106,4 @@
 			ESC_PARENS (T1, T2, T3, T4),			\
 			VALID, EXPR_TYPE, EXPR)
 
-#endif /* COMMON_VALID_EXPR_H */
+#endif /* GDBSUPPORT_VALID_EXPR_H */

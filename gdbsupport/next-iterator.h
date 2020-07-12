@@ -16,8 +16,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef COMMON_NEXT_ITERATOR_H
-#define COMMON_NEXT_ITERATOR_H
+#ifndef GDBSUPPORT_NEXT_ITERATOR_H
+#define GDBSUPPORT_NEXT_ITERATOR_H
 
 /* An iterator that uses the 'next' field of a type to iterate.  This
    can be used with various GDB types that are stored as linked
@@ -99,4 +99,4 @@ private:
   T *m_item;
 };
 
-#endif /* COMMON_NEXT_ITERATOR_H */
+#endif /* GDBSUPPORT_NEXT_ITERATOR_H */

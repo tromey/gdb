@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef COMMON_HASH_ENUM_H
-#define COMMON_HASH_ENUM_H
+#ifndef GDBSUPPORT_HASH_ENUM_H
+#define GDBSUPPORT_HASH_ENUM_H
 
 /* A hasher for enums, which was missing in C++11:
     http://www.open-std.org/jtc1/sc22/wg21/docs/lwg-defects.html#2148
@@ -42,4 +42,4 @@ struct hash_enum
 
 } /* namespace gdb */
 
-#endif /* COMMON_HASH_ENUM_H */
+#endif /* GDBSUPPORT_HASH_ENUM_H */

@@ -17,6 +17,9 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
+#ifndef GDBSUPPORT_OFFSET_TYPE_H
+#define GDBSUPPORT_OFFSET_TYPE_H
+
 /* Define an "offset" type.  Offset types are distinct integer types
    that are used to represent an offset into anything that is
    addressable.  For example, an offset into a DWARF debug section.
@@ -45,8 +48,6 @@
 
    However, unlike pointers, you can't deference offset types.  */
 
-#ifndef COMMON_OFFSET_TYPE_H
-#define COMMON_OFFSET_TYPE_H
 
 /* Declare TYPE as being an offset type.  This declares the type and
    enables the operators defined below.  */
@@ -130,4 +131,4 @@ operator- (E lhs, E rhs)
   return static_cast<underlying> (lhs) - static_cast<underlying> (rhs);
 }
 
-#endif /* COMMON_OFFSET_TYPE_H */
+#endif /* GDBSUPPORT_OFFSET_TYPE_H */

@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef COMMON_FORMAT_H
-#define COMMON_FORMAT_H
+#ifndef GDBSUPPORT_FORMAT_H
+#define GDBSUPPORT_FORMAT_H
 
 #include "gdbsupport/gdb_string_view.h"
 
@@ -98,4 +98,4 @@ private:
   gdb::unique_xmalloc_ptr<char> m_storage;
 };
 
-#endif /* COMMON_FORMAT_H */
+#endif /* GDBSUPPORT_FORMAT_H */

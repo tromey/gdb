@@ -16,8 +16,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef COMMON_SAFE_ITERATOR_H
-#define COMMON_SAFE_ITERATOR_H
+#ifndef GDBSUPPORT_SAFE_ITERATOR_H
+#define GDBSUPPORT_SAFE_ITERATOR_H
 
 /* A forward iterator that wraps Iterator, such that when iterating
    with iterator IT, it is possible to delete *IT without invalidating
@@ -132,4 +132,4 @@ private:
   Range m_range;
 };
 
-#endif /* COMMON_SAFE_ITERATOR_H */
+#endif /* GDBSUPPORT_SAFE_ITERATOR_H */

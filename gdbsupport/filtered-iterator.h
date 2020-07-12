@@ -16,8 +16,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef COMMON_FILTERED_ITERATOR_H
-#define COMMON_FILTERED_ITERATOR_H
+#ifndef GDBSUPPORT_FILTERED_ITERATOR_H
+#define GDBSUPPORT_FILTERED_ITERATOR_H
 
 /* A filtered iterator.  This wraps BaseIterator and automatically
    skips elements that FilterFunc filters out.  Requires that
@@ -84,4 +84,4 @@ private:
   BaseIterator m_end {};
 };
 
-#endif /* COMMON_FILTERED_ITERATOR_H */
+#endif /* GDBSUPPORT_FILTERED_ITERATOR_H */

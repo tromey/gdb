@@ -15,8 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef COMMON_TRAITS_H
-#define COMMON_TRAITS_H
+#ifndef GDBSUPPORT_TRAITS_H
+#define GDBSUPPORT_TRAITS_H
 
 #include <type_traits>
 
@@ -106,4 +106,4 @@ template<typename Condition>
 using Requires = typename std::enable_if<Condition::value, void>::type;
 }
 
-#endif /* COMMON_TRAITS_H */
+#endif /* GDBSUPPORT_TRAITS_H */

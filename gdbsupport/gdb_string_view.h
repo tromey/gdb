@@ -1,8 +1,8 @@
 // Components for manipulating non-owning sequences of characters -*- C++ -*-
 
 
-#ifndef COMMON_GDB_STRING_VIEW_H
-#define COMMON_GDB_STRING_VIEW_H
+#ifndef GDBSUPPORT_GDB_STRING_VIEW_H
+#define GDBSUPPORT_GDB_STRING_VIEW_H
 
 // Note: This file has been stolen from the gcc repo
 // (libstdc++-v3/include/experimental/string_view) and has local modifications.
@@ -563,4 +563,4 @@ to_string(const gdb::string_view &view)
 
 }
 
-#endif /* COMMON_GDB_STRING_VIEW_H */
+#endif /* GDBSUPPORT_GDB_STRING_VIEW_H */

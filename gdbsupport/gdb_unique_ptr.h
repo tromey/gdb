@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef COMMON_GDB_UNIQUE_PTR_H
-#define COMMON_GDB_UNIQUE_PTR_H
+#ifndef GDBSUPPORT_GDB_UNIQUE_PTR_H
+#define GDBSUPPORT_GDB_UNIQUE_PTR_H
 
 #include <memory>
 
@@ -64,4 +64,4 @@ make_unique_xstrdup (const char *str)
   return gdb::unique_xmalloc_ptr<char> (xstrdup (str));
 }
 
-#endif /* COMMON_GDB_UNIQUE_PTR_H */
+#endif /* GDBSUPPORT_GDB_UNIQUE_PTR_H */

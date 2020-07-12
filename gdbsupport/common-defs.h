@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef COMMON_COMMON_DEFS_H
-#define COMMON_COMMON_DEFS_H
+#ifndef GDBSUPPORT_COMMON_DEFS_H
+#define GDBSUPPORT_COMMON_DEFS_H
 
 #include <gdbsupport/config.h>
 
@@ -150,4 +150,4 @@ extern char *current_directory;
 #define HAVE_USEFUL_SBRK 1
 #endif
 
-#endif /* COMMON_COMMON_DEFS_H */
+#endif /* GDBSUPPORT_COMMON_DEFS_H */

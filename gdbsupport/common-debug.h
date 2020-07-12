@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef COMMON_COMMON_DEBUG_H
-#define COMMON_COMMON_DEBUG_H
+#ifndef GDBSUPPORT_COMMON_DEBUG_H
+#define GDBSUPPORT_COMMON_DEBUG_H
 
 /* Set to true to enable debugging of hardware breakpoint/
    watchpoint support code.  */
@@ -38,4 +38,4 @@ extern void debug_printf (const char *format, ...)
 extern void debug_vprintf (const char *format, va_list ap)
      ATTRIBUTE_PRINTF (1, 0);
 
-#endif /* COMMON_COMMON_DEBUG_H */
+#endif /* GDBSUPPORT_COMMON_DEBUG_H */

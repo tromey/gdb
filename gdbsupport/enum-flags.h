@@ -15,8 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef COMMON_ENUM_FLAGS_H
-#define COMMON_ENUM_FLAGS_H
+#ifndef GDBSUPPORT_ENUM_FLAGS_H
+#define GDBSUPPORT_ENUM_FLAGS_H
 
 /* Type-safe wrapper for enum flags.  enum flags are enums where the
    values are bits that are meant to be ORed together.
@@ -218,4 +218,4 @@ operator~ (enum_type e)
 
 #endif /* __cplusplus */
 
-#endif /* COMMON_ENUM_FLAGS_H */
+#endif /* GDBSUPPORT_ENUM_FLAGS_H */
