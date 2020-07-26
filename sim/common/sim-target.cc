@@ -22,6 +22,8 @@ class sim_target : public process_stratum_target
 
   void mourn (process_info *proc) override
   {
+    sim_close (m_sim, fixme);
+    m_sim = nullptr;
   }
 
   void request_interrupt () const
