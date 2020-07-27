@@ -1,5 +1,11 @@
 2020-07-27  Tom Tromey  <tromey@adacore.com>
 
+	PR gdb/26303:
+	* dwarf2/macro.c (dwarf_decode_macro_bytes)
+	<case DW_MACRO_import>: Ignore out-of-range offsets.
+
+2020-07-27  Tom Tromey  <tromey@adacore.com>
+
 	* gcore.h (load_corefile): Don't declare.
 
 2020-07-27  Tom de Vries  <tdevries@suse.de>

@@ -653,6 +653,17 @@ dwarf_decode_macro_bytes (dwarf2_per_objfile *per_objfile,
 		is_dwz = 1;
 	      }
 
+	    /* Some versions of ldc generated a DW_MACRO_import with
+	       an offset of 0xffffffff.  See PR gdb/26303.  */
+	    if (offset >= include_section->size)
+	      {
+		complaint (_("invalid offset to DW_MACRO_import"
+			     " (at offset 0x%s)"),
+			   phex_nz (mac_ptr - 1 - section->buffer,
+				    offset_size));
+		break;
+	      }
+
 	    new_mac_ptr = include_section->buffer + offset;
 	    slot = htab_find_slot (include_hash, new_mac_ptr, INSERT);
 
