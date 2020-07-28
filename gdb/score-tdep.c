@@ -103,17 +103,6 @@ score3_register_name (struct gdbarch *gdbarch, int regnum)
   return score_register_names[regnum];
 }
 
-#if WITH_SIM
-static int
-score_register_sim_regno (struct gdbarch *gdbarch, int regnum)
-{
-  gdb_assert (regnum >= 0 
-              && regnum < ((target_mach == bfd_mach_score7)
-			   ? SCORE7_NUM_REGS : SCORE3_NUM_REGS));
-  return regnum;
-}
-#endif
-
 static inst_t *
 score7_fetch_inst (struct gdbarch *gdbarch, CORE_ADDR addr, gdb_byte *memblock)
 {
@@ -1452,9 +1441,7 @@ score_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
   set_gdbarch_float_bit (gdbarch, 32);
   set_gdbarch_double_bit (gdbarch, 64);
   set_gdbarch_long_double_bit (gdbarch, 64);
-#if WITH_SIM
-  set_gdbarch_register_sim_regno (gdbarch, score_register_sim_regno);
-#endif
+  set_gdbarch_register_sim_regno (gdbarch, one2one_register_sim_regno);
   set_gdbarch_pc_regnum (gdbarch, SCORE_PC_REGNUM);
   set_gdbarch_sp_regnum (gdbarch, SCORE_SP_REGNUM);
   set_gdbarch_adjust_breakpoint_address (gdbarch,

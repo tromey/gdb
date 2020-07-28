@@ -913,22 +913,6 @@ h8300h_return_value (struct gdbarch *gdbarch, struct value *function,
   return RETURN_VALUE_REGISTER_CONVENTION;
 }
 
-/* Implementation of 'register_sim_regno' gdbarch method.  */
-
-static int
-h8300_register_sim_regno (struct gdbarch *gdbarch, int regnum)
-{
-  /* Only makes sense to supply raw registers.  */
-  gdb_assert (regnum >= 0 && regnum < gdbarch_num_regs (gdbarch));
-
-  /* We hide the raw ccr from the user by making it nameless.  Because
-     the default register_sim_regno hook returns
-     LEGACY_SIM_REGNO_IGNORE for unnamed registers, we need to
-     override it.  The sim register numbering is compatible with
-     gdb's.  */
-  return regnum;
-}
-
 static const char *
 h8300_register_name_common (const char *regnames[], int numregs,
 			    struct gdbarch *gdbarch, int regno)
@@ -1250,7 +1234,7 @@ h8300_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
 
   gdbarch = gdbarch_alloc (&info, 0);
 
-  set_gdbarch_register_sim_regno (gdbarch, h8300_register_sim_regno);
+  set_gdbarch_register_sim_regno (gdbarch, one2one_register_sim_regno);
 
   switch (info.bfd_arch_info->mach)
     {

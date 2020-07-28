@@ -1222,19 +1222,6 @@ rl78_dwarf_reg_to_regnum (struct gdbarch *gdbarch, int reg)
     return -1;
 }
 
-/* Implement the `register_sim_regno' gdbarch method.  */
-
-static int
-rl78_register_sim_regno (struct gdbarch *gdbarch, int regnum)
-{
-  gdb_assert (regnum < RL78_NUM_REGS);
-
-  /* So long as regnum is in [0, RL78_NUM_REGS), it's valid.  We
-     just want to override the default here which disallows register
-     numbers which have no names.  */
-  return regnum;
-}
-
 /* Implement the "return_value" gdbarch method.  */
 
 static enum return_value_convention
@@ -1432,7 +1419,7 @@ rl78_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
   set_gdbarch_pseudo_register_write (gdbarch, rl78_pseudo_register_write);
   set_gdbarch_dwarf2_reg_to_regnum (gdbarch, rl78_dwarf_reg_to_regnum);
   set_gdbarch_register_reggroup_p (gdbarch, rl78_register_reggroup_p);
-  set_gdbarch_register_sim_regno (gdbarch, rl78_register_sim_regno);
+  set_gdbarch_register_sim_regno (gdbarch, one2one_register_sim_regno);
 
   /* Data types.  */
   set_gdbarch_char_signed (gdbarch, 0);

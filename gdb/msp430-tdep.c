@@ -262,19 +262,6 @@ msp430_pseudo_register_write (struct gdbarch *gdbarch,
     gdb_assert_not_reached ("invalid pseudo register number");
 }
 
-/* Implement the `register_sim_regno' gdbarch method.  */
-
-static int
-msp430_register_sim_regno (struct gdbarch *gdbarch, int regnum)
-{
-  gdb_assert (regnum < MSP430_NUM_REGS);
-
-  /* So long as regnum is in [0, RL78_NUM_REGS), it's valid.  We
-     just want to override the default here which disallows register
-     numbers which have no names.  */
-  return regnum;
-}
-
 constexpr gdb_byte msp430_break_insn[] = { 0x43, 0x43 };
 
 typedef BP_MANIPULATION (msp430_break_insn) msp430_breakpoint;
@@ -930,7 +917,7 @@ msp430_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
   set_gdbarch_pseudo_register_read (gdbarch, msp430_pseudo_register_read);
   set_gdbarch_pseudo_register_write (gdbarch, msp430_pseudo_register_write);
   set_gdbarch_dwarf2_reg_to_regnum (gdbarch, msp430_dwarf2_reg_to_regnum);
-  set_gdbarch_register_sim_regno (gdbarch, msp430_register_sim_regno);
+  set_gdbarch_register_sim_regno (gdbarch, one2one_register_sim_regno);
 
   /* Data types.  */
   set_gdbarch_char_signed (gdbarch, 0);
