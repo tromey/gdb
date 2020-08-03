@@ -75,7 +75,7 @@ struct dummy_target : public target_ops
   void interrupt () override;
   void pass_ctrlc () override;
   void rcmd (const char *arg0, struct ui_file *arg1) override;
-  char *pid_to_exec_file (int arg0) override;
+  std::string pid_to_exec_file (int arg0) override;
   void log_command (const char *arg0) override;
   struct target_section_table *get_section_table () override;
   thread_control_capabilities get_thread_control_capabilities () override;
@@ -244,7 +244,7 @@ struct debug_target : public target_ops
   void interrupt () override;
   void pass_ctrlc () override;
   void rcmd (const char *arg0, struct ui_file *arg1) override;
-  char *pid_to_exec_file (int arg0) override;
+  std::string pid_to_exec_file (int arg0) override;
   void log_command (const char *arg0) override;
   struct target_section_table *get_section_table () override;
   thread_control_capabilities get_thread_control_capabilities () override;
@@ -1970,28 +1970,28 @@ debug_target::rcmd (const char *arg0, struct ui_file *arg1)
   fputs_unfiltered (")\n", gdb_stdlog);
 }
 
-char *
+std::string
 target_ops::pid_to_exec_file (int arg0)
 {
   return this->beneath ()->pid_to_exec_file (arg0);
 }
 
-char *
+std::string
 dummy_target::pid_to_exec_file (int arg0)
 {
   return NULL;
 }
 
-char *
+std::string
 debug_target::pid_to_exec_file (int arg0)
 {
-  char * result;
+  std::string result;
   fprintf_unfiltered (gdb_stdlog, "-> %s->pid_to_exec_file (...)\n", this->beneath ()->shortname ());
   result = this->beneath ()->pid_to_exec_file (arg0);
   fprintf_unfiltered (gdb_stdlog, "<- %s->pid_to_exec_file (", this->beneath ()->shortname ());
   target_debug_print_int (arg0);
   fputs_unfiltered (") = ", gdb_stdlog);
-  target_debug_print_char_p (result);
+  target_debug_print_std_string (result);
   fputs_unfiltered ("\n", gdb_stdlog);
   return result;
 }

@@ -676,7 +676,7 @@ struct target_ops
       TARGET_DEFAULT_FUNC (default_target_pass_ctrlc);
     virtual void rcmd (const char *command, struct ui_file *output)
       TARGET_DEFAULT_FUNC (default_rcmd);
-    virtual char *pid_to_exec_file (int pid)
+    virtual std::string pid_to_exec_file (int pid)
       TARGET_DEFAULT_RETURN (NULL);
     virtual void log_command (const char *)
       TARGET_DEFAULT_IGNORE ();
@@ -1905,12 +1905,9 @@ extern gdb::byte_vector target_thread_info_to_thread_handle
 
    The process PID must be stopped when this operation is used.
 
-   If the executable file cannot be determined, NULL is returned.
-
-   Else, a pointer to a character string containing the pathname
-   is returned.  This string should be copied into a buffer by
-   the client if the string will not be immediately used, or if
-   it must persist.  */
+   If the executable file cannot be determined, an empty string is
+   returned.  Otherwise, a string containing the pathname is
+   returned.  */
 
 #define target_pid_to_exec_file(pid) \
      (current_top_target ()->pid_to_exec_file) (pid)

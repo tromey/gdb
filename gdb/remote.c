@@ -512,7 +512,7 @@ public:
 
   void rcmd (const char *command, struct ui_file *output) override;
 
-  char *pid_to_exec_file (int pid) override;
+  std::string pid_to_exec_file (int pid) override;
 
   void log_command (const char *cmd) override
   {
@@ -14024,14 +14024,14 @@ remote_target::load (const char *name, int from_tty)
    can be opened on the remote side to get the symbols for the child
    process.  Returns NULL if the operation is not supported.  */
 
-char *
+std::string
 remote_target::pid_to_exec_file (int pid)
 {
   static gdb::optional<gdb::char_vector> filename;
   char *annex = NULL;
 
   if (packet_support (PACKET_qXfer_exec_file) != PACKET_ENABLE)
-    return NULL;
+    return {};
 
   inferior *inf = find_inferior_pid (this, pid);
   if (inf == NULL)
@@ -14049,7 +14049,7 @@ remote_target::pid_to_exec_file (int pid)
   filename = target_read_stralloc (current_top_target (),
 				   TARGET_OBJECT_EXEC_FILE, annex);
 
-  return filename ? filename->data () : nullptr;
+  return filename ? std::string (filename->data ()) : {};
 }
 
 /* Implement the to_can_do_single_step target_ops method.  */

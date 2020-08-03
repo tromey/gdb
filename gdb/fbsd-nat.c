@@ -50,11 +50,11 @@
 /* Return the name of a file that can be opened to get the symbols for
    the child process identified by PID.  */
 
-char *
+std::string
 fbsd_nat_target::pid_to_exec_file (int pid)
 {
   ssize_t len;
-  static char buf[PATH_MAX];
+  char buf[PATH_MAX];
   char name[PATH_MAX];
 
 #ifdef KERN_PROC_PATHNAME
@@ -78,10 +78,10 @@ fbsd_nat_target::pid_to_exec_file (int pid)
   if (len != -1)
     {
       buf[len] = '\0';
-      return buf;
+      return std::string (buf);
     }
 
-  return NULL;
+  return {};
 }
 
 #ifdef HAVE_KINFO_GETVMMAP
@@ -386,8 +386,13 @@ fbsd_nat_target::info_proc (const char *args, enum info_proc_what what)
 	    }
 	}
 #endif
+      std::string exe_holder;
       if (exe == NULL)
-	exe = pid_to_exec_file (pid);
+	{
+	  exe_holder = pid_to_exec_file (pid);
+	  if (!exe_holder.empty ())
+	    exe = exe_holder.c_str ();
+	}
       if (exe != NULL)
 	printf_filtered ("exe = '%s'\n", exe);
       else
@@ -1469,7 +1474,7 @@ fbsd_nat_target::wait (ptid_t ptid, struct target_waitstatus *ourstatus,
 	    {
 	      ourstatus->kind = TARGET_WAITKIND_EXECD;
 	      ourstatus->value.execd_pathname
-		= xstrdup (pid_to_exec_file (pid));
+		= xstrdup (pid_to_exec_file (pid).c_str ());
 	      return wptid;
 	    }
 #endif

@@ -247,11 +247,11 @@ validate_exec_file (int from_tty)
   const char *current_exec_file = get_exec_file (0);
   struct inferior *inf = current_inferior ();
   /* Try to determine a filename from the process itself.  */
-  const char *pid_exec_file = target_pid_to_exec_file (inf->pid);
+  std::string pid_exec_file = target_pid_to_exec_file (inf->pid);
   bool build_id_mismatch = false;
 
   /* If we cannot validate the exec file, return.  */
-  if (current_exec_file == NULL || pid_exec_file == NULL)
+  if (current_exec_file == NULL || pid_exec_file.empty ())
     return;
 
   /* Try validating via build-id, if available.  This is the most
@@ -297,19 +297,17 @@ validate_exec_file (int from_tty)
 
   if (build_id_mismatch)
     {
-      std::string exec_file_target (pid_exec_file);
-
-      /* In case the exec file is not local, exec_file_target has to point at
+      /* In case the exec file is not local, pid_exec_file has to point at
 	 the target file system.  */
       if (is_target_filename (current_exec_file) && !target_filesystem_is_local ())
-	exec_file_target = TARGET_SYSROOT_PREFIX + exec_file_target;
+	pid_exec_file = TARGET_SYSROOT_PREFIX + pid_exec_file;
 
       warning
 	(_("Build ID mismatch between current exec-file %ps\n"
 	   "and automatically determined exec-file %ps\n"
 	   "exec-file-mismatch handling is currently \"%s\""),
 	 styled_string (file_name_style.style (), current_exec_file),
-	 styled_string (file_name_style.style (), exec_file_target.c_str ()),
+	 styled_string (file_name_style.style (), pid_exec_file.c_str ()),
 	 exec_file_mismatch_names[exec_file_mismatch_mode]);
       if (exec_file_mismatch_mode == exec_file_mismatch_ask)
 	{
@@ -321,14 +319,14 @@ validate_exec_file (int from_tty)
 	    }
 	  try
 	    {
-	      symbol_file_add_main (exec_file_target.c_str (), add_flags);
-	      exec_file_attach (exec_file_target.c_str (), from_tty);
+	      symbol_file_add_main (pid_exec_file.c_str (), add_flags);
+	      exec_file_attach (pid_exec_file.c_str (), from_tty);
 	    }
 	  catch (gdb_exception_error &err)
 	    {
 	      warning (_("loading %ps %s"),
 		       styled_string (file_name_style.style (),
-				      exec_file_target.c_str ()),
+				      pid_exec_file.c_str ()),
 		       err.message != NULL ? err.what () : "error");
 	    }
 	}
@@ -340,7 +338,6 @@ validate_exec_file (int from_tty)
 void
 exec_file_locate_attach (int pid, int defer_bp_reset, int from_tty)
 {
-  char *exec_file_target;
   symfile_add_flags add_flags = 0;
 
   /* Do nothing if we already have an executable filename.  */
@@ -348,8 +345,8 @@ exec_file_locate_attach (int pid, int defer_bp_reset, int from_tty)
     return;
 
   /* Try to determine a filename from the process itself.  */
-  exec_file_target = target_pid_to_exec_file (pid);
-  if (exec_file_target == NULL)
+  std::string exec_file_target = target_pid_to_exec_file (pid);
+  if (exec_file_target.empty ())
     {
       warning (_("No executable has been specified and target does not "
 		 "support\n"
@@ -359,7 +356,7 @@ exec_file_locate_attach (int pid, int defer_bp_reset, int from_tty)
     }
 
   gdb::unique_xmalloc_ptr<char> exec_file_host
-    = exec_file_find (exec_file_target, NULL);
+    = exec_file_find (exec_file_target.c_str (), NULL);
 
   if (defer_bp_reset)
     add_flags |= SYMFILE_DEFER_BP_RESET;

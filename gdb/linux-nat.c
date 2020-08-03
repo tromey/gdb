@@ -3958,7 +3958,7 @@ linux_nat_target::thread_name (struct thread_info *thr)
 /* Accepts an integer PID; Returns a string representing a file that
    can be opened to get the symbols for the child process.  */
 
-char *
+std::string
 linux_nat_target::pid_to_exec_file (int pid)
 {
   return linux_proc_pid_to_exec_file (pid);

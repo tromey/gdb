@@ -349,7 +349,7 @@ struct windows_nat_target final : public x86_nat_target<inf_child_target>
 
   void interrupt () override;
 
-  char *pid_to_exec_file (int pid) override;
+  std::string pid_to_exec_file (int pid) override;
 
   ptid_t get_ada_task_ptid (long lwp, long thread) override;
 
@@ -2275,10 +2275,10 @@ windows_get_exec_module_filename (char *exe_name_ret, size_t exe_name_max_len)
 
 /* The pid_to_exec_file target_ops method for this platform.  */
 
-char *
+std::string
 windows_nat_target::pid_to_exec_file (int pid)
 {
-  static char path[__PMAX];
+  char path[__PMAX];
 #ifdef __CYGWIN__
   /* Try to find exe name as symlink target of /proc/<pid>/exe.  */
   int nchars;
@@ -2289,7 +2289,7 @@ windows_nat_target::pid_to_exec_file (int pid)
   if (nchars > 0 && nchars < sizeof (path))
     {
       path[nchars] = '\0';	/* Got it */
-      return path;
+      return std::string (path);
     }
 #endif
 
@@ -2298,7 +2298,7 @@ windows_nat_target::pid_to_exec_file (int pid)
   if (!windows_get_exec_module_filename (path, sizeof (path)))
     path[0] = '\0';
 
-  return path;
+  return std::string (path);
 }
 
 /* Print status information about what we're accessing.  */

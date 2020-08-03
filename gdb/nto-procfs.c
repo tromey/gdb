@@ -121,7 +121,7 @@ struct nto_procfs_target : public inf_child_target
 
   const char *extra_thread_info (struct thread_info *) override;
 
-  char *pid_to_exec_file (int pid) override;
+  std::string pid_to_exec_file (int pid) override;
 };
 
 /* For "target native".  */
@@ -664,11 +664,11 @@ nto_procfs_target::files_info ()
 
 /* Target to_pid_to_exec_file implementation.  */
 
-char *
+std::string
 nto_procfs_target::pid_to_exec_file (const int pid)
 {
   int proc_fd;
-  static char proc_path[PATH_MAX];
+  char proc_path[PATH_MAX];
   ssize_t rd;
 
   /* Read exe file name.  */
@@ -676,17 +676,17 @@ nto_procfs_target::pid_to_exec_file (const int pid)
 	    (nodestr != NULL) ? nodestr : "", pid);
   proc_fd = open (proc_path, O_RDONLY);
   if (proc_fd == -1)
-    return NULL;
+    return {};
 
   rd = read (proc_fd, proc_path, sizeof (proc_path) - 1);
   close (proc_fd);
   if (rd <= 0)
     {
       proc_path[0] = '\0';
-      return NULL;
+      return {};
     }
   proc_path[rd] = '\0';
-  return proc_path;
+  return std::string (proc_path);
 }
 
 /* Attach to process PID, then initialize for debugging it.  */

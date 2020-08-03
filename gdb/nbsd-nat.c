@@ -33,16 +33,16 @@
 /* Return the name of a file that can be opened to get the symbols for
    the child process identified by PID.  */
 
-char *
+std::string
 nbsd_nat_target::pid_to_exec_file (int pid)
 {
-  static char buf[PATH_MAX];
+  char buf[PATH_MAX];
   size_t buflen;
   int mib[4] = {CTL_KERN, KERN_PROC_ARGS, pid, KERN_PROC_PATHNAME};
   buflen = sizeof (buf);
   if (sysctl (mib, ARRAY_SIZE (mib), buf, &buflen, NULL, 0))
-    return NULL;
-  return buf;
+    return {};
+  return std::string (buf);
 }
 
 /* Return the current directory for the process identified by PID.  */
@@ -450,9 +450,9 @@ nbsd_nat_target::info_proc (const char *args, enum info_proc_what what)
     }
   if (do_exe)
     {
-      const char *exe = pid_to_exec_file (pid);
-      if (exe != nullptr)
-	printf_filtered ("exe = '%s'\n", exe);
+      std::string exe = pid_to_exec_file (pid);
+      if (!exe.empty ())
+	printf_filtered ("exe = '%s'\n", exe.c_str ());
       else
 	warning (_("unable to fetch executable path name"));
     }
@@ -768,7 +768,8 @@ nbsd_nat_target::wait (ptid_t ptid, struct target_waitstatus *ourstatus,
   if (code == TRAP_EXEC)
     {
       ourstatus->kind = TARGET_WAITKIND_EXECD;
-      ourstatus->value.execd_pathname = xstrdup (pid_to_exec_file (pid));
+      ourstatus->value.execd_pathname
+	= xstrdup (pid_to_exec_file (pid).c_str ());
       return wptid;
     }
 

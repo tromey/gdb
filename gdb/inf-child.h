@@ -70,7 +70,7 @@ public:
 
   void post_attach (int) override;
 
-  char *pid_to_exec_file (int pid) override;
+  std::string pid_to_exec_file (int pid) override;
 
   int fileio_open (struct inferior *inf, const char *filename,
 		   int flags, int mode, int warn_if_slow,

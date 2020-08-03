@@ -235,12 +235,12 @@ inf_child_target::can_attach ()
   return true;
 }
 
-char *
+std::string
 inf_child_target::pid_to_exec_file (int pid)
 {
   /* This target doesn't support translation of a process ID to the
      filename of the executable file.  */
-  return NULL;
+  return {};
 }
 
 /* Implementation of to_fileio_open.  */

@@ -127,7 +127,7 @@ public:
 
   std::string pid_to_str (ptid_t) override;
 
-  char *pid_to_exec_file (int pid) override;
+  std::string pid_to_exec_file (int pid) override;
 
   thread_control_capabilities get_thread_control_capabilities () override
   { return tc_schedlock; }
@@ -2947,10 +2947,10 @@ procfs_target::pid_to_str (ptid_t ptid)
 /* Accepts an integer PID; Returns a string representing a file that
    can be opened to get the symbols for the child process.  */
 
-char *
+std::string
 procfs_target::pid_to_exec_file (int pid)
 {
-  static char buf[PATH_MAX];
+  char buf[PATH_MAX];
   char name[PATH_MAX];
 
   /* Solaris 11 introduced /proc/<proc-id>/execname.  */
@@ -2970,7 +2970,7 @@ procfs_target::pid_to_exec_file (int pid)
 	buf[len] = '\0';
     }
 
-  return buf;
+  return std::string (buf);
 }
 
 /* Insert a watchpoint.  */
