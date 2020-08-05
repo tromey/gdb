@@ -8825,23 +8825,17 @@ ada_to_fixed_value (struct value *val)
 
 /* Attributes */
 
-/* Table mapping attribute numbers to names.
-   NOTE: Keep up to date with enum ada_attribute definition in ada-lang.h.  */
+/* Table mapping attribute numbers to names.  */
 
 static const char *attribute_names[] = {
   "<?>",
 
-  "first",
-  "last",
-  "length",
-  "image",
-  "max",
-  "min",
-  "modulus",
-  "pos",
-  "size",
-  "tag",
-  "val",
+#define OP(X)
+#define XOP(name, user_name) user_name ,
+#include "ada-operator.def"
+#undef XOP
+#undef OP
+
   0
 };
 

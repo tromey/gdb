@@ -1,5 +1,12 @@
 2020-08-05  Tom Tromey  <tromey@adacore.com>
 
+	* expression.h (XOP): New define.
+	* ada-lang.c (attribute_names): Use ada-operator.def to fill
+	array.
+	* ada-operator.def: Use XOP for attribute operators.
+
+2020-08-05  Tom Tromey  <tromey@adacore.com>
+
 	PR rust/26197:
 	* dwarf2/read.c (alloc_rust_variant): Handle univariant case.
 	(quirk_rust_enum): Call alloc_rust_variant for univariant case.

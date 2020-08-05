@@ -66,8 +66,11 @@ enum exp_opcode : uint8_t
        OP_EXTENDED0.  */
     OP (OP_EXTENDED0)
 
+
 /* Language specific operators.  */
+#define XOP(opname, user_name) OP (opname)
 #include "ada-operator.def"
+#undef XOP
 #include "fortran-operator.def"
 
 #undef OP
