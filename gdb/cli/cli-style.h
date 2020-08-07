@@ -124,6 +124,9 @@ extern cli_style_option tui_border_style;
 /* The border style of a TUI window that does have the focus.  */
 extern cli_style_option tui_active_border_style;
 
+/* The style for a line number.  */
+extern cli_style_option line_number_style;
+
 /* True if source styling is enabled.  */
 extern bool source_styling;
 

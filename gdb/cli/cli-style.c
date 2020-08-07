@@ -98,6 +98,10 @@ cli_style_option metadata_style ("metadata", ui_file_style::DIM);
 
 /* See cli-style.h.  */
 
+cli_style_option line_number_style ("line-number", ui_file_style::DIM);
+
+/* See cli-style.h.  */
+
 cli_style_option::cli_style_option (const char *name,
 				    ui_file_style::basic_color fg)
   : changed (name),
