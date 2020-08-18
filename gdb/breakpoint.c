@@ -12158,10 +12158,11 @@ say_where (struct breakpoint *b)
 	    {
 	      const char *filename
 		= symtab_to_filename_for_display (b->loc->symtab);
-	      printf_filtered (": file %ps, line %d.",
+	      printf_filtered (": file %ps, line %ps.",
 			       styled_string (file_name_style.style (),
 					      filename),
-			       b->loc->line_number);
+			       styled_string (line_number_style.style (),
+					      pulongest (b->loc->line_number)));
 	    }
 	  else
 	    /* This is not ideal, but each location may have a

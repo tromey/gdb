@@ -1097,7 +1097,9 @@ jump_command (const char *arg, int from_tty)
   sfn = find_pc_function (sal.pc);
   if (fn != NULL && sfn != fn)
     {
-      if (!query (_("Line %d is not in `%s'.  Jump anyway? "), sal.line,
+      if (!query (_("Line %ps is not in `%s'.  Jump anyway? "),
+		  styled_string (line_number_style.style (),
+				 pulongest (sal.line)),
 		  fn->print_name ()))
 	{
 	  error (_("Not confirmed."));

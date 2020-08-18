@@ -2378,8 +2378,9 @@ tfind_line_command (const char *args, int from_tty)
     {
       if (start_pc == end_pc)
   	{
-	  printf_filtered ("Line %d of \"%s\"",
-			   sal.line,
+	  printf_filtered ("Line %ps of \"%s\"",
+			   styled_string (line_number_style.style (),
+					  pulongest (sal.line)),
 			   symtab_to_filename_for_display (sal.symtab));
 	  wrap_here ("  ");
 	  printf_filtered (" is at address ");
@@ -2390,8 +2391,9 @@ tfind_line_command (const char *args, int from_tty)
 	  if (sal.line > 0
 	      && find_line_pc_range (sal, &start_pc, &end_pc)
 	      && start_pc != end_pc)
-	    printf_filtered ("Attempting to find line %d instead.\n",
-			     sal.line);
+	    printf_filtered ("Attempting to find line %ps instead.\n",
+			     styled_string (line_number_style.style (),
+					    pulongest (sal.line)));
   	  else
 	    error (_("Cannot find a good line."));
   	}
@@ -2400,8 +2402,10 @@ tfind_line_command (const char *args, int from_tty)
     /* Is there any case in which we get here, and have an address
        which the user would want to see?  If we have debugging
        symbols and no line numbers?  */
-    error (_("Line number %d is out of range for \"%s\"."),
-	   sal.line, symtab_to_filename_for_display (sal.symtab));
+    error (_("Line number %ps is out of range for \"%s\"."),
+	   styled_string (line_number_style.style (),
+			  pulongest (sal.line)),
+	   symtab_to_filename_for_display (sal.symtab));
 
   /* Find within range of stated line.  */
   if (args && *args)

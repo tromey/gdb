@@ -1338,8 +1338,10 @@ print_source_lines_base (struct symtab *s, int line, int stopline,
     {
       const std::vector<off_t> *offsets = nullptr;
       g_source_cache.get_line_charpos (s, &offsets);
-      error (_("Line number %d out of range; %s has %d lines."),
-	     line, symtab_to_filename_for_display (s),
+      error (_("Line number %ps out of range; %s has %d lines."),
+	     styled_string (line_number_style.style (),
+			    pulongest (line)),
+	     symtab_to_filename_for_display (s),
 	     offsets == nullptr ? 0 : (int) offsets->size ());
     }
 
@@ -1503,8 +1505,9 @@ info_line_command (const char *arg, int from_tty)
 
 	  if (start_pc == end_pc)
 	    {
-	      printf_filtered ("Line %d of \"%s\"",
-			       sal.line,
+	      printf_filtered ("Line %ps of \"%s\"",
+			       styled_string (line_number_style.style (),
+					      pulongest (sal.line)),
 			       symtab_to_filename_for_display (sal.symtab));
 	      wrap_here ("  ");
 	      printf_filtered (" is at address ");
@@ -1514,8 +1517,9 @@ info_line_command (const char *arg, int from_tty)
 	    }
 	  else
 	    {
-	      printf_filtered ("Line %d of \"%s\"",
-			       sal.line,
+	      printf_filtered ("Line %ps of \"%s\"",
+			       styled_string (line_number_style.style (),
+					      pulongest (sal.line)),
 			       symtab_to_filename_for_display (sal.symtab));
 	      wrap_here ("  ");
 	      printf_filtered (" starts at address ");
@@ -1541,8 +1545,10 @@ info_line_command (const char *arg, int from_tty)
 	/* Is there any case in which we get here, and have an address
 	   which the user would want to see?  If we have debugging symbols
 	   and no line numbers?  */
-	printf_filtered (_("Line number %d is out of range for \"%s\".\n"),
-			 sal.line, symtab_to_filename_for_display (sal.symtab));
+	printf_filtered (_("Line number %ps is out of range for \"%s\".\n"),
+			 styled_string (line_number_style.style (),
+					pulongest (sal.line)),
+			 symtab_to_filename_for_display (sal.symtab));
     }
 }
 
