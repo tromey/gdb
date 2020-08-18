@@ -1355,8 +1355,10 @@ print_source_lines_base (struct symtab *s, int line, int stopline,
           uiout->text (symtab_to_filename_for_display (s));
           uiout->text (":");
         }
-      xsnprintf (buf, sizeof (buf), "%d\t", new_lineno++);
-      uiout->text (buf);
+
+      uiout->message ("%ps\t", styled_string (line_number_style.style (),
+					      pulongest (new_lineno)));
+      ++new_lineno;
 
       while (*iter != '\0')
 	{
