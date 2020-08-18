@@ -183,7 +183,7 @@ class ui_out
   void end (ui_out_type type);
 
   void field_signed (const char *fldname, LONGEST value,
-		     const ui_file_style &style);
+		     const ui_file_style &style = ui_file_style ());
   void field_fmt_signed (int width, ui_align align, const char *fldname,
 			 LONGEST value);
   /* Like field_signed, but print an unsigned value.  */

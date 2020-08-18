@@ -37,6 +37,7 @@
 #include "gdbcmd.h"
 #include "source.h"
 #include "readline/tilde.h"
+#include "cli/cli-style.h"
 
 #include "psymtab.h"
 
