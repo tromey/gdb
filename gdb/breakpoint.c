@@ -5825,7 +5825,8 @@ print_breakpoint_location (struct breakpoint *b,
       if (uiout->is_mi_like_p ())
 	uiout->field_string ("fullname", symtab_to_fullname (loc->symtab));
       
-      uiout->field_signed ("line", loc->line_number);
+      uiout->field_signed ("line", loc->line_number,
+			   line_number_style.style ());
     }
   else if (loc)
     {
@@ -13396,7 +13397,7 @@ update_static_tracepoint (struct breakpoint *b, struct symtab_and_line sal)
 	      uiout->field_string ("fullname", fullname);
 	    }
 
-	  uiout->field_signed ("line", sal2.line);
+	  uiout->field_signed ("line", sal2.line, line_number_style.style ());
 	  uiout->text ("\n");
 
 	  b->loc->line_number = sal2.line;

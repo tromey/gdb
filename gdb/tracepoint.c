@@ -3707,7 +3707,7 @@ print_one_static_tracepoint_marker (int count,
       else
 	uiout->field_skip ("fullname");
 
-      uiout->field_signed ("line", sal.line);
+      uiout->field_signed ("line", sal.line, line_number_style.style ());
     }
   else
     {

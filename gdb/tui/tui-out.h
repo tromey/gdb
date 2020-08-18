@@ -33,7 +33,7 @@ public:
 protected:
 
   void do_field_signed (int fldno, int width, ui_align align, const char *fldname,
-			LONGEST value) override;
+			LONGEST value, const ui_file_style &style) override;
   void do_field_string (int fldno, int width, ui_align align, const char *fldname,
 			const char *string, const ui_file_style &style) override;
   void do_field_fmt (int fldno, int width, ui_align align, const char *fldname,

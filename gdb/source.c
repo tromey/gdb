@@ -1298,7 +1298,7 @@ print_source_lines_base (struct symtab *s, int line, int stopline,
 	}
       else
 	{
-	  uiout->field_signed ("line", line);
+	  uiout->field_signed ("line", line, line_number_style.style ());
 	  uiout->text ("\tin ");
 
 	  /* CLI expects only the "file" field.  TUI expects only the
