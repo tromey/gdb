@@ -386,4 +386,11 @@ TUI window that does have the focus."),
 						&style_set_list,
 						&style_show_list,
 						true);
+  line_number_style.add_setshow_commands (no_class, _("\
+Line number display styling.\n\
+Configure colors and display intensity for line numbers\n\
+The \"line-number\" style is used when GDB displays line numbers\n\
+coming from your source code."),
+				       &style_set_list, &style_show_list,
+				       false);
 }
