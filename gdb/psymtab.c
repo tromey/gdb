@@ -1473,7 +1473,8 @@ sort_pst_symbols (struct objfile *objfile, struct partial_symtab *pst)
 
   /* The psymbols for this partial_symtab are currently at the end of the
      vector.  */
-  auto end = objfile->partial_symtabs->global_psymbols.end ();
+  auto end = begin;
+  std::advance (end, pst->n_global_syms);
 
   std::sort (begin, end, [] (partial_symbol *s1, partial_symbol *s2)
     {
