@@ -65,13 +65,8 @@ psymtab_storage::psymtab_storage ()
 
 psymtab_storage::~psymtab_storage ()
 {
-  partial_symtab *iter = psymtabs;
-  while (iter != nullptr)
-    {
-      partial_symtab *next = iter->next;
-      delete iter;
-      iter = next;
-    }
+  for (partial_symtab *iter : m_symtabs)
+    delete iter;
 }
 
 /* See psymtab.h.  */
@@ -79,11 +74,18 @@ psymtab_storage::~psymtab_storage ()
 void
 psymtab_storage::install_psymtab (partial_symtab *pst)
 {
-  pst->next = psymtabs;
-  psymtabs = pst;
+  m_symtabs.push_back (pst);
 }
 
 
+
+void
+psymtab_storage::finish ()
+{
+  global_psymbols.shrink_to_fit ();
+  static_psymbols.shrink_to_fit ();
+  m_symtabs.shrink_to_fit ();
+}
 
 /* See psymtab.h.  */
 
@@ -103,8 +105,7 @@ require_partial_symbols (struct objfile *objfile, bool verbose)
 
 	  /* Partial symbols list are not expected to changed after this
 	     point.  */
-	  objfile->partial_symtabs->global_psymbols.shrink_to_fit ();
-	  objfile->partial_symtabs->static_psymbols.shrink_to_fit ();
+	  objfile->partial_symtabs->finish ();
 
 	  if (verbose && !objfile_has_symbols (objfile))
 	    printf_filtered (_("(No debugging symbols found in %s)\n"),
@@ -214,7 +215,6 @@ find_pc_sect_psymtab_closer (struct objfile *objfile,
 			     struct partial_symtab *pst,
 			     struct bound_minimal_symbol msymbol)
 {
-  struct partial_symtab *tpst;
   struct partial_symtab *best_pst = pst;
   CORE_ADDR best_addr = pst->text_low (objfile);
 
@@ -238,8 +238,11 @@ find_pc_sect_psymtab_closer (struct objfile *objfile,
      address is closest to the PC address.  By closest we mean
      that find_pc_sect_symbol returns the symbol with address
      that is closest and still less than the given PC.  */
-  for (tpst = pst; tpst != NULL; tpst = tpst->next)
+  for (partial_symtab *tpst : objfile->partial_symtabs->range ())
     {
+      if (tpst == pst)
+	break;
+
       if (pc >= tpst->text_low (objfile) && pc < tpst->text_high (objfile))
 	{
 	  struct partial_symbol *p;
@@ -305,8 +308,7 @@ find_pc_sect_psymtab (struct objfile *objfile, CORE_ADDR pc,
      partial symtabs then we will end up returning a pointer to an object
      that is not a partial_symtab, which doesn't end well.  */
 
-  if (objfile->partial_symtabs->psymtabs != NULL
-      && objfile->partial_symtabs->psymtabs_addrmap != NULL)
+  if (objfile->partial_symtabs->has_psymtabs_and_map ())
     {
       CORE_ADDR baseaddr = objfile->text_section_offset ();
 
@@ -1016,14 +1018,10 @@ psym_print_stats (struct objfile *objfile)
 static void
 psym_dump (struct objfile *objfile)
 {
-  struct partial_symtab *psymtab;
-
-  if (objfile->partial_symtabs->psymtabs)
+  if (!objfile->partial_symtabs->empty ())
     {
       printf_filtered ("Psymtabs:\n");
-      for (psymtab = objfile->partial_symtabs->psymtabs;
-	   psymtab != NULL;
-	   psymtab = psymtab->next)
+      for (partial_symtab *psymtab : objfile->partial_symtabs->range ())
 	{
 	  printf_filtered ("%s at ",
 			   psymtab->filename);
@@ -1363,7 +1361,7 @@ psym_expand_symtabs_matching
 static int
 psym_has_symbols (struct objfile *objfile)
 {
-  return objfile->partial_symtabs->psymtabs != NULL;
+  return !objfile->partial_symtabs->empty ();
 }
 
 /* Helper function for psym_find_compunit_symtab_by_address that fills
@@ -1737,26 +1735,43 @@ partial_symtab::expand_dependencies (struct objfile *objfile)
     }
 }
 
+/* See psymtab.h.  */
+
+void
+psymtab_storage::discard_psymtabs_to (struct partial_symtab *to)
+{
+  bool found = false;
+  while (!found && !m_symtabs.empty ())
+    {
+      partial_symtab *pst = m_symtabs.back ();
+      m_symtabs.pop_back ();
+      found = pst == to;
+      delete pst;
+    }
+}
 
 void
 psymtab_storage::discard_psymtab (struct partial_symtab *pst)
 {
-  struct partial_symtab **prev_pst;
-
-  /* From dbxread.c:
-     Empty psymtabs happen as a result of header files which don't
-     have any symbols in them.  There can be a lot of them.  But this
-     check is wrong, in that a psymtab with N_SLINE entries but
-     nothing else is not empty, but we don't realize that.  Fixing
-     that without slowing things down might be tricky.  */
-
-  /* First, snip it out of the psymtab chain.  */
-
-  prev_pst = &psymtabs;
-  while ((*prev_pst) != pst)
-    prev_pst = &((*prev_pst)->next);
-  (*prev_pst) = pst->next;
+  auto iter = std::find (m_symtabs.begin (), m_symtabs.end (), pst);
+  if (iter != m_symtabs.end ())
+    m_symtabs.erase (iter);
   delete pst;
+}
+
+void
+psymtab_storage::maybe_drop_last ()
+{
+  if (m_symtabs.size () != 1)
+    return;
+  partial_symtab *pst = m_symtabs[0];
+  if (pst->number_of_dependencies == 0
+      && pst->n_global_syms == 0
+      && pst->n_static_syms == 0)
+    {
+      m_symtabs.clear ();
+      delete pst;
+    }
 }
 
 

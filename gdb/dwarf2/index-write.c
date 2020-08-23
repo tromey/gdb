@@ -1712,8 +1712,7 @@ write_psymtabs_to_index (dwarf2_per_objfile *per_objfile, const char *dir,
   if (per_objfile->per_bfd->types.size () > 1)
     error (_("Cannot make an index when the file has multiple .debug_types sections"));
 
-  if (!objfile->partial_symtabs->psymtabs
-      || !objfile->partial_symtabs->psymtabs_addrmap)
+  if (!objfile->partial_symtabs->has_psymtabs_and_map ())
     return;
 
   struct stat st;

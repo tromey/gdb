@@ -197,10 +197,6 @@ struct partial_symtab
   }
 
 
-  /* Chain of all existing partial symtabs.  */
-
-  struct partial_symtab *next = nullptr;
-
   /* Name of the source file which this partial_symtab defines,
      or if the psymtab is anonymous then a descriptive name for
      debugging purposes, or "".  It must not be NULL.  */
@@ -450,7 +446,7 @@ class psymtab_discarder
 
   psymtab_discarder (struct objfile *objfile)
     : m_objfile (objfile),
-      m_psymtab (objfile->partial_symtabs->psymtabs)
+      m_psymtab (objfile->partial_symtabs->latest ())
   {
   }
 

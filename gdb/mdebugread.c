@@ -3725,12 +3725,7 @@ parse_partial_symbols (minimal_symbol_reader &reader,
 
   /* Remove the dummy psymtab created for -O3 images above, if it is
      still empty, to enable the detection of stripped executables.  */
-  partial_symtab *pst_del = objfile->partial_symtabs->psymtabs;
-  if (pst_del->next == NULL
-      && pst_del->number_of_dependencies == 0
-      && pst_del->n_global_syms == 0
-      && pst_del->n_static_syms == 0)
-    objfile->partial_symtabs->discard_psymtab (pst_del);
+  objfile->partial_symtabs->maybe_drop_last ();
 }
 
 /* If the current psymbol has an enumerated type, we need to add

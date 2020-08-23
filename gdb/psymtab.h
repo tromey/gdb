@@ -20,6 +20,7 @@
 #ifndef PSYMTAB_H
 #define PSYMTAB_H
 
+#include <algorithm>
 #include "gdb_obstack.h"
 #include "symfile.h"
 #include "gdbsupport/next-iterator.h"
@@ -58,11 +59,7 @@ public:
   /* Discard all partial symbol tables starting with "psymtabs" and
      proceeding until "to" has been discarded.  */
 
-  void discard_psymtabs_to (struct partial_symtab *to)
-  {
-    while (psymtabs != to)
-      discard_psymtab (psymtabs);
-  }
+  void discard_psymtabs_to (struct partial_symtab *to);
 
   /* Discard the partial symbol table.  */
 
@@ -90,22 +87,37 @@ public:
 
   void install_psymtab (partial_symtab *pst);
 
-  typedef next_adapter<struct partial_symtab> partial_symtab_range;
+  typedef const std::vector<partial_symtab *> &partial_symtab_range;
 
   /* A range adapter that makes it possible to iterate over all
      psymtabs in one objfile.  */
 
-  partial_symtab_range range ()
+  partial_symtab_range range () const
   {
-    return partial_symtab_range (psymtabs);
+    return m_symtabs;
   }
 
+  /* Return the most recent psymtab that was created.  */
+  partial_symtab *latest () const
+  {
+    if (m_symtabs.empty ())
+      return nullptr;
+    return m_symtabs.back ();
+  }
 
-  /* Each objfile points to a linked list of partial symtabs derived from
-     this file, one partial symtab structure for each compilation unit
-     (source file).  */
+  void maybe_drop_last ();
 
-  struct partial_symtab *psymtabs = nullptr;
+  bool has_psymtabs_and_map () const
+  {
+    return !m_symtabs.empty () && psymtabs_addrmap != nullptr;
+  }
+
+  bool empty () const
+  {
+    return m_symtabs.empty ();
+  }
+
+  void finish ();
 
   /* Map addresses to the entries of PSYMTABS.  It would be more efficient to
      have a map per the whole process but ADDRMAP cannot selectively remove
@@ -141,6 +153,8 @@ private:
      so that we don't waste memory when there are no psymtabs.  */
 
   gdb::optional<auto_obstack> m_obstack;
+
+  std::vector<partial_symtab *> m_symtabs;
 };
 
 
