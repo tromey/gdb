@@ -196,6 +196,11 @@ struct partial_symtab
     text_high_valid = 1;
   }
 
+  bool empty () const
+  {
+    return global_psymbols.empty () && static_psymbols.empty ();
+  }
+
 
   /* Name of the source file which this partial_symtab defines,
      or if the psymtab is anonymous then a descriptive name for
@@ -265,22 +270,18 @@ struct partial_symtab
 
   /* Global symbol list.  This list will be sorted after readin to
      improve access.  Binary search will be the usual method of
-     finding a symbol within it.  globals_offset is an integer offset
-     within global_psymbols[].  */
+     finding a symbol within it.  */
 
-  int globals_offset = 0;
-  int n_global_syms = 0;
+  std::vector<partial_symbol *> global_psymbols;
 
   /* Static symbol list.  This list will *not* be sorted after readin;
      to find a symbol in it, exhaustive search must be used.  This is
      reasonable because searches through this list will eventually
      lead to either the read in of a files symbols for real (assumed
      to take a *lot* of time; check) or an error (and we don't care
-     how long errors take).  This is an offset and size within
-     static_psymbols[].  */
+     how long errors take).  */
 
-  int statics_offset = 0;
-  int n_static_syms = 0;
+  std::vector<partial_symbol *> static_psymbols;
 
   /* True iff objfile->psymtabs_addrmap is properly populated for this
      partial_symtab.  For discontiguous overlapping psymtabs is the only usable
@@ -399,12 +400,14 @@ enum class psymbol_placement
    If COPY_NAME is true, make a copy of NAME, otherwise use the passed
    reference.
 
+   PST is the partial symbol table to add to.
+
    THECLASS is the type of symbol.
 
    SECTION is the index of the section of OBJFILE in which the symbol is found.
 
    WHERE determines whether the symbol goes in the list of static or global
-   partial symbols of OBJFILE.
+   partial symbols.
 
    COREADDR is the address of the symbol.  For partial symbols that don't have
    an address, zero is passed.
@@ -412,7 +415,8 @@ enum class psymbol_placement
    LANGUAGE is the language from which the symbol originates.  This will
    influence, amongst other things, how the symbol name is demangled. */
 
-extern void add_psymbol_to_list (gdb::string_view name,
+extern void add_psymbol_to_list (partial_symtab *pst,
+				 gdb::string_view name,
 				 bool copy_name, domain_enum domain,
 				 enum address_class theclass,
 				 short section,
@@ -425,7 +429,8 @@ extern void add_psymbol_to_list (gdb::string_view name,
    must be fully constructed, and the names must be set and intern'd
    as appropriate.  */
 
-extern void add_psymbol_to_list (const partial_symbol &psym,
+extern void add_psymbol_to_list (partial_symtab *pst,
+				 const partial_symbol &psym,
 				 psymbol_placement where,
 				 struct objfile *objfile);
 

@@ -2035,8 +2035,7 @@ xcoff_end_psymtab (struct objfile *objfile, legacy_psymtab *pst,
 
   if (num_includes == 0
       && number_dependencies == 0
-      && pst->n_global_syms == 0
-      && pst->n_static_syms == 0)
+      && pst->empty ())
     {
       /* Throw away this psymtab, it's empty.  */
       /* Empty psymtabs happen as a result of header files which don't have
@@ -2575,7 +2574,8 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 	    switch (p[1])
 	      {
 	      case 'S':
-		add_psymbol_to_list (gdb::string_view (namestring,
+		add_psymbol_to_list (pst,
+				     gdb::string_view (namestring,
 						       p - namestring),
 				     true, VAR_DOMAIN, LOC_STATIC,
 				     SECT_OFF_DATA (objfile),
@@ -2587,7 +2587,8 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 	      case 'G':
 		/* The addresses in these entries are reported to be
 		   wrong.  See the code that reads 'G's for symtabs.  */
-		add_psymbol_to_list (gdb::string_view (namestring,
+		add_psymbol_to_list (pst,
+				     gdb::string_view (namestring,
 						       p - namestring),
 				     true, VAR_DOMAIN, LOC_STATIC,
 				     SECT_OFF_DATA (objfile),
@@ -2607,7 +2608,8 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 		    || (p == namestring + 1
 			&& namestring[0] != ' '))
 		  {
-		    add_psymbol_to_list (gdb::string_view (namestring,
+		    add_psymbol_to_list (pst,
+					 gdb::string_view (namestring,
 							   p - namestring),
 					 true, STRUCT_DOMAIN, LOC_TYPEDEF, -1,
 					 psymbol_placement::STATIC,
@@ -2615,7 +2617,8 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 		    if (p[2] == 't')
 		      {
 			/* Also a typedef with the same name.  */
-			add_psymbol_to_list (gdb::string_view (namestring,
+			add_psymbol_to_list (pst,
+					     gdb::string_view (namestring,
 							       p - namestring),
 					     true, VAR_DOMAIN, LOC_TYPEDEF, -1,
 					     psymbol_placement::STATIC,
@@ -2628,7 +2631,8 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 	      case 't':
 		if (p != namestring)	/* a name is there, not just :T...  */
 		  {
-		    add_psymbol_to_list (gdb::string_view (namestring,
+		    add_psymbol_to_list (pst,
+					 gdb::string_view (namestring,
 							   p - namestring),
 					 true, VAR_DOMAIN, LOC_TYPEDEF, -1,
 					 psymbol_placement::STATIC,
@@ -2691,7 +2695,8 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 			  ;
 			/* Note that the value doesn't matter for
 			   enum constants in psymtabs, just in symtabs.  */
-			add_psymbol_to_list (gdb::string_view (p, q - p), true,
+			add_psymbol_to_list (pst,
+					     gdb::string_view (p, q - p), true,
 					     VAR_DOMAIN, LOC_CONST, -1,
 					     psymbol_placement::STATIC,
 					     0, psymtab_language, objfile);
@@ -2709,7 +2714,8 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 
 	      case 'c':
 		/* Constant, e.g. from "const" in Pascal.  */
-		add_psymbol_to_list (gdb::string_view (namestring,
+		add_psymbol_to_list (pst,
+				     gdb::string_view (namestring,
 						       p - namestring),
 				     true, VAR_DOMAIN, LOC_CONST, -1,
 				     psymbol_placement::STATIC,
@@ -2727,7 +2733,8 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 		    function_outside_compilation_unit_complaint (name);
 		    xfree (name);
 		  }
-		add_psymbol_to_list (gdb::string_view (namestring,
+		add_psymbol_to_list (pst,
+				     gdb::string_view (namestring,
 						       p - namestring),
 				     true, VAR_DOMAIN, LOC_BLOCK,
 				     SECT_OFF_TEXT (objfile),
@@ -2758,7 +2765,8 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 		if (startswith (namestring, "@FIX"))
 		  continue;
 
-		add_psymbol_to_list (gdb::string_view (namestring,
+		add_psymbol_to_list (pst,
+				     gdb::string_view (namestring,
 						       p - namestring),
 				     true, VAR_DOMAIN, LOC_BLOCK,
 				     SECT_OFF_TEXT (objfile),
