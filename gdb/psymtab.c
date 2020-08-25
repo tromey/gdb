@@ -809,6 +809,9 @@ psym_find_last_source_symtab (struct objfile *ofp)
 static void
 psym_forget_cached_source_info (struct objfile *objfile)
 {
+  if ((objfile->flags & OBJF_PSYMTABS_READ) == 0)
+    return;
+
   for (partial_symtab *pst : require_partial_symbols (objfile, true))
     {
       if (pst->fullname != NULL)
