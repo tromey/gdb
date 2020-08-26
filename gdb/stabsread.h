@@ -172,7 +172,7 @@ extern void finish_global_stabs (struct objfile *objfile);
    they are only used by some stabs readers.  */
 
 extern legacy_psymtab *dbx_end_psymtab
-  (struct objfile *objfile, legacy_psymtab *pst,
+(struct objfile *objfile, std::unique_ptr<legacy_psymtab> &&pst,
    const char **include_list, int num_includes,
    int capping_symbol_offset, CORE_ADDR capping_text,
    legacy_psymtab **dependency_list, int number_dependencies,

@@ -3651,7 +3651,7 @@ parse_partial_symbols (minimal_symbol_reader &reader,
       /* Link pst to FDR.  dbx_end_psymtab returns NULL if the psymtab was
          empty and put on the free list.  */
       fdr_to_pst[f_idx].pst
-	= dbx_end_psymtab (objfile, save_pst,
+	= dbx_end_psymtab (objfile, std::unique_ptr<legacy_psymtab> (save_pst),
 			   psymtab_include_list, includes_used,
 			   -1, save_pst->raw_text_high (),
 			   dependency_list, dependencies_used,
@@ -3675,9 +3675,9 @@ parse_partial_symbols (minimal_symbol_reader &reader,
 	  && save_pst->text_low_valid
 	  && !(objfile->flags & OBJF_REORDERED))
 	{
-	  for (partial_symtab *iter : objfile->psymtabs ())
+	  for (auto &iter : objfile->psymtabs ())
 	    {
-	      if (save_pst != iter
+	      if (save_pst != iter.get ()
 		  && save_pst->raw_text_low () >= iter->raw_text_low ()
 		  && save_pst->raw_text_low () < iter->raw_text_high ()
 		  && save_pst->raw_text_high () > iter->raw_text_high ())

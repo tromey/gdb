@@ -1956,12 +1956,13 @@ static unsigned int first_fun_line_offset;
    is the address relative to which its symbols are (incremental) or 0
    (normal).  */
 
-static legacy_psymtab *
+static std::unique_ptr<legacy_psymtab>
 xcoff_start_psymtab (struct objfile *objfile,
 		     const char *filename, int first_symnum)
 {
   /* We fill in textlow later.  */
-  legacy_psymtab *result = new legacy_psymtab (filename, objfile, 0);
+  std::unique_ptr<legacy_psymtab> result
+    (new legacy_psymtab (filename, objfile, 0));
 
   result->read_symtab_private =
     XOBNEW (&objfile->objfile_obstack, struct symloc);
@@ -1984,7 +1985,8 @@ xcoff_start_psymtab (struct objfile *objfile,
    are the information for includes and dependencies.  */
 
 static legacy_psymtab *
-xcoff_end_psymtab (struct objfile *objfile, legacy_psymtab *pst,
+xcoff_end_psymtab (struct objfile *objfile,
+		   std::unique_ptr<legacy_psymtab> &&pst,
 		   const char **include_list, int num_includes,
 		   int capping_symbol_number,
 		   legacy_psymtab **dependency_list,
@@ -1999,8 +2001,6 @@ xcoff_end_psymtab (struct objfile *objfile, legacy_psymtab *pst,
   ((struct symloc *) pst->read_symtab_private)->lineno_off =
     first_fun_line_offset;
   first_fun_line_offset = 0;
-
-  end_psymtab_common (objfile, pst);
 
   pst->number_of_dependencies = number_dependencies;
   if (number_dependencies)
@@ -2026,7 +2026,7 @@ xcoff_end_psymtab (struct objfile *objfile, legacy_psymtab *pst,
          shared by the entire set of include files.  FIXME-someday.  */
       subpst->dependencies =
 	objfile->partial_symtabs->allocate_dependencies (1);
-      subpst->dependencies[0] = pst;
+      subpst->dependencies[0] = pst.get ();
       subpst->number_of_dependencies = 1;
 
       subpst->legacy_read_symtab = pst->legacy_read_symtab;
@@ -2037,16 +2037,13 @@ xcoff_end_psymtab (struct objfile *objfile, legacy_psymtab *pst,
       && number_dependencies == 0
       && pst->empty ())
     {
-      /* Throw away this psymtab, it's empty.  */
-      /* Empty psymtabs happen as a result of header files which don't have
-         any symbols in them.  There can be a lot of them.  */
-
-      objfile->partial_symtabs->discard_psymtab (pst);
-
       /* Indicate that psymtab was thrown away.  */
-      pst = NULL;
+      return nullptr;
     }
-  return pst;
+
+  legacy_psymtab *result = pst.get ();
+  end_psymtab_common (objfile, std::move (pst));
+  return result;
 }
 
 /* Swap raw symbol at *RAW and put the name in *NAME, the symbol in
@@ -2121,7 +2118,7 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
   unsigned int nsyms;
 
   /* Current partial symtab */
-  legacy_psymtab *pst;
+  std::unique_ptr<legacy_psymtab> pst;
 
   /* List of current psymtab's include files.  */
   const char **psymtab_include_list;
@@ -2142,8 +2139,6 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
   int last_csect_sec = 0;
   int misc_func_recorded = 0;	/* true if any misc. function.  */
   int textlow_not_set = 1;
-
-  pst = (legacy_psymtab *) 0;
 
   includes_allocated = 30;
   includes_used = 0;
@@ -2231,7 +2226,7 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 			       each program csect, because their text
 			       sections need not be adjacent.  */
 			    xcoff_end_psymtab
-			      (objfile, pst, psymtab_include_list,
+			      (objfile, std::move (pst), psymtab_include_list,
 			       includes_used, symnum_before, dependency_list,
 			       dependencies_used, textlow_not_set);
 			    includes_used = 0;
@@ -2400,7 +2395,8 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 
 	    if (pst)
 	      {
-		xcoff_end_psymtab (objfile, pst, psymtab_include_list,
+		xcoff_end_psymtab (objfile, std::move (pst),
+				   psymtab_include_list,
 				   includes_used, symnum_before,
 				   dependency_list, dependencies_used,
 				   textlow_not_set);
@@ -2574,7 +2570,7 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 	    switch (p[1])
 	      {
 	      case 'S':
-		add_psymbol_to_list (pst,
+		add_psymbol_to_list (pst.get (),
 				     gdb::string_view (namestring,
 						       p - namestring),
 				     true, VAR_DOMAIN, LOC_STATIC,
@@ -2587,7 +2583,7 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 	      case 'G':
 		/* The addresses in these entries are reported to be
 		   wrong.  See the code that reads 'G's for symtabs.  */
-		add_psymbol_to_list (pst,
+		add_psymbol_to_list (pst.get (),
 				     gdb::string_view (namestring,
 						       p - namestring),
 				     true, VAR_DOMAIN, LOC_STATIC,
@@ -2608,7 +2604,7 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 		    || (p == namestring + 1
 			&& namestring[0] != ' '))
 		  {
-		    add_psymbol_to_list (pst,
+		    add_psymbol_to_list (pst.get (),
 					 gdb::string_view (namestring,
 							   p - namestring),
 					 true, STRUCT_DOMAIN, LOC_TYPEDEF, -1,
@@ -2617,7 +2613,7 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 		    if (p[2] == 't')
 		      {
 			/* Also a typedef with the same name.  */
-			add_psymbol_to_list (pst,
+			add_psymbol_to_list (pst.get (),
 					     gdb::string_view (namestring,
 							       p - namestring),
 					     true, VAR_DOMAIN, LOC_TYPEDEF, -1,
@@ -2631,7 +2627,7 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 	      case 't':
 		if (p != namestring)	/* a name is there, not just :T...  */
 		  {
-		    add_psymbol_to_list (pst,
+		    add_psymbol_to_list (pst.get (),
 					 gdb::string_view (namestring,
 							   p - namestring),
 					 true, VAR_DOMAIN, LOC_TYPEDEF, -1,
@@ -2695,7 +2691,7 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 			  ;
 			/* Note that the value doesn't matter for
 			   enum constants in psymtabs, just in symtabs.  */
-			add_psymbol_to_list (pst,
+			add_psymbol_to_list (pst.get (),
 					     gdb::string_view (p, q - p), true,
 					     VAR_DOMAIN, LOC_CONST, -1,
 					     psymbol_placement::STATIC,
@@ -2714,7 +2710,7 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 
 	      case 'c':
 		/* Constant, e.g. from "const" in Pascal.  */
-		add_psymbol_to_list (pst,
+		add_psymbol_to_list (pst.get (),
 				     gdb::string_view (namestring,
 						       p - namestring),
 				     true, VAR_DOMAIN, LOC_CONST, -1,
@@ -2733,7 +2729,7 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 		    function_outside_compilation_unit_complaint (name);
 		    xfree (name);
 		  }
-		add_psymbol_to_list (pst,
+		add_psymbol_to_list (pst.get (),
 				     gdb::string_view (namestring,
 						       p - namestring),
 				     true, VAR_DOMAIN, LOC_BLOCK,
@@ -2765,7 +2761,7 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 		if (startswith (namestring, "@FIX"))
 		  continue;
 
-		add_psymbol_to_list (pst,
+		add_psymbol_to_list (pst.get (),
 				     gdb::string_view (namestring,
 						       p - namestring),
 				     true, VAR_DOMAIN, LOC_BLOCK,
@@ -2826,7 +2822,8 @@ scan_xcoff_symtab (minimal_symbol_reader &reader,
 
   if (pst)
     {
-      xcoff_end_psymtab (objfile, pst, psymtab_include_list, includes_used,
+      xcoff_end_psymtab (objfile, std::move (pst),
+			 psymtab_include_list, includes_used,
 			 ssymnum, dependency_list,
 			 dependencies_used, textlow_not_set);
     }

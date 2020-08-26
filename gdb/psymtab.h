@@ -56,15 +56,6 @@ public:
 
   DISABLE_COPY_AND_ASSIGN (psymtab_storage);
 
-  /* Discard all partial symbol tables starting with "psymtabs" and
-     proceeding until "to" has been discarded.  */
-
-  void discard_psymtabs_to (struct partial_symtab *to);
-
-  /* Discard the partial symbol table.  */
-
-  void discard_psymtab (struct partial_symtab *pst);
-
   /* Return the obstack that is used for storage by this object.  */
 
   struct obstack *obstack ()
@@ -85,9 +76,10 @@ public:
   /* Install a psymtab on the psymtab list.  This transfers ownership
      of PST to this object.  */
 
-  void install_psymtab (partial_symtab *pst);
+  void install_psymtab (std::unique_ptr<partial_symtab> &&pst);
 
-  typedef const std::vector<partial_symtab *> &partial_symtab_range;
+  typedef const std::vector<std::unique_ptr<partial_symtab>>
+    &partial_symtab_range;
 
   /* A range adapter that makes it possible to iterate over all
      psymtabs in one objfile.  */
@@ -95,14 +87,6 @@ public:
   partial_symtab_range range () const
   {
     return m_symtabs;
-  }
-
-  /* Return the most recent psymtab that was created.  */
-  partial_symtab *latest () const
-  {
-    if (m_symtabs.empty ())
-      return nullptr;
-    return m_symtabs.back ();
   }
 
   void maybe_drop_last ();
@@ -142,7 +126,7 @@ private:
 
   gdb::optional<auto_obstack> m_obstack;
 
-  std::vector<partial_symtab *> m_symtabs;
+  std::vector<std::unique_ptr<partial_symtab>> m_symtabs;
 };
 
 

@@ -297,8 +297,8 @@ static void add_old_header_file (const char *, int);
 
 static void add_this_object_header_file (int);
 
-static legacy_psymtab *start_psymtab (struct objfile *, const char *,
-					     CORE_ADDR, int);
+static std::unique_ptr<legacy_psymtab> start_psymtab
+  (struct objfile *, const char *, CORE_ADDR, int);
 
 /* Free up old header file tables.  */
 
@@ -968,7 +968,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
   int data_sect_index;
 
   /* Current partial symtab.  */
-  legacy_psymtab *pst;
+  std::unique_ptr<legacy_psymtab> pst;
 
   /* List of current psymtab's include files.  */
   const char **psymtab_include_list;
@@ -988,8 +988,6 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
   next_file_string_table_offset = 0;
 
   stringtab_global = DBX_STRINGTAB (objfile);
-
-  pst = (legacy_psymtab *) 0;
 
   includes_allocated = 30;
   includes_used = 0;
@@ -1130,13 +1128,14 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 		     which are not the address.  */
 		  && nlist.n_value >= pst->raw_text_low ())
 		{
-		  dbx_end_psymtab (objfile, pst, psymtab_include_list,
+		  dbx_end_psymtab (objfile, std::move (pst),
+				   psymtab_include_list,
 				   includes_used, symnum * symbol_size,
 				   nlist.n_value > pst->raw_text_high ()
 				   ? nlist.n_value : pst->raw_text_high (),
 				   dependency_list, dependencies_used,
 				   textlow_not_set);
-		  pst = (legacy_psymtab *) 0;
+		  pst = nullptr;
 		  includes_used = 0;
 		  dependencies_used = 0;
 		  has_line_numbers = 0;
@@ -1245,13 +1244,14 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 
 		if (pst)
 		  {
-		    dbx_end_psymtab (objfile, pst, psymtab_include_list,
+		    dbx_end_psymtab (objfile, std::move (pst),
+				     psymtab_include_list,
 				     includes_used, symnum * symbol_size,
 				     (valu > pst->raw_text_high ()
 				      ? valu : pst->raw_text_high ()),
 				     dependency_list, dependencies_used,
 				     prev_textlow_not_set);
-		    pst = (legacy_psymtab *) 0;
+		    pst = nullptr;
 		    includes_used = 0;
 		    dependencies_used = 0;
 		    has_line_numbers = 0;
@@ -1326,7 +1326,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 			   namestring, symnum);
 		continue;
 	      }
-	    bincl_list->emplace_back (namestring, nlist.n_value, pst);
+	    bincl_list->emplace_back (namestring, nlist.n_value, pst.get ());
 
 	    /* Mark down an include file in the current psymtab.  */
 
@@ -1460,7 +1460,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 	  switch (p[1])
 	    {
 	    case 'S':
-	      add_psymbol_to_list (pst,
+	      add_psymbol_to_list (pst.get (),
 				   gdb::string_view (sym_name, sym_len), true,
 				   VAR_DOMAIN, LOC_STATIC,
 				   data_sect_index,
@@ -1471,7 +1471,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 	    case 'G':
 	      /* The addresses in these entries are reported to be
 		 wrong.  See the code that reads 'G's for symtabs.  */
-	      add_psymbol_to_list (pst,
+	      add_psymbol_to_list (pst.get (),
 				   gdb::string_view (sym_name, sym_len), true,
 				   VAR_DOMAIN, LOC_STATIC,
 				   data_sect_index,
@@ -1490,7 +1490,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 		  || (p == namestring + 1
 		      && namestring[0] != ' '))
 		{
-		  add_psymbol_to_list (pst,
+		  add_psymbol_to_list (pst.get (),
 				       gdb::string_view (sym_name, sym_len),
 				       true, STRUCT_DOMAIN, LOC_TYPEDEF, -1,
 				       psymbol_placement::STATIC,
@@ -1498,7 +1498,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 		  if (p[2] == 't')
 		    {
 		      /* Also a typedef with the same name.  */
-		      add_psymbol_to_list (pst,
+		      add_psymbol_to_list (pst.get (),
 					   gdb::string_view (sym_name, sym_len),
 					   true, VAR_DOMAIN, LOC_TYPEDEF, -1,
 					   psymbol_placement::STATIC,
@@ -1511,7 +1511,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 	    case 't':
 	      if (p != namestring)	/* a name is there, not just :T...  */
 		{
-		  add_psymbol_to_list (pst,
+		  add_psymbol_to_list (pst.get (),
 				       gdb::string_view (sym_name, sym_len),
 				       true, VAR_DOMAIN, LOC_TYPEDEF, -1,
 				       psymbol_placement::STATIC,
@@ -1573,7 +1573,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 			;
 		      /* Note that the value doesn't matter for
 			 enum constants in psymtabs, just in symtabs.  */
-		      add_psymbol_to_list (pst,
+		      add_psymbol_to_list (pst.get (),
 					   gdb::string_view (p, q - p), true,
 					   VAR_DOMAIN, LOC_CONST, -1,
 					   psymbol_placement::STATIC, 0,
@@ -1592,7 +1592,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 
 	    case 'c':
 	      /* Constant, e.g. from "const" in Pascal.  */
-	      add_psymbol_to_list (pst,
+	      add_psymbol_to_list (pst.get (),
 				   gdb::string_view (sym_name, sym_len), true,
 				   VAR_DOMAIN, LOC_CONST, -1,
 				   psymbol_placement::STATIC, 0,
@@ -1648,7 +1648,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 		  pst->set_text_low (nlist.n_value);
 		  textlow_not_set = 0;
 		}
-	      add_psymbol_to_list (pst,
+	      add_psymbol_to_list (pst.get (),
 				   gdb::string_view (sym_name, sym_len), true,
 				   VAR_DOMAIN, LOC_BLOCK,
 				   SECT_OFF_TEXT (objfile),
@@ -1708,7 +1708,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 		  pst->set_text_low (nlist.n_value);
 		  textlow_not_set = 0;
 		}
-	      add_psymbol_to_list (pst,
+	      add_psymbol_to_list (pst.get (),
 				   gdb::string_view (sym_name, sym_len), true,
 				   VAR_DOMAIN, LOC_BLOCK,
 				   SECT_OFF_TEXT (objfile),
@@ -1774,7 +1774,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 
 	    /* If this include file was defined earlier in this file,
 	       leave it alone.  */
-	    if (needed_pst == pst)
+	    if (needed_pst == pst.get ())
 	      continue;
 
 	    if (needed_pst)
@@ -1825,12 +1825,12 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 	     compiled without debugging info follows this module.  */
 	  if (pst && gdbarch_sofun_address_maybe_missing (gdbarch))
 	    {
-	      dbx_end_psymtab (objfile, pst,
+	      dbx_end_psymtab (objfile, std::move (pst),
 			       psymtab_include_list, includes_used,
 			       symnum * symbol_size,
 			       (CORE_ADDR) 0, dependency_list,
 			       dependencies_used, textlow_not_set);
-	      pst = (legacy_psymtab *) 0;
+	      pst = nullptr;
 	      includes_used = 0;
 	      dependencies_used = 0;
 	      has_line_numbers = 0;
@@ -1891,7 +1891,8 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
 	 : lowest_text_address)
 	+ text_size;
 
-      dbx_end_psymtab (objfile, pst, psymtab_include_list, includes_used,
+      dbx_end_psymtab (objfile, std::move (pst),
+		       psymtab_include_list, includes_used,
 		       symnum * symbol_size,
 		       (text_end > pst->raw_text_high ()
 			? text_end : pst->raw_text_high ()),
@@ -1906,7 +1907,7 @@ read_dbx_symtab (minimal_symbol_reader &reader, struct objfile *objfile)
    is the address relative to which its symbols are (incremental) or 0
    (normal).  */
 
-static legacy_psymtab *
+static std::unique_ptr<legacy_psymtab>
 start_psymtab (struct objfile *objfile, const char *filename, CORE_ADDR textlow,
 	       int ldsymoff)
 {
@@ -1926,7 +1927,7 @@ start_psymtab (struct objfile *objfile, const char *filename, CORE_ADDR textlow,
   psymtab_language = deduce_language_from_filename (filename);
   PST_LANGUAGE (result) = psymtab_language;
 
-  return result;
+  return std::unique_ptr<legacy_psymtab> (result);
 }
 
 /* Close off the current usage of PST.
@@ -1935,7 +1936,8 @@ start_psymtab (struct objfile *objfile, const char *filename, CORE_ADDR textlow,
    FIXME:  List variables and peculiarities of same.  */
 
 legacy_psymtab *
-dbx_end_psymtab (struct objfile *objfile, legacy_psymtab *pst,
+dbx_end_psymtab (struct objfile *objfile,
+		 std::unique_ptr<legacy_psymtab> &&pst,
 		 const char **include_list, int num_includes,
 		 int capping_symbol_offset, CORE_ADDR capping_text,
 		 legacy_psymtab **dependency_list,
@@ -2009,14 +2011,12 @@ dbx_end_psymtab (struct objfile *objfile, legacy_psymtab *pst,
          address, set it to our starting address.  Take care to not set our
          own ending address to our starting address.  */
 
-      for (partial_symtab *p1 : objfile->psymtabs ())
+      for (auto &p1 : objfile->psymtabs ())
 	if (!p1->text_high_valid && p1->text_low_valid && p1 != pst)
 	  p1->set_text_high (pst->raw_text_low ());
     }
 
   /* End of kludge for patching Solaris textlow and texthigh.  */
-
-  end_psymtab_common (objfile, pst);
 
   pst->number_of_dependencies = number_dependencies;
   if (number_dependencies)
@@ -2043,7 +2043,7 @@ dbx_end_psymtab (struct objfile *objfile, legacy_psymtab *pst,
          shared by the entire set of include files.  FIXME-someday.  */
       subpst->dependencies =
 	objfile->partial_symtabs->allocate_dependencies (1);
-      subpst->dependencies[0] = pst;
+      subpst->dependencies[0] = pst.get ();
       subpst->number_of_dependencies = 1;
 
       subpst->legacy_read_symtab = pst->legacy_read_symtab;
@@ -2055,19 +2055,13 @@ dbx_end_psymtab (struct objfile *objfile, legacy_psymtab *pst,
       && pst->empty ()
       && has_line_numbers == 0)
     {
-      /* Throw away this psymtab, it's empty.  */
-      /* Empty psymtabs happen as a result of header files which don't have
-         any symbols in them.  There can be a lot of them.  But this check
-         is wrong, in that a psymtab with N_SLINE entries but nothing else
-         is not empty, but we don't realize that.  Fixing that without slowing
-         things down might be tricky.  */
-
-      objfile->partial_symtabs->discard_psymtab (pst);
-
       /* Indicate that psymtab was thrown away.  */
-      pst = NULL;
+      return nullptr;
     }
-  return pst;
+
+  legacy_psymtab *result = pst.get ();
+  end_psymtab_common (objfile, std::move (pst));
+  return result;
 }
 
 static void

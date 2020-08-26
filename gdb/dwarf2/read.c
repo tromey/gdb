@@ -1245,7 +1245,7 @@ show_dwarf_max_cache_age (struct ui_file *file, int from_tty,
 static void dwarf2_find_base_address (struct die_info *die,
 				      struct dwarf2_cu *cu);
 
-static dwarf2_psymtab *create_partial_symtab
+static std::unique_ptr<dwarf2_psymtab> create_partial_symtab
   (dwarf2_per_cu_data *per_cu, dwarf2_per_objfile *per_objfile,
    const char *name);
 
@@ -6123,12 +6123,7 @@ dwarf2_build_psymtabs (struct objfile *objfile)
 
   try
     {
-      /* This isn't really ideal: all the data we allocate on the
-	 objfile's obstack is still uselessly kept around.  However,
-	 freeing it seems unsafe.  */
-      psymtab_discarder psymtabs (objfile);
       dwarf2_build_psymtabs_hard (per_objfile);
-      psymtabs.keep ();
 
       per_objfile->resize_symtabs ();
 
@@ -7436,7 +7431,6 @@ create_type_unit_group (struct dwarf2_cu *cu, sect_offset line_offset_struct)
   else
     {
       unsigned int line_offset = to_underlying (line_offset_struct);
-      dwarf2_psymtab *pst;
       std::string name;
 
       /* Give the symtab a useful name for debug purposes.  */
@@ -7446,7 +7440,9 @@ create_type_unit_group (struct dwarf2_cu *cu, sect_offset line_offset_struct)
       else
 	name = string_printf ("<type_units_at_0x%x>", line_offset);
 
-      pst = create_partial_symtab (per_cu, per_objfile, name.c_str ());
+      std::unique_ptr<dwarf2_psymtab> pst
+	= create_partial_symtab (per_cu, per_objfile, name.c_str ());
+      // FIXME install it
       pst->anonymous = true;
     }
 
@@ -7519,20 +7515,20 @@ get_type_unit_group (struct dwarf2_cu *cu, const struct attribute *stmt_list)
    The caller must fill in the following details:
    dirname, textlow, texthigh.  */
 
-static dwarf2_psymtab *
+static std::unique_ptr<dwarf2_psymtab>
 create_partial_symtab (dwarf2_per_cu_data *per_cu,
 		       dwarf2_per_objfile *per_objfile,
 		       const char *name)
 {
   struct objfile *objfile = per_objfile->objfile;
-  dwarf2_psymtab *pst;
 
-  pst = new dwarf2_psymtab (name, objfile, per_cu);
+  std::unique_ptr<dwarf2_psymtab> pst
+    (new dwarf2_psymtab (name, objfile, per_cu));
 
   pst->psymtabs_addrmap_supported = true;
 
   /* This is the glue that links PST into GDB's symbol API.  */
-  per_cu->v.psymtab = pst;
+  per_cu->v.psymtab = pst.get ();
 
   return pst;
 }
@@ -7552,7 +7548,6 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
   struct dwarf2_per_cu_data *per_cu = cu->per_cu;
   CORE_ADDR baseaddr;
   CORE_ADDR best_lowpc = 0, best_highpc = 0;
-  dwarf2_psymtab *pst;
   enum pc_bounds_kind cu_bounds_kind;
   const char *filename;
 
@@ -7574,7 +7569,9 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
       filename = debug_filename.get ();
     }
 
-  pst = create_partial_symtab (per_cu, per_objfile, filename);
+  std::unique_ptr<dwarf2_psymtab> pst_holder
+    = create_partial_symtab (per_cu, per_objfile, filename);
+  dwarf2_psymtab *pst = pst_holder.get ();
 
   /* This must be done before calling dwarf2_build_include_psymtabs.  */
   pst->dirname = dwarf2_string_attr (comp_unit_die, DW_AT_comp_dir, cu);
@@ -7637,7 +7634,7 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
 						  best_highpc + baseaddr)
 		      - baseaddr);
 
-  end_psymtab_common (objfile, pst);
+  end_psymtab_common (objfile, std::move (pst_holder));
 
   if (!cu->per_cu->imported_symtabs_empty ())
     {
@@ -7739,7 +7736,6 @@ build_type_psymtabs_reader (const struct die_reader_specs *reader,
   struct attribute *attr;
   struct partial_die_info *first_die;
   CORE_ADDR lowpc, highpc;
-  dwarf2_psymtab *pst;
 
   gdb_assert (per_cu->is_debug_types);
   sig_type = (struct signatured_type *) per_cu;
@@ -7755,7 +7751,8 @@ build_type_psymtabs_reader (const struct die_reader_specs *reader,
   tu_group->tus->push_back (sig_type);
 
   prepare_one_comp_unit (cu, type_unit_die, language_minimal);
-  pst = create_partial_symtab (per_cu, per_objfile, "");
+  std::unique_ptr<dwarf2_psymtab> pst
+    = create_partial_symtab (per_cu, per_objfile, "");
   pst->anonymous = true;
 
   first_die = load_partial_dies (reader, info_ptr, 1);
@@ -7764,7 +7761,7 @@ build_type_psymtabs_reader (const struct die_reader_specs *reader,
   highpc = (CORE_ADDR) 0;
   scan_partial_symbols (first_die, &lowpc, &highpc, 0, cu);
 
-  end_psymtab_common (objfile, pst);
+  end_psymtab_common (objfile, std::move (pst));
 }
 
 /* Struct used to sort TUs by their abbreviation table offset.  */

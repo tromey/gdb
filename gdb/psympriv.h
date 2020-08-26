@@ -105,9 +105,7 @@ struct partial_symtab
 {
   /* Allocate a new partial symbol table associated with OBJFILE.
      FILENAME (which must be non-NULL) is the filename of this partial
-     symbol table; it is copied into the appropriate storage.  The
-     partial symtab will also be installed using
-     psymtab_storage::install.  */
+     symbol table; it is copied into the appropriate storage.  */
 
   partial_symtab (const char *filename, struct objfile *objfile)
     ATTRIBUTE_NONNULL (2) ATTRIBUTE_NONNULL (3);
@@ -440,40 +438,7 @@ extern void add_psymbol_to_list (partial_symtab *pst,
 
 extern void init_psymbol_list (struct objfile *objfile, int total_symbols);
 
-extern void end_psymtab_common (struct objfile *, struct partial_symtab *);
-
-/* Used when recording partial symbol tables.  On destruction,
-   discards any partial symbol tables that have been built.  However,
-   the tables can be kept by calling the "keep" method.  */
-class psymtab_discarder
-{
- public:
-
-  psymtab_discarder (struct objfile *objfile)
-    : m_objfile (objfile),
-      m_psymtab (objfile->partial_symtabs->latest ())
-  {
-  }
-
-  ~psymtab_discarder ()
-  {
-    if (m_objfile != NULL)
-      m_objfile->partial_symtabs->discard_psymtabs_to (m_psymtab);
-  }
-
-  /* Keep any partial symbol tables that were built.  */
-  void keep ()
-  {
-    m_objfile = NULL;
-  }
-
- private:
-
-  /* The objfile.  If NULL this serves as a sentinel to indicate that
-     the psymtabs should be kept.  */
-  struct objfile *m_objfile;
-  /* How far back to free.  */
-  struct partial_symtab *m_psymtab;
-};
+extern void end_psymtab_common (struct objfile *,
+				std::unique_ptr<partial_symtab> &&);
 
 #endif /* PSYMPRIV_H */
