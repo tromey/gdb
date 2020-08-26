@@ -1616,13 +1616,6 @@ add_psymbol_to_list (partial_symtab *pst,
 
 /* See psympriv.h.  */
 
-void
-init_psymbol_list (struct objfile *objfile, int total_symbols)
-{
-}
-
-/* See psympriv.h.  */
-
 partial_symtab::partial_symtab (const char *filename_, struct objfile *objfile)
   : searched_flag (PST_NOT_SEARCHED),
     text_low_valid (0),

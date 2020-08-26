@@ -432,12 +432,6 @@ extern void add_psymbol_to_list (partial_symtab *pst,
 				 psymbol_placement where,
 				 struct objfile *objfile);
 
-/* Initialize storage for partial symbols.  If partial symbol storage
-   has already been initialized, this does nothing.  TOTAL_SYMBOLS is
-   an estimate of how many symbols there will be.  */
-
-extern void init_psymbol_list (struct objfile *objfile, int total_symbols);
-
 extern void end_psymtab_common (struct objfile *,
 				std::unique_ptr<partial_symtab> &&);
 

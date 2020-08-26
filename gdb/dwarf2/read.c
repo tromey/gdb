@@ -6119,8 +6119,6 @@ dwarf2_build_psymtabs (struct objfile *objfile)
       return;
     }
 
-  init_psymbol_list (objfile, 1024);
-
   try
     {
       dwarf2_build_psymtabs_hard (per_objfile);
