@@ -36,6 +36,7 @@
 #include "gdbcmd.h"
 #include <algorithm>
 #include <set>
+#include "gdbsupport/thread-pool.h"
 
 static struct partial_symbol *lookup_partial_symbol (struct objfile *,
 						     struct partial_symtab *,
@@ -85,6 +86,8 @@ psymtab_storage::install_psymtab (partial_symtab *pst)
 
 
 
+static std::vector<std::future<void>> sort_futures;
+
 /* See psymtab.h.  */
 
 psymtab_storage::partial_symtab_range
@@ -100,6 +103,9 @@ require_partial_symbols (struct objfile *objfile, bool verbose)
 	    printf_filtered (_("Reading symbols from %s...\n"),
 			     objfile_name (objfile));
 	  (*objfile->sf->sym_read_psymbols) (objfile);
+	  for (auto &f : sort_futures)
+	    f.wait ();
+	  sort_futures.clear ();
 
 	  if (verbose && !objfile_has_symbols (objfile))
 	    printf_filtered (_("(No debugging symbols found in %s)\n"),
@@ -1470,10 +1476,13 @@ partial_symtab::partial_symtab (const char *filename,
 void
 end_psymtab_common (struct partial_symtab *pst)
 {
-  pst->global_psymbols.shrink_to_fit ();
-  pst->static_psymbols.shrink_to_fit ();
+  sort_futures.push_back (gdb::thread_pool::g_thread_pool->post_task ([=] ()
+    {
+      pst->global_psymbols.shrink_to_fit ();
+      pst->static_psymbols.shrink_to_fit ();
 
-  sort_pst_symbols (pst);
+      sort_pst_symbols (pst);
+    }));
 }
 
 /* Calculate a hash code for the given partial symbol.  The hash is
