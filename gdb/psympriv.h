@@ -442,7 +442,7 @@ struct legacy_psymtab : public standard_psymtab
 
 extern void init_psymbol_list (struct objfile *objfile, int total_symbols);
 
-extern void end_psymtab_common (struct objfile *, struct partial_symtab *);
+extern void end_psymtab_common (struct partial_symtab *);
 
 /* Used when recording partial symbol tables.  On destruction,
    discards any partial symbol tables that have been built.  However,
