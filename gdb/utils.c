@@ -1278,11 +1278,18 @@ set_height_command (const char *args, int from_tty, struct cmd_list_element *c)
 void
 set_screen_width_and_height (int width, int height)
 {
+  /* If the user did "set height 0", make sure to preserve it after
+     handling the height change.  */
+  unsigned int saved_lines = lines_per_page;
+
   lines_per_page = height;
   chars_per_line = width;
 
   set_screen_size ();
   set_width ();
+
+  if (saved_lines == UINT_MAX)
+    lines_per_page = UINT_MAX;
 }
 
 /* Import termcap variable UP (instead of readline private variable
