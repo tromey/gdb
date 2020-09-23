@@ -1,3 +1,8 @@
+2020-09-23  Tom Tromey  <tromey@adacore.com>
+
+	PR cli/26650:
+	* utils.c (set_screen_width_and_height): Preserve "set height 0".
+
 2020-09-23  Tom Tromey  <tom@tromey.com>
 
 	PR symtab/25470:
