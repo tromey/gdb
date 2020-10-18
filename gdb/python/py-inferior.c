@@ -59,7 +59,7 @@ struct inferior_object
 extern PyTypeObject inferior_object_type
     CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF ("inferior_object");
 
-static const struct inferior_data *infpy_inf_data_key;
+static const inferior::registry_data *infpy_inf_data_key;
 
 typedef struct {
   PyObject_HEAD
@@ -219,7 +219,7 @@ inferior_to_inferior_object (struct inferior *inferior)
 {
   inferior_object *inf_obj;
 
-  inf_obj = (inferior_object *) inferior_data (inferior, infpy_inf_data_key);
+  inf_obj = (inferior_object *) inferior->get (infpy_inf_data_key);
   if (!inf_obj)
     {
       inf_obj = PyObject_New (inferior_object, &inferior_object_type);
@@ -232,7 +232,7 @@ inferior_to_inferior_object (struct inferior *inferior)
 
       /* PyObject_New initializes the new object with a refcount of 1.  This
 	 counts for the reference we are keeping in the inferior data.  */
-      set_inferior_data (inferior, infpy_inf_data_key, inf_obj);
+      inferior->set (infpy_inf_data_key, inf_obj);
     }
 
   /* We are returning a new reference.  */
@@ -851,7 +851,7 @@ infpy_dealloc (PyObject *obj)
   if (! inf)
     return;
 
-  set_inferior_data (inf, infpy_inf_data_key, NULL);
+  inf->set (infpy_inf_data_key, NULL);
   Py_TYPE (obj)->tp_free (obj);
 }
 
@@ -901,8 +901,7 @@ gdbpy_initialize_inferior (void)
 			      (PyObject *) &inferior_object_type) < 0)
     return -1;
 
-  infpy_inf_data_key =
-    register_inferior_data_with_cleanup (NULL, py_free_inferior);
+  infpy_inf_data_key = inferior::new_key (NULL, py_free_inferior);
 
   gdb::observers::new_thread.attach (add_thread_object);
   gdb::observers::thread_exit.attach (delete_thread_object);

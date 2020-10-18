@@ -333,7 +333,7 @@ struct auxv_info
 };
 
 /* Per-inferior data key for auxv.  */
-static const struct inferior_key<auxv_info> auxv_inferior_data;
+static const registry_key<inferior, auxv_info> auxv_inferior_data;
 
 /* Invalidate INF's auxv cache.  */
 

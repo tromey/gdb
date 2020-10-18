@@ -25,7 +25,23 @@
 #include "gdbsupport/gdb_ref_ptr.h"
 #include "gdbsupport/next-iterator.h"
 
-DECLARE_REGISTRY (bfd);
+struct gdb_bfd_data;
+
+/* A registry adaptor for BFD.  This arranges to store the registry in
+   gdb's per-BFD data, which is stored as the bfd_usrdata.  */
+template<>
+struct registry_accessor<bfd>
+{
+  /* The data type that derives from registry.  */
+  typedef gdb_bfd_data data_type;
+  /* The registry type.  */
+  typedef registry<gdb_bfd_data> registry_type;
+
+  registry<gdb_bfd_data> *operator() (bfd *abfd)
+  {
+    return (registry<gdb_bfd_data> *) bfd_usrdata (abfd);
+  }
+};
 
 /* If supplied a path starting with this sequence, gdb_bfd_open will
    open BFDs using target fileio operations.  */

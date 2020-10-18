@@ -338,7 +338,7 @@ extern void switch_to_inferior_no_thread (inferior *inf);
    listed exactly once in the inferior list, so placing an inferior in
    the inferior list is an implicit, not counted strong reference.  */
 
-class inferior : public refcounted_object
+class inferior : public refcounted_object, public registry<inferior>
 {
 public:
   explicit inferior (int pid);
@@ -543,9 +543,6 @@ public:
   /* Data related to displaced stepping.  */
   displaced_step_inferior_state displaced_step_state;
 
-  /* Per inferior data-pointers required by other GDB modules.  */
-  REGISTRY_FIELDS;
-
 private:
   /* The inferior's target stack.  */
   target_stack m_target_stack;
@@ -553,11 +550,6 @@ private:
   /* The name of terminal device to use for I/O.  */
   gdb::unique_xmalloc_ptr<char> m_terminal;
 };
-
-/* Keep a registry of per-inferior data-pointers required by other GDB
-   modules.  */
-
-DECLARE_REGISTRY (inferior);
 
 /* Add an inferior to the inferior list, print a message that a new
    inferior is found, and return the pointer to the new inferior.

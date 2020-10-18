@@ -60,7 +60,7 @@ struct catch_syscall_inferior_data
   int total_syscalls_count;
 };
 
-static const struct inferior_key<struct catch_syscall_inferior_data>
+static const registry_key<inferior, struct catch_syscall_inferior_data>
   catch_syscall_inferior_data;
 
 static struct catch_syscall_inferior_data *

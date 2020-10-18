@@ -37,11 +37,6 @@
 #include "readline/tilde.h"
 #include "progspace-and-thread.h"
 
-/* Keep a registry of per-inferior data-pointers required by other GDB
-   modules.  */
-
-DEFINE_REGISTRY (inferior, REGISTRY_ACCESS_FIELD)
-
 struct inferior *inferior_list = NULL;
 static int highest_inferior_num;
 
@@ -77,7 +72,6 @@ inferior::~inferior ()
   inferior *inf = this;
 
   discard_all_inferior_continuations (inf);
-  inferior_free_data (inf);
   xfree (inf->args);
   target_desc_info_free (inf->tdesc_info);
 }
@@ -85,11 +79,8 @@ inferior::~inferior ()
 inferior::inferior (int pid_)
   : num (++highest_inferior_num),
     pid (pid_),
-    environment (gdb_environ::from_host_environ ()),
-    registry_data ()
+    environment (gdb_environ::from_host_environ ())
 {
-  inferior_alloc_data (this);
-
   m_target_stack.push (get_dummy_target ());
 }
 

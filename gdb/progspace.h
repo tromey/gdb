@@ -36,8 +36,7 @@ struct objfile;
 struct inferior;
 struct exec;
 struct address_space;
-struct program_space_data;
-struct address_space_data;
+struct program_space;
 struct so_list;
 
 typedef std::list<std::shared_ptr<objfile>> objfile_list;
@@ -209,7 +208,7 @@ private:
 
 /* The program space structure.  */
 
-struct program_space
+struct program_space : public registry<program_space>
 {
   /* Constructs a new empty program space, binds it to ASPACE, and
      adds it to the program space list.  */
@@ -341,19 +340,15 @@ struct program_space
   /* When an solib is removed, its name is added to this vector.
      This is so we can properly report solib changes to the user.  */
   std::vector<std::string> deleted_solibs;
-
-  /* Per pspace data-pointers required by other GDB modules.  */
-  REGISTRY_FIELDS {};
 };
 
 /* An address space.  It is used for comparing if
    pspaces/inferior/threads see the same address space and for
    associating caches to each address space.  */
-struct address_space
+struct address_space : public registry<address_space>
 {
   /* Create a new address space object, and add it to the list.  */
   address_space ();
-  ~address_space ();
   DISABLE_COPY_AND_ASSIGN (address_space);
 
   /* Returns the integer address space id of this address space.  */
@@ -361,9 +356,6 @@ struct address_space
   {
     return m_num;
   }
-
-  /* Per aspace data-pointers required by other GDB modules.  */
-  REGISTRY_FIELDS;
 
 private:
   int m_num;
@@ -439,15 +431,5 @@ extern void update_address_spaces (void);
    us properly collect the data when calling solib_add, so it can then
    later be printed.  */
 extern void clear_program_space_solib_cache (struct program_space *);
-
-/* Keep a registry of per-pspace data-pointers required by other GDB
-   modules.  */
-
-DECLARE_REGISTRY (program_space);
-
-/* Keep a registry of per-aspace data-pointers required by other GDB
-   modules.  */
-
-DECLARE_REGISTRY (address_space);
 
 #endif

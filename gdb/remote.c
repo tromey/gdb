@@ -979,7 +979,7 @@ public:
 };
 
 /* Per-program-space data key.  */
-static const struct program_space_key<char, gdb::xfree_deleter<char>>
+static const registry_key<program_space, char, gdb::xfree_deleter<char>>
   remote_pspace_data;
 
 /* The variable registered as the control variable used by the

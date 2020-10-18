@@ -365,7 +365,7 @@ struct svr4_info
 };
 
 /* Per-program-space data key.  */
-static const struct program_space_key<svr4_info> solib_svr4_pspace_data;
+static const registry_key<program_space, svr4_info> solib_svr4_pspace_data;
 
 /* Free the probes table.  */
 

@@ -80,7 +80,8 @@ struct darwin_info
 };
 
 /* Per-program-space data key.  */
-static program_space_key<darwin_info> solib_darwin_pspace_data;
+static const registry_key<program_space, darwin_info>
+  solib_darwin_pspace_data;
 
 /* Get the current darwin data.  If none is found yet, add it now.  This
    function always returns a valid object.  */

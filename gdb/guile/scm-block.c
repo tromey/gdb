@@ -76,7 +76,7 @@ static scm_t_bits block_syms_progress_smob_tag;
 /* The "next!" block syms iterator method.  */
 static SCM bkscm_next_symbol_x_proc;
 
-static const struct objfile_data *bkscm_objfile_data_key;
+static const objfile::registry_data *bkscm_objfile_data_key;
 
 /* Administrivia for block smobs.  */
 
@@ -108,13 +108,13 @@ bkscm_eq_block_smob (const void *ap, const void *bp)
 static htab_t
 bkscm_objfile_block_map (struct objfile *objfile)
 {
-  htab_t htab = (htab_t) objfile_data (objfile, bkscm_objfile_data_key);
+  htab_t htab = (htab_t) objfile->get (bkscm_objfile_data_key);
 
   if (htab == NULL)
     {
       htab = gdbscm_create_eqable_gsmob_ptr_map (bkscm_hash_block_smob,
 						 bkscm_eq_block_smob);
-      set_objfile_data (objfile, bkscm_objfile_data_key, htab);
+      objfile->set (bkscm_objfile_data_key, htab);
     }
 
   return htab;
@@ -802,6 +802,5 @@ Internal function to assist the block symbols iterator."));
 
   /* Register an objfile "free" callback so we can properly
      invalidate blocks when an object file is about to be deleted.  */
-  bkscm_objfile_data_key
-    = register_objfile_data_with_cleanup (NULL, bkscm_del_objfile_blocks);
+  bkscm_objfile_data_key = objfile::new_key (NULL, bkscm_del_objfile_blocks);
 }

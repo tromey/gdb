@@ -84,8 +84,8 @@ struct hppa_objfile_private
    that separately and make this static. The solib data is probably hpux-
    specific, so we can create a separate extern objfile_data that is registered
    by hppa-hpux-tdep.c and shared with pa64solib.c and somsolib.c.  */
-static const struct objfile_key<hppa_objfile_private,
-				gdb::noop_deleter<hppa_objfile_private>>
+static const registry_key<objfile, hppa_objfile_private,
+				    gdb::noop_deleter<hppa_objfile_private>>
   hppa_objfile_priv_data;
 
 /* Get at various relevant fields of an instruction word.  */

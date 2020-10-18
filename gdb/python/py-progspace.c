@@ -57,7 +57,7 @@ typedef struct
 extern PyTypeObject pspace_object_type
     CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF ("pspace_object");
 
-static const struct program_space_data *pspy_pspace_data_key;
+static const program_space::registry_data *pspy_pspace_data_key;
 
 /* Require that PSPACE_OBJ be a valid program space ID.  */
 #define PSPY_REQUIRE_VALID(pspace_obj)				\
@@ -485,8 +485,7 @@ py_free_pspace (struct program_space *pspace, void *datum)
 gdbpy_ref<>
 pspace_to_pspace_object (struct program_space *pspace)
 {
-  PyObject *result
-    ((PyObject *) program_space_data (pspace, pspy_pspace_data_key));
+  PyObject *result ((PyObject *) pspace->get (pspy_pspace_data_key));
   if (result == NULL)
     {
       gdbpy_ref<pspace_object> object
@@ -497,7 +496,7 @@ pspace_to_pspace_object (struct program_space *pspace)
 	return NULL;
 
       object->pspace = pspace;
-      set_program_space_data (pspace, pspy_pspace_data_key, object.get ());
+      pspace->set (pspy_pspace_data_key, object.get ());
       result = (PyObject *) object.release ();
     }
 
@@ -507,8 +506,7 @@ pspace_to_pspace_object (struct program_space *pspace)
 int
 gdbpy_initialize_pspace (void)
 {
-  pspy_pspace_data_key
-    = register_program_space_data_with_cleanup (NULL, py_free_pspace);
+  pspy_pspace_data_key = program_space::new_key (NULL, py_free_pspace);
 
   if (PyType_Ready (&pspace_object_type) < 0)
     return -1;

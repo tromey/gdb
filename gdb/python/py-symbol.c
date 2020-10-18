@@ -50,7 +50,7 @@ typedef struct sympy_symbol_object {
       }							\
   } while (0)
 
-static const struct objfile_data *sympy_objfile_data_key;
+static const objfile::registry_data *sympy_objfile_data_key;
 
 static PyObject *
 sympy_str (PyObject *self)
@@ -308,10 +308,10 @@ set_symbol (symbol_object *obj, struct symbol *symbol)
       struct objfile *objfile = symbol_objfile (symbol);
 
       obj->next = ((struct sympy_symbol_object *)
-		   objfile_data (objfile, sympy_objfile_data_key));
+		   objfile->get (sympy_objfile_data_key));
       if (obj->next)
 	obj->next->prev = obj;
-      set_objfile_data (objfile, sympy_objfile_data_key, obj);
+      objfile->set (sympy_objfile_data_key, obj);
     }
   else
     obj->next = NULL;
@@ -350,10 +350,8 @@ sympy_dealloc (PyObject *obj)
   else if (sym_obj->symbol != NULL
 	   && SYMBOL_OBJFILE_OWNED (sym_obj->symbol)
 	   && symbol_symtab (sym_obj->symbol) != NULL)
-    {
-      set_objfile_data (symbol_objfile (sym_obj->symbol),
-			sympy_objfile_data_key, sym_obj->next);
-    }
+    symbol_objfile (sym_obj->symbol)->set (sympy_objfile_data_key,
+					   sym_obj->next);
   if (sym_obj->next)
     sym_obj->next->prev = sym_obj->prev;
   sym_obj->symbol = NULL;
@@ -626,8 +624,7 @@ gdbpy_initialize_symbols (void)
   /* Register an objfile "free" callback so we can properly
      invalidate symbol when an object file that is about to be
      deleted.  */
-  sympy_objfile_data_key
-    = register_objfile_data_with_cleanup (NULL, del_objfile_symbols);
+  sympy_objfile_data_key = objfile::new_key (NULL, del_objfile_symbols);
 
   if (PyModule_AddIntConstant (gdb_module, "SYMBOL_LOC_UNDEF", LOC_UNDEF) < 0
       || PyModule_AddIntConstant (gdb_module, "SYMBOL_LOC_CONST",

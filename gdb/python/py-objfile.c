@@ -55,7 +55,7 @@ typedef struct
 extern PyTypeObject objfile_object_type
     CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF ("objfile_object");
 
-static const struct objfile_data *objfpy_objfile_data_key;
+static const objfile::registry_data *objfpy_objfile_data_key;
 
 /* Require that OBJF be a valid objfile.  */
 #define OBJFPY_REQUIRE_VALID(obj)				\
@@ -675,7 +675,7 @@ gdbpy_ref<>
 objfile_to_objfile_object (struct objfile *objfile)
 {
   PyObject *result
-    = ((PyObject *) objfile_data (objfile, objfpy_objfile_data_key));
+    = ((PyObject *) objfile->get (objfpy_objfile_data_key));
   if (result == NULL)
     {
       gdbpy_ref<objfile_object> object
@@ -686,7 +686,7 @@ objfile_to_objfile_object (struct objfile *objfile)
 	return NULL;
 
       object->objfile = objfile;
-      set_objfile_data (objfile, objfpy_objfile_data_key, object.get ());
+      objfile->set (objfpy_objfile_data_key, object.get ());
       result = (PyObject *) object.release ();
     }
 
@@ -696,8 +696,7 @@ objfile_to_objfile_object (struct objfile *objfile)
 int
 gdbpy_initialize_objfile (void)
 {
-  objfpy_objfile_data_key
-    = register_objfile_data_with_cleanup (NULL, py_free_objfile);
+  objfpy_objfile_data_key = objfile::new_key (NULL, py_free_objfile);
 
   if (PyType_Ready (&objfile_object_type) < 0)
     return -1;

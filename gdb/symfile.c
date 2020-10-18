@@ -2493,7 +2493,7 @@ reread_symbols (void)
 	      (*objfile->sf->sym_finish) (objfile);
 	    }
 
-	  clear_objfile_data (objfile);
+	  objfile->clear_registry ();
 
 	  /* Clean up any state BFD has sitting around.  */
 	  {
@@ -2619,7 +2619,7 @@ reread_symbols (void)
     {
       clear_symtab_users (0);
 
-      /* clear_objfile_data for each objfile was called before freeing it and
+      /* The registry for each objfile was cleared and
 	 gdb::observers::new_objfile.notify (NULL) has been called by
 	 clear_symtab_users above.  Notify the new files now.  */
       for (auto iter : new_objfiles)

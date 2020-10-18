@@ -422,7 +422,7 @@ private:
    objfile->sf->qf->lookup_symbol is used to check if we only have a partial
    symbol and if so, read and expand the full compunit.  */
 
-struct objfile
+struct objfile : public registry<objfile>
 {
 private:
 
@@ -612,10 +612,6 @@ public:
 
   const struct sym_fns *sf = nullptr;
 
-  /* Per objfile data-pointers required by other GDB modules.  */
-
-  REGISTRY_FIELDS {};
-
   /* Set of relocation offsets to apply to each section.
      The table is indexed by the_bfd_section->index, thus it is generally
      as large as the number of sections in the binary.
@@ -791,10 +787,6 @@ in_plt_section (CORE_ADDR pc)
 {
   return pc_in_section (pc, ".plt");
 }
-
-/* Keep a registry of per-objfile data-pointers required by other GDB
-   modules.  */
-DECLARE_REGISTRY(objfile);
 
 /* In normal use, the section map will be rebuilt by find_pc_section
    if objfiles have been added, removed or relocated since it was last

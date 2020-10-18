@@ -5881,8 +5881,8 @@ gdbtypes_post_init (struct gdbarch *gdbarch)
 /* This set of objfile-based types is intended to be used by symbol
    readers as basic types.  */
 
-static const struct objfile_key<struct objfile_type,
-				gdb::noop_deleter<struct objfile_type>>
+static const registry_key<objfile, struct objfile_type,
+				    gdb::noop_deleter<struct objfile_type>>
   objfile_type_data;
 
 const struct objfile_type *

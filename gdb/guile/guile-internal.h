@@ -28,6 +28,7 @@
 #include "extension-priv.h"
 #include "symtab.h"
 #include "libguile.h"
+#include "objfiles.h"
 
 struct block;
 struct frame_info;
@@ -272,7 +273,6 @@ typedef struct _eqable_gdb_smob
 #undef GDB_SMOB_HEAD
 
 struct objfile;
-struct objfile_data;
 
 /* A predicate that returns non-zero if an object is a particular kind
    of gsmob.  */
@@ -288,11 +288,11 @@ extern void gdbscm_init_eqable_gsmob (eqable_gdb_smob *base,
 				      SCM containing_scm);
 
 extern void gdbscm_add_objfile_ref (struct objfile *objfile,
-				    const struct objfile_data *data_key,
+				    const objfile::registry_data *data_key,
 				    chained_gdb_smob *g_smob);
 
 extern void gdbscm_remove_objfile_ref (struct objfile *objfile,
-				       const struct objfile_data *data_key,
+				       const objfile::registry_data *data_key,
 				       chained_gdb_smob *g_smob);
 
 extern htab_t gdbscm_create_eqable_gsmob_ptr_map (htab_hash hash_fn,

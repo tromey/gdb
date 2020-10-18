@@ -109,7 +109,7 @@ private:
   int m_line = 0;
 };
 
-static program_space_key<current_source_location> current_source_key;
+static const registry_key<program_space, current_source_location> current_source_key;
 
 /* Default number of lines to print with commands like "list".
    This is based on guessing how many long (i.e. more than chars_per_line

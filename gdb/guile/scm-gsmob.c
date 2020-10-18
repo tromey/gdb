@@ -187,16 +187,16 @@ gdbscm_gsmob_kind (SCM self)
 
 void
 gdbscm_add_objfile_ref (struct objfile *objfile,
-			const struct objfile_data *data_key,
+			const objfile::registry_data *data_key,
 			chained_gdb_smob *g_smob)
 {
   g_smob->prev = NULL;
   if (objfile != NULL)
     {
-      g_smob->next = (chained_gdb_smob *) objfile_data (objfile, data_key);
+      g_smob->next = (chained_gdb_smob *) objfile->get (data_key);
       if (g_smob->next)
 	g_smob->next->prev = g_smob;
-      set_objfile_data (objfile, data_key, g_smob);
+      objfile->set (data_key, g_smob);
     }
   else
     g_smob->next = NULL;
@@ -207,13 +207,13 @@ gdbscm_add_objfile_ref (struct objfile *objfile,
 
 void
 gdbscm_remove_objfile_ref (struct objfile *objfile,
-			   const struct objfile_data *data_key,
+			   const objfile::registry_data *data_key,
 			   chained_gdb_smob *g_smob)
 {
   if (g_smob->prev)
     g_smob->prev->next = g_smob->next;
   else if (objfile != NULL)
-    set_objfile_data (objfile, data_key, g_smob->next);
+    objfile->set (data_key, g_smob->next);
   if (g_smob->next)
     g_smob->next->prev = g_smob->prev;
 }

@@ -87,7 +87,7 @@
 #include "ctf.h"
 #include "ctf-api.h"
 
-static const struct objfile_key<htab, htab_deleter> ctf_tid_key;
+static const registry_key<objfile, htab, htab_deleter> ctf_tid_key;
 
 struct ctf_fp_info
 {
@@ -107,7 +107,7 @@ ctf_fp_info::~ctf_fp_info ()
   ctf_close (arc);
 }
 
-static const objfile_key<ctf_fp_info> ctf_file_key;
+static const registry_key<objfile, ctf_fp_info> ctf_file_key;
 
 /* A CTF context consists of a file pointer and an objfile pointer.  */
 

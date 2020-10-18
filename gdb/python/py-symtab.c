@@ -39,7 +39,7 @@ typedef struct stpy_symtab_object {
 
 extern PyTypeObject symtab_object_type
     CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF ("symtab_object");
-static const struct objfile_data *stpy_objfile_data_key;
+static const objfile::registry_data *stpy_objfile_data_key;
 
 /* Require a valid symbol table.  All access to symtab_object->symtab
    should be gated by this call.  */
@@ -70,7 +70,7 @@ typedef struct salpy_sal_object {
 
 extern PyTypeObject sal_object_type
     CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF ("sal_object");
-static const struct objfile_data *salpy_objfile_data_key;
+static const objfile::registry_data *salpy_objfile_data_key;
 
 /* Require a valid symbol table and line object.  All access to
    sal_object->sal should be gated by this call.  */
@@ -246,10 +246,8 @@ stpy_dealloc (PyObject *obj)
   if (symtab->prev)
     symtab->prev->next = symtab->next;
   else if (symtab->symtab)
-    {
-      set_objfile_data (SYMTAB_OBJFILE (symtab->symtab),
-			stpy_objfile_data_key, symtab->next);
-    }
+    SYMTAB_OBJFILE (symtab->symtab)->set (stpy_objfile_data_key,
+					  symtab->next);
   if (symtab->next)
     symtab->next->prev = symtab->prev;
   symtab->symtab = NULL;
@@ -329,9 +327,8 @@ salpy_dealloc (PyObject *self)
   if (self_sal->prev)
     self_sal->prev->next = self_sal->next;
   else if (self_sal->symtab != Py_None)
-    set_objfile_data
-      (SYMTAB_OBJFILE (symtab_object_to_symtab (self_sal->symtab)),
-       salpy_objfile_data_key, self_sal->next);
+    SYMTAB_OBJFILE (symtab_object_to_symtab (self_sal->symtab))
+      ->set (salpy_objfile_data_key, self_sal->next);
 
   if (self_sal->next)
     self_sal->next->prev = self_sal->prev;
@@ -378,13 +375,12 @@ set_sal (sal_object *sal_obj, struct symtab_and_line sal)
       symtab *symtab = symtab_object_to_symtab (sal_obj->symtab);
 
       sal_obj->next
-	= ((struct salpy_sal_object *) objfile_data (SYMTAB_OBJFILE (symtab),
-						     salpy_objfile_data_key));
+	= ((struct salpy_sal_object *) SYMTAB_OBJFILE (symtab)
+	   ->get (salpy_objfile_data_key));
       if (sal_obj->next)
 	sal_obj->next->prev = sal_obj;
 
-      set_objfile_data (SYMTAB_OBJFILE (symtab),
-			salpy_objfile_data_key, sal_obj);
+      SYMTAB_OBJFILE (symtab)->set (salpy_objfile_data_key, sal_obj);
     }
   else
     sal_obj->next = NULL;
@@ -406,10 +402,10 @@ set_symtab (symtab_object *obj, struct symtab *symtab)
     {
       obj->next
 	= ((struct stpy_symtab_object *)
-	   objfile_data (SYMTAB_OBJFILE (symtab), stpy_objfile_data_key));
+	   SYMTAB_OBJFILE (symtab)->get (stpy_objfile_data_key));
       if (obj->next)
 	obj->next->prev = obj;
-      set_objfile_data (SYMTAB_OBJFILE (symtab), stpy_objfile_data_key, obj);
+      SYMTAB_OBJFILE (symtab)->set (stpy_objfile_data_key, obj);
     }
   else
     obj->next = NULL;
@@ -526,10 +522,8 @@ gdbpy_initialize_symtabs (void)
      invalidate symbol tables, and symbol table and line data
      structures when an object file that is about to be
      deleted.  */
-  stpy_objfile_data_key
-    = register_objfile_data_with_cleanup (NULL, del_objfile_symtab);
-  salpy_objfile_data_key
-    = register_objfile_data_with_cleanup (NULL, del_objfile_sal);
+  stpy_objfile_data_key = objfile::new_key (NULL, del_objfile_symtab);
+  salpy_objfile_data_key = objfile::new_key (NULL, del_objfile_sal);
 
   if (gdb_pymodule_addobject (gdb_module, "Symtab",
 			      (PyObject *) &symtab_object_type) < 0)

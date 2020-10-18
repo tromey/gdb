@@ -1,5 +1,104 @@
 2020-10-19  Tom Tromey  <tom@tromey.com>
 
+	* xcoffread.c (xcoff_objfile_data_key): Update.
+	* target-dcache.c (target_dcache_aspace_key): Update.
+	* symtab.c (main_progspace_key, symbol_cache_key): Update.
+	* symfile.c (reread_symbols): Update.
+	* symfile-debug.c (symfile_debug_objfile_data_key): Update.
+	* stabsread.c (rs6000_builtin_type_data): Update.
+	* source.c (current_source_key): Update.
+	* solib-svr4.c (solib_svr4_pspace_data): Update.
+	* solib-dsbt.c (solib_dsbt_pspace_data): Update.
+	* solib-darwin.c (solib_darwin_pspace_data): Update.
+	* solib-aix.c (solib_aix_inferior_data_handle): Update.
+	* remote.c (remote_pspace_data): Update.
+	* remote-sim.c (sim_inferior_data_key): Update.
+	* registry.h: Rewrite.
+	* registry.c: Remove.
+	* python/py-type.c (typy_objfile_data_key, set_type)
+	(typy_dealloc, gdbpy_initialize_types): Update.
+	* python/py-symtab.c (stpy_objfile_data_key)
+	(salpy_objfile_data_key, stpy_dealloc, salpy_dealloc)
+	(CPYCHECKER_NEGATIVE_RESULT_SETS_EXCEPTION, set_symtab)
+	(gdbpy_initialize_symtabs): Update.
+	* python/py-symbol.c (sympy_objfile_data_key, set_symbol)
+	(sympy_dealloc, gdbpy_initialize_symbols): Update.
+	* python/py-progspace.c (pspy_pspace_data_key)
+	(pspace_to_pspace_object, gdbpy_initialize_pspace): Update.
+	* python/py-objfile.c (objfpy_objfile_data_key)
+	(objfile_to_objfile_object, gdbpy_initialize_objfile): Update.
+	* python/py-inferior.c (infpy_inf_data_key)
+	(inferior_to_inferior_object, infpy_dealloc)
+	(gdbpy_initialize_inferior): Update.
+	* python/py-block.c (blpy_objfile_data_key, blpy_dealloc)
+	(set_block, gdbpy_initialize_blocks): Update.
+	* progspace.h (struct program_space, struct address_space): Derive
+	from registry.
+	* progspace.c (address_space::address_space): Update.
+	(address_space::~address_space): Remove.
+	(program_space::program_space, program_space::~program_space):
+	Update.
+	* objfiles.h (struct objfile): Derive from registry.
+	* objfiles.c (objfiles_pspace_data, objfiles_bfd_data)
+	(objfile::objfile, objfile::~objfile): Update.
+	* objc-lang.c (objc_objfile_data): Update.
+	* nto-tdep.c (nto_inferior_data_reg): Update.
+	* minidebug.c (gnu_debug_key): Update.
+	* mdebugread.c (basic_type_data): Update.
+	* linux-tdep.c (linux_inferior_data): Update.
+	* inflow.c (inflow_inferior_data): Update.
+	* inferior.h (class inferior): Derive from registry.
+	* inferior.c (inferior::~inferior, inferior::inferior): Update.
+	* hppa-tdep.c (hppa_objfile_priv_data): Update.
+	* guile/scm-type.c (tyscm_objfile_data_key, tyscm_type_map)
+	(gdbscm_initialize_types): Update.
+	* guile/scm-symtab.c (stscm_objfile_data_key)
+	(stscm_objfile_symtab_map, gdbscm_initialize_symtabs): Update.
+	* guile/scm-symbol.c (syscm_objfile_data_key)
+	(syscm_get_symbol_map, gdbscm_initialize_symbols): Update.
+	* guile/scm-progspace.c (psscm_pspace_data_key)
+	(psscm_pspace_smob_from_pspace, gdbscm_initialize_pspaces):
+	Update.
+	* guile/scm-objfile.c (ofscm_objfile_data_key)
+	(ofscm_objfile_smob_from_objfile, gdbscm_initialize_objfiles):
+	Update.
+	* guile/scm-gsmob.c (gdbscm_add_objfile_ref)
+	(gdbscm_remove_objfile_ref): Use objfile::registry_data.
+	* guile/scm-frame.c (frscm_inferior_data_key)
+	(frscm_inferior_frame_map, gdbscm_initialize_frames): Update.
+	* guile/scm-block.c (bkscm_objfile_data_key)
+	(bkscm_objfile_block_map, gdbscm_initialize_blocks): Update.
+	* guile/guile-internal.h (gdbscm_add_objfile_ref)
+	(gdbscm_remove_objfile_ref): Use objfile::registry_data.
+	* gdbtypes.c (objfile_type_data): Update.
+	* gdb_bfd.h (registry_accessor<bfd>): New specialization.
+	* gdb_bfd.c (struct gdb_bfd_data): Derive from registry.
+	(GDB_BFD_DATA_ACCESSOR): Remove.
+	(gdb_bfd_init_data, gdb_bfd_unref): Update.
+	* gdb-stabs.h (dbx_objfile_data_key): Update.
+	* fbsd-tdep.c (fbsd_pspace_data_handle): Update.
+	* elfread.c (probe_key, elf_objfile_gnu_ifunc_cache_data):
+	Update.
+	* dwarf2/read.c (dwarf2_objfile_data_key)
+	(dwarf2_per_bfd_bfd_data_key, dwarf2_per_bfd_objfile_data_key):
+	Update.
+	* dwarf2/frame.c (dwarf2_frame_bfd_data)
+	(dwarf2_frame_objfile_data): Update.
+	* dbxread.c (dbx_objfile_data_key): Update.
+	* ctfread.c (ctf_tid_key, ctf_file_key): Update.
+	* coffread.c (coff_objfile_data_key): Update.
+	* breakpoint.c (breakpoint_objfile_key): Update.
+	* break-catch-syscall.c (catch_syscall_inferior_data): Update.
+	* auxv.c (auxv_inferior_data): Update.
+	* auto-load.c (auto_load_pspace_data): Update.
+	* arm-tdep.c (arm_bfd_data_key, arm_exidx_data_key): Update.
+	* ada-tasks.c (ada_tasks_pspace_data_handle)
+	(ada_tasks_inferior_data_handle): Update.
+	* ada-lang.c (ada_inferior_data, ada_pspace_data_handle): Update.
+	* Makefile.in (COMMON_SFILES): Remove registry.c.
+
+2020-10-19  Tom Tromey  <tom@tromey.com>
+
 	* target-debug.h (target_debug_print_struct_address_space_p):
 	Update.
 	* scoped-mock-context.h (struct scoped_mock_context): Update.

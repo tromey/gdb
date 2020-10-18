@@ -50,7 +50,7 @@ static const char objfile_smob_name[] = "gdb:objfile";
 /* The tag Guile knows the objfile smob by.  */
 static scm_t_bits objfile_smob_tag;
 
-static const struct objfile_data *ofscm_objfile_data_key;
+static const objfile::registry_data *ofscm_objfile_data_key;
 
 /* Return the list of pretty-printers registered with O_SMOB.  */
 
@@ -148,7 +148,7 @@ ofscm_objfile_smob_from_objfile (struct objfile *objfile)
 {
   objfile_smob *o_smob;
 
-  o_smob = (objfile_smob *) objfile_data (objfile, ofscm_objfile_data_key);
+  o_smob = (objfile_smob *) objfile->get (ofscm_objfile_data_key);
   if (o_smob == NULL)
     {
       SCM o_scm = ofscm_make_objfile_smob ();
@@ -156,7 +156,7 @@ ofscm_objfile_smob_from_objfile (struct objfile *objfile)
       o_smob = (objfile_smob *) SCM_SMOB_DATA (o_scm);
       o_smob->objfile = objfile;
 
-      set_objfile_data (objfile, ofscm_objfile_data_key, o_smob);
+      objfile->set (ofscm_objfile_data_key, o_smob);
       scm_gc_protect_object (o_smob->containing_scm);
     }
 
@@ -431,5 +431,5 @@ gdbscm_initialize_objfiles (void)
   gdbscm_define_functions (objfile_functions, 1);
 
   ofscm_objfile_data_key
-    = register_objfile_data_with_cleanup (NULL, ofscm_handle_objfile_deleted);
+    = objfile::new_key (NULL, ofscm_handle_objfile_deleted);
 }

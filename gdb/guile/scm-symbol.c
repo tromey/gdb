@@ -49,7 +49,7 @@ static SCM block_keyword;
 static SCM domain_keyword;
 static SCM frame_keyword;
 
-static const struct objfile_data *syscm_objfile_data_key;
+static const objfile::registry_data *syscm_objfile_data_key;
 static struct gdbarch_data *syscm_gdbarch_data_key;
 
 struct syscm_gdbarch_data
@@ -105,12 +105,12 @@ syscm_get_symbol_map (struct symbol *symbol)
     {
       struct objfile *objfile = symbol_objfile (symbol);
 
-      htab = (htab_t) objfile_data (objfile, syscm_objfile_data_key);
+      htab = (htab_t) objfile->get (syscm_objfile_data_key);
       if (htab == NULL)
 	{
 	  htab = gdbscm_create_eqable_gsmob_ptr_map (syscm_hash_symbol_smob,
 						     syscm_eq_symbol_smob);
-	  set_objfile_data (objfile, syscm_objfile_data_key, htab);
+	  objfile->set (syscm_objfile_data_key, htab);
 	}
     }
   else
@@ -820,8 +820,7 @@ gdbscm_initialize_symbols (void)
 
   /* Register an objfile "free" callback so we can properly
      invalidate symbols when an object file is about to be deleted.  */
-  syscm_objfile_data_key
-    = register_objfile_data_with_cleanup (NULL, syscm_del_objfile_symbols);
+  syscm_objfile_data_key = objfile::new_key (NULL, syscm_del_objfile_symbols);
 
   /* Arch-specific symbol data.  */
   syscm_gdbarch_data_key

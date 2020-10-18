@@ -75,7 +75,7 @@ struct objc_method {
   CORE_ADDR imp;
 };
 
-static const struct objfile_key<unsigned int> objc_objfile_data;
+static const registry_key<objfile, unsigned int> objc_objfile_data;
 
 /* Lookup a structure type named "struct NAME", visible in lexical
    block BLOCK.  If NOERR is nonzero, return zero if NAME is not

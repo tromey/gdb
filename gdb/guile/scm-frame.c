@@ -75,7 +75,7 @@ static scm_t_bits frame_smob_tag;
 /* Keywords used in argument passing.  */
 static SCM block_keyword;
 
-static const struct inferior_data *frscm_inferior_data_key;
+static const inferior::registry_data *frscm_inferior_data_key;
 
 /* Administrivia for frame smobs.  */
 
@@ -118,13 +118,13 @@ frscm_eq_frame_smob (const void *ap, const void *bp)
 static htab_t
 frscm_inferior_frame_map (struct inferior *inferior)
 {
-  htab_t htab = (htab_t) inferior_data (inferior, frscm_inferior_data_key);
+  htab_t htab = (htab_t) inferior->get (frscm_inferior_data_key);
 
   if (htab == NULL)
     {
       htab = gdbscm_create_eqable_gsmob_ptr_map (frscm_hash_frame_smob,
 						 frscm_eq_frame_smob);
-      set_inferior_data (inferior, frscm_inferior_data_key, htab);
+      inferior->set (frscm_inferior_data_key, htab);
     }
 
   return htab;
@@ -1179,5 +1179,5 @@ gdbscm_initialize_frames (void)
   /* Register an inferior "free" callback so we can properly
      invalidate frames when an inferior file is about to be deleted.  */
   frscm_inferior_data_key
-    = register_inferior_data_with_cleanup (NULL, frscm_del_inferior_frames);
+    = inferior::new_key (NULL, frscm_del_inferior_frames);
 }

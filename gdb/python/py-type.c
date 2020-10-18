@@ -1060,7 +1060,7 @@ typy_richcompare (PyObject *self, PyObject *other, int op)
 
 
 
-static const struct objfile_data *typy_objfile_data_key;
+static const objfile::registry_data *typy_objfile_data_key;
 
 static void
 save_objfile_types (struct objfile *objfile, void *datum)
@@ -1102,10 +1102,10 @@ set_type (type_object *obj, struct type *type)
       struct objfile *objfile = TYPE_OBJFILE (type);
 
       obj->next = ((struct pyty_type_object *)
-		   objfile_data (objfile, typy_objfile_data_key));
+		   objfile->get (typy_objfile_data_key));
       if (obj->next)
 	obj->next->prev = obj;
-      set_objfile_data (objfile, typy_objfile_data_key, obj);
+      objfile->set (typy_objfile_data_key, obj);
     }
   else
     obj->next = NULL;
@@ -1124,7 +1124,7 @@ typy_dealloc (PyObject *obj)
       struct objfile *objfile = TYPE_OBJFILE (type->type);
 
       if (objfile)
-	set_objfile_data (objfile, typy_objfile_data_key, type->next);
+	objfile->set (typy_objfile_data_key, type->next);
     }
   if (type->next)
     type->next->prev = type->prev;
@@ -1421,8 +1421,7 @@ gdbpy_initialize_types (void)
 {
   int i;
 
-  typy_objfile_data_key
-    = register_objfile_data_with_cleanup (save_objfile_types, NULL);
+  typy_objfile_data_key = objfile::new_key (save_objfile_types, NULL);
 
   if (PyType_Ready (&type_object_type) < 0)
     return -1;

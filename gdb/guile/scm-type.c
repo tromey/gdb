@@ -82,7 +82,7 @@ static SCM tyscm_next_field_x_proc;
 /* Keywords used in argument passing.  */
 static SCM block_keyword;
 
-static const struct objfile_data *tyscm_objfile_data_key;
+static const objfile::registry_data *tyscm_objfile_data_key;
 
 /* Hash table to uniquify global (non-objfile-owned) types.  */
 static htab_t global_types_map;
@@ -158,12 +158,12 @@ tyscm_type_map (struct type *type)
   if (objfile == NULL)
     return global_types_map;
 
-  htab = (htab_t) objfile_data (objfile, tyscm_objfile_data_key);
+  htab = (htab_t) objfile->get (tyscm_objfile_data_key);
   if (htab == NULL)
     {
       htab = gdbscm_create_eqable_gsmob_ptr_map (tyscm_hash_type_smob,
 						 tyscm_eq_type_smob);
-      set_objfile_data (objfile, tyscm_objfile_data_key, htab);
+      objfile->set (tyscm_objfile_data_key, htab);
     }
 
   return htab;
@@ -1501,8 +1501,7 @@ Internal function to assist the type fields iterator."));
 
   /* Register an objfile "free" callback so we can properly copy types
      associated with the objfile when it's about to be deleted.  */
-  tyscm_objfile_data_key
-    = register_objfile_data_with_cleanup (save_objfile_types, NULL);
+  tyscm_objfile_data_key = objfile::new_key (save_objfile_types, NULL);
 
   global_types_map = gdbscm_create_eqable_gsmob_ptr_map (tyscm_hash_type_smob,
 							 tyscm_eq_type_smob);

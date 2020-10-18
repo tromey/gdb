@@ -79,7 +79,7 @@ typedef struct {
 
 extern PyTypeObject block_syms_iterator_object_type
     CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF ("block_syms_iterator_object");
-static const struct objfile_data *blpy_objfile_data_key;
+static const objfile::registry_data *blpy_objfile_data_key;
 
 static PyObject *
 blpy_iter (PyObject *self)
@@ -269,10 +269,7 @@ blpy_dealloc (PyObject *obj)
   if (block->prev)
     block->prev->next = block->next;
   else if (block->objfile)
-    {
-      set_objfile_data (block->objfile, blpy_objfile_data_key,
-			block->next);
-    }
+    block->objfile->set (blpy_objfile_data_key, block->next);
   if (block->next)
     block->next->prev = block->prev;
   block->block = NULL;
@@ -294,10 +291,10 @@ set_block (block_object *obj, const struct block *block,
     {
       obj->objfile = objfile;
       obj->next = ((struct blpy_block_object *)
-		   objfile_data (objfile, blpy_objfile_data_key));
+		   objfile->get (blpy_objfile_data_key));
       if (obj->next)
 	obj->next->prev = obj;
-      set_objfile_data (objfile, blpy_objfile_data_key, obj);
+      objfile->set (blpy_objfile_data_key, obj);
     }
   else
     obj->next = NULL;
@@ -441,8 +438,7 @@ gdbpy_initialize_blocks (void)
   /* Register an objfile "free" callback so we can properly
      invalidate blocks when an object file is about to be
      deleted.  */
-  blpy_objfile_data_key
-    = register_objfile_data_with_cleanup (NULL, del_objfile_blocks);
+  blpy_objfile_data_key = objfile::new_key (NULL, del_objfile_blocks);
 
   if (gdb_pymodule_addobject (gdb_module, "Block",
 			      (PyObject *) &block_object_type) < 0)

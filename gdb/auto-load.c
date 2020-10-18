@@ -561,7 +561,7 @@ struct loaded_script
 };
 
 /* Per-program-space data key.  */
-static const struct program_space_key<struct auto_load_pspace_info>
+static const registry_key<program_space, struct auto_load_pspace_info>
   auto_load_pspace_data;
 
 /* Get the current autoload data.  If none is found yet, add it now.  This

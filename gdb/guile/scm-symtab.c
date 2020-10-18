@@ -77,7 +77,7 @@ static const char sal_smob_name[] = "gdb:sal";
 static scm_t_bits symtab_smob_tag;
 static scm_t_bits sal_smob_tag;
 
-static const struct objfile_data *stscm_objfile_data_key;
+static const objfile::registry_data *stscm_objfile_data_key;
 
 /* Administrivia for symtab smobs.  */
 
@@ -110,13 +110,13 @@ static htab_t
 stscm_objfile_symtab_map (struct symtab *symtab)
 {
   struct objfile *objfile = SYMTAB_OBJFILE (symtab);
-  htab_t htab = (htab_t) objfile_data (objfile, stscm_objfile_data_key);
+  htab_t htab = (htab_t) objfile->get (stscm_objfile_data_key);
 
   if (htab == NULL)
     {
       htab = gdbscm_create_eqable_gsmob_ptr_map (stscm_hash_symtab_smob,
 						 stscm_eq_symtab_smob);
-      set_objfile_data (objfile, stscm_objfile_data_key, htab);
+      objfile->set (stscm_objfile_data_key, htab);
     }
 
   return htab;
@@ -692,6 +692,5 @@ gdbscm_initialize_symtabs (void)
   /* Register an objfile "free" callback so we can properly
      invalidate symbol tables, and symbol table and line data
      structures when an object file that is about to be deleted.  */
-  stscm_objfile_data_key
-    = register_objfile_data_with_cleanup (NULL, stscm_del_objfile_symtabs);
+  stscm_objfile_data_key = objfile::new_key (NULL, stscm_del_objfile_symtabs);
 }
