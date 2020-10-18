@@ -1,3 +1,21 @@
+2020-10-19  Tom Tromey  <tom@tromey.com>
+
+	* target-debug.h (target_debug_print_struct_address_space_p):
+	Update.
+	* scoped-mock-context.h (struct scoped_mock_context): Update.
+	* progspace.h (struct address_space): Add constructor,
+	destructor.
+	<num>: New method.
+	<m_num>: Rename member from num.
+	(new_address_space, address_space_num): Don't declare.
+	* progspace.c (address_space): Rename from new_address_space,
+	change to constructor.
+	(address_space::~address_space): Rename from free_address_space.
+	(address_space_num): Remove.
+	(program_space::~program_space, update_address_spaces)
+	(initialize_progspace): Update.
+	* infrun.c (follow_fork_inferior): Update.
+
 2020-10-19  Tom Tromey  <tromey@adacore.com>
 
 	PR tui/26719

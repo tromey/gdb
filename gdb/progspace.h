@@ -351,10 +351,22 @@ struct program_space
    associating caches to each address space.  */
 struct address_space
 {
-  int num;
+  /* Create a new address space object, and add it to the list.  */
+  address_space ();
+  ~address_space ();
+  DISABLE_COPY_AND_ASSIGN (address_space);
+
+  /* Returns the integer address space id of this address space.  */
+  int num () const
+  {
+    return m_num;
+  }
 
   /* Per aspace data-pointers required by other GDB modules.  */
   REGISTRY_FIELDS;
+
+private:
+  int m_num;
 };
 
 /* The object file that the main symbol table was loaded from (e.g. the
@@ -408,16 +420,10 @@ private:
   program_space *m_saved_pspace;
 };
 
-/* Create a new address space object, and add it to the list.  */
-extern struct address_space *new_address_space (void);
-
 /* Maybe create a new address space object, and add it to the list, or
    return a pointer to an existing address space, in case inferiors
    share an address space.  */
 extern struct address_space *maybe_new_address_space (void);
-
-/* Returns the integer address space id of ASPACE.  */
-extern int address_space_num (struct address_space *aspace);
 
 /* Update all program spaces matching to address spaces.  The user may
    have created several program spaces, and loaded executables into

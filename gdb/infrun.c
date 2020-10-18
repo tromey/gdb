@@ -524,7 +524,7 @@ holding the child stopped.  Try \"set detach-on-fork\" or \
 	    }
 	  else
 	    {
-	      child_inf->aspace = new_address_space ();
+	      child_inf->aspace = new address_space ();
 	      child_inf->pspace = new program_space (child_inf->aspace);
 	      child_inf->removable = 1;
 	      set_current_program_space (child_inf->pspace);
@@ -663,7 +663,7 @@ holding the child stopped.  Try \"set detach-on-fork\" or \
 	}
       else
 	{
-	  child_inf->aspace = new_address_space ();
+	  child_inf->aspace = new address_space ();
 	  child_inf->pspace = new program_space (child_inf->aspace);
 	  child_inf->removable = 1;
 	  child_inf->symfile_flags = SYMFILE_NO_READ;
