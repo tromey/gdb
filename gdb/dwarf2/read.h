@@ -573,6 +573,13 @@ struct dwarf2_per_cu_data
   /* Get the header of this per_cu, reading it if necessary.  */
   const comp_unit_head *get_header () const;
 
+  /* Set the header of this per_cu.  */
+  void set_header (const comp_unit_head &header)
+  {
+    m_header = header;
+    m_header_read_in = true;
+  }
+
   /* Return the address size given in the compilation unit header for
      this CU.  */
   int addr_size () const;

@@ -8169,6 +8169,7 @@ read_comp_units_from_section (dwarf2_per_objfile *per_objfile,
       this_cu->length = cu_header.length + cu_header.initial_length_size;
       this_cu->is_dwz = is_dwz;
       this_cu->section = section;
+      this_cu->set_header (cu_header);
 
       per_objfile->per_bfd->all_comp_units.push_back (this_cu);
 
