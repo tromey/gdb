@@ -55,8 +55,7 @@ typedef std::unique_ptr<struct abbrev_table> abbrev_table_up;
 
 struct abbrev_table
 {
-  static abbrev_table_up read (struct objfile *objfile,
-			       struct dwarf2_section_info *section,
+  static abbrev_table_up read (struct dwarf2_section_info *section,
 			       sect_offset sect_off);
 
   /* Look up an abbrev in the table.
