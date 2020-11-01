@@ -27,10 +27,11 @@
 class abbrev_cache
 {
 public:
-  abbrev_cache (struct dwarf2_section_info *section,
-		const std::unordered_set<sect_offset> &offsets);
-
+  abbrev_cache () = default;
   DISABLE_COPY_AND_ASSIGN (abbrev_cache);
+
+  void populate (struct dwarf2_section_info *section,
+		 const std::unordered_set<sect_offset> &offsets);
 
   abbrev_table *find (sect_offset offset)
   {

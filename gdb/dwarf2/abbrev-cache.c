@@ -51,11 +51,15 @@ destroy_table (void *item)
   delete table;
 }
 
-abbrev_cache::abbrev_cache (struct dwarf2_section_info *section,
-			    const std::unordered_set<sect_offset> &offsets)
-  : m_tables (htab_create_alloc (20, hash_table, eq_table,
-				 destroy_table, xcalloc, xfree))
+void
+abbrev_cache::populate (struct dwarf2_section_info *section,
+			const std::unordered_set<sect_offset> &offsets)
 {
+  gdb_assert (m_tables == nullptr);
+
+  m_tables.reset (htab_create_alloc (20, hash_table, eq_table,
+				     destroy_table, xcalloc, xfree));
+
   std::vector<std::pair<sect_offset, abbrev_table_up>> v_offsets;
   for (sect_offset off : offsets)
     v_offsets.emplace_back (off, abbrev_table_up ());

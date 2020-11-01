@@ -8030,19 +8030,24 @@ set_partial_user (dwarf2_per_objfile *per_objfile)
     }
 }
 
-static abbrev_cache *
-create_abbrev_cache (const std::vector<dwarf2_per_cu_data *> &comp_units,
-		     struct dwarf2_section_info *section)
+static void
+populate_abbrev_cache (abbrev_cache &cache,
+		       const std::vector<dwarf2_per_cu_data *> &comp_units,
+		       struct dwarf2_section_info *section,
+		       bool is_dwz)
 {
   std::unordered_set<sect_offset> offsets;
 
   for (dwarf2_per_cu_data *per_cu : comp_units)
     {
-      const comp_unit_head *header = per_cu->get_header ();
-      offsets.insert (header->sect_off);
+      if (per_cu->is_dwz == is_dwz)
+	{
+	  const comp_unit_head *header = per_cu->get_header ();
+	  offsets.insert (header->sect_off);
+	}
     }
 
-  return new abbrev_cache (section, offsets);
+  cache.populate (section, offsets);
 }
 
 /* Build the partial symbol table by doing a quick pass through the
@@ -8073,8 +8078,13 @@ dwarf2_build_psymtabs_hard (dwarf2_per_objfile *per_objfile)
 
   create_all_comp_units (per_objfile);
 
-  create_abbrev_cache (per_objfile->per_bfd->all_comp_units,
-		       &per_objfile->per_bfd->abbrev);
+  abbrev_cache main_cache, dwz_cache;
+  populate_abbrev_cache (main_cache, per_objfile->per_bfd->all_comp_units,
+			 &per_objfile->per_bfd->abbrev, 0);
+  dwz_file *dwz = dwarf2_get_dwz_file (per_objfile->per_bfd);
+  if (dwz != NULL)
+    populate_abbrev_cache (dwz_cache, per_objfile->per_bfd->all_comp_units,
+			   &dwz->abbrev, 1);
 
   /* Create a temporary address map on a temporary obstack.  We later
      copy this to the final obstack.  */
