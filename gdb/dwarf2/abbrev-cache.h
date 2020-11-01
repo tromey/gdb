@@ -21,7 +21,6 @@
 #define GDB_DWARF2_ABBREV_CACHE_H
 
 #include "dwarf2/abbrev.h"
-#include <vector>
 #include <unordered_set>
 #include "gdbtypes.h"
 
@@ -29,7 +28,7 @@ class abbrev_cache
 {
 public:
   abbrev_cache (struct dwarf2_section_info *section,
-		const std::vector<sect_offset> offsets);
+		const std::unordered_set<sect_offset> &offsets);
 
   abbrev_table *find (sect_offset offset)
   {

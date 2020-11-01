@@ -50,7 +50,7 @@ destroy_table (void *item)
 }
 
 abbrev_cache::abbrev_cache (struct dwarf2_section_info *section,
-			    const std::vector<sect_offset> offsets)
+			    const std::unordered_set<sect_offset> &offsets)
   : m_tables (htab_create_alloc (20, hash_table, eq_table,
 				 destroy_table, xcalloc, xfree))
 {

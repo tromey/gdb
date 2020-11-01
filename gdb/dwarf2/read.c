@@ -87,6 +87,7 @@
 #include "gdbsupport/pathstuff.h"
 #include "count-one-bits.h"
 #include "debuginfod-support.h"
+#include "dwarf2/abbrev-cache.h"
 
 /* When == 1, print basic high level tracing messages.
    When > 1, be more verbose.
@@ -8029,6 +8030,21 @@ set_partial_user (dwarf2_per_objfile *per_objfile)
     }
 }
 
+static abbrev_cache *
+create_abbrev_cache (const std::vector<dwarf2_per_cu_data *> &comp_units,
+		     struct dwarf2_section_info *section)
+{
+  std::unordered_set<sect_offset> offsets;
+
+  for (dwarf2_per_cu_data *per_cu : comp_units)
+    {
+      const comp_unit_head *header = per_cu->get_header ();
+      offsets.insert (header->sect_off);
+    }
+
+  return new abbrev_cache (section, offsets);
+}
+
 /* Build the partial symbol table by doing a quick pass through the
    .debug_info and .debug_abbrev sections.  */
 
@@ -8056,6 +8072,9 @@ dwarf2_build_psymtabs_hard (dwarf2_per_objfile *per_objfile)
   build_type_psymtabs (per_objfile);
 
   create_all_comp_units (per_objfile);
+
+  create_abbrev_cache (per_objfile->per_bfd->all_comp_units,
+		       &per_objfile->per_bfd->abbrev);
 
   /* Create a temporary address map on a temporary obstack.  We later
      copy this to the final obstack.  */
