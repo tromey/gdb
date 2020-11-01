@@ -20,6 +20,8 @@
 #include "defs.h"
 #include "dwarf2/read.h"
 #include "dwarf2/abbrev-cache.h"
+#include "gdbsupport/parallel-for.h"
+#include <utility>
 
 /* Hash function for an abbrev table.  */
 
@@ -60,13 +62,27 @@ void
 abbrev_cache::populate (struct dwarf2_section_info *section,
 			const std::unordered_set<sect_offset> &offsets)
 {
-  for (sect_offset offset : offsets)
+  std::vector<std::pair<sect_offset, abbrev_table_up>> v_offsets;
+  v_offsets.reserve (offsets.size ());
+  for (sect_offset off : offsets)
+    v_offsets.emplace_back (off, abbrev_table_up ());
+
+  gdb::parallel_for_each
+    (v_offsets.begin (), v_offsets.end (),
+     [&] (auto start, auto end)
+     {
+       for (; start != end; ++start)
+	 start->second = abbrev_table::read (section, start->first);
+     });
+
+  for (auto &item : v_offsets)
     {
-      abbrev_table_up table = abbrev_table::read (section, offset);
-      search_key key = { section, table->sect_off };
-      void **slot = htab_find_slot_with_hash (m_tables.get (), &key,
-					      to_underlying (table->sect_off),
-					      INSERT);
-      *slot = table.release ();
+      search_key key = { section, item.second->sect_off };
+
+      void **slot
+	= htab_find_slot_with_hash (m_tables.get (), &key,
+				    to_underlying (item.second->sect_off),
+				    INSERT);
+      *slot = item.second.release ();
     }
 }
