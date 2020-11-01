@@ -30,6 +30,8 @@ public:
   abbrev_cache (struct dwarf2_section_info *section,
 		const std::unordered_set<sect_offset> &offsets);
 
+  DISABLE_COPY_AND_ASSIGN (abbrev_cache);
+
   abbrev_table *find (sect_offset offset)
   {
     return (abbrev_table *) htab_find_with_hash (m_tables.get (),
