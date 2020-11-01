@@ -970,6 +970,11 @@ public:
   void keep ();
 
 private:
+  struct abbrev_table *set_abbrevs (dwarf2_per_objfile *per_objfile,
+				    struct dwarf2_section_info *section,
+				    sect_offset off,
+				    struct abbrev_table *abbrev_table);
+
   void init_tu_and_read_dwo_dies (dwarf2_per_cu_data *this_cu,
 				  dwarf2_per_objfile *per_objfile,
 				  dwarf2_cu *existing_cu);
@@ -7076,6 +7081,23 @@ cutu_reader::init_tu_and_read_dwo_dies (dwarf2_per_cu_data *this_cu,
     }
 }
 
+struct abbrev_table *
+cutu_reader::set_abbrevs (dwarf2_per_objfile *per_objfile,
+			  struct dwarf2_section_info *abbrev_section,
+			  sect_offset sect_off,
+			  struct abbrev_table *abbrev_table)
+{
+  if (abbrev_table != NULL)
+    gdb_assert (sect_off == abbrev_table->sect_off);
+  else
+    {
+      abbrev_section->read (per_objfile->objfile);
+      m_abbrev_table_holder = abbrev_table::read (abbrev_section, sect_off);
+      abbrev_table = m_abbrev_table_holder.get ();
+    }
+  return abbrev_table;
+}
+
 /* Initialize a CU (or TU) and read its DIEs.
    If the CU defers to a DWO file, read the DWO file as well.
 
@@ -7210,15 +7232,8 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
   /* If we don't have them yet, read the abbrevs for this compilation unit.
      And if we need to read them now, make sure they're freed when we're
      done.  */
-  if (abbrev_table != NULL)
-    gdb_assert (cu->header.abbrev_sect_off == abbrev_table->sect_off);
-  else
-    {
-      abbrev_section->read (objfile);
-      m_abbrev_table_holder
-	= abbrev_table::read (abbrev_section, cu->header.abbrev_sect_off);
-      abbrev_table = m_abbrev_table_holder.get ();
-    }
+  abbrev_table = set_abbrevs (per_objfile, abbrev_section,
+			      cu->header.abbrev_sect_off, abbrev_table);
 
   /* Read the top level CU/TU die.  */
   init_cu_die_reader (this, cu, section, NULL, abbrev_table);
@@ -7358,12 +7373,11 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
       return;
     }
 
-  abbrev_section->read (objfile);
-  m_abbrev_table_holder
-    = abbrev_table::read (abbrev_section, m_new_cu->header.abbrev_sect_off);
+  struct abbrev_table *table = set_abbrevs (per_objfile, abbrev_section,
+					    m_new_cu->header.abbrev_sect_off,
+					    nullptr);
 
-  init_cu_die_reader (this, m_new_cu.get (), section, dwo_file,
-		      m_abbrev_table_holder.get ());
+  init_cu_die_reader (this, m_new_cu.get (), section, dwo_file, table);
   info_ptr = read_full_die (this, &comp_unit_die, info_ptr);
 }
 
@@ -8085,6 +8099,11 @@ dwarf2_build_psymtabs_hard (dwarf2_per_objfile *per_objfile)
   if (dwz != NULL)
     populate_abbrev_cache (dwz_cache, per_objfile->per_bfd->all_comp_units,
 			   &dwz->abbrev, 1);
+
+  scoped_restore save_main_abbrev_cache
+    = make_scoped_restore (&per_objfile->main_abbrev_cache, &main_cache);
+  scoped_restore save_dwz_abbrev_cache
+    = make_scoped_restore (&per_objfile->dwz_abbrev_cache, &dwz_cache);
 
   /* Create a temporary address map on a temporary obstack.  We later
      copy this to the final obstack.  */
