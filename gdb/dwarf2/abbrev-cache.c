@@ -20,6 +20,7 @@
 #include "defs.h"
 #include "dwarf2/read.h"
 #include "dwarf2/abbrev-cache.h"
+#include "gdbsupport/parallel-for.h"
 
 /* Hash function for an abbrev table.  */
 
@@ -54,12 +55,22 @@ abbrev_cache::abbrev_cache (struct dwarf2_section_info *section,
   : m_tables (htab_create_alloc (20, hash_table, eq_table,
 				 destroy_table, xcalloc, xfree))
 {
-  for (sect_offset offset : offsets)
-    {
-      abbrev_table_up table = abbrev_table::read (section, offset);
-      void **slot = htab_find_slot_with_hash (m_tables.get (), &table->sect_off,
-					      to_underlying (table->sect_off),
-					      INSERT);
-      *slot = table.release ();
-    }
+  std::vector<sect_offset> v_offsets (offsets.begin (), offsets.end ());
+
+  gdb::parallel_for_each
+    (v_offsets.begin (), v_offsets.end (),
+     [&] (auto start, auto end)
+     {
+       // crazliy wrong fixme
+       for (; start != end; ++start)
+	 {
+	   abbrev_table_up table = abbrev_table::read (section, *start);
+	   void **slot
+	     = htab_find_slot_with_hash (m_tables.get (),
+					 &table->sect_off,
+					 to_underlying (table->sect_off),
+					 INSERT);
+	   *slot = table.release ();
+	 }
+     });
 }
