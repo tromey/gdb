@@ -57,6 +57,7 @@ abbrev_cache::populate (struct dwarf2_section_info *section,
 {
   gdb_assert (m_tables == nullptr);
 
+  m_section = section;
   m_tables.reset (htab_create_alloc (20, hash_table, eq_table,
 				     destroy_table, xcalloc, xfree));
 

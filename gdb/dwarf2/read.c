@@ -7091,9 +7091,20 @@ cutu_reader::set_abbrevs (dwarf2_per_objfile *per_objfile,
     gdb_assert (sect_off == abbrev_table->sect_off);
   else
     {
-      abbrev_section->read (per_objfile->objfile);
-      m_abbrev_table_holder = abbrev_table::read (abbrev_section, sect_off);
-      abbrev_table = m_abbrev_table_holder.get ();
+      if (per_objfile->main_abbrev_cache != nullptr
+	  && per_objfile->main_abbrev_cache->matches (abbrev_section))
+	abbrev_table = per_objfile->main_abbrev_cache->find (sect_off);
+      else if (per_objfile->dwz_abbrev_cache != nullptr
+	       && per_objfile->dwz_abbrev_cache->matches (abbrev_section))
+	abbrev_table = per_objfile->dwz_abbrev_cache->find (sect_off);
+
+      if (abbrev_table == nullptr)
+	{
+	  abbrev_section->read (per_objfile->objfile);
+	  m_abbrev_table_holder = abbrev_table::read (abbrev_section,
+						      sect_off);
+	  abbrev_table = m_abbrev_table_holder.get ();
+	}
     }
   return abbrev_table;
 }

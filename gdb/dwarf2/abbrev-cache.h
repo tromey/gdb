@@ -33,6 +33,11 @@ public:
   void populate (struct dwarf2_section_info *section,
 		 const std::unordered_set<sect_offset> &offsets);
 
+  bool matches (struct dwarf2_section_info *section)
+  {
+    return section == m_section;
+  }
+
   abbrev_table *find (sect_offset offset)
   {
     return (abbrev_table *) htab_find_with_hash (m_tables.get (),
@@ -44,6 +49,7 @@ private:
 
   /* Hash table of abbrev tables.  */
   htab_up m_tables;
+  struct dwarf2_section_info *m_section = nullptr;
 };
 
 #endif /* GDB_DWARF2_ABBREV_CACHE_H */
