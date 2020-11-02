@@ -8068,7 +8068,7 @@ populate_abbrev_cache (abbrev_cache &cache,
       if (per_cu->is_dwz == is_dwz)
 	{
 	  const comp_unit_head *header = per_cu->get_header ();
-	  offsets.insert (header->sect_off);
+	  offsets.insert (header->abbrev_sect_off);
 	}
     }
 
