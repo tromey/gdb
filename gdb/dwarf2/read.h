@@ -51,6 +51,7 @@ struct mapped_index;
 struct mapped_debug_names;
 struct signatured_type;
 struct type_unit_group;
+struct abbrev_cache;
 
 /* One item on the queue of compilation units to read in full symbols
    for.  */
@@ -374,6 +375,8 @@ struct dwarf2_per_objfile
 
   /* Table containing line_header indexed by offset and offset_in_dwz.  */
   htab_up line_header_hash;
+
+  struct abbrev_cache *abbrev_cache = nullptr;
 
 private:
   /* Hold the corresponding compunit_symtab for each CU or TU.  This
