@@ -151,27 +151,7 @@ evaluate_subexpression_type (struct expression *exp, int subexp)
   return evaluate_subexp (nullptr, exp, &subexp, EVAL_AVOID_SIDE_EFFECTS);
 }
 
-/* Find the current value of a watchpoint on EXP.  Return the value in
-   *VALP and *RESULTP and the chain of intermediate and final values
-   in *VAL_CHAIN.  RESULTP and VAL_CHAIN may be NULL if the caller does
-   not need them.
-
-   If PRESERVE_ERRORS is true, then exceptions are passed through.
-   Otherwise, if PRESERVE_ERRORS is false, then if a memory error
-   occurs while evaluating the expression, *RESULTP will be set to
-   NULL.  *RESULTP may be a lazy value, if the result could not be
-   read from memory.  It is used to determine whether a value is
-   user-specified (we should watch the whole value) or intermediate
-   (we should watch only the bit used to locate the final value).
-
-   If the final value, or any intermediate value, could not be read
-   from memory, *VALP will be set to NULL.  *VAL_CHAIN will still be
-   set to any referenced values.  *VALP will never be a lazy value.
-   This is the value which we store in struct breakpoint.
-
-   If VAL_CHAIN is non-NULL, the values put into *VAL_CHAIN will be
-   released from the value chain.  If VAL_CHAIN is NULL, all generated
-   values will be left on the value chain.  */
+/* See expression.h.  */
 
 void
 fetch_subexp_value (struct expression *exp, int *pc, struct value **valp,

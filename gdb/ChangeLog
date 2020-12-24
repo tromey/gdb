@@ -1,3 +1,10 @@
+2020-12-24  Tom Tromey  <tom@tromey.com>
+
+	* ppc-linux-nat.c: Include expression.h.
+	* expression.h (fetch_subexp_value): Declare here, not...
+	* value.h (fetch_subexp_value): ... here.
+	* eval.c (fetch_subexp_value): Move comment to expression.h.
+
 2020-12-23  Samuel Thibault  <samuel.thibault@ens-lyon.org>
 
 	* i386-gnu-tdep.c (I386_GNU_UCONTEXT_T_THREAD_STATE_OFFSET): New

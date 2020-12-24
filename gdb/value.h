@@ -932,11 +932,6 @@ extern value *evaluate_var_msym_value (enum noside noside,
 
 extern value *eval_skip_value (expression *exp);
 
-extern void fetch_subexp_value (struct expression *exp, int *pc,
-				struct value **valp, struct value **resultp,
-				std::vector<value_ref_ptr> *val_chain,
-				bool preserve_errors);
-
 extern const char *extract_field_op (struct expression *exp, int *subexp);
 
 extern struct value *evaluate_subexp_with_coercion (struct expression *,
