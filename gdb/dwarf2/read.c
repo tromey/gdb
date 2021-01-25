@@ -7932,8 +7932,8 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
     {
       /* We must do all the work synchronously -- no threads are
 	 running.  */
-        psym_reader->intern_names ();
-	psym_reader->create_psymtab ();
+      psym_reader->intern_names ();
+      psym_reader->create_psymtab ();
     }
   else
     to_intern->push (std::move (psym_reader));
