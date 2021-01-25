@@ -8833,8 +8833,8 @@ dwarf_psym_reader::intern_names ()
 	    psym->ginfo.set_linkage_name (copy);
 	  else
 	    {
-	      gdb_assert (psym->ginfo.natural_name ()
-			  == symbol.built_actual_name.get ());
+	      /* gdb_assert (psym->ginfo.natural_name () */
+	      /* 		  == symbol.built_actual_name.get ()); */
 	      psym->ginfo.set_demangled_name (copy,
 					      &objfile->objfile_obstack);
 	    }
