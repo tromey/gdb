@@ -7687,13 +7687,18 @@ typedef gdb::job_queue<std::unique_ptr<dwarf_psym_reader>> psym_queue;
 
 struct dwarf_psym_reader
 {
-  explicit dwarf_psym_reader (dwarf2_cu *cu_, psym_queue *queue)
-    : cu (cu_),
+  explicit dwarf_psym_reader (dwarf2_per_objfile *per_objfile_,
+			      dwarf2_cu *cu_, psym_queue *queue)
+    : per_objfile (per_objfile_),
+      cu (cu_),
       per_cu (cu->per_cu),
       language (cu->language),
       job_queue (queue)
   {
   }
+
+  /* The per-objfile object.  */
+  dwarf2_per_objfile *per_objfile;
 
   /* The CU we are reading.  */
   struct dwarf2_cu *cu;
@@ -7856,7 +7861,7 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
   prepare_one_comp_unit (cu, comp_unit_die, pretend_language);
 
   std::unique_ptr<dwarf_psym_reader> psym_reader
-    (new dwarf_psym_reader (cu, to_intern));
+    (new dwarf_psym_reader (per_objfile, cu, to_intern));
 
   static const char artificial[] = "<artificial>";
   filename = dwarf2_string_attr (comp_unit_die, DW_AT_name, cu);
@@ -8026,7 +8031,7 @@ build_type_psymtabs_reader (const struct die_reader_specs *reader,
   prepare_one_comp_unit (cu, type_unit_die, language_minimal);
 
   std::unique_ptr<dwarf_psym_reader> psym_reader
-    (new dwarf_psym_reader (cu, to_intern));
+    (new dwarf_psym_reader (cu->per_objfile, cu, to_intern));
   psym_reader->is_type_unit = true;
 
   first_die = psym_reader->load_partial_dies (reader, info_ptr, 1);
@@ -8483,7 +8488,7 @@ load_partial_comp_unit (dwarf2_per_cu_data *this_cu,
 	 If not, there's no more debug_info for this comp unit.  */
       if (reader.comp_unit_die->has_children)
 	{
-	  dwarf_psym_reader psym_reader (reader.cu, nullptr);
+	  dwarf_psym_reader psym_reader (per_objfile, reader.cu, nullptr);
 	  psym_reader.load_partial_dies (&reader, reader.info_ptr, 0);
 	}
 
@@ -8816,7 +8821,7 @@ partial_die_full_name (struct partial_die_info *pdi,
 void
 dwarf_psym_reader::intern_names ()
 {
-  struct objfile *objfile = cu->per_objfile->objfile;
+  struct objfile *objfile = per_objfile->objfile;
   for (auto &symbol : symbols)
     {
       if (symbol.built_actual_name != nullptr)
@@ -8847,9 +8852,9 @@ dwarf_psym_reader::intern_names ()
 void
 dwarf_psym_reader::create_symbols ()
 {
-  struct objfile *objfile = cu->per_objfile->objfile;
+  struct objfile *objfile = per_objfile->objfile;
   for (const auto &symbol : symbols)
-    cu->per_cu->v.psymtab->add_psymbol (symbol.psym, symbol.where, objfile);
+    per_cu->v.psymtab->add_psymbol (symbol.psym, symbol.where, objfile);
 }
 
 void
