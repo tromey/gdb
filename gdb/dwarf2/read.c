@@ -8833,8 +8833,8 @@ dwarf_psym_reader::intern_names ()
 	    psym->ginfo.set_linkage_name (copy);
 	  else
 	    {
-	      /* gdb_assert (psym->ginfo.natural_name () */
-	      /* 		  == symbol.built_actual_name.get ()); */
+	      gdb_assert (psym->ginfo.natural_name ()
+			  == symbol.built_actual_name.get ());
 	      psym->ginfo.set_demangled_name (copy,
 					      &objfile->objfile_obstack);
 	    }
@@ -9048,12 +9048,11 @@ dwarf_psym_reader::add_partial_symbol (struct partial_die_info *pdi)
   if (where.has_value ())
     {
       if (built_actual_name != nullptr)
-	actual_name = objfile->intern (actual_name);
+	actual_name = built_actual_name.get ();
       if (pdi->linkage_name == nullptr || cu->language == language_ada)
 	psymbol.ginfo.set_linkage_name (actual_name);
       else
 	{
-	  /* FIXME !? */
 	  psymbol.ginfo.set_demangled_name (actual_name,
 					    &objfile->objfile_obstack);
 	  psymbol.ginfo.set_linkage_name (pdi->linkage_name);
