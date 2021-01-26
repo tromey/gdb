@@ -7772,9 +7772,9 @@ struct dwarf_psym_reader
 void
 dwarf_psym_reader::create_psymtab ()
 {
-  struct objfile *objfile = cu->per_objfile->objfile;
+  struct objfile *objfile = per_objfile->objfile;
   struct gdbarch *gdbarch = objfile->arch ();
-  dwarf2_psymtab *pst = create_partial_symtab (per_cu, cu->per_objfile,
+  dwarf2_psymtab *pst = create_partial_symtab (per_cu, per_objfile,
 					       interned_filename);
 
   if (is_type_unit)
