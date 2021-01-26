@@ -1508,6 +1508,8 @@ static const gdb_byte *read_full_die (const struct die_reader_specs *,
 
 static void process_die (struct die_info *, struct dwarf2_cu *);
 
+static gdb::unique_xmalloc_ptr<char> dwarf2_canonicalize_name
+     (const char *, struct dwarf2_cu *);
 static const char *dwarf2_canonicalize_name (const char *, struct dwarf2_cu *,
 					     struct objfile *);
 
@@ -19900,8 +19902,10 @@ partial_die_info::name (dwarf2_cu *cu)
 {
   if (!canonical_name && raw_name != nullptr)
     {
-      struct objfile *objfile = cu->per_objfile->objfile;
-      raw_name = dwarf2_canonicalize_name (raw_name, cu, objfile);
+      gdb::unique_xmalloc_ptr<char> canon
+	= dwarf2_canonicalize_name (raw_name, cu);
+      if (canon != nullptr)
+	raw_name = obstack_strdup (&cu->comp_unit_obstack, canon.get ());
       canonical_name = 1;
     }
 
@@ -23507,6 +23511,15 @@ typename_concat (struct obstack *obs, const char *prefix, const char *suffix,
 }
 
 /* Get name of a die, return NULL if not found.  */
+
+static gdb::unique_xmalloc_ptr<char>
+dwarf2_canonicalize_name (const char *name, struct dwarf2_cu *cu)
+{
+  if (name && cu->language == language_cplus)
+    return cp_canonicalize_string (name);
+
+  return {};
+}
 
 static const char *
 dwarf2_canonicalize_name (const char *name, struct dwarf2_cu *cu,
