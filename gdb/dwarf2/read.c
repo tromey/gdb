@@ -8787,25 +8787,25 @@ partial_die_full_name (struct partial_die_info *pdi,
      template arguments from partial DIEs.  So, unfortunately, we have
      to go through the full DIEs.  At least any work we do building
      types here will be reused if full symbols are loaded later.  */
-  if (pdi->has_template_arguments)
-    {
-      pdi->fixup (cu);
+  /* if (pdi->has_template_arguments) */
+  /*   { */
+  /*     pdi->fixup (cu); */
 
-      if (pdi->name (cu) != NULL && strchr (pdi->name (cu), '<') == NULL)
-	{
-	  struct die_info *die;
-	  struct attribute attr;
-	  struct dwarf2_cu *ref_cu = cu;
+  /*     if (pdi->name (cu) != NULL && strchr (pdi->name (cu), '<') == NULL) */
+  /* 	{ */
+  /* 	  struct die_info *die; */
+  /* 	  struct attribute attr; */
+  /* 	  struct dwarf2_cu *ref_cu = cu; */
 
-	  /* DW_FORM_ref_addr is using section offset.  */
-	  attr.name = (enum dwarf_attribute) 0;
-	  attr.form = DW_FORM_ref_addr;
-	  attr.u.unsnd = to_underlying (pdi->sect_off);
-	  die = follow_die_ref (NULL, &attr, &ref_cu);
+  /* 	  /\* DW_FORM_ref_addr is using section offset.  *\/ */
+  /* 	  attr.name = (enum dwarf_attribute) 0; */
+  /* 	  attr.form = DW_FORM_ref_addr; */
+  /* 	  attr.u.unsnd = to_underlying (pdi->sect_off); */
+  /* 	  die = follow_die_ref (NULL, &attr, &ref_cu); */
 
-	  return make_unique_xstrdup (dwarf2_full_name (NULL, die, ref_cu));
-	}
-    }
+  /* 	  return make_unique_xstrdup (dwarf2_full_name (NULL, die, ref_cu)); */
+  /* 	} */
+  /*   } */
 
   parent_scope = partial_die_parent_scope (pdi, cu);
   if (parent_scope != NULL)
