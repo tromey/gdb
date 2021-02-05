@@ -2584,7 +2584,8 @@ static void
 create_cus_from_index_list (dwarf2_per_bfd *per_bfd,
 			    const gdb_byte *cu_list, offset_type n_elements,
 			    struct dwarf2_section_info *section,
-			    int is_dwz)
+			    int is_dwz,
+			    double total_progress_steps)
 {
   for (offset_type i = 0; i < n_elements; i += 2)
     {
@@ -2599,6 +2600,8 @@ create_cus_from_index_list (dwarf2_per_bfd *per_bfd,
 	= create_cu_from_index_list (per_bfd, section, is_dwz, sect_off,
 				     length);
       per_bfd->all_comp_units.push_back (per_cu);
+      current_uiout->progress (per_bfd->all_comp_units.size ()
+			       / total_progress_steps);
     }
 }
 
@@ -2608,20 +2611,21 @@ create_cus_from_index_list (dwarf2_per_bfd *per_bfd,
 static void
 create_cus_from_index (dwarf2_per_bfd *per_bfd,
 		       const gdb_byte *cu_list, offset_type cu_list_elements,
-		       const gdb_byte *dwz_list, offset_type dwz_elements)
+		       const gdb_byte *dwz_list, offset_type dwz_elements,
+		       double total_progress_steps)
 {
   gdb_assert (per_bfd->all_comp_units.empty ());
   per_bfd->all_comp_units.reserve ((cu_list_elements + dwz_elements) / 2);
 
   create_cus_from_index_list (per_bfd, cu_list, cu_list_elements,
-			      &per_bfd->info, 0);
+			      &per_bfd->info, 0, total_progress_steps);
 
   if (dwz_elements == 0)
     return;
 
   dwz_file *dwz = dwarf2_get_dwz_file (per_bfd);
   create_cus_from_index_list (per_bfd, dwz_list, dwz_elements,
-			      &dwz->info, 1);
+			      &dwz->info, 1, total_progress_steps);
 }
 
 /* Create the signatured type hash table from the index.  */
@@ -2629,7 +2633,8 @@ create_cus_from_index (dwarf2_per_bfd *per_bfd,
 static void
 create_signatured_type_table_from_index
   (dwarf2_per_bfd *per_bfd, struct dwarf2_section_info *section,
-   const gdb_byte *bytes, offset_type elements)
+   const gdb_byte *bytes, offset_type elements,
+   double base_steps, double total_progress_steps)
 {
   gdb_assert (per_bfd->all_type_units.empty ());
   per_bfd->all_type_units.reserve (elements / 3);
@@ -2666,6 +2671,7 @@ create_signatured_type_table_from_index
       *slot = sig_type;
 
       per_bfd->all_type_units.push_back (sig_type);
+      current_uiout->progress ((base_steps + i) / total_progress_steps);
     }
 
   per_bfd->signatured_types = std::move (sig_types_hash);
@@ -3190,8 +3196,11 @@ dwarf2_read_gdb_index
 	}
     }
 
+  double cu_steps = (double) cu_list_elements + dwz_list_elements;
+  double total_steps = cu_steps + types_list_elements;
+
   create_cus_from_index (per_bfd, cu_list, cu_list_elements, dwz_list,
-			 dwz_list_elements);
+			 dwz_list_elements, total_steps);
 
   if (types_list_elements)
     {
@@ -3203,7 +3212,8 @@ dwarf2_read_gdb_index
       dwarf2_section_info *section = &per_bfd->types[0];
 
       create_signatured_type_table_from_index (per_bfd, section, types_list,
-					       types_list_elements);
+					       types_list_elements,
+					       cu_steps, total_steps);
     }
 
   create_addrmap_from_index (per_objfile, map.get ());
@@ -3785,6 +3795,8 @@ dwarf2_base_index_functions::expand_all_symtabs (struct objfile *objfile)
 	 dw2_instantiate_symtab to skip partial CUs -- any important
 	 partial CU will be read via DW_TAG_imported_unit anyway.  */
       dw2_instantiate_symtab (per_cu, per_objfile, true);
+
+      current_uiout->progress ((double) i / total_units);
     }
 }
 
@@ -8104,13 +8116,20 @@ dwarf2_build_psymtabs_hard (dwarf2_per_objfile *per_objfile)
     = make_scoped_restore (&per_bfd->partial_symtabs->psymtabs_addrmap,
 			   addrmap_create_mutable (&temp_obstack));
 
+<<<<<<< HEAD
   for (dwarf2_per_cu_data *per_cu : per_bfd->all_comp_units)
+=======
+  int n_cus = per_objfile->per_bfd->all_comp_units.size ();
+  for (int i = 0; i < n_cus; ++i)
+>>>>>>> 7b80aaee53a... Create a progress meter when reading symbols
     {
+      dwarf2_per_cu_data *per_cu = per_objfile->per_bfd->all_comp_units[i];
       if (per_cu->v.psymtab != NULL)
 	/* In case a forward DW_TAG_imported_unit has read the CU already.  */
 	continue;
       process_psymtab_comp_unit (per_cu, per_objfile, false,
 				 language_minimal);
+      current_uiout->progress ((double) i / n_cus);
     }
 
   /* This has to wait until we read the CUs, we need the list of DWOs.  */

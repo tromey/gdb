@@ -1,5 +1,22 @@
 2021-04-16  Tom Tromey  <tom@tromey.com>
 
+	* symfile-debug.c (objfile::require_partial_symbols): Create a
+	progress meter.
+	* symfile.c (symbol_file_add_with_addrs): Create a progress
+	meter.
+	(symbol_file_add_with_addrs): Create a progress meter.
+	(reread_symbols): Create a progress meter.
+	* dwarf2/read.c (create_cus_from_index_list): Add
+	total_progress_steps parameter.
+	(create_cus_from_index): Likewise.
+	(create_signatured_type_table_from_index): Add base_steps and
+	total_progress_steps parameters.
+	(dwarf2_read_gdb_index): Update.
+	(dw2_expand_all_symtabs): Notify progress.
+	(dwarf2_build_psymtabs_hard): Likewise.
+
+2021-04-16  Tom Tromey  <tom@tromey.com>
+
 	* rust-parse.c: New file.
 	* rust-exp.y: Remove.
 	* Makefile.in (COMMON_SFILES): Add rust-parse.c.

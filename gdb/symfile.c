@@ -1076,15 +1076,25 @@ symbol_file_add_with_addrs (bfd *abfd, const char *name,
   /* We either created a new mapped symbol table, mapped an existing
      symbol table file which has not had initial symbol reading
      performed, or need to read an unmapped symbol table.  */
-  if (should_print)
-    {
-      if (deprecated_pre_add_symbol_hook)
-	deprecated_pre_add_symbol_hook (name);
-      else
-	printf_filtered (_("Reading symbols from %ps...\n"),
-			 styled_string (file_name_style.style (), name));
-    }
-  syms_from_objfile (objfile, addrs, add_flags);
+  {
+    std::string message;
+    if (should_print)
+      {
+	if (deprecated_pre_add_symbol_hook)
+	  deprecated_pre_add_symbol_hook (name);
+	else
+	  {
+	    string_file styled (current_uiout->can_emit_style_escape ());
+	    fprintf_filtered (&styled,
+			      _("Reading symbols from %ps..."),
+			      styled_string (file_name_style.style (), name));
+	    message = std::move (styled.string ());
+	  }
+      }
+
+    ui_out::progress_meter meter (current_uiout, message, should_print);
+    syms_from_objfile (objfile, addrs, add_flags);
+  }
 
   /* We now have at least a partial symbol table.  Check to see if the
      user requested that all symbols be read on initial access via either
@@ -1093,10 +1103,16 @@ symbol_file_add_with_addrs (bfd *abfd, const char *name,
 
   if ((flags & OBJF_READNOW))
     {
+      std::string message;
       if (should_print)
-	printf_filtered (_("Expanding full symbols from %ps...\n"),
-			 styled_string (file_name_style.style (), name));
+	{
+	  string_file styled (current_uiout->can_emit_style_escape ());
+	  fprintf_filtered (&styled, _("Expanding full symbols from %ps...\n"),
+			    styled_string (file_name_style.style (), name));
+	  message = std::move (styled.string ());
+	}
 
+      ui_out::progress_meter meter (current_uiout, message, should_print);
       objfile->expand_all_symtabs ();
     }
 
@@ -2444,9 +2460,6 @@ reread_symbols (void)
       new_modtime = new_statbuf.st_mtime;
       if (new_modtime != objfile->mtime)
 	{
-	  printf_filtered (_("`%s' has changed; re-reading symbols.\n"),
-			   objfile_name (objfile));
-
 	  /* There are various functions like symbol_file_add,
 	     symfile_bfd_open, syms_from_objfile, etc., which might
 	     appear to do what we want.  But they have various other
@@ -2585,7 +2598,17 @@ reread_symbols (void)
 	  /* Recompute section offsets and section indices.  */
 	  objfile->sf->sym_offsets (objfile, {});
 
-	  read_symbols (objfile, 0);
+	  {
+	    string_file styled (current_uiout->can_emit_style_escape ());
+	    fprintf_filtered (&styled,
+			      _("`%ps' has changed; re-reading symbols.\n"),
+			      styled_string (file_name_style.style (),
+					     objfile_name (objfile)));
+	    ui_out::progress_meter meter (current_uiout, styled.string (),
+					  true);
+
+	    read_symbols (objfile, 0);
+	  }
 
 	  if (!objfile_has_symbols (objfile))
 	    {

@@ -390,14 +390,19 @@ objfile::require_partial_symbols (bool verbose)
       flags |= OBJF_PSYMTABS_READ;
 
       bool printed = false;
+      gdb::optional<ui_out::progress_meter> meter;
       for (const auto &iter : qf)
 	{
 	  if (iter->can_lazily_read_symbols ())
 	    {
 	      if (verbose && !printed)
 		{
-		  printf_filtered (_("Reading symbols from %s...\n"),
-				   objfile_name (this));
+		  string_file styled (current_uiout->can_emit_style_escape ());
+		  fprintf_filtered (&styled,
+				    _("Reading symbols from %ps..."),
+				    styled_string (file_name_style.style (),
+						   objfile_name (objfile)));
+		  meter.emplace (current_uiout, styled.string (), verbose);
 		  printed = true;
 		}
 	      iter->read_partial_symbols (this);
