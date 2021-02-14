@@ -6,7 +6,8 @@ class sim_target : public process_stratum_target
 {
   ~sim_target ()
   {
-    sim_close (m_sim, 1);
+    if (m_sim != nullptr)
+      sim_close (m_sim, 1);
   }
 
   int create_inferior (const char *program,
