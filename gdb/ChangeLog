@@ -1,3 +1,26 @@
+2021-02-21  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2/read.c (struct partial_die_info) <is_dwz, spec_is_dwz>:
+	Update comments.
+	(skip_one_die): Add DWARF 5 forms.
+	(process_imported_unit_die, partial_die_info::read)
+	(partial_die_info::read): Update.
+	(read_attribute_value, dwarf2_const_value_attr): Add DWARF 5
+	forms.
+	(lookup_die_type): Update.
+	(dump_die_shallow): Add DWARF 5 forms.
+	(follow_die_ref): Update.
+	(dwarf2_fetch_constant_bytes): Add DWARF 5 forms.
+	* dwarf2/macro.c (skip_form_bytes): Add DWARF 5 form.
+	* dwarf2/dwz.c (get_debug_sup_info, verify_id, read_alt_info): New
+	functions.
+	(dwz_search_other_debugdirs): Add 'dwarf5' parameter.
+	(dwarf2_get_dwz_file): Update.
+	* dwarf2/attribute.h (form_is_ref): Add DWARF 5 forms.
+	(form_is_alt): New method.
+	* dwarf2/attribute.c (attribute::form_is_string)
+	(attribute::form_is_unsigned): Add DWARF 5 forms.
+
 2021-03-06  Chernov Sergey  <klen_s@mail.ru>
 
 	PR gdb/27528:

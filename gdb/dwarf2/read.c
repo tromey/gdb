@@ -1080,10 +1080,12 @@ struct partial_die_info : public allocate_on_obstack
     /* Flag set if fixup has been called on this die.  */
     unsigned int fixup_called : 1;
 
-    /* Flag set if DW_TAG_imported_unit uses DW_FORM_GNU_ref_alt.  */
+    /* Flag set if DW_TAG_imported_unit uses DW_FORM_GNU_ref_alt,
+       DW_FORM_ref_sup4, or DW_FORM_ref_sup8.  */
     unsigned int is_dwz : 1;
 
-    /* Flag set if spec_offset uses DW_FORM_GNU_ref_alt.  */
+    /* Flag set if spec_offset uses DW_FORM_GNU_ref_alt,
+       DW_FORM_ref_sup4, or DW_FORM_ref_sup8.  */
     unsigned int spec_is_dwz : 1;
 
     unsigned int canonical_name : 1;
@@ -8819,11 +8821,13 @@ skip_one_die (const struct die_reader_specs *reader, const gdb_byte *info_ptr,
 	case DW_FORM_data4:
 	case DW_FORM_ref4:
 	case DW_FORM_strx4:
+	case DW_FORM_ref_sup4:
 	  info_ptr += 4;
 	  break;
 	case DW_FORM_data8:
 	case DW_FORM_ref8:
 	case DW_FORM_ref_sig8:
+	case DW_FORM_ref_sup8:
 	  info_ptr += 8;
 	  break;
 	case DW_FORM_data16:
@@ -8836,6 +8840,7 @@ skip_one_die (const struct die_reader_specs *reader, const gdb_byte *info_ptr,
 	case DW_FORM_sec_offset:
 	case DW_FORM_strp:
 	case DW_FORM_GNU_strp_alt:
+	case DW_FORM_strp_sup:
 	  info_ptr += cu->header.offset_size;
 	  break;
 	case DW_FORM_exprloc:
@@ -10021,7 +10026,7 @@ process_imported_unit_die (struct die_info *die, struct dwarf2_cu *cu)
   if (attr != NULL)
     {
       sect_offset sect_off = attr->get_ref_die_offset ();
-      bool is_dwz = (attr->form == DW_FORM_GNU_ref_alt || cu->per_cu->is_dwz);
+      bool is_dwz = attr->form_is_alt () || cu->per_cu->is_dwz;
       dwarf2_per_objfile *per_objfile = cu->per_objfile;
       dwarf2_per_cu_data *per_cu
 	= dwarf2_find_containing_comp_unit (sect_off, is_dwz, per_objfile);
@@ -19680,8 +19685,7 @@ partial_die_info::read (const struct die_reader_specs *reader,
 	case DW_AT_extension:
 	  has_specification = 1;
 	  spec_offset = attr.get_ref_die_offset ();
-	  spec_is_dwz = (attr.form == DW_FORM_GNU_ref_alt
-				   || cu->per_cu->is_dwz);
+	  spec_is_dwz = attr.form_is_alt () || cu->per_cu->is_dwz;
 	  break;
 	case DW_AT_sibling:
 	  /* Ignore absolute siblings, they might point outside of
@@ -19740,8 +19744,7 @@ partial_die_info::read (const struct die_reader_specs *reader,
 	  if (tag == DW_TAG_imported_unit)
 	    {
 	      d.sect_off = attr.get_ref_die_offset ();
-	      is_dwz = (attr.form == DW_FORM_GNU_ref_alt
-				  || cu->per_cu->is_dwz);
+	      is_dwz = attr.form_is_alt () || cu->per_cu->is_dwz;
 	    }
 	  break;
 
@@ -20372,10 +20375,12 @@ read_attribute_value (const struct die_reader_specs *reader,
       info_ptr += 2;
       break;
     case DW_FORM_data4:
+    case DW_FORM_ref_sup4:
       attr->set_unsigned (read_4_bytes (abfd, info_ptr));
       info_ptr += 4;
       break;
     case DW_FORM_data8:
+    case DW_FORM_ref_sup8:
       attr->set_unsigned (read_8_bytes (abfd, info_ptr));
       info_ptr += 8;
       break;
@@ -20425,6 +20430,7 @@ read_attribute_value (const struct die_reader_specs *reader,
 	}
       /* FALLTHROUGH */
     case DW_FORM_GNU_strp_alt:
+    case DW_FORM_strp_sup:
       {
 	dwz_file *dwz = dwarf2_get_dwz_file (per_objfile->per_bfd, true);
 	LONGEST str_offset = cu_header->read_offset (abfd, info_ptr,
@@ -22520,6 +22526,7 @@ dwarf2_const_value_attr (const struct attribute *attr, struct type *type,
     case DW_FORM_strx:
     case DW_FORM_GNU_str_index:
     case DW_FORM_GNU_strp_alt:
+    case DW_FORM_strp_sup:
       /* The string is already allocated on the objfile obstack, point
 	 directly to it.  */
       *bytes = (const gdb_byte *) attr->as_string ();
@@ -22723,7 +22730,7 @@ lookup_die_type (struct die_info *die, const struct attribute *attr,
 
   /* First see if we have it cached.  */
 
-  if (attr->form == DW_FORM_GNU_ref_alt)
+  if (attr->form_is_alt ())
     {
       struct dwarf2_per_cu_data *per_cu;
       sect_offset sect_off = attr->get_ref_die_offset ();
@@ -23404,6 +23411,8 @@ dump_die_shallow (struct ui_file *f, int indent, struct die_info *die)
 	  fputs_filtered (hex_string (die->attrs[i].as_unsigned ()), f);
 	  break;
 	case DW_FORM_GNU_ref_alt:
+	case DW_FORM_ref_sup4:
+	case DW_FORM_ref_sup8:
 	  fprintf_unfiltered (f, "alt ref address: ");
 	  fputs_filtered (hex_string (die->attrs[i].as_unsigned ()), f);
 	  break;
@@ -23437,6 +23446,7 @@ dump_die_shallow (struct ui_file *f, int indent, struct die_info *die)
 	case DW_FORM_strx:
 	case DW_FORM_GNU_str_index:
 	case DW_FORM_GNU_strp_alt:
+	case DW_FORM_strp_sup:
 	  fprintf_unfiltered (f, "string: \"%s\" (%s canonicalized)",
 			      die->attrs[i].as_string ()
 			      ? die->attrs[i].as_string () : "",
@@ -23645,8 +23655,7 @@ follow_die_ref (struct die_info *src_die, const struct attribute *attr,
   struct die_info *die;
 
   die = follow_die_offset (sect_off,
-			   (attr->form == DW_FORM_GNU_ref_alt
-			    || cu->per_cu->is_dwz),
+			   attr->form_is_alt () || cu->per_cu->is_dwz,
 			   ref_cu);
   if (!die)
     error (_("Dwarf Error: Cannot find DIE at %s referenced from DIE "
@@ -23855,6 +23864,7 @@ dwarf2_fetch_constant_bytes (sect_offset sect_off,
     case DW_FORM_strx:
     case DW_FORM_GNU_str_index:
     case DW_FORM_GNU_strp_alt:
+    case DW_FORM_strp_sup:
       /* The string is already allocated on the objfile obstack, point
 	 directly to it.  */
       {

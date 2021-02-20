@@ -1,3 +1,8 @@
+2021-02-21  Tom Tromey  <tom@tromey.com>
+
+	* gdb.dwarf2/dwznolink.exp: Update expected output.
+	* gdb.dwarf2/dwzbuildid.exp: Also test .debug_sup.
+
 2021-03-06  Tom Tromey  <tom@tromey.com>
 
 	* lib/dwarf.exp (_handle_DW_FORM): Treat DW_FORM_GNU_ref_alt and

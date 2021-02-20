@@ -25,146 +25,161 @@ if {[is_remote host]} {
     return 0
 }
 
+foreach_with_prefix scenario {gnu dwarf5} {
+    # Lots of source files since we test a few cases and make new files
+    # for each.
+    # The tests are:
+    #     ok - the main file refers to a dwz and the buildids match
+    #     mismatch - the buildids do not match
+    #     fallback - the buildids do not match but a match is found via buildid
+    standard_testfile main.c \
+	dwzbuildid-ok-base.S dwzbuildid-ok-sep.S \
+	dwzbuildid-mismatch-base.S dwzbuildid-mismatch-sep.S \
+	dwzbuildid-fallback-base.S dwzbuildid-fallback-sep.S \
+	dwzbuildid-fallback-ok.S
 
-# Lots of source files since we test a few cases and make new files
-# for each.
-# The tests are:
-#     ok - the main file refers to a dwz and the buildids match
-#     mismatch - the buildids do not match
-#     fallback - the buildids do not match but a match is found via buildid
-standard_testfile main.c \
-    dwzbuildid-ok-base.S dwzbuildid-ok-sep.S \
-    dwzbuildid-mismatch-base.S dwzbuildid-mismatch-sep.S \
-    dwzbuildid-fallback-base.S dwzbuildid-fallback-sep.S \
-    dwzbuildid-fallback-ok.S
-    
-# Write some assembly that just has a .gnu_debugaltlink section.
-proc write_just_debugaltlink {filename dwzname buildid} {
-    set asm_file [standard_output_file $filename]
+    # Write some assembly that just has a .gnu_debugaltlink section.
+    proc write_just_debugaltlink {filename dwzname buildid} {
+	set asm_file [standard_output_file $filename]
 
-    Dwarf::assemble $asm_file {
-	upvar dwzname dwzname
-	upvar buildid buildid
+	Dwarf::assemble $asm_file {
+	    upvar dwzname dwzname
+	    upvar buildid buildid
+	    global scenario
 
-	gnu_debugaltlink $dwzname $buildid
-
-	# Only the DWARF reader checks .gnu_debugaltlink, so make sure
-	# there is a bit of DWARF in here.
-	cu {} {
-	    compile_unit {{language @DW_LANG_C}} {
+	    if {$scenario == "gnu"} {
+		gnu_debugaltlink $dwzname $buildid
+	    } else {
+		debug_sup 0 $dwzname $buildid
 	    }
-	}
-    }
-}
 
-# Write some DWARF that also sets the buildid.
-proc write_dwarf_file {filename buildid {value 99}} {
-    set asm_file [standard_output_file $filename]
-
-    Dwarf::assemble $asm_file {
-	declare_labels int_label int_label2
-
-	upvar buildid buildid
-	upvar value value
-
-	build_id $buildid
-
-	cu {} {
-	    compile_unit {{language @DW_LANG_C}} {
-		int_label2: base_type {
-		    {name int}
-		    {byte_size 4 sdata}
-		    {encoding @DW_ATE_signed}
-		}
-
-		constant {
-		    {name the_int}
-		    {type :$int_label2}
-		    {const_value $value data1}
+	    # Only the DWARF reader checks .gnu_debugaltlink, so make sure
+	    # there is a bit of DWARF in here.
+	    cu {} {
+		compile_unit {{language @DW_LANG_C}} {
 		}
 	    }
 	}
     }
-}
 
-if  { [gdb_compile ${srcdir}/${subdir}/${srcfile} ${binfile}1.o \
-	   object {nodebug}] != "" } {
-    return -1
-}
+    # Write some DWARF that also sets the buildid.
+    proc write_dwarf_file {filename buildid {value 99}} {
+	set asm_file [standard_output_file $filename]
 
-# The values don't really matter, just whether they are equal.
-set ok_prefix 01
-set ok_suffix 0203040506
-set ok_suffix2 02030405ff
-set ok_buildid ${ok_prefix}${ok_suffix}
-set ok_buildid2 ${ok_prefix}${ok_suffix2}
-set bad_buildid ffffffffffff
+	Dwarf::assemble $asm_file {
+	    declare_labels int_label int_label2
 
-set debugdir [standard_output_file {}]
-set basedir $debugdir/.build-id
-file mkdir $basedir $basedir/$ok_prefix
+	    global scenario
+	    upvar buildid buildid
+	    upvar value value
 
-# Test where the separate debuginfo's buildid matches.
-write_just_debugaltlink $srcfile2 ${binfile}3.o $ok_buildid
-write_dwarf_file $srcfile3 $ok_buildid
+	    if {$scenario == "gnu"} {
+		build_id $buildid
+	    } else {
+		debug_sup 1 "" $buildid
+	    }
 
-# Test where the separate debuginfo's buildid does not match.
-write_just_debugaltlink $srcfile4 ${binfile}5.o $ok_buildid
-write_dwarf_file $srcfile5 $bad_buildid
+	    cu {} {
+		compile_unit {{language @DW_LANG_C}} {
+		    int_label2: base_type {
+			{name int}
+			{byte_size 4 sdata}
+			{encoding @DW_ATE_signed}
+		    }
 
-# Test where the separate debuginfo's buildid does not match, but then
-# we find a match in the .build-id directory.
-write_just_debugaltlink $srcfile6 ${binfile}7.o $ok_buildid2
-# Use 77 as the value so that if we load the bad debuginfo, we will
-# see the wrong result.
-write_dwarf_file $srcfile7 $bad_buildid 77
-write_dwarf_file $srcfile8 $ok_buildid2
+		    constant {
+			{name the_int}
+			{type :$int_label2}
+			{const_value $value data1}
+		    }
+		}
+	    }
+	}
+    }
 
-# Compile everything.
-for {set i 2} {$i <= 8} {incr i} {
-    if {[gdb_compile [standard_output_file [set srcfile$i]] \
-	     ${binfile}$i.o object nodebug] != ""} {
+    if  { [gdb_compile ${srcdir}/${subdir}/${srcfile} ${binfile}1.o \
+	       object {nodebug}] != "" } {
 	return -1
     }
-}
 
-# Copy a file into the .build-id place for the "fallback" test.
-file copy -force -- ${binfile}8.o $basedir/$ok_prefix/$ok_suffix2.debug
+    # The values don't really matter, just whether they are equal.
+    set ok_prefix 01
+    set ok_suffix 0203040506
+    set ok_suffix2 02030405ff
+    set ok_buildid ${ok_prefix}${ok_suffix}
+    set ok_buildid2 ${ok_prefix}${ok_suffix2}
+    set bad_buildid ffffffffffff
 
-# Link the executables.
-if {[gdb_compile [list ${binfile}1.o ${binfile}2.o] ${binfile}-ok \
-	 executable {}] != ""} {
-    return -1
-}
+    set debugdir [standard_output_file {}]
+    set basedir $debugdir/.build-id
+    file mkdir $basedir $basedir/$ok_prefix
 
-if {[gdb_compile [list ${binfile}1.o ${binfile}4.o] ${binfile}-mismatch \
-	 executable {quiet}] != ""} {
-    return -1
-}
+    # Test where the separate debuginfo's buildid matches.
+    write_just_debugaltlink $srcfile2 ${binfile}3.o $ok_buildid
+    write_dwarf_file $srcfile3 $ok_buildid
 
-if {[gdb_compile [list ${binfile}1.o ${binfile}6.o] ${binfile}-fallback \
-	 executable {}] != ""} {
-    return -1
-}
+    # Test where the separate debuginfo's buildid does not match.
+    write_just_debugaltlink $srcfile4 ${binfile}5.o $ok_buildid
+    write_dwarf_file $srcfile5 $bad_buildid
 
+    # Test where the separate debuginfo's buildid does not match, but then
+    # we find a match in the .build-id directory.
+    write_just_debugaltlink $srcfile6 ${binfile}7.o $ok_buildid2
+    # Use 77 as the value so that if we load the bad debuginfo, we will
+    # see the wrong result.
+    write_dwarf_file $srcfile7 $bad_buildid 77
+    write_dwarf_file $srcfile8 $ok_buildid2
 
-foreach testname {ok mismatch fallback} {
-    with_test_prefix $testname {
-	gdb_exit
-	gdb_start
-	gdb_reinitialize_dir $srcdir/$subdir
+    # Compile everything.
+    for {set i 2} {$i <= 8} {incr i} {
+	if {[gdb_compile [standard_output_file [set srcfile$i]] \
+		 ${binfile}$i.o object nodebug] != ""} {
+	    return -1
+	}
+    }
 
-	gdb_test_no_output "set debug-file-directory $debugdir" \
-	    "set debug-file-directory"
+    # Copy a file into the .build-id place for the "fallback" test.
+    file copy -force -- ${binfile}8.o $basedir/$ok_prefix/$ok_suffix2.debug
 
-	gdb_load ${binfile}-${testname}
+    # Link the executables.
+    if {[gdb_compile [list ${binfile}1.o ${binfile}2.o] ${binfile}-ok \
+	     executable {}] != ""} {
+	return -1
+    }
 
-	if {[runto_main]} {
-	    if {$testname == "mismatch"} {
-		gdb_test "print the_int" \
-		    "(No symbol table is loaded|No symbol \"the_int\" in current context).*"
-	    } else {
-		gdb_test "print the_int" " = 99"
+    if {[gdb_compile [list ${binfile}1.o ${binfile}4.o] ${binfile}-mismatch \
+	     executable {quiet}] != ""} {
+	return -1
+    }
+
+    if {[gdb_compile [list ${binfile}1.o ${binfile}6.o] ${binfile}-fallback \
+	     executable {}] != ""} {
+	return -1
+    }
+
+    set tests {ok mismatch}
+    if {$scenario == "gnu"} {
+	lappend tests fallback
+    }
+
+    foreach testname $tests {
+	with_test_prefix $testname {
+	    gdb_exit
+	    gdb_start
+	    gdb_reinitialize_dir $srcdir/$subdir
+
+	    gdb_test_no_output "set debug-file-directory $debugdir" \
+		"set debug-file-directory"
+
+	    gdb_load ${binfile}-${testname}
+
+	    if {[runto_main]} {
+		if {$testname == "mismatch"} {
+		    gdb_test "print the_int" \
+			"(No symbol table is loaded|No symbol \"the_int\" in current context).*"
+		} else {
+		    gdb_test "print the_int" " = 99"
+		}
 	    }
 	}
     }
