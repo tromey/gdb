@@ -1,3 +1,11 @@
+2021-02-20  Tom Tromey  <tom@tromey.com>
+
+	* xcoffread.c: Include sect-names.h.
+	* symfile.h (struct dwarf2_section_names, struct
+	dwarf2_debug_sections): Move to dwarf2/sect-names.h.
+	* dwarf2/sect-names.h: New file, from symfile.h.
+	* dwarf2/read.c: Include sect-names.h.
+
 2021-02-19  Kevin Buettner  <kevinb@redhat.com>
 
 	* nat/amd64-linux-siginfo.c: Include "gdbsupport/common-defs.h"
