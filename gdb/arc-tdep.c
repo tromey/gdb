@@ -826,33 +826,6 @@ arc_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
   return sp;
 }
 
-/* Implement the "push_dummy_code" gdbarch method.
-
-   We don't actually push any code.  We just identify where a breakpoint can
-   be inserted to which we are can return and the resume address where we
-   should be called.
-
-   ARC does not necessarily have an executable stack, so we can't put the
-   return breakpoint there.  Instead we put it at the entry point of the
-   function.  This means the SP is unchanged.
-
-   SP is a current stack pointer FUNADDR is an address of the function to be
-   called.  ARGS is arguments to pass.  NARGS is a number of args to pass.
-   VALUE_TYPE is a type of value returned.  REAL_PC is a resume address when
-   the function is called.  BP_ADDR is an address where breakpoint should be
-   set.  Returns the updated stack pointer.  */
-
-static CORE_ADDR
-arc_push_dummy_code (struct gdbarch *gdbarch, CORE_ADDR sp, CORE_ADDR funaddr,
-		     struct value **args, int nargs, struct type *value_type,
-		     CORE_ADDR *real_pc, CORE_ADDR *bp_addr,
-		     struct regcache *regcache)
-{
-  *real_pc = funaddr;
-  *bp_addr = entry_point_address ();
-  return sp;
-}
-
 /* Implement the "cannot_fetch_register" gdbarch method.  */
 
 static int
@@ -2327,7 +2300,6 @@ arc_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
   set_gdbarch_fp0_regnum (gdbarch, -1);	/* No FPU registers.  */
 
   set_gdbarch_push_dummy_call (gdbarch, arc_push_dummy_call);
-  set_gdbarch_push_dummy_code (gdbarch, arc_push_dummy_code);
 
   set_gdbarch_cannot_fetch_register (gdbarch, arc_cannot_fetch_register);
   set_gdbarch_cannot_store_register (gdbarch, arc_cannot_store_register);

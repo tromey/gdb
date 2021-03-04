@@ -1833,7 +1833,6 @@ sparc64_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 
   /* Call dummy code.  */
   set_gdbarch_frame_align (gdbarch, sparc64_frame_align);
-  set_gdbarch_call_dummy_location (gdbarch, AT_ENTRY_POINT);
   set_gdbarch_push_dummy_code (gdbarch, NULL);
   set_gdbarch_push_dummy_call (gdbarch, sparc64_push_dummy_call);
 

@@ -770,23 +770,6 @@ cris_frame_align (struct gdbarch *gdbarch, CORE_ADDR sp)
 }
 
 static CORE_ADDR
-cris_push_dummy_code (struct gdbarch *gdbarch,
-		      CORE_ADDR sp, CORE_ADDR funaddr,
-		      struct value **args, int nargs,
-		      struct type *value_type,
-		      CORE_ADDR *real_pc, CORE_ADDR *bp_addr,
-		      struct regcache *regcache)
-{
-  /* Allocate space sufficient for a breakpoint.  */
-  sp = (sp - 4) & ~3;
-  /* Store the address of that breakpoint */
-  *bp_addr = sp;
-  /* CRIS always starts the call at the callee's entry point.  */
-  *real_pc = funaddr;
-  return sp;
-}
-
-static CORE_ADDR
 cris_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
 		      struct regcache *regcache, CORE_ADDR bp_addr,
 		      int nargs, struct value **args, CORE_ADDR sp,
@@ -4030,7 +4013,6 @@ cris_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
 
   /* Dummy frame functions (shared between CRISv10 and CRISv32 since they
      have the same ABI).  */
-  set_gdbarch_push_dummy_code (gdbarch, cris_push_dummy_code);
   set_gdbarch_push_dummy_call (gdbarch, cris_push_dummy_call);
   set_gdbarch_frame_align (gdbarch, cris_frame_align);
   set_gdbarch_skip_prologue (gdbarch, cris_skip_prologue);

@@ -342,25 +342,6 @@ find_function_addr (struct value *function,
   return funaddr + gdbarch_deprecated_function_start_offset (gdbarch);
 }
 
-/* For CALL_DUMMY_ON_STACK, push a breakpoint sequence that the called
-   function returns to.  */
-
-static CORE_ADDR
-push_dummy_code (struct gdbarch *gdbarch,
-		 CORE_ADDR sp, CORE_ADDR funaddr,
-		 gdb::array_view<value *> args,
-		 struct type *value_type,
-		 CORE_ADDR *real_pc, CORE_ADDR *bp_addr,
-		 struct regcache *regcache)
-{
-  gdb_assert (gdbarch_push_dummy_code_p (gdbarch));
-
-  return gdbarch_push_dummy_code (gdbarch, sp, funaddr,
-				  args.data (), args.size (),
-				  value_type, real_pc, bp_addr,
-				  regcache);
-}
-
 /* See infcall.h.  */
 
 void
@@ -955,61 +936,57 @@ call_function_by_hand_dummy (struct value *function,
   gdb::observers::inferior_call_pre.notify (inferior_ptid, funaddr);
 
   /* Determine the location of the breakpoint (and possibly other
-     stuff) that the called function will return to.  The SPARC, for a
-     function returning a structure or union, needs to make space for
-     not just the breakpoint but also an extra word containing the
-     size (?) of the structure being passed.  */
+     stuff) that the called function will return to.  */
 
-  switch (gdbarch_call_dummy_location (gdbarch))
+  if (gdbarch_push_dummy_code_p (gdbarch))
     {
-    case ON_STACK:
-      {
-	const gdb_byte *bp_bytes;
-	CORE_ADDR bp_addr_as_address;
-	int bp_size;
+      /* If gdbarch_push_dummy_code is defined, use it.  This means
+	 the call dummy is on the stack.  */
 
-	/* Be careful BP_ADDR is in inferior PC encoding while
-	   BP_ADDR_AS_ADDRESS is a plain memory address.  */
+      const gdb_byte *bp_bytes;
+      CORE_ADDR bp_addr_as_address;
+      int bp_size;
 
-	sp = push_dummy_code (gdbarch, sp, funaddr, args,
-			      target_values_type, &real_pc, &bp_addr,
-			      get_current_regcache ());
+      /* Be careful BP_ADDR is in inferior PC encoding while
+	 BP_ADDR_AS_ADDRESS is a plain memory address.  */
 
-	/* Write a legitimate instruction at the point where the infcall
-	   breakpoint is going to be inserted.  While this instruction
-	   is never going to be executed, a user investigating the
-	   memory from GDB would see this instruction instead of random
-	   uninitialized bytes.  We chose the breakpoint instruction
-	   as it may look as the most logical one to the user and also
-	   valgrind 3.7.0 needs it for proper vgdb inferior calls.
 
-	   If software breakpoints are unsupported for this target we
-	   leave the user visible memory content uninitialized.  */
+      sp = gdbarch_push_dummy_code (gdbarch, sp, funaddr,
+				    args.data (), args.size (),
+				    target_values_type, &real_pc, &bp_addr,
+				    get_current_regcache ());
 
-	bp_addr_as_address = bp_addr;
-	bp_bytes = gdbarch_breakpoint_from_pc (gdbarch, &bp_addr_as_address,
-					       &bp_size);
-	if (bp_bytes != NULL)
-	  write_memory (bp_addr_as_address, bp_bytes, bp_size);
-      }
-      break;
-    case AT_ENTRY_POINT:
-      {
-	CORE_ADDR dummy_addr;
+      /* Write a legitimate instruction at the point where the infcall
+	 breakpoint is going to be inserted.  While this instruction
+	 is never going to be executed, a user investigating the
+	 memory from GDB would see this instruction instead of random
+	 uninitialized bytes.  We chose the breakpoint instruction
+	 as it may look as the most logical one to the user and also
+	 valgrind 3.7.0 needs it for proper vgdb inferior calls.
 
-	real_pc = funaddr;
-	dummy_addr = entry_point_address ();
+	 If software breakpoints are unsupported for this target we
+	 leave the user visible memory content uninitialized.  */
 
-	/* A call dummy always consists of just a single breakpoint, so
-	   its address is the same as the address of the dummy.
+      bp_addr_as_address = bp_addr;
+      bp_bytes = gdbarch_breakpoint_from_pc (gdbarch, &bp_addr_as_address,
+					     &bp_size);
+      if (bp_bytes != NULL)
+	write_memory (bp_addr_as_address, bp_bytes, bp_size);
+    }
+  else
+    {
+      /* Otherwise, put the call dummy at the entry point.  */
+      CORE_ADDR dummy_addr;
 
-	   The actual breakpoint is inserted separatly so there is no need to
-	   write that out.  */
-	bp_addr = dummy_addr;
-	break;
-      }
-    default:
-      internal_error (__FILE__, __LINE__, _("bad switch"));
+      real_pc = funaddr;
+      dummy_addr = entry_point_address ();
+
+      /* A call dummy always consists of just a single breakpoint, so
+	 its address is the same as the address of the dummy.
+
+	 The actual breakpoint is inserted separatly so there is no need to
+	 write that out.  */
+      bp_addr = dummy_addr;
     }
 
   /* Coerce the arguments and handle pass-by-reference.

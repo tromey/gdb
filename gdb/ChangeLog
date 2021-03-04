@@ -1,3 +1,34 @@
+2021-03-05  Tom Tromey  <tromey@adacore.com>
+
+	* infcall.c (push_dummy_code): Remove.
+	(call_function_by_hand_dummy): Update.
+	* dicos-tdep.c (dicos_init_abi): Update comment.
+	* sparc-tdep.c (sparc32_gdbarch_init): Don't call
+	set_gdbarch_call_dummy_location.
+	* or1k-tdep.c (or1k_gdbarch_init): Don't call
+	set_gdbarch_call_dummy_location.
+	* score-tdep.c (score_gdbarch_init): Don't call
+	set_gdbarch_call_dummy_location.
+	* riscv-tdep.c (riscv_gdbarch_init): Don't call
+	set_gdbarch_call_dummy_location.
+	* mips-tdep.c (mips_gdbarch_init): Don't call
+	set_gdbarch_call_dummy_location.
+	* i386-tdep.c (i386_gdbarch_init): Don't call
+	set_gdbarch_call_dummy_location.
+	* bpf-tdep.c (bpf_gdbarch_init): Don't call
+	set_gdbarch_call_dummy_location.
+	* microblaze-tdep.c (microblaze_gdbarch_init): Don't call
+	set_gdbarch_call_dummy_location.
+	* sparc64-tdep.c (sparc64_init_abi): Don't call
+	set_gdbarch_push_dummy_code.
+	* cris-tdep.c (cris_push_dummy_code): Remove.
+	(cris_gdbarch_init): Update.
+	* arc-tdep.c (arc_push_dummy_code): Remove.
+	(arc_gdbarch_init): Update.
+	* gdbarch.h, gdbarch.c: Rebuild.
+	* inferior.h (ON_STACK, AT_ENTRY_POINT): Remove.
+	* gdbarch.sh (call_dummy_location): Remove.
+
 2021-03-04  Tom Tromey  <tromey@adacore.com>
 
 	* ada-lang.c (struct match_data) <found_sym>: Now bool.

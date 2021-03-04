@@ -712,9 +712,6 @@ microblaze_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
   /* Map Dwarf2 registers to GDB registers.  */
   set_gdbarch_dwarf2_reg_to_regnum (gdbarch, microblaze_dwarf2_reg_to_regnum);
 
-  /* Call dummy code.  */
-  set_gdbarch_call_dummy_location (gdbarch, ON_STACK);
-
   set_gdbarch_return_value (gdbarch, microblaze_return_value);
   set_gdbarch_stabs_argument_has_addr
     (gdbarch, microblaze_stabs_argument_has_addr);

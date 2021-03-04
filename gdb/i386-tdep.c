@@ -8550,7 +8550,6 @@ i386_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
   set_gdbarch_get_longjmp_target (gdbarch, i386_get_longjmp_target);
 
   /* Call dummy code.  */
-  set_gdbarch_call_dummy_location (gdbarch, ON_STACK);
   set_gdbarch_push_dummy_code (gdbarch, i386_push_dummy_code);
   set_gdbarch_push_dummy_call (gdbarch, i386_push_dummy_call);
   set_gdbarch_frame_align (gdbarch, i386_frame_align);

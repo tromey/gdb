@@ -207,7 +207,6 @@ struct gdbarch
   gdbarch_dummy_id_ftype *dummy_id;
   int deprecated_fp_regnum;
   gdbarch_push_dummy_call_ftype *push_dummy_call;
-  int call_dummy_location;
   gdbarch_push_dummy_code_ftype *push_dummy_code;
   gdbarch_code_of_frame_writable_ftype *code_of_frame_writable;
   gdbarch_print_registers_info_ftype *print_registers_info;
@@ -410,7 +409,6 @@ gdbarch_alloc (const struct gdbarch_info *info,
   gdbarch->dwarf2_reg_to_regnum = no_op_reg_to_regnum;
   gdbarch->dummy_id = default_dummy_id;
   gdbarch->deprecated_fp_regnum = -1;
-  gdbarch->call_dummy_location = AT_ENTRY_POINT;
   gdbarch->code_of_frame_writable = default_code_of_frame_writable;
   gdbarch->print_registers_info = default_print_registers_info;
   gdbarch->print_float_info = default_print_float_info;
@@ -581,7 +579,6 @@ verify_gdbarch (struct gdbarch *gdbarch)
   /* Skip verify of dummy_id, invalid_p == 0 */
   /* Skip verify of deprecated_fp_regnum, invalid_p == 0 */
   /* Skip verify of push_dummy_call, has predicate.  */
-  /* Skip verify of call_dummy_location, invalid_p == 0 */
   /* Skip verify of push_dummy_code, has predicate.  */
   /* Skip verify of code_of_frame_writable, invalid_p == 0 */
   /* Skip verify of print_registers_info, invalid_p == 0 */
@@ -839,9 +836,6 @@ gdbarch_dump (struct gdbarch *gdbarch, struct ui_file *file)
   fprintf_unfiltered (file,
                       "gdbarch_dump: byte_order_for_code = %s\n",
                       plongest (gdbarch->byte_order_for_code));
-  fprintf_unfiltered (file,
-                      "gdbarch_dump: call_dummy_location = %s\n",
-                      plongest (gdbarch->call_dummy_location));
   fprintf_unfiltered (file,
                       "gdbarch_dump: cannot_fetch_register = <%s>\n",
                       host_address_to_string (gdbarch->cannot_fetch_register));
@@ -2417,23 +2411,6 @@ set_gdbarch_push_dummy_call (struct gdbarch *gdbarch,
                              gdbarch_push_dummy_call_ftype push_dummy_call)
 {
   gdbarch->push_dummy_call = push_dummy_call;
-}
-
-int
-gdbarch_call_dummy_location (struct gdbarch *gdbarch)
-{
-  gdb_assert (gdbarch != NULL);
-  /* Skip verify of call_dummy_location, invalid_p == 0 */
-  if (gdbarch_debug >= 2)
-    fprintf_unfiltered (gdb_stdlog, "gdbarch_call_dummy_location called\n");
-  return gdbarch->call_dummy_location;
-}
-
-void
-set_gdbarch_call_dummy_location (struct gdbarch *gdbarch,
-                                 int call_dummy_location)
-{
-  gdbarch->call_dummy_location = call_dummy_location;
 }
 
 bool
@@ -5314,7 +5291,7 @@ struct gdbarch_data_registry
   struct gdbarch_data_registration *registrations;
 };
 
-static struct gdbarch_data_registry gdbarch_data_registry =
+struct gdbarch_data_registry gdbarch_data_registry =
 {
   0, NULL,
 };

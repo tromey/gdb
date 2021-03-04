@@ -1506,7 +1506,6 @@ score_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
 
   /* Dummy frame hooks.  */
   set_gdbarch_return_value (gdbarch, score_return_value);
-  set_gdbarch_call_dummy_location (gdbarch, AT_ENTRY_POINT);
   set_gdbarch_push_dummy_call (gdbarch, score_push_dummy_call);
 
   /* Normal frame hooks.  */

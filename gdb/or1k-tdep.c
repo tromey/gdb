@@ -1173,7 +1173,6 @@ or1k_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
   set_gdbarch_unwind_sp (gdbarch, or1k_unwind_sp);
 
   /* Functions handling dummy frames */
-  set_gdbarch_call_dummy_location (gdbarch, ON_STACK);
   set_gdbarch_push_dummy_code (gdbarch, or1k_push_dummy_code);
   set_gdbarch_push_dummy_call (gdbarch, or1k_push_dummy_call);
 

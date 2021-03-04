@@ -8650,7 +8650,6 @@ mips_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
 
   /* MIPS version of CALL_DUMMY.  */
 
-  set_gdbarch_call_dummy_location (gdbarch, ON_STACK);
   set_gdbarch_push_dummy_code (gdbarch, mips_push_dummy_code);
   set_gdbarch_frame_align (gdbarch, mips_frame_align);
 

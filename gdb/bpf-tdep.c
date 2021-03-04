@@ -336,7 +336,6 @@ bpf_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
   set_gdbarch_dwarf2_reg_to_regnum (gdbarch, bpf_dwarf2_reg_to_regnum);
 
   /* Call dummy code.  */
-  set_gdbarch_call_dummy_location (gdbarch, ON_STACK);
   set_gdbarch_dummy_id (gdbarch, bpf_dummy_id);
   set_gdbarch_push_dummy_call (gdbarch, bpf_push_dummy_call);
 

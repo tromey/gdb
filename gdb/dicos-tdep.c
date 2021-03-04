@@ -42,7 +42,7 @@ dicos_init_abi (struct gdbarch *gdbarch)
   /* There's no (standard definition of) entry point or a guaranteed
      text location with a symbol where to place the call dummy, so we
      need it on the stack.  Rely on i386_gdbarch_init used also for
-     amd64 to set up ON_STACK inferior calls.  */
+     amd64 to set up on-stack inferior calls.  */
 
   /* DICOS rewinds the PC itself.  */
   set_gdbarch_decr_pc_after_break (gdbarch, 0);

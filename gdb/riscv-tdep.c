@@ -3567,7 +3567,6 @@ riscv_gdbarch_init (struct gdbarch_info info,
   set_gdbarch_frame_align (gdbarch, riscv_frame_align);
 
   /* Functions handling dummy frames.  */
-  set_gdbarch_call_dummy_location (gdbarch, ON_STACK);
   set_gdbarch_push_dummy_code (gdbarch, riscv_push_dummy_code);
   set_gdbarch_push_dummy_call (gdbarch, riscv_push_dummy_call);
 
