@@ -633,7 +633,7 @@ write_one_signatured_type (void **slot, void *d)
 		  1);
 
   info->types_list.append_uint (8, BFD_ENDIAN_LITTLE,
-				to_underlying (entry->sect_off));
+				to_underlying (entry->sect_off ()));
   info->types_list.append_uint (8, BFD_ENDIAN_LITTLE,
 				to_underlying (entry->type_offset_in_tu));
   info->types_list.append_uint (8, BFD_ENDIAN_LITTLE, entry->signature);
@@ -1267,7 +1267,7 @@ private:
 		    info->cu_index, true, unit_kind::tu);
 
     info->types_list.append_uint (dwarf5_offset_size (), m_dwarf5_byte_order,
-				  to_underlying (entry->sect_off));
+				  to_underlying (entry->sect_off ()));
 
     ++info->cu_index;
   }
@@ -1314,7 +1314,7 @@ check_dwarf64_offsets (dwarf2_per_objfile *per_objfile)
 {
   for (const auto &per_cu : per_objfile->per_bfd->all_comp_units)
     {
-      if (to_underlying (per_cu->sect_off)
+      if (to_underlying (per_cu->sect_off ())
 	  >= (static_cast<uint64_t> (1) << 32))
 	return true;
     }
@@ -1457,8 +1457,8 @@ write_gdbindex (dwarf2_per_objfile *per_objfile, FILE *out_file,
 	 corresponding index.  */
       data_buf &cu_list = per_cu->is_dwz ? dwz_cu_list : objfile_cu_list;
       cu_list.append_uint (8, BFD_ENDIAN_LITTLE,
-			   to_underlying (per_cu->sect_off));
-      cu_list.append_uint (8, BFD_ENDIAN_LITTLE, per_cu->length);
+			   to_underlying (per_cu->sect_off ()));
+      cu_list.append_uint (8, BFD_ENDIAN_LITTLE, per_cu->get_length ());
       ++counter;
     }
 
@@ -1541,7 +1541,7 @@ write_debug_names (dwarf2_per_objfile *per_objfile,
 					      counter);
 
       cu_list.append_uint (nametable.dwarf5_offset_size (), dwarf5_byte_order,
-			   to_underlying (per_cu->sect_off));
+			   to_underlying (per_cu->sect_off ()));
       ++counter;
     }
 

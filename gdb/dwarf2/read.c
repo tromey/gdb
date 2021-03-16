@@ -2545,8 +2545,8 @@ create_cu_from_index_list (dwarf2_per_bfd *per_bfd,
 			   sect_offset sect_off, ULONGEST length)
 {
   std::unique_ptr<dwarf2_per_cu_data> the_cu = per_bfd->allocate_per_cu ();
-  the_cu->sect_off = sect_off;
-  the_cu->length = length;
+  the_cu->m_sect_off = sect_off;
+  the_cu->m_length = length;
   the_cu->section = section;
   the_cu->v.quick = OBSTACK_ZALLOC (&per_bfd->obstack,
 				    struct dwarf2_per_cu_quick_data);
@@ -2631,7 +2631,7 @@ create_signatured_type_table_from_index
       sig_type->type_offset_in_tu = type_offset_in_tu;
       sig_type->is_debug_types = 1;
       sig_type->section = section;
-      sig_type->sect_off = sect_off;
+      sig_type->m_sect_off = sect_off;
       sig_type->v.quick
 	= OBSTACK_ZALLOC (&per_bfd->obstack,
 			  struct dwarf2_per_cu_quick_data);
@@ -2684,7 +2684,7 @@ create_signatured_type_table_from_debug_names
       sig_type->type_offset_in_tu = type_offset;
       sig_type->is_debug_types = 1;
       sig_type->section = section;
-      sig_type->sect_off = sect_off;
+      sig_type->m_sect_off = sect_off;
       sig_type->v.quick
 	= OBSTACK_ZALLOC (&per_objfile->per_bfd->obstack,
 			  struct dwarf2_per_cu_quick_data);
@@ -2778,13 +2778,14 @@ create_addrmap_from_aranges (dwarf2_per_objfile *per_objfile,
   for (const auto &per_cu : per_bfd->all_comp_units)
     {
       const auto insertpair
-	= debug_info_offset_to_per_cu.emplace (per_cu->sect_off,
+	= debug_info_offset_to_per_cu.emplace (per_cu->sect_off (),
 					       per_cu.get ());
       if (!insertpair.second)
 	{
 	  warning (_("Section .debug_aranges in %s has duplicate "
 		     "debug_info_offset %s, ignoring .debug_aranges."),
-		   objfile_name (objfile), sect_offset_str (per_cu->sect_off));
+		   objfile_name (objfile),
+		   sect_offset_str (per_cu->sect_off ()));
 	  return;
 	}
     }
@@ -6173,8 +6174,8 @@ fill_in_sig_entry_from_dwo_entry (dwarf2_per_objfile *per_objfile,
   gdb_assert (sig_entry->dwo_unit == NULL);
 
   sig_entry->section = dwo_entry->section;
-  sig_entry->sect_off = dwo_entry->sect_off;
-  sig_entry->length = dwo_entry->length;
+  sig_entry->m_sect_off = dwo_entry->sect_off;
+  sig_entry->m_length = dwo_entry->length;
   sig_entry->reading_dwo_directly = 1;
   sig_entry->per_bfd = per_bfd;
   sig_entry->type_offset_in_tu = dwo_entry->type_offset_in_tu;
@@ -6678,7 +6679,7 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
   if (dwarf_die_debug)
     fprintf_unfiltered (gdb_stdlog, "Reading %s unit at offset %s\n",
 			this_cu->is_debug_types ? "type" : "comp",
-			sect_offset_str (this_cu->sect_off));
+			sect_offset_str (this_cu->sect_off ()));
 
   /* If we're reading a TU directly from a DWO file, including a virtual DWO
      file (instead of going through the stub), short-circuit all of this.  */
@@ -6694,7 +6695,8 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
   /* This is cheap if the section is already read in.  */
   section->read (objfile);
 
-  begin_info_ptr = info_ptr = section->buffer + to_underlying (this_cu->sect_off);
+  begin_info_ptr = info_ptr = (section->buffer
+			       + to_underlying (this_cu->sect_off ()));
 
   abbrev_section = get_abbrev_section_for_cu (this_cu);
 
@@ -6742,15 +6744,15 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
 	  sig_type = (struct signatured_type *) this_cu;
 	  gdb_assert (sig_type->signature == cu->header.signature);
 	  gdb_assert (sig_type->type_offset_in_tu == type_offset);
-	  gdb_assert (this_cu->sect_off == cu->header.sect_off);
+	  gdb_assert (this_cu->sect_off () == cu->header.sect_off);
 
 	  /* LENGTH has not been set yet for type units if we're
 	     using .gdb_index.  */
-	  this_cu->length = cu->header.get_length ();
+	  this_cu->m_length = cu->header.get_length ();
 
 	  /* Establish the type offset that can be used to lookup the type.  */
 	  sig_type->type_offset_in_section =
-	    this_cu->sect_off + to_underlying (sig_type->type_offset_in_tu);
+	    this_cu->sect_off () + to_underlying (sig_type->type_offset_in_tu);
 
 	  this_cu->dwarf_version = cu->header.version;
 	}
@@ -6762,17 +6764,17 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
 						    rcuh_kind::COMPILE,
 						    nullptr);
 
-	  gdb_assert (this_cu->sect_off == cu->header.sect_off);
-	  if (this_cu->length == 0)
-	    this_cu->length = cu->header.get_length ();
+	  gdb_assert (this_cu->sect_off () == cu->header.sect_off);
+	  if (this_cu->get_length () == 0)
+	    this_cu->m_length = cu->header.get_length ();
 	  else
-	    gdb_assert (this_cu->length == cu->header.get_length ());
+	    gdb_assert (this_cu->get_length () == cu->header.get_length ());
 	  this_cu->dwarf_version = cu->header.version;
 	}
     }
 
   /* Skip dummy compilation units.  */
-  if (info_ptr >= begin_info_ptr + this_cu->length
+  if (info_ptr >= begin_info_ptr + this_cu->get_length ()
       || peek_abbrev_code (abfd, info_ptr) == 0)
     {
       dummy_p = true;
@@ -6820,7 +6822,7 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
 	{
 	  complaint (_("compilation unit with DW_AT_GNU_dwo_name"
 		       " has children (offset %s) [in module %s]"),
-		     sect_offset_str (this_cu->sect_off),
+		     sect_offset_str (this_cu->sect_off ()),
 		     bfd_get_filename (abfd));
 	}
       dwo_unit = lookup_dwo_unit (cu, comp_unit_die, dwo_name);
@@ -6895,7 +6897,7 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
   if (dwarf_die_debug)
     fprintf_unfiltered (gdb_stdlog, "Reading %s unit at offset %s\n",
 			this_cu->is_debug_types ? "type" : "comp",
-			sect_offset_str (this_cu->sect_off));
+			sect_offset_str (this_cu->sect_off ()));
 
   gdb_assert (per_objfile->get_cu (this_cu) == nullptr);
 
@@ -6908,7 +6910,8 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
 
   m_new_cu.reset (new dwarf2_cu (this_cu, per_objfile));
 
-  begin_info_ptr = info_ptr = section->buffer + to_underlying (this_cu->sect_off);
+  begin_info_ptr = info_ptr = (section->buffer
+			       + to_underlying (this_cu->sect_off ()));
   info_ptr = read_and_check_comp_unit_head (per_objfile, &m_new_cu->header,
 					    section, abbrev_section, info_ptr,
 					    (this_cu->is_debug_types
@@ -6921,10 +6924,10 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
       m_new_cu->str_offsets_base = parent_cu->str_offsets_base;
       m_new_cu->addr_base = parent_cu->addr_base;
     }
-  this_cu->length = m_new_cu->header.get_length ();
+  this_cu->m_length = m_new_cu->header.get_length ();
 
   /* Skip dummy compilation units.  */
-  if (info_ptr >= begin_info_ptr + this_cu->length
+  if (info_ptr >= begin_info_ptr + this_cu->get_length ()
       || peek_abbrev_code (abfd, info_ptr) == 0)
     {
       dummy_p = true;
@@ -7142,7 +7145,7 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
   else if (strcmp (filename, artificial) == 0)
     {
       debug_filename.reset (concat (artificial, "@",
-				    sect_offset_str (per_cu->sect_off),
+				    sect_offset_str (per_cu->sect_off ()),
 				    (char *) NULL));
       filename = debug_filename.get ();
     }
@@ -7238,7 +7241,7 @@ process_psymtab_comp_unit_reader (const struct die_reader_specs *reader,
   dwarf_read_debug_printf ("Psymtab for %s unit @%s: %s - %s"
 			   ", %d global, %d static syms",
 			   per_cu->is_debug_types ? "type" : "comp",
-			   sect_offset_str (per_cu->sect_off),
+			   sect_offset_str (per_cu->sect_off ()),
 			   paddress (gdbarch, pst->text_low (objfile)),
 			   paddress (gdbarch, pst->text_high (objfile)),
 			   (int) pst->global_psymbols.size (),
@@ -7266,18 +7269,18 @@ process_psymtab_comp_unit (dwarf2_per_cu_data *this_cu,
   switch (reader.comp_unit_die->tag)
     {
     case DW_TAG_compile_unit:
-      this_cu->unit_type = DW_UT_compile;
+      this_cu->m_unit_type = DW_UT_compile;
       break;
     case DW_TAG_partial_unit:
-      this_cu->unit_type = DW_UT_partial;
+      this_cu->m_unit_type = DW_UT_partial;
       break;
     case DW_TAG_type_unit:
-      this_cu->unit_type = DW_UT_type;
+      this_cu->m_unit_type = DW_UT_type;
       break;
     default:
       error (_("Dwarf Error: unexpected tag '%s' at offset %s [in module %s]"),
 	     dwarf_tag_name (reader.comp_unit_die->tag),
-	     sect_offset_str (reader.cu->per_cu->sect_off),
+	     sect_offset_str (reader.cu->per_cu->sect_off ()),
 	     objfile_name (per_objfile->objfile));
     }
 
@@ -7427,7 +7430,7 @@ build_type_psymtabs (dwarf2_per_objfile *per_objfile)
 	  auto sig_type = static_cast<signatured_type *> (cu.get ());
 	  sorted_by_abbrev.emplace_back
 	    (sig_type, read_abbrev_offset (per_objfile, sig_type->section,
-					   sig_type->sect_off));
+					   sig_type->sect_off ()));
 	}
     }
 
@@ -7741,17 +7744,17 @@ read_comp_units_from_section (dwarf2_per_objfile *per_objfile,
 	    complaint (_("debug type entry at offset %s is duplicate to"
 			 " the entry at offset %s, signature %s"),
 		       sect_offset_str (sect_off),
-		       sect_offset_str (sig_ptr->sect_off),
+		       sect_offset_str (sig_ptr->sect_off ()),
 		       hex_string (sig_ptr->signature));
 	  *slot = sig_ptr;
 	}
       this_cu->is_debug_types = (cu_header.unit_type == DW_UT_type);
-      this_cu->sect_off = sect_off;
-      this_cu->length = cu_header.length + cu_header.initial_length_size;
+      this_cu->m_sect_off = sect_off;
+      this_cu->m_length = cu_header.length + cu_header.initial_length_size;
       this_cu->is_dwz = is_dwz;
       this_cu->section = section;
 
-      info_ptr = info_ptr + this_cu->length;
+      info_ptr = info_ptr + this_cu->get_length ();
       per_objfile->per_bfd->all_comp_units.push_back (std::move (this_cu));
     }
 }
@@ -8757,7 +8760,7 @@ process_queue (dwarf2_per_objfile *per_objfile)
 
 		  sprintf (buf, "TU %s at offset %s",
 			   hex_string (sig_type->signature),
-			   sect_offset_str (per_cu->sect_off));
+			   sect_offset_str (per_cu->sect_off ()));
 		  /* There can be 100s of TUs.
 		     Only print them in verbose mode.  */
 		  debug_print_threshold = 2;
@@ -8765,7 +8768,7 @@ process_queue (dwarf2_per_objfile *per_objfile)
 	      else
 		{
 		  sprintf (buf, "CU at offset %s",
-			   sect_offset_str (per_cu->sect_off));
+			   sect_offset_str (per_cu->sect_off ()));
 		  debug_print_threshold = 1;
 		}
 
@@ -9560,7 +9563,7 @@ process_full_comp_unit (dwarf2_cu *cu, enum language pretend_language)
     default:
       error (_("Dwarf Error: unexpected tag '%s' at offset %s [in module %s]"),
 	     dwarf_tag_name (cu->dies->tag),
-	     sect_offset_str (cu->per_cu->sect_off),
+	     sect_offset_str (cu->per_cu->sect_off ()),
 	     objfile_name (per_objfile->objfile));
     }
 
@@ -9738,7 +9741,7 @@ process_imported_unit_die (struct die_info *die, struct dwarf2_cu *cu)
 	 into another compilation unit, at root level.  Regard this as a hint,
 	 and ignore it.  */
       if (die->parent && die->parent->parent == NULL
-	  && per_cu->unit_type == DW_UT_compile
+	  && per_cu->unit_type () == DW_UT_compile
 	  && per_cu->lang == language_cplus)
 	return;
 
@@ -11084,7 +11087,7 @@ create_dwo_cu_reader (const struct die_reader_specs *reader,
 		      struct dwo_unit *dwo_unit)
 {
   struct dwarf2_cu *cu = reader->cu;
-  sect_offset sect_off = cu->per_cu->sect_off;
+  sect_offset sect_off = cu->per_cu->sect_off ();
   struct dwarf2_section_info *section = cu->per_cu->section;
 
   gdb::optional<ULONGEST> signature = lookup_dwo_id (cu, comp_unit_die);
@@ -11100,7 +11103,7 @@ create_dwo_cu_reader (const struct die_reader_specs *reader,
   dwo_unit->signature = *signature;
   dwo_unit->section = section;
   dwo_unit->sect_off = sect_off;
-  dwo_unit->length = cu->per_cu->length;
+  dwo_unit->length = cu->per_cu->get_length ();
 
   dwarf_read_debug_printf ("  offset %s, dwo_id %s",
 			   sect_offset_str (sect_off),
@@ -11140,14 +11143,14 @@ create_cus_hash_table (dwarf2_per_objfile *per_objfile,
 
       per_cu.per_bfd = per_bfd;
       per_cu.is_debug_types = 0;
-      per_cu.sect_off = sect_offset (info_ptr - section.buffer);
+      per_cu.m_sect_off = sect_offset (info_ptr - section.buffer);
       per_cu.section = &section;
 
       cutu_reader reader (&per_cu, per_objfile, cu, &dwo_file);
       if (!reader.dummy_p)
 	create_dwo_cu_reader (&reader, reader.info_ptr, reader.comp_unit_die,
 			      &dwo_file, &read_unit);
-      info_ptr += per_cu.length;
+      info_ptr += per_cu.get_length ();
 
       // If the unit could not be parsed, skip it.
       if (read_unit.dwo_file == NULL)
@@ -12923,7 +12926,8 @@ lookup_dwo_cutu (dwarf2_cu *cu, const char *dwo_name, const char *comp_dir,
     warning (_("Could not find DWO %s %s(%s)%s referenced by %s at offset %s"
 	       " [in module %s]"),
 	     kind, dwo_name, hex_string (signature), dwp_text.c_str (), kind,
-	     sect_offset_str (cu->per_cu->sect_off), objfile_name (objfile));
+	     sect_offset_str (cu->per_cu->sect_off ()),
+	     objfile_name (objfile));
   }
   return NULL;
 }
@@ -16969,7 +16973,7 @@ mark_common_block_symbol_computed (struct symbol *sym,
   baton->data = ptr;
 
   *ptr++ = DW_OP_call4;
-  cu_off = common_die->sect_off - cu->per_cu->sect_off;
+  cu_off = common_die->sect_off - cu->per_cu->sect_off ();
   store_unsigned_integer (ptr, 4, byte_order, cu_off);
   ptr += 4;
 
@@ -23333,7 +23337,7 @@ follow_die_offset (sect_offset sect_off, int offset_in_dwz,
 
   dwarf_read_debug_printf_v ("source CU offset: %s, target offset: %s, "
 			     "source CU contains target offset: %d",
-			     sect_offset_str (cu->per_cu->sect_off),
+			     sect_offset_str (cu->per_cu->sect_off ()),
 			     sect_offset_str (sect_off),
 			     cu->header.offset_in_cu_p (sect_off));
 
@@ -23355,7 +23359,7 @@ follow_die_offset (sect_offset sect_off, int offset_in_dwz,
 
       dwarf_read_debug_printf_v ("target CU offset: %s, "
 				 "target CU DIEs loaded: %d",
-				 sect_offset_str (per_cu->sect_off),
+				 sect_offset_str (per_cu->sect_off ()),
 				 per_objfile->get_cu (per_cu) != nullptr);
 
       /* If necessary, add it to the queue and load its DIEs.
@@ -23525,7 +23529,7 @@ dwarf2_fetch_die_loc_cu_off (cu_offset offset_in_cu,
 			     dwarf2_per_objfile *per_objfile,
 			     gdb::function_view<CORE_ADDR ()> get_frame_pc)
 {
-  sect_offset sect_off = per_cu->sect_off + to_underlying (offset_in_cu);
+  sect_offset sect_off = per_cu->sect_off () + to_underlying (offset_in_cu);
 
   return dwarf2_fetch_die_loc_sect_off (sect_off, per_cu, per_objfile,
 					get_frame_pc);
@@ -23717,7 +23721,8 @@ dwarf2_get_die_type (cu_offset die_offset,
 		     dwarf2_per_cu_data *per_cu,
 		     dwarf2_per_objfile *per_objfile)
 {
-  sect_offset die_offset_sect = per_cu->sect_off + to_underlying (die_offset);
+  sect_offset die_offset_sect = (per_cu->sect_off ()
+				 + to_underlying (die_offset));
   return get_die_type_at_offset (die_offset_sect, per_cu, per_objfile);
 }
 
@@ -24500,7 +24505,7 @@ dwarf2_per_cu_data::get_header () const
   if (!m_header_read_in)
     {
       const gdb_byte *info_ptr
-	= this->section->buffer + to_underlying (this->sect_off);
+	= this->section->buffer + to_underlying (this->sect_off ());
 
       memset (&m_header, 0, sizeof (m_header));
 
@@ -24589,7 +24594,7 @@ dwarf2_find_containing_comp_unit
       mid_cu = all_comp_units[mid].get ();
       if (mid_cu->is_dwz > offset_in_dwz
 	  || (mid_cu->is_dwz == offset_in_dwz
-	      && mid_cu->sect_off + mid_cu->length > sect_off))
+	      && mid_cu->sect_off () + mid_cu->get_length () > sect_off))
 	high = mid;
       else
 	low = mid + 1;
@@ -24611,7 +24616,7 @@ dwarf2_find_containing_comp_unit (sect_offset sect_off,
   dwarf2_per_cu_data *this_cu
     = per_objfile->per_bfd->all_comp_units[low].get ();
 
-  if (this_cu->is_dwz != offset_in_dwz || this_cu->sect_off > sect_off)
+  if (this_cu->is_dwz != offset_in_dwz || this_cu->sect_off () > sect_off)
     {
       if (low == 0 || this_cu->is_dwz != offset_in_dwz)
 	error (_("Dwarf Error: could not find partial DIE containing "
@@ -24619,16 +24624,16 @@ dwarf2_find_containing_comp_unit (sect_offset sect_off,
 	       sect_offset_str (sect_off),
 	       bfd_get_filename (per_objfile->objfile->obfd));
 
-      gdb_assert (per_objfile->per_bfd->all_comp_units[low-1]->sect_off
+      gdb_assert (per_objfile->per_bfd->all_comp_units[low-1]->sect_off ()
 		  <= sect_off);
       return per_objfile->per_bfd->all_comp_units[low - 1].get ();
     }
   else
     {
       if (low == per_objfile->per_bfd->all_comp_units.size () - 1
-	  && sect_off >= this_cu->sect_off + this_cu->length)
+	  && sect_off >= this_cu->sect_off () + this_cu->get_length ())
 	error (_("invalid dwarf2 offset %s"), sect_offset_str (sect_off));
-      gdb_assert (sect_off < this_cu->sect_off + this_cu->length);
+      gdb_assert (sect_off < this_cu->sect_off () + this_cu->get_length ());
       return this_cu;
     }
 }
@@ -24650,14 +24655,14 @@ run_test ()
   std::unique_ptr<dwarf2_per_cu_data> four (new dwarf2_per_cu_data);
   dwarf2_per_cu_data *four_ptr = four.get ();
 
-  one->length = 5;
-  two->sect_off = sect_offset (one->length);
-  two->length = 7;
+  one->m_length = 5;
+  two->m_sect_off = sect_offset (one->get_length ());
+  two->m_length = 7;
 
-  three->length = 5;
+  three->m_length = 5;
   three->is_dwz = 1;
-  four->sect_off = sect_offset (three->length);
-  four->length = 7;
+  four->m_sect_off = sect_offset (three->get_length ());
+  four->m_length = 7;
   four->is_dwz = 1;
 
   std::vector<std::unique_ptr<dwarf2_per_cu_data>> units;
@@ -24785,8 +24790,8 @@ dwarf2_per_objfile::age_comp_units ()
 
       if (!cu->mark)
 	{
-	  dwarf_read_debug_printf_v ("deleting old CU %s",
-				     sect_offset_str (cu->per_cu->sect_off));
+	  dwarf_read_debug_printf_v
+	    ("deleting old CU %s", sect_offset_str (cu->per_cu->sect_off ()));
 	  delete cu;
 	  it = m_dwarf2_cus.erase (it);
 	}

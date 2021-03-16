@@ -1,3 +1,25 @@
+2021-05-12  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2/read.h (struct dwarf2_per_cu_data) <m_sect_off,
+	m_length, m_unit_type>: Add "m_" prefix.
+	<sect_off, get_length, unit_type>: New methods.
+	* dwarf2/read.c (create_cu_from_index_list)
+	(create_signatured_type_table_from_index)
+	(create_signatured_type_table_from_debug_names)
+	(create_addrmap_from_aranges, fill_in_sig_entry_from_dwo_entry)
+	(cutu_reader::cutu_reader, process_psymtab_comp_unit_reader)
+	(build_type_psymtabs, read_comp_units_from_section)
+	(process_queue, process_full_comp_unit, create_dwo_cu_reader)
+	(create_cus_hash_table, lookup_dwo_cutu)
+	(mark_common_block_symbol_computed, follow_die_offset)
+	(dwarf2_fetch_die_loc_cu_off, dwarf2_get_die_type)
+	(dwarf2_per_cu_data::get_header)
+	(dwarf2_find_containing_comp_unit, run_test)
+	(dwarf2_per_objfile::age_comp_units): Update.
+	* dwarf2/index-write.c (write_one_signatured_type)
+	(check_dwarf64_offsets, write_gdbindex, write_debug_names):
+	Update.
+
 2021-05-11  Tom Tromey  <tom@tromey.com>
 
 	* dwarf2/read.c (open_and_init_dwo_file): Use version accessor.

@@ -413,7 +413,7 @@ struct dwarf2_per_cu_data
       reading_dwo_directly (false),
       tu_read (false),
       m_header_read_in (false),
-      unit_type {},
+      m_unit_type {},
       lang (language_unknown)
   {
   }
@@ -423,8 +423,8 @@ struct dwarf2_per_cu_data
      initial_length_size.
      If the DIE refers to a DWO file, this is always of the original die,
      not the DWO file.  */
-  sect_offset sect_off {};
-  unsigned int length = 0;
+  sect_offset m_sect_off {};
+  unsigned int m_length = 0;
 
   /* DWARF standard version this data has been read from (such as 4 or 5).  */
   unsigned char dwarf_version = 0;
@@ -470,7 +470,7 @@ struct dwarf2_per_cu_data
   mutable bool m_header_read_in : 1;
 
   /* The unit type of this CU.  */
-  ENUM_BITFIELD (dwarf_unit_type) unit_type : 8;
+  ENUM_BITFIELD (dwarf_unit_type) m_unit_type : 8;
 
   /* The language of this CU.  */
   ENUM_BITFIELD (language) lang : LANGUAGE_BITS;
@@ -529,6 +529,24 @@ struct dwarf2_per_cu_data
      avoid direct access to this member, and instead use the helper
      functions above.  */
   std::vector <dwarf2_per_cu_data *> *imported_symtabs = nullptr;
+
+  /* Return the unit type of this CU.  */
+  dwarf_unit_type unit_type () const
+  {
+    return m_unit_type;
+  }
+
+  /* Get the section offset of the start of this CU.  */
+  sect_offset sect_off () const
+  {
+    return m_sect_off;
+  }
+
+  /* Return the total length of this CU..  */
+  unsigned int get_length () const
+  {
+    return m_length;
+  }
 
   /* Return true of IMPORTED_SYMTABS is empty or not yet allocated.  */
   bool imported_symtabs_empty () const
