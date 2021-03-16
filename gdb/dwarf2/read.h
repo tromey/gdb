@@ -486,10 +486,7 @@ struct dwarf2_per_cu_data
   /* Backlink to the owner of this.  */
   dwarf2_per_bfd *per_bfd = nullptr;
 
-  /* DWARF header of this CU.  Note that dwarf2_cu reads its own version of the
-     header, which may differ from this one, since it may pass rcuh_kind::TYPE
-     to read_comp_unit_head, whereas for dwarf2_per_cu_data we always pass
-     rcuh_kind::COMPILE.
+  /* DWARF header of this CU.
 
      Don't access this field directly, use the get_header method instead.  It
      should be private, but we can't make it private at the moment.  */

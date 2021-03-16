@@ -56,9 +56,6 @@ struct comp_unit_head
      .debug_info section, for resolving relative reference dies.  */
   sect_offset sect_off;
 
-  /* For types, offset in the type's DIE of the type defined by this TU.  */
-  cu_offset type_cu_offset_in_tu;
-
   /* 64-bit signature of this unit. For type units, it denotes the signature of
      the type (DW_UT_type in DWARF 4, additionally DW_UT_split_type in DWARF 5).
      Also used in DWARF 5, to denote the dwo id when the unit type is
@@ -105,7 +102,8 @@ extern const gdb_byte *read_comp_unit_head
   (struct comp_unit_head *cu_header,
    const gdb_byte *info_ptr,
    struct dwarf2_section_info *section,
-   rcuh_kind section_kind);
+   rcuh_kind section_kind,
+   cu_offset *type_offset);
 
 /* Read in a CU/TU header and perform some basic error checking.
    The contents of the header are stored in HEADER.
@@ -116,6 +114,7 @@ extern const gdb_byte *read_and_check_comp_unit_head
    struct dwarf2_section_info *section,
    struct dwarf2_section_info *abbrev_section,
    const gdb_byte *info_ptr,
-   rcuh_kind section_kind);
+   rcuh_kind section_kind,
+   cu_offset *type_offset);
 
 #endif /* GDB_DWARF2_COMP_UNIT_H */

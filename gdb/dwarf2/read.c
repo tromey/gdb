@@ -2672,15 +2672,16 @@ create_signatured_type_table_from_debug_names
 			  map.offset_size,
 			  map.dwarf5_byte_order));
 
+      cu_offset type_offset;
       comp_unit_head cu_header;
       read_and_check_comp_unit_head (per_objfile, &cu_header, section,
 				     abbrev_section,
 				     section->buffer + to_underlying (sect_off),
-				     rcuh_kind::TYPE);
+				     rcuh_kind::TYPE, &type_offset);
 
       sig_type = per_objfile->per_bfd->allocate_signatured_type ();
       sig_type->signature = cu_header.signature;
-      sig_type->type_offset_in_tu = cu_header.type_cu_offset_in_tu;
+      sig_type->type_offset_in_tu = type_offset;
       sig_type->is_debug_types = 1;
       sig_type->section = section;
       sig_type->sect_off = sect_off;
@@ -6039,13 +6040,14 @@ create_debug_type_hash_table (dwarf2_per_objfile *per_objfile,
 
       /* Initialize it due to a false compiler warning.  */
       header.signature = -1;
-      header.type_cu_offset_in_tu = (cu_offset) -1;
 
       /* We need to read the type's signature in order to build the hash
 	 table, but we don't need anything else just yet.  */
 
+      cu_offset type_offset {};
       ptr = read_and_check_comp_unit_head (per_objfile, &header, section,
-					   abbrev_section, ptr, section_kind);
+					   abbrev_section, ptr, section_kind,
+					   &type_offset);
 
       length = header.get_length ();
 
@@ -6065,7 +6067,7 @@ create_debug_type_hash_table (dwarf2_per_objfile *per_objfile,
       dwo_tu = OBSTACK_ZALLOC (&per_objfile->per_bfd->obstack, dwo_unit);
       dwo_tu->dwo_file = dwo_file;
       dwo_tu->signature = header.signature;
-      dwo_tu->type_offset_in_tu = header.type_cu_offset_in_tu;
+      dwo_tu->type_offset_in_tu = type_offset;
       dwo_tu->section = section;
       dwo_tu->sect_off = sect_off;
       dwo_tu->length = length;
@@ -6454,9 +6456,11 @@ read_cutu_die_from_dwo (dwarf2_cu *cu,
     {
       signatured_type *sig_type = (struct signatured_type *) per_cu;
 
+      cu_offset type_offset {};
       info_ptr = read_and_check_comp_unit_head (per_objfile, &cu->header,
 						section, dwo_abbrev_section,
-						info_ptr, rcuh_kind::TYPE);
+						info_ptr, rcuh_kind::TYPE,
+						&type_offset);
       /* This is not an assert because it can be caused by bad debug info.  */
       if (sig_type->signature != cu->header.signature)
 	{
@@ -6471,7 +6475,7 @@ read_cutu_die_from_dwo (dwarf2_cu *cu,
       /* For DWOs coming from DWP files, we don't know the CU length
 	 nor the type's offset in the TU until now.  */
       dwo_unit->length = cu->header.get_length ();
-      dwo_unit->type_offset_in_tu = cu->header.type_cu_offset_in_tu;
+      dwo_unit->type_offset_in_tu = type_offset;
 
       /* Establish the type offset that can be used to lookup the type.
 	 For DWO files, we don't know it until now.  */
@@ -6482,7 +6486,8 @@ read_cutu_die_from_dwo (dwarf2_cu *cu,
     {
       info_ptr = read_and_check_comp_unit_head (per_objfile, &cu->header,
 						section, dwo_abbrev_section,
-						info_ptr, rcuh_kind::COMPILE);
+						info_ptr, rcuh_kind::COMPILE,
+						nullptr);
       gdb_assert (dwo_unit->sect_off == cu->header.sect_off);
       /* For DWOs coming from DWP files, we don't know the CU length
 	 until now.  */
@@ -6726,16 +6731,17 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
     {
       if (this_cu->is_debug_types)
 	{
+	  cu_offset type_offset {};
 	  info_ptr = read_and_check_comp_unit_head (per_objfile, &cu->header,
 						    section, abbrev_section,
-						    info_ptr, rcuh_kind::TYPE);
+						    info_ptr, rcuh_kind::TYPE,
+						    &type_offset);
 
 	  /* Since per_cu is the first member of struct signatured_type,
 	     we can go from a pointer to one to a pointer to the other.  */
 	  sig_type = (struct signatured_type *) this_cu;
 	  gdb_assert (sig_type->signature == cu->header.signature);
-	  gdb_assert (sig_type->type_offset_in_tu
-		      == cu->header.type_cu_offset_in_tu);
+	  gdb_assert (sig_type->type_offset_in_tu == type_offset);
 	  gdb_assert (this_cu->sect_off == cu->header.sect_off);
 
 	  /* LENGTH has not been set yet for type units if we're
@@ -6753,7 +6759,8 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
 	  info_ptr = read_and_check_comp_unit_head (per_objfile, &cu->header,
 						    section, abbrev_section,
 						    info_ptr,
-						    rcuh_kind::COMPILE);
+						    rcuh_kind::COMPILE,
+						    nullptr);
 
 	  gdb_assert (this_cu->sect_off == cu->header.sect_off);
 	  if (this_cu->length == 0)
@@ -6906,7 +6913,8 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
 					    section, abbrev_section, info_ptr,
 					    (this_cu->is_debug_types
 					     ? rcuh_kind::TYPE
-					     : rcuh_kind::COMPILE));
+					     : rcuh_kind::COMPILE),
+					    nullptr);
 
   if (parent_cu != nullptr)
     {
@@ -7707,10 +7715,11 @@ read_comp_units_from_section (dwarf2_per_objfile *per_objfile,
 
       sect_offset sect_off = (sect_offset) (info_ptr - section->buffer);
 
+      cu_offset type_offset {};
       comp_unit_head cu_header;
       read_and_check_comp_unit_head (per_objfile, &cu_header, section,
 				     abbrev_section, info_ptr,
-				     section_kind);
+				     section_kind, &type_offset);
 
       /* Save the compilation unit for later lookup.  */
       if (cu_header.unit_type != DW_UT_type)
@@ -7723,7 +7732,7 @@ read_comp_units_from_section (dwarf2_per_objfile *per_objfile,
 	  auto sig_type = per_objfile->per_bfd->allocate_signatured_type ();
 	  signatured_type *sig_ptr = sig_type.get ();
 	  sig_type->signature = cu_header.signature;
-	  sig_type->type_offset_in_tu = cu_header.type_cu_offset_in_tu;
+	  sig_type->type_offset_in_tu = type_offset;
 	  this_cu = std::move (sig_type);
 
 	  void **slot = htab_find_slot (types_htab.get (), sig_ptr, INSERT);
@@ -24495,8 +24504,14 @@ dwarf2_per_cu_data::get_header () const
 
       memset (&m_header, 0, sizeof (m_header));
 
+      cu_offset *type_offset = nullptr;
+      if (is_debug_types)
+	type_offset = &((signatured_type *) this)->type_offset_in_tu;
       read_comp_unit_head (&m_header, info_ptr, this->section,
-			   rcuh_kind::COMPILE);
+			   (is_debug_types
+			    ? rcuh_kind::TYPE
+			    : rcuh_kind::COMPILE),
+			   type_offset);
 
       m_header_read_in = true;
     }

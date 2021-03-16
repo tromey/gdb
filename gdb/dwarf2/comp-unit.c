@@ -37,7 +37,8 @@ const gdb_byte *
 read_comp_unit_head (struct comp_unit_head *cu_header,
 		     const gdb_byte *info_ptr,
 		     struct dwarf2_section_info *section,
-		     rcuh_kind section_kind)
+		     rcuh_kind section_kind,
+		     cu_offset *type_offset_out)
 {
   int signed_addr;
   unsigned int bytes_read;
@@ -133,11 +134,14 @@ read_comp_unit_head (struct comp_unit_head *cu_header,
       LONGEST type_offset;
       type_offset = cu_header->read_offset (abfd, info_ptr, &bytes_read);
       info_ptr += bytes_read;
-      cu_header->type_cu_offset_in_tu = (cu_offset) type_offset;
-      if (to_underlying (cu_header->type_cu_offset_in_tu) != type_offset)
-	error (_("Dwarf Error: Too big type_offset in compilation unit "
-	       "header (is %s) [in module %s]"), plongest (type_offset),
-	       filename);
+      if (type_offset_out != nullptr)
+	{
+	  *type_offset_out = (cu_offset) type_offset;
+	  if (to_underlying (*type_offset_out) != type_offset)
+	    error (_("Dwarf Error: Too big type_offset in compilation unit "
+		     "header (is %s) [in module %s]"), plongest (type_offset),
+		   filename);
+	}
     }
 
   cu_header->first_die_cu_offset = (cu_offset) (info_ptr - beg_of_comp_unit);
@@ -182,11 +186,13 @@ read_and_check_comp_unit_head (dwarf2_per_objfile *per_objfile,
 			       struct dwarf2_section_info *section,
 			       struct dwarf2_section_info *abbrev_section,
 			       const gdb_byte *info_ptr,
-			       rcuh_kind section_kind)
+			       rcuh_kind section_kind,
+			       cu_offset *type_offset_out)
 {
   header->sect_off = (sect_offset) (info_ptr - section->buffer);
 
-  info_ptr = read_comp_unit_head (header, info_ptr, section, section_kind);
+  info_ptr = read_comp_unit_head (header, info_ptr, section, section_kind,
+				  type_offset_out);
 
   error_check_comp_unit_head (per_objfile, header, section, abbrev_section);
 
