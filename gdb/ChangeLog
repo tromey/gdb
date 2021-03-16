@@ -1,5 +1,12 @@
 2021-05-12  Tom Tromey  <tom@tromey.com>
 
+	* dwarf2/read.h (struct dwarf2_per_cu_data) <set_header>: New
+	method.
+	* dwarf2/read.c (create_signatured_type_table_from_debug_names)
+	(read_comp_units_from_section): Use set_header.
+
+2021-05-12  Tom Tromey  <tom@tromey.com>
+
 	* dwarf2/read.h (struct dwarf2_per_cu_data) <m_sect_off,
 	m_length, m_unit_type>: Add "m_" prefix.
 	<sect_off, get_length, unit_type>: New methods.

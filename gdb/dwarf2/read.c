@@ -2682,6 +2682,7 @@ create_signatured_type_table_from_debug_names
       sig_type = per_objfile->per_bfd->allocate_signatured_type ();
       sig_type->signature = cu_header.signature;
       sig_type->type_offset_in_tu = type_offset;
+      sig_type->set_header (cu_header);
       sig_type->is_debug_types = 1;
       sig_type->section = section;
       sig_type->m_sect_off = sect_off;
@@ -7748,6 +7749,7 @@ read_comp_units_from_section (dwarf2_per_objfile *per_objfile,
 		       hex_string (sig_ptr->signature));
 	  *slot = sig_ptr;
 	}
+      this_cu->set_header (cu_header);
       this_cu->is_debug_types = (cu_header.unit_type == DW_UT_type);
       this_cu->m_sect_off = sect_off;
       this_cu->m_length = cu_header.length + cu_header.initial_length_size;
