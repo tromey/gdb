@@ -12450,7 +12450,7 @@ open_and_init_dwo_file (dwarf2_cu *cu, const char *dwo_name,
   create_cus_hash_table (per_objfile, cu, *dwo_file, dwo_file->sections.info,
 			 dwo_file->cus);
 
-  if (cu->per_cu->dwarf_version < 5)
+  if (cu->per_cu->version () < 5)
     {
       create_debug_types_hash_table (per_objfile, dwo_file.get (),
 				     dwo_file->sections.types, dwo_file->tus);

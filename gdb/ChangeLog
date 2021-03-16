@@ -1,5 +1,9 @@
 2021-05-11  Tom Tromey  <tom@tromey.com>
 
+	* dwarf2/read.c (open_and_init_dwo_file): Use version accessor.
+
+2021-05-11  Tom Tromey  <tom@tromey.com>
+
 	* dwarf2/read.h (struct dwarf2_per_cu_data) <m_header>: Update
 	comment.
 	* dwarf2/read.c (create_signatured_type_table_from_debug_names)
