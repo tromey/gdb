@@ -24501,8 +24501,8 @@ dwarf2_symbol_mark_computed (const struct attribute *attr, struct symbol *sym,
 
 /* See read.h.  */
 
-const comp_unit_head *
-dwarf2_per_cu_data::get_header () const
+void
+dwarf2_per_cu_data::require_header () const
 {
   if (!m_header_read_in)
     {
@@ -24522,8 +24522,6 @@ dwarf2_per_cu_data::get_header () const
 
       m_header_read_in = true;
     }
-
-  return &m_header;
 }
 
 /* See read.h.  */
@@ -24531,7 +24529,9 @@ dwarf2_per_cu_data::get_header () const
 int
 dwarf2_per_cu_data::addr_size () const
 {
-  return this->get_header ()->addr_size;
+  if (!m_header_read_in)
+    require_header ();
+  return this->m_header.addr_size;
 }
 
 /* See read.h.  */
@@ -24539,7 +24539,9 @@ dwarf2_per_cu_data::addr_size () const
 int
 dwarf2_per_cu_data::offset_size () const
 {
-  return this->get_header ()->offset_size;
+  if (!m_header_read_in)
+    require_header ();
+  return this->m_header.offset_size;
 }
 
 /* See read.h.  */
@@ -24547,12 +24549,13 @@ dwarf2_per_cu_data::offset_size () const
 int
 dwarf2_per_cu_data::ref_addr_size () const
 {
-  const comp_unit_head *header = this->get_header ();
+  if (!m_header_read_in)
+    require_header ();
 
-  if (header->version == 2)
-    return header->addr_size;
+  if (m_header.version == 2)
+    return m_header.addr_size;
   else
-    return header->offset_size;
+    return m_header.offset_size;
 }
 
 /* See read.h.  */

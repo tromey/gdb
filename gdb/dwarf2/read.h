@@ -579,8 +579,8 @@ struct dwarf2_per_cu_data
     imported_symtabs = nullptr;
   }
 
-  /* Get the header of this per_cu, reading it if necessary.  */
-  const comp_unit_head *get_header () const;
+  /* Read the header of this per_cu if necessary.  */
+  void require_header () const;
 
   /* Set the header of this per_cu.  */
   void set_header (const comp_unit_head &head)

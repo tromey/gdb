@@ -1,5 +1,14 @@
 2021-05-12  Tom Tromey  <tom@tromey.com>
 
+	* dwarf2/read.h (struct dwarf2_per_cu_data) <require_header>:
+	Rename from get_header.  Change return type.
+	* dwarf2/read.c (dwarf2_per_cu_data::require_header): Rename from
+	get_header.  Change return type.
+	(dwarf2_per_cu_data::addr_size, dwarf2_per_cu_data::offset_size)
+	(dwarf2_per_cu_data::ref_addr_size): Update.
+
+2021-05-12  Tom Tromey  <tom@tromey.com>
+
 	* dwarf2/read.h (struct dwarf2_per_cu_data) <set_header>: New
 	method.
 	* dwarf2/read.c (create_signatured_type_table_from_debug_names)
