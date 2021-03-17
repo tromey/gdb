@@ -1,5 +1,21 @@
 2021-05-12  Tom Tromey  <tom@tromey.com>
 
+	* dwarf2/read.h (struct dwarf2_per_cu_data) <m_sect_off, m_length,
+	dwarf_version, m_unit_type>: Remove.
+	<m_header>: Move earlier.
+	<unit_type, sect_off, get_length, version>: Rewrite.
+	* dwarf2/read.c (create_cu_from_index_list)
+	(create_signatured_type_table_from_index)
+	(create_signatured_type_table_from_debug_names)
+	(fill_in_sig_entry_from_dwo_entry)
+	(cutu_reader::init_tu_and_read_dwo_dies): Update.
+	(cutu_reader::cutu_reader): Simplify.
+	(process_psymtab_comp_unit, read_comp_units_from_section)
+	(create_cus_hash_table, dwarf2_per_cu_data::require_header):
+	Update.
+
+2021-05-12  Tom Tromey  <tom@tromey.com>
+
 	* dwarf2/read.h (struct dwarf2_per_cu_data) <require_header>:
 	Rename from get_header.  Change return type.
 	* dwarf2/read.c (dwarf2_per_cu_data::require_header): Rename from

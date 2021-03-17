@@ -413,21 +413,17 @@ struct dwarf2_per_cu_data
       reading_dwo_directly (false),
       tu_read (false),
       m_header_read_in (false),
-      m_unit_type {},
       lang (language_unknown)
   {
   }
 
-  /* The start offset and length of this compilation unit.
-     NOTE: Unlike comp_unit_head.length, this length includes
-     initial_length_size.
-     If the DIE refers to a DWO file, this is always of the original die,
-     not the DWO file.  */
-  sect_offset m_sect_off {};
-  unsigned int m_length = 0;
+  /* DWARF header of this CU.
 
-  /* DWARF standard version this data has been read from (such as 4 or 5).  */
-  unsigned char dwarf_version = 0;
+     Don't access this field directly, use the accessor methods
+     instead.  It should be private, but we can't make it private at
+     the moment.  */
+  /* FIXME more text explaining stuff */
+  mutable comp_unit_head m_header {};
 
   /* Flag indicating this compilation unit will be read in before
      any of the current compilation units are processed.  */
@@ -469,9 +465,6 @@ struct dwarf2_per_cu_data
      it private at the moment.  */
   mutable bool m_header_read_in : 1;
 
-  /* The unit type of this CU.  */
-  ENUM_BITFIELD (dwarf_unit_type) m_unit_type : 8;
-
   /* The language of this CU.  */
   ENUM_BITFIELD (language) lang : LANGUAGE_BITS;
 
@@ -485,12 +478,6 @@ struct dwarf2_per_cu_data
 
   /* Backlink to the owner of this.  */
   dwarf2_per_bfd *per_bfd = nullptr;
-
-  /* DWARF header of this CU.
-
-     Don't access this field directly, use the get_header method instead.  It
-     should be private, but we can't make it private at the moment.  */
-  mutable comp_unit_head m_header {};
 
   /* When dwarf2_per_bfd::using_index is true, the 'quick' field
      is active.  Otherwise, the 'psymtab' field is active.  */
@@ -533,19 +520,21 @@ struct dwarf2_per_cu_data
   /* Return the unit type of this CU.  */
   dwarf_unit_type unit_type () const
   {
-    return m_unit_type;
+    if (!m_header_read_in)
+      require_header ();
+    return m_header.unit_type;
   }
 
   /* Get the section offset of the start of this CU.  */
   sect_offset sect_off () const
   {
-    return m_sect_off;
+    return m_header.sect_off;
   }
 
   /* Return the total length of this CU..  */
   unsigned int get_length () const
   {
-    return m_length;
+    return m_header.get_length ();
   }
 
   /* Return true of IMPORTED_SYMTABS is empty or not yet allocated.  */
@@ -604,7 +593,9 @@ struct dwarf2_per_cu_data
   /* Return DWARF version number of this CU.  */
   short version () const
   {
-    return dwarf_version;
+    if (!m_header_read_in)
+      require_header ();
+    return m_header.version;
   }
 
   /* A type unit group has a per_cu object that is recognized by
