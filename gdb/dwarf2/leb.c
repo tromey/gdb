@@ -28,8 +28,7 @@
 #include "dwarf2/leb.h"
 
 ULONGEST
-read_unsigned_leb128 (bfd *abfd, const gdb_byte *buf,
-			  unsigned int *bytes_read_ptr)
+read_unsigned_leb128 (const gdb_byte *buf, unsigned int *bytes_read_ptr)
 {
   ULONGEST result;
   unsigned int num_read;
@@ -41,7 +40,7 @@ read_unsigned_leb128 (bfd *abfd, const gdb_byte *buf,
   num_read = 0;
   while (1)
     {
-      byte = bfd_get_8 (abfd, buf);
+      byte = *buf;
       buf++;
       num_read++;
       result |= ((ULONGEST) (byte & 127) << shift);
@@ -56,8 +55,7 @@ read_unsigned_leb128 (bfd *abfd, const gdb_byte *buf,
 }
 
 LONGEST
-read_signed_leb128 (bfd *abfd, const gdb_byte *buf,
-		    unsigned int *bytes_read_ptr)
+read_signed_leb128 (const gdb_byte *buf, unsigned int *bytes_read_ptr)
 {
   ULONGEST result;
   int shift, num_read;
@@ -68,7 +66,7 @@ read_signed_leb128 (bfd *abfd, const gdb_byte *buf,
   num_read = 0;
   while (1)
     {
-      byte = bfd_get_8 (abfd, buf);
+      byte = *buf;
       buf++;
       num_read++;
       result |= ((ULONGEST) (byte & 127) << shift);

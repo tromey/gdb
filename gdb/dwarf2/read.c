@@ -5037,7 +5037,7 @@ read_debug_names_from_section (struct objfile *objfile,
   const gdb_byte *abbrev_table_start = addr;
   for (;;)
     {
-      const ULONGEST index_num = read_unsigned_leb128 (abfd, addr, &bytes_read);
+      const ULONGEST index_num = read_unsigned_leb128 (addr, &bytes_read);
       addr += bytes_read;
       if (index_num == 0)
 	break;
@@ -5052,19 +5052,19 @@ read_debug_names_from_section (struct objfile *objfile,
 	  return false;
 	}
       mapped_debug_names::index_val &indexval = insertpair.first->second;
-      indexval.dwarf_tag = read_unsigned_leb128 (abfd, addr, &bytes_read);
+      indexval.dwarf_tag = read_unsigned_leb128 (addr, &bytes_read);
       addr += bytes_read;
 
       for (;;)
 	{
 	  mapped_debug_names::index_val::attr attr;
-	  attr.dw_idx = read_unsigned_leb128 (abfd, addr, &bytes_read);
+	  attr.dw_idx = read_unsigned_leb128 (addr, &bytes_read);
 	  addr += bytes_read;
-	  attr.form = read_unsigned_leb128 (abfd, addr, &bytes_read);
+	  attr.form = read_unsigned_leb128 (addr, &bytes_read);
 	  addr += bytes_read;
 	  if (attr.form == DW_FORM_implicit_const)
 	    {
-	      attr.implicit_const = read_signed_leb128 (abfd, addr,
+	      attr.implicit_const = read_signed_leb128 (addr,
 							&bytes_read);
 	      addr += bytes_read;
 	    }
@@ -5422,7 +5422,7 @@ dw2_debug_names_iterator::next ()
  again:
 
   unsigned int bytes_read;
-  const ULONGEST abbrev = read_unsigned_leb128 (abfd, m_addr, &bytes_read);
+  const ULONGEST abbrev = read_unsigned_leb128 (m_addr, &bytes_read);
   m_addr += bytes_read;
   if (abbrev == 0)
     return NULL;
@@ -5454,7 +5454,7 @@ dw2_debug_names_iterator::next ()
 	  ull = 1;
 	  break;
 	case DW_FORM_udata:
-	  ull = read_unsigned_leb128 (abfd, m_addr, &bytes_read);
+	  ull = read_unsigned_leb128 (m_addr, &bytes_read);
 	  m_addr += bytes_read;
 	  break;
 	case DW_FORM_ref4:
@@ -8699,7 +8699,7 @@ peek_abbrev_code (bfd *abfd, const gdb_byte *info_ptr)
 {
   unsigned int bytes_read;
 
-  return read_unsigned_leb128 (abfd, info_ptr, &bytes_read);
+  return read_unsigned_leb128 (info_ptr, &bytes_read);
 }
 
 /* Read the initial uleb128 in the die at INFO_PTR in compilation unit
@@ -8716,7 +8716,7 @@ peek_die_abbrev (const die_reader_specs &reader,
   dwarf2_cu *cu = reader.cu;
   bfd *abfd = reader.abfd;
   unsigned int abbrev_number
-    = read_unsigned_leb128 (abfd, info_ptr, bytes_read);
+    = read_unsigned_leb128 (info_ptr, bytes_read);
 
   if (abbrev_number == 0)
     return NULL;
@@ -8854,7 +8854,7 @@ skip_one_die (const struct die_reader_specs *reader, const gdb_byte *info_ptr,
 	  break;
 	case DW_FORM_exprloc:
 	case DW_FORM_block:
-	  info_ptr += read_unsigned_leb128 (abfd, info_ptr, &bytes_read);
+	  info_ptr += read_unsigned_leb128 (info_ptr, &bytes_read);
 	  info_ptr += bytes_read;
 	  break;
 	case DW_FORM_block1:
@@ -8878,7 +8878,7 @@ skip_one_die (const struct die_reader_specs *reader, const gdb_byte *info_ptr,
 	  info_ptr = safe_skip_leb128 (info_ptr, buffer_end);
 	  break;
 	case DW_FORM_indirect:
-	  form = read_unsigned_leb128 (abfd, info_ptr, &bytes_read);
+	  form = read_unsigned_leb128 (info_ptr, &bytes_read);
 	  info_ptr += bytes_read;
 	  /* We need to continue parsing from here, so just go back to
 	     the top.  */
@@ -14160,7 +14160,7 @@ dwarf2_rnglists_process (unsigned offset, struct dwarf2_cu *cu,
 	  buffer += bytes_read;
 	  break;
 	case DW_RLE_base_addressx:
-	  addr_index = read_unsigned_leb128 (obfd, buffer, &bytes_read);
+	  addr_index = read_unsigned_leb128 (buffer, &bytes_read);
 	  buffer += bytes_read;
 	  base = read_addr_index (cu, addr_index);
 	  break;
@@ -14174,7 +14174,7 @@ dwarf2_rnglists_process (unsigned offset, struct dwarf2_cu *cu,
 						     &bytes_read);
 	  buffer += bytes_read;
 	  range_end = (range_beginning
-		       + read_unsigned_leb128 (obfd, buffer, &bytes_read));
+		       + read_unsigned_leb128 (buffer, &bytes_read));
 	  buffer += bytes_read;
 	  if (buffer > buf_end)
 	    {
@@ -14183,7 +14183,7 @@ dwarf2_rnglists_process (unsigned offset, struct dwarf2_cu *cu,
 	    }
 	  break;
 	case DW_RLE_startx_length:
-	  addr_index = read_unsigned_leb128 (obfd, buffer, &bytes_read);
+	  addr_index = read_unsigned_leb128 (buffer, &bytes_read);
 	  buffer += bytes_read;
 	  range_beginning = read_addr_index (cu, addr_index);
 	  if (buffer > buf_end)
@@ -14192,18 +14192,18 @@ dwarf2_rnglists_process (unsigned offset, struct dwarf2_cu *cu,
 	      break;
 	    }
 	  range_end = (range_beginning
-		       + read_unsigned_leb128 (obfd, buffer, &bytes_read));
+		       + read_unsigned_leb128 (buffer, &bytes_read));
 	  buffer += bytes_read;
 	  break;
 	case DW_RLE_offset_pair:
-	  range_beginning = read_unsigned_leb128 (obfd, buffer, &bytes_read);
+	  range_beginning = read_unsigned_leb128 (buffer, &bytes_read);
 	  buffer += bytes_read;
 	  if (buffer > buf_end)
 	    {
 	      overflow = true;
 	      break;
 	    }
-	  range_end = read_unsigned_leb128 (obfd, buffer, &bytes_read);
+	  range_end = read_unsigned_leb128 (buffer, &bytes_read);
 	  buffer += bytes_read;
 	  if (buffer > buf_end)
 	    {
@@ -14224,7 +14224,7 @@ dwarf2_rnglists_process (unsigned offset, struct dwarf2_cu *cu,
 	  buffer += bytes_read;
 	  break;
 	case DW_RLE_startx_endx:
-	  addr_index = read_unsigned_leb128 (obfd, buffer, &bytes_read);
+	  addr_index = read_unsigned_leb128 (buffer, &bytes_read);
 	  buffer += bytes_read;
 	  range_beginning = read_addr_index (cu, addr_index);
 	  if (buffer > buf_end)
@@ -14232,7 +14232,7 @@ dwarf2_rnglists_process (unsigned offset, struct dwarf2_cu *cu,
 	      overflow = true;
 	      break;
 	    }
-	  addr_index = read_unsigned_leb128 (obfd, buffer, &bytes_read);
+	  addr_index = read_unsigned_leb128 (buffer, &bytes_read);
 	  buffer += bytes_read;
 	  range_end = read_addr_index (cu, addr_index);
 	  break;
@@ -15174,10 +15174,9 @@ convert_variant_range (struct obstack *obstack, const variant_field &variant,
 	      break;
 	    }
 	  if (is_unsigned)
-	    low = read_unsigned_leb128 (nullptr, data.data (), &bytes_read);
+	    low = read_unsigned_leb128 (data.data (), &bytes_read);
 	  else
-	    low = (ULONGEST) read_signed_leb128 (nullptr, data.data (),
-						 &bytes_read);
+	    low = (ULONGEST) read_signed_leb128 (data.data (), &bytes_read);
 	  data = data.slice (bytes_read);
 
 	  if (is_range)
@@ -15188,10 +15187,9 @@ convert_variant_range (struct obstack *obstack, const variant_field &variant,
 		  break;
 		}
 	      if (is_unsigned)
-		high = read_unsigned_leb128 (nullptr, data.data (),
-					     &bytes_read);
+		high = read_unsigned_leb128 (data.data (), &bytes_read);
 	      else
-		high = (LONGEST) read_signed_leb128 (nullptr, data.data (),
+		high = (LONGEST) read_signed_leb128 (data.data (),
 						     &bytes_read);
 	      data = data.slice (bytes_read);
 	    }
@@ -19189,7 +19187,7 @@ read_full_die_1 (const struct die_reader_specs *reader,
   bfd *abfd = reader->abfd;
 
   sect_offset sect_off = (sect_offset) (info_ptr - reader->buffer);
-  abbrev_number = read_unsigned_leb128 (abfd, info_ptr, &bytes_read);
+  abbrev_number = read_unsigned_leb128 (info_ptr, &bytes_read);
   info_ptr += bytes_read;
   if (!abbrev_number)
     {
@@ -20408,7 +20406,7 @@ read_attribute_value (const struct die_reader_specs *reader,
       break;
     case DW_FORM_loclistx:
       {
-	attr->set_unsigned_reprocess (read_unsigned_leb128 (abfd, info_ptr,
+	attr->set_unsigned_reprocess (read_unsigned_leb128 (info_ptr,
 							    &bytes_read));
 	info_ptr += bytes_read;
       }
@@ -20453,7 +20451,7 @@ read_attribute_value (const struct die_reader_specs *reader,
     case DW_FORM_exprloc:
     case DW_FORM_block:
       blk = dwarf_alloc_block (cu);
-      blk->size = read_unsigned_leb128 (abfd, info_ptr, &bytes_read);
+      blk->size = read_unsigned_leb128 (info_ptr, &bytes_read);
       info_ptr += bytes_read;
       blk->data = read_n_bytes (abfd, info_ptr, blk->size);
       info_ptr += blk->size;
@@ -20476,18 +20474,18 @@ read_attribute_value (const struct die_reader_specs *reader,
       attr->set_unsigned (1);
       break;
     case DW_FORM_sdata:
-      attr->set_signed (read_signed_leb128 (abfd, info_ptr, &bytes_read));
+      attr->set_signed (read_signed_leb128 (info_ptr, &bytes_read));
       info_ptr += bytes_read;
       break;
     case DW_FORM_rnglistx:
       {
-	attr->set_unsigned_reprocess (read_unsigned_leb128 (abfd, info_ptr,
+	attr->set_unsigned_reprocess (read_unsigned_leb128 (info_ptr,
 							    &bytes_read));
 	info_ptr += bytes_read;
       }
       break;
     case DW_FORM_udata:
-      attr->set_unsigned (read_unsigned_leb128 (abfd, info_ptr, &bytes_read));
+      attr->set_unsigned (read_unsigned_leb128 (info_ptr, &bytes_read));
       info_ptr += bytes_read;
       break;
     case DW_FORM_ref1:
@@ -20516,16 +20514,16 @@ read_attribute_value (const struct die_reader_specs *reader,
       break;
     case DW_FORM_ref_udata:
       attr->set_unsigned ((to_underlying (cu_header->sect_off)
-			   + read_unsigned_leb128 (abfd, info_ptr,
+			   + read_unsigned_leb128 (info_ptr,
 						   &bytes_read)));
       info_ptr += bytes_read;
       break;
     case DW_FORM_indirect:
-      form = read_unsigned_leb128 (abfd, info_ptr, &bytes_read);
+      form = read_unsigned_leb128 (info_ptr, &bytes_read);
       info_ptr += bytes_read;
       if (form == DW_FORM_implicit_const)
 	{
-	  implicit_const = read_signed_leb128 (abfd, info_ptr, &bytes_read);
+	  implicit_const = read_signed_leb128 (info_ptr, &bytes_read);
 	  info_ptr += bytes_read;
 	}
       info_ptr = read_attribute_value (reader, attr, form, implicit_const,
@@ -20536,7 +20534,7 @@ read_attribute_value (const struct die_reader_specs *reader,
       break;
     case DW_FORM_addrx:
     case DW_FORM_GNU_addr_index:
-      attr->set_unsigned_reprocess (read_unsigned_leb128 (abfd, info_ptr,
+      attr->set_unsigned_reprocess (read_unsigned_leb128 (info_ptr,
 							  &bytes_read));
       info_ptr += bytes_read;
       break;
@@ -20570,7 +20568,7 @@ read_attribute_value (const struct die_reader_specs *reader,
 	  }
 	else
 	  {
-	    str_index = read_unsigned_leb128 (abfd, info_ptr, &bytes_read);
+	    str_index = read_unsigned_leb128 (info_ptr, &bytes_read);
 	    info_ptr += bytes_read;
 	  }
 	attr->set_unsigned_reprocess (str_index);
@@ -20702,8 +20700,7 @@ static CORE_ADDR
 read_addr_index_from_leb128 (struct dwarf2_cu *cu, const gdb_byte *info_ptr,
 			     unsigned int *bytes_read)
 {
-  bfd *abfd = cu->per_objfile->objfile->obfd;
-  unsigned int addr_index = read_unsigned_leb128 (abfd, info_ptr, bytes_read);
+  unsigned int addr_index = read_unsigned_leb128 (info_ptr, bytes_read);
 
   return read_addr_index (cu, addr_index);
 }
@@ -21652,7 +21649,7 @@ dwarf_decode_lines_1 (struct line_header *lh, struct dwarf2_cu *cu,
 	  else switch (op_code)
 	    {
 	    case DW_LNS_extended_op:
-	      extended_len = read_unsigned_leb128 (abfd, line_ptr,
+	      extended_len = read_unsigned_leb128 (line_ptr,
 						   &bytes_read);
 	      line_ptr += bytes_read;
 	      extended_end = line_ptr + extended_len;
@@ -21692,13 +21689,13 @@ dwarf_decode_lines_1 (struct line_header *lh, struct dwarf2_cu *cu,
 						   &bytes_read);
 		    line_ptr += bytes_read;
 		    dindex = (dir_index)
-		      read_unsigned_leb128 (abfd, line_ptr, &bytes_read);
+		      read_unsigned_leb128 (line_ptr, &bytes_read);
 		    line_ptr += bytes_read;
 		    mod_time =
-		      read_unsigned_leb128 (abfd, line_ptr, &bytes_read);
+		      read_unsigned_leb128 (line_ptr, &bytes_read);
 		    line_ptr += bytes_read;
 		    length =
-		      read_unsigned_leb128 (abfd, line_ptr, &bytes_read);
+		      read_unsigned_leb128 (line_ptr, &bytes_read);
 		    line_ptr += bytes_read;
 		    lh->add_file_name (cur_file, dindex, mod_time, length);
 		  }
@@ -21712,7 +21709,7 @@ dwarf_decode_lines_1 (struct line_header *lh, struct dwarf2_cu *cu,
 		       (non-prologue) line we want to coalesce them.
 		       PR 17276.  */
 		    unsigned int discr
-		      = read_unsigned_leb128 (abfd, line_ptr, &bytes_read);
+		      = read_unsigned_leb128 (line_ptr, &bytes_read);
 		    line_ptr += bytes_read;
 
 		    state_machine.handle_set_discriminator (discr);
@@ -21737,7 +21734,7 @@ dwarf_decode_lines_1 (struct line_header *lh, struct dwarf2_cu *cu,
 	    case DW_LNS_advance_pc:
 	      {
 		CORE_ADDR adjust
-		  = read_unsigned_leb128 (abfd, line_ptr, &bytes_read);
+		  = read_unsigned_leb128 (line_ptr, &bytes_read);
 		line_ptr += bytes_read;
 
 		state_machine.handle_advance_pc (adjust);
@@ -21746,7 +21743,7 @@ dwarf_decode_lines_1 (struct line_header *lh, struct dwarf2_cu *cu,
 	    case DW_LNS_advance_line:
 	      {
 		int line_delta
-		  = read_signed_leb128 (abfd, line_ptr, &bytes_read);
+		  = read_signed_leb128 (line_ptr, &bytes_read);
 		line_ptr += bytes_read;
 
 		state_machine.handle_advance_line (line_delta);
@@ -21755,7 +21752,7 @@ dwarf_decode_lines_1 (struct line_header *lh, struct dwarf2_cu *cu,
 	    case DW_LNS_set_file:
 	      {
 		file_name_index file
-		  = (file_name_index) read_unsigned_leb128 (abfd, line_ptr,
+		  = (file_name_index) read_unsigned_leb128 (line_ptr,
 							    &bytes_read);
 		line_ptr += bytes_read;
 
@@ -21763,7 +21760,7 @@ dwarf_decode_lines_1 (struct line_header *lh, struct dwarf2_cu *cu,
 	      }
 	      break;
 	    case DW_LNS_set_column:
-	      (void) read_unsigned_leb128 (abfd, line_ptr, &bytes_read);
+	      (void) read_unsigned_leb128 (line_ptr, &bytes_read);
 	      line_ptr += bytes_read;
 	      break;
 	    case DW_LNS_negate_stmt:
@@ -21794,7 +21791,7 @@ dwarf_decode_lines_1 (struct line_header *lh, struct dwarf2_cu *cu,
 
 		for (i = 0; i < lh->standard_opcode_lengths[op_code]; i++)
 		  {
-		    (void) read_unsigned_leb128 (abfd, line_ptr, &bytes_read);
+		    (void) read_unsigned_leb128 (line_ptr, &bytes_read);
 		    line_ptr += bytes_read;
 		  }
 	      }
@@ -24352,7 +24349,7 @@ decode_locdesc (struct dwarf_block *blk, struct dwarf2_cu *cu, bool *computed)
 	  break;
 
 	case DW_OP_regx:
-	  unsnd = read_unsigned_leb128 (NULL, (data + i), &bytes_read);
+	  unsnd = read_unsigned_leb128 ((data + i), &bytes_read);
 	  i += bytes_read;
 	  stack[++stacki] = unsnd;
 	  if (i < size)
@@ -24406,13 +24403,12 @@ decode_locdesc (struct dwarf_block *blk, struct dwarf2_cu *cu, bool *computed)
 	  break;
 
 	case DW_OP_constu:
-	  stack[++stacki] = read_unsigned_leb128 (NULL, (data + i),
-						  &bytes_read);
+	  stack[++stacki] = read_unsigned_leb128 ((data + i), &bytes_read);
 	  i += bytes_read;
 	  break;
 
 	case DW_OP_consts:
-	  stack[++stacki] = read_signed_leb128 (NULL, (data + i), &bytes_read);
+	  stack[++stacki] = read_signed_leb128 ((data + i), &bytes_read);
 	  i += bytes_read;
 	  break;
 
@@ -24427,8 +24423,7 @@ decode_locdesc (struct dwarf_block *blk, struct dwarf2_cu *cu, bool *computed)
 	  break;
 
 	case DW_OP_plus_uconst:
-	  stack[stacki] += read_unsigned_leb128 (NULL, (data + i),
-						 &bytes_read);
+	  stack[stacki] += read_unsigned_leb128 ((data + i), &bytes_read);
 	  i += bytes_read;
 	  break;
 

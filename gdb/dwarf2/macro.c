@@ -270,7 +270,7 @@ skip_form_bytes (bfd *abfd, const gdb_byte *bytes, const gdb_byte *buffer_end,
       break;
 
     case DW_FORM_block:
-      bytes += read_unsigned_leb128 (abfd, bytes, &bytes_read);
+      bytes += read_unsigned_leb128 (bytes, &bytes_read);
       bytes += bytes_read;
       break;
 
@@ -336,7 +336,7 @@ skip_unknown_opcode (unsigned int opcode,
     }
 
   defn = opcode_definitions[opcode];
-  arg = read_unsigned_leb128 (abfd, defn, &bytes_read);
+  arg = read_unsigned_leb128 (defn, &bytes_read);
   defn += bytes_read;
 
   for (i = 0; i < arg; ++i)
@@ -404,7 +404,7 @@ dwarf_parse_macro_header (const gdb_byte **opcode_definitions,
 	      opcode = read_1_byte (mac_ptr);
 	      ++mac_ptr;
 	      opcode_definitions[opcode] = mac_ptr;
-	      arg = read_unsigned_leb128 (abfd, mac_ptr, &bytes_read);
+	      arg = read_unsigned_leb128 (mac_ptr, &bytes_read);
 	      mac_ptr += bytes_read;
 	      mac_ptr += arg;
 	    }
@@ -489,7 +489,7 @@ dwarf_decode_macro_bytes (dwarf2_per_objfile *per_objfile,
 	    const char *body;
 	    int is_define;
 
-	    line = read_unsigned_leb128 (abfd, mac_ptr, &bytes_read);
+	    line = read_unsigned_leb128 (mac_ptr, &bytes_read);
 	    mac_ptr += bytes_read;
 
 	    if (macinfo_type == DW_MACRO_define
@@ -570,9 +570,9 @@ dwarf_decode_macro_bytes (dwarf2_per_objfile *per_objfile,
 	  {
 	    unsigned int bytes_read;
 
-	    int line = read_unsigned_leb128 (abfd, mac_ptr, &bytes_read);
+	    int line = read_unsigned_leb128 (mac_ptr, &bytes_read);
 	    mac_ptr += bytes_read;
-	    int offset_index = read_unsigned_leb128 (abfd, mac_ptr, &bytes_read);
+	    int offset_index = read_unsigned_leb128 (mac_ptr, &bytes_read);
 	    mac_ptr += bytes_read;
 
 	    str_offsets_section->read (objfile);
@@ -617,9 +617,9 @@ dwarf_decode_macro_bytes (dwarf2_per_objfile *per_objfile,
 	    unsigned int bytes_read;
 	    int line, file;
 
-	    line = read_unsigned_leb128 (abfd, mac_ptr, &bytes_read);
+	    line = read_unsigned_leb128 (mac_ptr, &bytes_read);
 	    mac_ptr += bytes_read;
-	    file = read_unsigned_leb128 (abfd, mac_ptr, &bytes_read);
+	    file = read_unsigned_leb128 (mac_ptr, &bytes_read);
 	    mac_ptr += bytes_read;
 
 	    if ((line == 0 && !at_commandline)
@@ -737,7 +737,7 @@ dwarf_decode_macro_bytes (dwarf2_per_objfile *per_objfile,
 
 	      /* This reads the constant, but since we don't recognize
 		 any vendor extensions, we ignore it.  */
-	      read_unsigned_leb128 (abfd, mac_ptr, &bytes_read);
+	      read_unsigned_leb128 (mac_ptr, &bytes_read);
 	      mac_ptr += bytes_read;
 	      read_direct_string (abfd, mac_ptr, &bytes_read);
 	      mac_ptr += bytes_read;
@@ -830,7 +830,7 @@ dwarf_decode_macros (dwarf2_per_objfile *per_objfile,
 	  {
 	    unsigned int bytes_read;
 
-	    read_unsigned_leb128 (abfd, mac_ptr, &bytes_read);
+	    read_unsigned_leb128 (mac_ptr, &bytes_read);
 	    mac_ptr += bytes_read;
 	    read_direct_string (abfd, mac_ptr, &bytes_read);
 	    mac_ptr += bytes_read;
@@ -842,9 +842,9 @@ dwarf_decode_macros (dwarf2_per_objfile *per_objfile,
 	    unsigned int bytes_read;
 	    int line, file;
 
-	    line = read_unsigned_leb128 (abfd, mac_ptr, &bytes_read);
+	    line = read_unsigned_leb128 (mac_ptr, &bytes_read);
 	    mac_ptr += bytes_read;
-	    file = read_unsigned_leb128 (abfd, mac_ptr, &bytes_read);
+	    file = read_unsigned_leb128 (mac_ptr, &bytes_read);
 	    mac_ptr += bytes_read;
 
 	    current_file = macro_start_file (builder, file, line,
@@ -863,7 +863,7 @@ dwarf_decode_macros (dwarf2_per_objfile *per_objfile,
 	  {
 	    unsigned int bytes_read;
 
-	    read_unsigned_leb128 (abfd, mac_ptr, &bytes_read);
+	    read_unsigned_leb128 (mac_ptr, &bytes_read);
 	    mac_ptr += bytes_read;
 	    mac_ptr += offset_size;
 	  }
@@ -873,9 +873,9 @@ dwarf_decode_macros (dwarf2_per_objfile *per_objfile,
 	  {
 	    unsigned int bytes_read;
 
-	    read_unsigned_leb128 (abfd, mac_ptr, &bytes_read);
+	    read_unsigned_leb128 (mac_ptr, &bytes_read);
 	    mac_ptr += bytes_read;
-	    read_unsigned_leb128 (abfd, mac_ptr, &bytes_read);
+	    read_unsigned_leb128 (mac_ptr, &bytes_read);
 	    mac_ptr += bytes_read;
 	  }
 	  break;
@@ -894,7 +894,7 @@ dwarf_decode_macros (dwarf2_per_objfile *per_objfile,
 	    {
 	      unsigned int bytes_read;
 
-	      read_unsigned_leb128 (abfd, mac_ptr, &bytes_read);
+	      read_unsigned_leb128 (mac_ptr, &bytes_read);
 	      mac_ptr += bytes_read;
 	      read_direct_string (abfd, mac_ptr, &bytes_read);
 	      mac_ptr += bytes_read;

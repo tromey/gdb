@@ -174,13 +174,13 @@ read_formatted_entries (dwarf2_per_objfile *per_objfile, bfd *abfd,
   format_header_data = buf;
   for (formati = 0; formati < format_count; formati++)
     {
-      read_unsigned_leb128 (abfd, buf, &bytes_read);
+      read_unsigned_leb128 (buf, &bytes_read);
       buf += bytes_read;
-      read_unsigned_leb128 (abfd, buf, &bytes_read);
+      read_unsigned_leb128 (buf, &bytes_read);
       buf += bytes_read;
     }
 
-  data_count = read_unsigned_leb128 (abfd, buf, &bytes_read);
+  data_count = read_unsigned_leb128 (buf, &bytes_read);
   buf += bytes_read;
   for (datai = 0; datai < data_count; datai++)
     {
@@ -189,10 +189,10 @@ read_formatted_entries (dwarf2_per_objfile *per_objfile, bfd *abfd,
 
       for (formati = 0; formati < format_count; formati++)
 	{
-	  ULONGEST content_type = read_unsigned_leb128 (abfd, format, &bytes_read);
+	  ULONGEST content_type = read_unsigned_leb128 (format, &bytes_read);
 	  format += bytes_read;
 
-	  ULONGEST form  = read_unsigned_leb128 (abfd, format, &bytes_read);
+	  ULONGEST form  = read_unsigned_leb128 (format, &bytes_read);
 	  format += bytes_read;
 
 	  gdb::optional<const char *> string;
@@ -237,7 +237,7 @@ read_formatted_entries (dwarf2_per_objfile *per_objfile, bfd *abfd,
 	      break;
 
 	    case DW_FORM_udata:
-	      uint.emplace (read_unsigned_leb128 (abfd, buf, &bytes_read));
+	      uint.emplace (read_unsigned_leb128 (buf, &bytes_read));
 	      buf += bytes_read;
 	      break;
 
@@ -426,11 +426,11 @@ dwarf_decode_line_header  (sect_offset sect_off, bool is_dwz,
 	  dir_index d_index;
 
 	  line_ptr += bytes_read;
-	  d_index = (dir_index) read_unsigned_leb128 (abfd, line_ptr, &bytes_read);
+	  d_index = (dir_index) read_unsigned_leb128 (line_ptr, &bytes_read);
 	  line_ptr += bytes_read;
-	  mod_time = read_unsigned_leb128 (abfd, line_ptr, &bytes_read);
+	  mod_time = read_unsigned_leb128 (line_ptr, &bytes_read);
 	  line_ptr += bytes_read;
-	  length = read_unsigned_leb128 (abfd, line_ptr, &bytes_read);
+	  length = read_unsigned_leb128 (line_ptr, &bytes_read);
 	  line_ptr += bytes_read;
 
 	  lh->add_file_name (cur_file, d_index, mod_time, length);

@@ -433,7 +433,7 @@ dwarf2_find_location_expression (struct dwarf2_loclist_baton *baton,
 	{
 	  unsigned int bytes_read;
 
-	  length = read_unsigned_leb128 (NULL, loc_ptr, &bytes_read);
+	  length = read_unsigned_leb128 (loc_ptr, &bytes_read);
 	  loc_ptr += bytes_read;
 	}
 
@@ -4662,7 +4662,7 @@ loclist_describe_location (struct symbol *symbol, CORE_ADDR addr,
       else
 	 {
 	   unsigned int bytes_read;
-	   length = read_unsigned_leb128 (NULL, loc_ptr, &bytes_read);
+	   length = read_unsigned_leb128 (loc_ptr, &bytes_read);
 	   loc_ptr += bytes_read;
 	 }
 

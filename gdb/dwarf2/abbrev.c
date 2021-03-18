@@ -81,7 +81,6 @@ abbrev_table_up
 abbrev_table::read (struct dwarf2_section_info *section,
 		    sect_offset sect_off)
 {
-  bfd *abfd = section->get_bfd_owner ();
   const gdb_byte *abbrev_ptr;
   struct abbrev_info *cur_abbrev;
 
@@ -96,7 +95,7 @@ abbrev_table::read (struct dwarf2_section_info *section,
     {
       unsigned int bytes_read;
       /* Loop until we reach an abbrev number of 0.  */
-      unsigned int abbrev_number = read_unsigned_leb128 (abfd, abbrev_ptr,
+      unsigned int abbrev_number = read_unsigned_leb128 (abbrev_ptr,
 							 &bytes_read);
       if (abbrev_number == 0)
 	break;
@@ -109,7 +108,7 @@ abbrev_table::read (struct dwarf2_section_info *section,
       /* Read in abbrev header.  */
       cur_abbrev->number = abbrev_number;
       cur_abbrev->tag
-	= (enum dwarf_tag) read_unsigned_leb128 (abfd, abbrev_ptr,
+	= (enum dwarf_tag) read_unsigned_leb128 (abbrev_ptr,
 						 &bytes_read);
       abbrev_ptr += bytes_read;
       cur_abbrev->has_children = read_1_byte (abbrev_ptr);
@@ -122,16 +121,16 @@ abbrev_table::read (struct dwarf2_section_info *section,
 	  struct attr_abbrev cur_attr;
 
 	  cur_attr.name
-	    = (enum dwarf_attribute) read_unsigned_leb128 (abfd, abbrev_ptr,
+	    = (enum dwarf_attribute) read_unsigned_leb128 (abbrev_ptr,
 							   &bytes_read);
 	  abbrev_ptr += bytes_read;
 	  cur_attr.form
-	    = (enum dwarf_form) read_unsigned_leb128 (abfd, abbrev_ptr,
+	    = (enum dwarf_form) read_unsigned_leb128 (abbrev_ptr,
 						      &bytes_read);
 	  abbrev_ptr += bytes_read;
 	  if (cur_attr.form == DW_FORM_implicit_const)
 	    {
-	      cur_attr.implicit_const = read_signed_leb128 (abfd, abbrev_ptr,
+	      cur_attr.implicit_const = read_signed_leb128 (abbrev_ptr,
 							    &bytes_read);
 	      abbrev_ptr += bytes_read;
 	    }

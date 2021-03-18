@@ -78,9 +78,9 @@ read_8_bytes (bfd *abfd, const gdb_byte *buf)
   return bfd_get_64 (abfd, buf);
 }
 
-extern LONGEST read_signed_leb128 (bfd *, const gdb_byte *, unsigned int *);
+extern LONGEST read_signed_leb128 (const gdb_byte *, unsigned int *);
 
-extern ULONGEST read_unsigned_leb128 (bfd *, const gdb_byte *, unsigned int *);
+extern ULONGEST read_unsigned_leb128 (const gdb_byte *, unsigned int *);
 
 /* Read the initial length from a section.  The (draft) DWARF 3
    specification allows the initial length to take up either 4 bytes
