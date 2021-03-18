@@ -112,7 +112,7 @@ abbrev_table::read (struct dwarf2_section_info *section,
 	= (enum dwarf_tag) read_unsigned_leb128 (abfd, abbrev_ptr,
 						 &bytes_read);
       abbrev_ptr += bytes_read;
-      cur_abbrev->has_children = read_1_byte (abfd, abbrev_ptr);
+      cur_abbrev->has_children = read_1_byte (abbrev_ptr);
       abbrev_ptr += 1;
 
       /* Now read in declarations.  */

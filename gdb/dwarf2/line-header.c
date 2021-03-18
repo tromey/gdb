@@ -169,7 +169,7 @@ read_formatted_entries (dwarf2_per_objfile *per_objfile, bfd *abfd,
   const gdb_byte *format_header_data;
   unsigned int bytes_read;
 
-  format_count = read_1_byte (abfd, buf);
+  format_count = read_1_byte (buf);
   buf += 1;
   format_header_data = buf;
   for (formati = 0; formati < format_count; formati++)
@@ -212,7 +212,7 @@ read_formatted_entries (dwarf2_per_objfile *per_objfile, bfd *abfd,
 	      break;
 
 	    case DW_FORM_data1:
-	      uint.emplace (read_1_byte (abfd, buf));
+	      uint.emplace (read_1_byte (buf));
 	      buf += 1;
 	      break;
 
@@ -337,10 +337,10 @@ dwarf_decode_line_header  (sect_offset sect_off, bool is_dwz,
       gdb_byte segment_selector_size;
 
       /* Skip address size.  */
-      read_1_byte (abfd, line_ptr);
+      read_1_byte (line_ptr);
       line_ptr += 1;
 
-      segment_selector_size = read_1_byte (abfd, line_ptr);
+      segment_selector_size = read_1_byte (line_ptr);
       line_ptr += 1;
       if (segment_selector_size != 0)
 	{
@@ -353,11 +353,11 @@ dwarf_decode_line_header  (sect_offset sect_off, bool is_dwz,
   lh->header_length = read_offset (abfd, line_ptr, offset_size);
   line_ptr += offset_size;
   lh->statement_program_start = line_ptr + lh->header_length;
-  lh->minimum_instruction_length = read_1_byte (abfd, line_ptr);
+  lh->minimum_instruction_length = read_1_byte (line_ptr);
   line_ptr += 1;
   if (lh->version >= 4)
     {
-      lh->maximum_ops_per_instruction = read_1_byte (abfd, line_ptr);
+      lh->maximum_ops_per_instruction = read_1_byte (line_ptr);
       line_ptr += 1;
     }
   else
@@ -370,20 +370,20 @@ dwarf_decode_line_header  (sect_offset sect_off, bool is_dwz,
 		   "in `.debug_line' section"));
     }
 
-  lh->default_is_stmt = read_1_byte (abfd, line_ptr);
+  lh->default_is_stmt = read_1_byte (line_ptr);
   line_ptr += 1;
-  lh->line_base = read_1_signed_byte (abfd, line_ptr);
+  lh->line_base = read_1_signed_byte (line_ptr);
   line_ptr += 1;
-  lh->line_range = read_1_byte (abfd, line_ptr);
+  lh->line_range = read_1_byte (line_ptr);
   line_ptr += 1;
-  lh->opcode_base = read_1_byte (abfd, line_ptr);
+  lh->opcode_base = read_1_byte (line_ptr);
   line_ptr += 1;
   lh->standard_opcode_lengths.reset (new unsigned char[lh->opcode_base]);
 
   lh->standard_opcode_lengths[0] = 1;  /* This should never be used anyway.  */
   for (i = 1; i < lh->opcode_base; ++i)
     {
-      lh->standard_opcode_lengths[i] = read_1_byte (abfd, line_ptr);
+      lh->standard_opcode_lengths[i] = read_1_byte (line_ptr);
       line_ptr += 1;
     }
 

@@ -30,15 +30,15 @@
 /* Read dwarf information from a buffer.  */
 
 static inline unsigned int
-read_1_byte (bfd *abfd, const gdb_byte *buf)
+read_1_byte (const gdb_byte *buf)
 {
-  return bfd_get_8 (abfd, buf);
+  return *buf;
 }
 
 static inline int
-read_1_signed_byte (bfd *abfd, const gdb_byte *buf)
+read_1_signed_byte (const gdb_byte *buf)
 {
-  return bfd_get_signed_8 (abfd, buf);
+  return (((int) *buf) ^ 0x80) - 0x80;
 }
 
 static inline unsigned int

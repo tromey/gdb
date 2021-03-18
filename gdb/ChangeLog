@@ -1,3 +1,7 @@
+2021-03-18  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2/abbrev.c (abbrev_table::read): Update.
+
 2021-03-18  Tom Tromey  <tromey@adacore.com>
 
 	* dwarf2/stringify.c (dwarf_unit_type_name): New function.  Use

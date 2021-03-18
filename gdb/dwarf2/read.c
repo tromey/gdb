@@ -8858,7 +8858,7 @@ skip_one_die (const struct die_reader_specs *reader, const gdb_byte *info_ptr,
 	  info_ptr += bytes_read;
 	  break;
 	case DW_FORM_block1:
-	  info_ptr += 1 + read_1_byte (abfd, info_ptr);
+	  info_ptr += 1 + read_1_byte (info_ptr);
 	  break;
 	case DW_FORM_block2:
 	  info_ptr += 2 + read_2_bytes (abfd, info_ptr);
@@ -20117,10 +20117,10 @@ read_loclists_rnglists_header (struct loclists_rnglists_header *header,
   header->version = read_2_bytes (abfd, info_ptr);
   info_ptr += 2;
 
-  header->addr_size = read_1_byte (abfd, info_ptr);
+  header->addr_size = read_1_byte (info_ptr);
   info_ptr += 1;
 
-  header->segment_collector_size = read_1_byte (abfd, info_ptr);
+  header->segment_collector_size = read_1_byte (info_ptr);
   info_ptr += 1;
 
   header->offset_entry_count = read_4_bytes (abfd, info_ptr);
@@ -20461,7 +20461,7 @@ read_attribute_value (const struct die_reader_specs *reader,
       break;
     case DW_FORM_block1:
       blk = dwarf_alloc_block (cu);
-      blk->size = read_1_byte (abfd, info_ptr);
+      blk->size = read_1_byte (info_ptr);
       info_ptr += 1;
       blk->data = read_n_bytes (abfd, info_ptr, blk->size);
       info_ptr += blk->size;
@@ -20469,7 +20469,7 @@ read_attribute_value (const struct die_reader_specs *reader,
       break;
     case DW_FORM_data1:
     case DW_FORM_flag:
-      attr->set_unsigned (read_1_byte (abfd, info_ptr));
+      attr->set_unsigned (read_1_byte (info_ptr));
       info_ptr += 1;
       break;
     case DW_FORM_flag_present:
@@ -20492,7 +20492,7 @@ read_attribute_value (const struct die_reader_specs *reader,
       break;
     case DW_FORM_ref1:
       attr->set_unsigned ((to_underlying (cu_header->sect_off)
-			   + read_1_byte (abfd, info_ptr)));
+			   + read_1_byte (info_ptr)));
       info_ptr += 1;
       break;
     case DW_FORM_ref2:
@@ -20550,7 +20550,7 @@ read_attribute_value (const struct die_reader_specs *reader,
 	ULONGEST str_index;
 	if (form == DW_FORM_strx1)
 	  {
-	    str_index = read_1_byte (abfd, info_ptr);
+	    str_index = read_1_byte (info_ptr);
 	    info_ptr += 1;
 	  }
 	else if (form == DW_FORM_strx2)
@@ -21641,7 +21641,7 @@ dwarf_decode_lines_1 (struct line_header *lh, struct dwarf2_cu *cu,
       /* Decode the table.  */
       while (line_ptr < line_end && !end_sequence)
 	{
-	  op_code = read_1_byte (abfd, line_ptr);
+	  op_code = read_1_byte (line_ptr);
 	  line_ptr += 1;
 
 	  if (op_code >= lh->opcode_base)
@@ -21656,7 +21656,7 @@ dwarf_decode_lines_1 (struct line_header *lh, struct dwarf2_cu *cu,
 						   &bytes_read);
 	      line_ptr += bytes_read;
 	      extended_end = line_ptr + extended_len;
-	      extended_op = read_1_byte (abfd, line_ptr);
+	      extended_op = read_1_byte (line_ptr);
 	      line_ptr += 1;
 	      if (DW_LNE_lo_user <= extended_op
 		  && extended_op <= DW_LNE_hi_user)
@@ -24371,12 +24371,12 @@ decode_locdesc (struct dwarf_block *blk, struct dwarf2_cu *cu, bool *computed)
 	  break;
 
 	case DW_OP_const1u:
-	  stack[++stacki] = read_1_byte (objfile->obfd, &data[i]);
+	  stack[++stacki] = read_1_byte (&data[i]);
 	  i += 1;
 	  break;
 
 	case DW_OP_const1s:
-	  stack[++stacki] = read_1_signed_byte (objfile->obfd, &data[i]);
+	  stack[++stacki] = read_1_signed_byte (&data[i]);
 	  i += 1;
 	  break;
 

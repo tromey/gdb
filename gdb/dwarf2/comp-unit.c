@@ -70,7 +70,7 @@ read_comp_unit_head (struct comp_unit_head *cu_header,
   else
     {
       cu_header->unit_type = static_cast<enum dwarf_unit_type>
-						 (read_1_byte (abfd, info_ptr));
+						 (read_1_byte (info_ptr));
       info_ptr += 1;
       switch (cu_header->unit_type)
 	{
@@ -99,7 +99,7 @@ read_comp_unit_head (struct comp_unit_head *cu_header,
 		 dwarf_unit_type_name (DW_UT_split_type), filename);
 	}
 
-      cu_header->addr_size = read_1_byte (abfd, info_ptr);
+      cu_header->addr_size = read_1_byte (info_ptr);
       info_ptr += 1;
     }
   cu_header->abbrev_sect_off
@@ -107,7 +107,7 @@ read_comp_unit_head (struct comp_unit_head *cu_header,
   info_ptr += bytes_read;
   if (cu_header->version < 5)
     {
-      cu_header->addr_size = read_1_byte (abfd, info_ptr);
+      cu_header->addr_size = read_1_byte (info_ptr);
       info_ptr += 1;
     }
   signed_addr = bfd_get_sign_extend_vma (abfd);

@@ -275,7 +275,7 @@ skip_form_bytes (bfd *abfd, const gdb_byte *bytes, const gdb_byte *buffer_end,
       break;
 
     case DW_FORM_block1:
-      bytes += 1 + read_1_byte (abfd, bytes);
+      bytes += 1 + read_1_byte (bytes);
       break;
     case DW_FORM_block2:
       bytes += 2 + read_2_bytes (abfd, bytes);
@@ -381,7 +381,7 @@ dwarf_parse_macro_header (const gdb_byte **opcode_definitions,
 	}
       mac_ptr += 2;
 
-      flags = read_1_byte (abfd, mac_ptr);
+      flags = read_1_byte (mac_ptr);
       ++mac_ptr;
       *offset_size = (flags & 1) ? 8 : 4;
 
@@ -394,14 +394,14 @@ dwarf_parse_macro_header (const gdb_byte **opcode_definitions,
 	{
 	  unsigned int i, count;
 
-	  count = read_1_byte (abfd, mac_ptr);
+	  count = read_1_byte (mac_ptr);
 	  ++mac_ptr;
 	  for (i = 0; i < count; ++i)
 	    {
 	      unsigned int opcode, bytes_read;
 	      unsigned long arg;
 
-	      opcode = read_1_byte (abfd, mac_ptr);
+	      opcode = read_1_byte (mac_ptr);
 	      ++mac_ptr;
 	      opcode_definitions[opcode] = mac_ptr;
 	      arg = read_unsigned_leb128 (abfd, mac_ptr, &bytes_read);
@@ -463,7 +463,7 @@ dwarf_decode_macro_bytes (dwarf2_per_objfile *per_objfile,
 	  break;
 	}
 
-      macinfo_type = (enum dwarf_macro_record_type) read_1_byte (abfd, mac_ptr);
+      macinfo_type = (enum dwarf_macro_record_type) read_1_byte (mac_ptr);
       mac_ptr++;
 
       /* Note that we rely on the fact that the corresponding GNU and
@@ -667,8 +667,7 @@ dwarf_decode_macro_bytes (dwarf2_per_objfile *per_objfile,
 		  /* We don't increment mac_ptr here, so this is just
 		     a look-ahead.  */
 		  next_type
-		    = (enum dwarf_macro_record_type) read_1_byte (abfd,
-								  mac_ptr);
+		    = (enum dwarf_macro_record_type) read_1_byte (mac_ptr);
 		  if (next_type != 0)
 		    complaint (_("no terminating 0-type entry for "
 				 "macros in `.debug_macinfo' section"));
@@ -811,7 +810,7 @@ dwarf_decode_macros (dwarf2_per_objfile *per_objfile,
 	  break;
 	}
 
-      macinfo_type = (enum dwarf_macro_record_type) read_1_byte (abfd, mac_ptr);
+      macinfo_type = (enum dwarf_macro_record_type) read_1_byte (mac_ptr);
       mac_ptr++;
 
       /* Note that we rely on the fact that the corresponding GNU and

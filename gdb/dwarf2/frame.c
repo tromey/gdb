@@ -1819,7 +1819,7 @@ decode_frame_entry_1 (struct gdbarch *gdbarch,
       cie->signal_frame = 0;
 
       /* Check version number.  */
-      cie_version = read_1_byte (unit->abfd, buf);
+      cie_version = read_1_byte (buf);
       if (cie_version != 1 && cie_version != 3 && cie_version != 4)
 	return NULL;
       cie->version = cie_version;
@@ -1847,9 +1847,9 @@ decode_frame_entry_1 (struct gdbarch *gdbarch,
       if (cie->version >= 4)
 	{
 	  /* FIXME: check that this is the same as from the CU header.  */
-	  cie->addr_size = read_1_byte (unit->abfd, buf);
+	  cie->addr_size = read_1_byte (buf);
 	  ++buf;
-	  cie->segment_size = read_1_byte (unit->abfd, buf);
+	  cie->segment_size = read_1_byte (buf);
 	  ++buf;
 	}
       else
@@ -1878,7 +1878,7 @@ decode_frame_entry_1 (struct gdbarch *gdbarch,
 
       if (cie_version == 1)
 	{
-	  cie->return_address_register = read_1_byte (unit->abfd, buf);
+	  cie->return_address_register = read_1_byte (buf);
 	  ++buf;
 	}
       else
