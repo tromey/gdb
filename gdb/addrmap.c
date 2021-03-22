@@ -390,10 +390,16 @@ addrmap_mutable_set_empty (struct addrmap *self,
 static void *
 addrmap_mutable_find (struct addrmap *self, CORE_ADDR addr)
 {
-  /* Not needed yet.  */
-  internal_error (__FILE__, __LINE__,
-		  _("addrmap_find is not implemented yet "
-		    "for mutable addrmaps"));
+  struct addrmap_mutable *map = (struct addrmap_mutable *) self;
+  splay_tree_node n = addrmap_splay_tree_lookup (map, addr);
+
+  if (n == nullptr)
+    n = addrmap_splay_tree_predecessor (map, addr);
+
+  if (n == nullptr)
+    return nullptr;
+
+  return addrmap_node_value (n);
 }
 
 
