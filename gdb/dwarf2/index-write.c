@@ -133,6 +133,12 @@ public:
     ::store_unsigned_integer (grow (len), len, byte_order, val);
   }
 
+  /* Append the contents of BUF.  */
+  void append (const data_buf &buf)
+  {
+    std::copy (buf.data.begin (), buf.data.end (), grow (buf.data.size ()));
+  }
+
   /* Return the size of the buffer.  */
   size_t size () const
   {
