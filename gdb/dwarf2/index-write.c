@@ -103,6 +103,15 @@ public:
 	       grow (sizeof (data)));
   }
 
+  /* Copy the data from VEC to the end of the buffer.  */
+  template<typename T, typename U>
+  void append_vector (const std::vector<T, U> &data)
+  {
+    size_t bytes = data.size () * sizeof (T);
+    const gdb_byte *ptr = (const gdb_byte *) &data[0];
+    memcpy (grow (bytes), ptr, bytes);
+  }
+
   /* Copy CSTR (a zero-terminated string) to the end of buffer.  The
      terminating zero is appended too.  */
   void append_cstr0 (const char *cstr)
@@ -136,7 +145,7 @@ public:
   /* Append the contents of BUF.  */
   void append (const data_buf &buf)
   {
-    std::copy (buf.data.begin (), buf.data.end (), grow (buf.data.size ()));
+    append_vector (buf.m_vec);
   }
 
   /* Return the size of the buffer.  */
@@ -149,6 +158,12 @@ public:
   bool empty () const
   {
     return m_vec.empty ();
+  }
+
+  /* Return the buffer.  */
+  const gdb::byte_vector &data () const
+  {
+    return m_vec;
   }
 
   /* Write the buffer to FILE.  */
@@ -932,20 +947,23 @@ public:
     return expected_bytes;
   }
 
-  /* Write .debug_names to FILE_NAMES and .debug_str addition to
-     FILE_STR.  This must be called only after calling the build
-     method.  */
-  void file_write (FILE *file_names, FILE *file_str) const
+  /* Append final .debug_names contents to BUF.  */
+  void append_to (data_buf &buf)
   {
     /* Verify the build method has been already called.  */
     gdb_assert (!m_abbrev_table.empty ());
-    ::file_write (file_names, m_bucket_table);
-    ::file_write (file_names, m_hash_table);
-    m_name_table_string_offs.file_write (file_names);
-    m_name_table_entry_offs.file_write (file_names);
-    m_abbrev_table.file_write (file_names);
-    m_entry_pool.file_write (file_names);
-    m_debugstrlookup.file_write (file_str);
+    buf.append_vector (m_bucket_table);
+    buf.append_vector (m_hash_table);
+    m_name_table_string_offs.append_to (buf);
+    m_name_table_entry_offs.append_to (buf);
+    buf.append (m_abbrev_table);
+    buf.append (m_entry_pool);
+  }
+
+  /* Return the buffer holding the additional strings.  */
+  const data_buf &get_strings () const
+  {
+    return m_debugstrlookup.get_strings ();
   }
 
   /* A helper user data for write_one_signatured_type.  */
@@ -1022,10 +1040,10 @@ private:
       return offset;
     }
 
-    /* Append the end of the .debug_str section to FILE.  */
-    void file_write (FILE *file) const
+    /* Return the buffer holding the additional strings.  */
+    const data_buf &get_strings () const
     {
-      m_str_add_buf.file_write (file);
+      return m_str_add_buf;
     }
 
   private:
@@ -1126,8 +1144,8 @@ private:
     /* Return expected output size in bytes.  */
     virtual size_t bytes () const = 0;
 
-    /* Write name table to FILE.  */
-    virtual void file_write (FILE *file) const = 0;
+    /* Write name table to BUF.  */
+    virtual void append_to (data_buf &buf) const = 0;
   };
 
   /* Template to unify DWARF-32 and DWARF-64 output.  */
@@ -1161,10 +1179,10 @@ private:
       return m_vec.size () * sizeof (m_vec[0]);
     }
 
-    /* Implement offset_vec::file_write.  */
-    void file_write (FILE *file) const override
+    /* Implement offset_vec::append_to.  */
+    void append_to (data_buf &buf) const override
     {
-      ::file_write (file, m_vec);
+      buf.append_vector (m_vec);
     }
 
   private:
@@ -1502,13 +1520,49 @@ write_gdbindex (dwarf2_per_objfile *per_objfile, FILE *out_file,
 /* DWARF-5 augmentation string for GDB's DW_IDX_GNU_* extension.  */
 static const gdb_byte dwarf5_gdb_augmentation[] = { 'G', 'D', 'B', 0 };
 
-/* Write a new .debug_names section for OBJFILE into OUT_FILE, write
-   needed addition to .debug_str section to OUT_FILE_STR.  Return how
-   many bytes were expected to be written into OUT_FILE.  */
+/* Throw an exception on BFD failure.  */
 
 static void
-write_debug_names (dwarf2_per_objfile *per_objfile,
-		   FILE *out_file, FILE *out_file_str)
+bfd_failure ()
+{
+  error (_("Error writing index: %s"), bfd_errmsg (bfd_get_error ()));
+}
+
+/* Create a section named NAME with enough size to hold BUF.  */
+
+static asection *
+add_section (bfd *out_bfd, const char *name, const data_buf &buf,
+	     int flags = 0)
+{
+  asection *sect = bfd_make_section_with_flags (out_bfd, name,
+						(flags
+						 | SEC_READONLY
+						 | SEC_DATA
+						 | SEC_HAS_CONTENTS
+						 | SEC_DEBUGGING
+						 | SEC_LINKER_CREATED));
+  if (sect == nullptr)
+    bfd_failure ();
+  if (!bfd_set_section_size (sect, buf.size ()))
+    bfd_failure ();
+  return sect;
+}
+
+/* Set the contents of SECTION to BUF.  */
+
+static void
+write_section (bfd *out_bfd, asection *section, const data_buf &buf)
+{
+  if (!bfd_set_section_contents (out_bfd, section, buf.data ().data (),
+				 0, buf.size ()))
+    bfd_failure ();
+}
+
+/* Write a new .debug_names section for OBJFILE into OUT_BFD, write
+   needed addition to .debug_str section there as well.  */
+
+static void
+write_debug_names (dwarf2_per_objfile *per_objfile, bfd *out_bfd)
 {
   const bool dwarf5_is_dwarf64 = check_dwarf64_offsets (per_objfile);
   struct objfile *objfile = per_objfile->objfile;
@@ -1621,12 +1675,16 @@ write_debug_names (dwarf2_per_objfile *per_objfile,
 
   gdb_assert (header.size () == bytes_of_header);
 
-  header.file_write (out_file);
-  cu_list.file_write (out_file);
-  types_cu_list.file_write (out_file);
-  nametable.file_write (out_file, out_file_str);
+  header.append (cu_list);
+  header.append (types_cu_list);
+  nametable.append_to (header);
 
-  assert_file_size (out_file, expected_bytes);
+  asection *names = add_section (out_bfd, ".debug_names", header);
+  asection *strs = add_section (out_bfd, ".debug_str",
+				nametable.get_strings (),
+				SEC_STRINGS);
+  write_section (out_bfd, names, header);
+  write_section (out_bfd, strs, nametable.get_strings ());
 }
 
 /* This represents an index file being written (work-in-progress).
@@ -1660,13 +1718,24 @@ struct index_wip_file
     unlink_file.emplace (filename_temp.data ());
   }
 
+  /* Create a BFD wrapping the file.  */
+  bfd *get_bfd (bfd *in_bfd)
+  {
+    bfd *result = bfd_fopen (filename_temp.data (), bfd_get_target (in_bfd),
+			     "w", fileno (out_file.get ()));
+    out_bfd = gdb_bfd_ref_ptr::new_reference (result);
+    return result;
+  }
+
   void finalize ()
   {
     /* We want to keep the file.  */
     unlink_file->keep ();
 
-    /* Close and move the str file in place.  */
-    unlink_file.reset ();
+    /* Close the BFD.  */
+    out_bfd.reset (nullptr);
+
+    /* Close and move the file into place.  */
     if (rename (filename_temp.data (), filename.c_str ()) != 0)
       perror_with_name (("rename"));
   }
@@ -1681,6 +1750,8 @@ struct index_wip_file
   gdb::optional<gdb::unlinker> unlink_file;
 
   gdb_file_up out_file;
+
+  gdb_bfd_ref_ptr out_bfd;
 };
 
 /* See dwarf-index-write.h.  */
@@ -1714,16 +1785,19 @@ write_psymtabs_to_index (dwarf2_per_objfile *per_objfile, const char *dir,
   gdb::optional<index_wip_file> dwz_index_wip;
 
   if (dwz_basename != NULL)
-      dwz_index_wip.emplace (dir, dwz_basename, index_suffix);
+    dwz_index_wip.emplace (dir, dwz_basename, index_suffix);
 
   if (index_kind == dw_index_kind::DEBUG_NAMES)
     {
-      index_wip_file str_wip_file (dir, basename, DEBUG_STR_SUFFIX);
+      bfd *in_bfd = per_objfile->per_bfd->obfd;
+      bfd *out_bfd = objfile_index_wip.get_bfd (in_bfd);
+      if (out_bfd == nullptr
+	  || !bfd_set_format (out_bfd, bfd_get_format (in_bfd))
+	  || !bfd_set_arch_mach (out_bfd, bfd_get_arch (in_bfd),
+				 bfd_get_mach (in_bfd)))
+	bfd_failure ();
 
-      write_debug_names (per_objfile, objfile_index_wip.out_file.get (),
-			 str_wip_file.out_file.get ());
-
-      str_wip_file.finalize ();
+      write_debug_names (per_objfile, out_bfd);
     }
   else
     write_gdbindex (per_objfile, objfile_index_wip.out_file.get (),
@@ -1792,8 +1866,7 @@ save_gdb_index_command (const char *arg, int from_tty)
 				 _("Error while writing index for `%s': "),
 				 objfile_name (objfile));
 	    }
-	    }
-
+	}
     }
 }
 
