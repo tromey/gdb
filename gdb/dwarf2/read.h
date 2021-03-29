@@ -24,6 +24,7 @@
 #include <unordered_map>
 #include "dwarf2/comp-unit.h"
 #include "dwarf2/index-cache.h"
+#include "dwarf2/mapped-index.h"
 #include "dwarf2/section.h"
 #include "filename-seen-cache.h"
 #include "gdb_obstack.h"
