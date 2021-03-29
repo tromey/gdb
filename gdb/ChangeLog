@@ -1,5 +1,17 @@
 2021-03-29  Tom Tromey  <tom@tromey.com>
 
+	* dwarf2/read.c (struct mapped_index, struct mapped_debug_names):
+	Declare make_quick_functions method.
+	(mapped_index::make_quick_functions)
+	(mapped_debug_names::make_quick_functions): New methods.
+	(class mock_mapped_index): Add make_quick_functions method.
+	(dwarf2_initialize_objfile): Call make_quick_functions.
+	(make_dwarf_debug_names): Remove.
+	* dwarf2/mapped-index.h (struct mapped_index_base)
+	<make_quick_functions>: New virtual method.
+
+2021-03-29  Tom Tromey  <tom@tromey.com>
+
 	* dwarf2/mapped-index.h (struct mapped_index_base)
 	<~mapped_index_base>: Now virtual and public.
 
