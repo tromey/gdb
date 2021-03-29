@@ -1,5 +1,10 @@
 2021-03-29  Tom Tromey  <tom@tromey.com>
 
+	* dwarf2/mapped-index.h (struct mapped_index_base)
+	<~mapped_index_base>: Now virtual and public.
+
+2021-03-29  Tom Tromey  <tom@tromey.com>
+
 	* dwarf2/read.h: Include mapped-index.h.
 	* dwarf2/read.c (struct name_component)
 	(struct mapped_index_base): Move to mapped-index.h.
