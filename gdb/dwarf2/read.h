@@ -481,6 +481,10 @@ struct dwarf2_per_cu_data
      it private at the moment.  */
   mutable bool m_header_read_in : 1;
 
+  /* A temporary mark bit used when iterating over all CUs in
+     expand_symtabs_matching.  */
+  unsigned int mark : 1;
+
   /* Our index in the unshared "symtabs" vector.  */
   unsigned index;
 
@@ -507,7 +511,7 @@ struct dwarf2_per_cu_data
      should be private, but we can't make it private at the moment.  */
   mutable comp_unit_head m_header;
 
-  /* When dwarf2_per_bfd::using_index is true, the 'quick' field
+  /* When dwarf2_per_bfd::using_index is true, the 'file_names' field
      is active.  Otherwise, the 'psymtab' field is active.  */
   union
   {
@@ -515,8 +519,12 @@ struct dwarf2_per_cu_data
        or NULL for unread partial units.  */
     dwarf2_psymtab *psymtab;
 
-    /* Data needed by the "quick" functions.  */
-    struct dwarf2_per_cu_quick_data *quick;
+    /* The file table.  This can be NULL if there was no file table or
+       it's currently not read in.  If it points to the
+       quick_file_names_sentinel, then we've tried to read in the file
+       names, but they weren't found.  NOTE: This points into
+       dwarf2_per_objfile->per_bfd->quick_file_names_table.  */
+    struct quick_file_names *file_names;
   } v;
 
   /* The CUs we import using DW_TAG_imported_unit.  This is filled in

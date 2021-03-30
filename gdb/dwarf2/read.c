@@ -2109,24 +2109,11 @@ struct quick_file_names
   const char **real_names;
 };
 
-/* When using the index (and thus not using psymtabs), each CU has an
-   object of this type.  This is used to hold information needed by
-   the various "quick" methods.  */
-struct dwarf2_per_cu_quick_data
-{
-  /* The file table.  This can be NULL if there was no file table
-     or it's currently not read in.
-     NOTE: This points into dwarf2_per_objfile->per_bfd->quick_file_names_table.  */
-  struct quick_file_names *file_names;
+/* A sentinel value for quick_file_names that is used to indicate that
+   we've tried to read the file table and found there isn't one.
+   There will be no point in trying to read it again next time.  */
 
-  /* A temporary mark bit used when iterating over all CUs in
-     expand_symtabs_matching.  */
-  unsigned int mark : 1;
-
-  /* True if we've tried to read the file table and found there isn't one.
-     There will be no point in trying to read it again next time.  */
-  unsigned int no_file_data : 1;
-};
+static quick_file_names quick_file_names_sentinel;
 
 /* A subclass of psymbol_functions that arranges to read the DWARF
    partial symbols when needed.  */
@@ -2548,8 +2535,6 @@ create_cu_from_index_list (dwarf2_per_bfd *per_bfd,
   the_cu->sect_off = sect_off;
   the_cu->length = length;
   the_cu->section = section;
-  the_cu->v.quick = OBSTACK_ZALLOC (&per_bfd->obstack,
-				    struct dwarf2_per_cu_quick_data);
   the_cu->is_dwz = is_dwz;
   return the_cu;
 }
@@ -2635,9 +2620,6 @@ create_signatured_type_table_from_index
       sig_type->per_cu.is_debug_types = 1;
       sig_type->per_cu.section = section;
       sig_type->per_cu.sect_off = sect_off;
-      sig_type->per_cu.v.quick
-	= OBSTACK_ZALLOC (&per_bfd->obstack,
-			  struct dwarf2_per_cu_quick_data);
 
       slot = htab_find_slot (sig_types_hash.get (), sig_type, INSERT);
       *slot = sig_type;
@@ -2690,9 +2672,6 @@ create_signatured_type_table_from_debug_names
       sig_type->per_cu.is_debug_types = 1;
       sig_type->per_cu.section = section;
       sig_type->per_cu.sect_off = sect_off;
-      sig_type->per_cu.v.quick
-	= OBSTACK_ZALLOC (&per_objfile->per_bfd->obstack,
-			  struct dwarf2_per_cu_quick_data);
 
       slot = htab_find_slot (sig_types_hash.get (), sig_type, INSERT);
       *slot = sig_type;
@@ -3213,7 +3192,7 @@ dw2_get_file_names_reader (const struct die_reader_specs *reader,
      will match the enclosing full CU.  */
   if (comp_unit_die->tag == DW_TAG_partial_unit)
     {
-      this_cu->v.quick->no_file_data = 1;
+      this_cu->v.file_names = &quick_file_names_sentinel;
       return;
     }
 
@@ -3238,7 +3217,7 @@ dw2_get_file_names_reader (const struct die_reader_specs *reader,
 			     &find_entry, INSERT);
       if (*slot != NULL)
 	{
-	  lh_cu->v.quick->file_names = (struct quick_file_names *) *slot;
+	  lh_cu->v.file_names = (struct quick_file_names *) *slot;
 	  return;
 	}
 
@@ -3246,7 +3225,7 @@ dw2_get_file_names_reader (const struct die_reader_specs *reader,
     }
   if (lh == NULL)
     {
-      lh_cu->v.quick->no_file_data = 1;
+      lh_cu->v.file_names = &quick_file_names_sentinel;
       return;
     }
 
@@ -3273,7 +3252,7 @@ dw2_get_file_names_reader (const struct die_reader_specs *reader,
 						      fnd.comp_dir).release ();
   qfn->real_names = NULL;
 
-  lh_cu->v.quick->file_names = qfn;
+  lh_cu->v.file_names = qfn;
 }
 
 /* A helper for the "quick" functions which attempts to read the line
@@ -3288,19 +3267,17 @@ dw2_get_file_names (dwarf2_per_cu_data *this_cu,
   /* Nor type unit groups.  */
   gdb_assert (! this_cu->type_unit_group_p ());
 
-  if (this_cu->v.quick->file_names != NULL)
-    return this_cu->v.quick->file_names;
   /* If we know there is no line data, no point in looking again.  */
-  if (this_cu->v.quick->no_file_data)
-    return NULL;
+  if (this_cu->v.file_names == NULL)
+    {
+      cutu_reader reader (this_cu, per_objfile);
+      if (!reader.dummy_p)
+	dw2_get_file_names_reader (&reader, reader.comp_unit_die);
+    }
 
-  cutu_reader reader (this_cu, per_objfile);
-  if (!reader.dummy_p)
-    dw2_get_file_names_reader (&reader, reader.comp_unit_die);
-
-  if (this_cu->v.quick->no_file_data)
+  if (this_cu->v.file_names == &quick_file_names_sentinel)
     return NULL;
-  return this_cu->v.quick->file_names;
+  return this_cu->v.file_names;
 }
 
 /* A helper for the "quick" functions which computes and caches the
@@ -4637,7 +4614,7 @@ dw2_expand_symtabs_matching_one
    gdb::function_view<expand_symtabs_file_matcher_ftype> file_matcher,
    gdb::function_view<expand_symtabs_exp_notify_ftype> expansion_notify)
 {
-  if (file_matcher == NULL || per_cu->v.quick->mark)
+  if (file_matcher == NULL || per_cu->mark)
     {
       bool symtab_was_null = !per_objfile->symtab_set_p (per_cu);
 
@@ -4762,7 +4739,7 @@ dw_expand_symtabs_matching_file_matcher
     {
       QUIT;
 
-      per_cu->v.quick->mark = 0;
+      per_cu->mark = 0;
 
       /* We only need to look at symtabs not already expanded.  */
       if (per_objfile->symtab_set_p (per_cu))
@@ -4776,7 +4753,7 @@ dw_expand_symtabs_matching_file_matcher
 	continue;
       else if (htab_find (visited_found.get (), file_data) != NULL)
 	{
-	  per_cu->v.quick->mark = 1;
+	  per_cu->mark = 1;
 	  continue;
 	}
 
@@ -4786,7 +4763,7 @@ dw_expand_symtabs_matching_file_matcher
 
 	  if (file_matcher (file_data->file_names[j], false))
 	    {
-	      per_cu->v.quick->mark = 1;
+	      per_cu->mark = 1;
 	      break;
 	    }
 
@@ -4800,12 +4777,12 @@ dw_expand_symtabs_matching_file_matcher
 	  this_real_name = dw2_get_real_path (per_objfile, file_data, j);
 	  if (file_matcher (this_real_name, false))
 	    {
-	      per_cu->v.quick->mark = 1;
+	      per_cu->mark = 1;
 	      break;
 	    }
 	}
 
-      void **slot = htab_find_slot (per_cu->v.quick->mark
+      void **slot = htab_find_slot (per_cu->mark
 				    ? visited_found.get ()
 				    : visited_not_found.get (),
 				    file_data, INSERT);
@@ -4936,10 +4913,10 @@ dwarf2_base_index_functions::map_symbol_filenames
 	  if (per_objfile->symtab_set_p (per_cu))
 	    {
 	      void **slot = htab_find_slot (visited.get (),
-					    per_cu->v.quick->file_names,
+					    per_cu->v.file_names,
 					    INSERT);
 
-	      *slot = per_cu->v.quick->file_names;
+	      *slot = per_cu->v.file_names;
 	    }
 	}
 
@@ -5968,15 +5945,6 @@ dwarf2_initialize_objfile (struct objfile *objfile)
 	= create_quick_file_names_table (per_bfd->all_comp_units.size ());
       per_objfile->resize_symtabs ();
 
-      for (int i = 0; i < (per_bfd->all_comp_units.size ()
-			   + per_bfd->all_type_units.size ()); ++i)
-	{
-	  dwarf2_per_cu_data *per_cu = per_bfd->get_cutu (i);
-
-	  per_cu->v.quick = OBSTACK_ZALLOC (&per_bfd->obstack,
-					    struct dwarf2_per_cu_quick_data);
-	}
-
       objfile->qf.emplace_front (new readnow_functions);
       return;
     }
@@ -6535,12 +6503,6 @@ add_type_unit (dwarf2_per_objfile *per_objfile, ULONGEST sig, void **slot)
   per_objfile->per_bfd->all_type_units.push_back (sig_type);
   sig_type->signature = sig;
   sig_type->per_cu.is_debug_types = 1;
-  if (per_objfile->per_bfd->using_index)
-    {
-      sig_type->per_cu.v.quick =
-	OBSTACK_ZALLOC (&per_objfile->per_bfd->obstack,
-			struct dwarf2_per_cu_quick_data);
-    }
 
   if (slot == NULL)
     {
@@ -6567,12 +6529,9 @@ fill_in_sig_entry_from_dwo_entry (dwarf2_per_objfile *per_objfile,
   gdb_assert (! sig_entry->per_cu.queued);
   gdb_assert (per_objfile->get_cu (&sig_entry->per_cu) == NULL);
   if (per_bfd->using_index)
-    {
-      gdb_assert (sig_entry->per_cu.v.quick != NULL);
-      gdb_assert (!per_objfile->symtab_set_p (&sig_entry->per_cu));
-    }
+    gdb_assert (!per_objfile->symtab_set_p (&sig_entry->per_cu));
   else
-      gdb_assert (sig_entry->per_cu.v.psymtab == NULL);
+    gdb_assert (sig_entry->per_cu.v.psymtab == NULL);
   gdb_assert (sig_entry->signature == dwo_entry->signature);
   gdb_assert (to_underlying (sig_entry->type_offset_in_section) == 0);
   gdb_assert (sig_entry->type_unit_group == NULL);
@@ -7399,12 +7358,7 @@ create_type_unit_group (struct dwarf2_cu *cu, sect_offset line_offset_struct)
   per_cu = &tu_group->per_cu;
   per_cu->per_bfd = per_bfd;
 
-  if (per_bfd->using_index)
-    {
-      per_cu->v.quick = OBSTACK_ZALLOC (&per_bfd->obstack,
-					struct dwarf2_per_cu_quick_data);
-    }
-  else
+  if (!per_bfd->using_index)
     {
       unsigned int line_offset = to_underlying (line_offset_struct);
       dwarf2_psymtab *pst;

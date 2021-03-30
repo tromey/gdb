@@ -1,5 +1,22 @@
 2021-03-29  Tom Tromey  <tom@tromey.com>
 
+	* dwarf2/read.h (struct dwarf2_per_cu_data) <mark>: New member.
+	<v>: Remove "quick" member, replace with "file_names".
+	* dwarf2/read.c (quick_file_names_sentinel): New global.
+	(struct dwarf2_per_cu_quick_data): Remove.
+	(create_cu_from_index_list)
+	(create_signatured_type_table_from_index)
+	(create_signatured_type_table_from_debug_names)
+	(dw2_get_file_names_reader, dw2_get_file_names)
+	(dw2_expand_symtabs_matching_one)
+	(dw_expand_symtabs_matching_file_matcher)
+	(dwarf2_base_index_functions::map_symbol_filenames)
+	(dwarf2_initialize_objfile, add_type_unit)
+	(fill_in_sig_entry_from_dwo_entry, create_type_unit_group):
+	Update.
+
+2021-03-29  Tom Tromey  <tom@tromey.com>
+
 	* dwarf2/read.h (struct dwarf2_per_cu_data): Pack.
 
 2021-03-29  Tom Tromey  <tom@tromey.com>
