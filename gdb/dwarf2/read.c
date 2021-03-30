@@ -5702,13 +5702,7 @@ dwarf2_debug_names_index::lookup_symbol
 {
   dwarf2_per_objfile *per_objfile = get_dwarf2_per_objfile (objfile);
 
-  const auto &mapp = per_objfile->per_bfd->debug_names_table;
-  if (!mapp)
-    {
-      /* index is NULL if OBJF_READNOW.  */
-      return NULL;
-    }
-  const auto &map = *mapp;
+  const auto &map = *per_objfile->per_bfd->debug_names_table;
 
   dw2_debug_names_iterator iter (map, block_index, domain, name, per_objfile);
 
@@ -5750,15 +5744,7 @@ dwarf2_debug_names_index::lookup_symbol
 void
 dwarf2_debug_names_index::dump (struct objfile *objfile)
 {
-  dwarf2_per_objfile *per_objfile = get_dwarf2_per_objfile (objfile);
-
-  gdb_assert (per_objfile->per_bfd->using_index);
-  printf_filtered (".debug_names:");
-  if (per_objfile->per_bfd->debug_names_table)
-    printf_filtered (" exists\n");
-  else
-    printf_filtered (" faked for \"readnow\"\n");
-  printf_filtered ("\n");
+  printf_filtered (".debug_names: exists\n");
 }
 
 void
@@ -5767,18 +5753,13 @@ dwarf2_debug_names_index::expand_symtabs_for_function
 {
   dwarf2_per_objfile *per_objfile = get_dwarf2_per_objfile (objfile);
 
-  /* per_objfile->per_bfd->debug_names_table is NULL if OBJF_READNOW.  */
-  if (per_objfile->per_bfd->debug_names_table)
-    {
-      const mapped_debug_names &map = *per_objfile->per_bfd->debug_names_table;
+  const mapped_debug_names &map = *per_objfile->per_bfd->debug_names_table;
 
-      dw2_debug_names_iterator iter (map, {}, VAR_DOMAIN, func_name,
-				     per_objfile);
+  dw2_debug_names_iterator iter (map, {}, VAR_DOMAIN, func_name, per_objfile);
 
-      struct dwarf2_per_cu_data *per_cu;
-      while ((per_cu = iter.next ()) != NULL)
-	dw2_instantiate_symtab (per_cu, per_objfile, false);
-    }
+  struct dwarf2_per_cu_data *per_cu;
+  while ((per_cu = iter.next ()) != NULL)
+    dw2_instantiate_symtab (per_cu, per_objfile, false);
 }
 
 void
@@ -5790,10 +5771,6 @@ dwarf2_debug_names_index::map_matching_symbols
    symbol_compare_ftype *ordered_compare)
 {
   dwarf2_per_objfile *per_objfile = get_dwarf2_per_objfile (objfile);
-
-  /* debug_names_table is NULL if OBJF_READNOW.  */
-  if (!per_objfile->per_bfd->debug_names_table)
-    return;
 
   mapped_debug_names &map = *per_objfile->per_bfd->debug_names_table;
   const block_enum block_kind = global ? GLOBAL_BLOCK : STATIC_BLOCK;
@@ -5849,10 +5826,6 @@ dwarf2_debug_names_index::expand_symtabs_matching
    enum search_domain kind)
 {
   dwarf2_per_objfile *per_objfile = get_dwarf2_per_objfile (objfile);
-
-  /* debug_names_table is NULL if OBJF_READNOW.  */
-  if (!per_objfile->per_bfd->debug_names_table)
-    return;
 
   dw_expand_symtabs_matching_file_matcher (per_objfile, file_matcher);
 

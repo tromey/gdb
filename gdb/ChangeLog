@@ -1,5 +1,13 @@
 2021-03-29  Tom Tromey  <tom@tromey.com>
 
+	* dwarf2/read.c (dwarf2_debug_names_index::lookup_symbol)
+	(dwarf2_debug_names_index::expand_symtabs_for_function)
+	(dwarf2_debug_names_index::map_matching_symbols)
+	(dwarf2_debug_names_index::expand_symtabs_matching)
+	(dwarf2_debug_names_index::dump): Remove "OBJF_READNOW" code.
+
+2021-03-29  Tom Tromey  <tom@tromey.com>
+
 	* dwarf2/read.c (struct mapped_index, struct mapped_debug_names):
 	Declare make_quick_functions method.
 	(mapped_index::make_quick_functions)
