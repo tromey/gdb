@@ -1,5 +1,13 @@
 2021-03-29  Tom Tromey  <tom@tromey.com>
 
+	* dwarf2/read.c (struct readnow_functions): New.
+	(dwarf2_initialize_objfile): Use readnow_functions.
+	(dwarf2_gdb_index::dump, dwarf2_gdb_index::map_matching_symbols)
+	(dw2_expand_symtabs_matching, dwarf2_initialize_objfile): Update.
+	(make_dwarf_gdb_index): Remove.
+
+2021-03-29  Tom Tromey  <tom@tromey.com>
+
 	* dwarf2/read.c (dwarf2_debug_names_index::lookup_symbol)
 	(dwarf2_debug_names_index::expand_symtabs_for_function)
 	(dwarf2_debug_names_index::map_matching_symbols)
