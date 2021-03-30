@@ -1,5 +1,9 @@
 2021-03-29  Tom Tromey  <tom@tromey.com>
 
+	* dwarf2/read.h (struct dwarf2_per_cu_data): Pack.
+
+2021-03-29  Tom Tromey  <tom@tromey.com>
+
 	* dwarf2/read.c (struct readnow_functions): New.
 	(dwarf2_initialize_objfile): Use readnow_functions.
 	(dwarf2_gdb_index::dump, dwarf2_gdb_index::map_matching_symbols)

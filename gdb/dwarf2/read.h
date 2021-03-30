@@ -475,19 +475,25 @@ struct dwarf2_per_cu_data
      This flag is only valid if is_debug_types is true.  */
   unsigned int tu_read : 1;
 
+  /* True if HEADER has been read in.
+
+     Don't access this field directly.  It should be private, but we can't make
+     it private at the moment.  */
+  mutable bool m_header_read_in : 1;
+
   /* Our index in the unshared "symtabs" vector.  */
   unsigned index;
+
+  /* The unit type of this CU.  */
+  ENUM_BITFIELD (dwarf_unit_type) unit_type : 8;
+
+  /* The language of this CU.  */
+  ENUM_BITFIELD (language) lang : 8;
 
   /* The section this CU/TU lives in.
      If the DIE refers to a DWO file, this is always the original die,
      not the DWO file.  */
   struct dwarf2_section_info *section;
-
-  /* The unit type of this CU.  */
-  enum dwarf_unit_type unit_type;
-
-  /* The language of this CU.  */
-  enum language lang;
 
   /* Backlink to the owner of this.  */
   dwarf2_per_bfd *per_bfd;
@@ -500,12 +506,6 @@ struct dwarf2_per_cu_data
      Don't access this field directly, use the get_header method instead.  It
      should be private, but we can't make it private at the moment.  */
   mutable comp_unit_head m_header;
-
-  /* True if HEADER has been read in.
-
-     Don't access this field directly.  It should be private, but we can't make
-     it private at the moment.  */
-  mutable bool m_header_read_in;
 
   /* When dwarf2_per_bfd::using_index is true, the 'quick' field
      is active.  Otherwise, the 'psymtab' field is active.  */
