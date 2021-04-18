@@ -105,9 +105,9 @@ struct dwarf2_per_cu_data
       tu_read (false),
       m_header_read_in (false),
       addresses_seen (false),
-      scanned (false),
       unit_type {},
-      lang (language_unknown)
+      lang (language_unknown),
+      scanned (false)
   {
   }
 
@@ -160,8 +160,6 @@ struct dwarf2_per_cu_data
      .debug_aranges), then this flag is set.  */
   bool addresses_seen : 1;
 
-  bool scanned : 1;
-
   /* The unit type of this CU.  */
   ENUM_BITFIELD (dwarf_unit_type) unit_type : 8;
 
@@ -187,6 +185,8 @@ struct dwarf2_per_cu_data
      Don't access this field directly, use the get_header method instead.  It
      should be private, but we can't make it private at the moment.  */
   mutable comp_unit_head m_header {};
+
+  std::atomic<bool> scanned;
 
   /* When dwarf2_per_bfd::using_index is true, the 'quick' field
      is active.  Otherwise, the 'psymtab' field is active.  */
@@ -444,7 +444,7 @@ public:
   std::unique_ptr<mapped_debug_names> debug_names_table;
 
   // FIXME should just share a base class
-  std::unique_ptr<cooked_index> cooked_index_table;
+  std::unique_ptr<cooked_index_vector> cooked_index_table;
 
   /* When using index_table, this keeps track of all quick_file_names entries.
      TUs typically share line table entries with a CU, so we maintain a

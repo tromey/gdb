@@ -92,6 +92,8 @@
 #include "dwarf2/abbrev-cache.h"
 #include "cooked-index.h"
 #include "split-name.h"
+#include "gdbsupport/parallel-for.h"
+#include "gdbsupport/thread-pool.h"
 
 /* When == 1, print basic high level tracing messages.
    When > 1, be more verbose.
@@ -7308,9 +7310,10 @@ process_psymtab_comp_unit (dwarf2_per_cu_data *this_cu,
     {
       if (per_objfile->per_bfd->using_index)
 	{
-	  if (!this_cu->scanned && reader.comp_unit_die->has_children)
+	  bool nope = false;
+	  if (this_cu->scanned.compare_exchange_strong (nope, true)
+	      && reader.comp_unit_die->has_children)
 	    {
-	      this_cu->scanned = true;
 	      prepare_one_comp_unit (reader.cu, reader.comp_unit_die,
 				     pretend_language);
 	      gdb_assert (storage != nullptr);
@@ -7686,14 +7689,27 @@ dwarf2_build_psymtabs_hard (dwarf2_per_objfile *per_objfile)
 				   index_storage.get_addrmap ());
     }
 
-  for (const auto &per_cu : per_bfd->all_comp_units)
+  per_objfile->per_bfd->str.read (per_objfile->objfile);
+
+  using iter_type = typeof (per_bfd->all_comp_units.begin ());
+  std::vector<std::unique_ptr<cooked_index>> indexes
+    = gdb::parallel_for_each (1, per_bfd->all_comp_units.begin (),
+			      per_bfd->all_comp_units.end (),
+			      [=] (iter_type iter, iter_type end)
     {
-      if (!per_bfd->using_index && per_cu->v.psymtab != NULL)
-	/* In case a forward DW_TAG_imported_unit has read the CU already.  */
-	continue;
-      process_psymtab_comp_unit (per_cu.get (), per_objfile, false,
-				 language_minimal, &index_storage);
-    }
+      cooked_index_storage thread_storage;
+      for (; iter != end; ++iter)
+	{
+	  dwarf2_per_cu_data *per_cu = iter->get ();
+	  if (!per_bfd->using_index && per_cu->v.psymtab != NULL)
+	    /* In case a forward DW_TAG_imported_unit has read the CU
+	       already.  */
+	    continue;
+	  process_psymtab_comp_unit (per_cu, per_objfile, false,
+				     language_minimal, &thread_storage);
+	}
+      return thread_storage.release ();
+    });
 
   /* This has to wait until we read the CUs, we need the list of DWOs.  */
   process_skeletonless_type_units (per_objfile, &index_storage);
@@ -7708,17 +7724,26 @@ dwarf2_build_psymtabs_hard (dwarf2_per_objfile *per_objfile)
   if (dwarf_read_debug > 0)
     print_tu_stats (per_objfile);
 
-  if (per_bfd->using_index)
-    {
-      per_bfd->cooked_index_table = index_storage.release ();
-      per_bfd->cooked_index_table->finalize ();
+  indexes.push_back (index_storage.release ());
+  /* Remove any NULL entries.  This might happen if parallel-for
+     decides to throttle the number of threads that were used.  */
+  indexes.erase
+    (std::remove_if (indexes.begin (),
+		     indexes.end (),
+		     [] (const std::unique_ptr<cooked_index> &entry)
+		     {
+		       return entry == nullptr;
+		     }),
+     indexes.end ());
+  indexes.shrink_to_fit ();
+  per_bfd->cooked_index_table.reset
+    (new cooked_index_vector (std::move (indexes)));
 
-      const cooked_index_entry *main_entry
-	= per_bfd->cooked_index_table->get_main ();
-      if (main_entry != nullptr)
-	set_objfile_main_name (objfile, main_entry->name,
-			       main_entry->per_cu->lang);
-    }
+  const cooked_index_entry *main_entry
+    = per_bfd->cooked_index_table->get_main ();
+  if (main_entry != nullptr)
+    set_objfile_main_name (objfile, main_entry->name,
+			   main_entry->per_cu->lang);
 
   if (!per_bfd->using_index)
     {
@@ -19210,9 +19235,9 @@ cooked_indexer::ensure_cu_exists (cutu_reader *reader,
      Doing this check here avoids self-imports as well.  */
   if (for_scanning)
     {
-      if (per_cu->scanned)
+      bool nope = false;
+      if (!per_cu->scanned.compare_exchange_strong (nope, true))
 	return nullptr;
-      per_cu->scanned = true;
     }
   if (per_cu == m_per_cu)
     return reader;
