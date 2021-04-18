@@ -5567,7 +5567,8 @@ dwarf2_initialize_objfile (struct objfile *objfile)
     }
 
   global_index_cache.miss ();
-  objfile->qf.push_front (make_lazy_dwarf_reader ());
+  per_bfd->using_index = true;
+  objfile->qf.push_front (make_cooked_index_funcs ());
 }
 
 
