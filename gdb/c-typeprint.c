@@ -1098,7 +1098,15 @@ c_type_print_base_struct_union (struct type *type, struct ui_file *stream,
       /* Add in template parameters when printing derivation info.  */
       if (local_flags.local_typedefs != NULL)
 	local_flags.local_typedefs->add_template_parameters (type);
-      cp_type_print_derivation_info (stream, type, &local_flags);
+
+      int starting_field;
+      if (flags->print_offset_data)
+	starting_field = 0;
+      else
+	{
+	  starting_field = TYPE_N_BASECLASSES (type);
+	  cp_type_print_derivation_info (stream, type, &local_flags);
+	}
 
       /* This holds just the global typedefs and the template
 	 parameters.  */
@@ -1150,7 +1158,7 @@ c_type_print_base_struct_union (struct type *type, struct ui_file *stream,
 
       struct print_offset_data local_podata;
 
-      for (int i = TYPE_N_BASECLASSES (type); i < len; i++)
+      for (int i = starting_field; i < len; i++)
 	{
 	  QUIT;
 
@@ -1177,6 +1185,14 @@ c_type_print_base_struct_union (struct type *type, struct ui_file *stream,
 	  print_spaces_filtered (level + 4, stream);
 	  if (is_static)
 	    fprintf_filtered (stream, "static ");
+	  else if (i < TYPE_N_BASECLASSES (type))
+	    fprintf_filtered (stream, "%s%s ",
+			      BASETYPE_VIA_PUBLIC (type, i)
+			      ? "public" : (TYPE_FIELD_PROTECTED (type, i)
+					    ? "protected" : "private"),
+			      BASETYPE_VIA_VIRTUAL (type, i)
+			      ? " virtual"
+			      : "");
 
 	  int newshow = show - 1;
 
