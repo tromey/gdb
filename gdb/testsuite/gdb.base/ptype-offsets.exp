@@ -355,3 +355,12 @@ gdb_test "ptype/o empty_member" \
 "" \
 "                           /* total size (bytes):    8 */" \
 "                         \}"]]
+
+gdb_test "ptype/o derived" \
+    [string_to_regexp [multi_line \
+"/* offset    |  size */  type = struct static_member \{" \
+"                           static static_member Empty;" \
+"\/*    0      |     4 */    int abc;" \
+"" \
+"                           /* total size (bytes):    4 */" \
+"                         \}"]]

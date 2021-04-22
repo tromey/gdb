@@ -191,6 +191,17 @@ struct empty_member
   int an_int;
 };
 
+struct base
+{
+  int a;
+  char b;
+};
+
+struct derived : public base
+{
+  int c;
+};
+
 int
 main (int argc, char *argv[])
 {
@@ -203,6 +214,7 @@ main (int argc, char *argv[])
   uint8_t i;
   static_member stmember;
   empty_member emember;
+  derived der;
 
   return 0;
 }
