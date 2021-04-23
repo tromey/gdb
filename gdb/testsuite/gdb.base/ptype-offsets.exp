@@ -358,9 +358,15 @@ gdb_test "ptype/o empty_member" \
 
 gdb_test "ptype/o derived" \
     [string_to_regexp [multi_line \
-"/* offset    |  size */  type = struct static_member \{" \
-"                           static static_member Empty;" \
-"\/*    0      |     4 */    int abc;" \
+"/* offset    |  size */  type = struct derived {" \
+"/*    0      |     8 */    : public struct base {" \
+"/*    0      |     4 */        int a;" \
+"/*    4      |     1 */        char b;" \
+"/* XXX  3-byte padding  */" \
 "" \
-"                           /* total size (bytes):    4 */" \
-"                         \}"]]
+"                               /* total size (bytes):    8 */" \
+"                           } base;" \
+"/*    8      |     4 */    int c;" \
+"" \
+"                           /* total size (bytes):   12 */" \
+"                         }"]]
