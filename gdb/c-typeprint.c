@@ -1100,7 +1100,7 @@ c_type_print_base_struct_union (struct type *type, struct ui_file *stream,
 	local_flags.local_typedefs->add_template_parameters (type);
 
       int starting_field;
-      if (flags->print_offset_data)
+      if (flags->print_offsets)
 	starting_field = 0;
       else
 	{
@@ -1186,7 +1186,8 @@ c_type_print_base_struct_union (struct type *type, struct ui_file *stream,
 	  if (is_static)
 	    fprintf_filtered (stream, "static ");
 	  else if (i < TYPE_N_BASECLASSES (type))
-	    fprintf_filtered (stream, "%s%s ",
+	    fprintf_filtered (stream, "%s %s%s ",
+			      i == 0 ? ":" : ",",
 			      BASETYPE_VIA_PUBLIC (type, i)
 			      ? "public" : (TYPE_FIELD_PROTECTED (type, i)
 					    ? "protected" : "private"),
@@ -1222,7 +1223,9 @@ c_type_print_base_struct_union (struct type *type, struct ui_file *stream,
 	    }
 
 	  c_print_type_1 (type->field (i).type (),
-			  TYPE_FIELD_NAME (type, i),
+			  i < TYPE_N_BASECLASSES (type)
+			  ? nullptr
+			  : TYPE_FIELD_NAME (type, i),
 			  stream, newshow, level + 4,
 			  language, &local_flags, &local_podata);
 
