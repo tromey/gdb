@@ -365,7 +365,7 @@ gdb_test "ptype/o derived" \
 "/* XXX  3-byte padding  */" \
 "" \
 "                               /* total size (bytes):    8 */" \
-"                           } base;" \
+"                           };" \
 "/*    8      |     4 */    int c;" \
 "" \
 "                           /* total size (bytes):   12 */" \
