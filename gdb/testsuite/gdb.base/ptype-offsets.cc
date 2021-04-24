@@ -193,11 +193,23 @@ struct empty_member
 
 struct base
 {
+  virtual ~base ()
+  {
+  }
+
   int a;
   char b;
 };
 
-struct derived : public base
+struct vbase {
+  void *z;
+};
+
+struct inter : public base, public virtual vbase
+{
+};
+
+struct derived : public inter, public virtual vbase
 {
   int c;
 };
