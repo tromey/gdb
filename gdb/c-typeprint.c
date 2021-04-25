@@ -214,6 +214,18 @@ c_print_typedef (struct type *type,
   fprintf_filtered (stream, ";");
 }
 
+static void
+cp_type_print_one_derivation (struct ui_file *stream,
+			      struct type *type, int i)
+{
+  fputs_filtered (i == 0 ? ": " : ", ", stream);
+  fprintf_filtered (stream, "%s%s ",
+		    BASETYPE_VIA_PUBLIC (type, i)
+		    ? "public" : (TYPE_FIELD_PROTECTED (type, i)
+				  ? "protected" : "private"),
+		    BASETYPE_VIA_VIRTUAL (type, i) ? " virtual" : "");
+}
+
 /* If TYPE is a derived type, then print out derivation information.
    Print only the actual base classes of this type, not the base
    classes of the base classes.  I.e. for the derivation hierarchy:
@@ -250,12 +262,7 @@ cp_type_print_derivation_info (struct ui_file *stream,
   for (i = 0; i < TYPE_N_BASECLASSES (type); i++)
     {
       wrap_here ("        ");
-      fputs_filtered (i == 0 ? ": " : ", ", stream);
-      fprintf_filtered (stream, "%s%s ",
-			BASETYPE_VIA_PUBLIC (type, i)
-			? "public" : (TYPE_FIELD_PROTECTED (type, i)
-				      ? "protected" : "private"),
-			BASETYPE_VIA_VIRTUAL (type, i) ? " virtual" : "");
+      cp_type_print_one_derivation (stream, type, i);
       name = TYPE_BASECLASS (type, i)->name ();
       if (name)
 	print_name_maybe_canonical (name, flags, stream);
@@ -1180,20 +1187,29 @@ c_type_print_base_struct_union (struct type *type, struct ui_file *stream,
 	  bool is_static = field_is_static (&type->field (i));
 
 	  if (flags->print_offsets)
-	    podata->update (type, i, stream);
+	    {
+	      if (i < TYPE_N_BASECLASSES (type)
+		  && BASETYPE_VIA_VIRTUAL (type, i))
+		{
+		  print_spaces_filtered (level + 4, stream);
+		  cp_type_print_one_derivation (stream, type, i);
+		  const char *name = TYPE_BASECLASS (type, i)->name ();
+		  if (name)
+		    print_name_maybe_canonical (name, flags, stream);
+		  else
+		    fprintf_filtered (stream, "(null)");
+		  fputs_filtered (";\n", stream);
+		  continue;
+		}
+
+	      podata->update (type, i, stream);
+	    }
 
 	  print_spaces_filtered (level + 4, stream);
 	  if (is_static)
 	    fprintf_filtered (stream, "static ");
 	  else if (i < TYPE_N_BASECLASSES (type))
-	    fprintf_filtered (stream, "%s %s%s ",
-			      i == 0 ? ":" : ",",
-			      BASETYPE_VIA_PUBLIC (type, i)
-			      ? "public" : (TYPE_FIELD_PROTECTED (type, i)
-					    ? "protected" : "private"),
-			      BASETYPE_VIA_VIRTUAL (type, i)
-			      ? " virtual"
-			      : "");
+	    cp_type_print_one_derivation (stream, type, i);
 
 	  int newshow = show - 1;
 
