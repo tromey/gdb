@@ -418,6 +418,8 @@ struct dwarf2_per_cu_data
   {
   }
 
+  virtual ~dwarf2_per_cu_data () = default;
+
   /* The start offset and length of this compilation unit.
      NOTE: Unlike comp_unit_head.length, this length includes
      initial_length_size.
