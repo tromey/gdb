@@ -1,5 +1,9 @@
 2021-05-03  Tom Tromey  <tromey@adacore.com>
 
+	* source.c (add_path): Check 'p' before using 'p[-1]'.
+
+2021-05-03  Tom Tromey  <tromey@adacore.com>
+
 	* dwarf2/read.h (dwarf2_per_cu_data): Add virtual destructor.
 
 2021-04-30  Tom Tromey  <tom@tromey.com>
