@@ -6,6 +6,8 @@
 # * function call bin-packing is weird
 #   https://bugs.llvm.org/show_bug.cgi?id=31907
 #    https://bugs.llvm.org/show_bug.cgi?id=37703
+# * gettext calls like "_()" are reformatted to "_ ()"
+#   I don't think there's an upstream bug for this yet
 
 Language:        Cpp
 # BasedOnStyle:  GNU
