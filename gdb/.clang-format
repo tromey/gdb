@@ -38,25 +38,7 @@ AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: Yes
 BinPackArguments: true
 BinPackParameters: true
-# Because BreakBeforeBraces = GNU, we don't need this.
-# BraceWrapping:
-#   AfterCaseLabel: true
-#   AfterClass:      true
-#   AfterControlStatement: true
-#   AfterEnum:       true
-#   AfterFunction:   true
-#   AfterNamespace:  true
-#   AfterObjCDeclaration: true
-#   AfterStruct:     true
-#   AfterUnion:      true
-#   AfterExternBlock: true
-#   BeforeCatch:     true
-#   BeforeElse:      true
-#   IndentBraces:    true
-#   SplitEmptyFunction: true
-#   SplitEmptyRecord: true
-#   SplitEmptyNamespace: true
-
+# Because BreakBeforeBraces = GNU, we don't need BraceWrapping.
 BreakBeforeBinaryOperators: All
 BreakBeforeBraces: GNU
 BreakBeforeTernaryOperators: true
@@ -66,8 +48,8 @@ BreakStringLiterals: true
 ColumnLimit:     79
 CommentPragmas:  'ARI'
 CompactNamespaces: false
-ConstructorInitializerAllOnOneLineOrOnePerLine: false
-ConstructorInitializerIndentWidth: 4
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+ConstructorInitializerIndentWidth: 2
 ContinuationIndentWidth: 2
 Cpp11BracedListStyle: false
 DeriveLineEnding: false
@@ -102,14 +84,14 @@ KeepEmptyLinesAtTheStartOfBlocks: false
 MaxEmptyLinesToKeep: 1
 NamespaceIndentation: None
 # NamespaceMacros
-PenaltyBreakAssignment: 2
-PenaltyBreakBeforeFirstCallParameter: 19
-PenaltyBreakComment: 300
-PenaltyBreakFirstLessLess: 120
-PenaltyBreakString: 1000
-# PenaltyBreakTemplateDeclaration: ???
-PenaltyExcessCharacter: 1000000
-PenaltyReturnTypeOnItsOwnLine: 60
+# PenaltyBreakAssignment: 2
+PenaltyBreakBeforeFirstCallParameter: 200
+# PenaltyBreakComment: 300
+# PenaltyBreakFirstLessLess: 120
+# PenaltyBreakString: 100
+# PenaltyBreakTemplateDeclaration: 1000
+# PenaltyExcessCharacter: 10
+# PenaltyReturnTypeOnItsOwnLine: 60
 PointerAlignment: Right
 # RawStringFormats: ???
 # FIXME - enable
