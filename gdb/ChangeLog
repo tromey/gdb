@@ -1,3 +1,9 @@
+2021-05-11  Tom Tromey  <tom@tromey.com>
+
+	* dwarf2/comp-unit.c (read_comp_unit_head): Set
+	first_die_cu_offset.
+	(read_and_check_comp_unit_head): Don't set first_die_cu_offset.
+
 2021-05-11  Simon Marchi  <simon.marchi@polymtl.ca>
 
 	* cli/cli-decode.h (struct cmd_list_element): Fix indentation.

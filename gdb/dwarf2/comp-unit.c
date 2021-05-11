@@ -43,6 +43,7 @@ read_comp_unit_head (struct comp_unit_head *cu_header,
   unsigned int bytes_read;
   const char *filename = section->get_file_name ();
   bfd *abfd = section->get_bfd_owner ();
+  const gdb_byte *beg_of_comp_unit = info_ptr;
 
   cu_header->length = read_initial_length (abfd, info_ptr, &bytes_read);
   cu_header->initial_length_size = bytes_read;
@@ -139,6 +140,7 @@ read_comp_unit_head (struct comp_unit_head *cu_header,
 	       filename);
     }
 
+  cu_header->first_die_cu_offset = (cu_offset) (info_ptr - beg_of_comp_unit);
   return info_ptr;
 }
 
@@ -182,13 +184,9 @@ read_and_check_comp_unit_head (dwarf2_per_objfile *per_objfile,
 			       const gdb_byte *info_ptr,
 			       rcuh_kind section_kind)
 {
-  const gdb_byte *beg_of_comp_unit = info_ptr;
-
-  header->sect_off = (sect_offset) (beg_of_comp_unit - section->buffer);
+  header->sect_off = (sect_offset) (info_ptr - section->buffer);
 
   info_ptr = read_comp_unit_head (header, info_ptr, section, section_kind);
-
-  header->first_die_cu_offset = (cu_offset) (info_ptr - beg_of_comp_unit);
 
   error_check_comp_unit_head (per_objfile, header, section, abbrev_section);
 
