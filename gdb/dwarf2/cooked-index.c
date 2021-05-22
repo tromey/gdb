@@ -117,9 +117,13 @@ cooked_index::add (sect_offset die_offset, enum dwarf_tag tag,
 }
 
 cooked_index_vector::cooked_index_vector (vec_type &&vec)
-  : m_vector (std::move (vec))
+  : m_vector (std::move (vec)),
+    m_future (gdb::thread_pool::g_thread_pool->post_task
+	      ([this] ()
+	      {
+		finalize ();
+	      }))
 {
-  finalize ();
 }
 
 /* See cooked-index.h.  */
@@ -152,6 +156,7 @@ cooked_index_vector::get_addrmaps ()
 cooked_index_vector::range
 cooked_index_vector::find (gdb::string_view name, bool completing)
 {
+  m_future.wait ();
   range result;
 
   result.m_begin = std::lower_bound (m_entries.begin (), m_entries.end (),
