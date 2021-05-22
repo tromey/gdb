@@ -794,7 +794,8 @@ public:
 	       dwarf2_per_objfile *per_objfile,
 	       struct abbrev_table *abbrev_table,
 	       dwarf2_cu *existing_cu,
-	       bool skip_partial);
+	       bool skip_partial,
+	       abbrev_cache *cache = nullptr);
 
   explicit cutu_reader (struct dwarf2_per_cu_data *this_cu,
 			dwarf2_per_objfile *per_objfile,
@@ -1100,7 +1101,9 @@ static dwarf2_psymtab *create_partial_symtab
   (dwarf2_per_cu_data *per_cu, dwarf2_per_objfile *per_objfile,
    const char *name);
 
-static void build_type_psymtabs_reader (cutu_reader *reader);
+class cooked_index_storage;
+static void build_type_psymtabs_reader (cutu_reader *reader,
+					cooked_index_storage *storage);
 
 static void dwarf2_build_psymtabs_hard (dwarf2_per_objfile *per_objfile);
 
@@ -6486,7 +6489,8 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
 			  dwarf2_per_objfile *per_objfile,
 			  struct abbrev_table *abbrev_table,
 			  dwarf2_cu *existing_cu,
-			  bool skip_partial)
+			  bool skip_partial,
+			  abbrev_cache *cache)
   : die_reader_specs {},
     m_this_cu (this_cu)
 {
@@ -6610,10 +6614,16 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
     gdb_assert (cu->header.abbrev_sect_off == abbrev_table->sect_off);
   else
     {
-      abbrev_section->read (objfile);
-      m_abbrev_table_holder
-	= abbrev_table::read (abbrev_section, cu->header.abbrev_sect_off);
-      abbrev_table = m_abbrev_table_holder.get ();
+      if (cache != nullptr)
+	abbrev_table = cache->find (abbrev_section,
+				    cu->header.abbrev_sect_off);
+      if (abbrev_table == nullptr)
+	{
+	  abbrev_section->read (objfile);
+	  m_abbrev_table_holder
+	    = abbrev_table::read (abbrev_section, cu->header.abbrev_sect_off);
+	  abbrev_table = m_abbrev_table_holder.get ();
+	}
     }
 
   /* Read the top level CU/TU die.  */
@@ -7249,16 +7259,21 @@ static void
 process_psymtab_comp_unit (dwarf2_per_cu_data *this_cu,
 			   dwarf2_per_objfile *per_objfile,
 			   bool want_partial_unit,
-			   enum language pretend_language)
+			   enum language pretend_language,
+			   cooked_index_storage *storage)
 {
   /* If this compilation unit was already read in, free the
      cached copy in order to read it in again.	This is
      necessary because we skipped some symbols when we first
      read in the compilation unit (see load_partial_dies).
      This problem could be avoided, but the benefit is unclear.  */
-  per_objfile->remove_cu (this_cu);
+  if (!per_objfile->per_bfd->using_index)
+    per_objfile->remove_cu (this_cu);
 
-  cutu_reader reader (this_cu, per_objfile, nullptr, nullptr, false);
+  cutu_reader reader (this_cu, per_objfile, nullptr, nullptr, false,
+		      (storage == nullptr
+		       ? nullptr
+		       : storage->get_abbrev_cache ()));
 
   if (reader.comp_unit_die == nullptr)
     return;
@@ -7286,12 +7301,28 @@ process_psymtab_comp_unit (dwarf2_per_cu_data *this_cu,
       /* Nothing.  */
     }
   else if (this_cu->is_debug_types)
-    build_type_psymtabs_reader (&reader);
+    build_type_psymtabs_reader (&reader, storage);
   else if (want_partial_unit
 	   || reader.comp_unit_die->tag != DW_TAG_partial_unit)
-    process_psymtab_comp_unit_reader (&reader, reader.info_ptr,
-				      reader.comp_unit_die,
-				      pretend_language);
+    {
+      if (per_objfile->per_bfd->using_index)
+	{
+	  if (!this_cu->scanned && reader.comp_unit_die->has_children)
+	    {
+	      this_cu->scanned = true;
+	      prepare_one_comp_unit (reader.cu, reader.comp_unit_die,
+				     pretend_language);
+	      gdb_assert (storage != nullptr);
+	      cooked_indexer indexer (storage, this_cu,
+				      reader.cu->per_cu->lang);
+	      indexer.make_index (&reader);
+	    }
+	}
+      else
+	process_psymtab_comp_unit_reader (&reader, reader.info_ptr,
+					  reader.comp_unit_die,
+					  pretend_language);
+    }
 
   /* Age out any secondary CUs.  */
   per_objfile->age_comp_units ();
@@ -7300,7 +7331,8 @@ process_psymtab_comp_unit (dwarf2_per_cu_data *this_cu,
 /* Reader function for build_type_psymtabs.  */
 
 static void
-build_type_psymtabs_reader (cutu_reader *reader)
+build_type_psymtabs_reader (cutu_reader *reader,
+			    cooked_index_storage *storage)
 {
   dwarf2_per_objfile *per_objfile = reader->cu->per_objfile;
   struct dwarf2_cu *cu = reader->cu;
@@ -7328,16 +7360,26 @@ build_type_psymtabs_reader (cutu_reader *reader)
   tu_group->tus->push_back (sig_type);
 
   prepare_one_comp_unit (cu, type_unit_die, language_minimal);
-  pst = create_partial_symtab (per_cu, per_objfile, "");
-  pst->anonymous = true;
 
-  first_die = load_partial_dies (reader, info_ptr, 1);
+  if (per_objfile->per_bfd->using_index)
+    {
+      gdb_assert (storage != nullptr);
+      cooked_indexer indexer (storage, per_cu, cu->per_cu->lang);
+      indexer.make_index (reader);
+    }
+  else
+    {
+      pst = create_partial_symtab (per_cu, per_objfile, "");
+      pst->anonymous = true;
 
-  lowpc = (CORE_ADDR) -1;
-  highpc = (CORE_ADDR) 0;
-  scan_partial_symbols (first_die, &lowpc, &highpc, 0, cu);
+      first_die = load_partial_dies (reader, info_ptr, 1);
 
-  pst->end ();
+      lowpc = (CORE_ADDR) -1;
+      highpc = (CORE_ADDR) 0;
+      scan_partial_symbols (first_die, &lowpc, &highpc, 0, cu);
+
+      pst->end ();
+    }
 }
 
 /* Struct used to sort TUs by their abbreviation table offset.  */
@@ -7376,7 +7418,8 @@ struct tu_abbrev_offset
    dwarf2_per_objfile->per_bfd->type_unit_groups.  */
 
 static void
-build_type_psymtabs (dwarf2_per_objfile *per_objfile)
+build_type_psymtabs (dwarf2_per_objfile *per_objfile,
+		     cooked_index_storage *storage)
 {
   struct tu_stats *tu_stats = &per_objfile->per_bfd->tu_stats;
   abbrev_table_up abbrev_table;
@@ -7445,7 +7488,7 @@ build_type_psymtabs (dwarf2_per_objfile *per_objfile)
       cutu_reader reader (tu.sig_type, per_objfile,
 			  abbrev_table.get (), nullptr, false);
       if (!reader.dummy_p)
-	build_type_psymtabs_reader (&reader);
+	build_type_psymtabs_reader (&reader, storage);
     }
 }
 
@@ -7501,6 +7544,12 @@ build_type_psymtab_dependencies (void **slot, void *info)
   return 1;
 }
 
+struct skeleton_data
+{
+  dwarf2_per_objfile *per_objfile;
+  cooked_index_storage *storage;
+};
+
 /* Traversal function for process_skeletonless_type_unit.
    Read a TU in a DWO file and build partial symbols for it.  */
 
@@ -7508,15 +7557,16 @@ static int
 process_skeletonless_type_unit (void **slot, void *info)
 {
   struct dwo_unit *dwo_unit = (struct dwo_unit *) *slot;
-  dwarf2_per_objfile *per_objfile = (dwarf2_per_objfile *) info;
+  skeleton_data *data = (skeleton_data *) info;
 
   /* If this TU doesn't exist in the global table, add it and read it in.  */
 
-  if (per_objfile->per_bfd->signatured_types == NULL)
-    per_objfile->per_bfd->signatured_types = allocate_signatured_type_table ();
+  if (data->per_objfile->per_bfd->signatured_types == NULL)
+    data->per_objfile->per_bfd->signatured_types
+      = allocate_signatured_type_table ();
 
   signatured_type find_entry (dwo_unit->signature);
-  slot = htab_find_slot (per_objfile->per_bfd->signatured_types.get (),
+  slot = htab_find_slot (data->per_objfile->per_bfd->signatured_types.get (),
 			 &find_entry, INSERT);
   /* If we've already seen this type there's nothing to do.  What's happening
      is we're doing our own version of comdat-folding here.  */
@@ -7526,14 +7576,14 @@ process_skeletonless_type_unit (void **slot, void *info)
   /* This does the job that create_all_comp_units would have done for
      this TU.  */
   signatured_type *entry
-    = add_type_unit (per_objfile, dwo_unit->signature, slot);
-  fill_in_sig_entry_from_dwo_entry (per_objfile, entry, dwo_unit);
+    = add_type_unit (data->per_objfile, dwo_unit->signature, slot);
+  fill_in_sig_entry_from_dwo_entry (data->per_objfile, entry, dwo_unit);
   *slot = entry;
 
   /* This does the job that build_type_psymtabs would have done.  */
-  cutu_reader reader (entry, per_objfile, nullptr, nullptr, false);
+  cutu_reader reader (entry, data->per_objfile, nullptr, nullptr, false);
   if (!reader.dummy_p)
-    build_type_psymtabs_reader (&reader);
+    build_type_psymtabs_reader (&reader, data->storage);
 
   return 1;
 }
@@ -7557,15 +7607,18 @@ process_dwo_file_for_skeletonless_type_units (void **slot, void *info)
    Note: This can't be done until we know what all the DWO files are.  */
 
 static void
-process_skeletonless_type_units (dwarf2_per_objfile *per_objfile)
+process_skeletonless_type_units (dwarf2_per_objfile *per_objfile,
+				 cooked_index_storage *storage)
 {
+  skeleton_data data { per_objfile, storage };
+
   /* Skeletonless TUs in DWP files without .gdb_index is not supported yet.  */
   if (get_dwp_file (per_objfile) == NULL
       && per_objfile->per_bfd->dwo_files != NULL)
     {
       htab_traverse_noresize (per_objfile->per_bfd->dwo_files.get (),
 			      process_dwo_file_for_skeletonless_type_units,
-			      per_objfile);
+			      &data);
     }
 }
 
@@ -7611,9 +7664,6 @@ dwarf2_build_psymtabs_hard (dwarf2_per_objfile *per_objfile)
      read_in_chain.  Make sure to free them when we're done.  */
   free_cached_comp_units freer (per_objfile);
 
-  create_all_comp_units (per_objfile);
-  build_type_psymtabs (per_objfile);
-
   /* Create a temporary address map on a temporary obstack.  We later
      copy this to the final obstack.  */
   auto_obstack temp_obstack;
@@ -7622,20 +7672,33 @@ dwarf2_build_psymtabs_hard (dwarf2_per_objfile *per_objfile)
     = make_scoped_restore (&per_bfd->partial_symtabs->psymtabs_addrmap,
 			   addrmap_create_mutable (&temp_obstack));
 
+  cooked_index_storage index_storage;
+  create_all_comp_units (per_objfile);
+  build_type_psymtabs (per_objfile, &index_storage);
+  if (per_bfd->using_index)
+    {
+      per_bfd->quick_file_names_table
+	= create_quick_file_names_table (per_bfd->all_comp_units.size ());
+
+      if (!per_bfd->debug_aranges.empty ())
+	read_addrmap_from_aranges (per_objfile, &per_bfd->debug_aranges,
+				   index_storage.get_addrmap ());
+    }
+
   for (const auto &per_cu : per_bfd->all_comp_units)
     {
-      if (per_cu->v.psymtab != NULL)
+      if (!per_bfd->using_index && per_cu->v.psymtab != NULL)
 	/* In case a forward DW_TAG_imported_unit has read the CU already.  */
 	continue;
       process_psymtab_comp_unit (per_cu.get (), per_objfile, false,
-				 language_minimal);
+				 language_minimal, &index_storage);
     }
 
   /* This has to wait until we read the CUs, we need the list of DWOs.  */
-  process_skeletonless_type_units (per_objfile);
+  process_skeletonless_type_units (per_objfile, &index_storage);
 
   /* Now that all TUs have been processed we can fill in the dependencies.  */
-  if (per_bfd->type_unit_groups != NULL)
+  if (!per_bfd->using_index && per_bfd->type_unit_groups != NULL)
     {
       htab_traverse_noresize (per_bfd->type_unit_groups.get (),
 			      build_type_psymtab_dependencies, per_objfile);
@@ -7644,14 +7707,28 @@ dwarf2_build_psymtabs_hard (dwarf2_per_objfile *per_objfile)
   if (dwarf_read_debug > 0)
     print_tu_stats (per_objfile);
 
-  set_partial_user (per_objfile);
+  if (per_bfd->using_index)
+    {
+      per_bfd->cooked_index_table = index_storage.release ();
+      per_bfd->cooked_index_table->finalize ();
 
-  per_bfd->partial_symtabs->psymtabs_addrmap
-    = addrmap_create_fixed (per_bfd->partial_symtabs->psymtabs_addrmap,
-			    per_bfd->partial_symtabs->obstack ());
-  /* At this point we want to keep the address map.  */
-  save_psymtabs_addrmap.release ();
+      const cooked_index_entry *main_entry
+	= per_bfd->cooked_index_table->get_main ();
+      if (main_entry != nullptr)
+	set_objfile_main_name (objfile, main_entry->name,
+			       main_entry->per_cu->lang);
+    }
 
+  if (!per_bfd->using_index)
+    {
+      set_partial_user (per_objfile);
+
+      per_bfd->partial_symtabs->psymtabs_addrmap
+	= addrmap_create_fixed (per_bfd->partial_symtabs->psymtabs_addrmap,
+				per_bfd->partial_symtabs->obstack ());
+      /* At this point we want to keep the address map.  */
+      save_psymtabs_addrmap.release ();
+    }
   dwarf_read_debug_printf ("Done building psymtabs of %s",
 			   objfile_name (objfile));
 }
@@ -7739,6 +7816,10 @@ read_comp_units_from_section (dwarf2_per_objfile *per_objfile,
       this_cu->length = cu_header.length + cu_header.initial_length_size;
       this_cu->is_dwz = is_dwz;
       this_cu->section = section;
+
+      if (per_objfile->per_bfd->using_index)
+	this_cu->v.quick = OBSTACK_ZALLOC (&per_objfile->per_bfd->obstack,
+					   struct dwarf2_per_cu_quick_data);
 
       info_ptr = info_ptr + this_cu->length;
       per_objfile->per_bfd->all_comp_units.push_back (std::move (this_cu));
@@ -7868,7 +7949,7 @@ scan_partial_symbols (struct partial_die_info *first_die, CORE_ADDR *lowpc,
 		/* Go read the partial unit, if needed.  */
 		if (per_cu->v.psymtab == NULL)
 		  process_psymtab_comp_unit (per_cu, cu->per_objfile, true,
-					     cu->per_cu->lang);
+					     cu->per_cu->lang, nullptr);
 
 		if (pdi->die_parent == nullptr
 		    && per_cu->unit_type == DW_UT_compile
@@ -19138,7 +19219,8 @@ cooked_indexer::ensure_cu_exists (cutu_reader *reader,
   cutu_reader *result = m_index_storage->get_reader (per_cu);
   if (result == nullptr)
     {
-      cutu_reader new_reader (per_cu, per_objfile, nullptr, nullptr, false);
+      cutu_reader new_reader (per_cu, per_objfile, nullptr, nullptr, false,
+			      m_index_storage->get_abbrev_cache ());
 
       prepare_one_comp_unit (new_reader.cu, new_reader.comp_unit_die,
 			     language_minimal);
