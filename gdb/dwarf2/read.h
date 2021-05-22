@@ -104,6 +104,7 @@ struct dwarf2_per_cu_data
       tu_read (false),
       m_header_read_in (false),
       addresses_seen (false),
+      scanned (false),
       unit_type {},
       lang (language_unknown)
   {
@@ -157,6 +158,8 @@ struct dwarf2_per_cu_data
   /* If addresses have been read for this CU (usually from
      .debug_aranges), then this flag is set.  */
   bool addresses_seen : 1;
+
+  bool scanned : 1;
 
   /* The unit type of this CU.  */
   ENUM_BITFIELD (dwarf_unit_type) unit_type : 8;
