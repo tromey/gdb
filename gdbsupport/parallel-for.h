@@ -35,11 +35,16 @@ namespace gdb
 
    This approach was chosen over having the callback work on single
    items because it makes it simple for the caller to do
-   once-per-subrange initialization and destruction.  */
+   once-per-subrange initialization and destruction.
+
+   The parameter N says how batching ought to be done -- there will be
+   at least N elements processed per thread.  Setting N to 0 is not
+   allowed.  */
 
 template<class RandomIt, class RangeFunction>
 void
-parallel_for_each (RandomIt first, RandomIt last, RangeFunction callback)
+parallel_for_each (unsigned n, RandomIt first, RandomIt last,
+		   RangeFunction callback)
 {
 #if CXX_STD_THREAD
   /* So we can use a local array below.  */
@@ -52,10 +57,11 @@ parallel_for_each (RandomIt first, RandomIt last, RangeFunction callback)
   size_t n_elements = last - first;
   if (n_threads > 1)
     {
-      /* Arbitrarily require that there should be at least 10 elements
-	 in a thread.  */
-      if (n_elements / n_threads < 10)
-	n_threads = std::max (n_elements / 10, (size_t) 1);
+      /* Require that there should be at least N elements in a
+	 thread.  */
+      gdb_assert (n > 0);
+      if (n_elements / n_threads < n)
+	n_threads = std::max (n_elements / n, (size_t) 1);
       size_t elts_per_thread = n_elements / n_threads;
       n_actual_threads = n_threads - 1;
       for (int i = 0; i < n_actual_threads; ++i)
