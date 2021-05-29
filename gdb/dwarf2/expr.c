@@ -30,6 +30,7 @@
 #include "dwarf2/read.h"
 #include "gdbsupport/underlying.h"
 #include "gdbarch.h"
+#include "objfiles.h"
 
 /* Cookie for gdbarch data.  */
 
