@@ -664,15 +664,10 @@ public:
   enum class unit_kind { cu, tu };
 
   /* Insert one symbol.  */
-  void insert (const partial_symbol *psym, int cu_index, bool is_static,
-	       unit_kind kind)
+  void insert (int dwarf_tag, const char *name, int cu_index, bool is_static,
+	       unit_kind kind, enum language lang)
   {
-    const int dwarf_tag = psymbol_tag (psym);
-    if (dwarf_tag == 0)
-      return;
-    const char *name = psym->ginfo.search_name ();
-
-    if (psym->ginfo.language () == language_ada)
+    if (lang == language_ada)
       {
 	/* We want to ensure that the Ada main function's name appears
 	   verbatim in the index.  However, this name will be of the
@@ -713,6 +708,28 @@ public:
 				     std::set<symbol_value> ());
     std::set<symbol_value> &value_set = insertpair.first->second;
     value_set.emplace (symbol_value (dwarf_tag, cu_index, is_static, kind));
+  }
+
+  void insert (const partial_symbol *psym, int cu_index, bool is_static,
+	       unit_kind kind)
+  {
+    const int dwarf_tag = psymbol_tag (psym);
+    if (dwarf_tag == 0)
+      return;
+    const char *name = psym->ginfo.search_name ();
+
+    insert (dwarf_tag, name, cu_index, is_static, kind,
+	    psym->ginfo.language ());
+  }
+
+  void insert (const cooked_index_entry *entry)
+  {
+    const auto it = m_cu_index_htab.find (entry->per_cu);
+    gdb_assert (it != m_cu_index_htab.cend ());
+    const char *name = entry->full_name (&m_string_obstack);
+    insert (entry->tag, name, it->second, (entry->flags & IS_STATIC) != 0,
+	    entry->per_cu->is_debug_types ? unit_kind::tu : unit_kind::cu,
+	    entry->per_cu->lang);
   }
 
   /* Build all the tables.  All symbols must be already inserted.
@@ -895,6 +912,11 @@ public:
     m_abbrev_table.file_write (file_names);
     m_entry_pool.file_write (file_names);
     m_debugstrlookup.file_write (file_str);
+  }
+
+  void add_cu (dwarf2_per_cu_data *per_cu, offset_type index)
+  {
+    m_cu_index_htab.emplace (per_cu, index);
   }
 
 private:
@@ -1211,6 +1233,8 @@ private:
 
   /* Temporary storage for Ada names.  */
   auto_obstack m_string_obstack;
+
+  cu_index_map m_cu_index_htab;
 };
 
 /* Return iff any of the needed offsets does not fit into 32-bit
@@ -1486,28 +1510,40 @@ write_debug_names (dwarf2_per_objfile *per_objfile,
   int types_counter = 0;
   for (int i = 0; i < per_objfile->per_bfd->all_comp_units.size (); ++i)
     {
-      const dwarf2_per_cu_data *per_cu
+      dwarf2_per_cu_data *per_cu
 	= per_objfile->per_bfd->all_comp_units[i].get ();
-      partial_symtab *psymtab = per_cu->v.psymtab;
 
-      /* CU of a shared file from 'dwz -m' may be unused by this main
-	 file.  It may be referenced from a local scope but in such
-	 case it does not need to be present in .debug_names.  */
-      if (psymtab == NULL)
-	continue;
+      partial_symtab *psymtab;
+      if (per_objfile->per_bfd->using_index)
+	psymtab = nullptr;
+      else
+	{
+	  psymtab = per_cu->v.psymtab;
+	  /* CU of a shared file from 'dwz -m' may be unused by this main
+	     file.  It may be referenced from a local scope but in such
+	     case it does not need to be present in .debug_names.  */
+	  if (psymtab == NULL)
+	    continue;
+	}
 
       int &this_counter = per_cu->is_debug_types ? types_counter : counter;
       data_buf &this_list = per_cu->is_debug_types ? types_cu_list : cu_list;
 
-      if (psymtab->user == NULL)
+      if (psymtab != nullptr && psymtab->user == NULL)
 	nametable.recursively_write_psymbols (objfile, psymtab, psyms_seen,
 					      this_counter);
 
+      nametable.add_cu (per_cu, this_counter);
       this_list.append_uint (nametable.dwarf5_offset_size (),
 			     dwarf5_byte_order,
 			     to_underlying (per_cu->sect_off));
       ++this_counter;
     }
+
+  if (per_objfile->per_bfd->using_index)
+    for (const cooked_index_entry *entry
+	   : per_objfile->per_bfd->cooked_index_table->all_entries ())
+      nametable.insert (entry);
 
   nametable.build ();
 
