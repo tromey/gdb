@@ -30,7 +30,6 @@
 #include "gdb_obstack.h"
 #include "gdbsupport/hash_enum.h"
 #include "gdbsupport/function-view.h"
-#include "psympriv.h"
 
 /* Hold 'maintenance (set|show) dwarf' commands.  */
 extern struct cmd_list_element *set_dwarf_cmdlist;
@@ -370,9 +369,9 @@ public:
   /* The corresponding BFD.  */
   bfd *obfd;
 
-  /* Objects that can be shared across objfiles are stored in this
-     obstack or on the psymtab obstack, while objects that are
-     objfile-specific are stored on the objfile obstack.  */
+  /* Objects that can be shared across objfiles may be stored in this
+     obstack, while objects that are objfile-specific are stored on
+     the objfile obstack.  */
   auto_obstack obstack;
 
   dwarf2_section_info info {};
@@ -433,10 +432,6 @@ public:
      VMA of 0.  */
   bool has_section_at_zero = false;
 
-  /* True if we are using the mapped index,
-     or we are faking it for OBJF_READNOW's sake.  */
-  bool using_index = false;
-
   /* The mapped index, or NULL if .gdb_index is missing or not being used.  */
   std::unique_ptr<mapped_index> index_table;
 
@@ -455,10 +450,6 @@ public:
      CU and its associated TU group if there is one.  */
   htab_up quick_file_names_table;
 
-  /* Set during partial symbol reading, to prevent queueing of full
-     symbols.  */
-  bool reading_partial_symbols = false;
-
   /* The CUs we recently read.  */
   std::vector<dwarf2_per_cu_data *> just_read_cus;
 
@@ -474,11 +465,6 @@ public:
 
   /* CUs that are queued to be read.  */
   gdb::optional<std::queue<dwarf2_queue_item>> queue;
-
-  /* We keep a separate reference to the partial symtabs, in case we
-     are sharing them between objfiles.  This is only set after
-     partial symbols have been read the first time.  */
-  std::shared_ptr<psymtab_storage> partial_symtabs;
 
   /* The address map that is used by the DWARF index code.  */
   struct addrmap *index_addrmap = nullptr;
@@ -622,26 +608,6 @@ private:
 /* Get the dwarf2_per_objfile associated to OBJFILE.  */
 
 dwarf2_per_objfile *get_dwarf2_per_objfile (struct objfile *objfile);
-
-/* A partial symtab specialized for DWARF.  */
-struct dwarf2_psymtab : public partial_symtab
-{
-  dwarf2_psymtab (const char *filename,
-		  psymtab_storage *partial_symtabs,
-		  objfile_per_bfd_storage *objfile_per_bfd,
-		  dwarf2_per_cu_data *per_cu)
-    : partial_symtab (filename, partial_symtabs, objfile_per_bfd, 0),
-      per_cu_data (per_cu)
-  {
-  }
-
-  void read_symtab (struct objfile *) override;
-  void expand_psymtab (struct objfile *) override;
-  bool readin_p (struct objfile *) const override;
-  compunit_symtab *get_compunit_symtab (struct objfile *) const override;
-
-  struct dwarf2_per_cu_data *per_cu_data;
-};
 
 /* Return the type of the DIE at DIE_OFFSET in the CU named by
    PER_CU.  */
