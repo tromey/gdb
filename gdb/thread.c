@@ -40,6 +40,7 @@
 #include "annotate.h"
 #include "cli/cli-decode.h"
 #include "cli/cli-option.h"
+#include "cli/cli-style.h"
 #include "gdb_regex.h"
 #include "cli/cli-utils.h"
 #include "thread-fsm.h"
@@ -1148,7 +1149,7 @@ print_thread_info_1 (struct ui_out *uiout, const char *requested_threads,
 	  if (!uiout->is_mi_like_p ())
 	    {
 	      if (tp == current_thread)
-		uiout->field_string ("current", "*");
+		uiout->field_string ("current", "*", selected_style.style ());
 	      else
 		uiout->field_skip ("current");
 

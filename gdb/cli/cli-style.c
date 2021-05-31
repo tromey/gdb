@@ -104,6 +104,10 @@ cli_style_option version_style ("version", ui_file_style::MAGENTA,
 
 /* See cli-style.h.  */
 
+cli_style_option selected_style ("selected", ui_file_style::RED);
+
+/* See cli-style.h.  */
+
 cli_style_option::cli_style_option (const char *name,
 				    ui_file_style::basic_color fg,
 				    ui_file_style::intensity intensity)

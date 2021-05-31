@@ -24,6 +24,7 @@
 
 #include "inferior.h"
 #include "target.h"
+#include "cli/cli-style.h"
 
 /* A map between connection number and representative process_stratum
    target.  */
@@ -127,7 +128,7 @@ print_connection (struct ui_out *uiout, const char *requested_connections)
       ui_out_emit_tuple tuple_emitter (uiout, NULL);
 
       if (current_inferior ()->process_target () == t)
-	uiout->field_string ("current", "*");
+	uiout->field_string ("current", "*", selected_style.style ());
       else
 	uiout->field_skip ("current");
 

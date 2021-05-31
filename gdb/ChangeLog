@@ -1,3 +1,8 @@
+2021-05-31  Tom Tromey  <tom@tromey.com>
+
+	* cli/cli-style.c (selected_style): New global.
+	* cli/cli-style.h (selected_style): Declare.
+
 2021-05-30  Tom Tromey  <tom@tromey.com>
 
 	* dwarf2/read.c (dwarf2_per_bfd::allocate_signatured_type): Set

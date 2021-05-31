@@ -30,6 +30,7 @@
 #include "gdbcore.h"
 #include "symfile.h"
 #include "gdbsupport/environ.h"
+#include "cli/cli-style.h"
 #include "cli/cli-utils.h"
 #include "arch-utils.h"
 #include "target-descriptions.h"
@@ -516,7 +517,7 @@ print_inferior (struct ui_out *uiout, const char *requested_inferiors)
       ui_out_emit_tuple tuple_emitter (uiout, NULL);
 
       if (inf == current_inf)
-	uiout->field_string ("current", "*");
+	uiout->field_string ("current", "*", selected_style.style ());
       else
 	uiout->field_skip ("current");
 
