@@ -980,7 +980,7 @@ ada_remove_po_subprogram_suffix (const char *encoded, int *len)
 /* See ada-lang.h.  */
 
 std::string
-ada_decode (const char *encoded, bool wrap)
+ada_decode (const char *encoded, bool wrap, bool operators)
 {
   int i, j;
   int len0;
@@ -1071,7 +1071,7 @@ ada_decode (const char *encoded, bool wrap)
   while (i < len0)
     {
       /* Is this a symbol function?  */
-      if (at_start_name && encoded[i] == 'O')
+      if (operators && at_start_name && encoded[i] == 'O')
 	{
 	  int k;
 
@@ -1208,9 +1208,12 @@ ada_decode (const char *encoded, bool wrap)
   /* Decoded names should never contain any uppercase character.
      Double-check this, and abort the decoding if we find one.  */
 
-  for (i = 0; i < decoded.length(); ++i)
-    if (isupper (decoded[i]) || decoded[i] == ' ')
-      goto Suppress;
+  if (operators)
+    {
+      for (i = 0; i < decoded.length(); ++i)
+	if (isupper (decoded[i]) || decoded[i] == ' ')
+	  goto Suppress;
+    }
 
   return decoded;
 
