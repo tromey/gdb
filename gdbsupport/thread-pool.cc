@@ -129,11 +129,10 @@ thread_pool::set_thread_count (size_t num_threads)
   m_thread_count = num_threads;
 }
 
-std::future<void>
-thread_pool::post_task (std::function<void ()> &&func)
+void
+thread_pool::do_post_task (std::packaged_task<void ()> &&func)
 {
   std::packaged_task<void ()> t (std::move (func));
-  std::future<void> f = t.get_future ();
 
   if (m_thread_count == 0)
     {
@@ -146,7 +145,6 @@ thread_pool::post_task (std::function<void ()> &&func)
       m_tasks.emplace (std::move (t));
       m_tasks_cv.notify_one ();
     }
-  return f;
 }
 
 void
