@@ -6159,7 +6159,7 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
     {
       /* If an existing_cu is provided, a dwarf2_cu must not exist for this_cu
 	 in per_objfile yet.  */
-      gdb_assert (per_objfile->get_cu (this_cu) == nullptr);
+      // gdb_assert (per_objfile->get_cu (this_cu) == nullptr);
       m_new_cu.reset (new dwarf2_cu (this_cu, per_objfile));
       cu = m_new_cu.get ();
     }
