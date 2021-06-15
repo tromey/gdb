@@ -7777,7 +7777,7 @@ proc ensure_gdb_index { binfile {style ""} } {
 	-re -wrap "debug_names.*" {
 	    return 0
 	}
-	-re -wrap "Psymtabs.*" {
+	-re -wrap "(Cooked|Psymtabs).*" {
 	    if { [add_gdb_index $binfile $style] != "1" } {
 		return -1
 	    }
