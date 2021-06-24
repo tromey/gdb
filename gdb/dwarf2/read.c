@@ -19127,8 +19127,7 @@ cooked_indexer::ensure_cu_exists (cutu_reader *reader,
   cutu_reader *result = m_index_storage->get_reader (per_cu);
   if (result == nullptr)
     {
-      cutu_reader new_reader (per_cu, per_objfile, nullptr, nullptr, false,
-			      m_index_storage->get_abbrev_cache ());
+      cutu_reader new_reader (per_cu, per_objfile, nullptr, nullptr, false);
 
       prepare_one_comp_unit (new_reader.cu, new_reader.comp_unit_die,
 			     language_minimal);
