@@ -7010,20 +7010,44 @@ dwarf2_build_psymtabs_hard (dwarf2_per_objfile *per_objfile)
   per_objfile->per_bfd->str.read (per_objfile->objfile);
 
   using iter_type = typeof (per_bfd->all_comp_units.begin ());
-  std::vector<std::unique_ptr<cooked_index>> indexes
+
+  /* Each thread returns a pair holding a cooked index, and a vector
+     of errors that should be printed.  The latter is done because
+     GDB's I/O system is not thread-safe.  run_on_main_thread could be
+     used, but that would mean the messages are printed after the
+     prompt, which looks weird.  */
+  using result_type = std::pair<std::unique_ptr<cooked_index>,
+				std::vector<gdb_exception>>;
+  std::vector<result_type> results
     = gdb::parallel_for_each (1, per_bfd->all_comp_units.begin (),
 			      per_bfd->all_comp_units.end (),
 			      [=] (iter_type iter, iter_type end)
     {
+      std::vector<gdb_exception> errors;
       cooked_index_storage thread_storage;
       for (; iter != end; ++iter)
 	{
 	  dwarf2_per_cu_data *per_cu = iter->get ();
-	  process_psymtab_comp_unit (per_cu, per_objfile, false,
-				     language_minimal, &thread_storage);
+	  try
+	    {
+	      process_psymtab_comp_unit (per_cu, per_objfile, false,
+					 language_minimal, &thread_storage);
+	    }
+	  catch (gdb_exception &except)
+	    {
+	      errors.push_back (std::move (except));
+	    }
 	}
-      return thread_storage.release ();
+      return result_type (thread_storage.release (), std::move (errors));
     });
+
+  std::vector<std::unique_ptr<cooked_index>> indexes;
+  for (auto &one_result : results)
+    {
+      indexes.push_back (std::move (one_result.first));
+      for (auto &one_exc : one_result.second)
+	exception_print (gdb_stderr, one_exc);
+    }
 
   /* This has to wait until we read the CUs, we need the list of DWOs.  */
   process_skeletonless_type_units (per_objfile, &index_storage);
