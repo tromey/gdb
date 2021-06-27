@@ -24,5 +24,6 @@ if {[prepare_for_testing "failed to prepare" "${testfile}" \
 
 set index_file ${testfile}.gdb-index
 # The bug was that gdb would crash here.
-gdb_test_no_output "save gdb-index [file dirname ${index_file}]" \
+gdb_test "save gdb-index [file dirname ${index_file}]" \
+    "No debugging symbols" \
     "try to save gdb index"

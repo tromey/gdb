@@ -1385,7 +1385,12 @@ write_dwarf_index (dwarf2_per_objfile *per_objfile, const char *dir,
   struct objfile *objfile = per_objfile->objfile;
 
   if (per_objfile->per_bfd->cooked_index_table == nullptr)
-    error (_("Cannot use an index to create the index"));
+    {
+      if (per_objfile->per_bfd->index_table != nullptr
+	  || per_objfile->per_bfd->debug_names_table != nullptr)
+	error (_("Cannot use an index to create the index"));
+      error (_("No debugging symbols"));
+    }
 
   if (per_objfile->per_bfd->types.size () > 1)
     error (_("Cannot make an index when the file has multiple .debug_types sections"));
