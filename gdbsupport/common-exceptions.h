@@ -165,6 +165,24 @@ struct gdb_exception
     return message->c_str ();
   }
 
+  /* Compare two exceptions.  */
+  bool operator== (const gdb_exception &other) const
+  {
+    if (reason != other.reason || error != other.error)
+      return false;
+    if (message == nullptr)
+      return other.message == nullptr;
+    if (other.message != nullptr)
+      return false;
+    return *message == *other.message;
+  }
+
+  /* Compare two exceptions.  */
+  bool operator!= (const gdb_exception &other) const
+  {
+    return !(*this == other);
+  }
+
   enum return_reason reason;
   enum errors error;
   std::shared_ptr<std::string> message;
