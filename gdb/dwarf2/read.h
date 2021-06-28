@@ -358,6 +358,8 @@ struct dwarf2_per_bfd
      is allocated on the dwarf2_per_bfd obstack.  */
   signatured_type_up allocate_signatured_type (ULONGEST signature);
 
+  void map_info_sections (struct objfile *objfile);
+
 private:
   /* This function is mapped across the sections and remembers the
      offset and size of each of the debugging sections we are

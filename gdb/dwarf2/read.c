@@ -1776,6 +1776,23 @@ dwarf2_get_section_info (struct objfile *objfile,
   *sizep = info->size;
 }
 
+void
+dwarf2_per_bfd::map_info_sections (struct objfile *objfile)
+{
+  info.read (objfile);
+  abbrev.read (objfile);
+  line.read (objfile);
+  str.read (objfile);
+  str_offsets.read (objfile);
+  line_str.read (objfile);
+  ranges.read (objfile);
+  rnglists.read (objfile);
+  addr.read (objfile);
+
+  for (auto &section : types)
+    section.read (objfile);
+}
+
 
 /* DWARF quick_symbol_functions support.  */
 
@@ -6995,7 +7012,7 @@ dwarf2_build_psymtabs_hard (dwarf2_per_objfile *per_objfile)
   dwarf_read_debug_printf ("Building psymtabs of objfile %s ...",
 			   objfile_name (objfile));
 
-  per_bfd->info.read (objfile);
+  per_bfd->map_info_sections (objfile);
 
   cooked_index_storage index_storage;
   create_all_comp_units (per_objfile);
@@ -7006,8 +7023,6 @@ dwarf2_build_psymtabs_hard (dwarf2_per_objfile *per_objfile)
   if (!per_bfd->debug_aranges.empty ())
     read_addrmap_from_aranges (per_objfile, &per_bfd->debug_aranges,
 			       index_storage.get_addrmap ());
-
-  per_objfile->per_bfd->str.read (per_objfile->objfile);
 
   using iter_type = typeof (per_bfd->all_comp_units.begin ());
 
