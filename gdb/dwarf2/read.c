@@ -1011,9 +1011,7 @@ static struct die_info *die_specification (struct die_info *die,
 static line_header_up dwarf_decode_line_header (sect_offset sect_off,
 						struct dwarf2_cu *cu);
 
-struct file_and_directory;
 static void dwarf_decode_lines (struct line_header *,
-				const file_and_directory &,
 				struct dwarf2_cu *,
 				CORE_ADDR, int decode_mapping);
 
@@ -9383,7 +9381,7 @@ find_file_and_directory (struct die_info *die, struct dwarf2_cu *cu)
 
 static void
 handle_DW_AT_stmt_list (struct die_info *die, struct dwarf2_cu *cu,
-			const file_and_directory &fnd, CORE_ADDR lowpc) /* ARI: editCase function */
+			CORE_ADDR lowpc) /* ARI: editCase function */
 {
   dwarf2_per_objfile *per_objfile = cu->per_objfile;
   struct attribute *attr;
@@ -9471,7 +9469,7 @@ handle_DW_AT_stmt_list (struct die_info *die, struct dwarf2_cu *cu,
       gdb_assert (die->tag != DW_TAG_partial_unit);
     }
   decode_mapping = (die->tag != DW_TAG_partial_unit);
-  dwarf_decode_lines (cu->line_header, fnd, cu, lowpc, decode_mapping);
+  dwarf_decode_lines (cu->line_header, cu, lowpc, decode_mapping);
 }
 
 /* Process DW_TAG_compile_unit or DW_TAG_partial_unit.  */
@@ -9510,7 +9508,7 @@ read_file_scope (struct die_info *die, struct dwarf2_cu *cu)
   /* Decode line number information if present.  We do this before
      processing child DIEs, so that the line header table is available
      for DW_AT_decl_file.  */
-  handle_DW_AT_stmt_list (die, cu, fnd, lowpc);
+  handle_DW_AT_stmt_list (die, cu, lowpc);
 
   /* Process all dies in compilation unit.  */
   if (die->child != NULL)
@@ -20295,8 +20293,7 @@ dwarf_decode_lines_1 (struct line_header *lh, struct dwarf2_cu *cu,
    table is read in.  */
 
 static void
-dwarf_decode_lines (struct line_header *lh, const file_and_directory &fnd,
-		    struct dwarf2_cu *cu,
+dwarf_decode_lines (struct line_header *lh, struct dwarf2_cu *cu,
 		    CORE_ADDR lowpc, int decode_mapping)
 {
   if (decode_mapping)
