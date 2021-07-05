@@ -2865,7 +2865,7 @@ dwarf2_base_index_functions::find_last_source_symtab (struct objfile *objfile)
 void
 dwarf2_per_cu_data::free_cached_file_names ()
 {
-  if (per_bfd == nullptr || !per_bfd->using_index || v.quick == nullptr)
+  if (per_bfd == nullptr || v.quick == nullptr)
     return;
 
   struct quick_file_names *file_data = v.quick->file_names;
