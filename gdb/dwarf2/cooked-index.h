@@ -30,6 +30,7 @@
 #include "gdb_obstack.h"
 #include "addrmap.h"
 #include "gdbsupport/thread-pool.h"
+#include "gdbsupport/iterator-range.h"
 
 struct dwarf2_per_cu_data;
 
@@ -273,23 +274,7 @@ public:
   }
 
   /* A simple range over part of m_entries.  */
-  struct range
-  {
-    typedef std::vector<cooked_index_entry *>::iterator iterator;
-
-    iterator begin () const
-    {
-      return m_begin;
-    }
-
-    iterator end () const
-    {
-      return m_end;
-    }
-
-    iterator m_begin;
-    iterator m_end;
-  };
+  typedef iterator_range<std::vector<cooked_index_entry *>::iterator> range;
 
   /* Look up an entry by name.  Returns a range of all matching
      results.  If COMPLETING is true, then a larger range, suitable

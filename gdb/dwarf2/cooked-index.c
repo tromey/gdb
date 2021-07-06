@@ -157,12 +157,11 @@ cooked_index_vector::range
 cooked_index_vector::find (gdb::string_view name, bool completing)
 {
   m_future.wait ();
-  range result;
 
-  result.m_begin = std::lower_bound (m_entries.begin (), m_entries.end (),
-				     name,
-				     [=] (const cooked_index_entry *entry,
-					  const gdb::string_view &n)
+  auto lower = std::lower_bound (m_entries.begin (), m_entries.end (),
+				 name,
+				 [=] (const cooked_index_entry *entry,
+				      const gdb::string_view &n)
   {
     int cmp = strncasecmp (entry->canonical, n.data (), n.length ());
     if (cmp != 0 || completing)
@@ -170,10 +169,10 @@ cooked_index_vector::find (gdb::string_view name, bool completing)
     return strlen (entry->canonical) < n.length ();
   });
 
-  result.m_end = std::upper_bound (m_entries.begin (), m_entries.end (),
-				   name,
-				   [=] (const gdb::string_view &n,
-					const cooked_index_entry *entry)
+  auto upper = std::upper_bound (m_entries.begin (), m_entries.end (),
+				 name,
+				 [=] (const gdb::string_view &n,
+				      const cooked_index_entry *entry)
   {
     int cmp = strncasecmp (n.data (), entry->canonical, n.length ());
     if (cmp != 0 || completing)
@@ -181,7 +180,7 @@ cooked_index_vector::find (gdb::string_view name, bool completing)
     return n.length () < strlen (entry->canonical);
   });
 
-  return result;
+  return range (lower, upper);
 }
 
 /* See cooked-index.h.  */
