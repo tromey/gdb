@@ -120,8 +120,7 @@ clean_restart
 set pattern1 \
     [multi_line \
         "Reading symbols from \[^\r\n\]+" \
-        "Dwarf Error: DW_FORM_strp used without required section" \
-        "\\(No debugging symbols \[^\r\n\]+\\)"]
+        "Dwarf Error: DW_FORM_strp used without required section"]
 
 # This pattern is hit when GDB does use -readnow (e.g. running with
 # --target_board=readnow).
