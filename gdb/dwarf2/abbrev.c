@@ -305,10 +305,6 @@ abbrev_table::read (struct dwarf2_section_info *section,
       else if (!has_location && !has_specification_or_origin && !has_external
 	       && cur_abbrev->tag == DW_TAG_variable)
 	cur_abbrev->interesting = false;
-      else if (!has_address && !has_specification_or_origin && !has_inline
-	       && (cur_abbrev->tag == DW_TAG_subprogram
-		   || cur_abbrev->tag == DW_TAG_inlined_subroutine))
-	cur_abbrev->interesting = false;
       else
 	cur_abbrev->interesting = true;
 
