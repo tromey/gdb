@@ -161,10 +161,8 @@ abbrev_table::read (struct dwarf2_section_info *section,
       bool has_specification_or_origin = false;
       bool has_name = false;
       bool has_linkage_name = false;
-      bool has_address = false;
       bool has_location = false;
       bool has_external = false;
-      bool has_inline = false;
 
       /* Now read in declarations.  */
       int num_attrs = 0;
@@ -203,10 +201,6 @@ abbrev_table::read (struct dwarf2_section_info *section,
 	      has_external = true;
 	      break;
 
-	    case DW_AT_inline:
-	      has_inline = true;
-	      break;
-
 	    case DW_AT_specification:
 	    case DW_AT_abstract_origin:
 	    case DW_AT_extension:
@@ -220,13 +214,6 @@ abbrev_table::read (struct dwarf2_section_info *section,
 	    case DW_AT_MIPS_linkage_name:
 	    case DW_AT_linkage_name:
 	      has_linkage_name = true;
-	      break;
-
-	    case DW_AT_low_pc:
-	    case DW_AT_high_pc:
-	    case DW_AT_ranges:
-	    case DW_AT_entry_pc:
-	      has_address = true;
 	      break;
 
 	    case DW_AT_const_value:
