@@ -201,8 +201,6 @@ extern void ref_add (int, struct symbol *, const char *, CORE_ADDR);
 
 extern struct symbol *ref_search (int);
 
-extern void free_header_files (void);
-
 extern void init_header_files (void);
 
 /* Scan through all of the global symbols defined in the object file,
