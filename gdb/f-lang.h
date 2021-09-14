@@ -138,7 +138,7 @@ public:
 
   /* See language.h.  */
 
-  int parser (struct parser_state *ps) const override;
+  void parser (struct parser_state *ps) const override;
 
   /* See language.h.  */
 

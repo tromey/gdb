@@ -3404,7 +3404,7 @@ yylex (void)
   return current.token;
 }
 
-int
+void
 c_parse (struct parser_state *par_state)
 {
   /* Setting up the parser state.  */
@@ -3440,10 +3440,8 @@ c_parse (struct parser_state *par_state)
   popping = 0;
   name_obstack.clear ();
 
-  int result = yyparse ();
-  if (!result)
+  if (!yyparse ())
     pstate->set_operation (pstate->pop ());
-  return result;
 }
 
 #ifdef YYBISON

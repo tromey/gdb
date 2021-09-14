@@ -13357,10 +13357,10 @@ public:
 
   /* See language.h.  */
 
-  int parser (struct parser_state *ps) const override
+  void parser (struct parser_state *ps) const override
   {
     warnings_issued = 0;
-    return ada_parse (ps);
+    ada_parse (ps);
   }
 
   /* See language.h.  */

@@ -2071,7 +2071,7 @@ rust_parser::parse_atom (bool required)
 
 /* The parser as exposed to gdb.  */
 
-int
+void
 rust_language::parser (struct parser_state *state) const
 {
   rust_parser parser (state);
@@ -2094,8 +2094,6 @@ rust_language::parser (struct parser_state *state) const
     }
 
   state->set_operation (std::move (result));
-
-  return 0;
 }
 
 

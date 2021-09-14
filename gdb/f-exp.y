@@ -1530,7 +1530,7 @@ yylex (void)
   }
 }
 
-int
+void
 f_language::parser (struct parser_state *par_state) const
 {
   /* Setting up the parser state.  */
@@ -1547,10 +1547,8 @@ f_language::parser (struct parser_state *par_state) const
   scoped_restore restore_type_stack = make_scoped_restore (&type_stack,
 							   &stack);
 
-  int result = yyparse ();
-  if (!result)
+  if (!yyparse ())
     pstate->set_operation (pstate->pop ());
-  return result;
 }
 
 static void

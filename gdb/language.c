@@ -642,10 +642,10 @@ language_defn::value_print (struct value *val, struct ui_file *stream,
 
 /* See language.h.  */
 
-int
+void
 language_defn::parser (struct parser_state *ps) const
 {
-  return c_parse (ps);
+  c_parse (ps);
 }
 
 /* See language.h.  */
@@ -823,7 +823,7 @@ public:
 
   /* See language.h.  */
 
-  int parser (struct parser_state *ps) const override
+  void parser (struct parser_state *ps) const override
   {
     error (_("expression parsing not implemented for language \"%s\""),
 	   natural_name ());

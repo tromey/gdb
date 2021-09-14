@@ -56,7 +56,7 @@ struct builtin_d_type
 
 /* Defined in d-exp.y.  */
 
-extern int d_parse (struct parser_state *);
+extern void d_parse (struct parser_state *);
 
 /* Defined in d-lang.c  */
 

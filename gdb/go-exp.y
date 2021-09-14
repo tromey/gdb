@@ -1559,7 +1559,7 @@ yylex (void)
 
 /* See language.h.  */
 
-int
+void
 go_language::parser (struct parser_state *par_state) const
 {
   /* Setting up the parser state.  */
@@ -1579,10 +1579,8 @@ go_language::parser (struct parser_state *par_state) const
   popping = 0;
   name_obstack.clear ();
 
-  int result = yyparse ();
-  if (!result)
+  if (!yyparse ())
     pstate->set_operation (pstate->pop ());
-  return result;
 }
 
 static void

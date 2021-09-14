@@ -992,7 +992,7 @@ yylex (void)
  }
 }
 
-int
+void
 m2_language::parser (struct parser_state *par_state) const
 {
   /* Setting up the parser state.  */
@@ -1001,10 +1001,8 @@ m2_language::parser (struct parser_state *par_state) const
   pstate = par_state;
   paren_depth = 0;
 
-  int result = yyparse ();
-  if (!result)
+  if (!yyparse ())
     pstate->set_operation (pstate->pop ());
-  return result;
 }
 
 static void

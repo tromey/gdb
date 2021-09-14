@@ -1073,7 +1073,7 @@ static struct obstack temp_parse_space;
 #define qsort __qsort__dummy
 #include "ada-lex.c"
 
-int
+void
 ada_parse (struct parser_state *par_state)
 {
   /* Setting up the parser state.  */
@@ -1087,15 +1087,13 @@ ada_parse (struct parser_state *par_state)
   components.clear ();
   associations.clear ();
 
-  int result = yyparse ();
-  if (!result)
+  if (!yyparse ())
     {
       struct type *context_type = nullptr;
       if (par_state->void_context_p)
 	context_type = parse_type (par_state)->builtin_void;
       pstate->set_operation (ada_pop (true, context_type));
     }
-  return result;
 }
 
 static void

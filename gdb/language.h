@@ -513,7 +513,7 @@ struct language_defn
 
   /* Parser function.  */
 
-  virtual int parser (struct parser_state *ps) const;
+  virtual void parser (struct parser_state *ps) const;
 
   /* Print the character CH (of type CHTYPE) on STREAM as part of the
      contents of a literal string whose delimiter is QUOTER.  */
