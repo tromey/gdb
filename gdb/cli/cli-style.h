@@ -151,6 +151,9 @@ extern cli_style_option version_style;
 /* The style for a line number.  */
 extern cli_style_option line_number_style;
 
+extern cli_style_option even_background_style;
+extern cli_style_option odd_background_style;
+
 /* True if source styling is enabled.  */
 extern bool source_styling;
 
