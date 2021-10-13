@@ -108,6 +108,10 @@ cli_style_option metadata_style ("metadata", ui_file_style::DIM);
 cli_style_option version_style ("version", ui_file_style::MAGENTA,
 				ui_file_style::BOLD);
 
+cli_style_option even_background_style ("even", ui_file_style::NONE);
+cli_style_option odd_background_style ("odd", ui_file_style::WHITE,
+				       ui_file_style::DIM);
+
 /* See cli-style.h.  */
 
 cli_style_option::cli_style_option (const char *name,
@@ -449,6 +453,18 @@ TUI window that does have the focus."),
   version_style.add_setshow_commands (no_class, _("\
 Version string display styling.\n\
 Configure colors used to display the GDB version string."),
+				      &style_set_list, &style_show_list,
+				      false);
+
+  even_background_style.add_setshow_commands (no_class, _("\
+FIXME display styling.\n\
+Configure colors used to display FIXME."),
+				      &style_set_list, &style_show_list,
+				      false);
+
+  odd_background_style.add_setshow_commands (no_class, _("\
+FIXME display styling.\n\
+Configure colors used to display FIXME."),
 				      &style_set_list, &style_show_list,
 				      false);
 }

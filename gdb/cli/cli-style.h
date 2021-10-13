@@ -125,6 +125,9 @@ extern cli_style_option tui_active_border_style;
 /* The style to use for the GDB version string.  */
 extern cli_style_option version_style;
 
+extern cli_style_option even_background_style;
+extern cli_style_option odd_background_style;
+
 /* True if source styling is enabled.  */
 extern bool source_styling;
 
