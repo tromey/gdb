@@ -1,0 +1,79 @@
+# Copyright 2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Test zebra striping.
+
+standard_testfile
+
+# Style a single line of a "bt".  Only some parts of the text are
+# really checked.  Returns a regexp that can be used to match the
+# line.
+proc style_bt_line {num name filename bg} {
+    # The code lamely emits too many escapes.
+    set result [style "#" reset $bg][style $num reset $bg]
+    append result ".*?"
+    append result [style $name function $bg]
+    append result ".*?"
+    append result [style $filename file $bg]
+    append result ".*?\r\n"
+    return $result
+}
+
+# Style a single line of "info break".  Only some parts of the text
+# are really checked.  Returns a regexp that can be used to match the
+# line.
+proc style_info_line {num name filename bg} {
+    set result [style $num reset $bg]
+    append result ".*?"
+    append result [style $name function $bg]
+    append result ".*?"
+    append result [style $filename file $bg]
+    append result ".*?\r\n"
+    return $result
+}
+
+with_ansi_styling_terminal {
+    if {[prepare_for_testing "failed to prepare" $testfile $srcfile debug]} {
+	return
+    }
+
+    if {![runto one]} {
+	return
+    }
+
+    gdb_test_no_output "set filename-display basename"
+    gdb_test_no_output "set style odd-lines background red"
+    gdb_test_no_output "set style even-lines background black"
+
+    gdb_test_no_output "set style enabled on"
+
+    gdb_test_sequence backtrace "" \
+	[list \
+	     [style_bt_line 0 one zebra-style.c 41] \
+	     [style_bt_line 1 two zebra-style.c 40] \
+	     [style_bt_line 2 main zebra-style.c 41]]
+
+    gdb_breakpoint two
+    gdb_breakpoint main
+
+    gdb_test_sequence "info break" "" \
+	-prompt "$gdb_prompt.*?" \
+	[list \
+	     ".*?Num.*?Address.*What.*?\r\n" \
+	     [style_info_line 1 one zebra-style.c 41] \
+	     [string cat [style "\tbreakpoint" reset 41] ".*?\r\n"] \
+	     [style_info_line 2 two zebra-style.c 40] \
+	     [style_info_line 3 main zebra-style.c 41]]
+}

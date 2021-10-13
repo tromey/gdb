@@ -1833,7 +1833,13 @@ pager_file::puts (const char *linebuffer)
 	  chars_printed = 0;
 	  wrap_here (0); /* Spit out chars, cancel further wraps.  */
 	  lines_printed++;
+	  const ui_file_style save_style = m_applied_style;
+	  const ui_file_style empty_style;
+	  if (save_style != empty_style)
+	    m_stream->emit_style_escape (ui_file_style ());
 	  m_stream->puts ("\n");
+	  if (save_style != empty_style)
+	    m_stream->emit_style_escape (save_style);
 	  linebuffer++;
 	}
     }

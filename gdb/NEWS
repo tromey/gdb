@@ -136,6 +136,16 @@ show progress-bars enabled
   content, to be disabled (the set command), or to see if
   progress-bars are currently enabled or not (the show command).
 
+set style even-lines foreground COLOR
+set style even-lines background COLOR
+set style even-lines intensity VALUE
+set style odd-lines foreground COLOR
+set style odd-lines background COLOR
+set style odd-lines intensity VALUE
+  Control the styling of even and odd lines of tables.  These style
+  settings are merged with any other style that would normally be
+  applied when displaying the table.
+
 info proc environ
   Print the initial environment variables of the specified process.
   Supported on Linux.

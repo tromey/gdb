@@ -179,6 +179,32 @@ cli_style_option version_style ("version", ui_file_style::MAGENTA,
 
 /* See cli-style.h.  */
 
+cli_style_option even_background_style ("even-lines", ui_file_style::NONE);
+
+/* Helper function to compute the initial value of the odd background
+   style.  */
+
+static ui_file_style::color
+get_initial_odd_color ()
+{
+  const std::vector<color_space> &colors = colorsupport ();
+  auto iter = std::find (colors.begin (), colors.end (),
+			 color_space::RGB_24BIT);
+  /* If 24-bit color is available, use a light grey; otherwise just do
+     nothing.  */
+  if (iter == colors.end ())
+    return ui_file_style::NONE;
+  return ui_file_style::color (0x33, 0x33, 0x33);
+}
+
+/* See cli-style.h.  */
+
+cli_style_option odd_background_style
+     ("odd-lines", ui_file_style::NONE, ui_file_style::NORMAL,
+      get_initial_odd_color ());
+
+/* See cli-style.h.  */
+
 cli_style_option disasm_mnemonic_style ("mnemonic", ui_file_style::GREEN);
 
 /* See cli-style.h.  */
@@ -202,11 +228,12 @@ cli_style_option line_number_style ("line-number", ui_file_style::DIM);
 
 cli_style_option::cli_style_option (const char *name,
 				    ui_file_style::basic_color fg,
-				    ui_file_style::intensity intensity)
+				    ui_file_style::intensity intensity,
+				    ui_file_style::color bg)
   : changed (name),
     m_name (name),
     m_foreground (fg),
-    m_background (ui_file_style::NONE),
+    m_background (bg),
     m_intensity (cli_intensities[intensity])
 {
 }
@@ -704,6 +731,18 @@ The \"line-number\" style is used when GDB displays line numbers\n\
 coming from your source code."),
 				       &style_set_list, &style_show_list,
 				       false);
+
+  even_background_style.add_setshow_commands (no_class, _("\
+Display styling for even-numbered lines.\n\
+Configure colors used to display even-numbered lines in tables."),
+				      &style_set_list, &style_show_list,
+				      false);
+
+  odd_background_style.add_setshow_commands (no_class, _("\
+Display styling for odd-numbered lines.\n\
+Configure colors used to display odd-numbered lines in tables."),
+				      &style_set_list, &style_show_list,
+				      false);
 
   /* Setup 'disassembler address' style and 'disassembler symbol' style,
      these are aliases for 'address' and 'function' styles respectively.  */

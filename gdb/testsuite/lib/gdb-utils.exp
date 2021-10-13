@@ -64,13 +64,16 @@ proc string_list_to_regexp { args } {
 # style to STYLE, and one to reset the style to the default.  The
 # return value is suitable for use as a regular expression.
 
-# STYLE can either be the payload part of an ANSI terminal sequence,
-# or a shorthand for one of the gdb standard styles: "file",
-# "function", "variable", "address", etc.
+# STYLE is a shorthand for one of the gdb standard styles: "file",
+# "function", "variable", "address", etc.  It can also be "none",
+# where STR is returned verbatim, or "reset", where the default style
+# setting (but including the BG parameter) is used.
 
-proc style {str style} {
+# BG is the background color to use.  This option can be useful when
+# testing zebra-striping.
+
+proc style {str style {bg 49}} {
     set fg 39
-    set bg 49
     set intensity 22
     set italic 23
     set underline 24
@@ -86,6 +89,7 @@ proc style {str style} {
 	metadata { set intensity 2 }
 	version { set fg 35; set intensity 1 }
 	line-number { set intensity 2 }
+	reset { }
 	none { return $str }
     }
     return "\033\\\[${fg};${bg};${intensity};${italic};${underline};${reverse}m${str}\033\\\[m"

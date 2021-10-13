@@ -48,6 +48,8 @@ protected:
   /* This overload is used for "phony" tables.  */
   void do_table_begin () override
   {
+    /* For a phony table, just set the row.  */
+    m_row_number = 1;
   }
 
   virtual void do_table_body () override;
@@ -90,6 +92,8 @@ protected:
 				   double, double) override;
   virtual void do_progress_end () override;
 
+  void do_start_row () override;
+
   bool suppress_output ()
   { return m_suppress_output; }
 
@@ -99,6 +103,12 @@ private:
 
   std::vector<ui_file *> m_streams;
   bool m_suppress_output;
+
+  /* When displaying a table, the current row.  */
+  int m_row_number = 0;
+
+  /* The prevailing background style, used for zebra-striping a table.  */
+  ui_file_style m_style;
 
   /* The state of a recent progress update.  */
   struct cli_progress_info

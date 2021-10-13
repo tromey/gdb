@@ -31,7 +31,8 @@ public:
 
   /* Construct a CLI style option with a foreground color.  */
   cli_style_option (const char *name, ui_file_style::basic_color fg,
-		    ui_file_style::intensity = ui_file_style::NORMAL);
+		    ui_file_style::intensity = ui_file_style::NORMAL,
+		    ui_file_style::color bg = ui_file_style::NONE);
 
   /* Construct a CLI style option with an intensity.  */
   cli_style_option (const char *name, ui_file_style::intensity i);
@@ -150,6 +151,9 @@ extern cli_style_option version_style;
 
 /* The style for a line number.  */
 extern cli_style_option line_number_style;
+
+extern cli_style_option even_background_style;
+extern cli_style_option odd_background_style;
 
 /* True if source styling is enabled.  */
 extern bool source_styling;

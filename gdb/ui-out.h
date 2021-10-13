@@ -397,6 +397,8 @@ protected:
   virtual bool do_is_mi_like_p () const
   { return false; }
 
+  virtual void do_start_row ();
+
  private:
 
   /* A table can only be started or ended by ui_out_emit_table.  */

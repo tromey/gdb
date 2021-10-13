@@ -1973,6 +1973,12 @@ backtrace_command_1 (const frame_print_options &fp_opts,
       else
 	trailing = get_current_frame ();
 
+      /* Make a phony table -- we don't want a real table, because we
+	 don't want headers.  But using a table is the easiest way to
+	 get zebra stripes, which we do want.  */
+      ui_out_emit_table phony_table (current_uiout);
+      current_uiout->table_body ();
+
       for (fi = trailing; fi && count--; fi = get_prev_frame (fi))
 	{
 	  QUIT;

@@ -28590,6 +28590,14 @@ family of commands.  This style is only used when @value{GDBN} is
 styling using its builtin disassembler library.  By default, this style's
 foreground color is red.
 
+@item even-lines
+@itemx odd-lines
+Control the styling of lines in a table, such as the output of
+@code{info break}.  These styles are used for even- and odd-numbered
+lines, respectively.  Note that, unlike most other styles mentioned
+here, these are merged with any other style that might be applied when
+displaying the table.
+
 @end table
 
 @node Numbers

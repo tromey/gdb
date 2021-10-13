@@ -42,6 +42,9 @@ cli_ui_out::do_table_begin (int nbrofcols, int nr_rows, const char *tblid)
     /* Only the table suppresses the output and, fortunately, a table
        is not a recursive data structure.  */
     gdb_assert (!m_suppress_output);
+
+  /* Rows start at 1.  */
+  m_row_number = 1;
 }
 
 /* Mark beginning of a table body */
@@ -62,6 +65,7 @@ void
 cli_ui_out::do_table_end (bool phony)
 {
   m_suppress_output = false;
+  m_style = ui_file_style ();
 }
 
 /* Specify table header */
@@ -76,6 +80,18 @@ cli_ui_out::do_table_header (int width, ui_align alignment,
 
   do_field_string (0, width, alignment, 0, col_hdr.c_str (),
 		   title_style.style ());
+}
+
+/* See ui-out.h.  */
+
+void
+cli_ui_out::do_start_row ()
+{
+  ui_out::do_start_row ();
+  m_style = ((m_row_number % 2 == 0)
+	     ? even_background_style
+	     : odd_background_style).style ();
+  ++m_row_number;
 }
 
 /* Mark beginning of a list */
@@ -175,7 +191,7 @@ cli_ui_out::do_field_string (int fldno, int width, ui_align align,
   if (string)
     {
       ui_file *stream = m_streams.back ();
-      stream->emit_style_escape (style);
+      stream->emit_style_escape (m_style.merge (style));
       stream->puts (string);
       stream->emit_style_escape (ui_file_style ());
     }
@@ -208,7 +224,7 @@ cli_ui_out::do_spaces (int numspaces)
   if (m_suppress_output)
     return;
 
-  print_spaces (numspaces, m_streams.back ());
+  fputs_styled (n_spaces (numspaces), m_style, m_streams.back ());
 }
 
 void
@@ -217,7 +233,7 @@ cli_ui_out::do_text (const char *string)
   if (m_suppress_output)
     return;
 
-  gdb_puts (string, m_streams.back ());
+  fputs_styled (string, m_style, m_streams.back ());
 }
 
 void
@@ -458,7 +474,7 @@ cli_ui_out::do_progress_end ()
 void
 cli_ui_out::field_separator ()
 {
-  gdb_putc (' ', m_streams.back ());
+  fputs_styled (" ", m_style, m_streams.back ());
 }
 
 /* Constructor for cli_ui_out.  */
