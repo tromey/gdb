@@ -75,6 +75,8 @@ protected:
   virtual void do_progress_notify (double) override;
   virtual void do_progress_end () override;
 
+  virtual void do_start_row () override;
+
   bool suppress_output ()
   { return m_suppress_output; }
 
@@ -84,6 +86,8 @@ private:
 
   std::vector<ui_file *> m_streams;
   bool m_suppress_output;
+
+  int m_row_number = 0;
 
   /* Represents the printing state of a progress meter.  */
   enum meter_state
