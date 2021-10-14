@@ -395,6 +395,12 @@ ui_out::table_end ()
 }
 
 void
+ui_out::do_start_row ()
+{
+  m_table_up->start_row ();
+}
+
+void
 ui_out::begin (ui_out_type type, const char *id)
 {
   /* Be careful to verify the ``field'' before the new tuple/list is
@@ -419,7 +425,7 @@ ui_out::begin (ui_out_type type, const char *id)
   if (m_table_up != nullptr
       && m_table_up->current_state () == ui_out_table::state::BODY
       && m_table_up->entry_level () == level ())
-    m_table_up->start_row ();
+    do_start_row ();
 
   do_begin (type, id);
 }

@@ -40,6 +40,7 @@ cli_ui_out::do_table_begin (int nbrofcols, int nr_rows, const char *tblid)
     /* Only the table suppresses the output and, fortunately, a table
        is not a recursive data structure.  */
     gdb_assert (!m_suppress_output);
+  m_row_number = 0;
 }
 
 /* Mark beginning of a table body */
@@ -74,6 +75,12 @@ cli_ui_out::do_table_header (int width, ui_align alignment,
 
   do_field_string (0, width, alignment, 0, col_hdr.c_str (),
 		   title_style.style ());
+}
+
+void
+cli_ui_out::do_start_row ()
+{
+  ++m_row_number;
 }
 
 /* Mark beginning of a list */
