@@ -81,6 +81,8 @@ protected:
 				   double, double) override;
   virtual void do_progress_end () override;
 
+  virtual void do_start_row () override;
+
   bool suppress_output ()
   { return m_suppress_output; }
 
@@ -90,6 +92,8 @@ private:
 
   std::vector<ui_file *> m_streams;
   bool m_suppress_output;
+
+  int m_row_number = 0;
 
   /* The state of a recent progress update.  */
   struct cli_progress_info

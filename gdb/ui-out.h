@@ -380,6 +380,8 @@ protected:
   virtual bool do_is_mi_like_p () const
   { return false; }
 
+  virtual void do_start_row ();
+
  private:
   void call_do_message (const ui_file_style &style, const char *format,
 			...);
