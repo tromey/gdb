@@ -115,6 +115,8 @@ private:
 
   /* Stack of progress meters.  */
   std::vector<cli_progress_info> m_meters;
+
+  ui_file_style m_style;
 };
 
 extern cli_ui_out *cli_out_new (struct ui_file *stream);
