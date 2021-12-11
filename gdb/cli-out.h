@@ -112,6 +112,8 @@ private:
 
   /* Stack of progress info.  */
   std::vector<cli_progress_info> m_progress_info;
+  ui_file_style m_style;
+
   void clear_progress_notify ();
 };
 
