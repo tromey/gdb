@@ -343,6 +343,18 @@ struct ui_file_style
     return this;
   }
 
+  /* Merge STYLE into this style, overriding this style's settings
+     where appropriate.  */
+  void merge (const ui_file_style &style)
+  {
+    if (style.m_foreground != NONE)
+      m_foreground = style.m_foreground;
+    if (style.m_background != NONE)
+      m_background = style.m_background;
+    m_intensity = style.m_intensity;
+    m_reverse = style.m_reverse;
+  }
+
   /* nullptr-terminated list of names corresponding to enum basic_color.  */
   static const std::vector<const char *> basic_color_enums;
 
