@@ -4147,34 +4147,13 @@ arm_stack_frame_destroyed_p (struct gdbarch *gdbarch, CORE_ADDR pc)
 /* When arguments must be pushed onto the stack, they go on in reverse
    order.  The code below implements a FILO (stack) to do this.  */
 
-struct arm_stack_item
-{
-  int len;
-  struct arm_stack_item *prev;
-  gdb_byte *data;
-};
+typedef std::vector<gdb_byte> arm_stack_item;
 
-static struct arm_stack_item *
-push_stack_item (struct arm_stack_item *prev, const gdb_byte *contents,
-		 int len)
+static void
+push_stack_item (std::list<arm_stack_item> &items,
+		 const gdb_byte *contents, int len)
 {
-  struct arm_stack_item *si;
-  si = XNEW (struct arm_stack_item);
-  si->data = (gdb_byte *) xmalloc (len);
-  si->len = len;
-  si->prev = prev;
-  memcpy (si->data, contents, len);
-  return si;
-}
-
-static struct arm_stack_item *
-pop_stack_item (struct arm_stack_item *si)
-{
-  struct arm_stack_item *dead = si;
-  si = si->prev;
-  xfree (dead->data);
-  xfree (dead);
-  return si;
+  items.emplace_front (contents, &contents[len]);
 }
 
 /* Implement the gdbarch type alignment method, overrides the generic
@@ -4488,7 +4467,7 @@ arm_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
   int argnum;
   int argreg;
   int nstack;
-  struct arm_stack_item *si = NULL;
+  std::list<arm_stack_item> items;
   int use_vfp_abi;
   struct type *ftype;
   unsigned vfp_regs_free = (1 << 16) - 1;
@@ -4624,7 +4603,7 @@ arm_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
       /* Push stack padding for doubleword alignment.  */
       if (nstack & (align - 1))
 	{
-	  si = push_stack_item (si, val, ARM_INT_REGISTER_SIZE);
+	  push_stack_item (items, val, ARM_INT_REGISTER_SIZE);
 	  nstack += ARM_INT_REGISTER_SIZE;
 	}
       
@@ -4685,7 +4664,7 @@ arm_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
 
 	      /* Push the arguments onto the stack.  */
 	      arm_debug_printf ("arg %d @ sp + %d", argnum, nstack);
-	      si = push_stack_item (si, buf, ARM_INT_REGISTER_SIZE);
+	      push_stack_item (items, buf, ARM_INT_REGISTER_SIZE);
 	      nstack += ARM_INT_REGISTER_SIZE;
 	    }
 	      
@@ -4698,14 +4677,13 @@ arm_push_dummy_call (struct gdbarch *gdbarch, struct value *function,
   if (nstack & 4)
     sp -= 4;
 
-  while (si)
+  for (const arm_stack_item &item : items)
     {
-      sp -= si->len;
-      write_memory (sp, si->data, si->len);
-      si = pop_stack_item (si);
+      sp -= item.size ();
+      write_memory (sp, item.data (), item.size ());
     }
 
-  /* Finally, update teh SP register.  */
+  /* Finally, update the SP register.  */
   regcache_cooked_write_unsigned (regcache, ARM_SP_REGNUM, sp);
 
   return sp;
