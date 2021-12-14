@@ -347,9 +347,9 @@ struct ui_file_style
      where appropriate.  */
   void merge (const ui_file_style &style)
   {
-    if (style.m_foreground != NONE)
+    if (!style.m_foreground.is_none ())
       m_foreground = style.m_foreground;
-    if (style.m_background != NONE)
+    if (!style.m_background.is_none ())
       m_background = style.m_background;
     m_intensity = style.m_intensity;
     m_reverse = style.m_reverse;
