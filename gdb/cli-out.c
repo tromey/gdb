@@ -61,6 +61,7 @@ void
 cli_ui_out::do_table_end ()
 {
   m_suppress_output = false;
+  m_style = ui_file_style ();
 }
 
 /* Specify table header */
@@ -81,6 +82,9 @@ void
 cli_ui_out::do_start_row ()
 {
   ++m_row_number;
+  m_style = ((m_row_number % 2 == 0)
+	     ? even_background_style
+	     : odd_background_style).style ();
 }
 
 /* Mark beginning of a list */
@@ -179,8 +183,10 @@ cli_ui_out::do_field_string (int fldno, int width, ui_align align,
 
   if (string)
     {
+      ui_file_style merged = m_style;
+      merged.merge (style);
       ui_file *stream = m_streams.back ();
-      stream->emit_style_escape (style);
+      stream->emit_style_escape (merged);
       stream->puts (string);
       stream->emit_style_escape (ui_file_style ());
     }
@@ -235,8 +241,10 @@ cli_ui_out::do_message (const ui_file_style &style,
   std::string str = string_vprintf (format, args);
   if (!str.empty ())
     {
+      ui_file_style merged = m_style;
+      merged.merge (style);
       ui_file *stream = m_streams.back ();
-      stream->emit_style_escape (style);
+      stream->emit_style_escape (merged);
       stream->puts (str.c_str ());
       stream->emit_style_escape (ui_file_style ());
     }
