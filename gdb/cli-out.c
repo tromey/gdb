@@ -81,6 +81,7 @@ cli_ui_out::do_table_header (int width, ui_align alignment,
 void
 cli_ui_out::do_start_row ()
 {
+  ui_out::do_start_row ();
   ++m_row_number;
   m_style = ((m_row_number % 2 == 0)
 	     ? even_background_style
