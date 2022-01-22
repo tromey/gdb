@@ -293,7 +293,9 @@ static const struct generic_val_print_decorations m2_decorations =
   false,
   "void",
   "{",
-  "}"
+  "}",
+  nullptr,
+  nullptr
 };
 
 /* See m2-lang.h.  */
@@ -382,67 +384,6 @@ m2_language::value_print_inner (struct value *val, struct ui_file *stream,
 	cp_print_value_fields (val, stream, recurse, options, NULL, 0);
       break;
 
-    case TYPE_CODE_SET:
-      elttype = type->index_type ();
-      elttype = check_typedef (elttype);
-      if (elttype->is_stub ())
-	{
-	  fprintf_styled (stream, metadata_style.style (),
-			  _("<incomplete type>"));
-	  break;
-	}
-      else
-	{
-	  struct type *range = elttype;
-	  LONGEST low_bound, high_bound;
-	  int i;
-	  int need_comma = 0;
-
-	  fputs_filtered ("{", stream);
-
-	  i = get_discrete_bounds (range, &low_bound, &high_bound) ? 0 : -1;
-	maybe_bad_bstring:
-	  if (i < 0)
-	    {
-	      fputs_styled (_("<error value>"), metadata_style.style (),
-			    stream);
-	      goto done;
-	    }
-
-	  for (i = low_bound; i <= high_bound; i++)
-	    {
-	      int element = value_bit_index (type, valaddr, i);
-
-	      if (element < 0)
-		{
-		  i = element;
-		  goto maybe_bad_bstring;
-		}
-	      if (element)
-		{
-		  if (need_comma)
-		    fputs_filtered (", ", stream);
-		  print_type_scalar (range, i, stream);
-		  need_comma = 1;
-
-		  if (i + 1 <= high_bound
-		      && value_bit_index (type, valaddr, ++i))
-		    {
-		      int j = i;
-
-		      fputs_filtered ("..", stream);
-		      while (i + 1 <= high_bound
-			     && value_bit_index (type, valaddr, ++i))
-			j = i;
-		      print_type_scalar (range, j, stream);
-		    }
-		}
-	    }
-	done:
-	  fputs_filtered ("}", stream);
-	}
-      break;
-
     case TYPE_CODE_RANGE:
       if (TYPE_LENGTH (type) == TYPE_LENGTH (TYPE_TARGET_TYPE (type)))
 	{
@@ -452,6 +393,7 @@ m2_language::value_print_inner (struct value *val, struct ui_file *stream,
 	}
       /* FALLTHROUGH */
 
+    case TYPE_CODE_SET:
     case TYPE_CODE_REF:
     case TYPE_CODE_ENUM:
     case TYPE_CODE_FUNC:

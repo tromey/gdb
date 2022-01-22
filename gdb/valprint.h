@@ -224,6 +224,11 @@ struct generic_val_print_decorations
   /* Array start and end strings.  */
   const char *array_start;
   const char *array_end;
+
+  /* Set start and end strings.  If nullptr, the corresponding array
+     string is used instead.  */
+  const char *set_start;
+  const char *set_end;
 };
 
 

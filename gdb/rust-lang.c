@@ -488,7 +488,9 @@ static const struct generic_val_print_decorations rust_decorations =
   false,
   "()",
   "[",
-  "]"
+  "]",
+  nullptr,
+  nullptr
 };
 
 /* See language.h.  */

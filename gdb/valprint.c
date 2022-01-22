@@ -874,6 +874,73 @@ generic_value_print_memberptr
     generic_value_print (val, stream, recurse, options, decorations);
 }
 
+/* generic_value_print helper for TYPE_CODE_SET.  */
+
+static void
+generic_value_print_set
+     (struct value *val, struct ui_file *stream,
+      const struct generic_val_print_decorations *decorations)
+{
+  struct type *type = value_type (val);
+  struct type *elttype = type->index_type ();
+  elttype = check_typedef (elttype);
+  if (elttype->is_stub ())
+    fprintf_styled (stream, metadata_style.style (), "<incomplete type>");
+  else
+    {
+      struct type *range = elttype;
+      LONGEST low_bound, high_bound;
+      int need_comma = 0;
+      const gdb_byte *valaddr = value_contents_for_printing (val).data ();
+
+      fputs_filtered (decorations->set_start == nullptr
+		      ? decorations->array_start
+		      : decorations->set_start, stream);
+
+      if (!get_discrete_bounds (range, &low_bound, &high_bound))
+	{
+	maybe_bad_bstring:
+	  fputs_styled ("<error value>", metadata_style.style (), stream);
+	  goto done;
+	}
+
+      for (int i = low_bound; i <= high_bound; i++)
+	{
+	  int element = value_bit_index (type, valaddr, i);
+
+	  if (element < 0)
+	    {
+	      i = element;
+	      goto maybe_bad_bstring;
+	    }
+	  if (element)
+	    {
+	      if (need_comma)
+		fputs_filtered (", ", stream);
+	      print_type_scalar (range, i, stream);
+	      need_comma = 1;
+
+	      if (i + 1 <= high_bound
+		  && value_bit_index (type, valaddr, ++i))
+		{
+		  int j = i;
+
+		  fputs_filtered ("..", stream);
+		  while (i + 1 <= high_bound
+			 && value_bit_index (type, valaddr, ++i))
+		    j = i;
+		  print_type_scalar (range, j, stream);
+		}
+	    }
+	}
+
+    done:
+      fputs_filtered (decorations->set_end == nullptr
+		      ? decorations->array_end
+		      : decorations->set_end, stream);
+    }
+}
+
 /* See valprint.h.  */
 
 void
@@ -979,6 +1046,10 @@ generic_value_print (struct value *val, struct ui_file *stream, int recurse,
     case TYPE_CODE_METHODPTR:
       cplus_print_method_ptr (value_contents_for_printing (val).data (), type,
 			      stream);
+      break;
+
+    case TYPE_CODE_SET:
+      generic_value_print_set (val, stream, decorations);
       break;
 
     case TYPE_CODE_UNION:

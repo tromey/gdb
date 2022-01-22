@@ -127,7 +127,9 @@ static const struct generic_val_print_decorations c_decorations =
   false,
   "void",
   "{",
-  "}"
+  "}",
+  nullptr,
+  nullptr
 };
 
 /* Print a pointer based on the type of its target.

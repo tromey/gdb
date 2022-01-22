@@ -59,7 +59,9 @@ static const struct generic_val_print_decorations p_decorations =
   false,
   "void",
   "{",
-  "}"
+  "}",
+  "[",
+  "]"
 };
 
 /* See p-lang.h.  */
@@ -287,6 +289,7 @@ pascal_language::value_print_inner (struct value *val,
     case TYPE_CODE_UNDEF:
     case TYPE_CODE_BOOL:
     case TYPE_CODE_CHAR:
+    case TYPE_CODE_SET:
       generic_value_print (val, stream, recurse, options, &p_decorations);
       break;
 
@@ -325,73 +328,6 @@ pascal_language::value_print_inner (struct value *val,
 	  else
 	    pascal_object_print_value_fields (val, stream, recurse,
 					      options, NULL, 0);
-	}
-      break;
-
-    case TYPE_CODE_SET:
-      elttype = type->index_type ();
-      elttype = check_typedef (elttype);
-      if (elttype->is_stub ())
-	{
-	  fprintf_styled (stream, metadata_style.style (), "<incomplete type>");
-	  break;
-	}
-      else
-	{
-	  struct type *range = elttype;
-	  LONGEST low_bound, high_bound;
-	  int need_comma = 0;
-
-	  fputs_filtered ("[", stream);
-
-	  int bound_info = (get_discrete_bounds (range, &low_bound, &high_bound)
-			    ? 0 : -1);
-	  if (low_bound == 0 && high_bound == -1 && TYPE_LENGTH (type) > 0)
-	    {
-	      /* If we know the size of the set type, we can figure out the
-	      maximum value.  */
-	      bound_info = 0;
-	      high_bound = TYPE_LENGTH (type) * TARGET_CHAR_BIT - 1;
-	      range->bounds ()->high.set_const_val (high_bound);
-	    }
-	maybe_bad_bstring:
-	  if (bound_info < 0)
-	    {
-	      fputs_styled ("<error value>", metadata_style.style (), stream);
-	      goto done;
-	    }
-
-	  for (i = low_bound; i <= high_bound; i++)
-	    {
-	      int element = value_bit_index (type, valaddr, i);
-
-	      if (element < 0)
-		{
-		  i = element;
-		  goto maybe_bad_bstring;
-		}
-	      if (element)
-		{
-		  if (need_comma)
-		    fputs_filtered (", ", stream);
-		  print_type_scalar (range, i, stream);
-		  need_comma = 1;
-
-		  if (i + 1 <= high_bound
-		      && value_bit_index (type, valaddr, ++i))
-		    {
-		      int j = i;
-
-		      fputs_filtered ("..", stream);
-		      while (i + 1 <= high_bound
-			     && value_bit_index (type, valaddr, ++i))
-			j = i;
-		      print_type_scalar (range, j, stream);
-		    }
-		}
-	    }
-	done:
-	  fputs_filtered ("]", stream);
 	}
       break;
 

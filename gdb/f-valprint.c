@@ -428,7 +428,9 @@ static const struct generic_val_print_decorations f_decorations =
   true,
   "void",
   "{",
-  "}"
+  "}",
+  nullptr,
+  nullptr
 };
 
 /* See f-lang.h.  */
