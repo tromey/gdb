@@ -422,6 +422,10 @@ static const struct generic_val_print_decorations f_decorations =
   ")",
   ".TRUE.",
   ".FALSE.",
+  /* The Fortran standard doesn't specify how logical types are
+     represented.  Different compilers use different non zero
+     values to represent logical true.  */
+  true,
   "void",
   "{",
   "}"
@@ -547,26 +551,6 @@ f_language::value_print_inner (struct value *val, struct ui_file *stream,
       break;     
 
     case TYPE_CODE_BOOL:
-      if (options->format || options->output_format)
-	{
-	  struct value_print_options opts = *options;
-	  opts.format = (options->format ? options->format
-			 : options->output_format);
-	  value_print_scalar_formatted (val, &opts, 0, stream);
-	}
-      else
-	{
-	  LONGEST longval = value_as_long (val);
-	  /* The Fortran standard doesn't specify how logical types are
-	     represented.  Different compilers use different non zero
-	     values to represent logical true.  */
-	  if (longval == 0)
-	    fputs_filtered (f_decorations.false_name, stream);
-	  else
-	    fputs_filtered (f_decorations.true_name, stream);
-	}
-      break;
-
     case TYPE_CODE_INT:
     case TYPE_CODE_REF:
     case TYPE_CODE_FUNC:

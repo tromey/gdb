@@ -56,6 +56,7 @@ static const struct generic_val_print_decorations p_decorations =
   " * I",
   "true",
   "false",
+  false,
   "void",
   "{",
   "}"

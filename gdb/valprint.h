@@ -212,6 +212,11 @@ struct generic_val_print_decorations
   const char *true_name;
   const char *false_name;
 
+  /* True if any non-zero value should be displayed as "true".
+     Normally only 0 and 1 are handled as booleans, and other values
+     are printed as decimal.  */
+  bool any_true_ok;
+
   /* What to print when we see TYPE_CODE_VOID.  */
 
   const char *void_name;

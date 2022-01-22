@@ -745,7 +745,7 @@ generic_value_print_bool
       LONGEST val = unpack_long (type, valaddr);
       if (val == 0)
 	fputs_filtered (decorations->false_name, stream);
-      else if (val == 1)
+      else if (val == 1 || decorations->any_true_ok)
 	fputs_filtered (decorations->true_name, stream);
       else
 	print_longest (stream, 'd', 0, val);

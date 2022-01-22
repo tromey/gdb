@@ -485,6 +485,7 @@ static const struct generic_val_print_decorations rust_decorations =
   " * I",
   "true",
   "false",
+  false,
   "()",
   "[",
   "]"
