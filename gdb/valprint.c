@@ -2503,13 +2503,33 @@ count_next_character (wchar_iterator *iter,
     }
 }
 
+/* Print some possibly-styled wide-character output to OUT.  */
+
+static void ATTRIBUTE_PRINTF (3, 4)
+obstack_styled_wprintf (bool term_out, struct obstack *out,
+			const char *format, ...)
+{
+  va_list args;
+
+  string_file formatter (term_out);
+  va_start (args, format);
+  vfprintf_filtered (&formatter, format, args);
+  va_end (args);
+
+  for (char c : formatter.string ())
+    {
+      gdb_wchar_t w = gdb_btowc (c);
+      obstack_grow (out, &w, sizeof (gdb_wchar_t));
+    }
+}
+
 /* Print the characters in CHARS to the OBSTACK.  QUOTE_CHAR is the quote
    character to use with string output.  WIDTH is the size of the output
    character type.  BYTE_ORDER is the target byte order.  OPTIONS
    is the user's print options.  */
 
 static void
-print_converted_chars_to_obstack (struct obstack *obstack,
+print_converted_chars_to_obstack (struct obstack *obstack, bool term_out,
 				  const std::vector<converted_character> &chars,
 				  int quote_char, int width,
 				  enum bfd_endian byte_order,
@@ -2564,8 +2584,6 @@ print_converted_chars_to_obstack (struct obstack *obstack,
 
 	case REPEAT:
 	  {
-	    int j;
-
 	    /* We are outputting a character with a repeat count
 	       greater than options->repeat_count_threshold.  */
 
@@ -2587,13 +2605,12 @@ print_converted_chars_to_obstack (struct obstack *obstack,
 	      print_wchar (gdb_WEOF, elem->buf, elem->buflen, width,
 			   byte_order, obstack, quote_char, &need_escape);
 	    obstack_grow_wstr (obstack, LCST ("'"));
-	    std::string s = string_printf (_(" <repeats %u times>"),
-					   elem->repeat_count);
-	    for (j = 0; s[j]; ++j)
-	      {
-		gdb_wchar_t w = gdb_btowc (s[j]);
-		obstack_grow (obstack, &w, sizeof (gdb_wchar_t));
-	      }
+
+	    obstack_styled_wprintf (term_out, obstack,
+				    _(" %p[<repeats %u times>%p]"),
+				    metadata_style.style ().ptr (),
+				    elem->repeat_count,
+				    nullptr);
 	  }
 	  break;
 
@@ -2609,10 +2626,12 @@ print_converted_chars_to_obstack (struct obstack *obstack,
 	    obstack_grow_wstr (obstack, LCST (", "));
 
 	  /* Output the incomplete sequence string.  */
-	  obstack_grow_wstr (obstack, LCST ("<incomplete sequence "));
+	  obstack_styled_wprintf (term_out, obstack,
+				  _("%p[<incomplete sequence "),
+				  metadata_style.style ().ptr ());
 	  print_wchar (gdb_WEOF, elem->buf, elem->buflen, width, byte_order,
 		       obstack, 0, &need_escape);
-	  obstack_grow_wstr (obstack, LCST (">"));
+	  obstack_styled_wprintf (term_out, obstack, _(">%p]"), nullptr);
 
 	  /* We do not attempt to output anything after this.  */
 	  state = FINISH;
@@ -2745,7 +2764,8 @@ generic_printstr (struct ui_file *stream, struct type *type,
   auto_obstack wchar_buf;
 
   /* Print the output string to the obstack.  */
-  print_converted_chars_to_obstack (&wchar_buf, converted_chars, quote_char,
+  print_converted_chars_to_obstack (&wchar_buf, stream->term_out (),
+				    converted_chars, quote_char,
 				    width, byte_order, options);
 
   if (force_ellipses || !finished)
