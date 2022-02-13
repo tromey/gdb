@@ -2201,11 +2201,18 @@ print_wchar (gdb_wint_t w, const gdb_byte *orig,
 	     int orig_len, int width,
 	     enum bfd_endian byte_order,
 	     struct obstack *output,
-	     int quoter, bool *need_escapep)
+	     int quoter, bool *need_escapep,
+	     emit_char_ftype emitter)
 {
   bool need_escape = *need_escapep;
 
   *need_escapep = false;
+
+  obstack_wide_file file (output);
+  if (emitter != nullptr
+      && emitter (&file, w, gdb::make_array_view (orig, orig_len),
+		  width, byte_order, quoter))
+    return;
 
   switch (w)
     {
@@ -2246,7 +2253,6 @@ print_wchar (gdb_wint_t w, const gdb_byte *orig,
 	  else
 	    {
 	      int i;
-	      obstack_wide_file file (output);
 
 	      for (i = 0; i + width <= orig_len; i += width)
 		{
@@ -2281,7 +2287,8 @@ print_wchar (gdb_wint_t w, const gdb_byte *orig,
 
 void
 generic_emit_char (int c, struct type *type, struct ui_file *stream,
-		   int quoter, const char *encoding)
+		   int quoter, const char *encoding,
+		   emit_char_ftype emitter)
 {
   enum bfd_endian byte_order
     = type_byte_order (type);
@@ -2330,14 +2337,16 @@ generic_emit_char (int c, struct type *type, struct ui_file *stream,
 	      for (i = 0; i < num_chars; ++i)
 		print_wchar (chars[i], buf, buflen,
 			     TYPE_LENGTH (type), byte_order,
-			     &wchar_buf, quoter, &need_escape);
+			     &wchar_buf, quoter, &need_escape,
+			     emitter);
 	    }
 	}
 
       /* This handles the NUM_CHARS == 0 case as well.  */
       if (print_escape)
 	print_wchar (gdb_WEOF, buf, buflen, TYPE_LENGTH (type),
-		     byte_order, &wchar_buf, quoter, &need_escape);
+		     byte_order, &wchar_buf, quoter, &need_escape,
+		     emitter);
     }
 
   /* The output in the host encoding.  */
@@ -2445,7 +2454,8 @@ print_converted_chars_to_obstack (struct obstack *obstack,
 				  const std::vector<converted_character> &chars,
 				  int quote_char, int width,
 				  enum bfd_endian byte_order,
-				  const struct value_print_options *options)
+				  const struct value_print_options *options,
+				  emit_char_ftype emitter)
 {
   unsigned int idx;
   const converted_character *elem;
@@ -2486,10 +2496,12 @@ print_converted_chars_to_obstack (struct obstack *obstack,
 	      {
 		if (elem->result == wchar_iterate_ok)
 		  print_wchar (elem->chars[0], elem->buf, elem->buflen, width,
-			       byte_order, obstack, quote_char, &need_escape);
+			       byte_order, obstack, quote_char, &need_escape,
+			       emitter);
 		else
 		  print_wchar (gdb_WEOF, elem->buf, elem->buflen, width,
-			       byte_order, obstack, quote_char, &need_escape);
+			       byte_order, obstack, quote_char, &need_escape,
+			       emitter);
 	      }
 	  }
 	  break;
@@ -2514,10 +2526,12 @@ print_converted_chars_to_obstack (struct obstack *obstack,
 	    obstack_grow_wstr (obstack, LCST ("'"));
 	    if (elem->result == wchar_iterate_ok)
 	      print_wchar (elem->chars[0], elem->buf, elem->buflen, width,
-			   byte_order, obstack, quote_char, &need_escape);
+			   byte_order, obstack, quote_char, &need_escape,
+			   emitter);
 	    else
 	      print_wchar (gdb_WEOF, elem->buf, elem->buflen, width,
-			   byte_order, obstack, quote_char, &need_escape);
+			   byte_order, obstack, quote_char, &need_escape,
+			   emitter);
 	    obstack_grow_wstr (obstack, LCST ("'"));
 	    std::string s = string_printf (_(" <repeats %u times>"),
 					   elem->repeat_count);
@@ -2543,7 +2557,7 @@ print_converted_chars_to_obstack (struct obstack *obstack,
 	  /* Output the incomplete sequence string.  */
 	  obstack_grow_wstr (obstack, LCST ("<incomplete sequence "));
 	  print_wchar (gdb_WEOF, elem->buf, elem->buflen, width, byte_order,
-		       obstack, 0, &need_escape);
+		       obstack, 0, &need_escape, emitter);
 	  obstack_grow_wstr (obstack, LCST (">"));
 
 	  /* We do not attempt to output anything after this.  */
@@ -2602,7 +2616,8 @@ generic_printstr (struct ui_file *stream, struct type *type,
 		  const gdb_byte *string, unsigned int length, 
 		  const char *encoding, int force_ellipses,
 		  int quote_char, int c_style_terminator,
-		  const struct value_print_options *options)
+		  const struct value_print_options *options,
+		  emit_char_ftype emitter)
 {
   enum bfd_endian byte_order = type_byte_order (type);
   unsigned int i;
@@ -2678,7 +2693,7 @@ generic_printstr (struct ui_file *stream, struct type *type,
 
   /* Print the output string to the obstack.  */
   print_converted_chars_to_obstack (&wchar_buf, converted_chars, quote_char,
-				    width, byte_order, options);
+				    width, byte_order, options, emitter);
 
   if (force_ellipses || !finished)
     obstack_grow_wstr (&wchar_buf, LCST ("..."));

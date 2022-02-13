@@ -233,14 +233,40 @@ extern void generic_value_print (struct value *val, struct ui_file *stream,
 				 const struct value_print_options *options,
 				 const struct generic_val_print_decorations *d);
 
+/* A callback that can be used to print a representation of a wide
+   character to a stream.
+   
+   If the character can be represented by this callback, it will
+   return true.  A false return indicates that the default behavior
+   should be taken -- for printable characters, the default is to emit
+   it verbatim; for non-printable characters, C-style escapes are
+   used.  Normally a callback should always return false for
+   printable, non-control characters.
+
+   STREAM is the stream to write to.
+   W is the character.  It might be gdb_WEOF, meaning an unconvertible
+   sequence.
+   ORIG is the original (target) bytes corresponding to W.
+   WIDTH is the width of a base character in the encoding.
+   BYTE_ORDER is the character type's byte order.
+   QUOTER is the quote character used -- this is a host character.  */
+typedef gdb::function_view<bool (ui_file *stream,
+				 gdb_wint_t w,
+				 gdb::array_view<const gdb_byte> orig,
+				 int width,
+				 enum bfd_endian byte_order,
+				 int quoter)> emit_char_ftype;
+
 extern void generic_emit_char (int c, struct type *type, struct ui_file *stream,
-			       int quoter, const char *encoding);
+			       int quoter, const char *encoding,
+			       emit_char_ftype emitter = nullptr);
 
 extern void generic_printstr (struct ui_file *stream, struct type *type, 
 			      const gdb_byte *string, unsigned int length, 
 			      const char *encoding, int force_ellipses,
 			      int quote_char, int c_style_terminator,
-			      const struct value_print_options *options);
+			      const struct value_print_options *options,
+			      emit_char_ftype emitter = nullptr);
 
 /* Run the "output" command.  ARGS and FROM_TTY are the usual
    arguments passed to all command implementations, except ARGS is
