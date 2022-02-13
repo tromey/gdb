@@ -110,7 +110,7 @@ public:
   /* See language.h.  */
 
   void emitchar (int ch, struct type *chtype,
-		 struct ui_file *stream, int quoter) const override
+		 struct ui_file *stream, int quoter) const
   {
     int in_quotes = 0;
 
