@@ -1996,7 +1996,7 @@ wchar_printable (gdb_wchar_t w)
 	  || w == LCST ('\a') || w == LCST ('\b')
 	  || w == LCST ('\f') || w == LCST ('\n')
 	  || w == LCST ('\r') || w == LCST ('\t')
-	  || w == LCST ('\v'));
+	  || w == LCST ('\v') || w == LCST ('\0'));
 }
 
 /* A helper function that converts the contents of STRING to wide
