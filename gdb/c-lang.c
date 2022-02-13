@@ -164,9 +164,7 @@ language_defn::printchar (int c, struct type *type,
       break;
     }
 
-  gdb_putc ('\'', stream);
   generic_emit_char (c, type, stream, '\'', encoding);
-  gdb_putc ('\'', stream);
 }
 
 /* Print the character string STRING, printing at most LENGTH

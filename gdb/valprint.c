@@ -2131,6 +2131,7 @@ generic_emit_char (int c, struct type *type, struct ui_file *stream,
   c_buf = (gdb_byte *) alloca (TYPE_LENGTH (type));
   pack_long (c_buf, type, c);
 
+  fputc_filtered (quoter, stream);
   wchar_iterator iter (c_buf, TYPE_LENGTH (type), encoding, TYPE_LENGTH (type));
 
   /* This holds the printable form of the wchar_t data.  */
@@ -2192,6 +2193,7 @@ generic_emit_char (int c, struct type *type, struct ui_file *stream,
   obstack_1grow (&output, '\0');
 
   gdb_puts ((const char *) obstack_base (&output), stream);
+  gdb_putc (quoter, stream);
 }
 
 /* Return the repeat count of the next character/byte in ITER,
