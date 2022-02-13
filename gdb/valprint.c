@@ -1999,19 +1999,29 @@ wchar_printable (gdb_wchar_t w)
 	  || w == LCST ('\v') || w == LCST ('\0'));
 }
 
-/* A helper function that converts the contents of STRING to wide
-   characters and then appends them to OUTPUT.  */
-
-static void
-append_string_as_wide (const char *string,
-		       struct obstack *output)
+/* A ui_file that writes wide characters to an obstack.  */
+class obstack_wide_file : public ui_file
 {
-  for (; *string; ++string)
-    {
-      gdb_wchar_t w = gdb_btowc (*string);
-      obstack_grow (output, &w, sizeof (gdb_wchar_t));
-    }
-}
+public:
+  explicit obstack_wide_file (struct obstack *output)
+    : m_output (output)
+  {
+  }
+
+  ~obstack_wide_file () = default;
+
+  void write (const char *buf, long length_buf) override
+  {
+    for (long i = 0; i < length_buf; ++i)
+      {
+	gdb_wchar_t w = gdb_btowc (buf[i]);
+	obstack_grow (m_output, &w, sizeof (gdb_wchar_t));
+      }
+  }
+
+private:
+  struct obstack *m_output;
+};
 
 /* Print a wide character W to OUTPUT.  ORIG is a pointer to the
    original (target) bytes representing the character, ORIG_LEN is the
@@ -2069,10 +2079,10 @@ print_wchar (gdb_wint_t w, const gdb_byte *orig,
 	  else
 	    {
 	      int i;
+	      obstack_wide_file file (output);
 
 	      for (i = 0; i + width <= orig_len; i += width)
 		{
-		  char octal[30];
 		  ULONGEST value;
 
 		  value = extract_unsigned_integer (&orig[i], width,
@@ -2081,28 +2091,20 @@ print_wchar (gdb_wint_t w, const gdb_byte *orig,
 		     way.  Otherwise, print it as a hex escape.  */
 		  if (value <= 0777)
 		    {
-		      xsnprintf (octal, sizeof (octal), "\\%.3o",
-				 (int) (value & 0777));
+		      fprintf_filtered (&file, "\\%.3o", (int) (value & 0777));
 		      *need_escapep = false;
 		    }
 		  else
 		    {
-		      xsnprintf (octal, sizeof (octal), "\\x%lx", (long) value);
-		      /* A hex escape might require the next character
-			 to be escaped, because, unlike with octal,
-			 hex escapes have no length limit.  */
+		      fprintf_filtered (&file, "\\x%lx", (long) value);
 		      *need_escapep = true;
 		    }
-		  append_string_as_wide (octal, output);
 		}
 	      /* If we somehow have extra bytes, print them now.  */
 	      while (i < orig_len)
 		{
-		  char octal[5];
-
-		  xsnprintf (octal, sizeof (octal), "\\%.3o", orig[i] & 0xff);
+		  fprintf_filtered (&file, "\\%.3o", orig[i] & 0xff);
 		  *need_escapep = false;
-		  append_string_as_wide (octal, output);
 		  ++i;
 		}
 	    }
