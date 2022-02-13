@@ -2222,9 +2222,10 @@ print_wchar (gdb_wint_t w, const gdb_byte *orig,
 	break;
       default:
 	{
-	  if (gdb_iswprint (w) && (!need_escape || (!gdb_iswdigit (w)
-						    && w != LCST ('8')
-						    && w != LCST ('9'))))
+	  if (gdb_iswprint (w)
+	      && !(need_escape && (gdb_iswdigit (w)
+				   && w != LCST ('8')
+				   && w != LCST ('9'))))
 	    {
 	      gdb_wchar_t wchar = w;
 

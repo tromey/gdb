@@ -503,6 +503,10 @@ gdb_test "print '\\9'" " = \[0-9\]+ '9'"
 # An octal escape can only be 3 digits.
 gdb_test "print \"\\1011\"" " = \"A1\""
 
+# Neither 8 nor 9 need escaping in this situation.
+gdb_test "print \"\\0\" \"8\"" " = \"\\\\0008\""
+gdb_test "print \"\\0\" \"9\"" " = \"\\\\0009\""
+
 # Tests for wide- or unicode- strings.  L is the prefix letter to use,
 # either "L" (for wide strings), "u" (for UTF-16), or "U" (for UTF-32).
 # NAME is used in the test names and should be related to the prefix
