@@ -139,20 +139,6 @@ classify_type (struct type *elttype, struct gdbarch *gdbarch,
   return result;
 }
 
-/* Print the character C on STREAM as part of the contents of a
-   literal string whose delimiter is QUOTER.  Note that that format
-   for printing characters and strings is language specific.  */
-
-void
-language_defn::emitchar (int c, struct type *type,
-			 struct ui_file *stream, int quoter) const
-{
-  const char *encoding;
-
-  classify_type (type, type->arch (), &encoding);
-  generic_emit_char (c, type, stream, quoter, encoding);
-}
-
 /* See language.h.  */
 
 void
@@ -160,8 +146,9 @@ language_defn::printchar (int c, struct type *type,
 			  struct ui_file * stream) const
 {
   c_string_type str_type;
+  const char *encoding;
 
-  str_type = classify_type (type, type->arch (), NULL);
+  str_type = classify_type (type, type->arch (), &encoding);
   switch (str_type)
     {
     case C_CHAR:
@@ -178,7 +165,7 @@ language_defn::printchar (int c, struct type *type,
     }
 
   fputc_filtered ('\'', stream);
-  emitchar (c, type, stream, '\'');
+  generic_emit_char (c, type, stream, '\'', encoding);
   fputc_filtered ('\'', stream);
 }
 
