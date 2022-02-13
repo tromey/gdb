@@ -1999,45 +1999,16 @@ wchar_printable (gdb_wchar_t w)
 	  || w == LCST ('\v') || w == LCST ('\0'));
 }
 
-/* A ui_file that writes wide characters to an obstack.  */
-class obstack_wide_file : public ui_file
-{
-public:
-  explicit obstack_wide_file (struct obstack *output)
-    : m_output (output)
-  {
-  }
+/* See valprint.h.  */
 
-  ~obstack_wide_file () = default;
-
-  void write (const char *buf, long length_buf) override
-  {
-    for (long i = 0; i < length_buf; ++i)
-      {
-	gdb_wchar_t w = gdb_btowc (buf[i]);
-	obstack_grow (m_output, &w, sizeof (gdb_wchar_t));
-      }
-  }
-
-private:
-  struct obstack *m_output;
-};
-
-/* Print a wide character W to OUTPUT.  ORIG is a pointer to the
-   original (target) bytes representing the character, ORIG_LEN is the
-   number of valid bytes.  WIDTH is the number of bytes in a base
-   characters of the type.  OUTPUT is an obstack to which wide
-   characters are emitted.  QUOTER is a (narrow) character indicating
-   the style of quotes surrounding the character to be printed.
-   NEED_ESCAPE is an in/out flag which is used to track numeric
-   escapes across calls.  */
-
-static void
-print_wchar (gdb_wint_t w, const gdb_byte *orig,
-	     int orig_len, int width,
-	     enum bfd_endian byte_order,
-	     struct obstack *output,
-	     int quoter, bool *need_escapep)
+void
+default_emit_wchar (obstack_wide_file *stream,
+		    gdb_wint_t w,
+		    gdb::array_view<const gdb_byte> orig,
+		    int width,
+		    enum bfd_endian byte_order,
+		    int quoter,
+		    bool *need_escapep)
 {
   bool need_escape = *need_escapep;
 
@@ -2046,64 +2017,61 @@ print_wchar (gdb_wint_t w, const gdb_byte *orig,
   switch (w)
     {
       case LCST ('\a'):
-	obstack_grow_wstr (output, LCST ("\\a"));
+	fputs_filtered ("\\a", stream);
 	break;
       case LCST ('\b'):
-	obstack_grow_wstr (output, LCST ("\\b"));
+	fputs_filtered ("\\b", stream);
 	break;
       case LCST ('\f'):
-	obstack_grow_wstr (output, LCST ("\\f"));
+	fputs_filtered ("\\f", stream);
 	break;
       case LCST ('\n'):
-	obstack_grow_wstr (output, LCST ("\\n"));
+	fputs_filtered ("\\n", stream);
 	break;
       case LCST ('\r'):
-	obstack_grow_wstr (output, LCST ("\\r"));
+	fputs_filtered ("\\r", stream);
 	break;
       case LCST ('\t'):
-	obstack_grow_wstr (output, LCST ("\\t"));
+	fputs_filtered ("\\t", stream);
 	break;
       case LCST ('\v'):
-	obstack_grow_wstr (output, LCST ("\\v"));
+	fputs_filtered ("\\v", stream);
 	break;
       default:
 	{
 	  if (gdb_iswprint (w) && !(need_escape && gdb_iswxdigit (w)))
 	    {
-	      gdb_wchar_t wchar = w;
-
 	      if (w == gdb_btowc (quoter) || w == LCST ('\\'))
-		obstack_grow_wstr (output, LCST ("\\"));
-	      obstack_grow (output, &wchar, sizeof (gdb_wchar_t));
+		fputs_filtered ("\\", stream);
+	      stream->write_wide_char (w);
 	    }
 	  else
 	    {
 	      int i;
-	      obstack_wide_file file (output);
 
-	      for (i = 0; i + width <= orig_len; i += width)
+	      for (i = 0; i + width <= orig.size (); i += width)
 		{
 		  ULONGEST value;
 
 		  value = extract_unsigned_integer (&orig[i], width,
-						  byte_order);
+						    byte_order);
 		  /* If the value fits in 3 octal digits, print it that
 		     way.  Otherwise, print it as a hex escape.  */
 		  if (value <= 0777)
 		    {
-		      fprintf_filtered (&file, "\\%.3o", (int) (value & 0777));
+		      fprintf_filtered (stream, "\\%.3o", (int) (value & 0777));
 		      *need_escapep = false;
 		    }
 		  else
 		    {
-		      fprintf_filtered (&file, "\\x%lx", (long) value);
+		      fprintf_filtered (stream, "\\x%lx", (long) value);
 		      *need_escapep = true;
 		    }
 		}
 	      /* If we somehow have extra bytes, print them now.  */
-	      while (i < orig_len)
+	      while (i < orig.size ())
 		{
-		  fprintf_filtered (&file, "\\%.3o", orig[i] & 0xff);
+		  fprintf_filtered (stream, "\\%.3o", orig[i] & 0xff);
 		  *need_escapep = false;
 		  ++i;
 		}
@@ -2119,7 +2087,8 @@ print_wchar (gdb_wint_t w, const gdb_byte *orig,
 
 void
 generic_emit_char (int c, struct type *type, struct ui_file *stream,
-		   int quoter, const char *encoding)
+		   int quoter, const char *encoding,
+		   emit_char_ftype emitter)
 {
   enum bfd_endian byte_order
     = type_byte_order (type);
@@ -2133,6 +2102,7 @@ generic_emit_char (int c, struct type *type, struct ui_file *stream,
 
   /* This holds the printable form of the wchar_t data.  */
   auto_obstack wchar_buf;
+  obstack_wide_file wchar_stream (&wchar_buf);
 
   while (1)
     {
@@ -2166,16 +2136,17 @@ generic_emit_char (int c, struct type *type, struct ui_file *stream,
 	  if (!print_escape)
 	    {
 	      for (i = 0; i < num_chars; ++i)
-		print_wchar (chars[i], buf, buflen,
-			     TYPE_LENGTH (type), byte_order,
-			     &wchar_buf, quoter, &need_escape);
+		emitter (&wchar_stream, chars[i],
+			 gdb::make_array_view (buf, buflen),
+			 TYPE_LENGTH (type), byte_order,
+			 quoter, &need_escape);
 	    }
 	}
 
       /* This handles the NUM_CHARS == 0 case as well.  */
       if (print_escape)
-	print_wchar (gdb_WEOF, buf, buflen, TYPE_LENGTH (type),
-		     byte_order, &wchar_buf, quoter, &need_escape);
+	emitter (&wchar_stream, gdb_WEOF, gdb::make_array_view (buf, buflen),
+		 TYPE_LENGTH (type), byte_order, quoter, &need_escape);
     }
 
   /* The output in the host encoding.  */
@@ -2283,7 +2254,8 @@ print_converted_chars_to_obstack (struct obstack *obstack,
 				  const std::vector<converted_character> &chars,
 				  int quote_char, int width,
 				  enum bfd_endian byte_order,
-				  const struct value_print_options *options)
+				  const struct value_print_options *options,
+				  emit_char_ftype emitter)
 {
   unsigned int idx;
   const converted_character *elem;
@@ -2319,15 +2291,19 @@ print_converted_chars_to_obstack (struct obstack *obstack,
 		  obstack_grow_wstr (obstack, LCST (", "));
 		obstack_grow (obstack, &wide_quote_char, sizeof (gdb_wchar_t));
 	      }
+
+	    obstack_wide_file wchar_stream (obstack);
 	    /* Output the character.  */
 	    for (j = 0; j < elem->repeat_count; ++j)
 	      {
 		if (elem->result == wchar_iterate_ok)
-		  print_wchar (elem->chars[0], elem->buf, elem->buflen, width,
-			       byte_order, obstack, quote_char, &need_escape);
+		  emitter (&wchar_stream, elem->chars[0],
+			   gdb::make_array_view (elem->buf, elem->buflen),
+			   width, byte_order, quote_char, &need_escape);
 		else
-		  print_wchar (gdb_WEOF, elem->buf, elem->buflen, width,
-			       byte_order, obstack, quote_char, &need_escape);
+		  emitter (&wchar_stream, gdb_WEOF,
+			   gdb::make_array_view (elem->buf, elem->buflen),
+			   width, byte_order, quote_char, &need_escape);
 	      }
 	  }
 	  break;
@@ -2350,12 +2326,15 @@ print_converted_chars_to_obstack (struct obstack *obstack,
 
 	    /* Output the character and repeat string.  */
 	    obstack_grow_wstr (obstack, LCST ("'"));
+	    obstack_wide_file wchar_stream (obstack);
 	    if (elem->result == wchar_iterate_ok)
-	      print_wchar (elem->chars[0], elem->buf, elem->buflen, width,
-			   byte_order, obstack, quote_char, &need_escape);
+	      emitter (&wchar_stream, elem->chars[0],
+		       gdb::make_array_view (elem->buf, elem->buflen),
+		       width, byte_order, quote_char, &need_escape);
 	    else
-	      print_wchar (gdb_WEOF, elem->buf, elem->buflen, width,
-			   byte_order, obstack, quote_char, &need_escape);
+	      emitter (&wchar_stream, gdb_WEOF,
+		       gdb::make_array_view (elem->buf, elem->buflen),
+		       width, byte_order, quote_char, &need_escape);
 	    obstack_grow_wstr (obstack, LCST ("'"));
 	    std::string s = string_printf (_(" <repeats %u times>"),
 					   elem->repeat_count);
@@ -2380,8 +2359,12 @@ print_converted_chars_to_obstack (struct obstack *obstack,
 
 	  /* Output the incomplete sequence string.  */
 	  obstack_grow_wstr (obstack, LCST ("<incomplete sequence "));
-	  print_wchar (gdb_WEOF, elem->buf, elem->buflen, width, byte_order,
-		       obstack, 0, &need_escape);
+	  {
+	    obstack_wide_file wchar_stream (obstack);
+	    emitter (&wchar_stream, gdb_WEOF,
+		     gdb::make_array_view (elem->buf, elem->buflen),
+		     width, byte_order, 0, &need_escape);
+	  }
 	  obstack_grow_wstr (obstack, LCST (">"));
 
 	  /* We do not attempt to output anything after this.  */
@@ -2440,7 +2423,8 @@ generic_printstr (struct ui_file *stream, struct type *type,
 		  const gdb_byte *string, unsigned int length, 
 		  const char *encoding, int force_ellipses,
 		  int quote_char, int c_style_terminator,
-		  const struct value_print_options *options)
+		  const struct value_print_options *options,
+		  emit_char_ftype emitter)
 {
   enum bfd_endian byte_order = type_byte_order (type);
   unsigned int i;
@@ -2516,7 +2500,7 @@ generic_printstr (struct ui_file *stream, struct type *type,
 
   /* Print the output string to the obstack.  */
   print_converted_chars_to_obstack (&wchar_buf, converted_chars, quote_char,
-				    width, byte_order, options);
+				    width, byte_order, options, emitter);
 
   if (force_ellipses || !finished)
     obstack_grow_wstr (&wchar_buf, LCST ("..."));

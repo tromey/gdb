@@ -227,14 +227,75 @@ extern void generic_value_print (struct value *val, struct ui_file *stream,
 				 const struct value_print_options *options,
 				 const struct generic_val_print_decorations *d);
 
+/* A ui_file that writes wide characters to an obstack.  */
+class obstack_wide_file : public ui_file
+{
+public:
+  explicit obstack_wide_file (struct obstack *output)
+    : m_output (output)
+  {
+  }
+
+  ~obstack_wide_file () = default;
+
+  void write (const char *buf, long length_buf) override
+  {
+    for (long i = 0; i < length_buf; ++i)
+      {
+	gdb_wchar_t w = gdb_btowc (buf[i]);
+	obstack_grow (m_output, &w, sizeof (gdb_wchar_t));
+      }
+  }
+
+  void write_wide_char (gdb_wchar_t w)
+  {
+    obstack_grow (m_output, &w, sizeof (gdb_wchar_t));
+  }
+
+private:
+  struct obstack *m_output;
+};
+
+/* A callback that can be used to print a representation of a wide
+   character to a stream.
+   STREAM is the stream to write to.
+   W is the character.  It might be gdb_WEOF, meaning an unconvertible
+   sequence.
+   ORIG is the original (target) bytes corresponding to W.
+   WIDTH is the width of a base character in the encoding.
+   BYTE_ORDER is the character type's byte order.
+   QUOTER is the quote character used -- this is a host character.
+   NEED_ESCAPEP is used to track whether emitting this character may
+   require a subsequent character to be escaped.  */
+typedef gdb::function_view<void (obstack_wide_file *stream,
+				 gdb_wint_t w,
+				 gdb::array_view<const gdb_byte> orig,
+				 int width,
+				 enum bfd_endian byte_order,
+				 int quoter,
+				 bool *need_escapep)> emit_char_ftype;
+
+/* A function suitable for use as a character emitter, that emits
+   characters in the C style.  */
+
+extern void default_emit_wchar (obstack_wide_file *stream,
+				gdb_wint_t w,
+				gdb::array_view<const gdb_byte> orig,
+				int width,
+				enum bfd_endian byte_order,
+				int quoter,
+				bool *need_escapep);
+
 extern void generic_emit_char (int c, struct type *type, struct ui_file *stream,
-			       int quoter, const char *encoding);
+			       int quoter, const char *encoding,
+			       emit_char_ftype emitter = default_emit_wchar);
 
 extern void generic_printstr (struct ui_file *stream, struct type *type, 
 			      const gdb_byte *string, unsigned int length, 
 			      const char *encoding, int force_ellipses,
 			      int quote_char, int c_style_terminator,
-			      const struct value_print_options *options);
+			      const struct value_print_options *options,
+			      emit_char_ftype emitter = default_emit_wchar);
 
 /* Run the "output" command.  ARGS and FROM_TTY are the usual
    arguments passed to all command implementations, except ARGS is
