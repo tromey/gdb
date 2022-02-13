@@ -164,9 +164,7 @@ language_defn::printchar (int c, struct type *type,
       break;
     }
 
-  fputc_filtered ('\'', stream);
   generic_emit_char (c, type, stream, '\'', encoding);
-  fputc_filtered ('\'', stream);
 }
 
 /* Print the character string STRING, printing at most LENGTH

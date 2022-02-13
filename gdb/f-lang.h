@@ -152,10 +152,8 @@ public:
   void printchar (int ch, struct type *chtype,
 		  struct ui_file *stream) const override
   {
-    fputs_filtered ("'", stream);
     const char *encoding = get_encoding (chtype);
     generic_emit_char (ch, chtype, stream, '\'', encoding);
-    fputs_filtered ("'", stream);
   }
 
   /* See language.h.  */
