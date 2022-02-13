@@ -2058,9 +2058,7 @@ print_wchar (gdb_wint_t w, const gdb_byte *orig,
 	break;
       default:
 	{
-	  if (gdb_iswprint (w) && (!need_escape || (!gdb_iswdigit (w)
-						    && w != LCST ('8')
-						    && w != LCST ('9'))))
+	  if (gdb_iswprint (w) && !(need_escape && gdb_iswxdigit (w)))
 	    {
 	      gdb_wchar_t wchar = w;
 
@@ -2082,10 +2080,19 @@ print_wchar (gdb_wint_t w, const gdb_byte *orig,
 		  /* If the value fits in 3 octal digits, print it that
 		     way.  Otherwise, print it as a hex escape.  */
 		  if (value <= 0777)
-		    xsnprintf (octal, sizeof (octal), "\\%.3o",
-			       (int) (value & 0777));
+		    {
+		      xsnprintf (octal, sizeof (octal), "\\%.3o",
+				 (int) (value & 0777));
+		      *need_escapep = false;
+		    }
 		  else
-		    xsnprintf (octal, sizeof (octal), "\\x%lx", (long) value);
+		    {
+		      xsnprintf (octal, sizeof (octal), "\\x%lx", (long) value);
+		      /* A hex escape might require the next character
+			 to be escaped, because, unlike with octal,
+			 hex escapes have no length limit.  */
+		      *need_escapep = true;
+		    }
 		  append_string_as_wide (octal, output);
 		}
 	      /* If we somehow have extra bytes, print them now.  */
@@ -2094,11 +2101,10 @@ print_wchar (gdb_wint_t w, const gdb_byte *orig,
 		  char octal[5];
 
 		  xsnprintf (octal, sizeof (octal), "\\%.3o", orig[i] & 0xff);
+		  *need_escapep = false;
 		  append_string_as_wide (octal, output);
 		  ++i;
 		}
-
-	      *need_escapep = true;
 	    }
 	  break;
 	}
