@@ -2267,13 +2267,16 @@ print_wchar (gdb_wint_t w, const gdb_byte *orig,
 }
 
 /* Print the character C on STREAM as part of the contents of a
-   literal string whose delimiter is QUOTER.  ENCODING names the
-   encoding of C.  */
+   literal string whose delimiter is a single quote.  ENCODING names
+   the encoding of C.  */
 
 void
 generic_emit_char (int c, struct type *type, struct ui_file *stream,
-		   int quoter, const char *encoding)
+		   const char *encoding)
 {
+  /* The quote character.  */
+  constexpr int quoter = '\'';
+
   enum bfd_endian byte_order
     = type_byte_order (type);
   gdb_byte *c_buf;
@@ -2282,6 +2285,7 @@ generic_emit_char (int c, struct type *type, struct ui_file *stream,
   c_buf = (gdb_byte *) alloca (type->length ());
   pack_long (c_buf, type, c);
 
+  gdb_putc (quoter, stream);
   wchar_iterator iter (c_buf, type->length (), encoding, type->length ());
 
   /* This holds the printable form of the wchar_t data.  */
@@ -2341,6 +2345,7 @@ generic_emit_char (int c, struct type *type, struct ui_file *stream,
   obstack_1grow (&output, '\0');
 
   gdb_puts ((const char *) obstack_base (&output), stream);
+  gdb_putc (quoter, stream);
 }
 
 /* Return the repeat count of the next character/byte in ITER,

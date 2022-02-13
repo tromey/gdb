@@ -1775,11 +1775,14 @@ void
 rust_language::printchar (int ch, struct type *chtype,
 			  struct ui_file *stream) const
 {
-  fputs_filtered ("'", stream);
   if (!rust_chartype_p (chtype))
-    generic_emit_char (ch, chtype, stream, '\'',
-		       target_charset (chtype->arch ()));
-  else if (ch == '\\')
+    {
+      generic_emit_char (ch, chtype, stream,
+			 target_charset (chtype->arch ()));
+      return;
+    }
+  gdb_puts ("'", stream);
+  if (ch == '\\')
     gdb_printf (stream, "\\%c", ch);
   else if (ch == '\n')
     gdb_puts ("\\n", stream);

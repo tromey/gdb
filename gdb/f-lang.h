@@ -161,10 +161,8 @@ public:
   void printchar (int ch, struct type *chtype,
 		  struct ui_file *stream) const override
   {
-    gdb_puts ("'", stream);
     const char *encoding = get_encoding (chtype);
-    generic_emit_char (ch, chtype, stream, '\'', encoding);
-    gdb_puts ("'", stream);
+    generic_emit_char (ch, chtype, stream, encoding);
   }
 
   /* See language.h.  */
