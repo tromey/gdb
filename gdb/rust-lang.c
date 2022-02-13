@@ -227,16 +227,6 @@ rust_u8_type_p (struct type *type)
 	  && TYPE_LENGTH (type) == 1);
 }
 
-/* Return true if TYPE is a Rust character type.  */
-
-static bool
-rust_chartype_p (struct type *type)
-{
-  return (type->code () == TYPE_CODE_CHAR
-	  && TYPE_LENGTH (type) == 4
-	  && type->is_unsigned ());
-}
-
 /* If VALUE represents a trait object pointer, return the underlying
    pointer with the correct (i.e., runtime) type.  Otherwise, return
    NULL.  */
@@ -272,6 +262,51 @@ rust_get_trait_object_pointer (struct value *value)
 
 
 
+/* A callback function for generic_emit_char and generic_printstr that
+   escapes characters Rust-style.  */
+static void
+rust_emit_char (obstack_wide_file *stream,
+		gdb_wint_t w,
+		gdb::array_view<const gdb_byte> orig,
+		int width,
+		enum bfd_endian byte_order,
+		int quoter,
+		bool *need_escapep)
+{
+  if (gdb_iswprint (w) && !gdb_iswcntrl (w))
+    default_emit_wchar (stream, w, orig, width, byte_order, quoter,
+			need_escapep);
+  else if (w == LCST ('\n'))
+    fputs_filtered ("\\n", stream);
+  else if (w == LCST ('\r'))
+    fputs_filtered ("\\r", stream);
+  else if (w == LCST ('\t'))
+    fputs_filtered ("\\t", stream);
+  else if (w == LCST ('\0'))
+    fputs_filtered ("\\0", stream);
+  else
+    {
+      int i;
+
+      for (i = 0; i + width <= orig.size (); i += width)
+	{
+	  ULONGEST value = extract_unsigned_integer (&orig[i], width,
+						     byte_order);
+	  if (value <= 255)
+	    fprintf_filtered (stream, "\\x%02x", (int) value);
+	  else
+	    fprintf_filtered (stream, "\\u{%06lx}", (unsigned long) value);
+	}
+
+      /* If we somehow have extra bytes, print them now.  */
+      while (i < orig.size ())
+	{
+	  fprintf_filtered (stream, "\\x%02x", orig[i] & 0xff);
+	  ++i;
+	}
+    }
+}
+
 /* See language.h.  */
 
 void
@@ -299,9 +334,8 @@ rust_language::printstr (struct ui_file *stream, struct type *type,
 	}
     }
 
-  /* This is not ideal as it doesn't use our character printer.  */
   generic_printstr (stream, type, string, length, encoding, force_ellipses,
-		    '"', 0, options);
+		    '"', 0, options, rust_emit_char);
 }
 
 
@@ -1642,27 +1676,7 @@ void
 rust_language::printchar (int ch, struct type *chtype,
 			  struct ui_file *stream) const
 {
-  fputs_filtered ("'", stream);
-  if (!rust_chartype_p (chtype))
-    generic_emit_char (ch, chtype, stream, '\'',
-		       target_charset (chtype->arch ()));
-  else if (ch == '\\')
-    gdb_printf (stream, "\\%c", ch);
-  else if (ch == '\n')
-    gdb_puts ("\\n", stream);
-  else if (ch == '\r')
-    gdb_puts ("\\r", stream);
-  else if (ch == '\t')
-    gdb_puts ("\\t", stream);
-  else if (ch == '\0')
-    gdb_puts ("\\0", stream);
-  else if (ch >= 32 && ch <= 127 && isprint (ch))
-    gdb_putc (ch, stream);
-  else if (ch <= 255)
-    gdb_printf (stream, "\\x%02x", ch);
-  else
-    gdb_printf (stream, "\\u{%06x}", ch);
-  gdb_puts ("'", stream);
+  generic_emit_char (ch, chtype, stream, '\'', nullptr, rust_emit_char);
 }
 
 /* See language.h.  */
