@@ -516,12 +516,6 @@ struct language_defn
 
   virtual int parser (struct parser_state *ps) const;
 
-  /* Print the character CH (of type CHTYPE) on STREAM as part of the
-     contents of a literal string whose delimiter is QUOTER.  */
-
-  virtual void emitchar (int ch, struct type *chtype,
-			 struct ui_file *stream, int quoter) const;
-
   virtual void printchar (int ch, struct type *chtype,
 			  struct ui_file * stream) const;
 

@@ -158,20 +158,12 @@ public:
 
   /* See language.h.  */
 
-  void emitchar (int ch, struct type *chtype,
-		 struct ui_file *stream, int quoter) const override
-  {
-    const char *encoding = get_encoding (chtype);
-    generic_emit_char (ch, chtype, stream, quoter, encoding);
-  }
-
-  /* See language.h.  */
-
   void printchar (int ch, struct type *chtype,
 		  struct ui_file *stream) const override
   {
     gdb_puts ("'", stream);
-    emitchar (ch, chtype, stream, '\'');
+    const char *encoding = get_encoding (chtype);
+    generic_emit_char (ch, chtype, stream, '\'', encoding);
     gdb_puts ("'", stream);
   }
 

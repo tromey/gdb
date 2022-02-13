@@ -1772,13 +1772,14 @@ rust_language::print_type (struct type *type, const char *varstring,
 /* See language.h.  */
 
 void
-rust_language::emitchar (int ch, struct type *chtype,
-			 struct ui_file *stream, int quoter) const
+rust_language::printchar (int ch, struct type *chtype,
+			  struct ui_file *stream) const
 {
+  fputs_filtered ("'", stream);
   if (!rust_chartype_p (chtype))
-    generic_emit_char (ch, chtype, stream, quoter,
+    generic_emit_char (ch, chtype, stream, '\'',
 		       target_charset (chtype->arch ()));
-  else if (ch == '\\' || ch == quoter)
+  else if (ch == '\\')
     gdb_printf (stream, "\\%c", ch);
   else if (ch == '\n')
     gdb_puts ("\\n", stream);
@@ -1794,6 +1795,7 @@ rust_language::emitchar (int ch, struct type *chtype,
     gdb_printf (stream, "\\x%02x", ch);
   else
     gdb_printf (stream, "\\u{%06x}", ch);
+  gdb_puts ("'", stream);
 }
 
 /* See language.h.  */
