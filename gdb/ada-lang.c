@@ -13801,7 +13801,7 @@ public:
   void printchar (int ch, struct type *chtype,
 		  struct ui_file *stream) const override
   {
-    ada_printchar (ch, chtype, stream);
+    generic_emit_char (ch, chtype, stream, '\'', nullptr, ada_emit_char);
   }
 
   /* See language.h.  */
@@ -13811,8 +13811,8 @@ public:
 		 const char *encoding, int force_ellipses,
 		 const struct value_print_options *options) const override
   {
-    ada_printstr (stream, elttype, string, length, encoding,
-		  force_ellipses, options);
+    generic_printstr (stream, elttype, string, length, encoding,
+		      force_ellipses, '"', 0, options, ada_emit_char);
   }
 
   /* See language.h.  */

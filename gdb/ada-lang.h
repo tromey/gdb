@@ -28,6 +28,7 @@ struct parser_state;
 #include "value.h"
 #include "gdbtypes.h"
 #include "breakpoint.h"
+#include "valprint.h"
 
 /* Names of specific files known to be part of the runtime
    system and that might consider (confusing) debugging information.
@@ -172,13 +173,12 @@ extern void ada_value_print (struct value *, struct ui_file *,
 
 				/* Defined in ada-lang.c */
 
-extern void ada_emit_char (int, struct type *, struct ui_file *, int, int);
-
-extern void ada_printchar (int, struct type *, struct ui_file *);
-
-extern void ada_printstr (struct ui_file *, struct type *, const gdb_byte *,
-			  unsigned int, const char *, int,
-			  const struct value_print_options *);
+extern void ada_emit_char (obstack_wide_file *stream, gdb_wint_t w,
+			   gdb::array_view<const gdb_byte> orig,
+			   int width,
+			   enum bfd_endian byte_order,
+			   int quoter,
+			   bool *need_escapep);
 
 struct value *ada_convert_actual (struct value *actual,
 				  struct type *formal_type0);
