@@ -143,31 +143,23 @@ pascal_is_string_type (struct type *type,int *length_pos, int *length_size,
   return 0;
 }
 
-/* See p-lang.h.  */
+/* A callback function for generic_emit_char and generic_printstr that
+   escapes characters Pascal style.  */
 
-void
-pascal_language::print_one_char (int c, struct ui_file *stream,
-				 int *in_quotes) const
+static void
+pascal_emit_char (obstack_wide_file *stream,
+		  gdb_wint_t w,
+		  gdb::array_view<const gdb_byte> orig,
+		  int width,
+		  enum bfd_endian byte_order,
+		  int quoter,
+		  bool *need_escapep)
 {
-  if (c == '\'' || ((unsigned int) c <= 0xff && (PRINT_LITERAL_FORM (c))))
-    {
-      if (!(*in_quotes))
-	gdb_puts ("'", stream);
-      *in_quotes = 1;
-      if (c == '\'')
-	{
-	  gdb_puts ("''", stream);
-	}
-      else
-	gdb_printf (stream, "%c", c);
-    }
+  if (w == LCST ('\''))
+    gdb_puts ("''", stream);
   else
-    {
-      if (*in_quotes)
-	gdb_puts ("'", stream);
-      *in_quotes = 0;
-      gdb_printf (stream, "#%d", (unsigned int) c);
-    }
+    default_emit_wchar (stream, w, orig, width, byte_order, quoter,
+			need_escapep);
 }
 
 /* See language.h.  */
@@ -176,11 +168,7 @@ void
 pascal_language::printchar (int c, struct type *type,
 			    struct ui_file *stream) const
 {
-  int in_quotes = 0;
-
-  print_one_char (c, stream, &in_quotes);
-  if (in_quotes)
-    gdb_puts ("'", stream);
+  generic_emit_char (c, type, stream, '\'', nullptr, pascal_emit_char);
 }
 
 
@@ -228,94 +216,8 @@ pascal_language::printstr (struct ui_file *stream, struct type *elttype,
 			   const char *encoding, int force_ellipses,
 			   const struct value_print_options *options) const
 {
-  enum bfd_endian byte_order = type_byte_order (elttype);
-  unsigned int i;
-  unsigned int things_printed = 0;
-  int in_quotes = 0;
-  int need_comma = 0;
-  int width;
-
-  /* Preserve ELTTYPE's original type, just set its LENGTH.  */
-  check_typedef (elttype);
-  width = TYPE_LENGTH (elttype);
-
-  /* If the string was not truncated due to `set print elements', and
-     the last byte of it is a null, we don't print that, in traditional C
-     style.  */
-  if ((!force_ellipses) && length > 0
-      && extract_unsigned_integer (string + (length - 1) * width, width,
-				   byte_order) == 0)
-    length--;
-
-  if (length == 0)
-    {
-      gdb_puts ("''", stream);
-      return;
-    }
-
-  for (i = 0; i < length && things_printed < options->print_max; ++i)
-    {
-      /* Position of the character we are examining
-	 to see whether it is repeated.  */
-      unsigned int rep1;
-      /* Number of repetitions we have detected so far.  */
-      unsigned int reps;
-      unsigned long int current_char;
-
-      QUIT;
-
-      if (need_comma)
-	{
-	  gdb_puts (", ", stream);
-	  need_comma = 0;
-	}
-
-      current_char = extract_unsigned_integer (string + i * width, width,
-					       byte_order);
-
-      rep1 = i + 1;
-      reps = 1;
-      while (rep1 < length
-	     && extract_unsigned_integer (string + rep1 * width, width,
-					  byte_order) == current_char)
-	{
-	  ++rep1;
-	  ++reps;
-	}
-
-      if (reps > options->repeat_count_threshold)
-	{
-	  if (in_quotes)
-	    {
-	      gdb_puts ("', ", stream);
-	      in_quotes = 0;
-	    }
-	  printchar (current_char, elttype, stream);
-	  gdb_printf (stream, " %p[<repeats %u times>%p]",
-		      metadata_style.style ().ptr (),
-		      reps, nullptr);
-	  i = rep1 - 1;
-	  things_printed += options->repeat_count_threshold;
-	  need_comma = 1;
-	}
-      else
-	{
-	  if ((!in_quotes) && (PRINT_LITERAL_FORM (current_char)))
-	    {
-	      gdb_puts ("'", stream);
-	      in_quotes = 1;
-	    }
-	  print_one_char (current_char, stream, &in_quotes);
-	  ++things_printed;
-	}
-    }
-
-  /* Terminate the quotes if necessary.  */
-  if (in_quotes)
-    gdb_puts ("'", stream);
-
-  if (force_ellipses || i < length)
-    gdb_puts ("...", stream);
+  generic_printstr (stream, elttype, string, length, encoding, force_ellipses,
+		    '\'', 0, options, pascal_emit_char);
 }
 
 /* Single instance of the Pascal language class.  */

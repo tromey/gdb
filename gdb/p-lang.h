@@ -109,18 +109,6 @@ public:
 
   /* See language.h.  */
 
-  void emitchar (int ch, struct type *chtype,
-		 struct ui_file *stream, int quoter) const
-  {
-    int in_quotes = 0;
-
-    print_one_char (ch, stream, &in_quotes);
-    if (in_quotes)
-      gdb_puts ("'", stream);
-  }
-
-  /* See language.h.  */
-
   void printchar (int ch, struct type *chtype,
 		  struct ui_file *stream) const override;
 
