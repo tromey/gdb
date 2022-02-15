@@ -139,137 +139,45 @@ m2_language::language_arch_info (struct gdbarch *gdbarch,
   lai->set_bool_type (builtin->builtin_bool, "BOOLEAN");
 }
 
+/* A callback function for generic_emit_char and generic_printstr that
+   escapes characters Modula 2-style.  */
+
+static void
+m2_emit_char (obstack_wide_file *stream,
+	      gdb_wint_t w,
+	      gdb::array_view<const gdb_byte> orig,
+	      int width,
+	      enum bfd_endian byte_order,
+	      int quoter,
+	      bool *need_escapep)
+{
+  /* Historically the Modula-2 code in gdb handled \e as well.  */
+  if (w == LCST ('\033'))
+    fputs_filtered ("\\e", stream);
+  else
+    default_emit_wchar (stream, w, orig, width, byte_order, quoter,
+			need_escapep);
+}
+
 /* See languge.h.  */
 
 void
 m2_language::printchar (int c, struct type *type,
 			struct ui_file *stream) const
 {
-  gdb_puts ("'", stream);
-  emitchar (c, type, stream, '\'');
-  gdb_puts ("'", stream);
+  generic_emit_char (c, type, stream, '\'', nullptr, m2_emit_char);
 }
 
 /* See language.h.  */
 
 void
 m2_language::printstr (struct ui_file *stream, struct type *elttype,
-			const gdb_byte *string, unsigned int length,
-			const char *encoding, int force_ellipses,
-			const struct value_print_options *options) const
+		       const gdb_byte *string, unsigned int length,
+		       const char *encoding, int force_ellipses,
+		       const struct value_print_options *options) const
 {
-  unsigned int i;
-  unsigned int things_printed = 0;
-  int in_quotes = 0;
-  int need_comma = 0;
-
-  if (length == 0)
-    {
-      gdb_puts ("\"\"");
-      return;
-    }
-
-  for (i = 0; i < length && things_printed < options->print_max; ++i)
-    {
-      /* Position of the character we are examining
-	 to see whether it is repeated.  */
-      unsigned int rep1;
-      /* Number of repetitions we have detected so far.  */
-      unsigned int reps;
-
-      QUIT;
-
-      if (need_comma)
-	{
-	  gdb_puts (", ", stream);
-	  need_comma = 0;
-	}
-
-      rep1 = i + 1;
-      reps = 1;
-      while (rep1 < length && string[rep1] == string[i])
-	{
-	  ++rep1;
-	  ++reps;
-	}
-
-      if (reps > options->repeat_count_threshold)
-	{
-	  if (in_quotes)
-	    {
-	      gdb_puts ("\", ", stream);
-	      in_quotes = 0;
-	    }
-	  printchar (string[i], elttype, stream);
-	  gdb_printf (stream, " <repeats %u times>", reps);
-	  i = rep1 - 1;
-	  things_printed += options->repeat_count_threshold;
-	  need_comma = 1;
-	}
-      else
-	{
-	  if (!in_quotes)
-	    {
-	      gdb_puts ("\"", stream);
-	      in_quotes = 1;
-	    }
-	  emitchar (string[i], elttype, stream, '"');
-	  ++things_printed;
-	}
-    }
-
-  /* Terminate the quotes if necessary.  */
-  if (in_quotes)
-    gdb_puts ("\"", stream);
-
-  if (force_ellipses || i < length)
-    gdb_puts ("...", stream);
-}
-
-/* See language.h.  */
-
-void
-m2_language::emitchar (int ch, struct type *chtype,
-		       struct ui_file *stream, int quoter) const
-{
-  ch &= 0xFF;			/* Avoid sign bit follies.  */
-
-  if (PRINT_LITERAL_FORM (ch))
-    {
-      if (ch == '\\' || ch == quoter)
-	gdb_puts ("\\", stream);
-      gdb_printf (stream, "%c", ch);
-    }
-  else
-    {
-      switch (ch)
-	{
-	case '\n':
-	  gdb_puts ("\\n", stream);
-	  break;
-	case '\b':
-	  gdb_puts ("\\b", stream);
-	  break;
-	case '\t':
-	  gdb_puts ("\\t", stream);
-	  break;
-	case '\f':
-	  gdb_puts ("\\f", stream);
-	  break;
-	case '\r':
-	  gdb_puts ("\\r", stream);
-	  break;
-	case '\033':
-	  gdb_puts ("\\e", stream);
-	  break;
-	case '\007':
-	  gdb_puts ("\\a", stream);
-	  break;
-	default:
-	  gdb_printf (stream, "\\%.3o", (unsigned int) ch);
-	  break;
-	}
-    }
+  generic_printstr (stream, elttype, string, length, encoding, force_ellipses,
+		    '"', 0, options, m2_emit_char);
 }
 
 /* Called during architecture gdbarch initialisation to create language
