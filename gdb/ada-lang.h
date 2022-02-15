@@ -172,13 +172,11 @@ extern void ada_value_print (struct value *, struct ui_file *,
 
 				/* Defined in ada-lang.c */
 
-extern void ada_emit_char (int, struct type *, struct ui_file *, int, int);
-
-extern void ada_printchar (int, struct type *, struct ui_file *);
-
-extern void ada_printstr (struct ui_file *, struct type *, const gdb_byte *,
-			  unsigned int, const char *, int,
-			  const struct value_print_options *);
+extern bool ada_emit_char (ui_file *stream, gdb_wint_t w,
+			   gdb::array_view<const gdb_byte> orig,
+			   int width,
+			   enum bfd_endian byte_order,
+			   int quoter);
 
 struct value *ada_convert_actual (struct value *actual,
 				  struct type *formal_type0);
