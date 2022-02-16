@@ -152,8 +152,7 @@ public:
   void printchar (int ch, struct type *chtype,
 		  struct ui_file *stream) const override
   {
-    const char *encoding = get_encoding (chtype);
-    generic_emit_char (ch, chtype, stream, '\'', encoding);
+    generic_emit_char (ch, chtype, stream, '\'', nullptr);
   }
 
   /* See language.h.  */
@@ -163,13 +162,8 @@ public:
 		 const char *encoding, int force_ellipses,
 		 const struct value_print_options *options) const override
   {
-    const char *type_encoding = get_encoding (elttype);
-
     if (TYPE_LENGTH (elttype) == 4)
       fputs_filtered ("4_", stream);
-
-    if (!encoding || !*encoding)
-      encoding = type_encoding;
 
     generic_printstr (stream, elttype, string, length, encoding,
 		      force_ellipses, '\'', 0, options);
@@ -223,11 +217,6 @@ protected:
 	(const lookup_name_info &lookup_name) const override;
 
 private:
-  /* Return the encoding that should be used for the character type
-     TYPE.  */
-
-  static const char *get_encoding (struct type *type);
-
   /* Print any asterisks or open-parentheses needed before the variable
      name (to describe its type).
 
