@@ -2281,6 +2281,37 @@ print_wchar (gdb_wint_t w, const gdb_byte *orig,
     }
 }
 
+/* Helper function to get the default encoding, given a type.  */
+static const char *
+get_default_encoding (struct type *chtype)
+{
+  const char *encoding;
+  if (TYPE_LENGTH (chtype) == 1)
+    encoding = target_charset (chtype->arch ());
+  else if (streq (chtype->name (), "wchar_t"))
+    encoding = target_wide_charset (chtype->arch ());
+  else if (TYPE_LENGTH (chtype) == 2)
+    {
+      if (type_byte_order (chtype) == BFD_ENDIAN_BIG)
+	encoding = "UTF-16BE";
+      else
+	encoding = "UTF-16LE";
+    }
+  else if (TYPE_LENGTH (chtype) == 4)
+    {
+      if (type_byte_order (chtype) == BFD_ENDIAN_BIG)
+	encoding = "UTF-32BE";
+      else
+	encoding = "UTF-32LE";
+    }
+  else
+    {
+      /* No idea.  */
+      encoding = target_charset (chtype->arch ());
+    }
+  return encoding;
+}
+
 /* Print the character C on STREAM as part of the contents of a
    literal string whose delimiter is QUOTER.  ENCODING names the
    encoding of C.  */
@@ -2290,6 +2321,8 @@ generic_emit_char (int c, struct type *type, struct ui_file *stream,
 		   int quoter, const char *encoding,
 		   emit_char_ftype emitter)
 {
+  if (encoding == nullptr)
+    encoding = get_default_encoding (type);
   enum bfd_endian byte_order
     = type_byte_order (type);
   gdb_byte *c_buf;
@@ -2619,6 +2652,8 @@ generic_printstr (struct ui_file *stream, struct type *type,
 		  const struct value_print_options *options,
 		  emit_char_ftype emitter)
 {
+  if (encoding == nullptr)
+    encoding = get_default_encoding (type);
   enum bfd_endian byte_order = type_byte_order (type);
   unsigned int i;
   int width = TYPE_LENGTH (type);
