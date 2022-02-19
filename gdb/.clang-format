@@ -2,10 +2,11 @@
 
 # Notes for gdb.
 # * labels are not handled gnu-style
-#   https://bugs.llvm.org/show_bug.cgi?id=24118
+#   https://github.com/llvm/llvm-project/issues/24492
+#   https://github.com/llvm/llvm-project/issues/53717
 # * function call bin-packing is weird
-#   https://bugs.llvm.org/show_bug.cgi?id=31907
-#    https://bugs.llvm.org/show_bug.cgi?id=37703
+#   https://github.com/llvm/llvm-project/issues/31255
+#   https://github.com/llvm/llvm-project/issues/37051
 # * gettext calls like "_()" are reformatted to "_ ()"
 #   I don't think there's an upstream bug for this yet
 
