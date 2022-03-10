@@ -809,7 +809,7 @@ sync_threadlists (void)
 	    = current_inferior ()->process_target ();
 	  thread = add_thread_with_info (proc_target,
 					 ptid_t (infpid, 0, pbuf[pi].pthid),
-					 priv);
+					 private_thread_info_up (priv));
 
 	  pi++;
 	}
