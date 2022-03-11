@@ -90,6 +90,7 @@ enum strata
     file_stratum,		/* Executable files, etc */
     process_stratum,		/* Executing processes or core dump files */
     thread_stratum,		/* Executing threads */
+    green_stratum,		/* Green threads.  */
     record_stratum,		/* Support record debugging */
     debug_stratum		/* Target debug.  Must be last.  */
   };

@@ -1087,6 +1087,7 @@ COMMON_SFILES = \
 	go-lang.c \
 	go-typeprint.c \
 	go-valprint.c \
+	green-thread.c \
 	inf-child.c \
 	inf-loop.c \
 	infcall.c \
