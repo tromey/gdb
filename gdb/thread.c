@@ -50,6 +50,7 @@
 #include "inline-frame.h"
 #include "stack.h"
 #include "interps.h"
+#include "green-thread.h"
 
 /* See gdbthread.h.  */
 
@@ -357,6 +358,14 @@ thread_info::thread_info (struct inferior *inf_, ptid_t ptid_)
 thread_info::~thread_info ()
 {
   threads_debug_printf ("thread %s", this->ptid.to_string ().c_str ());
+}
+
+/* See gdbthread.h.  */
+
+bool
+thread_info::is_green_thread () const
+{
+  return dynamic_cast<green_thread *> (priv.get ()) != nullptr;
 }
 
 /* See gdbthread.h.  */
