@@ -316,6 +316,7 @@ extern PyTypeObject frame_object_type
     CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF ("frame_object");
 extern PyTypeObject thread_object_type
     CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF ("thread_object");
+extern PyTypeObject green_thread_object_type;
 
 struct gdbpy_breakpoint_object
 {
@@ -370,6 +371,17 @@ struct thread_object
   /* The Inferior object to which this thread belongs.  */
   PyObject *inf_obj;
 };
+
+/* Require that Thread be a valid thread object.  */
+#define THPY_REQUIRE_VALID(Thread)				\
+  do {								\
+    if (!Thread->thread)					\
+      {								\
+	PyErr_SetString (PyExc_RuntimeError,			\
+			 _("Thread no longer exists."));	\
+	return NULL;						\
+      }								\
+  } while (0)
 
 struct inferior_object;
 
@@ -562,6 +574,7 @@ int gdbpy_initialize_membuf ()
   CPYCHECKER_NEGATIVE_RESULT_SETS_EXCEPTION;
 int gdbpy_initialize_connection ()
   CPYCHECKER_NEGATIVE_RESULT_SETS_EXCEPTION;
+int gdbpy_initialize_green ();
 
 /* A wrapper for PyErr_Fetch that handles reference counting for the
    caller.  */
@@ -830,5 +843,18 @@ extern bool gdbpy_parse_register_id (struct gdbarch *gdbarch,
 
 extern gdbpy_ref<> gdbpy_get_register_descriptor (struct gdbarch *gdbarch,
 						  int regnum);
+
+/* Implement "gdb.create_green_thread".  */
+
+extern PyObject *gdbpy_create_green_thread (PyObject *self, PyObject *args,
+					    PyObject *kw);
+
+/* See if THR is a Python-created green thread.  */
+
+extern bool py_green_thread_p (thread_info *thr);
+
+extern void thpy_dealloc (PyObject *self);
+
+extern thread_info *thread_object_to_thread (PyObject *obj);
 
 #endif /* PYTHON_PYTHON_INTERNAL_H */

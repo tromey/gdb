@@ -402,6 +402,7 @@ SUBDIR_PYTHON_SRCS = \
 	python/py-framefilter.c \
 	python/py-function.c \
 	python/py-gdb-readline.c \
+	python/py-green.c \
 	python/py-inferior.c \
 	python/py-infevents.c \
 	python/py-infthread.c \

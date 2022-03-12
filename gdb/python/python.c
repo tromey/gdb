@@ -1983,7 +1983,8 @@ do_start_initialization ()
       || gdbpy_initialize_unwind () < 0
       || gdbpy_initialize_membuf () < 0
       || gdbpy_initialize_connection () < 0
-      || gdbpy_initialize_tui () < 0)
+      || gdbpy_initialize_tui () < 0
+      || gdbpy_initialize_green () < 0)
     return false;
 
 #define GDB_PY_DEFINE_EVENT_TYPE(name, py_name, doc, base)	\
@@ -2441,6 +2442,11 @@ Return a list of all the architecture names GDB understands." },
   { "connections", gdbpy_connections, METH_NOARGS,
     "connections () -> List.\n\
 Return a list of gdb.TargetConnection objects." },
+
+  { "create_green_thread", (PyCFunction) gdbpy_create_green_thread,
+    METH_VARARGS,
+    "create_green_thread (CALLBACK) -> GreenThread.\n\
+Create a new green thread." },
 
   {NULL, NULL, 0, NULL}
 };
