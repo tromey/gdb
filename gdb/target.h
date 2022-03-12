@@ -91,7 +91,6 @@ enum strata
     process_stratum,		/* Executing processes or core dump files */
     thread_stratum,		/* Executing threads */
     record_stratum,		/* Support record debugging */
-    arch_stratum,		/* Architecture overrides */
     debug_stratum		/* Target debug.  Must be last.  */
   };
 
