@@ -150,11 +150,9 @@ gdbpy_reggroup_name (PyObject *self, void *closure)
   return gdbpy_reggroup_to_string (self);
 }
 
-/* Return a gdb.RegisterDescriptor object for REGNUM from GDBARCH.  For
-   each REGNUM (in GDBARCH) only one descriptor is ever created, which is
-   then cached on the GDBARCH.  */
+/* See python-internal.h.  */
 
-static gdbpy_ref<>
+gdbpy_ref<>
 gdbpy_get_register_descriptor (struct gdbarch *gdbarch,
 			       int regnum)
 {

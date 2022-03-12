@@ -824,4 +824,11 @@ typedef std::unique_ptr<Py_buffer, Py_buffer_deleter> Py_buffer_up;
 extern bool gdbpy_parse_register_id (struct gdbarch *gdbarch,
 				     PyObject *pyo_reg_id, int *reg_num);
 
+/* Return a gdb.RegisterDescriptor object for REGNUM from GDBARCH.  For
+   each REGNUM (in GDBARCH) only one descriptor is ever created, which is
+   then cached on the GDBARCH.  */
+
+extern gdbpy_ref<> gdbpy_get_register_descriptor (struct gdbarch *gdbarch,
+						  int regnum);
+
 #endif /* PYTHON_PYTHON_INTERNAL_H */
