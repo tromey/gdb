@@ -108,6 +108,9 @@ show remote thread-options-packet
      object, these will be stored in the object's new
      InferiorThread.__dict__ attribute.
 
+  ** New function gdb.create_green_thread().  This can be used to
+     register user-space "green" threads with GDB.
+
 * Debugger Adapter Protocol changes
 
   ** GDB now emits the "process" event.
