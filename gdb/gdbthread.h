@@ -472,6 +472,10 @@ public:
     m_thread_fsm = std::move (fsm);
   }
 
+  /* Return true if this thread is a green thread.  */
+
+  bool is_green_thread () const;
+
   int current_line = 0;
   struct symtab *current_symtab = NULL;
 
