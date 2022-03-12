@@ -54,6 +54,9 @@
   ** Added gdb.record.clear.  Clears the trace data of the current recording.
      This forces re-decoding of the trace for successive commands.
 
+  ** New function gdb.create_green_thread().  This can be used to
+     register user-space "green" threads with GDB.
+
 * Debugger Adapter Protocol changes
 
   ** The "scopes" request will now return a scope holding global

@@ -373,6 +373,7 @@ extern PyTypeObject frame_object_type
     CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF ("frame_object");
 extern PyTypeObject thread_object_type
     CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF ("thread_object");
+extern PyTypeObject green_thread_object_type;
 
 /* Ensure that breakpoint_object_type is initialized and return true.  If
    breakpoint_object_type can't be initialized then set a suitable Python
@@ -443,6 +444,17 @@ struct thread_object
      attribute of the object.  */
   PyObject *dict;
 };
+
+/* Require that Thread be a valid thread object.  */
+#define THPY_REQUIRE_VALID(Thread)				\
+  do {								\
+    if (!Thread->thread)					\
+      {								\
+	PyErr_SetString (PyExc_RuntimeError,			\
+			 _("Thread no longer exists."));	\
+	return NULL;						\
+      }								\
+  } while (0)
 
 struct inferior_object;
 
@@ -1114,6 +1126,25 @@ extern gdb::unique_xmalloc_ptr<char> gdbpy_fix_doc_string_indentation
 extern std::optional<int> gdbpy_print_insn (struct gdbarch *gdbarch,
 					    CORE_ADDR address,
 					    disassemble_info *info);
+/* Return a gdb.RegisterDescriptor object for REGNUM from GDBARCH.  For
+   each REGNUM (in GDBARCH) only one descriptor is ever created, which is
+   then cached on the GDBARCH.  */
+
+extern gdbpy_ref<> gdbpy_get_register_descriptor (struct gdbarch *gdbarch,
+						  int regnum);
+
+/* Implement "gdb.create_green_thread".  */
+
+extern PyObject *gdbpy_create_green_thread (PyObject *self, PyObject *args,
+					    PyObject *kw);
+
+/* See if THR is a Python-created green thread.  */
+
+extern bool py_green_thread_p (thread_info *thr);
+
+extern void thpy_dealloc (PyObject *self);
+
+extern thread_info *thread_object_to_thread (PyObject *obj);
 
 /* A wrapper for PyType_Ready that also automatically registers the
    type in the appropriate module.  Returns 0 on success, -1 on error.
