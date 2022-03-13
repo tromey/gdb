@@ -40,7 +40,7 @@ struct scoped_mock_context
   ptid_t mock_ptid {1, 1};
   program_space mock_pspace {new_address_space ()};
   inferior mock_inferior {mock_ptid.pid ()};
-  thread_info mock_thread {&mock_inferior, mock_ptid};
+  thread_info mock_thread {&mock_inferior, mock_ptid, nullptr};
 
   scoped_restore_current_pspace_and_thread restore_pspace_thread;
 

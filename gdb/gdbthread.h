@@ -247,7 +247,7 @@ class thread_info : public refcounted_object,
 		    public intrusive_list_node<thread_info>
 {
 public:
-  explicit thread_info (inferior *inf, ptid_t ptid);
+  explicit thread_info (inferior *inf, ptid_t ptid, private_thread_info_up &&);
   ~thread_info ();
 
   bool deletable () const;
@@ -613,7 +613,8 @@ extern struct thread_info *add_thread (process_stratum_target *targ,
 /* Same as add_thread, but does not print a message about new
    thread.  */
 extern struct thread_info *add_thread_silent (process_stratum_target *targ,
-					      ptid_t ptid);
+					      ptid_t ptid,
+					      private_thread_info_up && = nullptr);
 
 /* Same as add_thread, and sets the private info.  */
 extern struct thread_info *add_thread_with_info (process_stratum_target *targ,
