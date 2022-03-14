@@ -151,7 +151,7 @@ green_thread_target::resume (ptid_t ptid, int step, enum gdb_signal siggnal)
 	{
 	  ptid = gth->underlying_thread ();
 	  if (ptid == null_ptid)
-	    error (_("cannot resume thread"));
+	    ptid = any_live_thread_of_inferior (current_inferior ())->ptid;
 	}
     }
   beneath ()->resume (ptid, step, siggnal);
