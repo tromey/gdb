@@ -386,7 +386,7 @@ exec_file_attach (const char *filename, int from_tty)
   else
     {
       int load_via_target = 0;
-      const char *scratch_pathname, *canonical_pathname;
+      const char *scratch_pathname;
       int scratch_chan;
       char **matching;
 
@@ -398,7 +398,7 @@ exec_file_attach (const char *filename, int from_tty)
 	    load_via_target = 1;
 	}
 
-      gdb::unique_xmalloc_ptr<char> canonical_storage, scratch_storage;
+      gdb::unique_xmalloc_ptr<char> scratch_storage;
       if (load_via_target)
 	{
 	  /* gdb_bfd_fopen does not support "target:" filenames.  */
@@ -409,7 +409,6 @@ exec_file_attach (const char *filename, int from_tty)
 
 	  scratch_pathname = filename;
 	  scratch_chan = -1;
-	  canonical_pathname = scratch_pathname;
 	}
       else
 	{
@@ -437,19 +436,14 @@ exec_file_attach (const char *filename, int from_tty)
 	    perror_with_name (filename);
 
 	  scratch_pathname = scratch_storage.get ();
-
-	  /* gdb_bfd_open (and its variants) prefers canonicalized
-	     pathname for better BFD caching.  */
-	  canonical_storage = gdb_realpath (scratch_pathname);
-	  canonical_pathname = canonical_storage.get ();
 	}
 
       gdb_bfd_ref_ptr temp;
       if (write_files && !load_via_target)
-	temp = gdb_bfd_fopen (canonical_pathname, gnutarget,
+	temp = gdb_bfd_fopen (scratch_pathname, gnutarget,
 			      FOPEN_RUB, scratch_chan);
       else
-	temp = gdb_bfd_open (canonical_pathname, gnutarget, scratch_chan);
+	temp = gdb_bfd_open (scratch_pathname, gnutarget, scratch_chan);
       current_program_space->set_exec_bfd (std::move (temp));
 
       if (!current_program_space->exec_bfd ())
