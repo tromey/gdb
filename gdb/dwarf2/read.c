@@ -3345,6 +3345,9 @@ dwarf2_initialize_objfile (struct objfile *objfile)
 
   dwarf_read_debug_printf ("called");
 
+  /* Make sure the DWZ file is mapped in early.  */
+  dwarf2_get_dwz_file (per_objfile);
+
   /* If we're about to read full symbols, don't bother with the
      indices.  In this case we also don't care if some other debug
      format is making psymtabs, because they are all about to be
@@ -3458,7 +3461,7 @@ get_abbrev_section_for_cu (struct dwarf2_per_cu_data *this_cu)
   dwarf2_per_bfd *per_bfd = this_cu->per_bfd;
 
   if (this_cu->is_dwz)
-    abbrev = &dwarf2_get_dwz_file (per_bfd, true)->abbrev;
+    abbrev = &per_bfd->require_dwz_file ()->abbrev;
   else
     abbrev = &per_bfd->abbrev;
 
@@ -5252,16 +5255,7 @@ create_all_units (dwarf2_per_objfile *per_objfile)
 				  &per_objfile->per_bfd->abbrev, 0,
 				  types_htab, rcuh_kind::TYPE);
 
-  dwz_file *dwz;
-  try
-    {
-      dwz = dwarf2_get_dwz_file (per_objfile->per_bfd);
-    }
-  catch (const gdb_exception_error &)
-    {
-      per_objfile->per_bfd->all_units.clear ();
-      throw;
-    }
+  dwz_file *dwz = per_objfile->per_bfd->dwz_file.get ();
   if (dwz != NULL)
     {
       /* Pre-read the sections we'll need to construct an index.  */
@@ -17281,7 +17275,7 @@ read_attribute_value (const struct die_reader_specs *reader,
       /* FALLTHROUGH */
     case DW_FORM_GNU_strp_alt:
       {
-	dwz_file *dwz = dwarf2_get_dwz_file (per_objfile->per_bfd, true);
+	dwz_file *dwz = per_objfile->per_bfd->require_dwz_file ();
 	LONGEST str_offset = cu_header->read_offset (abfd, info_ptr,
 						     &bytes_read);
 
@@ -17950,7 +17944,7 @@ get_debug_line_section (struct dwarf2_cu *cu)
     section = &cu->dwo_unit->dwo_file->sections.line;
   else if (cu->per_cu->is_dwz)
     {
-      dwz_file *dwz = dwarf2_get_dwz_file (per_objfile->per_bfd, true);
+      dwz_file *dwz = per_objfile->per_bfd->require_dwz_file ();
 
       section = &dwz->line;
     }

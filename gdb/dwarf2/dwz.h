@@ -65,13 +65,12 @@ struct dwz_file
   const char *read_string (struct objfile *objfile, LONGEST str_offset);
 };
 
-/* Open the separate '.dwz' debug file, if needed.  If there is no
-   .gnu_debugaltlink section in the file, then the result depends on
-   REQUIRE: if REQUIRE is true, then error; if REQUIRE is false,
-   return NULL.  Always error if there is such a section but the file
-   cannot be found.  */
+/* Open the separate '.dwz' debug file, if it exists.  If it is
+   opened, it is stored on the per_bfd object associated with
+   PER_OBJFILE.  If there is no .gnu_debugaltlink section in the file,
+   then do nothing.  This will warn without updating the per_bfd if
+   there is such a section but the file cannot be found.  */
 
-extern dwz_file *dwarf2_get_dwz_file (dwarf2_per_bfd *per_bfd,
-				      bool require = false);
+extern void dwarf2_get_dwz_file (dwarf2_per_objfile *per_objfile);
 
 #endif /* GDB_DWARF2_DWZ_H */

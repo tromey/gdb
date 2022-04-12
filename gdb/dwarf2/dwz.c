@@ -52,49 +52,35 @@ dwz_file::read_string (struct objfile *objfile, LONGEST str_offset)
 /* A helper function to find the sections for a .dwz file.  */
 
 static void
-locate_dwz_sections (bfd *abfd, asection *sectp, dwz_file *dwz_file)
+locate_dwz_sections (struct objfile *objfile, bfd *abfd, asection *sectp,
+		     dwz_file *dwz_file)
 {
+  dwarf2_section_info *sect = nullptr;
+
   /* Note that we only support the standard ELF names, because .dwz
      is ELF-only (at the time of writing).  */
   if (dwarf2_elf_names.abbrev.matches (sectp->name))
-    {
-      dwz_file->abbrev.s.section = sectp;
-      dwz_file->abbrev.size = bfd_section_size (sectp);
-    }
+    sect = &dwz_file->abbrev;
   else if (dwarf2_elf_names.info.matches (sectp->name))
-    {
-      dwz_file->info.s.section = sectp;
-      dwz_file->info.size = bfd_section_size (sectp);
-    }
+    sect = &dwz_file->info;
   else if (dwarf2_elf_names.str.matches (sectp->name))
-    {
-      dwz_file->str.s.section = sectp;
-      dwz_file->str.size = bfd_section_size (sectp);
-    }
+    sect = &dwz_file->str;
   else if (dwarf2_elf_names.line.matches (sectp->name))
-    {
-      dwz_file->line.s.section = sectp;
-      dwz_file->line.size = bfd_section_size (sectp);
-    }
+    sect = &dwz_file->line;
   else if (dwarf2_elf_names.macro.matches (sectp->name))
-    {
-      dwz_file->macro.s.section = sectp;
-      dwz_file->macro.size = bfd_section_size (sectp);
-    }
+    sect = &dwz_file->macro;
   else if (dwarf2_elf_names.gdb_index.matches (sectp->name))
-    {
-      dwz_file->gdb_index.s.section = sectp;
-      dwz_file->gdb_index.size = bfd_section_size (sectp);
-    }
+    sect = &dwz_file->gdb_index;
   else if (dwarf2_elf_names.debug_names.matches (sectp->name))
-    {
-      dwz_file->debug_names.s.section = sectp;
-      dwz_file->debug_names.size = bfd_section_size (sectp);
-    }
+    sect = &dwz_file->debug_names;
   else if (dwarf2_elf_names.types.matches (sectp->name))
+    sect = &dwz_file->types;
+
+  if (sect != nullptr)
     {
-      dwz_file->types.s.section = sectp;
-      dwz_file->types.size = bfd_section_size (sectp);
+      sect->s.section = sectp;
+      sect->size = bfd_section_size (sectp);
+      sect->read (objfile);
     }
 }
 
@@ -189,15 +175,16 @@ dwz_search_other_debugdirs (std::string &filename, bfd_byte *buildid,
 
 /* See dwz.h.  */
 
-struct dwz_file *
-dwarf2_get_dwz_file (dwarf2_per_bfd *per_bfd, bool require)
+void
+dwarf2_get_dwz_file (dwarf2_per_objfile *per_objfile)
 {
+  dwarf2_per_bfd *per_bfd = per_objfile->per_bfd;
   bfd_size_type buildid_len_arg;
   size_t buildid_len;
   bfd_byte *buildid;
 
-  if (per_bfd->dwz_file != NULL)
-    return per_bfd->dwz_file.get ();
+  if (per_bfd->dwz_file != nullptr)
+    return;
 
   bfd_set_error (bfd_error_no_error);
   gdb::unique_xmalloc_ptr<char> data
@@ -205,14 +192,10 @@ dwarf2_get_dwz_file (dwarf2_per_bfd *per_bfd, bool require)
 				  &buildid_len_arg, &buildid));
   if (data == NULL)
     {
-      if (bfd_get_error () == bfd_error_no_error)
-	{
-	  if (!require)
-	    return nullptr;
-	  error (_("could not read '.gnu_debugaltlink' section"));
-	}
-      error (_("could not read '.gnu_debugaltlink' section: %s"),
-	     bfd_errmsg (bfd_get_error ()));
+      if (bfd_get_error () != bfd_error_no_error)
+	warning (_("could not read '.gnu_debugaltlink' section: %s"),
+		 bfd_errmsg (bfd_get_error ()));
+      return;
     }
 
   gdb::unique_xmalloc_ptr<bfd_byte> buildid_holder (buildid);
@@ -272,16 +255,29 @@ dwarf2_get_dwz_file (dwarf2_per_bfd *per_bfd, bool require)
     }
 
   if (dwz_bfd == NULL)
-    error (_("could not find '.gnu_debugaltlink' file for %s"),
-	   bfd_get_filename (per_bfd->obfd));
+    {
+      warning (_("could not find '.gnu_debugaltlink' file for %s"),
+	       bfd_get_filename (per_bfd->obfd));
+      return;
+    }
 
   std::unique_ptr<struct dwz_file> result
     (new struct dwz_file (std::move (dwz_bfd)));
 
   for (asection *sec : gdb_bfd_sections (result->dwz_bfd))
-    locate_dwz_sections (result->dwz_bfd.get (), sec, result.get ());
+    locate_dwz_sections (per_objfile->objfile, result->dwz_bfd.get (),
+			 sec, result.get ());
 
   gdb_bfd_record_inclusion (per_bfd->obfd, result->dwz_bfd.get ());
   per_bfd->dwz_file = std::move (result);
-  return per_bfd->dwz_file.get ();
+}
+
+/* See read.h.  */
+
+dwz_file *
+dwarf2_per_bfd::require_dwz_file ()
+{
+  if (dwz_file == nullptr)
+    error (_("could not read '.gnu_debugaltlink' section"));
+  return dwz_file.get ();
 }

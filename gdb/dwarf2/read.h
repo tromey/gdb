@@ -460,6 +460,9 @@ struct dwarf2_per_bfd
      .debug_info.  */
   void map_info_sections (struct objfile *objfile);
 
+  /* Return the DWZ file.  If it does not exist, throw an exception.  */
+  struct dwz_file *require_dwz_file ();
+
 private:
   /* This function is mapped across the sections and remembers the
      offset and size of each of the debugging sections we are

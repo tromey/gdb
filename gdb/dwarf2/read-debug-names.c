@@ -440,6 +440,7 @@ create_cus_from_debug_names_list (dwarf2_per_bfd *per_bfd,
 static bool
 create_cus_from_debug_names (dwarf2_per_bfd *per_bfd,
 			     const mapped_debug_names &map,
+			     dwz_file *dwz,
 			     const mapped_debug_names &dwz_map)
 {
   gdb_assert (per_bfd->all_units.empty ());
@@ -452,7 +453,7 @@ create_cus_from_debug_names (dwarf2_per_bfd *per_bfd,
   if (dwz_map.cu_count == 0)
     return true;
 
-  dwz_file *dwz = dwarf2_get_dwz_file (per_bfd);
+  gdb_assert (dwz != nullptr);
   return create_cus_from_debug_names_list (per_bfd, dwz_map, dwz->info,
 					   true /* is_dwz */);
 }
@@ -477,7 +478,7 @@ dwarf2_read_debug_names (dwarf2_per_objfile *per_objfile)
 
   /* If there is a .dwz file, read it so we can get its CU list as
      well.  */
-  dwz_file *dwz = dwarf2_get_dwz_file (per_bfd);
+  dwz_file *dwz = per_bfd->dwz_file.get ();
   if (dwz != NULL)
     {
       if (!read_debug_names_from_section (objfile,
@@ -490,7 +491,7 @@ dwarf2_read_debug_names (dwarf2_per_objfile *per_objfile)
 	}
     }
 
-  if (!create_cus_from_debug_names (per_bfd, *map, dwz_map))
+  if (!create_cus_from_debug_names (per_bfd, *map, dwz, dwz_map))
     {
       per_bfd->all_units.clear ();
       return false;
