@@ -775,7 +775,7 @@ static unrelocated_addr read_addr_index (struct dwarf2_cu *cu,
 static sect_offset read_abbrev_offset (dwarf2_section_info *, sect_offset);
 
 static const char *read_indirect_string
-  (dwarf2_per_objfile *per_objfile, bfd *, const gdb_byte *,
+  (dwarf2_per_bfd *per_bfd, bfd *, const gdb_byte *,
    const struct comp_unit_head *, unsigned int *);
 
 static unrelocated_addr read_addr_index_from_leb128 (struct dwarf2_cu *,
@@ -17207,9 +17207,8 @@ read_attribute_value (const struct die_reader_specs *reader,
       if (!cu->per_cu->is_dwz)
 	{
 	  attr->set_string_noncanonical
-	    (read_indirect_string (per_objfile,
-				   abfd, info_ptr, cu_header,
-				   &bytes_read));
+	    (read_indirect_string (per_objfile->per_bfd, abfd, info_ptr,
+				   cu_header, &bytes_read));
 	  info_ptr += bytes_read;
 	  break;
 	}
@@ -17413,10 +17412,10 @@ read_attribute (const struct die_reader_specs *reader,
 /* See read.h.  */
 
 const char *
-read_indirect_string_at_offset (dwarf2_per_objfile *per_objfile,
+read_indirect_string_at_offset (dwarf2_per_bfd *per_bfd,
 				LONGEST str_offset)
 {
-  return per_objfile->per_bfd->str.read_string (str_offset, "DW_FORM_strp");
+  return per_bfd->str.read_string (str_offset, "DW_FORM_strp");
 }
 
 /* Return pointer to string at .debug_str offset as read from BUF.
@@ -17424,14 +17423,14 @@ read_indirect_string_at_offset (dwarf2_per_objfile *per_objfile,
    Return *BYTES_READ_PTR count of bytes read from BUF.  */
 
 static const char *
-read_indirect_string (dwarf2_per_objfile *per_objfile, bfd *abfd,
+read_indirect_string (dwarf2_per_bfd *per_bfd, bfd *abfd,
 		      const gdb_byte *buf,
 		      const struct comp_unit_head *cu_header,
 		      unsigned int *bytes_read_ptr)
 {
   LONGEST str_offset = cu_header->read_offset (abfd, buf, bytes_read_ptr);
 
-  return read_indirect_string_at_offset (per_objfile, str_offset);
+  return read_indirect_string_at_offset (per_bfd, str_offset);
 }
 
 /* See read.h.  */

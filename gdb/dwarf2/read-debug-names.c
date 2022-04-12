@@ -599,7 +599,8 @@ mapped_debug_names::namei_to_name
 				 + namei * offset_size),
 				offset_size,
 				dwarf5_byte_order);
-  return read_indirect_string_at_offset (per_objfile, namei_string_offs);
+  return read_indirect_string_at_offset (per_objfile->per_bfd,
+					 namei_string_offs);
 }
 
 /* Find a slot in .debug_names for the object named NAME.  If NAME is

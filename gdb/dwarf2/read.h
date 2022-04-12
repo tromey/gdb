@@ -935,7 +935,7 @@ extern void dw_expand_symtabs_matching_file_matcher
 /* Return pointer to string at .debug_str offset STR_OFFSET.  */
 
 extern const char *read_indirect_string_at_offset
-  (dwarf2_per_objfile *per_objfile, LONGEST str_offset);
+  (dwarf2_per_bfd *per_bfd, LONGEST str_offset);
 
 /* Allocate a hash table for signatured types.  */
 
