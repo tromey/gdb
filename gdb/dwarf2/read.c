@@ -1049,7 +1049,7 @@ static void prepare_one_comp_unit (struct dwarf2_cu *cu,
 static struct type *set_die_type (struct die_info *, struct type *,
 				  struct dwarf2_cu *, bool = false);
 
-static void create_all_units (dwarf2_per_objfile *per_objfile);
+static void create_all_units (dwarf2_per_bfd *per_bfd);
 
 static void load_full_comp_unit (dwarf2_per_cu_data *per_cu,
 				 dwarf2_per_objfile *per_objfile,
@@ -3335,7 +3335,7 @@ dwarf2_initialize_objfile (struct objfile *objfile)
     {
       dwarf_read_debug_printf ("readnow requested");
 
-      create_all_units (per_objfile);
+      create_all_units (per_bfd);
       per_bfd->quick_file_names_table
 	= create_quick_file_names_table (per_bfd->all_units.size ());
 
@@ -5026,7 +5026,7 @@ dwarf2_build_psymtabs_hard (dwarf2_per_objfile *per_objfile)
 			   objfile_name (objfile));
 
   cooked_index_storage index_storage;
-  create_all_units (per_objfile);
+  create_all_units (per_bfd);
   build_type_psymtabs (per_objfile, &index_storage);
   std::vector<std::unique_ptr<cooked_index_shard>> indexes;
 
@@ -5125,7 +5125,7 @@ dwarf2_build_psymtabs_hard (dwarf2_per_objfile *per_objfile)
 }
 
 static void
-read_comp_units_from_section (dwarf2_per_objfile *per_objfile,
+read_comp_units_from_section (dwarf2_per_bfd *per_bfd,
 			      struct dwarf2_section_info *section,
 			      struct dwarf2_section_info *abbrev_section,
 			      unsigned int is_dwz,
@@ -5154,13 +5154,13 @@ read_comp_units_from_section (dwarf2_per_objfile *per_objfile,
 
       /* Save the compilation unit for later lookup.  */
       if (cu_header.unit_type != DW_UT_type)
-	this_cu = per_objfile->per_bfd->allocate_per_cu ();
+	this_cu = per_bfd->allocate_per_cu ();
       else
 	{
 	  if (types_htab == nullptr)
 	    types_htab = allocate_signatured_type_table ();
 
-	  auto sig_type = per_objfile->per_bfd->allocate_signatured_type
+	  auto sig_type = per_bfd->allocate_signatured_type
 	    (cu_header.signature);
 	  signatured_type *sig_ptr = sig_type.get ();
 	  sig_type->type_offset_in_tu = cu_header.type_cu_offset_in_tu;
@@ -5186,7 +5186,7 @@ read_comp_units_from_section (dwarf2_per_objfile *per_objfile,
       this_cu->set_version (cu_header.version);
 
       info_ptr = info_ptr + this_cu->length ();
-      per_objfile->per_bfd->all_units.push_back (std::move (this_cu));
+      per_bfd->all_units.push_back (std::move (this_cu));
     }
 }
 
@@ -5206,23 +5206,23 @@ finalize_all_units (dwarf2_per_bfd *per_bfd)
    This is only done for -readnow and building partial symtabs.  */
 
 static void
-create_all_units (dwarf2_per_objfile *per_objfile)
+create_all_units (dwarf2_per_bfd *per_bfd)
 {
   htab_up types_htab;
-  gdb_assert (per_objfile->per_bfd->all_units.empty ());
+  gdb_assert (per_bfd->all_units.empty ());
 
-  read_comp_units_from_section (per_objfile, &per_objfile->per_bfd->info,
-				&per_objfile->per_bfd->abbrev, 0,
+  read_comp_units_from_section (per_bfd, &per_bfd->info,
+				&per_bfd->abbrev, 0,
 				types_htab, rcuh_kind::COMPILE);
-  for (dwarf2_section_info &section : per_objfile->per_bfd->types)
-    read_comp_units_from_section (per_objfile, &section,
-				  &per_objfile->per_bfd->abbrev, 0,
+  for (dwarf2_section_info &section : per_bfd->types)
+    read_comp_units_from_section (per_bfd, &section,
+				  &per_bfd->abbrev, 0,
 				  types_htab, rcuh_kind::TYPE);
 
-  dwz_file *dwz = per_objfile->per_bfd->dwz_file.get ();
+  dwz_file *dwz = per_bfd->dwz_file.get ();
   if (dwz != NULL)
     {
-      read_comp_units_from_section (per_objfile, &dwz->info, &dwz->abbrev, 1,
+      read_comp_units_from_section (per_bfd, &dwz->info, &dwz->abbrev, 1,
 				    types_htab, rcuh_kind::COMPILE);
 
       if (!dwz->types.empty ())
@@ -5232,9 +5232,9 @@ create_all_units (dwarf2_per_objfile *per_objfile)
 	}
     }
 
-  per_objfile->per_bfd->signatured_types = std::move (types_htab);
+  per_bfd->signatured_types = std::move (types_htab);
 
-  finalize_all_units (per_objfile->per_bfd);
+  finalize_all_units (per_bfd);
 }
 
 /* Return the initial uleb128 in the die at INFO_PTR.  */
