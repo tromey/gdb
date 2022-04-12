@@ -135,7 +135,7 @@ create_signatured_type_table_from_debug_names
 			  map.dwarf5_byte_order));
 
       comp_unit_head cu_header;
-      read_and_check_comp_unit_head (per_objfile, &cu_header, section,
+      read_and_check_comp_unit_head (&cu_header, section,
 				     abbrev_section,
 				     section->buffer + to_underlying (sect_off),
 				     rcuh_kind::TYPE);

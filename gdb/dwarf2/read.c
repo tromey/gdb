@@ -3557,7 +3557,7 @@ create_debug_type_hash_table (dwarf2_per_objfile *per_objfile,
       /* We need to read the type's signature in order to build the hash
 	 table, but we don't need anything else just yet.  */
 
-      ptr = read_and_check_comp_unit_head (per_objfile, &header, section,
+      ptr = read_and_check_comp_unit_head (&header, section,
 					   abbrev_section, ptr, section_kind);
 
       length = header.get_length_with_initial ();
@@ -3877,7 +3877,6 @@ read_cutu_die_from_dwo (dwarf2_cu *cu,
 			struct die_info **result_comp_unit_die,
 			abbrev_table_up *result_dwo_abbrev_table)
 {
-  dwarf2_per_objfile *per_objfile = cu->per_objfile;
   dwarf2_per_cu_data *per_cu = cu->per_cu;
   bfd *abfd;
   const gdb_byte *begin_info_ptr, *info_ptr;
@@ -3955,7 +3954,7 @@ read_cutu_die_from_dwo (dwarf2_cu *cu,
     {
       signatured_type *sig_type = (struct signatured_type *) per_cu;
 
-      info_ptr = read_and_check_comp_unit_head (per_objfile, &cu->header,
+      info_ptr = read_and_check_comp_unit_head (&cu->header,
 						section, dwo_abbrev_section,
 						info_ptr, rcuh_kind::TYPE);
       /* This is not an assert because it can be caused by bad debug info.  */
@@ -3981,7 +3980,7 @@ read_cutu_die_from_dwo (dwarf2_cu *cu,
     }
   else
     {
-      info_ptr = read_and_check_comp_unit_head (per_objfile, &cu->header,
+      info_ptr = read_and_check_comp_unit_head (&cu->header,
 						section, dwo_abbrev_section,
 						info_ptr, rcuh_kind::COMPILE);
       gdb_assert (dwo_unit->sect_off == cu->header.sect_off);
@@ -4209,7 +4208,7 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
     {
       if (this_cu->is_debug_types)
 	{
-	  info_ptr = read_and_check_comp_unit_head (per_objfile, &cu->header,
+	  info_ptr = read_and_check_comp_unit_head (&cu->header,
 						    section, abbrev_section,
 						    info_ptr, rcuh_kind::TYPE);
 
@@ -4233,7 +4232,7 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
 	}
       else
 	{
-	  info_ptr = read_and_check_comp_unit_head (per_objfile, &cu->header,
+	  info_ptr = read_and_check_comp_unit_head (&cu->header,
 						    section, abbrev_section,
 						    info_ptr,
 						    rcuh_kind::COMPILE);
@@ -4385,7 +4384,7 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
 
   section->require ();
   begin_info_ptr = info_ptr = section->buffer + to_underlying (this_cu->sect_off);
-  info_ptr = read_and_check_comp_unit_head (per_objfile, &m_new_cu->header,
+  info_ptr = read_and_check_comp_unit_head (&m_new_cu->header,
 					    section, abbrev_section, info_ptr,
 					    (this_cu->is_debug_types
 					     ? rcuh_kind::TYPE
@@ -5149,7 +5148,7 @@ read_comp_units_from_section (dwarf2_per_objfile *per_objfile,
       sect_offset sect_off = (sect_offset) (info_ptr - section->buffer);
 
       comp_unit_head cu_header;
-      read_and_check_comp_unit_head (per_objfile, &cu_header, section,
+      read_and_check_comp_unit_head (&cu_header, section,
 				     abbrev_section, info_ptr,
 				     section_kind);
 

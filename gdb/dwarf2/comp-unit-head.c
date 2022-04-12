@@ -145,8 +145,7 @@ read_comp_unit_head (struct comp_unit_head *cu_header,
    Perform various error checking on the header.  */
 
 static void
-error_check_comp_unit_head (dwarf2_per_objfile *per_objfile,
-			    struct comp_unit_head *header,
+error_check_comp_unit_head (struct comp_unit_head *header,
 			    struct dwarf2_section_info *section,
 			    struct dwarf2_section_info *abbrev_section)
 {
@@ -172,8 +171,7 @@ error_check_comp_unit_head (dwarf2_per_objfile *per_objfile,
 /* See comp-unit-head.h.  */
 
 const gdb_byte *
-read_and_check_comp_unit_head (dwarf2_per_objfile *per_objfile,
-			       struct comp_unit_head *header,
+read_and_check_comp_unit_head (struct comp_unit_head *header,
 			       struct dwarf2_section_info *section,
 			       struct dwarf2_section_info *abbrev_section,
 			       const gdb_byte *info_ptr,
@@ -187,7 +185,7 @@ read_and_check_comp_unit_head (dwarf2_per_objfile *per_objfile,
 
   header->first_die_cu_offset = (cu_offset) (info_ptr - beg_of_comp_unit);
 
-  error_check_comp_unit_head (per_objfile, header, section, abbrev_section);
+  error_check_comp_unit_head (header, section, abbrev_section);
 
   return info_ptr;
 }
