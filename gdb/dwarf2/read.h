@@ -456,10 +456,6 @@ struct dwarf2_per_bfd
      is allocated on the dwarf2_per_bfd obstack.  */
   signatured_type_up allocate_signatured_type (ULONGEST signature);
 
-  /* Map all the DWARF section data needed when scanning
-     .debug_info.  */
-  void map_info_sections (struct objfile *objfile);
-
   /* Return the DWZ file.  If it does not exist, throw an exception.  */
   struct dwz_file *require_dwz_file ();
 

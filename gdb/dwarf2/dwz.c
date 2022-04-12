@@ -33,8 +33,6 @@
 const char *
 dwz_file::read_string (struct objfile *objfile, LONGEST str_offset)
 {
-  str.read (objfile);
-
   if (str.buffer == NULL)
     error (_("DW_FORM_GNU_strp_alt used without .debug_str "
 	     "section [in module %s]"),

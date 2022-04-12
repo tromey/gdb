@@ -792,7 +792,6 @@ private:
       : m_abfd (per_bfd->obfd),
 	m_per_bfd (per_bfd)
     {
-      gdb_assert (per_bfd->str.readin);
       if (per_bfd->str.buffer == NULL)
 	return;
       for (const gdb_byte *data = per_bfd->str.buffer;

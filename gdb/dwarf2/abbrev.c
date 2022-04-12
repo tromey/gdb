@@ -128,7 +128,7 @@ abbrev_table::read (struct dwarf2_section_info *section,
   struct obstack *obstack = &abbrev_table->m_abbrev_obstack;
 
   /* Caller must ensure this.  */
-  gdb_assert (section->readin);
+  section->require ();
   abbrev_ptr = section->buffer + to_underlying (sect_off);
 
   while (true)

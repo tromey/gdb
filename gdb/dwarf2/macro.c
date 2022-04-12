@@ -601,7 +601,7 @@ dwarf_decode_macro_bytes (dwarf2_per_objfile *per_objfile,
 		break;
 	      }
 
-	    str_offsets_section->read (objfile);
+	    str_offsets_section->require ();
 	    const gdb_byte *info_ptr = (str_offsets_section->buffer
 					+ *str_offsets_base
 					+ offset_index * offset_size);
@@ -733,8 +733,7 @@ dwarf_decode_macro_bytes (dwarf2_per_objfile *per_objfile,
 	      {
 		dwz_file *dwz = per_objfile->per_bfd->require_dwz_file ();
 
-		dwz->macro.read (objfile);
-
+		dwz->macro.require ();
 		include_section = &dwz->macro;
 		include_bfd = include_section->get_bfd_owner ();
 		include_mac_end = dwz->macro.buffer + dwz->macro.size;

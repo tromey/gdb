@@ -122,10 +122,7 @@ dwarf2_section_info::read (struct objfile *objfile)
   bfd *abfd;
   gdb_byte *buf, *retbuf;
 
-  if (readin)
-    return;
-  buffer = NULL;
-  readin = true;
+  buffer = nullptr;
 
   if (empty ())
     return;
@@ -194,7 +191,6 @@ const char *
 dwarf2_section_info::read_string (struct objfile *objfile, LONGEST str_offset,
 				  const char *form_name)
 {
-  read (objfile);
   if (buffer == NULL)
     {
       if (get_bfd_section () == nullptr)

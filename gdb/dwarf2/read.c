@@ -772,8 +772,7 @@ static void read_attribute_reprocess (const struct die_reader_specs *reader,
 static unrelocated_addr read_addr_index (struct dwarf2_cu *cu,
 					 unsigned int addr_index);
 
-static sect_offset read_abbrev_offset (dwarf2_per_objfile *per_objfile,
-				       dwarf2_section_info *, sect_offset);
+static sect_offset read_abbrev_offset (dwarf2_section_info *, sect_offset);
 
 static const char *read_indirect_string
   (dwarf2_per_objfile *per_objfile, bfd *, const gdb_byte *,
@@ -1523,30 +1522,11 @@ dwarf2_get_section_info (struct objfile *objfile,
       gdb_assert_not_reached ("unexpected section");
     }
 
-  info->read (objfile);
-
+  /* Either this was read in earlier, or the section simply didn't
+     exist.  Either way is ok.  */
   *sectp = info->get_bfd_section ();
   *bufp = info->buffer;
   *sizep = info->size;
-}
-
-/* See dwarf2/read.h.  */
-
-void
-dwarf2_per_bfd::map_info_sections (struct objfile *objfile)
-{
-  info.read (objfile);
-  abbrev.read (objfile);
-  line.read (objfile);
-  str.read (objfile);
-  str_offsets.read (objfile);
-  line_str.read (objfile);
-  ranges.read (objfile);
-  rnglists.read (objfile);
-  addr.read (objfile);
-
-  for (auto &section : types)
-    section.read (objfile);
 }
 
 
@@ -1829,10 +1809,9 @@ read_addrmap_from_aranges (dwarf2_per_objfile *per_objfile,
 
   std::set<sect_offset> debug_info_offset_seen;
 
-  section->read (objfile);
-
   const bfd_endian dwarf5_byte_order = gdbarch_byte_order (gdbarch);
 
+  section->require ();
   const gdb_byte *addr = section->buffer;
 
   while (addr < section->buffer + section->size)
@@ -3296,14 +3275,13 @@ get_gdb_index_contents_from_section (objfile *obj, T *section_owner)
   if ((section->get_flags () & SEC_HAS_CONTENTS) == 0)
     return {};
 
-  section->read (obj);
-
   /* dwarf2_section_info::size is a bfd_size_type, while
      gdb::array_view works with size_t.  On 32-bit hosts, with
      --enable-64-bit-bfd, bfd_size_type is a 64-bit type, while size_t
      is 32-bit.  So we need an explicit narrowing conversion here.
      This is fine, because it's impossible to allocate or mmap an
      array/buffer larger than what size_t can represent.  */
+  section->require ();
   return gdb::make_array_view (section->buffer, section->size);
 }
 
@@ -3471,8 +3449,7 @@ get_abbrev_section_for_cu (struct dwarf2_per_cu_data *this_cu)
 /* Fetch the abbreviation table offset from a comp or type unit header.  */
 
 static sect_offset
-read_abbrev_offset (dwarf2_per_objfile *per_objfile,
-		    struct dwarf2_section_info *section,
+read_abbrev_offset (struct dwarf2_section_info *section,
 		    sect_offset sect_off)
 {
   bfd *abfd = section->get_bfd_owner ();
@@ -3480,7 +3457,7 @@ read_abbrev_offset (dwarf2_per_objfile *per_objfile,
   unsigned int initial_length_size, offset_size;
   uint16_t version;
 
-  section->read (per_objfile->objfile);
+  section->require ();
   info_ptr = section->buffer + to_underlying (sect_off);
   read_initial_length (abfd, info_ptr, &initial_length_size);
   offset_size = initial_length_size == 4 ? 4 : 8;
@@ -3537,7 +3514,6 @@ create_debug_type_hash_table (dwarf2_per_objfile *per_objfile,
 			      dwarf2_section_info *section, htab_up &types_htab,
 			      rcuh_kind section_kind)
 {
-  struct objfile *objfile = per_objfile->objfile;
   struct dwarf2_section_info *abbrev_section;
   bfd *abfd;
   const gdb_byte *info_ptr, *end_ptr;
@@ -3548,7 +3524,7 @@ create_debug_type_hash_table (dwarf2_per_objfile *per_objfile,
 			   section->get_name (),
 			   abbrev_section->get_file_name ());
 
-  section->read (objfile);
+  section->require ();
   info_ptr = section->buffer;
 
   if (info_ptr == NULL)
@@ -3861,7 +3837,7 @@ init_cu_die_reader (struct die_reader_specs *reader,
 		    struct dwo_file *dwo_file,
 		    struct abbrev_table *abbrev_table)
 {
-  gdb_assert (section->readin && section->buffer != NULL);
+  section->require ();
   reader->abfd = section->get_bfd_owner ();
   reader->cu = cu;
   reader->dwo_file = dwo_file;
@@ -3902,7 +3878,6 @@ read_cutu_die_from_dwo (dwarf2_cu *cu,
 {
   dwarf2_per_objfile *per_objfile = cu->per_objfile;
   dwarf2_per_cu_data *per_cu = cu->per_cu;
-  struct objfile *objfile = per_objfile->objfile;
   bfd *abfd;
   const gdb_byte *begin_info_ptr, *info_ptr;
   struct dwarf2_section_info *dwo_abbrev_section;
@@ -3969,7 +3944,7 @@ read_cutu_die_from_dwo (dwarf2_cu *cu,
   /* Set up for reading the DWO CU/TU.  */
   cu->dwo_unit = dwo_unit;
   dwarf2_section_info *section = dwo_unit->section;
-  section->read (objfile);
+  section->require ();
   abfd = section->get_bfd_owner ();
   begin_info_ptr = info_ptr = (section->buffer
 			       + to_underlying (dwo_unit->sect_off));
@@ -4014,7 +3989,7 @@ read_cutu_die_from_dwo (dwarf2_cu *cu,
       dwo_unit->length = cu->header.get_length_with_initial ();
     }
 
-  dwo_abbrev_section->read (objfile);
+  dwo_abbrev_section->require ();
   *result_dwo_abbrev_table
     = abbrev_table::read (dwo_abbrev_section, cu->header.abbrev_sect_off);
   init_cu_die_reader (result_reader, cu, section, dwo_unit->dwo_file,
@@ -4164,7 +4139,6 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
   : die_reader_specs {},
     m_this_cu (this_cu)
 {
-  struct objfile *objfile = per_objfile->objfile;
   struct dwarf2_section_info *section = this_cu->section;
   bfd *abfd = section->get_bfd_owner ();
   const gdb_byte *begin_info_ptr;
@@ -4191,9 +4165,7 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
       return;
     }
 
-  /* This is cheap if the section is already read in.  */
-  section->read (objfile);
-
+  section->require ();
   begin_info_ptr = info_ptr = section->buffer + to_underlying (this_cu->sect_off);
 
   abbrev_section = get_abbrev_section_for_cu (this_cu);
@@ -4291,7 +4263,7 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
 				    cu->header.abbrev_sect_off);
       if (abbrev_table == nullptr)
 	{
-	  abbrev_section->read (objfile);
+	  abbrev_section->require ();
 	  m_abbrev_table_holder
 	    = abbrev_table::read (abbrev_section, cu->header.abbrev_sect_off);
 	  abbrev_table = m_abbrev_table_holder.get ();
@@ -4392,7 +4364,6 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
   : die_reader_specs {},
     m_this_cu (this_cu)
 {
-  struct objfile *objfile = per_objfile->objfile;
   struct dwarf2_section_info *section = this_cu->section;
   bfd *abfd = section->get_bfd_owner ();
   struct dwarf2_section_info *abbrev_section;
@@ -4409,11 +4380,9 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
 		    ? &dwo_file->sections.abbrev
 		    : get_abbrev_section_for_cu (this_cu));
 
-  /* This is cheap if the section is already read in.  */
-  section->read (objfile);
-
   m_new_cu.reset (new dwarf2_cu (this_cu, per_objfile));
 
+  section->require ();
   begin_info_ptr = info_ptr = section->buffer + to_underlying (this_cu->sect_off);
   info_ptr = read_and_check_comp_unit_head (per_objfile, &m_new_cu->header,
 					    section, abbrev_section, info_ptr,
@@ -4436,7 +4405,7 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
       return;
     }
 
-  abbrev_section->read (objfile);
+  abbrev_section->require ();
   m_abbrev_table_holder
     = abbrev_table::read (abbrev_section, m_new_cu->header.abbrev_sect_off);
 
@@ -4917,7 +4886,7 @@ build_type_psymtabs (dwarf2_per_objfile *per_objfile,
 	{
 	  auto sig_type = static_cast<signatured_type *> (cu.get ());
 	  sorted_by_abbrev.emplace_back
-	    (sig_type, read_abbrev_offset (per_objfile, sig_type->section,
+	    (sig_type, read_abbrev_offset (sig_type->section,
 					   sig_type->sect_off));
 	}
     }
@@ -4933,7 +4902,7 @@ build_type_psymtabs (dwarf2_per_objfile *per_objfile,
 	  || tu.abbrev_offset != abbrev_offset)
 	{
 	  abbrev_offset = tu.abbrev_offset;
-	  per_objfile->per_bfd->abbrev.read (per_objfile->objfile);
+	  per_objfile->per_bfd->abbrev.require ();
 	  abbrev_table =
 	    abbrev_table::read (&per_objfile->per_bfd->abbrev, abbrev_offset);
 	  ++tu_stats->nr_uniq_abbrev_tables;
@@ -5057,8 +5026,6 @@ dwarf2_build_psymtabs_hard (dwarf2_per_objfile *per_objfile)
   dwarf_read_debug_printf ("Building psymtabs of objfile %s ...",
 			   objfile_name (objfile));
 
-  per_bfd->map_info_sections (objfile);
-
   cooked_index_storage index_storage;
   create_all_units (per_objfile);
   build_type_psymtabs (per_objfile, &index_storage);
@@ -5167,14 +5134,12 @@ read_comp_units_from_section (dwarf2_per_objfile *per_objfile,
 			      rcuh_kind section_kind)
 {
   const gdb_byte *info_ptr;
-  struct objfile *objfile = per_objfile->objfile;
 
   dwarf_read_debug_printf ("Reading %s for %s",
 			   section->get_name (),
 			   section->get_file_name ());
 
-  section->read (objfile);
-
+  section->require ();
   info_ptr = section->buffer;
 
   while (info_ptr < section->buffer + section->size)
@@ -5258,12 +5223,6 @@ create_all_units (dwarf2_per_objfile *per_objfile)
   dwz_file *dwz = per_objfile->per_bfd->dwz_file.get ();
   if (dwz != NULL)
     {
-      /* Pre-read the sections we'll need to construct an index.  */
-      struct objfile *objfile = per_objfile->objfile;
-      dwz->abbrev.read (objfile);
-      dwz->info.read (objfile);
-      dwz->str.read (objfile);
-      dwz->line.read (objfile);
       read_comp_units_from_section (per_objfile, &dwz->info, &dwz->abbrev, 1,
 				    types_htab, rcuh_kind::COMPILE);
 
@@ -7960,11 +7919,10 @@ create_cus_hash_table (dwarf2_per_objfile *per_objfile,
 		       dwarf2_cu *cu, struct dwo_file &dwo_file,
 		       dwarf2_section_info &section, htab_up &cus_htab)
 {
-  struct objfile *objfile = per_objfile->objfile;
   dwarf2_per_bfd *per_bfd = per_objfile->per_bfd;
   const gdb_byte *info_ptr, *end_ptr;
 
-  section.read (objfile);
+  section.require ();
   info_ptr = section.buffer;
 
   if (info_ptr == NULL)
@@ -8177,7 +8135,6 @@ static struct dwp_hash_table *
 create_dwp_hash_table (dwarf2_per_objfile *per_objfile,
 		       struct dwp_file *dwp_file, int is_debug_types)
 {
-  struct objfile *objfile = per_objfile->objfile;
   bfd *dbfd = dwp_file->dbfd.get ();
   const gdb_byte *index_ptr, *index_end;
   struct dwarf2_section_info *index;
@@ -8191,8 +8148,8 @@ create_dwp_hash_table (dwarf2_per_objfile *per_objfile,
 
   if (index->empty ())
     return NULL;
-  index->read (objfile);
 
+  index->require ();
   index_ptr = index->buffer;
   index_end = index_ptr + index->size;
 
@@ -10744,7 +10701,7 @@ dwarf2_rnglists_process (unsigned offset, struct dwarf2_cu *cu,
 
   base = cu->base_address;
   rnglists_section = cu_debug_rnglists_section (cu, tag);
-  rnglists_section->read (objfile);
+  rnglists_section->require ();
 
   if (offset >= rnglists_section->size)
     {
@@ -10951,7 +10908,7 @@ dwarf2_ranges_process (unsigned offset, struct dwarf2_cu *cu, dwarf_tag tag,
 
   base = cu->base_address;
 
-  per_objfile->per_bfd->ranges.read (objfile);
+  per_objfile->per_bfd->ranges.require ();
   if (offset >= per_objfile->per_bfd->ranges.size)
     {
       complaint (_("Offset %d out of bounds for DW_AT_ranges attribute"),
@@ -17000,8 +16957,6 @@ read_loclist_index (struct dwarf2_cu *cu, ULONGEST loclist_index)
   /* Get loclists section.  */
   struct dwarf2_section_info *section = cu_debug_loc_section (cu);
 
-  /* Read the loclists section content.  */
-  section->read (objfile);
   if (section->buffer == NULL)
     error (_("DW_FORM_loclistx used without .debug_loclists "
 	     "section [in module %s]"), objfile_name (objfile));
@@ -17064,8 +17019,6 @@ read_rnglist_index (struct dwarf2_cu *cu, ULONGEST rnglist_index,
   /* Get rnglists section.  */
   struct dwarf2_section_info *section = cu_debug_rnglists_section (cu, tag);
 
-  /* Read the rnglists section content.  */
-  section->read (objfile);
   if (section->buffer == nullptr)
     error (_("DW_FORM_rnglistx used without .debug_rnglists section "
 	     "[in module %s]"),
@@ -17523,7 +17476,6 @@ read_addr_index_1 (dwarf2_per_objfile *per_objfile, unsigned int addr_index,
   const gdb_byte *info_ptr;
   ULONGEST addr_base_or_zero = addr_base.has_value () ? *addr_base : 0;
 
-  per_objfile->per_bfd->addr.read (objfile);
   if (per_objfile->per_bfd->addr.buffer == NULL)
     error (_("DW_FORM_addr_index used without .debug_addr section [in module %s]"),
 	   objfile_name (objfile));
@@ -17622,8 +17574,6 @@ read_str_index (struct dwarf2_cu *cu,
   ULONGEST str_offset;
   static const char form_name[] = "DW_FORM_GNU_str_index or DW_FORM_strx";
 
-  str_section->read (objfile);
-  str_offsets_section->read (objfile);
   if (str_section->buffer == NULL)
     error (_("%s used without %s section"
 	     " in CU at offset %s [in module %s]"),
@@ -17972,7 +17922,6 @@ dwarf_decode_line_header (sect_offset sect_off, struct dwarf2_cu *cu,
   dwarf2_per_objfile *per_objfile = cu->per_objfile;
 
   section = get_debug_line_section (cu);
-  section->read (per_objfile->objfile);
   if (section->buffer == NULL)
     {
       if (cu->dwo_unit && cu->per_cu->is_debug_types)
@@ -21289,14 +21238,13 @@ dwarf_alloc_block (struct dwarf2_cu *cu)
 /* Macro support.  */
 
 /* An overload of dwarf_decode_macros that finds the correct section
-   and ensures it is read in before calling the other overload.  */
+   before calling the other overload.  */
 
 static void
 dwarf_decode_macros (struct dwarf2_cu *cu, unsigned int offset,
 		     int section_is_gnu)
 {
   dwarf2_per_objfile *per_objfile = cu->per_objfile;
-  struct objfile *objfile = per_objfile->objfile;
   const struct line_header *lh = cu->line_header;
   unsigned int offset_size = cu->header.offset_size;
   struct dwarf2_section_info *section;
@@ -21329,7 +21277,6 @@ dwarf_decode_macros (struct dwarf2_cu *cu, unsigned int offset,
 	}
     }
 
-  section->read (objfile);
   if (section->buffer == nullptr)
     {
       complaint (_("missing %s section"), section_name);
@@ -21417,8 +21364,7 @@ fill_in_loclist_baton (struct dwarf2_cu *cu,
   dwarf2_per_objfile *per_objfile = cu->per_objfile;
   struct dwarf2_section_info *section = cu_debug_loc_section (cu);
 
-  section->read (per_objfile->objfile);
-
+  section->require ();
   baton->per_objfile = per_objfile;
   baton->per_cu = cu->per_cu;
   gdb_assert (baton->per_cu);
@@ -21445,7 +21391,7 @@ dwarf2_symbol_mark_computed (const struct attribute *attr, struct symbol *sym,
       /* .debug_loc{,.dwo} may not exist at all, or the offset may be outside
 	 the section.  If so, fall through to the complaint in the
 	 other branch.  */
-      && attr->as_unsigned () < section->get_size (objfile))
+      && attr->as_unsigned () < section->size)
     {
       struct dwarf2_loclist_baton *baton;
 
