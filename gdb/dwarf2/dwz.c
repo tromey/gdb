@@ -31,7 +31,7 @@
 #include "gdbsupport/scoped_fd.h"
 
 const char *
-dwz_file::read_string (struct objfile *objfile, LONGEST str_offset)
+dwz_file::read_string (LONGEST str_offset)
 {
   if (str.buffer == NULL)
     error (_("DW_FORM_GNU_strp_alt used without .debug_str "

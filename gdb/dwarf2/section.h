@@ -94,8 +94,7 @@ struct dwarf2_section_info
 
   /* Return pointer to string in this section at offset STR_OFFSET
      with error reporting string FORM_NAME.  */
-  const char *read_string (struct objfile *objfile, LONGEST str_offset,
-			   const char *form_name);
+  const char *read_string (LONGEST str_offset, const char *form_name);
 
   union
   {

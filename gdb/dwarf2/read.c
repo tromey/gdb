@@ -17119,7 +17119,6 @@ read_attribute_value (const struct die_reader_specs *reader,
 {
   struct dwarf2_cu *cu = reader->cu;
   dwarf2_per_objfile *per_objfile = cu->per_objfile;
-  struct objfile *objfile = per_objfile->objfile;
   bfd *abfd = reader->abfd;
   struct comp_unit_head *cu_header = &cu->header;
   unsigned int bytes_read;
@@ -17232,8 +17231,7 @@ read_attribute_value (const struct die_reader_specs *reader,
 	LONGEST str_offset = cu_header->read_offset (abfd, info_ptr,
 						     &bytes_read);
 
-	attr->set_string_noncanonical
-	  (dwz->read_string (objfile, str_offset));
+	attr->set_string_noncanonical (dwz->read_string (str_offset));
 	info_ptr += bytes_read;
       }
       break;
@@ -17419,8 +17417,7 @@ const char *
 read_indirect_string_at_offset (dwarf2_per_objfile *per_objfile,
 				LONGEST str_offset)
 {
-  return per_objfile->per_bfd->str.read_string (per_objfile->objfile,
-						str_offset, "DW_FORM_strp");
+  return per_objfile->per_bfd->str.read_string (str_offset, "DW_FORM_strp");
 }
 
 /* Return pointer to string at .debug_str offset as read from BUF.
@@ -17447,7 +17444,7 @@ dwarf2_per_objfile::read_line_string (const gdb_byte *buf,
   bfd *abfd = objfile->obfd.get ();
   ULONGEST str_offset = read_offset (abfd, buf, offset_size);
 
-  return per_bfd->line_str.read_string (objfile, str_offset, "DW_FORM_line_strp");
+  return per_bfd->line_str.read_string (str_offset, "DW_FORM_line_strp");
 }
 
 /* See read.h.  */
@@ -17460,7 +17457,7 @@ dwarf2_per_objfile::read_line_string (const gdb_byte *buf,
   bfd *abfd = objfile->obfd.get ();
   LONGEST str_offset = cu_header->read_offset (abfd, buf, bytes_read_ptr);
 
-  return per_bfd->line_str.read_string (objfile, str_offset, "DW_FORM_line_strp");
+  return per_bfd->line_str.read_string (str_offset, "DW_FORM_line_strp");
 }
 
 /* Given index ADDR_INDEX in .debug_addr, fetch the value.

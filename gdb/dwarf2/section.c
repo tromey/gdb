@@ -188,8 +188,7 @@ dwarf2_section_info::read (struct objfile *objfile)
 }
 
 const char *
-dwarf2_section_info::read_string (struct objfile *objfile, LONGEST str_offset,
-				  const char *form_name)
+dwarf2_section_info::read_string (LONGEST str_offset, const char *form_name)
 {
   if (buffer == NULL)
     {

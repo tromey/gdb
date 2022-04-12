@@ -62,7 +62,7 @@ struct dwz_file
      the string consists of a single NUL byte, return NULL; otherwise
      return a pointer to the string.  */
 
-  const char *read_string (struct objfile *objfile, LONGEST str_offset);
+  const char *read_string (LONGEST str_offset);
 };
 
 /* Open the separate '.dwz' debug file, if it exists.  If it is

@@ -526,11 +526,10 @@ dwarf_decode_macro_bytes (dwarf2_per_objfile *per_objfile,
 		  {
 		    dwz_file *dwz = per_objfile->per_bfd->require_dwz_file ();
 
-		    body = dwz->read_string (objfile, str_offset);
+		    body = dwz->read_string (str_offset);
 		  }
 		else
-		  body = per_objfile->per_bfd->str.read_string (objfile,
-								str_offset,
+		  body = per_objfile->per_bfd->str.read_string (str_offset,
 								"DW_FORM_strp");
 	      }
 
@@ -619,7 +618,7 @@ dwarf_decode_macro_bytes (dwarf2_per_objfile *per_objfile,
 
 	    ULONGEST str_offset = read_offset (abfd, info_ptr, offset_size);
 
-	    const char *body = str_section->read_string (objfile, str_offset,
+	    const char *body = str_section->read_string (str_offset,
 							 macinfo_str);
 	    if (current_file == nullptr)
 	      {
