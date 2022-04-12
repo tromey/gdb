@@ -1255,7 +1255,8 @@ line_header_eq_voidp (const void *item_lhs, const void *item_rhs)
 
 /* See declaration.  */
 
-dwarf2_per_bfd::dwarf2_per_bfd (bfd *obfd, const dwarf2_debug_sections *names,
+dwarf2_per_bfd::dwarf2_per_bfd (struct objfile *objfile, bfd *obfd,
+				const dwarf2_debug_sections *names,
 				bool can_copy_)
   : obfd (obfd),
     can_copy (can_copy_)
@@ -1264,7 +1265,7 @@ dwarf2_per_bfd::dwarf2_per_bfd (bfd *obfd, const dwarf2_debug_sections *names,
     names = &dwarf2_elf_names;
 
   for (asection *sec : gdb_bfd_sections (obfd))
-    locate_sections (obfd, sec, *names);
+    locate_sections (objfile, obfd, sec, *names);
 }
 
 dwarf2_per_bfd::~dwarf2_per_bfd ()
@@ -1385,15 +1386,16 @@ dwarf2_has_info (struct objfile *objfile,
 	  if (per_bfd == nullptr)
 	    {
 	      /* No, create it now.  */
-	      per_bfd = new dwarf2_per_bfd (objfile->obfd.get (), names,
-					    can_copy);
+	      per_bfd = new dwarf2_per_bfd (objfile, objfile->obfd.get (),
+					    names, can_copy);
 	      dwarf2_per_bfd_bfd_data_key.set (objfile->obfd.get (), per_bfd);
 	    }
 	}
       else
 	{
 	  /* No sharing possible, create one specifically for this objfile.  */
-	  per_bfd = new dwarf2_per_bfd (objfile->obfd.get (), names, can_copy);
+	  per_bfd = new dwarf2_per_bfd (objfile, objfile->obfd.get (),
+					names, can_copy);
 	  dwarf2_per_bfd_objfile_data_key.set (objfile, per_bfd);
 	}
 
@@ -1409,10 +1411,12 @@ dwarf2_has_info (struct objfile *objfile,
 /* See declaration.  */
 
 void
-dwarf2_per_bfd::locate_sections (bfd *abfd, asection *sectp,
+dwarf2_per_bfd::locate_sections (struct objfile *objfile,
+				 bfd *abfd, asection *sectp,
 				 const dwarf2_debug_sections &names)
 {
   flagword aflag = bfd_section_flags (sectp);
+  dwarf2_section_info *sect = nullptr;
 
   if ((aflag & SEC_HAS_CONTENTS) == 0)
     {
@@ -1427,80 +1431,35 @@ dwarf2_per_bfd::locate_sections (bfd *abfd, asection *sectp,
 	       bfd_get_filename (abfd));
     }
   else if (names.info.matches (sectp->name))
-    {
-      this->info.s.section = sectp;
-      this->info.size = bfd_section_size (sectp);
-    }
+    sect = &this->info;
   else if (names.abbrev.matches (sectp->name))
-    {
-      this->abbrev.s.section = sectp;
-      this->abbrev.size = bfd_section_size (sectp);
-    }
+    sect = &this->abbrev;
   else if (names.line.matches (sectp->name))
-    {
-      this->line.s.section = sectp;
-      this->line.size = bfd_section_size (sectp);
-    }
+    sect = &this->line;
   else if (names.loc.matches (sectp->name))
-    {
-      this->loc.s.section = sectp;
-      this->loc.size = bfd_section_size (sectp);
-    }
+    sect = &this->loc;
   else if (names.loclists.matches (sectp->name))
-    {
-      this->loclists.s.section = sectp;
-      this->loclists.size = bfd_section_size (sectp);
-    }
+    sect = &this->loclists;
   else if (names.macinfo.matches (sectp->name))
-    {
-      this->macinfo.s.section = sectp;
-      this->macinfo.size = bfd_section_size (sectp);
-    }
+    sect = &this->macinfo;
   else if (names.macro.matches (sectp->name))
-    {
-      this->macro.s.section = sectp;
-      this->macro.size = bfd_section_size (sectp);
-    }
+    sect = &this->macro;
   else if (names.str.matches (sectp->name))
-    {
-      this->str.s.section = sectp;
-      this->str.size = bfd_section_size (sectp);
-    }
+    sect = &this->str;
   else if (names.str_offsets.matches (sectp->name))
-    {
-      this->str_offsets.s.section = sectp;
-      this->str_offsets.size = bfd_section_size (sectp);
-    }
+    sect = &this->str_offsets;
   else if (names.line_str.matches (sectp->name))
-    {
-      this->line_str.s.section = sectp;
-      this->line_str.size = bfd_section_size (sectp);
-    }
+    sect = &this->line_str;
   else if (names.addr.matches (sectp->name))
-    {
-      this->addr.s.section = sectp;
-      this->addr.size = bfd_section_size (sectp);
-    }
+    sect = &this->addr;
   else if (names.frame.matches (sectp->name))
-    {
-      this->frame.s.section = sectp;
-      this->frame.size = bfd_section_size (sectp);
-    }
+    sect = &this->frame;
   else if (names.eh_frame.matches (sectp->name))
-    {
-      this->eh_frame.s.section = sectp;
-      this->eh_frame.size = bfd_section_size (sectp);
-    }
+    sect = &this->eh_frame;
   else if (names.ranges.matches (sectp->name))
-    {
-      this->ranges.s.section = sectp;
-      this->ranges.size = bfd_section_size (sectp);
-    }
+    sect = &this->ranges;
   else if (names.rnglists.matches (sectp->name))
-    {
-      this->rnglists.s.section = sectp;
-      this->rnglists.size = bfd_section_size (sectp);
-    }
+    sect = &this->rnglists;
   else if (names.types.matches (sectp->name))
     {
       struct dwarf2_section_info type_section;
@@ -1510,26 +1469,25 @@ dwarf2_per_bfd::locate_sections (bfd *abfd, asection *sectp,
       type_section.size = bfd_section_size (sectp);
 
       this->types.push_back (type_section);
+      sect = &this->types.back ();
     }
   else if (names.gdb_index.matches (sectp->name))
-    {
-      this->gdb_index.s.section = sectp;
-      this->gdb_index.size = bfd_section_size (sectp);
-    }
+    sect = &this->gdb_index;
   else if (names.debug_names.matches (sectp->name))
-    {
-      this->debug_names.s.section = sectp;
-      this->debug_names.size = bfd_section_size (sectp);
-    }
+    sect = &this->debug_names;
   else if (names.debug_aranges.matches (sectp->name))
-    {
-      this->debug_aranges.s.section = sectp;
-      this->debug_aranges.size = bfd_section_size (sectp);
-    }
+    sect = &this->debug_aranges;
 
   if ((bfd_section_flags (sectp) & (SEC_LOAD | SEC_ALLOC))
       && bfd_section_vma (sectp) == 0)
     this->has_section_at_zero = true;
+
+  if (sect != nullptr)
+    {
+      sect->s.section = sectp;
+      sect->size = bfd_section_size (sectp);
+      sect->read (objfile);
+    }
 }
 
 /* Fill in SECTP, BUFP and SIZEP with section info, given OBJFILE and

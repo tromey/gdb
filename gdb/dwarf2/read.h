@@ -431,8 +431,10 @@ struct dwarf2_per_bfd
      dwarf2 section names, or is NULL if the standard ELF names are
      used.  CAN_COPY is true for formats where symbol
      interposition is possible and so symbol values must follow copy
-     relocation rules.  */
-  dwarf2_per_bfd (bfd *obfd, const dwarf2_debug_sections *names, bool can_copy);
+     relocation rules.  OBJFILE is used for mapping sections and is
+     not otherwise needed.  */
+  dwarf2_per_bfd (struct objfile *objfile, bfd *obfd,
+		  const dwarf2_debug_sections *names, bool can_copy);
 
   ~dwarf2_per_bfd ();
 
@@ -462,7 +464,7 @@ private:
   /* This function is mapped across the sections and remembers the
      offset and size of each of the debugging sections we are
      interested in.  */
-  void locate_sections (bfd *abfd, asection *sectp,
+  void locate_sections (struct objfile *objfile, bfd *abfd, asection *sectp,
 			const dwarf2_debug_sections &names);
 
 public:
