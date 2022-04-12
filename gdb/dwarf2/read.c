@@ -1263,7 +1263,7 @@ dwarf2_per_bfd::dwarf2_per_bfd (bfd *obfd, const dwarf2_debug_sections *names,
   if (names == NULL)
     names = &dwarf2_elf_names;
 
-  for (asection *sec = obfd->sections; sec != NULL; sec = sec->next)
+  for (asection *sec : gdb_bfd_sections (obfd))
     locate_sections (obfd, sec, *names);
 }
 
