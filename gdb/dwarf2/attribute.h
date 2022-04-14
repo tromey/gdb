@@ -52,7 +52,7 @@ struct attribute
   const char *as_string () const;
 
   /* Return the block value.  The attribute must have block form.  */
-  dwarf_block *as_block () const
+  const dwarf_block *as_block () const
   {
     gdb_assert (form_is_block ());
     return u.blk;

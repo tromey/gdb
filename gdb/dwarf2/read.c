@@ -858,7 +858,7 @@ struct variant_field
   ULONGEST discriminant_value = 0;
   /* If we see a DW_AT_discr_list, then this is a pointer to the list
      data.  */
-  struct dwarf_block *discr_list_data = nullptr;
+  const dwarf_block *discr_list_data = nullptr;
 };
 
 /* This represents a DW_TAG_variant_part.  */
@@ -1144,7 +1144,7 @@ static const char *namespace_name (struct die_info *die,
 
 static void process_enumeration_scope (struct die_info *, struct dwarf2_cu *);
 
-static CORE_ADDR decode_locdesc (struct dwarf_block *, struct dwarf2_cu *,
+static CORE_ADDR decode_locdesc (const dwarf_block *, struct dwarf2_cu *,
 				 bool * = nullptr);
 
 static enum dwarf_array_dim_ordering read_array_order (struct die_info *,
@@ -12397,7 +12397,7 @@ read_call_site_scope (struct die_info *die, struct dwarf2_cu *cu)
   else if (attr->form_is_block ())
     {
       struct dwarf2_locexpr_baton *dlbaton;
-      struct dwarf_block *block = attr->as_block ();
+      const dwarf_block *block = attr->as_block ();
 
       dlbaton = XOBNEW (&objfile->objfile_obstack, struct dwarf2_locexpr_baton);
       dlbaton->data = block->data;
@@ -12526,7 +12526,7 @@ read_call_site_scope (struct die_info *die, struct dwarf2_cu *cu)
 	}
       else
 	{
-	  struct dwarf_block *block = loc->as_block ();
+	  const dwarf_block *block = loc->as_block ();
 
 	  parameter->u.dwarf_reg = dwarf_block_to_dwarf_reg
 	    (block->data, &block->data[block->size]);
@@ -12560,7 +12560,7 @@ read_call_site_scope (struct die_info *die, struct dwarf2_cu *cu)
 	  continue;
 	}
 
-      struct dwarf_block *block = attr->as_block ();
+      const dwarf_block *block = attr->as_block ();
       parameter->value = block->data;
       parameter->value_size = block->size;
 
@@ -14178,7 +14178,7 @@ dwarf2_add_member_fn (struct field_info *fip, struct die_info *die,
     {
       if (attr->form_is_block () && attr->as_block ()->size > 0)
 	{
-	  struct dwarf_block *block = attr->as_block ();
+	  const dwarf_block *block = attr->as_block ();
 
 	  if (block->data[0] == DW_OP_constu)
 	    {
@@ -15448,7 +15448,7 @@ quirk_ada_thick_pointer (struct die_info *die, struct dwarf2_cu *cu,
      the compiler.  However, we have no good way to recognize some
      other layout, because we don't know what expression the compiler
      might choose to emit should this happen.  */
-  struct dwarf_block *blk = attr->as_block ();
+  const dwarf_block *blk = attr->as_block ();
   if (blk->size != 2
       || blk->data[0] != DW_OP_push_object_address
       || blk->data[1] != DW_OP_deref)
@@ -15850,7 +15850,7 @@ mark_common_block_symbol_computed (struct symbol *sym,
     {
       /* We have to copy the data here, because DW_OP_call4 will only
 	 use a DW_AT_location attribute.  */
-      struct dwarf_block *block = member_loc->as_block ();
+      const dwarf_block *block = member_loc->as_block ();
       memcpy (ptr, block->data, block->size);
       ptr += block->size;
     }
@@ -16696,7 +16696,7 @@ get_mpz (struct dwarf2_cu *cu, gdb_mpz *value, struct attribute *attr)
      location expression that pushes an implicit value.  */
   if (attr->form == DW_FORM_exprloc)
     {
-      dwarf_block *blk = attr->as_block ();
+      const dwarf_block *blk = attr->as_block ();
       if (blk->size > 0 && blk->data[0] == DW_OP_implicit_value)
 	{
 	  uint64_t len;
@@ -16717,7 +16717,7 @@ get_mpz (struct dwarf2_cu *cu, gdb_mpz *value, struct attribute *attr)
     }
   else if (attr->form_is_block ())
     {
-      dwarf_block *blk = attr->as_block ();
+      const dwarf_block *blk = attr->as_block ();
       mpz_import (value->val, blk->size,
 		  bfd_big_endian (cu->per_objfile->objfile->obfd) ? 1 : -1,
 		  1, 0, 0, blk->data);
@@ -17342,18 +17342,19 @@ attr_to_dynamic_prop (const struct attribute *attr, struct die_info *die,
       baton->locexpr.per_cu = cu->per_cu;
       baton->locexpr.per_objfile = per_objfile;
 
-      struct dwarf_block *block;
+      const dwarf_block *block;
       if (attr->form == DW_FORM_data16)
 	{
 	  size_t data_size = 16;
-	  block = XOBNEW (obstack, struct dwarf_block);
-	  block->size = (data_size
-			 + 2 /* Extra bytes for DW_OP and arg.  */);
-	  gdb_byte *data = XOBNEWVEC (obstack, gdb_byte, block->size);
+	  dwarf_block *new_block = XOBNEW (obstack, struct dwarf_block);
+	  new_block->size = (data_size
+			     + 2 /* Extra bytes for DW_OP and arg.  */);
+	  gdb_byte *data = XOBNEWVEC (obstack, gdb_byte, new_block->size);
 	  data[0] = DW_OP_implicit_value;
 	  data[1] = data_size;
 	  memcpy (&data[2], attr->as_block ()->data, data_size);
-	  block->data = data;
+	  new_block->data = data;
+	  block = new_block;
 	}
       else
 	block = attr->as_block ();
@@ -17415,7 +17416,7 @@ attr_to_dynamic_prop (const struct attribute *attr, struct die_info *die,
 		baton->property_type = die_type (target_die, target_cu);
 		baton->locexpr.per_cu = cu->per_cu;
 		baton->locexpr.per_objfile = per_objfile;
-		struct dwarf_block *block = target_attr->as_block ();
+		const dwarf_block *block = target_attr->as_block ();
 		baton->locexpr.size = block->size;
 		baton->locexpr.data = block->data;
 		baton->locexpr.is_reference = true;
@@ -18125,7 +18126,7 @@ cooked_indexer::scan_attributes (dwarf2_per_cu_data *scanning_per_cu,
 	case DW_AT_location:
 	  if (!scanning_per_cu->addresses_seen && attr.form_is_block ())
 	    {
-	      struct dwarf_block *locdesc = attr.as_block ();
+	      const dwarf_block *locdesc = attr.as_block ();
 	      CORE_ADDR addr = decode_locdesc (locdesc, reader->cu);
 	      if (addr != 0
 		  || reader->cu->per_objfile->per_bfd->has_section_at_zero)
@@ -20590,7 +20591,7 @@ var_decode_location (struct attribute *attr, struct symbol *sym,
 
   if (attr->form_is_block ())
     {
-      struct dwarf_block *block = attr->as_block ();
+      const dwarf_block *block = attr->as_block ();
 
       if ((block->data[0] == DW_OP_addr
 	   && block->size == 1 + cu_header->addr_size)
@@ -21107,7 +21108,7 @@ dwarf2_const_value_attr (const struct attribute *attr, struct type *type,
   dwarf2_per_objfile *per_objfile = cu->per_objfile;
   struct objfile *objfile = per_objfile->objfile;
   struct comp_unit_head *cu_header = &cu->header;
-  struct dwarf_block *blk;
+  const dwarf_block *blk;
   enum bfd_endian byte_order = (bfd_big_endian (objfile->obfd) ?
 				BFD_ENDIAN_BIG : BFD_ENDIAN_LITTLE);
 
@@ -22377,7 +22378,7 @@ dwarf2_fetch_die_loc_sect_off (sect_offset sect_off,
 		 "is neither DW_FORM_block* nor DW_FORM_exprloc"),
 	       sect_offset_str (sect_off), objfile_name (objfile));
 
-      struct dwarf_block *block = attr->as_block ();
+      const dwarf_block *block = attr->as_block ();
       retval.data = block->data;
       retval.size = block->size;
     }
@@ -22497,7 +22498,7 @@ dwarf2_fetch_constant_bytes (sect_offset sect_off,
     case DW_FORM_exprloc:
     case DW_FORM_data16:
       {
-	struct dwarf_block *block = attr->as_block ();
+	const dwarf_block *block = attr->as_block ();
 	result = block->data;
 	*len = block->size;
       }
@@ -22857,7 +22858,7 @@ read_signatured_type (signatured_type *sig_type,
    complaint.  */
 
 static CORE_ADDR
-decode_locdesc (struct dwarf_block *blk, struct dwarf2_cu *cu, bool *computed)
+decode_locdesc (const dwarf_block *blk, struct dwarf2_cu *cu, bool *computed)
 {
   struct objfile *objfile = cu->per_objfile->objfile;
   size_t i;
@@ -23345,7 +23346,7 @@ dwarf2_symbol_mark_computed (const struct attribute *attr, struct symbol *sym,
 	     info_buffer for SYM's objfile; right now we never release
 	     that buffer, but when we do clean up properly this may
 	     need to change.  */
-	  struct dwarf_block *block = attr->as_block ();
+	  const dwarf_block *block = attr->as_block ();
 	  baton->size = block->size;
 	  baton->data = block->data;
 	}
