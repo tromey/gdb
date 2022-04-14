@@ -21298,7 +21298,7 @@ dwarf_decode_macros (struct dwarf2_cu *cu, unsigned int offset,
       str_offsets_base = cu->str_offsets_base;
     }
 
-  dwarf_decode_macros (per_objfile, builder, section, lh,
+  dwarf_decode_macros (per_objfile->per_bfd, builder, section, lh,
 		       offset_size, offset, str_section, str_offsets_section,
 		       str_offsets_base, section_is_gnu, cu);
 }

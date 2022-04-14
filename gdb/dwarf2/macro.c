@@ -35,7 +35,6 @@
 #include "buildsym.h"
 #include "macrotab.h"
 #include "complaints.h"
-#include "objfiles.h"
 
 static void
 dwarf2_macro_malformed_definition_complaint (const char *arg1)
@@ -433,7 +432,7 @@ dwarf_parse_macro_header (const gdb_byte **opcode_definitions,
    including DW_MACRO_import.  */
 
 static void
-dwarf_decode_macro_bytes (dwarf2_per_objfile *per_objfile,
+dwarf_decode_macro_bytes (dwarf2_per_bfd *per_bfd,
 			  buildsym_compunit *builder,
 			  bfd *abfd,
 			  const gdb_byte *mac_ptr, const gdb_byte *mac_end,
@@ -447,7 +446,6 @@ dwarf_decode_macro_bytes (dwarf2_per_objfile *per_objfile,
 			  gdb::optional<ULONGEST> str_offsets_base,
 			  htab_t include_hash, struct dwarf2_cu *cu)
 {
-  struct objfile *objfile = per_objfile->objfile;
   enum dwarf_macro_record_type macinfo_type;
   int at_commandline;
   const gdb_byte *opcode_definitions[256];
@@ -524,13 +522,12 @@ dwarf_decode_macro_bytes (dwarf2_per_objfile *per_objfile,
 		    || macinfo_type == DW_MACRO_undef_sup
 		    || section_is_dwz)
 		  {
-		    dwz_file *dwz = per_objfile->per_bfd->require_dwz_file ();
+		    dwz_file *dwz = per_bfd->require_dwz_file ();
 
 		    body = dwz->read_string (str_offset);
 		  }
 		else
-		  body = per_objfile->per_bfd->str.read_string (str_offset,
-								"DW_FORM_strp");
+		  body = per_bfd->str.read_string (str_offset, "DW_FORM_strp");
 	      }
 
 	    is_define = (macinfo_type == DW_MACRO_define
@@ -596,7 +593,7 @@ dwarf_decode_macro_bytes (dwarf2_per_objfile *per_objfile,
 			   (macinfo_type == DW_MACRO_define_strx
 			    ? "DW_MACRO_define_strx"
 			    : "DW_MACRO_undef_strx"),
-			   objfile_name (objfile));
+			   bfd_get_filename (per_bfd->obfd));
 		break;
 	      }
 
@@ -612,7 +609,8 @@ dwarf_decode_macro_bytes (dwarf2_per_objfile *per_objfile,
 		>= str_offsets_section->size)
 	      {
 		complaint (_("%s pointing outside of .debug_str_offsets section "
-			     "[in module %s]"), macinfo_str, objfile_name (objfile));
+			     "[in module %s]"), macinfo_str,
+			   bfd_get_filename (per_bfd->obfd));
 		break;
 	      }
 
@@ -730,7 +728,7 @@ dwarf_decode_macro_bytes (dwarf2_per_objfile *per_objfile,
 
 	    if (macinfo_type == DW_MACRO_import_sup)
 	      {
-		dwz_file *dwz = per_objfile->per_bfd->require_dwz_file ();
+		dwz_file *dwz = per_bfd->require_dwz_file ();
 
 		dwz->macro.require ();
 		include_section = &dwz->macro;
@@ -753,7 +751,7 @@ dwarf_decode_macro_bytes (dwarf2_per_objfile *per_objfile,
 	      {
 		*slot = (void *) new_mac_ptr;
 
-		dwarf_decode_macro_bytes (per_objfile, builder, include_bfd,
+		dwarf_decode_macro_bytes (per_bfd, builder, include_bfd,
 					  new_mac_ptr, include_mac_end,
 					  current_file, lh, section,
 					  section_is_gnu, is_dwz, offset_size,
@@ -795,7 +793,7 @@ dwarf_decode_macro_bytes (dwarf2_per_objfile *per_objfile,
 }
 
 void
-dwarf_decode_macros (dwarf2_per_objfile *per_objfile,
+dwarf_decode_macros (dwarf2_per_bfd *per_bfd,
 		     buildsym_compunit *builder,
 		     const dwarf2_section_info *section,
 		     const struct line_header *lh, unsigned int offset_size,
@@ -960,7 +958,7 @@ dwarf_decode_macros (dwarf2_per_objfile *per_objfile,
   mac_ptr = section->buffer + offset;
   slot = htab_find_slot (include_hash.get (), mac_ptr, INSERT);
   *slot = (void *) mac_ptr;
-  dwarf_decode_macro_bytes (per_objfile, builder, abfd, mac_ptr, mac_end,
+  dwarf_decode_macro_bytes (per_bfd, builder, abfd, mac_ptr, mac_end,
 			    current_file, lh, section, section_is_gnu, 0,
 			    offset_size, str_section, str_offsets_section,
 			    str_offsets_base, include_hash.get (), cu);
