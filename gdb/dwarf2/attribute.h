@@ -55,7 +55,7 @@ struct attribute
   const dwarf_block *as_block () const
   {
     gdb_assert (form_is_block ());
-    return u.blk;
+    return &u.blk;
   }
 
   /* Return the signature.  The attribute must have signature
@@ -223,7 +223,7 @@ struct attribute
   }
 
   /* Set the block value for this attribute.  */
-  void set_block (dwarf_block *blk)
+  void set_block (dwarf_block blk)
   {
     gdb_assert (form_is_block ());
     u.blk = blk;
@@ -316,7 +316,7 @@ struct attribute
   union
     {
       const char *str;
-      struct dwarf_block *blk;
+      dwarf_block blk;
       ULONGEST unsnd;
       LONGEST snd;
       CORE_ADDR addr;

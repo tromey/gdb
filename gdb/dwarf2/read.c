@@ -1226,8 +1226,6 @@ static int attr_to_dynamic_prop (const struct attribute *attr,
 
 /* memory allocation interface */
 
-static struct dwarf_block *dwarf_alloc_block (struct dwarf2_cu *);
-
 static struct die_info *dwarf_alloc_die (struct dwarf2_cu *, int);
 
 static void dwarf_decode_macros (struct dwarf2_cu *, unsigned int, int);
@@ -18992,7 +18990,6 @@ read_attribute_value (const struct die_reader_specs *reader,
   bfd *abfd = reader->abfd;
   struct comp_unit_head *cu_header = &cu->header;
   unsigned int bytes_read;
-  struct dwarf_block *blk;
 
   attr->form = (enum dwarf_form) form;
   switch (form)
@@ -19021,20 +19018,24 @@ read_attribute_value (const struct die_reader_specs *reader,
       }
       break;
     case DW_FORM_block2:
-      blk = dwarf_alloc_block (cu);
-      blk->size = read_2_bytes (abfd, info_ptr);
-      info_ptr += 2;
-      blk->data = read_n_bytes (abfd, info_ptr, blk->size);
-      info_ptr += blk->size;
-      attr->set_block (blk);
+      {
+	dwarf_block blk;
+	blk.size = read_2_bytes (abfd, info_ptr);
+	info_ptr += 2;
+	blk.data = read_n_bytes (abfd, info_ptr, blk.size);
+	info_ptr += blk.size;
+	attr->set_block (blk);
+      }
       break;
     case DW_FORM_block4:
-      blk = dwarf_alloc_block (cu);
-      blk->size = read_4_bytes (abfd, info_ptr);
-      info_ptr += 4;
-      blk->data = read_n_bytes (abfd, info_ptr, blk->size);
-      info_ptr += blk->size;
-      attr->set_block (blk);
+      {
+	dwarf_block blk;
+	blk.size = read_4_bytes (abfd, info_ptr);
+	info_ptr += 4;
+	blk.data = read_n_bytes (abfd, info_ptr, blk.size);
+	info_ptr += blk.size;
+	attr->set_block (blk);
+      }
       break;
     case DW_FORM_data2:
       attr->set_unsigned (read_2_bytes (abfd, info_ptr));
@@ -19049,11 +19050,13 @@ read_attribute_value (const struct die_reader_specs *reader,
       info_ptr += 8;
       break;
     case DW_FORM_data16:
-      blk = dwarf_alloc_block (cu);
-      blk->size = 16;
-      blk->data = read_n_bytes (abfd, info_ptr, 16);
-      info_ptr += 16;
-      attr->set_block (blk);
+      {
+	dwarf_block blk;
+	blk.size = 16;
+	blk.data = read_n_bytes (abfd, info_ptr, 16);
+	info_ptr += 16;
+	attr->set_block (blk);
+      }
       break;
     case DW_FORM_sec_offset:
       attr->set_unsigned (cu_header->read_offset (abfd, info_ptr,
@@ -19106,20 +19109,24 @@ read_attribute_value (const struct die_reader_specs *reader,
       break;
     case DW_FORM_exprloc:
     case DW_FORM_block:
-      blk = dwarf_alloc_block (cu);
-      blk->size = read_unsigned_leb128 (abfd, info_ptr, &bytes_read);
-      info_ptr += bytes_read;
-      blk->data = read_n_bytes (abfd, info_ptr, blk->size);
-      info_ptr += blk->size;
-      attr->set_block (blk);
+      {
+	dwarf_block blk;
+	blk.size = read_unsigned_leb128 (abfd, info_ptr, &bytes_read);
+	info_ptr += bytes_read;
+	blk.data = read_n_bytes (abfd, info_ptr, blk.size);
+	info_ptr += blk.size;
+	attr->set_block (blk);
+      }
       break;
     case DW_FORM_block1:
-      blk = dwarf_alloc_block (cu);
-      blk->size = read_1_byte (abfd, info_ptr);
-      info_ptr += 1;
-      blk->data = read_n_bytes (abfd, info_ptr, blk->size);
-      info_ptr += blk->size;
-      attr->set_block (blk);
+      {
+	dwarf_block blk;
+	blk.size = read_1_byte (abfd, info_ptr);
+	info_ptr += 1;
+	blk.data = read_n_bytes (abfd, info_ptr, blk.size);
+	info_ptr += blk.size;
+	attr->set_block (blk);
+      }
       break;
     case DW_FORM_data1:
     case DW_FORM_flag:
@@ -23131,12 +23138,6 @@ decode_locdesc (const dwarf_block *blk, struct dwarf2_cu *cu, bool *computed)
 }
 
 /* memory allocation interface */
-
-static struct dwarf_block *
-dwarf_alloc_block (struct dwarf2_cu *cu)
-{
-  return XOBNEW (&cu->comp_unit_obstack, struct dwarf_block);
-}
 
 static struct die_info *
 dwarf_alloc_die (struct dwarf2_cu *cu, int num_attrs)
