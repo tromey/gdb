@@ -54,7 +54,7 @@ struct attribute
   /* Return the block value.  The attribute must have block form.  */
   dwarf_block *as_block () const
   {
-    gdb_assert (form_is_block ());
+    gdb_debug_assert (form_is_block ());
     return u.blk;
   }
 
@@ -62,7 +62,7 @@ struct attribute
      form.  */
   ULONGEST as_signature () const
   {
-    gdb_assert (form == DW_FORM_ref_sig8);
+    gdb_debug_assert (form == DW_FORM_ref_sig8);
     return u.signature;
   }
 
@@ -70,7 +70,9 @@ struct attribute
      form.  */
   LONGEST as_signed () const
   {
-    gdb_assert (form_is_signed ());
+    /* This is a debug assert because it causes a large performance
+       drop when enabled.  See PR symtab/27937.  */
+    gdb_debug_assert (form_is_signed ());
     return u.snd;
   }
 
@@ -78,8 +80,8 @@ struct attribute
      reprocessing.  */
   ULONGEST as_unsigned_reprocess () const
   {
-    gdb_assert (form_requires_reprocessing ());
-    gdb_assert (requires_reprocessing);
+    gdb_debug_assert (form_requires_reprocessing ());
+    gdb_debug_assert (requires_reprocessing);
     return u.unsnd;
   }
 
@@ -87,8 +89,8 @@ struct attribute
      form, and that reprocessing not be needed.  */
   ULONGEST as_unsigned () const
   {
-    gdb_assert (form_is_unsigned ());
-    gdb_assert (!requires_reprocessing);
+    gdb_debug_assert (form_is_unsigned ());
+    gdb_debug_assert (!requires_reprocessing);
     return u.unsnd;
   }
 
@@ -109,9 +111,8 @@ struct attribute
   {
     if (form_is_unsigned ())
       return as_unsigned ();
-    if (form_is_signed ())
-      return (ULONGEST)as_signed ();
-    gdb_assert (false);
+    gdb_debug_assert (form_is_signed ());
+    return (ULONGEST) as_signed ();
   }
 
   /* Return non-zero if ATTR's value is a section offset --- classes
@@ -200,7 +201,7 @@ struct attribute
      flag indicates whether the value has been canonicalized.  */
   bool canonical_string_p () const
   {
-    gdb_assert (form_is_string ());
+    gdb_debug_assert (form_is_string ());
     return string_is_canonical;
   }
 
@@ -208,7 +209,7 @@ struct attribute
      value.  */
   void set_string_noncanonical (const char *str)
   {
-    gdb_assert (form_is_string ());
+    gdb_debug_assert (form_is_string ());
     u.str = str;
     string_is_canonical = 0;
     requires_reprocessing = 0;
@@ -217,7 +218,7 @@ struct attribute
   /* Set the canonical string value for this attribute.  */
   void set_string_canonical (const char *str)
   {
-    gdb_assert (form_is_string ());
+    gdb_debug_assert (form_is_string ());
     u.str = str;
     string_is_canonical = 1;
   }
@@ -225,28 +226,28 @@ struct attribute
   /* Set the block value for this attribute.  */
   void set_block (dwarf_block *blk)
   {
-    gdb_assert (form_is_block ());
+    gdb_debug_assert (form_is_block ());
     u.blk = blk;
   }
 
   /* Set the signature value for this attribute.  */
   void set_signature (ULONGEST signature)
   {
-    gdb_assert (form == DW_FORM_ref_sig8);
+    gdb_debug_assert (form == DW_FORM_ref_sig8);
     u.signature = signature;
   }
 
   /* Set this attribute to a signed integer.  */
   void set_signed (LONGEST snd)
   {
-    gdb_assert (form == DW_FORM_sdata || form == DW_FORM_implicit_const);
+    gdb_debug_assert (form == DW_FORM_sdata || form == DW_FORM_implicit_const);
     u.snd = snd;
   }
 
   /* Set this attribute to an unsigned integer.  */
   void set_unsigned (ULONGEST unsnd)
   {
-    gdb_assert (form_is_unsigned ());
+    gdb_debug_assert (form_is_unsigned ());
     u.unsnd = unsnd;
     requires_reprocessing = 0;
   }
@@ -255,7 +256,7 @@ struct attribute
      used only for those forms that require reprocessing.  */
   void set_unsigned_reprocess (ULONGEST unsnd)
   {
-    gdb_assert (form_requires_reprocessing ());
+    gdb_debug_assert (form_requires_reprocessing ());
     u.unsnd = unsnd;
     requires_reprocessing = 1;
   }
@@ -263,7 +264,7 @@ struct attribute
   /* Set this attribute to an address.  */
   void set_address (CORE_ADDR addr)
   {
-    gdb_assert (form == DW_FORM_addr
+    gdb_debug_assert (form == DW_FORM_addr
 		|| ((form == DW_FORM_addrx
 		     || form == DW_FORM_GNU_addr_index)
 		    && requires_reprocessing));

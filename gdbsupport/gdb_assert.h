@@ -48,4 +48,10 @@
   internal_error (__FILE__, __LINE__, _("%s: " message), __func__, \
 		  ##__VA_ARGS__)
 
+#ifdef _GLIBCXX_DEBUG
+#define gdb_debug_assert(expr) gdb_assert (expr)
+#else
+#define gdb_debug_assert(expr)
+#endif
+
 #endif /* COMMON_GDB_ASSERT_H */
