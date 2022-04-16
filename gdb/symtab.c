@@ -6546,6 +6546,13 @@ initialize_ordinary_address_classes (void)
 
 
 
+void
+symbol::read_on_demand () const
+{
+  /* Not implemented yet.  */
+  /* gdb_assert (m_aclass_index != LOC_ON_DEMAND); */
+}
+
 /* See symtab.h.  */
 
 struct objfile *

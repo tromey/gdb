@@ -1040,6 +1040,10 @@ enum address_class
      It also always uses COMMON_BLOCK_DOMAIN.  */
   LOC_COMMON_BLOCK,
 
+  /* A special location type that means that the symbol should be
+     read in on demand.  This is DWARF-specific.  */
+  LOC_ON_DEMAND,
+
   /* Not used, just notes the boundary of the enum.  */
   LOC_FINAL_VALUE
 };
@@ -1229,6 +1233,8 @@ struct symbol : public general_symbol_info, public allocate_on_obstack
 
   const symbol_impl &impl () const
   {
+    if (m_aclass_index == LOC_ON_DEMAND)
+      read_on_demand ();
     return symbol_impls[this->m_aclass_index];
   }
 
@@ -1279,11 +1285,15 @@ struct symbol : public general_symbol_info, public allocate_on_obstack
 
   bool is_cplus_template_function () const
   {
+    if (m_aclass_index == LOC_ON_DEMAND)
+      read_on_demand ();
     return this->subclass == SYMBOL_TEMPLATE;
   }
 
   struct type *type () const
   {
+    if (m_aclass_index == LOC_ON_DEMAND)
+      read_on_demand ();
     return m_type;
   }
 
@@ -1294,6 +1304,8 @@ struct symbol : public general_symbol_info, public allocate_on_obstack
 
   unsigned short line () const
   {
+    if (m_aclass_index == LOC_ON_DEMAND)
+      read_on_demand ();
     return m_line;
   }
 
@@ -1304,6 +1316,8 @@ struct symbol : public general_symbol_info, public allocate_on_obstack
 
   LONGEST value_longest () const
   {
+    if (m_aclass_index == LOC_ON_DEMAND)
+      read_on_demand ();
     return m_value.ivalue;
   }
 
@@ -1314,6 +1328,8 @@ struct symbol : public general_symbol_info, public allocate_on_obstack
 
   CORE_ADDR value_address () const
   {
+    if (m_aclass_index == LOC_ON_DEMAND)
+      read_on_demand ();
     if (this->maybe_copied)
       return get_symbol_address (this);
     else
@@ -1327,6 +1343,8 @@ struct symbol : public general_symbol_info, public allocate_on_obstack
 
   const gdb_byte *value_bytes () const
   {
+    if (m_aclass_index == LOC_ON_DEMAND)
+      read_on_demand ();
     return m_value.bytes;
   }
 
@@ -1337,6 +1355,8 @@ struct symbol : public general_symbol_info, public allocate_on_obstack
 
   const common_block *value_common_block () const
   {
+    if (m_aclass_index == LOC_ON_DEMAND)
+      read_on_demand ();
     return m_value.common_block;
   }
 
@@ -1347,6 +1367,8 @@ struct symbol : public general_symbol_info, public allocate_on_obstack
 
   const block *value_block () const
   {
+    if (m_aclass_index == LOC_ON_DEMAND)
+      read_on_demand ();
     return m_value.block;
   }
 
@@ -1357,6 +1379,8 @@ struct symbol : public general_symbol_info, public allocate_on_obstack
 
   symbol *value_chain () const
   {
+    if (m_aclass_index == LOC_ON_DEMAND)
+      read_on_demand ();
     return m_value.chain;
   }
 
@@ -1368,6 +1392,8 @@ struct symbol : public general_symbol_info, public allocate_on_obstack
   /* Return true if this symbol was marked as artificial.  */
   bool is_artificial () const
   {
+    if (m_aclass_index == LOC_ON_DEMAND)
+      read_on_demand ();
     return m_artificial;
   }
 
@@ -1483,6 +1509,10 @@ struct symbol : public general_symbol_info, public allocate_on_obstack
   void *aux_value = nullptr;
 
   struct symbol *hash_next = nullptr;
+
+private:
+
+  void read_on_demand () const;
 };
 
 /* Several lookup functions return both a symbol and the block in which the
