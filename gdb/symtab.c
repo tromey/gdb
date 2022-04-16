@@ -6558,6 +6558,7 @@ symbol::read_on_demand () const
 struct objfile *
 symbol::objfile () const
 {
+  /* FIXME on-demand */
   gdb_assert (is_objfile_owned ());
   return owner.symtab->compunit ()->objfile ();
 }
@@ -6567,6 +6568,7 @@ symbol::objfile () const
 struct gdbarch *
 symbol::arch () const
 {
+  /* FIXME on-demand */
   if (!is_objfile_owned ())
     return owner.arch;
   return owner.symtab->compunit ()->objfile ()->arch ();
@@ -6577,6 +6579,7 @@ symbol::arch () const
 struct symtab *
 symbol::symtab () const
 {
+  /* FIXME on-demand */
   gdb_assert (is_objfile_owned ());
   return owner.symtab;
 }
