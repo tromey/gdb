@@ -24605,26 +24605,26 @@ This affects the way the Windows OS handles
 @item show new-group
 Displays current value of new-group boolean.
 
-@kindex set debugevents
-@item set debugevents
+@kindex set debug events
+@item set debug events
 This boolean value adds debug output concerning kernel events related
 to the debuggee seen by the debugger.  This includes events that
 signal thread and process creation and exit, DLL loading and
 unloading, console interrupts, and debugging messages produced by the
 Windows @code{OutputDebugString} API call.
 
-@kindex set debugexec
-@item set debugexec
+@kindex set debug exec
+@item set debug exec
 This boolean value adds debug output concerning execute events
 (such as resume thread) seen by the debugger.
 
-@kindex set debugexceptions
-@item set debugexceptions
+@kindex set debug exceptions
+@item set debug exceptions
 This boolean value adds debug output concerning exceptions in the
 debuggee seen by the debugger.
 
-@kindex set debugmemory
-@item set debugmemory
+@kindex set debug memory
+@item set debug memory
 This boolean value adds debug output concerning debuggee memory reads
 and writes by the debugger.
 

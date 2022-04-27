@@ -3062,34 +3062,34 @@ Show creation of new group when creating child process."), NULL,
 			   NULL, /* FIXME: i18n: */
 			   &setlist, &showlist);
 
-  add_setshow_boolean_cmd ("debugexec", class_support, &debug_exec, _("\
+  add_setshow_boolean_cmd ("exec", class_support, &debug_exec, _("\
 Set whether to display execution in child process."), _("\
 Show whether to display execution in child process."), NULL,
 			   NULL,
 			   NULL, /* FIXME: i18n: */
-			   &setlist, &showlist);
+			   &setdebuglist, &showdebuglist);
 
-  add_setshow_boolean_cmd ("debugevents", class_support, &debug_events, _("\
+  add_setshow_boolean_cmd ("events", class_support, &debug_events, _("\
 Set whether to display kernel events in child process."), _("\
 Show whether to display kernel events in child process."), NULL,
 			   NULL,
 			   NULL, /* FIXME: i18n: */
-			   &setlist, &showlist);
+			   &setdebuglist, &showdebuglist);
 
-  add_setshow_boolean_cmd ("debugmemory", class_support, &debug_memory, _("\
+  add_setshow_boolean_cmd ("memory", class_support, &debug_memory, _("\
 Set whether to display memory accesses in child process."), _("\
 Show whether to display memory accesses in child process."), NULL,
 			   NULL,
 			   NULL, /* FIXME: i18n: */
-			   &setlist, &showlist);
+			   &setdebuglist, &showdebuglist);
 
-  add_setshow_boolean_cmd ("debugexceptions", class_support,
+  add_setshow_boolean_cmd ("exceptions", class_support,
 			   &debug_exceptions, _("\
 Set whether to display kernel exceptions in child process."), _("\
 Show whether to display kernel exceptions in child process."), NULL,
 			   NULL,
 			   NULL, /* FIXME: i18n: */
-			   &setlist, &showlist);
+			   &setdebuglist, &showdebuglist);
 
   init_w32_command_list ();
 

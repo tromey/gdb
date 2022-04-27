@@ -30,6 +30,18 @@ maintenance info line-table
   entry corresponds to an address where a breakpoint should be placed
   to be at the first instruction past a function's prologue.
 
+set debug exec
+show debug exec
+set debug events
+show debug events
+set debug memory
+show debug memory
+set debug exceptions
+show debug exceptions
+  These Windows-specific commands have been renamed to be more
+  consistent with GDB conventions.  The old names did not have a
+  space, e.g., "debugeexec".
+
 * Python API
 
   ** New function gdb.format_address(ADDRESS, PROGSPACE, ARCHITECTURE),
