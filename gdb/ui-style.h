@@ -343,16 +343,17 @@ struct ui_file_style
     return this;
   }
 
-  /* Merge STYLE into this style, overriding this style's settings
-     where appropriate.  */
-  void merge (const ui_file_style &style)
+  /* Merge STYLE into this style, returning a new merged style.  */
+  ui_file_style operator+ (const ui_file_style &style) const
   {
+    ui_file_style result = *this;
     if (!style.m_foreground.is_none ())
-      m_foreground = style.m_foreground;
+      result.m_foreground = style.m_foreground;
     if (!style.m_background.is_none ())
-      m_background = style.m_background;
-    m_intensity = style.m_intensity;
-    m_reverse = style.m_reverse;
+      result.m_background = style.m_background;
+    result.m_intensity = style.m_intensity;
+    result.m_reverse = style.m_reverse;
+    return result;
   }
 
   /* nullptr-terminated list of names corresponding to enum basic_color.  */
