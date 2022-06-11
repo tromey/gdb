@@ -217,7 +217,7 @@ cli_ui_out::do_spaces (int numspaces)
   if (m_suppress_output)
     return;
 
-  print_spaces (numspaces, m_streams.back ());
+  fputs_styled (n_spaces (numspaces), m_style, m_streams.back ());
 }
 
 void
@@ -226,7 +226,7 @@ cli_ui_out::do_text (const char *string)
   if (m_suppress_output)
     return;
 
-  gdb_puts (string, m_streams.back ());
+  fputs_styled (string, m_style, m_streams.back ());
 }
 
 void
@@ -380,7 +380,7 @@ cli_ui_out::do_progress_end ()
 void
 cli_ui_out::field_separator ()
 {
-  gdb_putc (' ', m_streams.back ());
+  fputs_styled (" ", m_style, m_streams.back ());
 }
 
 /* Constructor for cli_ui_out.  */
