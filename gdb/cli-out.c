@@ -82,10 +82,10 @@ void
 cli_ui_out::do_start_row ()
 {
   ui_out::do_start_row ();
-  ++m_row_number;
   m_style = ((m_row_number % 2 == 0)
 	     ? even_background_style
 	     : odd_background_style).style ();
+  ++m_row_number;
 }
 
 /* Mark beginning of a list */
