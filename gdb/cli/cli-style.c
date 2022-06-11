@@ -173,8 +173,9 @@ cli_style_option version_style ("version", ui_file_style::MAGENTA,
 				ui_file_style::BOLD);
 
 cli_style_option even_background_style ("even", ui_file_style::NONE);
-cli_style_option odd_background_style ("odd", ui_file_style::WHITE,
-				       ui_file_style::DIM);
+cli_style_option odd_background_style ("odd", ui_file_style::BLACK,
+				       ui_file_style::DIM,
+				       ui_file_style::WHITE);
 
 /* See cli-style.h.  */
 
@@ -201,11 +202,12 @@ cli_style_option line_number_style ("line-number", ui_file_style::DIM);
 
 cli_style_option::cli_style_option (const char *name,
 				    ui_file_style::basic_color fg,
-				    ui_file_style::intensity intensity)
+				    ui_file_style::intensity intensity,
+				    ui_file_style::basic_color bg)
   : changed (name),
     m_name (name),
     m_foreground (fg),
-    m_background (ui_file_style::NONE),
+    m_background (bg),
     m_intensity (cli_intensities[intensity])
 {
 }
