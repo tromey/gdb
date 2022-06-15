@@ -157,17 +157,12 @@ python_on_register_change (struct frame_info *frame, int regnum)
 static void
 python_inferior_exit (struct inferior *inf)
 {
-  const LONGEST *exit_code = NULL;
-
   if (!gdb_python_initialized)
     return;
 
   gdbpy_enter enter_py (target_gdbarch ());
 
-  if (inf->has_exit_code)
-    exit_code = &inf->exit_code;
-
-  if (emit_exited_event (exit_code, inf) < 0)
+  if (emit_exited_event (inf->exit_code, inf) < 0)
     gdbpy_print_stack ();
 }
 

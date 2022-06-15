@@ -483,6 +483,11 @@ public:
     return m_cwd;
   }
 
+  void set_exit_code (LONGEST code)
+  {
+    exit_code = code;
+  }
+
   /* Convenient handle (GDB inferior id).  Unique across all
      inferiors.  */
   int num = 0;
@@ -558,10 +563,8 @@ public:
   /* Private data used by the target vector implementation.  */
   std::unique_ptr<private_inferior> priv;
 
-  /* HAS_EXIT_CODE is true if the inferior exited with an exit code.
-     In this case, the EXIT_CODE field is also valid.  */
-  bool has_exit_code = false;
-  LONGEST exit_code = 0;
+  /* This holds the exit code, if the inferior exited normally.  */
+  gdb::optional<LONGEST> exit_code;
 
   /* Default flags to pass to the symbol reading functions.  These are
      used whenever a new objfile is created.  */

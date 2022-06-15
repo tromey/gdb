@@ -279,8 +279,7 @@ inferior_appeared (struct inferior *inf, int pid)
     init_thread_list ();
 
   inf->pid = pid;
-  inf->has_exit_code = 0;
-  inf->exit_code = 0;
+  inf->exit_code.reset ();
 
   gdb::observers::inferior_appeared.notify (inf);
 }

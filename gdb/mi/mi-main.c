@@ -641,9 +641,9 @@ print_one_inferior (struct inferior *inferior, bool recurse,
 
       uiout->field_fmt ("id", "i%d", inferior->num);
       uiout->field_string ("type", "process");
-      if (inferior->has_exit_code)
+      if (inferior->exit_code.has_value ())
 	uiout->field_string ("exit-code",
-			     int_string (inferior->exit_code, 8, 0, 0, 1));
+			     int_string (*inferior->exit_code, 8, 0, 0, 1));
       if (inferior->pid != 0)
 	uiout->field_signed ("pid", inferior->pid);
 

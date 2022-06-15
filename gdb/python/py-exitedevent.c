@@ -21,14 +21,15 @@
 #include "py-event.h"
 
 static gdbpy_ref<>
-create_exited_event_object (const LONGEST *exit_code, struct inferior *inf)
+create_exited_event_object (const gdb::optional<LONGEST> &exit_code,
+			    struct inferior *inf)
 {
   gdbpy_ref<> exited_event = create_event_object (&exited_event_object_type);
 
   if (exited_event == NULL)
     return NULL;
 
-  if (exit_code)
+  if (exit_code.has_value ())
     {
       gdbpy_ref<> exit_code_obj = gdb_py_object_from_longest (*exit_code);
 
@@ -52,7 +53,8 @@ create_exited_event_object (const LONGEST *exit_code, struct inferior *inf)
    will create a new Python exited event object.  */
 
 int
-emit_exited_event (const LONGEST *exit_code, struct inferior *inf)
+emit_exited_event (const gdb::optional<LONGEST> &exit_code,
+		   struct inferior *inf)
 {
   if (evregpy_no_listeners_p (gdb_py_events.exited))
     return 0;

@@ -482,10 +482,10 @@ mi_inferior_exit (struct inferior *inf)
       target_terminal::scoped_restore_terminal_state term_state;
       target_terminal::ours_for_output ();
 
-      if (inf->has_exit_code)
+      if (inf->exit_code.has_value ())
 	gdb_printf (mi->event_channel,
 		    "thread-group-exited,id=\"i%d\",exit-code=\"%s\"",
-		    inf->num, int_string (inf->exit_code, 8, 0, 0, 1));
+		    inf->num, int_string (*inf->exit_code, 8, 0, 0, 1));
       else
 	gdb_printf (mi->event_channel,
 		    "thread-group-exited,id=\"i%d\"", inf->num);

@@ -5552,8 +5552,8 @@ handle_inferior_event (struct execution_control_state *ecs)
 				   (LONGEST) ecs->ws.exit_status ());
 
 	  /* Also record this in the inferior itself.  */
-	  current_inferior ()->has_exit_code = 1;
-	  current_inferior ()->exit_code = (LONGEST) ecs->ws.exit_status ();
+	  current_inferior ()->set_exit_code
+	    ((LONGEST) ecs->ws.exit_status ());
 
 	  /* Support the --return-child-result option.  */
 	  return_child_result_value = ecs->ws.exit_status ();
