@@ -5568,9 +5568,11 @@ handle_inferior_event (struct execution_control_state *ecs)
 	    {
 	      /* Set the value of the internal variable $_exitsignal,
 		 which holds the signal uncaught by the inferior.  */
+	      int code = gdbarch_gdb_signal_to_target (gdbarch,
+						       ecs->ws.sig ());
 	      set_internalvar_integer (lookup_internalvar ("_exitsignal"),
-				       gdbarch_gdb_signal_to_target (gdbarch,
-							  ecs->ws.sig ()));
+				       code);
+	      current_inferior ()->set_exit_signal (code);
 	    }
 	  else
 	    {

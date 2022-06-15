@@ -41,6 +41,7 @@ struct event_object
 
 extern int emit_continue_event (ptid_t ptid);
 extern int emit_exited_event (const gdb::optional<LONGEST> &exit_code,
+			      const gdb::optional<int> &exit_signal,
 			      struct inferior *inf);
 
 /* For inferior function call events, discriminate whether event is

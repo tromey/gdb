@@ -485,7 +485,14 @@ public:
 
   void set_exit_code (LONGEST code)
   {
+    exit_signal.reset ();
     exit_code = code;
+  }
+
+  void set_exit_signal (int code)
+  {
+    exit_code.reset ();
+    exit_signal = code;
   }
 
   /* Convenient handle (GDB inferior id).  Unique across all
@@ -565,6 +572,7 @@ public:
 
   /* This holds the exit code, if the inferior exited normally.  */
   gdb::optional<LONGEST> exit_code;
+  gdb::optional<int> exit_signal;
 
   /* Default flags to pass to the symbol reading functions.  These are
      used whenever a new objfile is created.  */
