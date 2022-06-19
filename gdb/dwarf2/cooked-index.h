@@ -352,6 +352,8 @@ public:
 
   quick_symbol_functions_up make_quick_functions () const override;
 
+  void make_phony_symbols (dwarf2_per_cu_data *per_cu);
+
 private:
 
   /* The vector of cooked_index objects.  This is stored because the

@@ -249,6 +249,73 @@ cooked_index::do_finalize ()
 	     });
 }
 
+void
+cooked_index_vector::make_phony_symbols (dwarf2_per_cu_data *per_cu)
+{
+  auto_obstack temp;
+
+  auto hash_sym = [] (const void *a)
+  {
+    const symbol *s = (const symbol *) a;
+    const cooked_index_entry *entry = (const cooked_index_entry *) s->aux_value;
+    return hashval_t (entry->die_offset);
+  };
+
+  auto eq_sym = [] (const void *a, const void *b) -> int
+  {
+    const symbol *sa = (const symbol *) a;
+    const cooked_index_entry *ea = (const cooked_index_entry *) sa->aux_value;
+    const cooked_index_entry *eb = (const cooked_index_entry *) b;
+    return ea->die_offset == eb->die_offset;
+  };
+
+  htab_up sym_tab (htab_create_alloc (10, hash_sym, eq_sym,
+				      nullptr, xcalloc, xfree));
+
+  for (const cooked_index_entry *entry : all_entries ())
+    {
+      if (entry->per_cu != per_cu)
+	continue;
+
+      /* If this entry is function-local, we exclude it.  */
+      bool skip = false;
+      for (const cooked_index_entry *parent = entry->parent_entry;
+	   !skip && parent != nullptr;
+	   parent = parent->parent_entry)
+	{
+	  if (parent->tag == DW_TAG_subprogram)
+	    skip = true;
+	}
+      if (skip)
+	continue;
+
+      hashval_t hash = hashval_t (entry->die_offset);
+      void **slot = htab_find_slot_with_hash (sym_tab.get (), entry,
+					      hash, INSERT);
+      symbol *sym;
+      if (*slot == nullptr)
+	{
+	  sym = new (&temp) symbol;
+	  sym->set_aclass_index (LOC_ON_DEMAND);
+	  sym->set_language (per_cu->lang, &temp);
+	  sym->aux_value = (void *) entry;
+	  /* FIXME set m_domain */
+	  /* FIXME put symbol in global or static block */
+	  *slot = sym;
+	}
+      else
+	sym = (symbol *) *slot;
+
+      if ((entry->flags & IS_LINKAGE) != 0)
+	sym->set_linkage_name (entry->canonical);
+      else
+	{
+	  const char *name = entry->full_name (&temp);
+	  sym->set_demangled_name (name, &temp);
+	}
+    }
+}
+
 /* See cooked-index.h.  */
 
 cooked_index::range

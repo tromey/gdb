@@ -2078,7 +2078,12 @@ dw2_instantiate_symtab (dwarf2_per_cu_data *per_cu,
     {
       free_cached_comp_units freer (per_objfile);
       scoped_restore decrementer = increment_reading_symtab ();
+      scoped_restore stamp = make_scoped_restore (&debug_timestamp, true);
+      gdb_printf (gdb_stdlog, "STARTING ordinary\n");
       dw2_do_instantiate_symtab (per_cu, per_objfile, skip_partial);
+      gdb_printf (gdb_stdlog, "DONE ordinary STARTING new\n");
+      per_cu->per_bfd->cooked_index_table->make_phony_symbols (per_cu);
+      gdb_printf (gdb_stdlog, "DONE new\n");
       process_cu_includes (per_objfile);
     }
 
@@ -9575,7 +9580,11 @@ read_file_scope (struct die_info *die, struct dwarf2_cu *cu)
      lnp_state_machine::check_line_address) will fail to properly
      exclude an entry that was removed via --gc-sections.  */
   if (lowpc != highpc)
-    handle_DW_AT_stmt_list (die, cu, lowpc);
+    {
+      gdb_printf (gdb_stdlog, "STARTING line table\n");
+      handle_DW_AT_stmt_list (die, cu, lowpc);
+      gdb_printf (gdb_stdlog, "ENDING line table\n");
+    }
 
   /* Process all dies in compilation unit.  */
   if (die->child != NULL)
@@ -9589,6 +9598,7 @@ read_file_scope (struct die_info *die, struct dwarf2_cu *cu)
     }
   per_objfile->sym_cu = nullptr;
 
+  gdb_printf (gdb_stdlog, "STARTING macro\n");
   /* Decode macro information, if present.  Dwarf 2 macro information
      refers to information in the line number info statement program
      header, so we can only read it if we've read the header
@@ -9613,6 +9623,7 @@ read_file_scope (struct die_info *die, struct dwarf2_cu *cu)
 	  dwarf_decode_macros (cu, macro_offset, 0);
 	}
     }
+  gdb_printf (gdb_stdlog, "ENDING macro\n");
 }
 
 void
