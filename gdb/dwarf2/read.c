@@ -2082,7 +2082,9 @@ dw2_instantiate_symtab (dwarf2_per_cu_data *per_cu,
       gdb_printf (gdb_stdlog, "STARTING ordinary\n");
       dw2_do_instantiate_symtab (per_cu, per_objfile, skip_partial);
       gdb_printf (gdb_stdlog, "DONE ordinary STARTING new\n");
-      per_cu->per_bfd->cooked_index_table->make_phony_symbols (per_cu);
+      if (dynamic_cast<cooked_index_vector *> (per_cu->per_bfd->index_table.get ()))
+	dynamic_cast<cooked_index_vector *> (per_cu->per_bfd->index_table.get ())
+	  ->make_phony_symbols (per_cu);
       gdb_printf (gdb_stdlog, "DONE new\n");
       process_cu_includes (per_objfile);
     }
