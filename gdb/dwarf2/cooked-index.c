@@ -297,7 +297,7 @@ cooked_index_vector::make_phony_symbols (dwarf2_per_cu_data *per_cu)
 	{
 	  sym = new (&temp) symbol;
 	  sym->set_aclass_index (LOC_ON_DEMAND);
-	  sym->set_language (per_cu->lang, &temp);
+	  sym->set_language (per_cu->lang (), &temp);
 	  sym->aux_value = (void *) entry;
 	  /* FIXME set m_domain */
 	  /* FIXME put symbol in global or static block */
