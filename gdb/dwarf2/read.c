@@ -7074,28 +7074,44 @@ dwarf2_build_psymtabs_hard (dwarf2_per_objfile *per_objfile)
        prompt, which looks weird.  */
     using result_type = std::pair<std::unique_ptr<cooked_index>,
 				  std::vector<gdb_exception>>;
-    std::vector<result_type> results
-      = gdb::parallel_for_each (1, per_bfd->all_comp_units.begin (),
-				per_bfd->all_comp_units.end (),
-				[=] (iter_type iter, iter_type end)
+    const size_t n_units = per_bfd->all_comp_units.size ();
+    std::vector<result_type> results (n_units);
+
+    const size_t n_threads
+      = std::min (gdb::thread_pool::g_thread_pool->thread_count (), n_units);
+    gdb::future<void> futures[n_threads];
+
+    std::atomic<size_t> next_cu = n_threads;
+    for (size_t i = 0; i < n_threads; ++i)
       {
-	std::vector<gdb_exception> errors;
-	cooked_index_storage thread_storage;
-	for (; iter != end; ++iter)
+	futures[i] = gdb::thread_pool::g_thread_pool->post_task ([&, i] ()
 	  {
-	    dwarf2_per_cu_data *per_cu = iter->get ();
-	    try
+	    std::vector<gdb_exception> &errors = results[i].second;
+	    cooked_index_storage thread_storage;
+
+	    size_t this_cu = i;
+	    while (this_cu < n_units)
 	      {
-		process_psymtab_comp_unit (per_cu, per_objfile,
-					   &thread_storage);
+		dwarf2_per_cu_data *per_cu = per_bfd->get_cu (this_cu);
+		try
+		  {
+		    process_psymtab_comp_unit (per_cu, per_objfile,
+					       &thread_storage);
+		  }
+		catch (gdb_exception &except)
+		  {
+		    errors.push_back (std::move (except));
+		  }
+
+		this_cu = next_cu++;
 	      }
-	    catch (gdb_exception &except)
-	      {
-		errors.push_back (std::move (except));
-	      }
-	  }
-	return result_type (thread_storage.release (), std::move (errors));
-      });
+
+	    results[i].first = thread_storage.release ();
+	  });
+      }
+
+    for (size_t i = 0; i < n_threads; ++i)
+      futures[i].get ();
 
     /* Only show a given exception a single time.  */
     std::unordered_set<gdb_exception> seen_exceptions;
