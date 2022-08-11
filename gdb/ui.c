@@ -192,8 +192,8 @@ ui::pop_output_files ()
   current_interp_set_logging (NULL, false, false);
 
   /* Stay consistent with handle_redirections.  */
-  if (!current_uiout->is_mi_like_p ())
-    current_uiout->redirect (NULL);
+  if (!m_current_uiout->is_mi_like_p ())
+    m_current_uiout->redirect (NULL);
 }
 
 /* This is a helper for the `set logging' command.  */
@@ -241,8 +241,8 @@ ui::handle_redirections (int from_tty)
      MI's ui-out scheme.  Note that we may get here with MI as current
      interpreter, but with the current ui_out as a CLI ui_out, with
      '-interpreter-exec console "set logging on"'.  */
-  if (!current_uiout->is_mi_like_p ())
-    current_uiout->redirect (gdb_stdout);
+  if (!m_current_uiout->is_mi_like_p ())
+    m_current_uiout->redirect (gdb_stdout);
 }
 
 /* Open file named NAME for read/write, making sure not to make it the
