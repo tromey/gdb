@@ -158,6 +158,13 @@ struct ui
   /* The current ui_out.  */
   struct ui_out *m_current_uiout = nullptr;
 
+  bool logging_enabled = false;
+  bool logging_overwrite = false;
+  bool logging_redirect = false;
+  bool debug_redirect = false;
+  std::string saved_filename;
+  std::string logging_filename = "gdb.txt";
+
   /* Register the UI's input file descriptor in the event loop.  */
   void register_file_handler ();
 
@@ -166,6 +173,10 @@ struct ui
 
   /* Return true if this UI's input fd is a tty.  */
   bool input_interactive_p () const;
+
+  void maybe_warn_already_logging ();
+  void pop_output_files ();
+  void handle_redirections (int from_tty);
 };
 
 /* The main UI.  This is the UI that is bound to stdin/stdout/stderr.

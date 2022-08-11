@@ -176,6 +176,74 @@ ui::unregister_file_handler ()
     delete_file_handler (input_fd);
 }
 
+void
+ui::maybe_warn_already_logging ()
+{
+  if (!saved_filename.empty ())
+    warning (_("Currently logging to %s.  Turn the logging off and on to "
+	       "make the new setting effective."), saved_filename.c_str ());
+}
+
+/* If we've pushed output files, close them and pop them.  */
+void
+ui::pop_output_files ()
+{
+  current_interp_set_logging (NULL, false, false);
+
+  /* Stay consistent with handle_redirections.  */
+  if (!current_uiout->is_mi_like_p ())
+    current_uiout->redirect (NULL);
+}
+
+/* This is a helper for the `set logging' command.  */
+void
+ui::handle_redirections (int from_tty)
+{
+  if (!saved_filename.empty ())
+    {
+      gdb_printf ("Already logging to %s.\n",
+		  saved_filename.c_str ());
+      return;
+    }
+
+  stdio_file_up log (new no_terminal_escape_file ());
+  if (!log->open (logging_filename.c_str (), logging_overwrite ? "w" : "a"))
+    perror_with_name (_("set logging"));
+
+  /* Redirects everything to gdb_stdout while this is running.  */
+  if (from_tty)
+    {
+      if (!logging_redirect)
+	gdb_printf ("Copying output to %s.\n",
+		    logging_filename.c_str ());
+      else
+	gdb_printf ("Redirecting output to %s.\n",
+		    logging_filename.c_str ());
+
+      if (!debug_redirect)
+	gdb_printf ("Copying debug output to %s.\n",
+		    logging_filename.c_str ());
+      else
+	gdb_printf ("Redirecting debug output to %s.\n",
+		    logging_filename.c_str ());
+    }
+
+  saved_filename = logging_filename;
+
+  /* Let the interpreter do anything it needs.  */
+  current_interp_set_logging (std::move (log), logging_redirect,
+			      debug_redirect);
+
+  /* Redirect the current ui-out object's output to the log.  Use
+     gdb_stdout, not log, since the interpreter may have created a tee
+     that wraps the log.  Don't do the redirect for MI, it confuses
+     MI's ui-out scheme.  Note that we may get here with MI as current
+     interpreter, but with the current ui_out as a CLI ui_out, with
+     '-interpreter-exec console "set logging on"'.  */
+  if (!current_uiout->is_mi_like_p ())
+    current_uiout->redirect (gdb_stdout);
+}
+
 /* Open file named NAME for read/write, making sure not to make it the
    controlling terminal.  */
 
