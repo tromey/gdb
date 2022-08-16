@@ -53,8 +53,8 @@ ui::ui (FILE *instream_, FILE *outstream_, FILE *errstream_)
     m_stderr_owner (new stderr_file (errstream)),
     m_gdb_stdout (m_stdout_owner.get ()),
     m_gdb_stdin (m_stdin_owner.get ()),
-    m_gdb_stderr (m_stderr_owner.get ()),
-    m_gdb_stdlog (new timestamped_file (m_gdb_stderr)),
+    m_gdb_stderr (new passthrough_file (m_stderr_owner.get ())),
+    m_gdb_stdlog (new timestamped_file (m_stderr_owner.get ())),
     m_gdb_stdtarg (m_gdb_stderr)
 {
   unbuffer_stream (instream_);
