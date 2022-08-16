@@ -78,7 +78,6 @@ std::string python_libdir;
 
 /* Target IO streams.  */
 struct ui_file *gdb_stdtargin;
-struct ui_file *gdb_stdtarg;
 
 /* True if --batch or --batch-silent was seen.  */
 int batch_flag = 0;
@@ -677,7 +676,6 @@ captured_main_1 (struct captured_main_args *context)
   main_ui = new ui (stdin, stdout, stderr);
   current_ui = main_ui;
 
-  gdb_stdtarg = gdb_stderr;
   gdb_stdtargin = gdb_stdin;
 
   /* Put a CLI based uiout in place early.  If the early initialization
