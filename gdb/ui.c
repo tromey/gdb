@@ -48,9 +48,12 @@ ui::ui (FILE *instream_, FILE *outstream_, FILE *errstream_)
     errstream (errstream_),
     input_fd (fileno (instream)),
     m_input_interactive_p (ISATTY (instream)),
-    m_gdb_stdout (new pager_file (new stdio_file (outstream))),
-    m_gdb_stdin (new stdio_file (instream)),
-    m_gdb_stderr (new stderr_file (errstream)),
+    m_stdout_owner (new pager_file (new stdio_file (outstream))),
+    m_stdin_owner (new stdio_file (instream)),
+    m_stderr_owner (new stderr_file (errstream)),
+    m_gdb_stdout (m_stdout_owner.get ()),
+    m_gdb_stdin (m_stdin_owner.get ()),
+    m_gdb_stderr (m_stderr_owner.get ()),
     m_gdb_stdlog (new timestamped_file (m_gdb_stderr)),
     m_gdb_stdtarg (m_gdb_stderr)
 {

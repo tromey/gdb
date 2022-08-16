@@ -144,6 +144,11 @@ struct ui
      meant to be accessed through wrapper macros that make them look
      like globals.  */
 
+  /* Owning pointers for streams.  */
+  ui_file_up m_stdout_owner;
+  ui_file_up m_stdin_owner;
+  ui_file_up m_stderr_owner;
+
   /* The ui_file streams.  */
   /* Normal results */
   struct ui_file *m_gdb_stdout;
