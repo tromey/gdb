@@ -51,7 +51,8 @@ ui::ui (FILE *instream_, FILE *outstream_, FILE *errstream_)
     m_gdb_stdout (new pager_file (new stdio_file (outstream))),
     m_gdb_stdin (new stdio_file (instream)),
     m_gdb_stderr (new stderr_file (errstream)),
-    m_gdb_stdlog (new timestamped_file (m_gdb_stderr))
+    m_gdb_stdlog (new timestamped_file (m_gdb_stderr)),
+    m_gdb_stdtarg (m_gdb_stderr)
 {
   unbuffer_stream (instream_);
 
