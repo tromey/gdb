@@ -48,7 +48,7 @@ ui::ui (FILE *instream_, FILE *outstream_, FILE *errstream_)
     errstream (errstream_),
     input_fd (fileno (instream)),
     m_input_interactive_p (ISATTY (instream)),
-    m_stdout_owner (new pager_file (&m_logging_stdout)),
+    m_stdout_owner (new passthrough_file (&m_logging_stdout)),
     m_stdin_owner (new stdio_file (instream)),
     m_stderr_owner (new passthrough_file (&m_logging_stderr)),
     m_gdb_stdout (m_stdout_owner.get ()),
@@ -56,7 +56,7 @@ ui::ui (FILE *instream_, FILE *outstream_, FILE *errstream_)
     m_gdb_stderr (m_stderr_owner.get ()),
     m_gdb_stdlog (new timestamped_file (&m_logging_stdlog)),
     m_gdb_stdtarg (new passthrough_file (&m_logging_stdtarg)),
-    m_raw_stdout (new stdio_file (outstream)),
+    m_raw_stdout (new pager_file (new stdio_file (outstream))),
     m_raw_stderr (new stderr_file (errstream)),
     m_logging_stdout (new passthrough_file (&m_raw_stdout)),
     m_logging_stderr (new passthrough_file (&m_raw_stderr)),
@@ -237,6 +237,7 @@ ui::handle_redirections (int from_tty)
 
   /* If something is not being redirected, then a tee containing both the
      logfile and stdout.  */
+  ui_file *logfile_p = log.get ();
   ui_file *tee = nullptr;
   if (!logging_redirect || !debug_redirect)
     {
@@ -246,10 +247,10 @@ ui::handle_redirections (int from_tty)
   else
     m_log_owner = std::move (log);
 
-  m_logging_stdout = logging_redirect ? m_log_owner.get () : tee;
-  m_logging_stdlog = debug_redirect ? m_log_owner.get () : tee;
-  m_logging_stderr = logging_redirect ? m_log_owner.get () : tee;
-  m_logging_stdtarg = logging_redirect ? m_log_owner.get () : tee;
+  m_logging_stdout = logging_redirect ? logfile_p : tee;
+  m_logging_stdlog = debug_redirect ? logfile_p : tee;
+  m_logging_stderr = logging_redirect ? logfile_p : tee;
+  m_logging_stdtarg = logging_redirect ? logfile_p : tee;
 }
 
 /* Open file named NAME for read/write, making sure not to make it the

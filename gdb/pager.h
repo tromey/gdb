@@ -26,10 +26,17 @@
 class pager_file : public wrapped_file
 {
 public:
-  /* Create a new pager_file.  */
-  explicit pager_file (ui_file **stream)
-    : wrapped_file (stream)
+  /* Create a new pager_file.  The new object takes ownership of
+     STREAM.  */
+  explicit pager_file (ui_file *stream)
+    : wrapped_file (&m_owned_stream),
+      m_owned_stream (stream)
   {
+  }
+
+  ~pager_file ()
+  {
+    delete m_owned_stream;
   }
 
   DISABLE_COPY_AND_ASSIGN (pager_file);
@@ -57,6 +64,8 @@ private:
 
   /* Flush the wrap buffer to STREAM, if necessary.  */
   void flush_wrap_buffer ();
+
+  ui_file *m_owned_stream;
 
   /* Contains characters which are waiting to be output (they have
      already been counted in chars_printed).  */

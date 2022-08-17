@@ -1764,9 +1764,8 @@ pager_file::write (const char *buf, long length_buf)
 static void
 test_pager ()
 {
-  string_file strfile;
-  ui_file *ptr = &strfile;
-  pager_file pager (&ptr);
+  string_file *strfile = new string_file ();
+  pager_file pager (strfile);
 
   /* Make sure the pager is disabled.  */
   scoped_restore save_enabled
@@ -1787,7 +1786,7 @@ test_pager ()
   pager.wrap_here (2);
   pager.puts ("bbbbbbbbbbbb\n");
 
-  SELF_CHECK (strfile.string () == "aaaaaaaaaaaa\n  bbbbbbbbbbbb\n");
+  SELF_CHECK (strfile->string () == "aaaaaaaaaaaa\n  bbbbbbbbbbbb\n");
 }
 
 #endif /* GDB_SELF_TEST */
