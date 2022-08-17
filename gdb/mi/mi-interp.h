@@ -79,9 +79,6 @@ public:
   mi_console_file *targ;
   mi_console_file *event_channel;
 
-  /* Raw console output.  */
-  struct ui_file *raw_stdout;
-
   /* MI's builder.  */
   struct ui_out *mi_uiout;
 

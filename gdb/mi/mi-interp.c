@@ -66,8 +66,8 @@ display_mi_prompt (struct mi_interp *mi)
 {
   struct ui *ui = current_ui;
 
-  gdb_puts ("(gdb) \n", mi->raw_stdout);
-  gdb_flush (mi->raw_stdout);
+  gdb_puts ("(gdb) \n", current_ui->m_logging_stdout);
+  gdb_flush (current_ui->m_logging_stdout);
   ui->prompt_state = PROMPTED;
 }
 
@@ -81,11 +81,6 @@ void
 mi_interp::init (bool top_level)
 {
   mi_interp *mi = this;
-
-  /* Store the current output channel, so that we can create a console
-     channel that encapsulates and prefixes all gdb_output-type bits
-     coming from the rest of the debugger.  */
-  mi->raw_stdout = current_ui->m_raw_stdout;
 
   /* Create MI console channels, each with a different prefix so they
      can be distinguished.  */
@@ -438,13 +433,13 @@ mi_interp::on_normal_stop (struct bpstat *bs, int print_frame)
       if (core != -1)
 	mi_uiout->field_signed ("core", core);
     }
-
-  gdb_puts ("*stopped", this->raw_stdout);
-  mi_out_put (mi_uiout, this->raw_stdout);
+  
+  gdb_puts ("*stopped", current_ui->m_logging_stdout);
+  mi_out_put (mi_uiout, current_ui->m_logging_stdout);
   mi_out_rewind (mi_uiout);
-  mi_print_timing_maybe (this->raw_stdout);
-  gdb_puts ("\n", this->raw_stdout);
-  gdb_flush (this->raw_stdout);
+  mi_print_timing_maybe (current_ui->m_logging_stdout);
+  gdb_puts ("\n", current_ui->m_logging_stdout);
+  gdb_flush (current_ui->m_logging_stdout);
 }
 
 void
@@ -633,7 +628,7 @@ mi_output_running (struct thread_info *thread)
       if (mi == NULL)
 	continue;
 
-      gdb_printf (mi->raw_stdout,
+      gdb_printf (current_ui->m_logging_stdout,
 		  "*running,thread-id=\"%d\"\n",
 		  thread->global_num);
     }
@@ -671,7 +666,7 @@ mi_on_resume_1 (struct mi_interp *mi,
      In future (MI3), we'll be outputting "^done" here.  */
   if (!mi->running_result_record_printed && mi->mi_proceeded)
     {
-      gdb_printf (mi->raw_stdout, "%s^running\n",
+      gdb_printf (current_ui->m_logging_stdout, "%s^running\n",
 		  mi->current_token ? mi->current_token : "");
     }
 
@@ -680,7 +675,7 @@ mi_on_resume_1 (struct mi_interp *mi,
      thread individually.  */
   if ((ptid == minus_one_ptid || ptid.is_pid ())
       && !multiple_inferiors_p ())
-    gdb_printf (mi->raw_stdout, "*running,thread-id=\"all\"\n");
+    gdb_printf (current_ui->m_logging_stdout, "*running,thread-id=\"all\"\n");
   else
     for (thread_info *tp : all_non_exited_threads (targ, ptid))
       mi_output_running (tp);
@@ -692,9 +687,9 @@ mi_on_resume_1 (struct mi_interp *mi,
 	 even if it cannot actually accept any input.  This will be
 	 surely removed for MI3, and may be removed even earlier.  */
       if (current_ui->prompt_state == PROMPT_BLOCKED)
-	gdb_puts ("(gdb) \n", mi->raw_stdout);
+	gdb_puts ("(gdb) \n", current_ui->m_logging_stdout);
     }
-  gdb_flush (mi->raw_stdout);
+  gdb_flush (current_ui->m_logging_stdout);
 }
 
 void
