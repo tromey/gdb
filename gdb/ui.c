@@ -48,14 +48,20 @@ ui::ui (FILE *instream_, FILE *outstream_, FILE *errstream_)
     errstream (errstream_),
     input_fd (fileno (instream)),
     m_input_interactive_p (ISATTY (instream)),
-    m_stdout_owner (new pager_file (new stdio_file (outstream))),
+    m_stdout_owner (new pager_file (&m_logging_stdout)),
     m_stdin_owner (new stdio_file (instream)),
-    m_stderr_owner (new stderr_file (errstream)),
+    m_stderr_owner (new passthrough_file (&m_logging_stderr)),
     m_gdb_stdout (m_stdout_owner.get ()),
     m_gdb_stdin (m_stdin_owner.get ()),
-    m_gdb_stderr (new passthrough_file (m_stderr_owner.get ())),
-    m_gdb_stdlog (new timestamped_file (m_stderr_owner.get ())),
-    m_gdb_stdtarg (m_gdb_stderr)
+    m_gdb_stderr (m_stderr_owner.get ()),
+    m_gdb_stdlog (new timestamped_file (&m_logging_stdlog)),
+    m_gdb_stdtarg (new passthrough_file (&m_logging_stdtarg)),
+    m_raw_stdout (new stdio_file (outstream)),
+    m_raw_stderr (new stderr_file (errstream)),
+    m_logging_stdout (new passthrough_file (&m_raw_stdout)),
+    m_logging_stderr (new passthrough_file (&m_raw_stderr)),
+    m_logging_stdlog (new passthrough_file (&m_raw_stderr)),
+    m_logging_stdtarg (new passthrough_file (&m_raw_stderr))
 {
   unbuffer_stream (instream_);
 
@@ -87,10 +93,6 @@ ui::~ui ()
     uiprev->next = next;
   else
     ui_list = next;
-
-  delete m_gdb_stdin;
-  delete m_gdb_stdout;
-  delete m_gdb_stderr;
 }
 
 
@@ -192,11 +194,10 @@ ui::maybe_warn_already_logging ()
 void
 ui::pop_output_files ()
 {
-  current_interp_set_logging (NULL, false, false);
-
-  /* Stay consistent with handle_redirections.  */
-  if (!m_current_uiout->is_mi_like_p ())
-    m_current_uiout->redirect (NULL);
+  m_logging_stdout = new passthrough_file (&m_raw_stdout);
+  m_logging_stderr = new passthrough_file (&m_raw_stderr);
+  m_logging_stdlog = new passthrough_file (&m_raw_stderr);
+  m_logging_stdtarg = new passthrough_file (&m_raw_stderr);
 }
 
 /* This is a helper for the `set logging' command.  */
@@ -234,18 +235,21 @@ ui::handle_redirections (int from_tty)
 
   saved_filename = logging_filename;
 
-  /* Let the interpreter do anything it needs.  */
-  current_interp_set_logging (std::move (log), logging_redirect,
-			      debug_redirect);
+  /* If something is not being redirected, then a tee containing both the
+     logfile and stdout.  */
+  ui_file *tee = nullptr;
+  if (!logging_redirect || !debug_redirect)
+    {
+      tee = new tee_file (m_logging_stdout, std::move (log));
+      m_log_owner.reset (tee);
+    }
+  else
+    m_log_owner = std::move (log);
 
-  /* Redirect the current ui-out object's output to the log.  Use
-     gdb_stdout, not log, since the interpreter may have created a tee
-     that wraps the log.  Don't do the redirect for MI, it confuses
-     MI's ui-out scheme.  Note that we may get here with MI as current
-     interpreter, but with the current ui_out as a CLI ui_out, with
-     '-interpreter-exec console "set logging on"'.  */
-  if (!m_current_uiout->is_mi_like_p ())
-    m_current_uiout->redirect (gdb_stdout);
+  m_logging_stdout = logging_redirect ? m_log_owner.get () : tee;
+  m_logging_stdlog = debug_redirect ? m_log_owner.get () : tee;
+  m_logging_stderr = logging_redirect ? m_log_owner.get () : tee;
+  m_logging_stdtarg = logging_redirect ? m_log_owner.get () : tee;
 }
 
 /* Open file named NAME for read/write, making sure not to make it the

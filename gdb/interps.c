@@ -201,15 +201,6 @@ set_top_level_interpreter (const char *name, bool for_new_ui)
   interp_set (interp, true);
 }
 
-void
-current_interp_set_logging (ui_file_up logfile, bool logging_redirect,
-			    bool debug_redirect)
-{
-  struct interp *interp = current_ui->current_interpreter;
-
-  interp->set_logging (std::move (logfile), logging_redirect, debug_redirect);
-}
-
 /* Temporarily overrides the current interpreter.  */
 struct interp *
 scoped_restore_interp::set_interp (const char *name)

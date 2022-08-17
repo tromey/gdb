@@ -109,13 +109,11 @@ key_is_start_sequence (int ch)
 /* TUI output files.  */
 static struct ui_file *tui_stdout;
 static struct ui_file *tui_stderr;
-static struct ui_file *tui_stdlog;
 struct ui_out *tui_out;
 
 /* GDB output files in non-curses mode.  */
 static struct ui_file *tui_old_stdout;
 static struct ui_file *tui_old_stderr;
-static struct ui_file *tui_old_stdlog;
 cli_ui_out *tui_old_uiout;
 
 /* Readline previous hooks.  */
@@ -831,14 +829,12 @@ tui_setup_io (int mode)
       /* Keep track of previous gdb output.  */
       tui_old_stdout = gdb_stdout;
       tui_old_stderr = gdb_stderr;
-      tui_old_stdlog = gdb_stdlog;
       tui_old_uiout = gdb::checked_static_cast<cli_ui_out *> (current_uiout);
+      gdb_assert (tui_old_uiout != nullptr);
 
       /* Reconfigure gdb output.  */
-      gdb_stdout = tui_stdout;
-      gdb_stderr = tui_stderr;
-      gdb_stdlog = tui_stdlog;
-      gdb_stdtarg = gdb_stderr;
+      current_ui->m_raw_stdout = tui_stdout;
+      current_ui->m_raw_stderr = tui_stderr;
       current_uiout = tui_out;
 
       /* Save tty for SIGCONT.  */
@@ -849,8 +845,6 @@ tui_setup_io (int mode)
       /* Restore gdb output.  */
       gdb_stdout = tui_old_stdout;
       gdb_stderr = tui_old_stderr;
-      gdb_stdlog = tui_old_stdlog;
-      gdb_stdtarg = gdb_stderr;
       current_uiout = tui_old_uiout;
 
       /* Restore readline.  */
@@ -901,9 +895,8 @@ tui_initialize_io (void)
 #endif
 
   /* Create tui output streams.  */
-  tui_stdout = new pager_file (new tui_file (stdout, true));
+  tui_stdout = new tui_file (stdout, true);
   tui_stderr = new tui_file (stderr, false);
-  tui_stdlog = new timestamped_file (tui_stderr);
   tui_out = new cli_ui_out (tui_stdout, 0);
 
   /* Create the default UI.  */

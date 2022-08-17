@@ -1348,7 +1348,7 @@ pager_file::emit_style_escape (const ui_file_style &style)
     {
       m_applied_style = style;
       if (m_paging)
-	m_stream->emit_style_escape (style);
+	(*m_stream)->emit_style_escape (style);
       else
 	m_wrap_buffer.append (style.to_ansi ());
     }
@@ -1384,10 +1384,10 @@ pager_file::prompt_for_continue ()
   scoped_restore save_paging = make_scoped_restore (&m_paging, true);
 
   /* Clear the current styling.  */
-  m_stream->emit_style_escape (ui_file_style ());
+  (*m_stream)->emit_style_escape (ui_file_style ());
 
   if (annotation_level > 1)
-    m_stream->puts (("\n\032\032pre-prompt-for-continue\n"));
+    (*m_stream)->puts (("\n\032\032pre-prompt-for-continue\n"));
 
   strcpy (cont_prompt,
 	  "--Type <RET> for more, q to quit, "
@@ -1410,7 +1410,7 @@ pager_file::prompt_for_continue ()
   prompt_for_continue_wait_time += steady_clock::now () - prompt_started;
 
   if (annotation_level > 1)
-    m_stream->puts (("\n\032\032post-prompt-for-continue\n"));
+    (*m_stream)->puts (("\n\032\032post-prompt-for-continue\n"));
 
   if (ignore != NULL)
     {
@@ -1466,7 +1466,7 @@ pager_file::flush_wrap_buffer ()
 {
   if (!m_paging && !m_wrap_buffer.empty ())
     {
-      m_stream->puts (m_wrap_buffer.c_str ());
+      (*m_stream)->puts (m_wrap_buffer.c_str ());
       m_wrap_buffer.clear ();
     }
 }
@@ -1475,7 +1475,7 @@ void
 pager_file::flush ()
 {
   flush_wrap_buffer ();
-  m_stream->flush ();
+  (*m_stream)->flush ();
 }
 
 /* See utils.h.  */
@@ -1595,7 +1595,7 @@ pager_file::puts (const char *linebuffer)
       || top_level_interpreter ()->interp_ui_out ()->is_mi_like_p ())
     {
       flush_wrap_buffer ();
-      m_stream->puts (linebuffer);
+      (*m_stream)->puts (linebuffer);
       return;
     }
 
@@ -1687,12 +1687,12 @@ pager_file::puts (const char *linebuffer)
 		     current applied style to how it was at the WRAP_COLUMN
 		     location.  */
 		  m_applied_style = m_wrap_style;
-		  m_stream->emit_style_escape (ui_file_style ());
+		  (*m_stream)->emit_style_escape (ui_file_style ());
 		  /* If we aren't actually wrapping, don't output
 		     newline -- if chars_per_line is right, we
 		     probably just overflowed anyway; if it's wrong,
 		     let us keep going.  */
-		  m_stream->puts ("\n");
+		  (*m_stream)->puts ("\n");
 		}
 	      else
 		this->flush_wrap_buffer ();
@@ -1711,11 +1711,11 @@ pager_file::puts (const char *linebuffer)
 	      /* Now output indentation and wrapped string.  */
 	      if (m_wrap_column)
 		{
-		  m_stream->puts (n_spaces (m_wrap_indent));
+		  (*m_stream)->puts (n_spaces (m_wrap_indent));
 
 		  /* Having finished inserting the wrapping we should
 		     restore the style as it was at the WRAP_COLUMN.  */
-		  m_stream->emit_style_escape (m_wrap_style);
+		  (*m_stream)->emit_style_escape (m_wrap_style);
 
 		  /* The WRAP_BUFFER will still contain content, and that
 		     content might set some alternative style.  Restore
@@ -1730,7 +1730,7 @@ pager_file::puts (const char *linebuffer)
 		  m_wrap_column = 0;	/* And disable fancy wrap */
 		}
 	      else if (did_paginate)
-		m_stream->emit_style_escape (save_style);
+		(*m_stream)->emit_style_escape (save_style);
 	    }
 	}
 
@@ -1739,7 +1739,7 @@ pager_file::puts (const char *linebuffer)
 	  chars_printed = 0;
 	  wrap_here (0); /* Spit out chars, cancel further wraps.  */
 	  lines_printed++;
-	  m_stream->puts ("\n");
+	  (*m_stream)->puts ("\n");
 	  lineptr++;
 	}
     }
@@ -1764,8 +1764,9 @@ pager_file::write (const char *buf, long length_buf)
 static void
 test_pager ()
 {
-  string_file *strfile = new string_file ();
-  pager_file pager (strfile);
+  string_file strfile;
+  ui_file *ptr = &strfile;
+  pager_file pager (&ptr);
 
   /* Make sure the pager is disabled.  */
   scoped_restore save_enabled
@@ -1786,7 +1787,7 @@ test_pager ()
   pager.wrap_here (2);
   pager.puts ("bbbbbbbbbbbb\n");
 
-  SELF_CHECK (strfile->string () == "aaaaaaaaaaaa\n  bbbbbbbbbbbb\n");
+  SELF_CHECK (strfile.string () == "aaaaaaaaaaaa\n  bbbbbbbbbbbb\n");
 }
 
 #endif /* GDB_SELF_TEST */

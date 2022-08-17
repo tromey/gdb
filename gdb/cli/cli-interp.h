@@ -28,8 +28,6 @@ public:
   explicit cli_interp_base (const char *name);
   virtual ~cli_interp_base () = 0;
 
-  void set_logging (ui_file_up logfile, bool logging_redirect,
-		    bool debug_redirect) override;
   void pre_command_loop () override;
   bool supports_command_editing () override;
 

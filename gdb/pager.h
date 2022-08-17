@@ -26,16 +26,10 @@
 class pager_file : public wrapped_file
 {
 public:
-  /* Create a new pager_file.  The new object takes ownership of
-     STREAM.  */
-  explicit pager_file (ui_file *stream)
+  /* Create a new pager_file.  */
+  explicit pager_file (ui_file **stream)
     : wrapped_file (stream)
   {
-  }
-
-  ~pager_file ()
-  {
-    delete m_stream;
   }
 
   DISABLE_COPY_AND_ASSIGN (pager_file);
@@ -54,7 +48,7 @@ public:
   void puts_unfiltered (const char *str) override
   {
     flush_wrap_buffer ();
-    m_stream->puts_unfiltered (str);
+    (*m_stream)->puts_unfiltered (str);
   }
 
 private:

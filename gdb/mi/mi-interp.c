@@ -85,15 +85,15 @@ mi_interp::init (bool top_level)
   /* Store the current output channel, so that we can create a console
      channel that encapsulates and prefixes all gdb_output-type bits
      coming from the rest of the debugger.  */
-  mi->raw_stdout = gdb_stdout;
+  mi->raw_stdout = current_ui->m_raw_stdout;
 
   /* Create MI console channels, each with a different prefix so they
      can be distinguished.  */
-  mi->out = new mi_console_file (mi->raw_stdout, "~", '"');
-  mi->err = new mi_console_file (mi->raw_stdout, "&", '"');
-  mi->log = mi->err;
-  mi->targ = new mi_console_file (mi->raw_stdout, "@", '"');
-  mi->event_channel = new mi_console_file (mi->raw_stdout, "=", 0);
+  mi->out = new mi_console_file (&current_ui->m_logging_stdout, "~", '"');
+  mi->err = new mi_console_file (&current_ui->m_logging_stdout, "&", '"');
+  mi->log = new mi_console_file (&current_ui->m_logging_stdlog, "&", '"');
+  mi->targ = new mi_console_file (&current_ui->m_logging_stdout, "@", '"');
+  mi->event_channel = new mi_console_file (&current_ui->m_logging_stdout, "=", 0);
   mi->mi_uiout = mi_out_new (name ()).release ();
   gdb_assert (mi->mi_uiout != nullptr);
   mi->cli_uiout = new cli_ui_out (mi->out);
@@ -875,48 +875,6 @@ ui_out *
 mi_interp::interp_ui_out ()
 {
   return this->mi_uiout;
-}
-
-/* Do MI-specific logging actions; save raw_stdout, and change all
-   the consoles to use the supplied ui-file(s).  */
-
-void
-mi_interp::set_logging (ui_file_up logfile, bool logging_redirect,
-			bool debug_redirect)
-{
-  struct mi_interp *mi = this;
-
-  if (logfile != NULL)
-    {
-      mi->saved_raw_stdout = mi->raw_stdout;
-
-      ui_file *logfile_p = logfile.get ();
-      mi->logfile_holder = std::move (logfile);
-
-      /* If something is not being redirected, then a tee containing both the
-	 logfile and stdout.  */
-      ui_file *tee = nullptr;
-      if (!logging_redirect || !debug_redirect)
-	{
-	  tee = new tee_file (mi->raw_stdout, logfile_p);
-	  mi->stdout_holder.reset (tee);
-	}
-
-      mi->raw_stdout = logging_redirect ? logfile_p : tee;
-    }
-  else
-    {
-      mi->logfile_holder.reset ();
-      mi->stdout_holder.reset ();
-      mi->raw_stdout = mi->saved_raw_stdout;
-      mi->saved_raw_stdout = nullptr;
-    }
-
-  mi->out->set_raw (mi->raw_stdout);
-  mi->err->set_raw (mi->raw_stdout);
-  mi->log->set_raw (mi->raw_stdout);
-  mi->targ->set_raw (mi->raw_stdout);
-  mi->event_channel->set_raw (mi->raw_stdout);
 }
 
 /* Factory for MI interpreters.  */

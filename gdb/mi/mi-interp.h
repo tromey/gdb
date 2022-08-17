@@ -38,8 +38,6 @@ public:
   void suspend () override;
   void exec (const char *command_str) override;
   ui_out *interp_ui_out () override;
-  void set_logging (ui_file_up logfile, bool logging_redirect,
-		    bool debug_redirect) override;
   void pre_command_loop () override;
 
   void on_signal_received (gdb_signal sig) override;
@@ -83,13 +81,6 @@ public:
 
   /* Raw console output.  */
   struct ui_file *raw_stdout;
-
-  /* Save the original value of raw_stdout here when logging, and the
-     file which we need to delete, so we can restore correctly when
-     done.  */
-  struct ui_file *saved_raw_stdout;
-  ui_file_up logfile_holder;
-  ui_file_up stdout_holder;
 
   /* MI's builder.  */
   struct ui_out *mi_uiout;

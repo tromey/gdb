@@ -148,6 +148,7 @@ struct ui
   ui_file_up m_stdout_owner;
   ui_file_up m_stdin_owner;
   ui_file_up m_stderr_owner;
+  ui_file_up m_log_owner;
 
   /* The ui_file streams.  */
   /* Normal results */
@@ -164,6 +165,16 @@ struct ui
 
   /* The current ui_out.  */
   struct ui_out *m_current_uiout = nullptr;
+
+  /* The raw underlying streams.  */
+  ui_file *m_raw_stdout;
+  ui_file *m_raw_stderr;
+
+  /* The logging streams.  */
+  ui_file *m_logging_stdout;
+  ui_file *m_logging_stderr;
+  ui_file *m_logging_stdlog;
+  ui_file *m_logging_stdtarg;
 
   bool logging_enabled = false;
   bool logging_overwrite = false;

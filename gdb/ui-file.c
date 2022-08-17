@@ -491,14 +491,14 @@ timestamped_file::write (const char *buf, long len)
 	  std::string timestamp = string_printf ("%ld.%06ld ",
 						 (long) s.count (),
 						 (long) us.count ());
-	  m_stream->puts (timestamp.c_str ());
+	  (*m_stream)->puts (timestamp.c_str ());
 	}
 
       /* Print the message.  */
-      m_stream->write (buf, len);
+      (*m_stream)->write (buf, len);
 
       m_needs_timestamp = (len > 0 && buf[len - 1] == '\n');
     }
   else
-    m_stream->write (buf, len);
+    (*m_stream)->write (buf, len);
 }

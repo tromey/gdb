@@ -29,7 +29,7 @@
 /* Create a console that wraps the given output stream RAW with the
    string PREFIX and quoting it with QUOTE.  */
 
-mi_console_file::mi_console_file (ui_file *raw, const char *prefix, char quote)
+mi_console_file::mi_console_file (ui_file **raw, const char *prefix, char quote)
   : m_raw (raw),
     m_prefix (prefix),
     m_quote (quote)
@@ -50,18 +50,18 @@ mi_console_file::write (const char *buf, long length_buf)
 void
 mi_console_file::write_async_safe (const char *buf, long length_buf)
 {
-  m_raw->write_async_safe (m_prefix, strlen (m_prefix));
+  (*m_raw)->write_async_safe (m_prefix, strlen (m_prefix));
   if (m_quote)
     {
-      m_raw->write_async_safe (&m_quote, 1);
-      m_raw->putstrn (buf, length_buf, m_quote, true);
-      m_raw->write_async_safe (&m_quote, 1);
+      (*m_raw)->write_async_safe (&m_quote, 1);
+      (*m_raw)->putstrn (buf, length_buf, m_quote, true);
+      (*m_raw)->write_async_safe (&m_quote, 1);
     }
   else
-    m_raw->putstrn (buf, length_buf, 0, true);
+    (*m_raw)->putstrn (buf, length_buf, 0, true);
 
   char nl = '\n';
-  m_raw->write_async_safe (&nl, 1);
+  (*m_raw)->write_async_safe (&nl, 1);
 }
 
 void
@@ -75,31 +75,21 @@ mi_console_file::flush ()
       size_t length_buf = str.size ();
       const char *buf = str.data ();
 
-      gdb_puts (m_prefix, m_raw);
+      gdb_puts (m_prefix, *m_raw);
       if (m_quote)
 	{
-	  gdb_putc (m_quote, m_raw);
-	  m_raw->putstrn (buf, length_buf, m_quote);
-	  gdb_putc (m_quote, m_raw);
-	  gdb_putc ('\n', m_raw);
+	  gdb_putc (m_quote, *m_raw);
+	  (*m_raw)->putstrn (buf, length_buf, m_quote);
+	  gdb_putc (m_quote, *m_raw);
+	  gdb_putc ('\n', *m_raw);
 	}
       else
 	{
-	  m_raw->putstrn (buf, length_buf, 0);
-	  gdb_putc ('\n', m_raw);
+	  (*m_raw)->putstrn (buf, length_buf, 0);
+	  gdb_putc ('\n', *m_raw);
 	}
-      gdb_flush (m_raw);
+      gdb_flush (*m_raw);
     }
 
   m_buffer.clear ();
-}
-
-/* Change the underlying stream of the console directly; this is
-   useful as a minimum-impact way to reflect external changes like
-   logging enable/disable.  */
-
-void
-mi_console_file::set_raw (ui_file *raw)
-{
-  m_raw = raw;
 }

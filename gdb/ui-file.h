@@ -402,48 +402,47 @@ class wrapped_file : public ui_file
 public:
 
   bool isatty () override
-  { return m_stream->isatty (); }
+  { return (*m_stream)->isatty (); }
 
   bool term_out () override
-  { return m_stream->term_out (); }
+  { return (*m_stream)->term_out (); }
 
   bool can_emit_style_escape () override
-  { return m_stream->can_emit_style_escape (); }
+  { return (*m_stream)->can_emit_style_escape (); }
 
   void flush () override
-  { m_stream->flush (); }
+  { (*m_stream)->flush (); }
 
   void wrap_here (int indent) override
-  { m_stream->wrap_here (indent); }
+  { (*m_stream)->wrap_here (indent); }
 
   void emit_style_escape (const ui_file_style &style) override
-  { m_stream->emit_style_escape (style); }
+  { (*m_stream)->emit_style_escape (style); }
 
   /* Rest the current output style to the empty style.  */
   void reset_style () override
-  { m_stream->reset_style (); }
+  { (*m_stream)->reset_style (); }
 
   int fd () const override
-  { return m_stream->fd (); }
+  { return (*m_stream)->fd (); }
 
   void puts_unfiltered (const char *str) override
-  { m_stream->puts_unfiltered (str); }
+  { (*m_stream)->puts_unfiltered (str); }
 
   void write_async_safe (const char *buf, long length_buf) override
-  { return m_stream->write_async_safe (buf, length_buf); }
+  { return (*m_stream)->write_async_safe (buf, length_buf); }
 
 protected:
 
-  /* Note that this class does not assume ownership of the stream.
-     However, a subclass may choose to, by adding a 'delete' to its
-     destructor.  */
-  explicit wrapped_file (ui_file *stream)
+  /* Note that the underlying stream is specified indirectly.  This
+     happens to be what is needed for logging in 'struct ui'.  */
+  explicit wrapped_file (ui_file **stream)
     : m_stream (stream)
   {
   }
 
   /* The underlying stream.  */
-  ui_file *m_stream;
+  ui_file **m_stream;
 };
 
 /* A ui_file that optionally puts a timestamp at the start of each
@@ -452,7 +451,7 @@ protected:
 class timestamped_file : public wrapped_file
 {
 public:
-  explicit timestamped_file (ui_file *stream)
+  explicit timestamped_file (ui_file **stream)
     : wrapped_file (stream)
   {
   }
@@ -472,7 +471,7 @@ private:
 class passthrough_file : public wrapped_file
 {
 public:
-  explicit passthrough_file (ui_file *stream)
+  explicit passthrough_file (ui_file **stream)
     : wrapped_file (stream)
   {
   }
@@ -480,7 +479,7 @@ public:
   DISABLE_COPY_AND_ASSIGN (passthrough_file);
 
   void write (const char *buf, long len) override
-  { m_stream->write (buf, len); }
+  { (*m_stream)->write (buf, len); }
 };
 
 #endif
