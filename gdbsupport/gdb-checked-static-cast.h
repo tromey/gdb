@@ -30,7 +30,10 @@ namespace gdb
    work for polymorphic types.
 
    In non-developer (i.e. production) builds, the dynamic_cast is replaced
-   with a static_cast which is usually significantly faster.  */
+   with a static_cast which is usually significantly faster.
+
+   This is intended only to be used for downcasts.  For upcasts, you
+   can safely omit the cast.  */
 
 template<typename T, typename V>
 T
@@ -48,10 +51,10 @@ checked_static_cast (V *v)
   /* In developer mode this cast uses dynamic_cast to confirm at run-time
      that the cast from V* to T is valid.  However, we can catch some
      mistakes at compile time, this assert prevents anything other than
-     downcasts, or casts to same type.  */
+     downcasts.  */
   static_assert (std::is_base_of<V, T_no_P>::value
-		 || std::is_base_of<T_no_P, V>::value,
-		 "types must be related");
+		 && !std::is_same<V, T_no_P>::value,
+		 "target type must be derived from actual type");
 
 #ifdef DEVELOPMENT
   if (v == nullptr)
