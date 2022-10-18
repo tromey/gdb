@@ -18631,7 +18631,23 @@ cooked_index_functions::expand_matching_symbols
 	continue;
 
       if (name_match (entry->canonical, lookup_name, nullptr))
-	dw2_instantiate_symtab (entry->per_cu, per_objfile, false);
+	{
+	  bool needed = !per_objfile->symtab_set_p (entry->per_cu);
+	  compunit_symtab *symtab =
+	    dw2_instantiate_symtab (entry->per_cu, per_objfile, false);
+	  if (needed)
+	    {
+	      bool found = false;
+	      iterate_over_symbols (symtab->blockvector ()->block (global ? GLOBAL_BLOCK : STATIC_BLOCK),
+				    lookup_name, domain,
+				    [&] (block_symbol *bsym)
+				    {
+				      found = true;
+				      return true;
+				    });
+	      gdb_assert (found);
+	    }
+	}
     }
 }
 
