@@ -41,6 +41,7 @@
 #include "gdbsupport/selftest.h"
 #include "inferior.h"
 #include "gdbsupport/thread-pool.h"
+#include "cp-support.h"
 
 #include "cli/cli-decode.h"
 #include "cli/cli-utils.h"
@@ -106,6 +107,16 @@ static void
 maintenance_demangle (const char *args, int from_tty)
 {
   gdb_printf (_("This command has been moved to \"demangle\".\n"));
+}
+
+static void
+maintenance_canonicalize (const char *args, int from_tty)
+{
+  gdb::unique_xmalloc_ptr<char> canon = cp_canonicalize_string (args);
+  if (canon == nullptr)
+    gdb_printf ("No change.\n");
+  else
+    gdb_printf ("canonical = %s\n", canon.get ());
 }
 
 static void
@@ -1334,6 +1345,11 @@ Cause GDB to behave as if a demangler warning was reported."),
 This command has been moved to \"demangle\"."),
 		 &maintenancelist);
   deprecate_cmd (cmd, "demangle");
+
+  cmd = add_cmd ("canonicalize", class_maintenance, maintenance_canonicalize,
+		 _("Usage: maintenance canonicalize NAME\n\
+Canonicalize NAME and print the result."),
+		 &maintenancelist);
 
   add_prefix_cmd ("per-command", class_maintenance, set_per_command_cmd, _("\
 Per-command statistics settings."),
