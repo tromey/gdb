@@ -903,7 +903,8 @@ bppy_init (PyObject *self, PyObject *args, PyObject *kwargs)
 {
   static const char *keywords[] = { "spec", "type", "wp_class", "internal",
 				    "temporary","source", "function",
-				    "label", "line", "qualified", NULL };
+				    "label", "line", "qualified",
+				    "announce", nullptr };
   const char *spec = NULL;
   enum bptype type = bp_breakpoint;
   int access_type = hw_write;
@@ -918,13 +919,15 @@ bppy_init (PyObject *self, PyObject *args, PyObject *kwargs)
   char *function = NULL;
   PyObject *qualified_obj = nullptr;
   int qualified = 0;
+  PyObject *announce_obj = nullptr;
+  int announce = 1;
 
-  if (!gdb_PyArg_ParseTupleAndKeywords (args, kwargs, "|siiOOsssOO", keywords,
+  if (!gdb_PyArg_ParseTupleAndKeywords (args, kwargs, "|siiOOsssOOO", keywords,
 					&spec, &type, &access_type,
 					&internal,
 					&temporary, &source,
 					&function, &label, &lineobj,
-					&qualified_obj))
+					&qualified_obj, &announce_obj))
     return -1;
 
 
@@ -963,6 +966,13 @@ bppy_init (PyObject *self, PyObject *args, PyObject *kwargs)
 	return -1;
     }
 
+  if (announce_obj != nullptr)
+    {
+      announce = PyObject_IsTrue (announce_obj);
+      if (announce == -1)
+	return -1;
+    }
+
   if (bppy_init_validate_args (spec, source, function, label, line.get (),
 			       type) == -1)
     return -1;
@@ -973,9 +983,17 @@ bppy_init (PyObject *self, PyObject *args, PyObject *kwargs)
 
   try
     {
-      bppy_create_breakpoint (type, access_type, temporary_bp, internal_bp,
-			      spec, qualified, source, function, label,
-			      line.get ());
+      if (announce)
+	bppy_create_breakpoint (type, access_type, temporary_bp, internal_bp,
+				spec, qualified, source, function,
+				label, line.get ());
+      else
+	execute_fn_to_ui_file (&null_stream, [&] ()
+	  {
+	    bppy_create_breakpoint (type, access_type, temporary_bp,
+				    internal_bp, spec, qualified,
+				    source, function, label, line.get ());
+	  });
     }
   catch (const gdb_exception &except)
     {

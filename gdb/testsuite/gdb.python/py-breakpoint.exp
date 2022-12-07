@@ -544,7 +544,8 @@ proc_with_prefix test_bkpt_address {} {
 
 proc_with_prefix test_bkpt_pending {} {
     delete_breakpoints
-    gdb_breakpoint "nosuchfunction" allow-pending
+    gdb_test_no_output "python gdb.Breakpoint(\"nosuchfunction\", announce=False)" \
+	"create pending breakpoint"
     gdb_test "python print (gdb.breakpoints()\[0\].pending)" "True" \
 	"Check pending status of pending breakpoint"
 }
