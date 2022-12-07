@@ -979,6 +979,95 @@ bppy_init_validate_args (const char *spec, char *source,
   return 1;
 }
 
+/* Helper function for breakpoint creation.  */
+
+static void
+bppy_create_breakpoint (enum bptype type, int access_type, bool temporary_bp,
+			bool internal_bp, const char *spec,
+			bool qualified, bool allow_pending,
+			const char *source, const char *function,
+			const char *label, const char *line)
+{
+  switch (type)
+    {
+    case bp_breakpoint:
+    case bp_hardware_breakpoint:
+      {
+	location_spec_up locspec;
+	symbol_name_match_type func_name_match_type
+	  = (qualified
+	     ? symbol_name_match_type::FULL
+	     : symbol_name_match_type::WILD);
+
+	if (spec != NULL)
+	  {
+	    gdb::unique_xmalloc_ptr<char>
+	      copy_holder (xstrdup (skip_spaces (spec)));
+	    const char *copy = copy_holder.get ();
+
+	    locspec  = string_to_location_spec (&copy,
+						current_language,
+						func_name_match_type);
+	  }
+	else
+	  {
+	    std::unique_ptr<explicit_location_spec> explicit_loc
+	      (new explicit_location_spec ());
+
+	    if (source != nullptr)
+	      explicit_loc->source_filename = make_unique_xstrdup (source);
+	    if (function != nullptr)
+	      explicit_loc->function_name = make_unique_xstrdup (function);
+	    if (label != nullptr)
+	      explicit_loc->label_name = make_unique_xstrdup (label);
+
+	    if (line != NULL)
+	      explicit_loc->line_offset
+		= linespec_parse_line_offset (line);
+
+	    explicit_loc->func_name_match_type = func_name_match_type;
+
+	    locspec.reset (explicit_loc.release ());
+	  }
+
+	const struct breakpoint_ops *ops
+	  = breakpoint_ops_for_location_spec (locspec.get (), false);
+
+	auto_boolean pending_enabled
+	  = (allow_pending
+	     ? AUTO_BOOLEAN_TRUE
+	     : AUTO_BOOLEAN_FALSE);
+	create_breakpoint (gdbpy_enter::get_gdbarch (),
+			   locspec.get (), NULL, -1, -1, NULL, false,
+			   0,
+			   temporary_bp, type,
+			   0,
+			   pending_enabled,
+			   ops,
+			   0, 1, internal_bp, 0);
+	break;
+      }
+    case bp_watchpoint:
+      {
+	spec = skip_spaces (spec);
+
+	if (access_type == hw_write)
+	  watch_command_wrapper (spec, 0, internal_bp);
+	else if (access_type == hw_access)
+	  awatch_command_wrapper (spec, 0, internal_bp);
+	else if (access_type == hw_read)
+	  rwatch_command_wrapper (spec, 0, internal_bp);
+	else
+	  error(_("Cannot understand watchpoint access type."));
+	break;
+      }
+    case bp_catchpoint:
+      error (_("BP_CATCHPOINT not supported"));
+    default:
+      error(_("Do not understand breakpoint type to set."));
+    }
+}
+
 /* Python function to create a new breakpoint.  */
 static int
 bppy_init (PyObject *self, PyObject *args, PyObject *kwargs)
@@ -1051,85 +1140,10 @@ bppy_init (PyObject *self, PyObject *args, PyObject *kwargs)
 
   try
     {
-      switch (type)
-	{
-	case bp_breakpoint:
-	case bp_hardware_breakpoint:
-	  {
-	    location_spec_up locspec;
-	    gdb_assert (PyBool_Check (qualified));
-	    symbol_name_match_type func_name_match_type
-	      = (qualified == Py_True
-		 ? symbol_name_match_type::FULL
-		 : symbol_name_match_type::WILD);
-
-	    if (spec != NULL)
-	      {
-		gdb::unique_xmalloc_ptr<char>
-		  copy_holder (xstrdup (skip_spaces (spec)));
-		const char *copy = copy_holder.get ();
-
-		locspec  = string_to_location_spec (&copy,
-						    current_language,
-						    func_name_match_type);
-	      }
-	    else
-	      {
-		std::unique_ptr<explicit_location_spec> explicit_loc
-		  (new explicit_location_spec ());
-
-		if (source != nullptr)
-		  explicit_loc->source_filename = make_unique_xstrdup (source);
-		if (function != nullptr)
-		  explicit_loc->function_name = make_unique_xstrdup (function);
-		if (label != nullptr)
-		  explicit_loc->label_name = make_unique_xstrdup (label);
-
-		if (line != NULL)
-		  explicit_loc->line_offset
-		    = linespec_parse_line_offset (line.get ());
-
-		explicit_loc->func_name_match_type = func_name_match_type;
-
-		locspec.reset (explicit_loc.release ());
-	      }
-
-	    const struct breakpoint_ops *ops
-	      = breakpoint_ops_for_location_spec (locspec.get (), false);
-
-	    auto_boolean pending_enabled
-	      = (allow_pending == Py_True
-		 ? AUTO_BOOLEAN_TRUE
-		 : AUTO_BOOLEAN_FALSE);
-	    create_breakpoint (gdbpy_enter::get_gdbarch (),
-			       locspec.get (), NULL, -1, -1, NULL, false,
-			       0,
-			       temporary_bp, type,
-			       0,
-			       pending_enabled,
-			       ops,
-			       0, 1, internal_bp, 0);
-	    break;
-	  }
-	case bp_watchpoint:
-	  {
-	    spec = skip_spaces (spec);
-
-	    if (access_type == hw_write)
-	      watch_command_wrapper (spec, 0, internal_bp);
-	    else if (access_type == hw_access)
-	      awatch_command_wrapper (spec, 0, internal_bp);
-	    else if (access_type == hw_read)
-	      rwatch_command_wrapper (spec, 0, internal_bp);
-	    else
-	      error(_("Cannot understand watchpoint access type."));
-	    break;
-	  }
-	case bp_catchpoint:
-	  error (_("BP_CATCHPOINT not supported"));
-	default:
-	  error(_("Do not understand breakpoint type to set."));
-	}
+      bppy_create_breakpoint (type, access_type, temporary_bp, internal_bp,
+			      spec, qualified == Py_True,
+			      allow_pending == Py_True, source, function,
+			      label, line.get ());
     }
   catch (const gdb_exception &except)
     {
