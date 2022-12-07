@@ -965,9 +965,12 @@ bppy_init (PyObject *self, PyObject *args, PyObject *kwargs)
 
   try
     {
-      bppy_create_breakpoint (type, access_type, temporary_bp, internal_bp,
-			      spec, qualified, source, function, label,
-			      line.get ());
+      execute_fn_to_ui_file (&null_stream, [&] ()
+	{
+	  bppy_create_breakpoint (type, access_type, temporary_bp, internal_bp,
+				  spec, qualified, source, function, label,
+				  line.get ());
+	});
     }
   catch (const gdb_exception &except)
     {
