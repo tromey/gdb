@@ -18,6 +18,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "source.h"
+#include "top.h"
 #include "value.h"
 #include "python-internal.h"
 #include "python.h"
@@ -1075,7 +1076,7 @@ bppy_init (PyObject *self, PyObject *args, PyObject *kwargs)
   static const char *keywords[] = { "spec", "type", "wp_class", "internal",
 				    "temporary","source", "function",
 				    "label", "line", "qualified",
-				    "allow_pending", nullptr };
+				    "allow_pending", "announce", nullptr };
   const char *spec = NULL;
   enum bptype type = bp_breakpoint;
   int access_type = hw_write;
@@ -1090,15 +1091,17 @@ bppy_init (PyObject *self, PyObject *args, PyObject *kwargs)
   char *function = NULL;
   PyObject *qualified = Py_False;
   PyObject *allow_pending = Py_True;
+  PyObject *announce_obj = Py_True;
 
-  if (!gdb_PyArg_ParseTupleAndKeywords (args, kwargs, "|siiOOsssOO!O!",
+  if (!gdb_PyArg_ParseTupleAndKeywords (args, kwargs, "|siiOOsssOO!O!O!",
 					keywords,
 					&spec, &type, &access_type,
 					&internal,
 					&temporary, &source,
 					&function, &label, &lineobj,
 					&PyBool_Type, &qualified,
-					&PyBool_Type, &allow_pending))
+					&PyBool_Type, &allow_pending,
+					&PyBool_Type, &announce_obj))
     return -1;
 
 
@@ -1140,10 +1143,22 @@ bppy_init (PyObject *self, PyObject *args, PyObject *kwargs)
 
   try
     {
-      bppy_create_breakpoint (type, access_type, temporary_bp, internal_bp,
-			      spec, qualified == Py_True,
-			      allow_pending == Py_True, source, function,
-			      label, line.get ());
+      if (announce_obj == Py_True)
+	bppy_create_breakpoint (type, access_type, temporary_bp, internal_bp,
+				spec, qualified == Py_True,
+				allow_pending == Py_True, source, function,
+				label, line.get ());
+      else
+	{
+	  std::string ignore;
+	  execute_fn_to_string (ignore, [&] ()
+	  {
+	    bppy_create_breakpoint (type, access_type, temporary_bp, internal_bp,
+				    spec, qualified == Py_True,
+				    allow_pending == Py_True, source, function,
+				    label, line.get ());
+	  }, false);
+	}
     }
   catch (const gdb_exception &except)
     {

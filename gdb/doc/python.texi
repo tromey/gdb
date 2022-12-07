@@ -6953,7 +6953,7 @@ create both breakpoints and watchpoints.  The second accepts separate Python
 arguments similar to @ref{Explicit Locations}, and can only be used to create
 breakpoints.
 
-@defun Breakpoint.__init__ (spec @r{[}, type @r{][}, wp_class @r{][}, internal @r{][}, temporary @r{][}, qualified @r{][}, allow_pending @r{]})
+@defun Breakpoint.__init__ (spec @r{[}, type @r{][}, wp_class @r{][}, internal @r{][}, temporary @r{][}, qualified @r{][}, allow_pending @r{][}, announce @r{]})
 Create a new breakpoint according to @var{spec}, which is a string naming the
 location of a breakpoint, or an expression that defines a watchpoint.  The
 string should describe a location in a format recognized by the @code{break}
@@ -6992,9 +6992,15 @@ the @var{allow_pending} argument is set to @code{False} and the breakpoint
 location cannot be resolved, a @code{gdb.error} exception is raised
 instead of creating a pending breakpoint.
 
+The optional @var{announce} argument is a boolean that controls
+whether @var{GDBN} announces the existence of the breakpoint.  The
+default is to announce, meaning that a message is printed.  Setting
+this argument to false will suppress all output from breakpoint
+creation.
+
 @end defun
 
-@defun Breakpoint.__init__ (@r{[} source @r{][}, function @r{][}, label @r{][}, line @r{]}, @r{][} internal @r{][}, temporary @r{][}, qualified @r{][}, allow_pending @r{]})
+@defun Breakpoint.__init__ (@r{[} source @r{][}, function @r{][}, label @r{][}, line @r{]}, @r{][} internal @r{][}, temporary @r{][}, qualified @r{][}, allow_pending @r{][}, announce @r{]})
 This second form of creating a new breakpoint specifies the explicit
 location (@pxref{Explicit Locations}) using keywords.  The new breakpoint will
 be created in the specified source file @var{source}, at the specified
