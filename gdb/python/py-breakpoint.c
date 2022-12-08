@@ -818,7 +818,7 @@ bppy_init_validate_args (const char *spec, char *source,
 static void
 bppy_create_breakpoint (enum bptype type, int access_type, int temporary_bp,
 			int internal_bp, const char *spec,
-			PyObject *qualified, const char *source,
+			int qualified, const char *source,
 			const char *function, const char *label,
 			const char *line)
 {
@@ -829,7 +829,7 @@ bppy_create_breakpoint (enum bptype type, int access_type, int temporary_bp,
       {
 	location_spec_up locspec;
 	symbol_name_match_type func_name_match_type
-	  = (qualified != NULL && PyObject_IsTrue (qualified)
+	  = (qualified
 	     ? symbol_name_match_type::FULL
 	     : symbol_name_match_type::WILD);
 
@@ -916,14 +916,15 @@ bppy_init (PyObject *self, PyObject *args, PyObject *kwargs)
   char *label = NULL;
   char *source = NULL;
   char *function = NULL;
-  PyObject * qualified = NULL;
+  PyObject *qualified_obj = nullptr;
+  int qualified = 0;
 
   if (!gdb_PyArg_ParseTupleAndKeywords (args, kwargs, "|siiOOsssOO", keywords,
 					&spec, &type, &access_type,
 					&internal,
 					&temporary, &source,
 					&function, &label, &lineobj,
-					&qualified))
+					&qualified_obj))
     return -1;
 
 
@@ -952,6 +953,13 @@ bppy_init (PyObject *self, PyObject *args, PyObject *kwargs)
     {
       temporary_bp = PyObject_IsTrue (temporary);
       if (temporary_bp == -1)
+	return -1;
+    }
+
+  if (qualified_obj != nullptr)
+    {
+      qualified = PyObject_IsTrue (qualified_obj);
+      if (qualified == -1)
 	return -1;
     }
 
