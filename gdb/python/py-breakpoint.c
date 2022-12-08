@@ -920,7 +920,7 @@ bppy_init (PyObject *self, PyObject *args, PyObject *kwargs)
   PyObject *qualified_obj = nullptr;
   int qualified = 0;
   PyObject *pending_obj = nullptr, *announce_obj = nullptr;
-  auto_boolean pending = AUTO_BOOLEAN_AUTO;
+  auto_boolean pending = AUTO_BOOLEAN_TRUE;
   int announce = 1;
 
   if (!gdb_PyArg_ParseTupleAndKeywords (args, kwargs, "|siiOOsssOOOO", keywords,
