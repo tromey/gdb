@@ -28,10 +28,7 @@ gdb_test_no_output "set listsize 1"
 runto_main
 
 get_debug_format
-if { [skip_inline_frame_tests] } {
-    untested "skipping inline frame tests"
-    return
-}
+require !skip_inline_frame_tests
 
 # First, check that the things we expected to be inlined really were,
 # and those that shouldn't be weren't.

@@ -25,9 +25,7 @@ if ![runto_main] {
 }
 
 get_debug_format
-if { [skip_inline_frame_tests] } {
-    return -1
-}
+require !skip_inline_frame_tests
 
 # Set a break-point in inline function bar, in a CU for which the partial
 # symtab has not been expanded.
