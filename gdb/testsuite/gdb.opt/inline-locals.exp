@@ -23,10 +23,7 @@ if {[prepare_for_testing "failed to prepare" $testfile \
 runto_main
 
 get_debug_format
-if { [skip_inline_var_tests] } {
-    untested inline-bt.exp
-    return
-}
+require !skip_inline_var_tests
 
 set no_frames [skip_inline_frame_tests]
 
