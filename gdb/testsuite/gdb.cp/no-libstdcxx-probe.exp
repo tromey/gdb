@@ -25,10 +25,7 @@ if {![runto_main]} {
     return -1
 }
 
-if { [skip_libstdcxx_probe_tests] == 0 } {
-    untested "Have libstdc++ stap probe"
-    return -1
-}
+require skip_libstdcxx_probe_tests
 
 gdb_test "catch throw" "Catchpoint $decimal \\(throw\\)" \
     "catch throw"

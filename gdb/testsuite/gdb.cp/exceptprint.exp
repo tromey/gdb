@@ -25,10 +25,7 @@ if {![runto_main]} {
     return -1
 }
 
-if {[skip_libstdcxx_probe_tests]} {
-    untested "could not find libstdc++ stap probe"
-    return -1
-}
+require !skip_libstdcxx_probe_tests
 
 proc do_continue_to_catchpoint {name} {
     global gdb_prompt
