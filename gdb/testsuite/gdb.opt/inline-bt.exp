@@ -24,10 +24,7 @@ if {[prepare_for_testing "failed to prepare" $testfile \
 runto_main
 
 get_debug_format
-if { [skip_inline_frame_tests] } {
-    untested "skipping inline frame tests"
-    return
-}
+require !skip_inline_frame_tests
 
 set line1 [gdb_get_line_number "set breakpoint 1 here" ${srcfile2}]
 gdb_breakpoint $srcfile2:$line1
