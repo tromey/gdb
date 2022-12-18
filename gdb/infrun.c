@@ -5572,8 +5572,13 @@ handle_inferior_event (struct execution_control_state *ecs)
 
       gdb_flush (gdb_stdout);
       target_mourn_inferior (inferior_ptid);
-      stop_print_frame = false;
-      stop_waiting (ecs);
+      if (current_inferior ()->removable)
+	prepare_to_wait (ecs);
+      else
+	{
+	  stop_print_frame = false;
+	  stop_waiting (ecs);
+	}
       return;
 
     case TARGET_WAITKIND_FORKED:
