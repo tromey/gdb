@@ -8734,11 +8734,8 @@ proc with_override { name override body } {
     return $result
 }
 
-# Setup tuiterm.exp environment.  To be used in test-cases instead of
-# "load_lib tuiterm.exp".  Calls initialization function and schedules
-# finalization function.
+# Setup tuiterm.exp environment.  This is just a placeholder for now.
 proc tuiterm_env { } {
-    load_lib tuiterm.exp
 }
 
 # Dejagnu has a version of note, but usage is not allowed outside of dejagnu.
