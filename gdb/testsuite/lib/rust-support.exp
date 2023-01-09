@@ -13,6 +13,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# Return 1 to try Rust tests, 0 to skip them.
+proc allow_rust_tests {} {
+    if { ![isnative] } {
+	return 0
+    }
+
+    # The rust compiler does not support "-m32", skip.
+    global board board_info
+    set board [target_info name]
+    if {[board_info $board exists multilib_flags]} {
+	foreach flag [board_info $board multilib_flags] {
+	    if { $flag == "-m32" } {
+		return 0
+	    }
+	}
+    }
+
+    return 1
+}
+
 # Auxiliary function to set the language to Rust.
 # The result is 1 (true) for success, 0 (false) for failure.
 proc set_lang_rust {} {

@@ -2382,81 +2382,6 @@ proc gdb_compile_test {src output} {
     fail "$msg"
 }
 
-# Return a 1 for configurations for which we want to try to test C++.
-
-proc allow_cplus_tests {} {
-    if { [istarget "h8300-*-*"] } {
-	return 0
-    }
-
-    # The C++ IO streams are too large for HC11/HC12 and are thus not
-    # available.  The gdb C++ tests use them and don't compile.
-    if { [istarget "m6811-*-*"] } {
-	return 0
-    }
-    if { [istarget "m6812-*-*"] } {
-	return 0
-    }
-    return 1
-}
-
-# Return a 0 for configurations which are missing either C++ or the STL.
-
-proc allow_stl_tests {} {
-    return [allow_cplus_tests]
-}
-
-# Return a 1 if I want to try to test FORTRAN.
-
-proc allow_fortran_tests {} {
-    return 1
-}
-
-# Return a 1 if I want to try to test ada.
-
-proc allow_ada_tests {} {
-    return 1
-}
-
-# Return a 1 if I want to try to test GO.
-
-proc allow_go_tests {} {
-    return 1
-}
-
-# Return a 1 if I even want to try to test D.
-
-proc allow_d_tests {} {
-    return 1
-}
-
-# Return 1 to try Rust tests, 0 to skip them.
-proc allow_rust_tests {} {
-    if { ![isnative] } {
-	return 0
-    }
-
-    # The rust compiler does not support "-m32", skip.
-    global board board_info
-    set board [target_info name]
-    if {[board_info $board exists multilib_flags]} {
-	foreach flag [board_info $board multilib_flags] {
-	    if { $flag == "-m32" } {
-		return 0
-	    }
-	}
-    }
-
-    return 1
-}
-
-# Return a 1 for configurations that support Python scripting.
-
-gdb_caching_proc allow_python_tests {
-    set output [remote_exec host $::GDB "$::INTERNAL_GDBFLAGS --configuration"]
-    return [expr {[string first "--with-python" $output] != -1}]
-}
-
 # Return a 1 if we should run shared library tests.
 
 proc allow_shlib_tests {} {
@@ -3186,18 +3111,6 @@ gdb_caching_proc support_complex_tests {
 	    return 0;
 	}
     } executable]
-}
-
-# Return 1 if compiling go is supported.
-gdb_caching_proc support_go_compile {
-
-    return [gdb_can_simple_compile go-hello {
-	package main
-	import "fmt"
-	func main() {
-	    fmt.Println("hello world")
-	}
-    } executable go]
 }
 
 # Return 1 if GDB can get a type for siginfo from the target, otherwise

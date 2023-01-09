@@ -15,6 +15,13 @@
 
 # Utilities for python-scripting related tests.
 
+# Return a 1 for configurations that support Python scripting.
+
+gdb_caching_proc allow_python_tests {
+    set output [remote_exec host $::GDB "$::INTERNAL_GDBFLAGS --configuration"]
+    return [expr {[string first "--with-python" $output] != -1}]
+}
+
 # Run a command in GDB, and report a failure if a Python exception is thrown.
 # If report_pass is true, report a pass if no exception is thrown.
 

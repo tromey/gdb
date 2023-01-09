@@ -13,6 +13,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# Return a 1 if I even want to try to test D.
+
+proc allow_d_tests {} {
+    return 1
+}
+
 # Auxiliary function to set the language to D.
 # The result is 1 (true) for success, 0 (false) for failure.
 

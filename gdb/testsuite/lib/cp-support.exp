@@ -15,6 +15,30 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# Return a 1 for configurations for which we want to try to test C++.
+
+proc allow_cplus_tests {} {
+    if { [istarget "h8300-*-*"] } {
+	return 0
+    }
+
+    # The C++ IO streams are too large for HC11/HC12 and are thus not
+    # available.  The gdb C++ tests use them and don't compile.
+    if { [istarget "m6811-*-*"] } {
+	return 0
+    }
+    if { [istarget "m6812-*-*"] } {
+	return 0
+    }
+    return 1
+}
+
+# Return a 0 for configurations which are missing either C++ or the STL.
+
+proc allow_stl_tests {} {
+    return [allow_cplus_tests]
+}
+
 # Controls whether detailed logging for cp_test_ptype_class is enabled.
 # By default, it is not.  Enable it to assist with troubleshooting
 # failed cp_test_ptype_class tests.  [Users can simply add the statement
