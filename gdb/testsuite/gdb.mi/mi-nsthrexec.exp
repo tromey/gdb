@@ -20,7 +20,6 @@
 
 require support_displaced_stepping
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 #

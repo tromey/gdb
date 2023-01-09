@@ -15,8 +15,6 @@
 
 # Tests that require character to be a discrete type.
 
-load_lib "ada.exp"
-
 require allow_ada_tests
 
 standard_ada_testfile main

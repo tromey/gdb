@@ -19,8 +19,6 @@
 # Parameters:
 # EXPANSION_DEPTH: knob to control how many times template expansions occur
 
-load_lib perftest.exp
-
 require allow_perf_tests
 
 standard_testfile .cc

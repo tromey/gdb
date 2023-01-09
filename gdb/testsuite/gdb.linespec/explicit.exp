@@ -15,8 +15,6 @@
 
 # Tests for explicit locations
 
-load_lib completion-support.exp
-
 standard_testfile explicit.c explicit2.c 3explicit.c
 set exefile $testfile
 

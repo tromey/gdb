@@ -16,8 +16,6 @@
 # This test checks that GDB can find the dwo file when the path to the
 # dwo embedded in the executable is relative.
 
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 

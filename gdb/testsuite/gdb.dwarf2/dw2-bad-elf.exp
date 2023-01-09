@@ -27,8 +27,6 @@
 # absolutely shouldn't crash.  All we try to do after placing the
 # breakpoint is check that GDB is still alive.
 
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 

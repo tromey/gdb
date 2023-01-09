@@ -16,8 +16,6 @@
 # Valgrind gdbserver requires gdb with xml support.
 require allow_xml_test
 
-load_lib valgrind.exp
-
 if [is_remote target] {
     # The test always runs locally.
     return 0

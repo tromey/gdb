@@ -14,8 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 standard_testfile "vla.f90"
-load_lib "fortran.exp"
-
 require allow_fortran_tests
 
 if { [prepare_for_testing "failed to prepare" ${testfile} ${srcfile} \

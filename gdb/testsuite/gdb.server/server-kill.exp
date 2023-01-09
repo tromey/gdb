@@ -18,8 +18,6 @@
 # Check that GDB handles GDBserver disconnecting abruptly, in several
 # scenarios.
 
-load_lib gdbserver-support.exp
-
 standard_testfile
 
 require allow_gdbserver_tests

@@ -15,8 +15,6 @@
 
 # This file tests GDB's handling of Fortran builtin intrinsic functions.
 
-load_lib "fortran.exp"
-
 require allow_fortran_tests
 
 standard_testfile .f90

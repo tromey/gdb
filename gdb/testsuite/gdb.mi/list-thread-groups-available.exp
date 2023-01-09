@@ -15,7 +15,6 @@
 
 # Test that -list-thread-groups --available works.
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 standard_testfile

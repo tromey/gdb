@@ -16,8 +16,6 @@
 # This script tests GDB's handling of using a Python unwinder in the
 # presence of inlined frames.
 
-load_lib gdb-python.exp
-
 require allow_python_tests
 
 standard_testfile

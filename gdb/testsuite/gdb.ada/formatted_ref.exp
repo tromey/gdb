@@ -24,8 +24,6 @@
 # work properly: condition expression using a reference object as one of its
 # operand.
 
-load_lib "ada.exp"
-
 require allow_ada_tests
 
 standard_ada_testfile formatted_ref

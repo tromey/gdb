@@ -17,8 +17,6 @@
 # correctly handle the (kind=N) type adjustment mechanism within
 # Fortran.
 
-load_lib "fortran.exp"
-
 require allow_fortran_tests
 
 # Cast the value 1 to the type 'BASE_TYPE (kind=TYPE_KIND)'.  The

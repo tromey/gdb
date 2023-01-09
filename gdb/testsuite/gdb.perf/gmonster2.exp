@@ -33,9 +33,6 @@
 # bash$ make -j5 build-perf RUNTESTFLAGS="gmonster1.exp gmonster2.exp"
 # bash$ make check-perf RUNTESTFLAGS="gdb.perf/gm*-*.exp GDB=/path/to/gdb"
 
-load_lib perftest.exp
-load_lib gen-perf-test.exp
-
 require allow_perf_tests
 
 if ![info exists MONSTER] {

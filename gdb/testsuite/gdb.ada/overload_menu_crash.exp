@@ -15,8 +15,6 @@
 
 # Regression test for a crash in the overload menu.
 
-load_lib "ada.exp"
-
 require allow_ada_tests
 
 standard_ada_testfile main

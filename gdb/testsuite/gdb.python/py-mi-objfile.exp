@@ -15,7 +15,6 @@
 
 # This file is part of the GDB testsuite.  It tests exercises PR 18833.
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi2"
 
 require allow_python_tests

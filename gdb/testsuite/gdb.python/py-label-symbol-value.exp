@@ -16,7 +16,6 @@
 # Check that GDB handles the user asking for the value of a label
 # symbol (i.e. a symbol for a goto label).
 
-load_lib gdb-python.exp
 require allow_python_tests
 standard_testfile
 

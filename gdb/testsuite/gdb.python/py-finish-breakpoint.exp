@@ -18,8 +18,6 @@
 
 require allow_shlib_tests allow_python_tests
 
-load_lib gdb-python.exp
-
 set libfile "py-events-shlib"
 set libsrc  $srcdir/$subdir/$libfile.c
 set lib_sl  [standard_output_file $libfile-nodebug.so]

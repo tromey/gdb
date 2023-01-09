@@ -25,8 +25,6 @@
 # 13     12     0x00000000004003f2
 # 14     13     0x00000000004003f4 Y
 
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 

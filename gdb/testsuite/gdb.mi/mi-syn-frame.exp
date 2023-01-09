@@ -21,7 +21,6 @@ if [target_info exists gdb,nosignals] {
     return
 }
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 set any "\[^\"\]+"
 

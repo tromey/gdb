@@ -21,8 +21,6 @@
 #
 # This test is only meaningful for standard remote connections.
 
-load_lib gdbserver-support.exp
-
 standard_testfile
 
 require allow_gdbserver_tests

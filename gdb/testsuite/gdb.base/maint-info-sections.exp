@@ -16,8 +16,6 @@
 # Test just for the 'maintenance info sections' command and the
 # 'maintenance info target-sections' command.
 
-load_lib completion-support.exp
-
 standard_testfile break.c break1.c
 
 if {[prepare_for_testing "failed to prepare" $testfile \

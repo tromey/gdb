@@ -17,8 +17,6 @@
 # executable, then tries to load the executable using the 'file'
 # command.  We expect to see an error from the DWARF parser.
 
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use
 # gas.
 require dwarf2_support

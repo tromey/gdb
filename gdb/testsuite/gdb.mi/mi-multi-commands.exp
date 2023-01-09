@@ -25,7 +25,6 @@
 # first command gets progressively bigger.  We check that gdb
 # correctly sees both commands.
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 # Start gdb, passing ARGS to mi_gdb_start.  Then run a series of tests

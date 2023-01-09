@@ -20,8 +20,6 @@
 # precisely, the crash was happening when trying to compute the full name of the
 # subprogram.
 
-load_lib dwarf.exp
-
 require dwarf2_support
 
 standard_testfile main.c .S

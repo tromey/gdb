@@ -12,8 +12,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-load_lib dwarf.exp
-
 # Test multiple location breakpoints vs. prologue analysis on -O2 -g code.
 # when the first statement of a function is an inlined function GDB could
 # crash.  Map of this testcase:

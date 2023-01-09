@@ -16,8 +16,6 @@
 # This file is part of the GDB testsuite.
 # It tests GDB provided ports.
 
-load_lib gdb-guile.exp
-
 require allow_guile_tests
 
 standard_testfile

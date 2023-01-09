@@ -15,8 +15,6 @@
 
 # Test task-specific watchpoints.
 
-load_lib "ada.exp"
-
 require allow_ada_tests
 
 require allow_hw_watchpoint_tests

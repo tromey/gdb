@@ -15,7 +15,6 @@
 
 # Test CLI output styling for Rust.
 
-load_lib rust-support.exp
 require allow_rust_tests
 
 save_vars { env(TERM) } {

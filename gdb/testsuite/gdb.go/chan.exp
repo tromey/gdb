@@ -18,8 +18,6 @@
 # Basic channel tests.
 # This is very much a work-in-progress.
 
-load_lib "go.exp"
-
 require allow_go_tests support_go_compile
 
 standard_testfile .go

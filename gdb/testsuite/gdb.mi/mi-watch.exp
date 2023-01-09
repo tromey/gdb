@@ -28,7 +28,6 @@
 
 set allow_hw_watchpoint_tests_p [allow_hw_watchpoint_tests]
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 gdb_exit

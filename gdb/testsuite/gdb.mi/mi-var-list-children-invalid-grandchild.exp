@@ -16,7 +16,6 @@
 # This is a regression test for bug 17416
 # https://sourceware.org/bugzilla/show_bug.cgi?id=17416
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 gdb_exit

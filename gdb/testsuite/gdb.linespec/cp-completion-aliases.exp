@@ -16,8 +16,6 @@
 # This file tests GDB's ability to remove symbol aliases from the
 # completion list in C++.
 
-load_lib completion-support.exp
-
 standard_testfile .cc
 
 if {[prepare_for_testing "failed to prepare" $testfile $srcfile {debug}]} {

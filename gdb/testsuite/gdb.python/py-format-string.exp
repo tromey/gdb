@@ -16,8 +16,6 @@
 # This file is part of the GDB testsuite.  It tests the
 # gdb.Value.format_string () method.
 
-load_lib gdb-python.exp
-
 require allow_python_tests
 
 standard_testfile

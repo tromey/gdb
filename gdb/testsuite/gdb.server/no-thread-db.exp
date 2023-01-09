@@ -20,8 +20,6 @@
 # Test gdbserver to handle qGetTLSAddr requests gracefully in case
 # libthread_db could not be loaded.
 
-load_lib gdbserver-support.exp
-
 standard_testfile
 set unresolvable_thread_db_path "/foo/bar"
 

@@ -23,8 +23,6 @@
 # SKIP_STEP_COUNT: the number of single steps GDB performs
 # SKIP_DIRECTIVE_COUNT: the number of skip directives to create
 
-load_lib perftest.exp
-
 require allow_perf_tests
 
 standard_testfile .cc skip-funcs.cc

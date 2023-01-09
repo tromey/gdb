@@ -16,8 +16,6 @@
 # This file tests GDB's handling of 'set print max-depth' for nested
 # fortran types.
 
-load_lib "fortran.exp"
-
 require allow_fortran_tests
 
 standard_testfile .f90

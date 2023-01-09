@@ -13,8 +13,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-load_lib libgloss.exp
-
 set pascal_init_done 0
 
 # This procedure looks for a suitable pascal compiler

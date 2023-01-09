@@ -18,8 +18,6 @@
 # Test basic builtin types.
 # NOTE: The tests here intentionally do not require a go compiler.
 
-load_lib "go.exp"
-
 require allow_go_tests
 
 proc test_integer_literal_types_accepted {} {

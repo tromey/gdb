@@ -16,8 +16,6 @@
 # Check that an out-of-range DW_LNE_end_sequence is removed from the
 # line table.
 
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 

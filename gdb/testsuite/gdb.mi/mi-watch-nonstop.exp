@@ -15,7 +15,6 @@
 
 require allow_hw_watchpoint_tests support_displaced_stepping
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 proc mi_nonstop_resume { command test } {

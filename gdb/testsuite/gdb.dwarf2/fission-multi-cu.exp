@@ -16,8 +16,6 @@
 # This test checks that GDB can load DWARF information from two
 # separate split .DWO files.
 
-load_lib dwarf.exp
-
 # We run objcopy locally to split out the .dwo file.
 if [is_remote host] {
     return 0

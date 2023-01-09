@@ -15,8 +15,6 @@
 
 # This file was written by Rob Savoye. (rob@cygnus.com)
 
-load_lib selftest-support.exp
-
 proc test_with_self { } {
     global gdb_prompt
     global decimal

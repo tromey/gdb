@@ -15,8 +15,6 @@
 
 # Test "info inferiors" and "info connections" with multiple targets.
 
-load_lib gdb-python.exp
-
 source $srcdir/$subdir/multi-target.exp.tcl
 
 if {![multi_target_prepare]} {

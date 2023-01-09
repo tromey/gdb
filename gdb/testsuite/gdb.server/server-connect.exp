@@ -18,8 +18,6 @@
 # Test multiple types of connection (IPv4, IPv6, TCP, UDP) and make
 # sure both gdbserver and GDB work.
 
-load_lib gdbserver-support.exp
-
 standard_testfile normal.c
 
 require allow_gdbserver_tests

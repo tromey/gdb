@@ -19,8 +19,6 @@
 #   Negative DW_AT_data_member_location
 #   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=101378
 
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 

@@ -20,8 +20,6 @@
 # single-threaded programs, even though they'd list the main thread in
 # response to qfThreadInfo/qsThreadInfo.  See PR remote/22597.
 
-load_lib gdbserver-support.exp
-
 require allow_gdbserver_tests
 
 standard_testfile

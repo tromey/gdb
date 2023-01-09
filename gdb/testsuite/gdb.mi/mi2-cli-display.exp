@@ -15,7 +15,6 @@
 
 # Ensure that CLI "display"s aren't double-emitted in MI mode.
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi2"
 
 if {[mi_gdb_start]} {

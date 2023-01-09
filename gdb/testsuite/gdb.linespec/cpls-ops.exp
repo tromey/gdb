@@ -15,8 +15,6 @@
 
 # This file is part of the gdb testsuite.
 
-load_lib completion-support.exp
-
 standard_testfile cpls-ops.cc
 
 if {[prepare_for_testing "failed to prepare" $testfile \

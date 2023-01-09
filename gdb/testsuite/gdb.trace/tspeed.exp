@@ -13,8 +13,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-load_lib "trace-support.exp"
-
 require allow_shlib_tests
 
 # Do not run if gdbsever debug is enabled - the output file is many Gb.

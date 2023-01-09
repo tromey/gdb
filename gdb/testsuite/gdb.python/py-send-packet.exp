@@ -19,9 +19,6 @@
 # thread list using gdb.TargetConnection.send_packet, then we compare
 # the results to the thread list using the standard API calls.
 
-load_lib gdb-python.exp
-load_lib gdbserver-support.exp
-
 standard_testfile
 
 require allow_gdbserver_tests allow_python_tests

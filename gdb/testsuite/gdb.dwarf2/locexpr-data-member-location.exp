@@ -51,8 +51,6 @@
 # This test can't be run on targets lacking shared library support.
 require allow_shlib_tests
 
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 

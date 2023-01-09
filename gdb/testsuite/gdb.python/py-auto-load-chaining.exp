@@ -17,8 +17,6 @@
 # auto-load script loads a second objfile, which triggers the
 # execution of another (nested) objfile script.
 
-load_lib gdb-python.exp
-
 require allow_python_tests
 
 standard_testfile .c -f1.c -f2.c

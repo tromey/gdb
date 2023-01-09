@@ -15,8 +15,6 @@
 
 # Basic DAP test.
 
-load_lib dap-support.exp
-
 standard_testfile
 
 if {[build_executable ${testfile}.exp $testfile] == -1} {

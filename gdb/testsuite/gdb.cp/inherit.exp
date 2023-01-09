@@ -22,8 +22,6 @@ set vhn "\\$\[0-9\]+"
 
 require allow_cplus_tests
 
-load_lib "cp-support.exp"
-
 standard_testfile misc.cc
 
 if {[prepare_for_testing "failed to prepare" $testfile $srcfile  {debug c++}]} {

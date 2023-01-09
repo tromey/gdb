@@ -15,8 +15,6 @@
 
 # Test floating-point literal extension.
 
-load_lib "ada.exp"
-
 require allow_ada_tests
 
 standard_ada_testfile prog

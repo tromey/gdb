@@ -16,8 +16,6 @@
 # Test basic builtin types.
 # NOTE: The tests here intentionally do not require a D compiler.
 
-load_lib "d-support.exp"
-
 require allow_d_tests
 
 proc test_d_integer_literals {} {

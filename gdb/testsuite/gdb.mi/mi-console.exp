@@ -15,7 +15,6 @@
 
 # Test inferior console output, with MI.
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 #

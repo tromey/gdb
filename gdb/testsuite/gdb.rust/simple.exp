@@ -15,7 +15,6 @@
 
 # Test expression parsing and evaluation that requires Rust compiler.
 
-load_lib rust-support.exp
 require allow_rust_tests
 
 standard_testfile .rs
@@ -385,7 +384,6 @@ gdb_test "ptype empty_enum_value" "simple::EmptyEnum.*"
 gdb_test "print empty_enum_value.0" ""
 gdb_test "print empty_enum_value.something" ""
 
-load_lib gdb-python.exp
 if {![allow_python_tests]} {
     return
 }

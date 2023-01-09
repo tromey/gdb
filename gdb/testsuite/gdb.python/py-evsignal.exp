@@ -20,8 +20,6 @@ if {[target_info gdb_protocol] == "remote"
     return -1
 }
 
-load_lib gdb-python.exp
-
 require allow_python_tests
 
 standard_testfile py-evthreads.c

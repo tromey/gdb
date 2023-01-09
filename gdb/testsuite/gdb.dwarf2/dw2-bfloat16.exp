@@ -16,8 +16,6 @@
 # This test checks if GDB can identify bfloat16 and IEEE half float types and
 # print them correctly.
 #
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 

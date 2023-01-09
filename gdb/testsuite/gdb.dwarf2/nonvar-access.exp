@@ -17,8 +17,6 @@
 # optimized to a constant DWARF location expression and/or
 # partially/fully optimized out.
 
-load_lib dwarf.exp
-
 require dwarf2_support
 
 standard_testfile main.c -dw.S

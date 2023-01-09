@@ -17,8 +17,6 @@
 # particular the test uses register- and memory locations as well as
 # composite locations with register- and memory pieces.
 
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 

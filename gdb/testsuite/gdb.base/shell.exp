@@ -15,8 +15,6 @@
 
 # Test that the "shell", "!", "|" and "pipe" commands work.
 
-load_lib completion-support.exp
-
 gdb_exit
 gdb_start
 

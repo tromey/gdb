@@ -15,7 +15,6 @@
 
 # Test a TUI window implemented in Python.
 
-load_lib gdb-python.exp
 require allow_python_tests allow_tui_tests
 tuiterm_env
 

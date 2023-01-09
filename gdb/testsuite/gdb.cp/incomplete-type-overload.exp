@@ -18,8 +18,6 @@
 # This test intends to check the error message that GDB emits when unable
 # to determine the correct overloaded function due to incomplete types.
 
-load_lib dwarf.exp
-
 require dwarf2_support allow_cplus_tests
 
 standard_testfile .cc .S

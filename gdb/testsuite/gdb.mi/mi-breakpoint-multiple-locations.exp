@@ -15,7 +15,6 @@
 
 # Tests various things related to breakpoints with multiple locations.
 
-load_lib mi-support.exp
 standard_testfile .cc
 
 if {[gdb_compile "$srcdir/$subdir/$srcfile" $binfile executable {debug c++}] != "" } {

@@ -17,8 +17,6 @@
 
 # Test restarting programs with the R packet.
 
-load_lib gdbserver-support.exp
-
 standard_testfile server.c
 
 require allow_gdbserver_tests

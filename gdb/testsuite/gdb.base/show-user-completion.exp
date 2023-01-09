@@ -15,8 +15,6 @@
 
 # Test tab-completion for the 'show user' command.
 
-load_lib completion-support.exp
-
 # This test does not require any file to be loaded.
 clean_restart
 

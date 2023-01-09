@@ -17,7 +17,6 @@
 # test gdb/680
 #
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 gdb_exit

@@ -21,8 +21,6 @@
 # Test that GDB is still able to print macros in clang versions that
 # have this bug.
 
-load_lib dwarf.exp
-
 require dwarf2_support
 
 standard_testfile .c .S

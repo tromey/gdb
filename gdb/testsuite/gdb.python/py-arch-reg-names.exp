@@ -15,7 +15,6 @@
 
 # Check the gdb.Architecture.registers functionality.
 
-load_lib gdb-python.exp
 require allow_python_tests
 standard_testfile py-arch.c
 

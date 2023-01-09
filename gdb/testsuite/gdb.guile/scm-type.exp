@@ -16,8 +16,6 @@
 # This file is part of the GDB testsuite.
 # It tests the mechanism of exposing types to Guile.
 
-load_lib gdb-guile.exp
-
 standard_testfile
 
 # Build inferior to language specification.

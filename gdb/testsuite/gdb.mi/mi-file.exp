@@ -15,7 +15,6 @@
 
 # Test -file-list-exec-source-files.
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 gdb_exit

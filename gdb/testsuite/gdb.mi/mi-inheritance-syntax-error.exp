@@ -15,7 +15,6 @@
 
 require allow_cplus_tests
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 gdb_exit

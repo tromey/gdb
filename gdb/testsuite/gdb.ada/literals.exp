@@ -15,8 +15,6 @@
 
 # Test some literal syntax.
 
-load_lib "ada.exp"
-
 require allow_ada_tests
 
 clean_restart

@@ -16,8 +16,6 @@
 # Check that GDB is able to print unconstrained variables and discriminated
 # records before their initialization.
 
-load_lib "ada.exp"
-
 require allow_ada_tests
 
 standard_ada_testfile parse

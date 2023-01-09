@@ -28,8 +28,6 @@ if { [is_remote target] || [is_remote host] } {
     return 0
 }
 
-load_lib gdbserver-support.exp
-
 standard_testfile
 
 require allow_gdbserver_tests

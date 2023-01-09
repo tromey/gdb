@@ -23,7 +23,6 @@
 # We can prevent timeouts due to the latter using exp_continue, but for
 # the former that doesn't work.  There we use with_timeout_factor instead.
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 standard_testfile mi-sym-info-1.c mi-sym-info-2.c

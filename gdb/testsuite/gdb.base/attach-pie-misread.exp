@@ -19,8 +19,6 @@ if { [is_remote host] || ![istarget *-linux*] } {
     return
 }
 
-load_lib prelink-support.exp
-
 standard_testfile .c
 set genfile [standard_output_file ${testfile}-gen.h]
 set executable $testfile

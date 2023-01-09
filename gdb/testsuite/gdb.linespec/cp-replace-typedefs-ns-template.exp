@@ -17,8 +17,6 @@
 # when setting breakpoints, particularly around templates in
 # namespaces.
 
-load_lib completion-support.exp
-
 standard_testfile .cc
 
 if {[prepare_for_testing "failed to prepare" $testfile $srcfile \

@@ -17,8 +17,6 @@
 #
 # Tests OpenCL function calling conventions.
 
-load_lib opencl.exp
-
 require allow_opencl_tests
 
 set testfile "callfuncs"

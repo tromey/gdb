@@ -16,8 +16,6 @@
 # Check that the DWARF reader works when a DW_AT_specification refers
 # into a type hierarchy that is marked as a declaration.
 
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 

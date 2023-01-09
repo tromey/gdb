@@ -16,8 +16,6 @@
 # Setup a main without line number info, and verify that attempting to
 # set a breakpoint on a line number doesn't crash gdb.
 
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 

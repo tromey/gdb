@@ -17,8 +17,6 @@
 
 require allow_fortran_tests
 
-load_lib fortran.exp
-
 # Build up the expected output for each array.
 set a9p9o "(9, 9, 9, 9, 9, 9)"
 set a1p   "(1, 1, 1, 1, 1)"

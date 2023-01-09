@@ -17,8 +17,6 @@
 # redirected to the log files.
 require !gdb_debug_enabled
 
-load_lib completion-support.exp
-
 set do_xml_test [allow_xml_test]
 
 standard_testfile

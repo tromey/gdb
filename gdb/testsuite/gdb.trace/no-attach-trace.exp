@@ -17,8 +17,6 @@
 
 # Test that trying to trace without a process attached fails properly.
 
-load_lib trace-support.exp
-
 standard_testfile
 
 if {[prepare_for_testing "failed to prepare" $testfile $srcfile debug]} {

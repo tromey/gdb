@@ -24,8 +24,6 @@
 # This test recreates the exact combination of line table entries that
 # were seen in the original test using the Dejagnu DWARF compiler.
 
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 

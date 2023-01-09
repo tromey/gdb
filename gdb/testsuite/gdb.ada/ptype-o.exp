@@ -15,8 +15,6 @@
 
 # Test that ptype/o of a dynamic type does not crash.
 
-load_lib "ada.exp"
-
 require allow_ada_tests
 
 standard_ada_testfile prog

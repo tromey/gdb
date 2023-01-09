@@ -18,8 +18,6 @@
 # Generate binaries imitating different ways source file paths can be passed to
 # compilers.  Test printing macros from those binaries.
 
-load_lib dwarf.exp
-
 require dwarf2_support
 
 standard_testfile .c

@@ -20,8 +20,6 @@
 # ability to generate synthetic trace files directly, and the tfile
 # target is available to all GDB configs.
 
-load_lib "trace-support.exp"
-
 if {![is_remote host] && ![is_remote target]} {
     set tfile_basic [standard_output_file tfile-basic.tf]
     set tfile_error [standard_output_file tfile-error.tf]

@@ -16,8 +16,6 @@
 # Regression test for a crash that would happen when setting a
 # breakpoint condition that used an array attribute.
 
-load_lib "ada.exp"
-
 require allow_ada_tests
 
 standard_ada_testfile length_cond

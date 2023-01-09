@@ -17,7 +17,6 @@
 # added for testing the -data-write-memory-bytes MI command enhancements
 #
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 standard_testfile "mi-read-memory"

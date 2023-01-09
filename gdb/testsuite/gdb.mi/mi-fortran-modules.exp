@@ -17,8 +17,6 @@
 
 require allow_fortran_tests
 
-load_lib fortran.exp
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 standard_testfile "mi-fortran-modules.f90" "mi-fortran-modules-2.f90"

@@ -15,9 +15,6 @@
 
 # This file is part of the gdb testsuite.
 
-load_lib completion-support.exp
-load_lib data-structures.exp
-
 standard_testfile cpls.cc cpls2.cc cpls-hyphen.cc
 
 if {[prepare_for_testing "failed to prepare" $testfile \

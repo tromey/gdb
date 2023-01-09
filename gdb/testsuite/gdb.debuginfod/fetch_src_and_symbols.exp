@@ -17,9 +17,6 @@
 
 standard_testfile
 
-load_lib dwarf.exp
-load_lib debuginfod-support.exp
-
 require allow_debuginfod_tests
 
 set sourcetmp [standard_output_file tmp-${srcfile}]

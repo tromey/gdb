@@ -16,8 +16,6 @@
 # This file is part of the GDB testsuite.  It tests the mechanism
 # for defining new GDB commands in Scheme.
 
-load_lib gdb-guile.exp
-
 require allow_guile_tests
 
 standard_testfile

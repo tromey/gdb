@@ -17,8 +17,6 @@
 
 # Test ABI tag support in linespecs.
 
-load_lib completion-support.exp
-
 standard_testfile cpls-abi-tag.cc
 
 if {[prepare_for_testing "failed to prepare" $testfile \

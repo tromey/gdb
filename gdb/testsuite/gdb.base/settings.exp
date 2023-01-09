@@ -19,8 +19,6 @@
 # "maintenance test-settings set/show xxx" subcommands to exercise
 # TAB-completion and setting processing.
 
-load_lib completion-support.exp
-
 standard_testfile .c
 
 if {[build_executable "failed to prepare" $testfile $srcfile debug]} {

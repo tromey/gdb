@@ -15,8 +15,6 @@
 
 # This file is part of the GDB testsuite.
 
-load_lib gdb-python.exp
-
 require allow_shlib_tests allow_python_tests
 
 standard_testfile

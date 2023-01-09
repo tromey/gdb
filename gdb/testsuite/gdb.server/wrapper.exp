@@ -17,8 +17,6 @@
 
 # Test --wrapper option of GDBserver.
 
-load_lib gdbserver-support.exp
-
 standard_testfile
 
 require allow_gdbserver_tests

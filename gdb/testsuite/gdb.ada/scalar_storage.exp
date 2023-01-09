@@ -16,8 +16,6 @@
 # Test that range types with scalar storage order are handled
 # properly.
 
-load_lib "ada.exp"
-
 require allow_ada_tests
 
 standard_ada_testfile storage

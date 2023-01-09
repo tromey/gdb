@@ -17,8 +17,6 @@
 
 # Test setup routines that work with the MI interpreter.
 
-load_lib gdb-utils.exp
-
 # The variable mi_gdb_prompt is a regexp which matches the gdb mi prompt.
 # Set it if it is not already set.
 global mi_gdb_prompt

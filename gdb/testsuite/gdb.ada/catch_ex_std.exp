@@ -15,8 +15,6 @@
 
 require allow_shlib_tests
 
-load_lib "ada.exp"
-
 require allow_ada_tests
 
 standard_ada_testfile foo

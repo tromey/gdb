@@ -16,8 +16,6 @@
 # Note that the testcase gdb.opt/inline-break.exp largely mirrors
 # this testcase, and should be updated if this testcase is changed.
 
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 

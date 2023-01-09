@@ -16,8 +16,6 @@
 # Check that 'Last correctly results in an unsigned integer in when
 # the underlying type is unsigned.
 
-load_lib "ada.exp"
-
 require allow_ada_tests
 
 standard_ada_testfile main

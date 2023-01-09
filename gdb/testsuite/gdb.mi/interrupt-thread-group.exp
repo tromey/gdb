@@ -18,7 +18,6 @@
 # Run two inferiors, try interrupting them both with --exec-interrupt +
 # --thread-group.
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 standard_testfile .c

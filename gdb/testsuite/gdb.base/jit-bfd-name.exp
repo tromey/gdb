@@ -22,8 +22,6 @@
 
 require allow_shlib_tests
 
-load_lib jit-elf-helpers.exp
-
 # The main code that loads and registers JIT objects.
 set main_basename "jit-elf-main"
 set main_srcfile ${srcdir}/${subdir}/${main_basename}.c

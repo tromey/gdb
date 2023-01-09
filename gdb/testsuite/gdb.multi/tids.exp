@@ -15,8 +15,6 @@
 
 # Test thread ID parsing and display.
 
-load_lib gdb-python.exp
-
 standard_testfile
 
 # Multiple inferiors are needed, therefore both native and extended

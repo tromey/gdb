@@ -13,8 +13,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-load_lib trace-support.exp
-
 standard_testfile actions.c
 
 require gdb_trace_common_supports_arch
@@ -34,7 +32,6 @@ if ![gdb_target_supports_trace] {
 
 gdb_exit
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 mi_clean_restart $binfile

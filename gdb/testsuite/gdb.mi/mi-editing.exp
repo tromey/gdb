@@ -20,7 +20,6 @@
 # readline: readline_callback_read_char() called with no handler!
 # Aborted (core dumped)
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 gdb_exit

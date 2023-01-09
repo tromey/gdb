@@ -24,8 +24,6 @@
 # table has more lists than the first one and we try to read a high index in
 # the second table.
 
-load_lib dwarf.exp
-
 require dwarf2_support
 
 # Test with 32-bit and 64-bit DWARF.

@@ -17,8 +17,6 @@
 # There is one parameter in this test:
 #  - SINGLE_STEP_COUNT is the number of single step GDB performs.
 
-load_lib perftest.exp
-
 require allow_perf_tests
 
 standard_testfile .c

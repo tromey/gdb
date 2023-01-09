@@ -23,7 +23,6 @@
 # - forking the child failing and sending output to the right inferior
 #   terminal, vs the child not failing to start.
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 # The purpose of this testcase is to test the -exec-run command. If we

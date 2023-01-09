@@ -16,9 +16,6 @@
 # PR gdb/21855 concerns a crash in "finish" where the function's
 # return type is a typedef of void.
 
-load_lib dwarf.exp
-load_lib gdb-python.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 

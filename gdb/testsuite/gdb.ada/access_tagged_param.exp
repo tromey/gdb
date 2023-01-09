@@ -16,8 +16,6 @@
 # Check that we can print values of parameters of type 'pointer
 # (access) to tagged type'.  See PR gdb/22670.
 
-load_lib "ada.exp"
-
 require allow_ada_tests
 
 standard_ada_testfile foo

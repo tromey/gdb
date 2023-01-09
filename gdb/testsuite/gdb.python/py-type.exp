@@ -16,8 +16,6 @@
 # This file is part of the GDB testsuite.  It tests the mechanism
 # of exposing types to Python.
 
-load_lib gdb-python.exp
-
 standard_testfile
 
 # Build inferior to language specification.

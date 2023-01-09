@@ -17,8 +17,6 @@
 
 # Basic tests.
 
-load_lib "go.exp"
-
 require allow_go_tests support_go_compile
 
 standard_testfile .go

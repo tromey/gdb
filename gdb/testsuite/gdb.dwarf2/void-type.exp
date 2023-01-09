@@ -24,8 +24,6 @@
 # This 'void' integer type would cause GDB to crash in some cases, one
 # that was seen was when using 'finish' to leave the void function.
 
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 

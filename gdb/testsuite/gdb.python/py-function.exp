@@ -16,8 +16,6 @@
 # This file is part of the GDB testsuite.  It tests the mechanism
 # exposing convenience functions to Python.
 
-load_lib gdb-python.exp
-
 require allow_python_tests
 
 # Start with a fresh gdb.

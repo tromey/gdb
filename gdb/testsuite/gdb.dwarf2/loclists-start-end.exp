@@ -15,8 +15,6 @@
 
 # Test support for DW_LLE_start_end (PR symtab/27999).
 
-load_lib dwarf.exp
-
 require dwarf2_support
 
 # Test with 32-bit and 64-bit DWARF.

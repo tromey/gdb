@@ -16,8 +16,6 @@
 # Regression test for the situation where aranges covers an address
 # but the CU does not.
 
-load_lib "dwarf.exp"
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 

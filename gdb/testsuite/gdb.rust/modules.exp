@@ -15,7 +15,6 @@
 
 # Test name lookup.
 
-load_lib rust-support.exp
 require allow_rust_tests
 
 standard_testfile .rs

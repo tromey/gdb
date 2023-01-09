@@ -18,8 +18,6 @@
 # (shebs@cygnus.com).
 # Adapted to pascal by Pierre Muller
 
-load_lib "pascal.exp"
-
 proc test_integer_literal_types_accepted {} {
     global gdb_prompt
 

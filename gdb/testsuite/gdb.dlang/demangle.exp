@@ -17,8 +17,6 @@
 # require a D compiler, it simply calls the internal demangler with
 # synthesized strings and tests the results.
 
-load_lib "d-support.exp"
-
 require allow_d_tests
 
 ### Utility function for test_demangling and test_demangling_exact.

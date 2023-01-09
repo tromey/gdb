@@ -17,8 +17,6 @@
 
 # Test the "default-args" arguments and completion of alias command.
 
-load_lib completion-support.exp
-
 standard_testfile .c
 
 if {[build_executable "failed to prepare" $testfile $srcfile debug]} {

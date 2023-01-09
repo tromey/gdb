@@ -16,8 +16,6 @@
 # This file is part of the GDB testsuite.  It tests the debug methods
 # feature in the Python extension language.
 
-load_lib gdb-python.exp
-
 require allow_cplus_tests allow_python_tests
 
 standard_testfile py-xmethods.cc

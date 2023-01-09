@@ -16,8 +16,6 @@
 # This file is part of the GDB testsuite.
 # It tests basic Guile features.
 
-load_lib gdb-guile.exp
-
 # Start with a fresh gdb.
 gdb_exit
 gdb_start

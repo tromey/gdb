@@ -14,8 +14,6 @@
 
 require is_amd64_regs_target
 
-load_lib "trace-support.exp"
-
 standard_testfile
 
 if {[prepare_for_testing "failed to prepare" $testfile $srcfile \

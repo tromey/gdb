@@ -18,8 +18,6 @@
 #
 # See https://bugzilla.redhat.com/show_bug.cgi?id=1638798 .
 
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF.
 require dwarf2_support
 

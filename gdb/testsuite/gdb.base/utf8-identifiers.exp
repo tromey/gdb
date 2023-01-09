@@ -19,8 +19,6 @@
 
 # Test GDB's support for UTF-8 C/C++ identifiers.
 
-load_lib completion-support.exp
-
 standard_testfile
 
 # Enable basic use of UTF-8.  LC_ALL gets reset for each testfile.

@@ -16,8 +16,6 @@
 # This file is part of the GDB testsuite.
 # It tests the mechanism exposing c++ values to Guile.
 
-load_lib gdb-guile.exp
-
 require allow_cplus_tests allow_guile_tests
 
 standard_testfile .cc

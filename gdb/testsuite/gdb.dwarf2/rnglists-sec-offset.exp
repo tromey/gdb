@@ -16,8 +16,6 @@
 # Test DW_AT_ranges attributes referencing the .debug_rnglists section using the
 # DW_FORM_sec_offset form.
 
-load_lib dwarf.exp
-
 require dwarf2_support
 
 foreach_with_prefix is_64 {false true} {

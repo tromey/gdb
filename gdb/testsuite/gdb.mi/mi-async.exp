@@ -33,8 +33,6 @@ require !use_gdb_stub
 set saved_gdbflags $GDBFLAGS
 set GDBFLAGS [concat $GDBFLAGS " -ex \"set mi-async on\""]
 
-load_lib mi-support.exp
-
 gdb_exit
 if [mi_gdb_start] {
     return

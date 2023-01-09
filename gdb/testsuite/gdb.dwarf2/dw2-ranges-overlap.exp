@@ -12,8 +12,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-load_lib dwarf.exp
-
 # The function foo is encapsulated by two functions from CU
 # $srcfile (main and bar), but the debug info does not describe foo, so
 # foo should not be seen as part of CU $srcfile.

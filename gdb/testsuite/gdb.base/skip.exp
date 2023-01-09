@@ -16,8 +16,6 @@
 # This file was written by Justin Lebar. (justin.lebar@gmail.com)
 # And further hacked on by Doug Evans. (dje@google.com)
 
-load_lib completion-support.exp
-
 standard_testfile
 
 if { [prepare_for_testing "failed to prepare" "skip" \

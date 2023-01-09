@@ -17,8 +17,6 @@
 # structures using structures as keys and values, it then tests how
 # 'set print max-depth' affects this printing.
 
-load_lib gdb-python.exp
-
 require allow_python_tests
 
 standard_testfile

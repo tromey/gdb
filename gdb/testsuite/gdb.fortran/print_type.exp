@@ -17,8 +17,6 @@
 # when not associated.
 
 standard_testfile "pointers.f90"
-load_lib fortran.exp
-
 require allow_fortran_tests
 
 if { [prepare_for_testing ${testfile}.exp ${testfile} ${srcfile} \

@@ -32,8 +32,6 @@
 # will get a test timeout.  With this issue fixed the expressions are
 # never executed and the test completes as we'd expect.
 
-load_lib dwarf.exp
-
 require dwarf2_support
 
 standard_testfile .c -dw.S

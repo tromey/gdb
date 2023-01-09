@@ -29,7 +29,6 @@
 #  *running,thread-id="all"
 #  ...
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 # Run either the multi-threaded or the single-threaded variant of the

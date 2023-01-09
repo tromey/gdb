@@ -17,8 +17,6 @@
 # calls an inferior function by hand, triggering a Use-after-Free bug
 # (PR gdb/28856).
 
-load_lib gdb-python.exp
-
 require allow_python_tests
 
 standard_testfile

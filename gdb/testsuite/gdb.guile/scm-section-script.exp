@@ -28,8 +28,6 @@ if {![istarget *-*-linux*]
     return
 }
 
-load_lib gdb-guile.exp
-
 require allow_guile_tests
 
 standard_testfile

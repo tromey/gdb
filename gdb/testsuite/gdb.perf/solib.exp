@@ -22,8 +22,6 @@
 #    libraries.  If it is set, program dlclose shared libraries in a
 #    reversed order of loading.
 
-load_lib perftest.exp
-
 require allow_perf_tests
 
 standard_testfile .c

@@ -12,8 +12,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-load_lib dwarf.exp
-
 # Test DW_TAG_compile_unit with no children and with neither DW_AT_low_pc nor
 # DW_AT_high_pc but with DW_AT_ranges instead.
 

@@ -171,8 +171,6 @@ if { ![readline_is_used] } {
 # The bulk of this test script pre-dates the completion-support
 # library, and should probably (where possible) be converted.
 # However, for now, new tests are being added using this library.
-load_lib completion-support.exp
-
 set test "complete 'hfgfh'"
 send_gdb "hfgfh\t"
 gdb_test_multiple "" "$test" {

@@ -15,8 +15,6 @@
 
 # Test of disconnected-tracing.
 
-load_lib "trace-support.exp"
-
 standard_testfile
 set executable $testfile
 set expfile $testfile.exp

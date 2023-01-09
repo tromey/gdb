@@ -12,8 +12,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-load_lib dwarf.exp
-
 # Test printint string variables that are optimized out because they
 # are unreferenced in code, and whose contents appear in .debug_str.
 

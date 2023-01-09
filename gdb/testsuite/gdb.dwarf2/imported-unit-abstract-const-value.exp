@@ -16,8 +16,6 @@
 # Test that a concrete var importing an abstract var using
 # DW_AT_abstract_origin inherits the DW_AT_const_value attribute.
 
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 

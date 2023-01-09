@@ -16,7 +16,6 @@
 # Verify that when "-exec-step N" trips on a breakpoint, we get a
 # *stop event with reason breakpoint-hit.
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 standard_testfile

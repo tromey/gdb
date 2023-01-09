@@ -16,8 +16,6 @@
 # This file tests GDB's handling of some of the builtin logical and
 # arithmetic dot operators in Fortran, for example `.AND.` and `.LE.`.
 
-load_lib "fortran.exp"
-
 require allow_fortran_tests
 
 proc test_dot_operations {} {

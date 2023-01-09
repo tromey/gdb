@@ -12,8 +12,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-load_lib dwarf.exp
-
 # Minimal DWARF-2 unit test
 
 # This test can only be run on targets which support DWARF-2 and use gas.

@@ -17,8 +17,6 @@
 
 require allow_fortran_tests
 
-load_lib fortran.exp
-
 # Build up the expected output for each array.
 set n0    {(-2)}
 set n1    {(-1)}

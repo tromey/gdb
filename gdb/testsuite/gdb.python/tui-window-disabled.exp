@@ -21,7 +21,6 @@
 # it was possible that GDB would try to redraw the tui window even
 # though the tui should be disabled.
 
-load_lib gdb-python.exp
 require allow_tui_tests
 tuiterm_env
 

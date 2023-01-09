@@ -18,8 +18,6 @@
 # coming from .debug_addr, will still need to add the base offset in case
 # we're debugging a PIE executable.
 
-load_lib dwarf.exp
-
 # We run objcopy locally to split out the .dwo file.
 if [is_remote host] {
     return 0

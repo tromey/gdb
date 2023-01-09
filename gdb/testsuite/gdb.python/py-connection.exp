@@ -18,8 +18,6 @@
 # gdb.python/py-inferior.exp, this file just covers some edge cases
 # that are not tested in other places.
 
-load_lib gdb-python.exp
-
 require allow_python_tests
 
 standard_testfile

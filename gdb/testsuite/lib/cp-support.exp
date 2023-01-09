@@ -15,8 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-load_lib "data-structures.exp"
-
 # Controls whether detailed logging for cp_test_ptype_class is enabled.
 # By default, it is not.  Enable it to assist with troubleshooting
 # failed cp_test_ptype_class tests.  [Users can simply add the statement

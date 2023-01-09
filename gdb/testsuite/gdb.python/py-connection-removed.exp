@@ -23,8 +23,6 @@
 # GDB might be getting the reference counting on target_ops objects
 # wrong.
 
-load_lib gdb-python.exp
-
 require allow_python_tests
 
 standard_testfile py-connection.c

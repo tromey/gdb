@@ -17,8 +17,6 @@
 # into the GDB build directory.  This script is intended for use by
 # developers to make debugging GDB easier.
 
-load_lib selftest-support.exp
-
 if [target_info exists gdb,noinferiorio] {
     verbose "Skipping because of no inferiorio capabilities."
     return

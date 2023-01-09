@@ -19,8 +19,6 @@
 #  - BACKTRACE_DEPTH is the number of innermost frames that command
 #    'bt' prints.
 
-load_lib perftest.exp
-
 require allow_perf_tests
 
 standard_testfile .c

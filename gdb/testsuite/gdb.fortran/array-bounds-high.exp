@@ -20,8 +20,6 @@ require allow_fortran_tests
 
 set testfile "array-bounds-high"
 standard_testfile .f90
-load_lib fortran.exp
-
 if {[prepare_for_testing $testfile.exp $testfile $srcfile {f90 debug}]} {
     return -1
 }

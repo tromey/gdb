@@ -17,8 +17,6 @@
 
 # Test various aspects of packages.
 
-load_lib "go.exp"
-
 require allow_go_tests support_go_compile
 
 standard_testfile package1.go package2.go

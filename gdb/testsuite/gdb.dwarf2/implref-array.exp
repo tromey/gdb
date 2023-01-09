@@ -16,10 +16,6 @@
 # Test a C++ reference marked with DW_OP_GNU_implicit_pointer.
 # The referenced value is a global array whose location is a DW_OP_addr.
 
-require allow_cplus_tests
-
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 

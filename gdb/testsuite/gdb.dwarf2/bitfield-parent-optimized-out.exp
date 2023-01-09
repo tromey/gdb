@@ -16,8 +16,6 @@
 # Test printing a bitfield of an optimized-out variable.  Regression
 # test for PR gdb/20295.
 
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 

@@ -16,7 +16,6 @@
 # Verify GDB/MI -complete in various scenarios. This test only tests
 # -complete command, not the correctness of completions.
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 standard_testfile .cc

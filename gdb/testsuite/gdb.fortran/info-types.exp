@@ -15,9 +15,6 @@
 
 # This file tests 'info types' for some Fortran types.
 
-load_lib "fortran.exp"
-load_lib "sym-info-cmds.exp"
-
 require allow_fortran_tests
 
 standard_testfile info-types.f90 info-types-2.f90

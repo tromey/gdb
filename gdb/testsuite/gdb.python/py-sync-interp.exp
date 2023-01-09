@@ -22,8 +22,6 @@ standard_testfile
 
 require can_spawn_for_attach allow_python_tests
 
-load_lib gdb-python.exp
-
 if { [prepare_for_testing "failed to prepare" ${testfile} ${srcfile}] } {
     return -1
 }

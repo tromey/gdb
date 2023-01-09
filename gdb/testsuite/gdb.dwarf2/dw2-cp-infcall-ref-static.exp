@@ -19,7 +19,6 @@
 # Still no C++ compiler is used.
 require allow_cplus_tests
 
-load_lib dwarf.exp
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 

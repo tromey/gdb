@@ -16,8 +16,6 @@
 # This file is part of the GDB testsuite.  It checks for memory leaks
 # associated with allocating and deallocation gdb.Inferior objects.
 
-load_lib gdb-python.exp
-
 standard_testfile
 
 save_vars { env(TERM) } {

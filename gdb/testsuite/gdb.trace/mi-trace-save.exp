@@ -17,8 +17,6 @@
 # mi-trace-frame-collected.exp), so this file currently only tests the error
 # cases of -trace-save.
 
-load_lib mi-support.exp
-
 mi_gdb_start
 
 # Test with the wrong number of arguments.

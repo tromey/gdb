@@ -21,8 +21,6 @@
 # ensuring that any attempt to dereference the pointer *will* throw an
 # error.
 
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 
@@ -163,8 +161,6 @@ proc do_console_test {} {
 # MI interpreter.
 
 proc do_mi_test {} {
-
-    load_lib mi-support.exp
     set MIFLAGS "-i=mi"
 
     global mi_gdb_prompt

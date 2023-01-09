@@ -15,8 +15,6 @@
 
 # This file is part of the gdb testsuite.
 
-load_lib completion-support.exp
-
 gdb_exit
 gdb_start
 

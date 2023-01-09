@@ -16,8 +16,6 @@
 
 # Test the Python free_objfile event.
 
-load_lib gdb-python.exp
-
 require allow_shlib_tests allow_python_tests
 
 if {[get_compiler_info]} {

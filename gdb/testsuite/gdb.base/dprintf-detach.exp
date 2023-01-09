@@ -18,8 +18,6 @@
 #
 # Related bug: https://sourceware.org/bugzilla/show_bug.cgi?id=17012
 
-load_lib gdbserver-support.exp
-
 # The test relies on "detach/attach".
 require !use_gdb_stub
 

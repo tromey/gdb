@@ -15,7 +15,6 @@
 
 # Test loading and unloading a core file.
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 require isnative

@@ -16,8 +16,6 @@
 # Test that GDB/MI commands preserve user selected context when
 # passed --thread and/or --frame.
 
-load_lib mi-support.exp
-
 standard_testfile
 
 if {[build_executable $testfile.exp $testfile ${srcfile} "debug pthreads"] == -1} {

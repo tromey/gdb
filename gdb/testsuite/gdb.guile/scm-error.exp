@@ -17,8 +17,6 @@
 
 set testfile "scm-error"
 
-load_lib gdb-guile.exp
-
 require allow_guile_tests
 
 # Start with a fresh gdb.

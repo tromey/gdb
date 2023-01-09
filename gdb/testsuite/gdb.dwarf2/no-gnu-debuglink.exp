@@ -15,8 +15,6 @@
 
 # Check that loading a file with a broken .gnu_debugaltlink doesn't crash gdb.
 
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 

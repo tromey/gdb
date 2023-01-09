@@ -434,6 +434,10 @@ readmore.so: lib/read1.c
 read1: read1.so expect-read1
 readmore: readmore.so expect-readmore
 
+TCLSH = tclsh
+lib/tclIndex:
+	cd $(srcdir) && $(TCLSH) make-tcl-index
+
 # Disable implicit make rules.
 include $(srcdir)/../disable-implicit-rules.mk
 include $(srcdir)/../silent-rules.mk

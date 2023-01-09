@@ -15,8 +15,6 @@
 
 # This test case is to test the speed of GDB when it is doing disassemble
 # some large functions in GDB.
-load_lib perftest.exp
-
 require allow_perf_tests
 
 global GDB

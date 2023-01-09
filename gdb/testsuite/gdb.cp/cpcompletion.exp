@@ -15,8 +15,6 @@
 
 # This file is part of the gdb testsuite.
 
-load_lib completion-support.exp
-
 # A helper procedure to test location completions restricted by
 # class.
 proc test_class_complete {class expr name matches} {

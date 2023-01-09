@@ -23,8 +23,6 @@
 # give a warning when the exit arrived that the remote needed to
 # include a thread-id, which was not correct.
 
-load_lib gdbserver-support.exp
-
 require allow_gdbserver_tests
 
 standard_testfile

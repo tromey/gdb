@@ -20,8 +20,6 @@
 # return to an interactive state, or does one (or both) of them get
 # stuck in a non-interactive state.
 
-load_lib gdbserver-support.exp
-
 standard_testfile
 
 require allow_gdbserver_tests

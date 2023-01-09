@@ -17,9 +17,6 @@
 
 # Test attaching to already-running programs using extended-remote.
 
-load_lib gdbserver-support.exp
-load_lib trace-support.exp
-
 standard_testfile
 
 require allow_gdbserver_tests

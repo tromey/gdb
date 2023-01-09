@@ -15,8 +15,6 @@
 
 # Tests to cover DW_AT_count attribute in subranges.
 
-load_lib dwarf.exp
-
 # Only run on targets which support dwarf and gas.
 require dwarf2_support
 

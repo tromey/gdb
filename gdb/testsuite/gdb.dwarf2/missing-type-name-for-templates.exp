@@ -19,8 +19,6 @@
 # the respective symbols (because of the missing name) was reported in PR
 # gdb/28396.
 
-load_lib dwarf.exp
-
 require dwarf2_support
 
 standard_testfile .cc .S

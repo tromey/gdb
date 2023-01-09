@@ -16,8 +16,6 @@
 # Test nameless, artificial classes that may be output by the compiler.
 # PR c++/16597
 
-load_lib dwarf.exp
-
 # Do not run in environments which do not support C++.
 # This test can only be run on x86-like targets which support DWARF.
 require dwarf2_support allow_cplus_tests

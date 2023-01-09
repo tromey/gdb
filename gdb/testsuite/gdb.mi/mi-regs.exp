@@ -22,7 +22,6 @@
 #
 
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 standard_testfile basics.c

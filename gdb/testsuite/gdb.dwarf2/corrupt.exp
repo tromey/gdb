@@ -16,8 +16,6 @@
 # Test corrupt DWARF input
 # PR gdb/15827
 
-load_lib dwarf.exp
-
 require dwarf2_support
 
 standard_testfile main.c .S

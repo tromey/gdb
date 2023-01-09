@@ -18,9 +18,6 @@
 
 standard_testfile
 
-load_lib gdb-python.exp
-load_lib prompt.exp
-
 require allow_python_tests
 
 if {[build_executable $testfile.exp $testfile $srcfile debug] == -1} {

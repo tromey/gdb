@@ -16,8 +16,6 @@
 # Check that we can connect to GDBserver with the multiprocess
 # extensions disabled, run to main, and finish the process.
 
-load_lib gdbserver-support.exp
-
 require allow_gdbserver_tests
 
 standard_testfile

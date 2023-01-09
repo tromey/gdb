@@ -14,8 +14,6 @@
 
 # Test custom MI commands implemented in Python.
 
-load_lib gdb-python.exp
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 gdb_exit

@@ -76,8 +76,6 @@
 #
 # This test checks this behaviour using the DWARF assembler.
 
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 

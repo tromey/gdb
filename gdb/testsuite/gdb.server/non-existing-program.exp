@@ -18,8 +18,6 @@
 # Test starting gdbserver passing it the name of a non-existing
 # program.
 
-load_lib gdbserver-support.exp
-
 standard_testfile
 
 require allow_gdbserver_tests

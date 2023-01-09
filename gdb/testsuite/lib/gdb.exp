@@ -25,6 +25,9 @@ if {$tool == ""} {
     exit 2
 }
 
+global auto_path
+lappend auto_path $srcdir/lib
+
 # Execute BODY, if COND wrapped in proc WRAP.
 # Instead of writing the verbose and repetitive:
 #   if { $cond } {
@@ -104,6 +107,8 @@ proc gdb_persistent_global_no_decl { args } {
     }
 }
 
+gdb_persistent_global_no_decl auto_path auto_index
+
 # Override proc load_lib.
 rename load_lib saved_load_lib
 # Run the runtest version of load_lib, and mark all variables that were
@@ -134,8 +139,6 @@ proc load_lib { file } {
 
 load_lib libgloss.exp
 load_lib cache.exp
-load_lib gdb-utils.exp
-load_lib memory.exp
 load_lib check-test-names.exp
 
 # The path to the GDB binary to test.
@@ -6203,10 +6206,15 @@ proc default_gdb_init { test_file_name } {
 	# dejagnu's version in gdb_finish.
 	rename ::unknown ::dejagnu_unknown
 	proc unknown { args } {
-	    # Use tcl's unknown.
 	    set cmd [lindex $args 0]
-	    unresolved "testcase aborted due to invalid command name: $cmd"
-	    return [uplevel 1 ::gdb_tcl_unknown $args]
+	    # Use tcl's unknown.
+	    set ret [catch {uplevel 1 ::gdb_tcl_unknown $args} msg opts]
+	    # If the command does not exist now, mark the test as
+	    # unresolved.
+	    if {[llength [info command $cmd]] == 0} {
+		unresolved "testcase aborted due to invalid command name: $cmd"
+	    }
+	    return -options $opts $msg
 	}
     }
 }

@@ -17,8 +17,6 @@
 # defined in a Python script that is autoloaded are registered when an event
 # handler for the new_objfile event is called.
 
-load_lib gdb-python.exp
-
 require allow_python_tests
 
 standard_testfile -main.cc

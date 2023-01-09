@@ -19,7 +19,6 @@
 # and fixed varobjs that represent the pc register.
 #
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 standard_testfile basics.c

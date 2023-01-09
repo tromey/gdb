@@ -18,9 +18,6 @@
 # the original patch to pr 16253.
 # Test parameters are the standard GenPerfTest parameters.
 
-load_lib perftest.exp
-load_lib gen-perf-test.exp
-
 require allow_perf_tests
 
 GenPerfTest::standard_run_driver gmonster2.exp make_testcase_config gmonster-pervasive-typedef.py PervasiveTypedef

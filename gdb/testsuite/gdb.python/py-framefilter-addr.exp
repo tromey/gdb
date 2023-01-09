@@ -17,8 +17,6 @@
 # frame-filters when the 'function ()' method on FrameDecorator
 # returns the address for the function being decorated.
 
-load_lib gdb-python.exp
-
 require allow_python_tests
 
 standard_testfile

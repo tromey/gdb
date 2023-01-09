@@ -15,8 +15,6 @@
 
 # Test ptype of an unchecked union.
 
-load_lib "ada.exp"
-
 require allow_ada_tests
 
 standard_ada_testfile unchecked_union

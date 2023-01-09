@@ -15,8 +15,6 @@
 
 # Inheritance tests for GDB's C++ compile feature.
 
-load_lib compile-support.exp
-
 standard_testfile .cc
 
 require allow_cplus_tests

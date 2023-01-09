@@ -18,8 +18,6 @@
 # Test that GDB can correctly read the binary and shared libraries
 # with different sysroot setups: local and "target:".
 
-load_lib gdbserver-support.exp
-
 require allow_gdbserver_tests
 
 standard_testfile

@@ -17,8 +17,6 @@
 #
 # Tests OpenCL data types.
 
-load_lib opencl.exp
-
 require allow_opencl_tests
 
 set testfile "datatypes"

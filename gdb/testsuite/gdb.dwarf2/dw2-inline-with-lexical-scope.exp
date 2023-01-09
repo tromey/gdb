@@ -16,8 +16,6 @@
 # Test that scoped local variables in an inlined function are printed
 # properly.
 
-load_lib dwarf.exp
-
 # This test can only be run on targets that support DWARF-2 and use
 # gas.
 require dwarf2_support

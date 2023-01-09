@@ -18,8 +18,6 @@ if {![istarget *-linux*]} {
     return 0
 }
 
-load_lib prelink-support.exp
-
 set testfile "dlopen-libpthread"
 set srcmainfile ${testfile}.c
 set srclibfile ${testfile}-lib.c

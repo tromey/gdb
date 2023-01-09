@@ -16,7 +16,6 @@
 # Do this here before we start GDB for the test.
 set scheduler_locking_supported [target_supports_scheduler_locking]
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 standard_testfile basics.c

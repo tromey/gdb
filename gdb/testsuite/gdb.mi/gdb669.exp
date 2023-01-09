@@ -17,7 +17,6 @@
 # command "info threads" and the MI command "-thread-list-ids"
 # return different threads in the system.
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 #

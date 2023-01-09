@@ -15,8 +15,6 @@
 
 # Common routines for testing multi-target features.
 
-load_lib gdbserver-support.exp
-
 standard_testfile multi-target.c
 
 # Keep a list of (inferior ID, spawn ID).

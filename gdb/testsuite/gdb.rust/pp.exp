@@ -15,8 +15,6 @@
 
 # Test expression parsing and evaluation that requires Rust compiler.
 
-load_lib gdb-python.exp
-load_lib rust-support.exp
 require allow_rust_tests allow_python_tests
 
 standard_testfile .rs

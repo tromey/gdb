@@ -19,8 +19,6 @@
 # - SKIP_PROLOGUE_COUNT is the number that GDB inserts breakpoints on
 #   function f1 and f2 and removes them.
 
-load_lib perftest.exp
-
 require allow_perf_tests
 
 standard_testfile .c

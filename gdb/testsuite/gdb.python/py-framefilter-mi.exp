@@ -15,9 +15,6 @@
 
 # This file is part of the GDB testsuite.  It tests Python-based
 # frame-filters.
-load_lib mi-support.exp
-load_lib gdb-python.exp
-
 set MIFLAGS "-i=mi2"
 
 gdb_exit

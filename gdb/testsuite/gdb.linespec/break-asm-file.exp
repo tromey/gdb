@@ -16,8 +16,6 @@
 # Bug 17394
 # Test for break-point at a function only for a selected ASM file.
 
-load_lib dwarf.exp
-
 standard_testfile .c
 set execfile $testfile
 set asm_file1 break-asm-file1.s

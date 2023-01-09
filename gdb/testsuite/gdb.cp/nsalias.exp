@@ -16,8 +16,6 @@
 # Test namespace aliases.
 # PRs c++/7935, c++/10541
 
-load_lib dwarf.exp
-
 require dwarf2_support allow_cplus_tests
 
 standard_testfile .cc nsalias-dw.S

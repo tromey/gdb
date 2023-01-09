@@ -26,8 +26,6 @@
 # to the tracepoint again (one more collection) after returns from
 # signal handler.
 
-load_lib "trace-support.exp"
-
 if [target_info exists gdb,nosignals] {
     verbose "Skipping signal.exp because of nosignals."
     return -1

@@ -15,8 +15,6 @@
 
 # Test case using the -gnatDG option.
 
-load_lib "ada.exp"
-
 require allow_ada_tests
 
 standard_ada_testfile x

@@ -22,7 +22,6 @@
 # ... MI continues processing input.  We actually test all
 # combinations of pairs of the above.  See PR mi/20431.
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 gdb_exit

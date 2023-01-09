@@ -45,8 +45,6 @@
 # same address as the previous entry, but the previous entry is-stmt,
 # while line 18 is a non-stmt.
 
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 

@@ -17,7 +17,6 @@
 # away.
 
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 require allow_shlib_tests

@@ -18,8 +18,6 @@
 # it, also try evaluating expressions involving calls to such
 # functions.
 
-load_lib "ada.exp"
-
 require allow_ada_tests
 
 standard_ada_testfile foo_h731_021

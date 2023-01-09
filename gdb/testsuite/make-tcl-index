@@ -1,0 +1,78 @@
+# Rebuild the Tcl index. -*- tcl -*-
+# To invoke:
+#    tclsh make-tcl-index
+
+# Copyright 2023 Free Software Foundation, Inc.
+
+# This file is part of GDB.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+set index ""
+# Note that this line must come first.
+append index "# Tcl autoload index file, version 2.0\n"
+# ... so this won't actually work.
+append index "# *INDENT-OFF* THIS FILE IS GENERATED -*- buffer-read-only: t -*-\n"
+append index "# vi:set ro:\n"
+append index "# Copyright 2023 Free Software Foundation, Inc.\n"
+append index "\n"
+append index "# This file is part of GDB.\n"
+append index "\n"
+append index "# This program is free software; you can redistribute it and/or modify\n"
+append index "# it under the terms of the GNU General Public License as published by\n"
+append index "# the Free Software Foundation; either version 3 of the License, or\n"
+append index "# (at your option) any later version.\n"
+append index "#\n"
+append index "# This program is distributed in the hope that it will be useful,\n"
+append index "# but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
+append index "# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
+append index "# GNU General Public License for more details.\n"
+append index "#\n"
+append index "# You should have received a copy of the GNU General Public License\n"
+append index "# along with this program.  If not, see <http://www.gnu.org/licenses/>.\n"
+append index "\n"
+append index "# Use make-tcl-index to regenerate\n\n"
+
+cd lib
+foreach file [lsort [glob -- *.exp *.tcl]] {
+    set f [open $file]
+    set ns_list {}
+    while {[gets $f line] >= 0} {
+	switch -regexp -matchvar match $line {
+	    "^[[:space:]]*(?:proc|gdb_caching_proc|proc_with_prefix) ([-a-z0-9A-Z_:@]+)" {
+		set nlist $ns_list
+		lappend nlist [lindex $match 1]
+		set name [auto_qualify [join $nlist ::] ::]
+		append index "set [list auto_index($name)]"
+		append index " \[list source \[file join \$dir [list $file]\]\]\n"
+	    }
+	    "^[[:space:]]*namespace ensemble create -command ::([a-z0-9A-Z_]+)" {
+		set name [lindex $match 1]
+		append index "set [list auto_index($name)]"
+		append index " \[list source \[file join \$dir [list $file]\]\]\n"
+	    }
+	    "^namespace eval ([a-z0-9A-Z_:]+)" {
+		lappend ns_list [lindex $match 1]
+	    }
+	    "^\}" {
+		set ns_list [lreplace $ns_list end end]
+	    }
+	}
+    }
+    close $f
+}
+
+set f [open tclIndex w]
+puts -nonewline $f $index
+close $f

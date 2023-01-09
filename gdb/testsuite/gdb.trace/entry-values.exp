@@ -12,8 +12,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 
@@ -201,8 +199,6 @@ gdb_test_sequence "bt" "bt (2)" {
 # Restart GDB and trace.
 
 clean_restart $binfile
-
-load_lib "trace-support.exp"
 
 if ![runto_main] {
     return -1

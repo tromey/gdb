@@ -20,8 +20,6 @@ if { [gdb_compile "$srcdir/$subdir/$srcfile" $binfile \
     return -1
 }
 
-load_lib mi-support.exp
-
 if [mi_gdb_start] {
     return
 }

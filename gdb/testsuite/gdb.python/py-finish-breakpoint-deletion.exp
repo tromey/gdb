@@ -15,8 +15,6 @@
 
 # Check that FinishBreakpoints are deleted after use.
 
-load_lib gdb-python.exp
-
 require allow_python_tests
 
 standard_testfile

@@ -18,7 +18,6 @@
 # no inferior. In particular, we want to verify that GDB does not
 # crash.
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 gdb_exit

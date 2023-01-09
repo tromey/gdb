@@ -17,9 +17,6 @@
 # or all-stop modes, "target remote" does not return with the remote
 # thread marked running.
 
-load_lib gdbserver-support.exp
-load_lib prelink-support.exp
-
 require allow_gdbserver_tests
 
 standard_testfile

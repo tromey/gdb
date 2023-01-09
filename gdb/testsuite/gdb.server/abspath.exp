@@ -18,8 +18,6 @@
 # Test that gdbserver performs path expansion/adjustment when we
 # provide just a filename (without any path specifications) to it.
 
-load_lib gdbserver-support.exp
-
 standard_testfile normal.c
 
 require allow_gdbserver_tests

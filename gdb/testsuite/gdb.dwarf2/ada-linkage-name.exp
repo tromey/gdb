@@ -16,8 +16,6 @@
 # Regression test to ensure that the order of DW_AT_name and
 # DW_AT_linkage_name does not affect Ada.
 
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 

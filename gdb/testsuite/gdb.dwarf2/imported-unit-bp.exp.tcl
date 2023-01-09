@@ -15,8 +15,6 @@
 
 # Test that "break /absolute/file:line" works ok with imported CUs.
 
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 if {![dwarf2_support]} {
     return 0

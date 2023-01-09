@@ -32,8 +32,6 @@
 # Do not run if gdb debug is enabled as it doesn't work for separate-mi-tty.
 require !gdb_debug_enabled
 
-load_lib mi-support.exp
-
 standard_testfile
 
 # Multiple inferiors are needed, therefore only native gdb and extended

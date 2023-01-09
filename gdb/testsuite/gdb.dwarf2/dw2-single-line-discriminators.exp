@@ -16,8 +16,6 @@
 # Test gdb's coalescing of multiple line number entries for the same line
 # but with different discriminators.  PR 17276.
 
-load_lib dwarf.exp
-
 # This test can only be run on targets which support DWARF-2 and use gas.
 require dwarf2_support
 

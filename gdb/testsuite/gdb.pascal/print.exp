@@ -21,8 +21,6 @@
 # Test printing of various values.
 # NOTE: The tests here intentionally do not require a pascal compiler.
 
-load_lib "pascal.exp"
-
 proc test_float_accepted {} {
     global gdb_prompt
 

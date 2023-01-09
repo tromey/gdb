@@ -16,8 +16,6 @@
 # Test loading of a file that when compiled with stabs uses a stub method.
 # This exercises gdbtypes.c:allocate_stub_method.
 
-load_lib "pascal.exp"
-
 standard_testfile .pas
 
 if {[gdb_compile_pascal "${srcdir}/${subdir}/${srcfile}" "${binfile}" executable [list debug ]] != "" } {

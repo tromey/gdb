@@ -21,7 +21,6 @@
 # The goal is not to test gdb functionality, which is done by other
 # tests, but to verify the correct output response to MI operations.
 
-load_lib mi-support.exp
 set MIFLAGS "-i=mi"
 
 gdb_exit

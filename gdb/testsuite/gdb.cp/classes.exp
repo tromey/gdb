@@ -20,8 +20,6 @@ set nl "\[\r\n\]+"
 
 require allow_cplus_tests
 
-load_lib "cp-support.exp"
-
 standard_testfile .cc
 
 set flags [list debug c++]

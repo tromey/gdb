@@ -16,8 +16,6 @@
 # Test DW_AT_location attributes referencing the .debug_loclists section using
 # the DW_FORM_sec_offset form.
 
-load_lib dwarf.exp
-
 require dwarf2_support
 
 # Test with 32-bit and 64-bit DWARF.

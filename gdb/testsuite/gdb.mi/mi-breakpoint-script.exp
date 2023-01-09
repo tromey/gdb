@@ -16,7 +16,6 @@
 # Tests the breakpoint script field, including the wrong syntax that GDB
 # emitted before version 13.1.
 
-load_lib mi-support.exp
 standard_testfile .c
 
 if {[gdb_compile "$srcdir/$subdir/$srcfile" $binfile executable {debug}] != "" } {

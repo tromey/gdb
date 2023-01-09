@@ -18,8 +18,6 @@
 
 set testfile "py-error"
 
-load_lib gdb-python.exp
-
 require allow_python_tests
 
 # Start with a fresh gdb.

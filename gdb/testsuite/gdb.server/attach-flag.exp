@@ -17,8 +17,6 @@
 
 # Test attaching to a multi-threaded process using gdbserver's --attach flag.
 
-load_lib gdbserver-support.exp
-
 standard_testfile
 
 require allow_gdbserver_tests

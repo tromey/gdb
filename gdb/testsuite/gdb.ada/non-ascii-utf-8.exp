@@ -15,8 +15,6 @@
 
 # Test UTF-8 identifiers.
 
-load_lib "ada.exp"
-
 require allow_ada_tests
 
 # Enable basic use of UTF-8.  LC_ALL gets reset for each testfile.

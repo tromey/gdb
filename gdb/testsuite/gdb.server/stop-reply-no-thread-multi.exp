@@ -28,8 +28,6 @@
 # the stop comes from the target, without a thread-id, GDB should be
 # able to correctly figure out which thread has stopped.
 
-load_lib gdbserver-support.exp
-
 require allow_gdbserver_tests
 
 standard_testfile
