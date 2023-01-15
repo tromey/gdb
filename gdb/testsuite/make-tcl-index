@@ -44,8 +44,44 @@ append index "# along with this program.  If not, see <http://www.gnu.org/licens
 append index "\n"
 append index "# Use make-tcl-index to regenerate\n\n"
 
+array set seen {}
+
+proc add_entry {name file} {
+    if {[info exists ::seen($name)]} {
+	# A duplicate is ok as long as the officially recorded
+	# location is gdb.exp or mi-support.exp.  This is a big hack,
+	# but needed for now due to the proc rewriting in
+	# gdbserver-support.exp.
+	if {$::seen($name) != $file && $::seen($name) != "gdb.exp"
+	    && $::seen($name) != "mi-support.exp"} {
+	    puts "Mismatch for $name: $::seen($name) != $file"
+	}
+    } else {
+	set ::seen($name) $file
+	append ::index "set [list auto_index($name)]"
+	append ::index " \[list source \[file join \$dir [list $file]\]\]\n"
+    }
+}
+
+# Sigh.
+proc move_to_front {a_list elt} {
+    set index [lsearch -exact $a_list $elt]
+    if {$index == -1} {
+	puts "could not find $elt"
+	exit 1
+    }
+    set a_list [lreplace $a_list $index $index]
+    return [linsert $a_list 0 $elt]
+}
+
 cd lib
-foreach file [lsort [glob -- *.exp *.tcl]] {
+
+# See the comment in add_entry to understand this ordering.
+set files [lsort [glob -- *.exp *.tcl]]
+set files [move_to_front $files mi-support.exp]
+set files [move_to_front $files gdb.exp]
+
+foreach file $files {
     set f [open $file]
     set ns_list {}
     while {[gets $f line] >= 0} {
@@ -54,16 +90,22 @@ foreach file [lsort [glob -- *.exp *.tcl]] {
 		set nlist $ns_list
 		lappend nlist [lindex $match 1]
 		set name [auto_qualify [join $nlist ::] ::]
-		append index "set [list auto_index($name)]"
-		append index " \[list source \[file join \$dir [list $file]\]\]\n"
+		add_entry $name $file
 	    }
 	    "^[[:space:]]*namespace ensemble create -command ::([a-z0-9A-Z_]+)" {
 		set name [lindex $match 1]
-		append index "set [list auto_index($name)]"
-		append index " \[list source \[file join \$dir [list $file]\]\]\n"
+		add_entry $name $file
 	    }
 	    "^namespace eval ([a-z0-9A-Z_:]+)" {
 		lappend ns_list [lindex $match 1]
+	    }
+	    "^[[:space:]]*namespace export (.+)$" {
+		foreach name [split [lindex $match 1]] {
+		    set nlist $ns_list
+		    lappend nlist $name
+		    set name [auto_qualify [join $nlist ::] ::]
+		    add_entry $name $file
+		}
 	    }
 	    "^\}" {
 		set ns_list [lreplace $ns_list end end]
