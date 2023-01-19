@@ -5,6 +5,9 @@
 
 * MI version 1 has been removed.
 
+* Support for the stabs debugging format is deprecated, and it will be
+  removed in GDB 15.
+
 * GDB has initial built-in support for the Debugger Adapter Protocol.
   This support requires that GDB be built with Python scripting
   enabled.
