@@ -29896,6 +29896,12 @@ The value of @code{max-user-call-depth} controls how many recursion
 levels are allowed in user-defined commands before @value{GDBN} suspects an
 infinite recursion and aborts the command.
 This does not apply to user-defined python commands.
+
+@kindex save user
+@item save user @var{filename}
+Save all user-defined commands to the file @var{filename}.  This
+command writes out the user-defined commands as a script that can be
+re-read into @value{GDBN} using the @code{source} command.
 @end table
 
 In addition to the above commands, user-defined commands frequently
