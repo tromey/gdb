@@ -42,13 +42,14 @@ gdb_test_no_output "end"
 gdb_breakpoint "foo"
 gdb_breakpoint "bar"
 
+set prefix  "with breakpoint pending on -- "
 set cmds [multi_line_input \
-	      "break -qualified main" \
+	      "${prefix}break -qualified main" \
 	      "  commands" \
 	      "    print 1" \
 	      "  end" \
-	      "break foo" \
-	      "break bar"]
+	      "${prefix}break foo" \
+	      "${prefix}break bar"]
 set cmds "$cmds\n"
 set outdir [standard_output_file {}]
 set cmds_file "$outdir/cmds.txt"
