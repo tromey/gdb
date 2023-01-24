@@ -6707,6 +6707,12 @@ Set whether to print the debug output about skipping files and functions.
 @item show debug skip
 Show whether the debug output about skipping files and functions is printed.
 
+@kindex save skip
+@item save skip @var{filename}
+Save all skips to the file @var{filename}.  This command writes out
+the skips as a script that can be re-read into @value{GDBN} using the
+@code{source} command.
+
 @end table
 
 @node Signals

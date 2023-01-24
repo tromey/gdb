@@ -17,6 +17,9 @@ maintenance print record-instruction [ N ]
   prints how GDB would undo the N-th previous instruction, and if N is
   positive, it prints how GDB will redo the N-th following instruction.
 
+save skip FILENAME
+  Save all current "skip"s to the given file.
+
 save user FILENAME
   Save all user-defined commands to the given file.
 
