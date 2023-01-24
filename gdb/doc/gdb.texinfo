@@ -7072,6 +7072,12 @@ skips.
 Disable the specified skip(s).  If @var{range} is not specified, disable all
 skips.
 
+@kindex save skip
+@item save skip @var{filename}
+Save all skips to the file @var{filename}.  This command writes out
+the skips as a script that can be re-read into @value{GDBN} using the
+@code{source} command.
+
 @kindex set debug skip
 @item set debug skip @r{[}on|off@r{]}
 Set whether to print the debug output about skipping files and functions.

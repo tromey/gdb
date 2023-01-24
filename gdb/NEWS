@@ -67,6 +67,9 @@ unset local-environment
   environment.  The local environment is used by "shell", "pipe", and
   other commands that launch a subprocess other than an inferior.
 
+save skip FILENAME
+  Save all current "skip"s to the given file.
+
 save user FILENAME
   Save all user-defined commands to the given file.
 
