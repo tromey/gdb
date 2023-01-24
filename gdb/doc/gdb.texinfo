@@ -28119,6 +28119,17 @@ removal of duplicate history entries is disabled.
 Only history entries added during the current session are considered for
 removal.  This option is set to 0 by default.
 
+@kindex save history
+@item save history @var{filename}
+Occasionally you may want to save your history to a file.  This
+command will do just that, saving the commands in your current session
+to the named file.  Note that you should normally edit the saved
+history before using @code{source} to reload it, as the @code{save
+history} command itself will be at the end of the file.
+
+Alternatively, you can use @code{server save history} to avoid this
+issue, as the @code{server} prefix prevents the command from being
+recorded (@pxref{Server Prefix}).
 @end table
 
 History expansion assigns special meaning to the character @kbd{!}.
