@@ -17910,7 +17910,7 @@ read_full_die_1 (const struct die_reader_specs *reader,
 
   for (i = 0; i < abbrev->num_attrs; ++i)
     info_ptr = read_attribute (reader, &die->attrs[i], &abbrev->attrs[i],
-			       info_ptr);
+			       info_ptr, allow_reprocess);
 
   *diep = die;
   return info_ptr;
