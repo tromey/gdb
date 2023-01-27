@@ -74,26 +74,15 @@ struct attribute
     return u.snd;
   }
 
-  /* Return the unsigned value, but only for attributes requiring
-     reprocessing.  */
-  ULONGEST as_unsigned_reprocess () const
-  {
-    gdb_assert (form_requires_reprocessing ());
-    gdb_assert (requires_reprocessing);
-    return u.unsnd;
-  }
-
   /* Return the unsigned value.  Requires that the form be an unsigned
-     form, and that reprocessing not be needed.  */
+     form.  */
   ULONGEST as_unsigned () const
   {
     gdb_assert (form_is_unsigned ());
-    gdb_assert (!requires_reprocessing);
     return u.unsnd;
   }
 
-  /* Return true if the value is nonnegative.  Requires that that
-     reprocessing not be needed.  */
+  /* Return true if the value is nonnegative.  */
   bool is_nonnegative () const
   {
     if (form_is_unsigned ())
@@ -103,8 +92,7 @@ struct attribute
     return false;
   }
 
-  /* Return the nonnegative value.  Requires that that reprocessing not be
-     needed.  */
+  /* Return the nonnegative value.  */
   ULONGEST as_nonnegative () const
   {
     if (form_is_unsigned ())
@@ -211,7 +199,6 @@ struct attribute
     gdb_assert (form_is_string ());
     u.str = str;
     string_is_canonical = 0;
-    requires_reprocessing = 0;
   }
 
   /* Set the canonical string value for this attribute.  */
@@ -248,33 +235,15 @@ struct attribute
   {
     gdb_assert (form_is_unsigned ());
     u.unsnd = unsnd;
-    requires_reprocessing = 0;
-  }
-
-  /* Temporarily set this attribute to an unsigned integer.  This is
-     used only for those forms that require reprocessing.  */
-  void set_unsigned_reprocess (ULONGEST unsnd)
-  {
-    gdb_assert (form_requires_reprocessing ());
-    u.unsnd = unsnd;
-    requires_reprocessing = 1;
   }
 
   /* Set this attribute to an address.  */
   void set_address (CORE_ADDR addr)
   {
     gdb_assert (form == DW_FORM_addr
-		|| ((form == DW_FORM_addrx
-		     || form == DW_FORM_GNU_addr_index)
-		    && requires_reprocessing));
+		|| form == DW_FORM_addrx
+		|| form == DW_FORM_GNU_addr_index);
     u.addr = addr;
-    requires_reprocessing = 0;
-  }
-
-  /* True if this attribute requires reprocessing.  */
-  bool requires_reprocessing_p () const
-  {
-    return requires_reprocessing;
   }
 
   /* Return the value as one of the recognized enum
@@ -294,17 +263,6 @@ struct attribute
   bool as_boolean () const;
 
   ENUM_BITFIELD(dwarf_attribute) name : 15;
-
-  /* A boolean that is used for forms that require reprocessing.  A
-     form may require data not directly available in the attribute.
-     E.g., DW_FORM_strx requires the corresponding
-     DW_AT_str_offsets_base.  In this case, the processing for the
-     attribute must be done in two passes.  In the first past, this
-     flag is set and the value is an unsigned.  In the second pass,
-     the unsigned value is turned into the correct value for the form,
-     and this flag is cleared.  This flag is unused for other
-     forms.  */
-  unsigned int requires_reprocessing : 1;
 
   ENUM_BITFIELD(dwarf_form) form : 15;
 
