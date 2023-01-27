@@ -18995,12 +18995,13 @@ read_attribute_reprocess (const struct die_reader_specs *reader,
     {
       case DW_FORM_addrx:
       case DW_FORM_GNU_addr_index:
-	attr->set_address (read_addr_index (cu, attr->as_unsigned ()));
+	attr->set_address (read_addr_index (cu,
+					    attr->as_unsigned_reprocess ()));
 	break;
       case DW_FORM_loclistx:
 	{
 	  sect_offset loclists_sect_off
-	    = read_loclist_index (cu, attr->as_unsigned ());
+	    = read_loclist_index (cu, attr->as_unsigned_reprocess ());
 
 	  attr->set_unsigned (to_underlying (loclists_sect_off));
 	}
@@ -19008,7 +19009,7 @@ read_attribute_reprocess (const struct die_reader_specs *reader,
       case DW_FORM_rnglistx:
 	{
 	  sect_offset rnglists_sect_off
-	    = read_rnglist_index (cu, attr->as_unsigned (), tag);
+	    = read_rnglist_index (cu, attr->as_unsigned_reprocess (), tag);
 
 	  attr->set_unsigned (to_underlying (rnglists_sect_off));
 	}
@@ -19020,7 +19021,7 @@ read_attribute_reprocess (const struct die_reader_specs *reader,
       case DW_FORM_strx4:
       case DW_FORM_GNU_str_index:
 	{
-	  unsigned int str_index = attr->as_unsigned ();
+	  unsigned int str_index = attr->as_unsigned_reprocess ();
 	  gdb_assert (!attr->canonical_string_p ());
 	  if (reader->dwo_file != NULL)
 	    attr->set_string_noncanonical (read_dwo_str_index (reader,
