@@ -1107,8 +1107,9 @@ static const gdb_byte *read_full_die_1 (const struct die_reader_specs *,
 					struct die_info **, const gdb_byte *,
 					int);
 
-static const gdb_byte *read_full_die (const struct die_reader_specs *,
-				      struct die_info **, const gdb_byte *);
+static const gdb_byte *read_toplevel_die (const struct die_reader_specs *,
+					  struct die_info **,
+					  const gdb_byte *);
 
 static void process_die (struct die_info *, struct dwarf2_cu *);
 
@@ -6328,7 +6329,7 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
 
   /* Read the top level CU/TU die.  */
   init_cu_die_reader (this, cu, section, NULL, abbrev_table);
-  info_ptr = read_full_die (this, &comp_unit_die, info_ptr);
+  info_ptr = read_toplevel_die (this, &comp_unit_die, info_ptr);
 
   if (skip_partial && comp_unit_die->tag == DW_TAG_partial_unit)
     {
@@ -6470,7 +6471,7 @@ cutu_reader::cutu_reader (dwarf2_per_cu_data *this_cu,
 
   init_cu_die_reader (this, m_new_cu.get (), section, dwo_file,
 		      m_abbrev_table_holder.get ());
-  info_ptr = read_full_die (this, &comp_unit_die, info_ptr);
+  info_ptr = read_toplevel_die (this, &comp_unit_die, info_ptr);
 }
 
 
@@ -17910,22 +17911,6 @@ read_full_die_1 (const struct die_reader_specs *reader,
 	any_need_reprocess = true;
     }
 
-  struct attribute *attr = die->attr (DW_AT_str_offsets_base);
-  if (attr != nullptr && attr->form_is_unsigned ())
-    cu->str_offsets_base = attr->as_unsigned ();
-
-  attr = die->attr (DW_AT_loclists_base);
-  if (attr != nullptr)
-    cu->loclist_base = attr->as_unsigned ();
-
-  auto maybe_addr_base = die->addr_base ();
-  if (maybe_addr_base.has_value ())
-    cu->addr_base = *maybe_addr_base;
-
-  attr = die->attr (DW_AT_rnglists_base);
-  if (attr != nullptr)
-    cu->rnglists_base = attr->as_unsigned ();
-
   if (any_need_reprocess)
     {
       for (i = 0; i < abbrev->num_attrs; ++i)
@@ -17943,10 +17928,11 @@ read_full_die_1 (const struct die_reader_specs *reader,
    except for its child, sibling, and parent fields.  */
 
 static const gdb_byte *
-read_full_die (const struct die_reader_specs *reader,
-	       struct die_info **diep, const gdb_byte *info_ptr)
+read_toplevel_die (const struct die_reader_specs *reader,
+		   struct die_info **diep, const gdb_byte *info_ptr)
 {
   const gdb_byte *result;
+  struct dwarf2_cu *cu = reader->cu;
 
   result = read_full_die_1 (reader, diep, info_ptr, 0);
 
@@ -17959,6 +17945,22 @@ read_full_die (const struct die_reader_specs *reader,
 		  bfd_get_filename (reader->abfd));
       (*diep)->dump (dwarf_die_debug);
     }
+
+  struct attribute *attr = (*diep)->attr (DW_AT_str_offsets_base);
+  if (attr != nullptr && attr->form_is_unsigned ())
+    cu->str_offsets_base = attr->as_unsigned ();
+
+  attr = (*diep)->attr (DW_AT_loclists_base);
+  if (attr != nullptr)
+    cu->loclist_base = attr->as_unsigned ();
+
+  auto maybe_addr_base = (*diep)->addr_base ();
+  if (maybe_addr_base.has_value ())
+    cu->addr_base = *maybe_addr_base;
+
+  attr = (*diep)->attr (DW_AT_rnglists_base);
+  if (attr != nullptr)
+    cu->rnglists_base = attr->as_unsigned ();
 
   return result;
 }
