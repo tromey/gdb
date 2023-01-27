@@ -19119,8 +19119,8 @@ read_attribute_value (const struct die_reader_specs *reader,
       break;
     case DW_FORM_loclistx:
       {
-	attr->set_unsigned (read_unsigned_leb128 (abfd, info_ptr,
-						  &bytes_read));
+	attr->set_unsigned_reprocess (read_unsigned_leb128 (abfd, info_ptr,
+							    &bytes_read));
 	info_ptr += bytes_read;
 	if (allow_reprocess)
 	  read_attribute_reprocess (reader, attr);
@@ -19195,8 +19195,8 @@ read_attribute_value (const struct die_reader_specs *reader,
       break;
     case DW_FORM_rnglistx:
       {
-	attr->set_unsigned (read_unsigned_leb128 (abfd, info_ptr,
-						  &bytes_read));
+	attr->set_unsigned_reprocess (read_unsigned_leb128 (abfd, info_ptr,
+							    &bytes_read));
 	info_ptr += bytes_read;
 	if (allow_reprocess)
 	  read_attribute_reprocess (reader, attr);
@@ -19252,7 +19252,8 @@ read_attribute_value (const struct die_reader_specs *reader,
       break;
     case DW_FORM_addrx:
     case DW_FORM_GNU_addr_index:
-      attr->set_unsigned (read_unsigned_leb128 (abfd, info_ptr, &bytes_read));
+      attr->set_unsigned_reprocess (read_unsigned_leb128 (abfd, info_ptr,
+							  &bytes_read));
       info_ptr += bytes_read;
       if (allow_reprocess)
 	read_attribute_reprocess (reader, attr);
@@ -19290,7 +19291,7 @@ read_attribute_value (const struct die_reader_specs *reader,
 	    str_index = read_unsigned_leb128 (abfd, info_ptr, &bytes_read);
 	    info_ptr += bytes_read;
 	  }
-	attr->set_unsigned (str_index);
+	attr->set_unsigned_reprocess (str_index);
 	if (allow_reprocess)
 	  read_attribute_reprocess (reader, attr);
       }
