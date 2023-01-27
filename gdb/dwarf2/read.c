@@ -17930,16 +17930,6 @@ read_toplevel_die (const struct die_reader_specs *reader,
 
   result = read_full_die_1 (reader, diep, info_ptr, 0, false);
 
-  if (dwarf_die_debug)
-    {
-      gdb_printf (gdb_stdlog,
-		  "Read die from %s@0x%x of %s:\n",
-		  reader->die_section->get_name (),
-		  (unsigned) (info_ptr - reader->die_section->buffer),
-		  bfd_get_filename (reader->abfd));
-      (*diep)->dump (dwarf_die_debug);
-    }
-
   struct attribute *attr = (*diep)->attr (DW_AT_str_offsets_base);
   if (attr != nullptr && attr->form_is_unsigned ())
     cu->str_offsets_base = attr->as_unsigned ();
@@ -17960,6 +17950,16 @@ read_toplevel_die (const struct die_reader_specs *reader,
     {
       if ((*diep)->attrs[i].form_requires_reprocessing ())
 	read_attribute_reprocess (reader, &(*diep)->attrs[i], (*diep)->tag);
+    }
+
+  if (dwarf_die_debug)
+    {
+      gdb_printf (gdb_stdlog,
+		  "Read die from %s@0x%x of %s:\n",
+		  reader->die_section->get_name (),
+		  (unsigned) (info_ptr - reader->die_section->buffer),
+		  bfd_get_filename (reader->abfd));
+      (*diep)->dump (dwarf_die_debug);
     }
 
   return result;
