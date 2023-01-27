@@ -905,10 +905,12 @@ static unsigned int peek_abbrev_code (bfd *, const gdb_byte *);
 static const gdb_byte *read_attribute (const struct die_reader_specs *,
 				       struct attribute *,
 				       const struct attr_abbrev *,
-				       const gdb_byte *);
+				       const gdb_byte *,
+				       bool allow_reprocess = true);
 
 static void read_attribute_reprocess (const struct die_reader_specs *reader,
-				      struct attribute *attr, dwarf_tag tag);
+				      struct attribute *attr,
+				      dwarf_tag tag = DW_TAG_padding);
 
 static CORE_ADDR read_addr_index (struct dwarf2_cu *cu, unsigned int addr_index);
 
@@ -1105,11 +1107,12 @@ static struct die_info *read_die_and_siblings (const struct die_reader_specs *,
 
 static const gdb_byte *read_full_die_1 (const struct die_reader_specs *,
 					struct die_info **, const gdb_byte *,
-					int);
+					int, bool);
 
 static const gdb_byte *read_toplevel_die (const struct die_reader_specs *,
 					  struct die_info **,
-					  const gdb_byte *);
+					  const gdb_byte *,
+					  int num_extra_attrs = 0);
 
 static void process_die (struct die_info *, struct dwarf2_cu *);
 
@@ -6029,8 +6032,8 @@ read_cutu_die_from_dwo (dwarf2_cu *cu,
 		     + (high_pc != NULL)
 		     + (ranges != NULL)
 		     + (comp_dir != NULL));
-  info_ptr = read_full_die_1 (result_reader, result_comp_unit_die, info_ptr,
-			      num_extra_attrs);
+  info_ptr = read_toplevel_die (result_reader, result_comp_unit_die, info_ptr,
+				num_extra_attrs);
 
   /* Copy over the attributes from the stub to the DIE we just read in.  */
   comp_unit_die = *result_comp_unit_die;
@@ -7405,7 +7408,10 @@ skip_one_die (const struct die_reader_specs *reader, const gdb_byte *info_ptr,
       /* The only abbrev we care about is DW_AT_sibling.  */
       if (do_skip_children && abbrev->attrs[i].name == DW_AT_sibling)
 	{
-	  read_attribute (reader, &attr, &abbrev->attrs[i], info_ptr);
+	  /* Note there is no need for the extra work of
+	     "reprocessing" here, so we pass false for that
+	     argument.  */
+	  read_attribute (reader, &attr, &abbrev->attrs[i], info_ptr, false);
 	  if (attr.form == DW_FORM_ref_addr)
 	    complaint (_("ignoring absolute DW_AT_sibling"));
 	  else
@@ -17773,7 +17779,7 @@ read_die_and_children (const struct die_reader_specs *reader,
   struct die_info *die;
   const gdb_byte *cur_ptr;
 
-  cur_ptr = read_full_die_1 (reader, &die, info_ptr, 0);
+  cur_ptr = read_full_die_1 (reader, &die, info_ptr, 0, true);
   if (die == NULL)
     {
       *new_info_ptr = cur_ptr;
@@ -17867,7 +17873,7 @@ read_die_and_siblings (const struct die_reader_specs *reader,
 static const gdb_byte *
 read_full_die_1 (const struct die_reader_specs *reader,
 		 struct die_info **diep, const gdb_byte *info_ptr,
-		 int num_extra_attrs)
+		 int num_extra_attrs, bool allow_reprocess)
 {
   unsigned int abbrev_number, bytes_read, i;
   const struct abbrev_info *abbrev;
@@ -17902,23 +17908,10 @@ read_full_die_1 (const struct die_reader_specs *reader,
      attributes.  */
   die->num_attrs = abbrev->num_attrs;
 
-  bool any_need_reprocess = false;
   for (i = 0; i < abbrev->num_attrs; ++i)
-    {
-      info_ptr = read_attribute (reader, &die->attrs[i], &abbrev->attrs[i],
-				 info_ptr);
-      if (die->attrs[i].requires_reprocessing_p ())
-	any_need_reprocess = true;
-    }
+    info_ptr = read_attribute (reader, &die->attrs[i], &abbrev->attrs[i],
+			       info_ptr);
 
-  if (any_need_reprocess)
-    {
-      for (i = 0; i < abbrev->num_attrs; ++i)
-	{
-	  if (die->attrs[i].requires_reprocessing_p ())
-	    read_attribute_reprocess (reader, &die->attrs[i], die->tag);
-	}
-    }
   *diep = die;
   return info_ptr;
 }
@@ -17929,12 +17922,13 @@ read_full_die_1 (const struct die_reader_specs *reader,
 
 static const gdb_byte *
 read_toplevel_die (const struct die_reader_specs *reader,
-		   struct die_info **diep, const gdb_byte *info_ptr)
+		   struct die_info **diep, const gdb_byte *info_ptr,
+		   int num_extra_attrs)
 {
   const gdb_byte *result;
   struct dwarf2_cu *cu = reader->cu;
 
-  result = read_full_die_1 (reader, diep, info_ptr, 0);
+  result = read_full_die_1 (reader, diep, info_ptr, 0, false);
 
   if (dwarf_die_debug)
     {
@@ -17961,6 +17955,12 @@ read_toplevel_die (const struct die_reader_specs *reader,
   attr = (*diep)->attr (DW_AT_rnglists_base);
   if (attr != nullptr)
     cu->rnglists_base = attr->as_unsigned ();
+
+  for (int i = 0; i < (*diep)->num_attrs - num_extra_attrs; ++i)
+    {
+      if ((*diep)->attrs[i].form_requires_reprocessing ())
+	read_attribute_reprocess (reader, &(*diep)->attrs[i], (*diep)->tag);
+    }
 
   return result;
 }
@@ -18092,8 +18092,6 @@ cooked_indexer::scan_attributes (dwarf2_per_cu_data *scanning_per_cu,
     {
       attribute attr;
       info_ptr = read_attribute (reader, &attr, &abbrev->attrs[i], info_ptr);
-      if (attr.requires_reprocessing_p ())
-	read_attribute_reprocess (reader, &attr, abbrev->tag);
 
       /* Store the data if it is of an attribute we want to keep in a
 	 partial symbol table.  */
@@ -18997,13 +18995,12 @@ read_attribute_reprocess (const struct die_reader_specs *reader,
     {
       case DW_FORM_addrx:
       case DW_FORM_GNU_addr_index:
-	attr->set_address (read_addr_index (cu,
-					    attr->as_unsigned_reprocess ()));
+	attr->set_address (read_addr_index (cu, attr->as_unsigned ()));
 	break;
       case DW_FORM_loclistx:
 	{
 	  sect_offset loclists_sect_off
-	    = read_loclist_index (cu, attr->as_unsigned_reprocess ());
+	    = read_loclist_index (cu, attr->as_unsigned ());
 
 	  attr->set_unsigned (to_underlying (loclists_sect_off));
 	}
@@ -19011,7 +19008,7 @@ read_attribute_reprocess (const struct die_reader_specs *reader,
       case DW_FORM_rnglistx:
 	{
 	  sect_offset rnglists_sect_off
-	    = read_rnglist_index (cu, attr->as_unsigned_reprocess (), tag);
+	    = read_rnglist_index (cu, attr->as_unsigned (), tag);
 
 	  attr->set_unsigned (to_underlying (rnglists_sect_off));
 	}
@@ -19023,7 +19020,7 @@ read_attribute_reprocess (const struct die_reader_specs *reader,
       case DW_FORM_strx4:
       case DW_FORM_GNU_str_index:
 	{
-	  unsigned int str_index = attr->as_unsigned_reprocess ();
+	  unsigned int str_index = attr->as_unsigned ();
 	  gdb_assert (!attr->canonical_string_p ());
 	  if (reader->dwo_file != NULL)
 	    attr->set_string_noncanonical (read_dwo_str_index (reader,
@@ -19043,7 +19040,8 @@ read_attribute_reprocess (const struct die_reader_specs *reader,
 static const gdb_byte *
 read_attribute_value (const struct die_reader_specs *reader,
 		      struct attribute *attr, unsigned form,
-		      LONGEST implicit_const, const gdb_byte *info_ptr)
+		      LONGEST implicit_const, const gdb_byte *info_ptr,
+		      bool allow_reprocess)
 {
   struct dwarf2_cu *cu = reader->cu;
   dwarf2_per_objfile *per_objfile = cu->per_objfile;
@@ -19121,9 +19119,11 @@ read_attribute_value (const struct die_reader_specs *reader,
       break;
     case DW_FORM_loclistx:
       {
-	attr->set_unsigned_reprocess (read_unsigned_leb128 (abfd, info_ptr,
-							    &bytes_read));
+	attr->set_unsigned (read_unsigned_leb128 (abfd, info_ptr,
+						  &bytes_read));
 	info_ptr += bytes_read;
+	if (allow_reprocess)
+	  read_attribute_reprocess (reader, attr);
       }
       break;
     case DW_FORM_string:
@@ -19195,9 +19195,11 @@ read_attribute_value (const struct die_reader_specs *reader,
       break;
     case DW_FORM_rnglistx:
       {
-	attr->set_unsigned_reprocess (read_unsigned_leb128 (abfd, info_ptr,
-							    &bytes_read));
+	attr->set_unsigned (read_unsigned_leb128 (abfd, info_ptr,
+						  &bytes_read));
 	info_ptr += bytes_read;
+	if (allow_reprocess)
+	  read_attribute_reprocess (reader, attr);
       }
       break;
     case DW_FORM_udata:
@@ -19243,16 +19245,17 @@ read_attribute_value (const struct die_reader_specs *reader,
 	  info_ptr += bytes_read;
 	}
       info_ptr = read_attribute_value (reader, attr, form, implicit_const,
-				       info_ptr);
+				       info_ptr, allow_reprocess);
       break;
     case DW_FORM_implicit_const:
       attr->set_signed (implicit_const);
       break;
     case DW_FORM_addrx:
     case DW_FORM_GNU_addr_index:
-      attr->set_unsigned_reprocess (read_unsigned_leb128 (abfd, info_ptr,
-							  &bytes_read));
+      attr->set_unsigned (read_unsigned_leb128 (abfd, info_ptr, &bytes_read));
       info_ptr += bytes_read;
+      if (allow_reprocess)
+	read_attribute_reprocess (reader, attr);
       break;
     case DW_FORM_strx:
     case DW_FORM_strx1:
@@ -19287,7 +19290,9 @@ read_attribute_value (const struct die_reader_specs *reader,
 	    str_index = read_unsigned_leb128 (abfd, info_ptr, &bytes_read);
 	    info_ptr += bytes_read;
 	  }
-	attr->set_unsigned_reprocess (str_index);
+	attr->set_unsigned (str_index);
+	if (allow_reprocess)
+	  read_attribute_reprocess (reader, attr);
       }
       break;
     default:
@@ -19324,13 +19329,14 @@ read_attribute_value (const struct die_reader_specs *reader,
 static const gdb_byte *
 read_attribute (const struct die_reader_specs *reader,
 		struct attribute *attr, const struct attr_abbrev *abbrev,
-		const gdb_byte *info_ptr)
+		const gdb_byte *info_ptr,
+		bool allow_reprocess)
 {
   attr->name = abbrev->name;
   attr->string_is_canonical = 0;
-  attr->requires_reprocessing = 0;
   return read_attribute_value (reader, attr, abbrev->form,
-			       abbrev->implicit_const, info_ptr);
+			       abbrev->implicit_const, info_ptr,
+			       allow_reprocess);
 }
 
 /* Return pointer to string at .debug_str offset STR_OFFSET.  */
