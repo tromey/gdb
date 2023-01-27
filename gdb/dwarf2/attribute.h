@@ -74,6 +74,14 @@ struct attribute
     return u.snd;
   }
 
+  /* Return the unsigned value, but only for attributes requiring
+     reprocessing.  */
+  ULONGEST as_unsigned_reprocess () const
+  {
+    gdb_assert (form_requires_reprocessing ());
+    return u.unsnd;
+  }
+
   /* Return the unsigned value.  Requires that the form be an unsigned
      form.  */
   ULONGEST as_unsigned () const
@@ -234,6 +242,14 @@ struct attribute
   void set_unsigned (ULONGEST unsnd)
   {
     gdb_assert (form_is_unsigned ());
+    u.unsnd = unsnd;
+  }
+
+  /* Temporarily set this attribute to an unsigned integer.  This is
+     used only for those forms that require reprocessing.  */
+  void set_unsigned_reprocess (ULONGEST unsnd)
+  {
+    gdb_assert (form_requires_reprocessing ());
     u.unsnd = unsnd;
   }
 
