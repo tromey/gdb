@@ -1099,6 +1099,8 @@ COMMON_SFILES = \
 	frame.c \
 	frame-base.c \
 	frame-unwind.c \
+	gcc-imports/hwint.c \
+	gcc-imports/wide-int.c \
 	gcore.c \
 	gdb-demangle.c \
 	gdb_bfd.c \
