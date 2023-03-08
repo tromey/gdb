@@ -379,10 +379,15 @@ class HtabPrinter:
         return "array"
 
     def to_string(self):
+        if int(self._val) == 0:
+            return "(null)"
         n = int(self._val["n_elements"]) - int(self._val["n_deleted"])
         return "htab_t with {} elements".format(n)
 
     def children(self):
+        if int(self._val) == 0:
+            return
+
         size = int(self._val["size"])
         entries = self._val["entries"]
 
