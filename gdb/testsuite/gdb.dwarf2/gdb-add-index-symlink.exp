@@ -30,10 +30,7 @@ with_test_prefix non-symlink {
 	return -1
     }
 
-    if { [ensure_gdb_index $binfile] == -1 } {
-	untested "error adding gdb index"
-	return -1
-    }
+    critical ensure_gdb_index $binfile
 }
 
 # Regenerate exec without index.
@@ -48,10 +45,7 @@ if { ![file exists $symlink] } {
     file link -symbolic $symlink $binfile
 }
 
-if { [ensure_gdb_index $symlink] == -1 } {
-    fail "Unable to call gdb-add-index with a symlink to a symfile"
-    return -1
-}
+critical ensure_gdb_index $symlink
 
 # Ok, we have a copy of $binfile with an index.
 # Restart gdb and verify the index was used.
