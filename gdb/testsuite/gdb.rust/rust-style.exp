@@ -24,10 +24,8 @@ save_vars { env(TERM) } {
     setenv TERM ansi
 
     standard_testfile .rs
-    if {[prepare_for_testing "failed to prepare" $testfile $srcfile \
-	     {debug rust}]} {
-	return -1
-    }
+    critical prepare_for_testing "failed to prepare" $testfile $srcfile \
+	{debug rust}
 
     set line [gdb_get_line_number "breakpoint"]
     if {![runto ${srcfile}:$line]} {
