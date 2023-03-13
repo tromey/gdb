@@ -21,9 +21,8 @@ require {can_compile rust}
 
 standard_testfile .rs
 
-if {[prepare_for_testing "failed to prepare" $testfile $srcfile {debug rust}]} {
-    return
-}
+critical prepare_for_testing "failed to prepare" $testfile $srcfile \
+    {debug rust}
 
 critical ensure_gdb_index $binfile -dwarf-5
 

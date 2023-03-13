@@ -20,9 +20,8 @@ require allow_rust_tests
 require {can_compile rust}
 
 standard_testfile .rs
-if {[prepare_for_testing "failed to prepare" $testfile $srcfile {debug rust}]} {
-    return
-}
+critical prepare_for_testing "failed to prepare" $testfile $srcfile \
+    {debug rust}
 
 set readelf_program [gdb_find_readelf]
 set result [catch {exec $readelf_program --debug-dump=info $binfile} output]

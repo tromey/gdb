@@ -21,10 +21,8 @@ require {can_compile rust}
 
 with_ansi_styling_terminal {
     standard_testfile .rs
-    if {[prepare_for_testing "failed to prepare" $testfile $srcfile \
-	     {debug rust}]} {
-	return
-    }
+    critical prepare_for_testing "failed to prepare" $testfile $srcfile \
+	{debug rust}
 
     set line [gdb_get_line_number "breakpoint"]
     if {![runto ${srcfile}:$line]} {

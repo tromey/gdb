@@ -26,9 +26,8 @@ if {[lindex $v 0] == 1 && [lindex $v 1] < 43} {
 }
 
 standard_testfile .rs
-if {[prepare_for_testing "failed to prepare" $testfile $srcfile {debug rust}]} {
-    return
-}
+critical prepare_for_testing "failed to prepare" $testfile $srcfile \
+    {debug rust}
 
 set line [gdb_get_line_number "BREAK"]
 if {![runto ${srcfile}:$line]} {

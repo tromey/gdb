@@ -21,9 +21,8 @@ require allow_rust_tests allow_python_tests
 require {can_compile rust}
 
 standard_testfile .rs
-if {[prepare_for_testing "failed to prepare" $testfile $srcfile {debug rust}]} {
-    return
-}
+critical prepare_for_testing "failed to prepare" $testfile $srcfile \
+    {debug rust}
 
 set remote_python_file [gdb_remote_download host \
 			    ${srcdir}/${subdir}/${testfile}.py]
