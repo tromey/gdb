@@ -25,10 +25,7 @@ if {[prepare_for_testing "failed to prepare" $testfile $srcfile {debug rust}]} {
     return
 }
 
-if {[ensure_gdb_index $binfile -dwarf-5] == -1} {
-    untested "error adding gdb index"
-    return
-}
+critical ensure_gdb_index $binfile -dwarf-5
 
 gdb_exit
 gdb_start
