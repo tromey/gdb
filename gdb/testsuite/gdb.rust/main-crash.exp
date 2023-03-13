@@ -25,10 +25,7 @@ critical prepare_for_testing "failed to prepare" $testfile $srcfile \
 
 set line [gdb_get_line_number "BREAK"]
 # The bug was that this would crash.
-if {![runto ${srcfile}:$line]} {
-    untested "could not run to breakpoint"
-    return
-}
+critical runto ${srcfile}:$line
 
 # Test that gdb is alive.
 gdb_test "print 23" " = 23"

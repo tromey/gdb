@@ -30,10 +30,7 @@ critical prepare_for_testing "failed to prepare" $testfile $srcfile \
     {debug rust}
 
 set line [gdb_get_line_number "BREAK"]
-if {![runto ${srcfile}:$line]} {
-    untested "could not run to breakpoint"
-    return
-}
+critical runto ${srcfile}:$line
 
 gdb_test "print x" " = 340282366920938463463374607431768211455"
 gdb_test "print y" " = 170141183460469231731687303715884105727"

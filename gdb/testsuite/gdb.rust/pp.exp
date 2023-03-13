@@ -29,10 +29,7 @@ set remote_python_file [gdb_remote_download host \
 gdb_test_no_output "source ${remote_python_file}" "load python file"
 
 set line [gdb_get_line_number "set breakpoint here"]
-if {![runto ${srcfile}:$line]} {
-    untested "could not run to breakpoint"
-    return
-}
+critical runto ${srcfile}:$line
 
 gdb_test "print outer" " = pp::Outer \\(x\\(5\\)\\)"
 gdb_test "print outer.0" " = x\\(5\\)"

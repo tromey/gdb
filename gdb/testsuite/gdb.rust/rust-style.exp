@@ -25,10 +25,7 @@ with_ansi_styling_terminal {
 	{debug rust}
 
     set line [gdb_get_line_number "breakpoint"]
-    if {![runto ${srcfile}:$line]} {
-	untested "could not run to breakpoint"
-	return
-    }
+    critical runto ${srcfile}:$line
 
     set vfield [style value variable]
     set v2field [style value2 variable]

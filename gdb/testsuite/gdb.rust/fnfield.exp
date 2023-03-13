@@ -24,10 +24,7 @@ critical prepare_for_testing "failed to prepare" $testfile $srcfile \
     {debug rust}
 
 set line [gdb_get_line_number "set breakpoint here"]
-if {![runto ${srcfile}:$line]} {
-    untested "could not run to breakpoint"
-    return
-}
+critical runto ${srcfile}:$line
 
 gdb_test "print foo.f()" " = 6" "call impl function"
 gdb_test "print (foo.f)()" " = 5" "call function field"
