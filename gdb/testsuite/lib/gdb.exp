@@ -9324,8 +9324,7 @@ proc prepare_for_testing_full {testname args} {
 	}
 	set executable [lindex $spec 0]
     }
-    clean_restart $executable
-    return 0
+    return [clean_restart $executable]
 }
 
 # Prepares for testing, by calling build_executable, and then clean_restart.
@@ -9335,9 +9334,7 @@ proc prepare_for_testing { testname executable {sources ""} {options {debug}}} {
     if {[build_executable $testname $executable $sources $options] == -1} {
         return -1
     }
-    clean_restart $executable
-
-    return 0
+    return [clean_restart $executable]
 }
 
 # Retrieve the value of EXP in the inferior, represented in format
