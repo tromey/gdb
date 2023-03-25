@@ -553,6 +553,12 @@ generic_elf_osabi_sniff_abi_tag_sections (bfd *abfd, asection *sect,
       *osabi = GDB_OSABI_NETBSD;
       return;
     }
+
+  if (startswith (name, ".note.linuxcore"))
+    {
+      *osabi = GDB_OSABI_LINUX;
+      return;
+    }
 }
 
 static enum gdb_osabi

@@ -1348,6 +1348,12 @@ m68k_dump_tdep (struct gdbarch *gdbarch, struct ui_file *file)
 static enum gdb_osabi
 m68k_osabi_sniffer (bfd *abfd)
 {
+  enum gdb_osabi osabi = GDB_OSABI_UNKNOWN;
+  for (asection *sect : gdb_bfd_sections (abfd))
+    generic_elf_osabi_sniff_abi_tag_sections (abfd, sect, &osabi);
+  if (osabi != GDB_OSABI_UNKNOWN)
+    return osabi;
+
   unsigned int elfosabi = elf_elfheader (abfd)->e_ident[EI_OSABI];
 
   if (elfosabi == ELFOSABI_NONE)
