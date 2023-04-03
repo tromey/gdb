@@ -66,6 +66,7 @@ libgdbsupport_a_SOURCES = \
     gdb_tilde_expand.cc \
     gdb_wait.cc \
     gdb_vecs.cc \
+    hash-table.cc \
     job-control.cc \
     netstuff.cc \
     new-op.cc \

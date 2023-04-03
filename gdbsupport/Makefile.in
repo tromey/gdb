@@ -161,13 +161,14 @@ am_libgdbsupport_a_OBJECTS = agent.$(OBJEXT) btrace-common.$(OBJEXT) \
 	gdb-dlfcn.$(OBJEXT) gdb-hashtab.$(OBJEXT) \
 	gdb_obstack.$(OBJEXT) gdb_regex.$(OBJEXT) \
 	gdb_tilde_expand.$(OBJEXT) gdb_wait.$(OBJEXT) \
-	gdb_vecs.$(OBJEXT) job-control.$(OBJEXT) netstuff.$(OBJEXT) \
-	new-op.$(OBJEXT) pathstuff.$(OBJEXT) print-utils.$(OBJEXT) \
-	ptid.$(OBJEXT) rsp-low.$(OBJEXT) run-time-clock.$(OBJEXT) \
-	safe-strerror.$(OBJEXT) scoped_mmap.$(OBJEXT) search.$(OBJEXT) \
-	signals.$(OBJEXT) signals-state-save-restore.$(OBJEXT) \
-	task-group.$(OBJEXT) tdesc.$(OBJEXT) thread-pool.$(OBJEXT) \
-	xml-utils.$(OBJEXT) $(am__objects_1) $(am__objects_2)
+	gdb_vecs.$(OBJEXT) hash-table.$(OBJEXT) job-control.$(OBJEXT) \
+	netstuff.$(OBJEXT) new-op.$(OBJEXT) pathstuff.$(OBJEXT) \
+	print-utils.$(OBJEXT) ptid.$(OBJEXT) rsp-low.$(OBJEXT) \
+	run-time-clock.$(OBJEXT) safe-strerror.$(OBJEXT) \
+	scoped_mmap.$(OBJEXT) search.$(OBJEXT) signals.$(OBJEXT) \
+	signals-state-save-restore.$(OBJEXT) task-group.$(OBJEXT) \
+	tdesc.$(OBJEXT) thread-pool.$(OBJEXT) xml-utils.$(OBJEXT) \
+	$(am__objects_1) $(am__objects_2)
 libgdbsupport_a_OBJECTS = $(am_libgdbsupport_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -423,6 +424,7 @@ libgdbsupport_a_SOURCES = \
     gdb_tilde_expand.cc \
     gdb_wait.cc \
     gdb_vecs.cc \
+    hash-table.cc \
     job-control.cc \
     netstuff.cc \
     new-op.cc \
@@ -533,6 +535,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdb_tilde_expand.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdb_vecs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdb_wait.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hash-table.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/job-control.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netstuff.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/new-op.Po@am__quote@
