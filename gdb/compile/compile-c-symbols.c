@@ -31,6 +31,7 @@
 #include "gdbtypes.h"
 #include "dwarf2/loc.h"
 #include "inferior.h"
+#include "gdbsupport/hash-table.h"
 
 
 /* Compute the name of the pointer representing a local symbol's
@@ -446,43 +447,27 @@ gcc_symbol_address (void *datum, struct gcc_c_context *gcc_context,
 
 
 
-/* A hash function for symbol names.  */
-
-static hashval_t
-hash_symname (const void *a)
+/* Traits for hashing symbols.  */
+struct symbol_traits
 {
-  const struct symbol *sym = (const struct symbol *) a;
+  typedef const struct symbol *value_type;
 
-  return htab_hash_string (sym->natural_name ());
-}
+  static bool is_empty (const struct symbol *sym)
+  { return sym == nullptr; }
 
-/* A comparison function for hash tables that just looks at symbol
-   names.  */
+  static bool equals (const struct symbol *syma, const struct symbol *symb)
+  {
+    return strcmp (syma->natural_name (), symb->natural_name ()) == 0;
+  }
 
-static int
-eq_symname (const void *a, const void *b)
-{
-  const struct symbol *syma = (const struct symbol *) a;
-  const struct symbol *symb = (const struct symbol *) b;
+  static hashval_t hash (const struct symbol *sym)
+  {
+    return htab_hash_string (sym->natural_name ());
+  }
+};
 
-  return strcmp (syma->natural_name (), symb->natural_name ()) == 0;
-}
-
-/* If a symbol with the same name as SYM is already in HASHTAB, return
-   1.  Otherwise, add SYM to HASHTAB and return 0.  */
-
-static int
-symbol_seen (htab_t hashtab, struct symbol *sym)
-{
-  void **slot;
-
-  slot = htab_find_slot (hashtab, sym, INSERT);
-  if (*slot != NULL)
-    return 1;
-
-  *slot = sym;
-  return 0;
-}
+/* Type of a set that holds symbols.  */
+typedef gdb::traited_hash_table<symbol_traits> symbol_set;
 
 /* Generate C code to compute the length of a VLA.  */
 
@@ -630,8 +615,7 @@ generate_c_for_variable_locations (compile_instance *compiler,
 
   /* Ensure that a given name is only entered once.  This reflects the
      reality of shadowing.  */
-  htab_up symhash (htab_create_alloc (1, hash_symname, eq_symname, NULL,
-				      xcalloc, xfree));
+  symbol_set symset;
 
   while (1)
     {
@@ -639,7 +623,7 @@ generate_c_for_variable_locations (compile_instance *compiler,
 	 compute the location of each local variable.  */
       for (struct symbol *sym : block_iterator_range (block))
 	{
-	  if (!symbol_seen (symhash.get (), sym))
+	  if (symset.insert (sym).second)
 	    generate_c_for_for_one_variable (compiler, stream, gdbarch,
 					     registers_used, pc, sym);
 	}
