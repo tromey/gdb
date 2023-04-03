@@ -20,47 +20,36 @@
 #ifndef FILENAME_SEEN_CACHE_H
 #define FILENAME_SEEN_CACHE_H
 
-#include "defs.h"
-#include "gdbsupport/function-view.h"
-#include "gdbsupport/gdb-hashtab.h"
+#include "gdbsupport/hash-table.h"
+#include "filenames.h"
 
 /* Cache to watch for file names already seen.  */
 
 class filename_seen_cache
 {
 public:
-  filename_seen_cache ();
+  filename_seen_cache () = default;
 
   DISABLE_COPY_AND_ASSIGN (filename_seen_cache);
 
-  /* Empty the cache, but do not delete it.  */
-  void clear ();
+  /* Empty the cache.  */
+  void clear ()
+  { m_tab.clear (); }
 
   /* If FILE is not already in the table of files in CACHE, add it and
      return false; otherwise return true.
 
      NOTE: We don't manage space for FILE, we assume FILE lives as
      long as the caller needs.  */
-  bool seen (const char *file);
-
-  /* Traverse all cache entries, calling CALLBACK on each.  The
-     filename is passed as argument to CALLBACK.  */
-  void traverse (gdb::function_view<void (const char *filename)> callback)
-  {
-    auto erased_cb = [] (void **slot, void *info) -> int
-      {
-	auto filename = (const char *) *slot;
-	auto restored_cb = (decltype (callback) *) info;
-	(*restored_cb) (filename);
-	return 1;
-      };
-
-    htab_traverse_noresize (m_tab.get (), erased_cb, &callback);
-  }
+  bool seen (const char *file)
+  { return !m_tab.insert (file).second; }
 
 private:
+  using traits = gdb::libiberty_traits<filename_hash, filename_eq,
+				       const char *>;
+
   /* Table of files seen so far.  */
-  htab_up m_tab;
+  gdb::traited_hash_table<traits> m_tab;
 };
 
 #endif /* FILENAME_SEEN_CACHE_H */
