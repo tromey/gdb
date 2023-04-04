@@ -28,11 +28,11 @@
 #include "stack.h"
 #include "source.h"
 #include "annotate.h"
-#include "hashtab.h"
 #include "demangle.h"
 #include "mi/mi-cmds.h"
 #include "python-internal.h"
 #include <optional>
+#include "gdbsupport/hash-table.h"
 #include "cli/cli-style.h"
 
 enum mi_print_types
@@ -727,6 +727,8 @@ py_print_args (PyObject *filter,
   return EXT_LANG_BT_OK;
 }
 
+typedef gdb::hash_set<frame_info *> levels_printed_hash;
+
 /*  Print a single frame to the designated output stream, detecting
     whether the output is MI or console, and formatting the output
     according to the conventions of that protocol.  FILTER is the
@@ -745,7 +747,8 @@ py_print_args (PyObject *filter,
 static enum ext_lang_bt_status
 py_print_frame (PyObject *filter, frame_filter_flags flags,
 		enum ext_lang_frame_args args_type,
-		struct ui_out *out, int indent, htab_t levels_printed)
+		struct ui_out *out, int indent,
+		levels_printed_hash &levels_printed)
 {
   int has_addr = 0;
   CORE_ADDR address = 0;
@@ -855,23 +858,16 @@ py_print_frame (PyObject *filter, frame_filter_flags flags,
       && (location_print
 	  || (out->is_mi_like_p () && (print_frame_info || print_args))))
     {
-      struct frame_info **slot;
-      int level;
-
-      slot = (frame_info **) htab_find_slot (levels_printed,
-						   frame.get(), INSERT);
-
-      level = frame_relative_level (frame);
+      int level = frame_relative_level (frame);
 
       /* Check if this frame has already been printed (there are cases
 	 where elided synthetic dummy-frames have to 'borrow' the frame
 	 architecture from the eliding frame.  If that is the case, do
 	 not print 'level', but print spaces.  */
-      if (*slot == frame)
+      if (!levels_printed.insert (frame.get ()).second)
 	out->field_skip ("level");
       else
 	{
-	  *slot = frame.get ();
 	  annotate_frame_begin (print_level ? level : 0,
 				gdbarch, address);
 	  out->text ("#");
@@ -1191,10 +1187,7 @@ gdbpy_apply_frame_filter (const struct extension_language_defn *extlang,
   if (iterable == Py_None)
     return EXT_LANG_BT_NO_FILTERS;
 
-  htab_up levels_printed (htab_create (20,
-				       htab_hash_pointer,
-				       htab_eq_pointer,
-				       NULL));
+  levels_printed_hash levels_printed;
 
   while (true)
     {
@@ -1226,7 +1219,7 @@ gdbpy_apply_frame_filter (const struct extension_language_defn *extlang,
       try
 	{
 	  success = py_print_frame (item.get (), flags, args_type, out, 0,
-				    levels_printed.get ());
+				    levels_printed);
 	}
       catch (const gdb_exception_error &except)
 	{
