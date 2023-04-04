@@ -34,6 +34,7 @@
 #include "cli/cli-style.h"
 #include "objfiles.h"
 #include "inferior.h"
+#include "gdbsupport/hash-table.h"
 
 /* Disassemble functions.
    FIXME: We should get rid of all the duplicate code in gdb that does
@@ -122,72 +123,54 @@ struct deprecated_dis_line_entry
 
 struct dis_line_entry
 {
-  struct symtab *symtab;
-  int line;
+  struct symtab *symtab = nullptr;
+  int line = -1;
+
+  operator bool () const
+  { return symtab != nullptr; }
+
+  bool operator== (const dis_line_entry &other) const
+  { return symtab == other.symtab && line == other.line; }
 };
 
-/* Hash function for dis_line_entry.  */
-
-static hashval_t
-hash_dis_line_entry (const void *item)
+namespace std
 {
-  const struct dis_line_entry *dle = (const struct dis_line_entry *) item;
 
-  return htab_hash_pointer (dle->symtab) + dle->line;
-}
-
-/* Equal function for dis_line_entry.  */
-
-static int
-eq_dis_line_entry (const void *item_lhs, const void *item_rhs)
+template<>
+struct hash<dis_line_entry>
 {
-  const struct dis_line_entry *lhs = (const struct dis_line_entry *) item_lhs;
-  const struct dis_line_entry *rhs = (const struct dis_line_entry *) item_rhs;
+  size_t operator() (const dis_line_entry &entry) const
+  {
+    return std::hash<symtab *> () (entry.symtab) + entry.line;
+  }
+};
 
-  return (lhs->symtab == rhs->symtab
-	  && lhs->line == rhs->line);
-}
-
-/* Create the table to manage lines for mixed source/disassembly.  */
-
-static htab_t
-allocate_dis_line_table (void)
-{
-  return htab_create_alloc (41,
-			    hash_dis_line_entry, eq_dis_line_entry,
-			    xfree, xcalloc, xfree);
 }
 
 /* Add a new dis_line_entry containing SYMTAB and LINE to TABLE.  */
 
 static void
-add_dis_line_entry (htab_t table, struct symtab *symtab, int line)
-{
-  void **slot;
-  struct dis_line_entry dle, *dlep;
-
-  dle.symtab = symtab;
-  dle.line = line;
-  slot = htab_find_slot (table, &dle, INSERT);
-  if (*slot == NULL)
-    {
-      dlep = XNEW (struct dis_line_entry);
-      dlep->symtab = symtab;
-      dlep->line = line;
-      *slot = dlep;
-    }
-}
-
-/* Return non-zero if SYMTAB, LINE are in TABLE.  */
-
-static int
-line_has_code_p (htab_t table, struct symtab *symtab, int line)
+add_dis_line_entry (gdb::hash_set<dis_line_entry> &table,
+		    struct symtab *symtab, int line)
 {
   struct dis_line_entry dle;
 
   dle.symtab = symtab;
   dle.line = line;
-  return htab_find (table, &dle) != NULL;
+  table.insert (dle);
+}
+
+/* Return non-zero if SYMTAB, LINE are in TABLE.  */
+
+static int
+line_has_code_p (const gdb::hash_set<dis_line_entry> &table,
+		 struct symtab *symtab, int line)
+{
+  struct dis_line_entry dle;
+
+  dle.symtab = symtab;
+  dle.line = line;
+  return table.contains (dle);
 }
 
 /* Wrapper of target_read_code.  */
@@ -742,7 +725,7 @@ do_mixed_source_and_assembly (struct gdbarch *gdbarch,
      but if that text is for code that will be disassembled later, then
      we'll want to defer printing it until later with its associated code.  */
 
-  htab_up dis_line_table (allocate_dis_line_table ());
+  gdb::hash_set<dis_line_entry> dis_line_table;
 
   struct objfile *objfile = main_symtab->compunit ()->objfile ();
 
@@ -781,7 +764,7 @@ do_mixed_source_and_assembly (struct gdbarch *gdbarch,
       pc += length;
 
       if (sal.symtab != NULL)
-	add_dis_line_entry (dis_line_table.get (), sal.symtab, sal.line);
+	add_dis_line_entry (dis_line_table, sal.symtab, sal.line);
     }
 
   /* Second pass: print the disassembly.
@@ -855,8 +838,7 @@ do_mixed_source_and_assembly (struct gdbarch *gdbarch,
 		     not associated with code that we'll print later.  */
 		  for (l = sal.line - 1; l > last_line; --l)
 		    {
-		      if (line_has_code_p (dis_line_table.get (),
-					   sal.symtab, l))
+		      if (line_has_code_p (dis_line_table, sal.symtab, l))
 			break;
 		    }
 		  if (l < sal.line - 1)
