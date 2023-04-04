@@ -20,7 +20,6 @@
 #include "defs.h"
 #include "arch-utils.h"
 #include <ctype.h>
-#include "hashtab.h"
 #include "symtab.h"
 #include "frame.h"
 #include "breakpoint.h"
@@ -84,6 +83,7 @@
 #include "gdbsupport/array-view.h"
 #include <optional>
 #include "gdbsupport/common-utils.h"
+#include "gdbsupport/hash-table.h"
 
 /* Prototypes for local functions.  */
 
@@ -12760,25 +12760,20 @@ all_locations_are_pending (struct breakpoint *b, struct program_space *pspace)
 static bool
 ambiguous_names_p (const bp_location_range &locs)
 {
-  htab_up htab (htab_create_alloc (13, htab_hash_string, htab_eq_string, NULL,
-				   xcalloc, xfree));
+  using traits = gdb::libiberty_traits<htab_hash_string, htab_eq_string,
+				       const char *>;
+  gdb::traited_hash_table<traits> htab;
 
   for (const bp_location &l : locs)
     {
-      const char **slot;
       const char *name = l.function_name.get ();
 
       /* Allow for some names to be NULL, ignore them.  */
       if (name == NULL)
 	continue;
 
-      slot = (const char **) htab_find_slot (htab.get (), (const void *) name,
-					     INSERT);
-      /* NOTE: We can assume slot != NULL here because xcalloc never
-	 returns NULL.  */
-      if (*slot != NULL)
+      if (!htab.insert (name).second)
 	return true;
-      *slot = name;
     }
 
   return false;
