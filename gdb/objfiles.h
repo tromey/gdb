@@ -38,6 +38,7 @@
 #include "jit.h"
 #include "quick-symbol.h"
 #include <forward_list>
+#include "gdbsupport/hash-table.h"
 
 struct htab;
 struct objfile_data;
@@ -849,7 +850,8 @@ public:
      Very few blocks have a static link, so it's more memory efficient to
      store these here rather than in struct block.  Static links must be
      allocated on the objfile's obstack.  */
-  htab_up static_links;
+  gdb::hash_map<const struct block *,
+		const struct dynamic_prop *> static_links;
 
   /* JIT-related data for this objfile, if the objfile is a JITer;
      that is, it produces JITed objfiles.  */
