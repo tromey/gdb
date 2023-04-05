@@ -60,7 +60,12 @@ struct abbrev_info
 struct abbrev_table;
 typedef std::unique_ptr<struct abbrev_table> abbrev_table_up;
 
-/* Top level data structure to contain an abbreviation table.  */
+/* Top level data structure to contain an abbreviation table.
+
+   In DWARF version 2, the description of the debugging information is
+   stored in a separate .debug_abbrev section.  Before we read any
+   dies from a section we read in all abbreviations and install them
+   in a hash table.  */
 
 struct abbrev_table
 {
@@ -76,12 +81,10 @@ struct abbrev_table
 
   const struct abbrev_info *lookup_abbrev (unsigned int abbrev_number) const
   {
-    struct abbrev_info search;
-    search.number = abbrev_number;
-
-    return (struct abbrev_info *) htab_find_with_hash (m_abbrevs.get (),
-						       &search,
-						       abbrev_number);
+    auto iter = m_abbrevs.find (abbrev_number, abbrev_number);
+    if (iter == m_abbrevs.end ())
+      return nullptr;
+    return *iter;
   }
 
   /* Where the abbrev table came from.
@@ -92,15 +95,46 @@ struct abbrev_table
 
 private:
 
-  abbrev_table (sect_offset off, struct dwarf2_section_info *sect);
+  abbrev_table (sect_offset off, struct dwarf2_section_info *sect)
+    : sect_off (off),
+      section (sect)
+  {
+  }
 
   DISABLE_COPY_AND_ASSIGN (abbrev_table);
 
   /* Add an abbreviation to the table.  */
-  void add_abbrev (struct abbrev_info *abbrev);
+  void add_abbrev (struct abbrev_info *abbrev)
+  { m_abbrevs.insert (abbrev); }
+
+  struct abbrev_traits
+  {
+    typedef abbrev_info *value_type;
+
+    static bool is_empty (const value_type &val)
+    { return val == nullptr; }
+
+    static bool equals (const value_type &lhs, const value_type &rhs)
+    {
+      return lhs->number == rhs->number;
+    }
+
+    static bool equals (const value_type &lhs, unsigned int rhs)
+    {
+      return lhs->number == rhs;
+    }
+
+    static size_t hash (const value_type &val)
+    {
+      /* Warning: if you change this next line, you must also update
+	 the other code in this class that computes the hash by
+	 hand..  */
+      return val->number;
+    }
+  };
 
   /* Hash table of abbrevs.  */
-  htab_up m_abbrevs;
+  gdb::traited_hash_table<abbrev_traits> m_abbrevs;
 
   /* Storage for the abbrev table.  */
   auto_obstack m_abbrev_obstack;
