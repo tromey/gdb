@@ -21,12 +21,13 @@
 #define GDB_DWARF2_ABBREV_CACHE_H
 
 #include "dwarf2/abbrev.h"
+#include "gdbsupport/hash-table.h"
 
 /* An abbrev cache holds abbrev tables for easier reuse.  */
 class abbrev_cache
 {
 public:
-  abbrev_cache ();
+  abbrev_cache () = default;
   DISABLE_COPY_AND_ASSIGN (abbrev_cache);
 
   /* Find an abbrev table coming from the abbrev section SECTION at
@@ -36,8 +37,10 @@ public:
   {
     search_key key = { section, offset };
 
-    return (abbrev_table *) htab_find_with_hash (m_tables.get (), &key,
-						 to_underlying (offset));
+    auto iter = m_tables.find (key, to_underlying (offset));
+    if (iter == m_tables.end ())
+      return nullptr;
+    return iter->get ();
   }
 
   /* Add TABLE to this cache.  Ownership of TABLE is transferred to
@@ -49,17 +52,37 @@ public:
 
 private:
 
-  static hashval_t hash_table (const void *item);
-  static int eq_table (const void *lhs, const void *rhs);
-
   struct search_key
   {
     struct dwarf2_section_info *section;
     sect_offset offset;
   };
 
+  struct abbrev_traits
+  {
+    typedef abbrev_table_up value_type;
+
+    static bool is_empty (const value_type &val)
+    { return val == nullptr; }
+
+    static bool equals (const value_type &lhs, const value_type &rhs)
+    {
+      return lhs->section == rhs->section && lhs->sect_off == rhs->sect_off;
+    }
+
+    static bool equals (const value_type &lhs, const search_key &rhs)
+    {
+      return lhs->section == rhs.section && lhs->sect_off == rhs.offset;
+    }
+
+    static size_t hash (const value_type &val)
+    {
+      return to_underlying (val->sect_off);
+    }
+  };
+
   /* Hash table of abbrev tables.  */
-  htab_up m_tables;
+  gdb::traited_hash_table<abbrev_traits> m_tables;
 };
 
 #endif /* GDB_DWARF2_ABBREV_CACHE_H */
