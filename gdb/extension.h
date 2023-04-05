@@ -23,6 +23,7 @@
 #include "mi/mi-cmds.h"
 #include "gdbsupport/array-view.h"
 #include <optional>
+#include "gdbtypes.h"
 
 struct breakpoint;
 struct command_line;
@@ -295,7 +296,8 @@ extern enum ext_lang_bt_status apply_ext_lang_frame_filter
    enum ext_lang_frame_args args_type,
    struct ui_out *out, int frame_low, int frame_high);
 
-extern void preserve_ext_lang_values (struct objfile *, htab_t copied_types);
+extern void preserve_ext_lang_values (struct objfile *,
+				      copied_types_hash_t &copied_types);
 
 extern const struct extension_language_defn *get_breakpoint_cond_ext_lang
   (struct breakpoint *b, enum extension_language skip_lang);
