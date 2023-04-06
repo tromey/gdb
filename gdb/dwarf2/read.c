@@ -96,6 +96,7 @@
 #include "split-name.h"
 #include "gdbsupport/thread-pool.h"
 #include "run-on-main-thread.h"
+#include "gdbsupport/hash-table.h"
 
 /* When == 1, print basic high level tracing messages.
    When > 1, be more verbose.
@@ -2873,12 +2874,8 @@ dw_expand_symtabs_matching_file_matcher
   if (file_matcher == NULL)
     return;
 
-  htab_up visited_found (htab_create_alloc (10, htab_hash_pointer,
-					    htab_eq_pointer,
-					    NULL, xcalloc, xfree));
-  htab_up visited_not_found (htab_create_alloc (10, htab_hash_pointer,
-						htab_eq_pointer,
-						NULL, xcalloc, xfree));
+  gdb::hash_set<quick_file_names *> visited_found;
+  gdb::hash_set<quick_file_names *> visited_not_found;
 
   /* The rule is CUs specify all the files, including those used by
      any TU, so there's no need to scan TUs here.  */
@@ -2921,9 +2918,9 @@ dw_expand_symtabs_matching_file_matcher
       if (file_data == NULL)
 	continue;
 
-      if (htab_find (visited_not_found.get (), file_data) != NULL)
+      if (visited_not_found.contains (file_data))
 	continue;
-      else if (htab_find (visited_found.get (), file_data) != NULL)
+      else if (visited_found.contains (file_data))
 	{
 	  per_cu->mark = 1;
 	  continue;
@@ -2954,11 +2951,10 @@ dw_expand_symtabs_matching_file_matcher
 	    }
 	}
 
-      void **slot = htab_find_slot (per_cu->mark
-				    ? visited_found.get ()
-				    : visited_not_found.get (),
-				    file_data, INSERT);
-      *slot = file_data;
+      if (per_cu->mark)
+	visited_found.insert (file_data);
+      else
+	visited_not_found.insert (file_data);
     }
 }
 
@@ -6164,20 +6160,19 @@ void dwarf2_per_objfile::set_type_for_signatured_type
    included by PER_CU.  */
 
 static void
-recursively_compute_inclusions (std::vector<compunit_symtab *> *result,
-				htab_t all_children, htab_t all_type_symtabs,
-				dwarf2_per_cu_data *per_cu,
-				dwarf2_per_objfile *per_objfile,
-				struct compunit_symtab *immediate_parent)
+recursively_compute_inclusions
+     (std::vector<compunit_symtab *> *result,
+      gdb::hash_set<dwarf2_per_cu_data *> &all_children,
+      gdb::hash_set<compunit_symtab *> &all_type_symtabs,
+      dwarf2_per_cu_data *per_cu,
+      dwarf2_per_objfile *per_objfile,
+      struct compunit_symtab *immediate_parent)
 {
-  void **slot = htab_find_slot (all_children, per_cu, INSERT);
-  if (*slot != NULL)
+  if (!all_children.insert (per_cu).second)
     {
       /* This inclusion and its children have been processed.  */
       return;
     }
-
-  *slot = per_cu;
 
   /* Only add a CU if it has a symbol table.  */
   compunit_symtab *cust = per_objfile->get_symtab (per_cu);
@@ -6187,10 +6182,8 @@ recursively_compute_inclusions (std::vector<compunit_symtab *> *result,
 	 seen it yet (type unit per_cu's can share symtabs).  */
       if (per_cu->is_debug_types)
 	{
-	  slot = htab_find_slot (all_type_symtabs, cust, INSERT);
-	  if (*slot == NULL)
+	  if (all_type_symtabs.insert (cust).second)
 	    {
-	      *slot = cust;
 	      result->push_back (cust);
 	      if (cust->user == NULL)
 		cust->user = immediate_parent;
@@ -6232,17 +6225,13 @@ compute_compunit_symtab_includes (dwarf2_per_cu_data *per_cu,
       if (cust == NULL)
 	return;
 
-      htab_up all_children (htab_create_alloc (1, htab_hash_pointer,
-					       htab_eq_pointer,
-					       NULL, xcalloc, xfree));
-      htab_up all_type_symtabs (htab_create_alloc (1, htab_hash_pointer,
-						   htab_eq_pointer,
-						   NULL, xcalloc, xfree));
+      gdb::hash_set<dwarf2_per_cu_data *> all_children;
+      gdb::hash_set<compunit_symtab *> all_type_symtabs;
 
       for (dwarf2_per_cu_data *ptr : *per_cu->imported_symtabs)
 	{
-	  recursively_compute_inclusions (&result_symtabs, all_children.get (),
-					  all_type_symtabs.get (), ptr,
+	  recursively_compute_inclusions (&result_symtabs, all_children,
+					  all_type_symtabs, ptr,
 					  per_objfile, cust);
 	}
 
