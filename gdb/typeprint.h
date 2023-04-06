@@ -20,6 +20,7 @@
 #define TYPEPRINT_H
 
 #include "gdbsupport/gdb_obstack.h"
+#include "gdbsupport/hash-table.h"
 
 enum language;
 struct ui_file;
@@ -123,10 +124,12 @@ class typedef_hash_table
 public:
 
   /* Create a new typedef-lookup hash table.  */
-  typedef_hash_table ();
+  typedef_hash_table () = default;
 
   /* Copy a typedef hash.  */
-  typedef_hash_table (const typedef_hash_table &);
+  typedef_hash_table (const typedef_hash_table &other)
+    : m_table (other.m_table)
+  { }
 
   typedef_hash_table &operator= (const typedef_hash_table &) = delete;
 
@@ -150,8 +153,28 @@ private:
 					  struct type *t);
 
 
+  /* Traits used for the hash table.  */
+  struct decl_field_traits
+  {
+    typedef decl_field *value_type;
+
+    static bool is_empty (const value_type &val)
+    { return val == nullptr; }
+
+    static bool equals (const value_type &lhs, const value_type &rhs)
+    { return types_equal (lhs->type, rhs->type); }
+
+    static size_t hash (const value_type &val)
+    {
+      /* The hash must agree with equals, and types_equal strips
+	 typedefs.  */
+      struct type *type = check_typedef (val->type);
+      return htab_hash_string (TYPE_SAFE_NAME (type));
+    }
+  };
+
   /* The actual hash table.  */
-  htab_up m_table;
+  gdb::traited_hash_table<decl_field_traits> m_table;
 
   /* Storage for typedef_field objects that must be synthesized.  */
   auto_obstack m_storage;
