@@ -154,10 +154,6 @@ registry_accessor<bfd>::get (bfd *abfd)
   return &gdata->registry_fields;
 }
 
-/* A hash table storing all the BFDs maintained in the cache.  */
-
-static htab_t gdb_bfd_cache;
-
 /* When true gdb will reuse an existing bfd object if the filename,
    modification time, and file size all match.  */
 
@@ -203,34 +199,38 @@ struct gdb_bfd_cache_search
   dev_t device_id;
 };
 
-/* A hash function for BFDs.  */
+/* Traits for the BFD cache hash table.  */
 
-static hashval_t
-hash_bfd (const void *b)
+struct gdb_bfd_cache_traits
 {
-  const bfd *abfd = (const struct bfd *) b;
+  typedef bfd *value_type;
 
-  /* It is simplest to just hash the filename.  */
-  return htab_hash_string (bfd_get_filename (abfd));
-}
+  static bool is_empty (const bfd *val)
+  { return val == nullptr; }
 
-/* An equality function for BFDs.  Note that this expects the caller
-   to search using struct gdb_bfd_cache_search only, not BFDs.  */
+  static size_t hash (const bfd *abfd)
+  { return htab_hash_string (bfd_get_filename (abfd)); }
 
-static int
-eq_bfd (const void *a, const void *b)
-{
-  const bfd *abfd = (const struct bfd *) a;
-  const struct gdb_bfd_cache_search *s
-    = (const struct gdb_bfd_cache_search *) b;
-  struct gdb_bfd_data *gdata = (struct gdb_bfd_data *) bfd_usrdata (abfd);
+  static size_t hash (const gdb_bfd_cache_search &val)
+  { return htab_hash_string (val.filename); }
 
-  return (gdata->mtime == s->mtime
-	  && gdata->size == s->size
-	  && gdata->inode == s->inode
-	  && gdata->device_id == s->device_id
-	  && strcmp (bfd_get_filename (abfd), s->filename) == 0);
-}
+  static bool equals (const bfd *a, const bfd *b)
+  { return a == b; }
+
+  static bool equals (const bfd *abfd, const gdb_bfd_cache_search &s)
+  {
+    struct gdb_bfd_data *gdata = (struct gdb_bfd_data *) bfd_usrdata (abfd);
+    return (gdata->mtime == s.mtime
+	    && gdata->size == s.size
+	    && gdata->inode == s.inode
+	    && gdata->device_id == s.device_id
+	    && strcmp (bfd_get_filename (abfd), s.filename) == 0);
+  }
+};
+
+/* A hash table storing all the BFDs maintained in the cache.  */
+
+static gdb::traited_hash_table<gdb_bfd_cache_traits> gdb_bfd_cache;
 
 /* See gdb_bfd.h.  */
 
@@ -503,8 +503,6 @@ gdb_bfd_ref_ptr
 gdb_bfd_open (const char *name, const char *target, int fd,
 	      bool warn_if_slow)
 {
-  hashval_t hash;
-  void **slot;
   bfd *abfd;
   struct gdb_bfd_cache_search search;
   struct stat st;
@@ -530,10 +528,6 @@ gdb_bfd_open (const char *name, const char *target, int fd,
 #if CXX_STD_THREAD
   std::lock_guard<std::recursive_mutex> guard (gdb_bfd_mutex);
 #endif
-
-  if (gdb_bfd_cache == NULL)
-    gdb_bfd_cache = htab_create_alloc (1, hash_bfd, eq_bfd, NULL,
-				       xcalloc, xfree);
 
   if (fd == -1)
     {
@@ -561,14 +555,10 @@ gdb_bfd_open (const char *name, const char *target, int fd,
   search.inode = st.st_ino;
   search.device_id = st.st_dev;
 
-  /* Note that this must compute the same result as hash_bfd.  */
-  hash = htab_hash_string (name);
-  /* Note that we cannot use htab_find_slot_with_hash here, because
-     opening the BFD may fail; and this would violate hashtab
-     invariants.  */
-  abfd = (struct bfd *) htab_find_with_hash (gdb_bfd_cache, &search, hash);
-  if (bfd_sharing && abfd != NULL)
+  auto iter = gdb_bfd_cache.find (search);
+  if (bfd_sharing && iter != gdb_bfd_cache.end ())
     {
+      abfd = *iter;
       bfd_cache_debug_printf ("Reusing cached bfd %s for %s",
 			      host_address_to_string (abfd),
 			      bfd_get_filename (abfd));
@@ -588,9 +578,8 @@ gdb_bfd_open (const char *name, const char *target, int fd,
 
   if (bfd_sharing)
     {
-      slot = htab_find_slot_with_hash (gdb_bfd_cache, &search, hash, INSERT);
-      gdb_assert (!*slot);
-      *slot = abfd;
+      auto insert_pair = gdb_bfd_cache.insert (abfd);
+      gdb_assert (insert_pair.second);
     }
 
   /* It's important to pass the already-computed stat info here,
@@ -685,7 +674,6 @@ void
 gdb_bfd_unref (struct bfd *abfd)
 {
   struct gdb_bfd_data *gdata;
-  struct gdb_bfd_cache_search search;
   bfd *archive_bfd;
 
   if (abfd == NULL)
@@ -712,23 +700,9 @@ gdb_bfd_unref (struct bfd *abfd)
 			  bfd_get_filename (abfd));
 
   archive_bfd = gdata->archive_bfd;
-  search.filename = bfd_get_filename (abfd);
 
-  if (gdb_bfd_cache && search.filename)
-    {
-      hashval_t hash = htab_hash_string (search.filename);
-      void **slot;
-
-      search.mtime = gdata->mtime;
-      search.size = gdata->size;
-      search.inode = gdata->inode;
-      search.device_id = gdata->device_id;
-      slot = htab_find_slot_with_hash (gdb_bfd_cache, &search, hash,
-				       NO_INSERT);
-
-      if (slot && *slot)
-	htab_clear_slot (gdb_bfd_cache, slot);
-    }
+  if (bfd_get_filename (abfd) != nullptr)
+    gdb_bfd_cache.erase (abfd);
 
   delete gdata;
   bfd_set_usrdata (abfd, NULL);  /* Paranoia.  */
