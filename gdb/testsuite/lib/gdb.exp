@@ -11016,6 +11016,34 @@ proc require { args } {
     }
 }
 
+#
+# The "critical" command is used to invoke some code that must
+# succeed.  If the code in question fails, "unsupported" is logged and
+# the command's caller will return.
+#
+# This is implemented as an ensemble namespace so that individual
+# sub-commands can handle varying return values correctly.
+#
+namespace eval critical {
+    proc _make_wrapper {name bad_result} {
+	proc $name {args} [format {
+	    set result [uplevel [list %s {*}$args]]
+	    if {$result == %s} {
+		unsupported "$name failed"
+		return -code return 0
+	    }
+	} $name $bad_result]
+	namespace export $name
+    }
+
+    _make_wrapper ensure_gdb_index -1
+    _make_wrapper prepare_for_testing_full -1
+    _make_wrapper prepare_for_testing -1
+    _make_wrapper runto 0
+
+    namespace ensemble create
+}
+
 # Wait up to ::TIMEOUT seconds for file PATH to exist on the target system.
 # Return 1 if it does exist, 0 otherwise.
 
