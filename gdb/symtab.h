@@ -1571,11 +1571,11 @@ struct rust_vtable_symbol : public symbol
 struct linetable_entry
 {
   /* Set the (unrelocated) PC for this entry.  */
-  void set_raw_pc (unrelocated_addr pc)
+  void set_unrelocated_pc (unrelocated_addr pc)
   { m_pc = pc; }
 
   /* Return the unrelocated PC for this entry.  */
-  unrelocated_addr raw_pc () const
+  unrelocated_addr unrelocated_pc () const
   { return m_pc; }
 
   /* Return the relocated PC for this entry.  */
@@ -1603,6 +1603,8 @@ struct linetable_entry
   /* True if this location is a good location to place a breakpoint after a
      function prologue.  */
   bool prologue_end : 1;
+
+private:
 
   /* The address for this entry.  */
   unrelocated_addr m_pc;
