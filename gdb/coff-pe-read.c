@@ -66,6 +66,26 @@ struct read_pe_section_data
 #define PE_SECTION_TABLE_SIZE     3
 #define PE_SECTION_INDEX_INVALID -1
 
+/* If ABFD appears to be a PE-COFF file, return the word size (either
+   4 or 8).  Otherwise, return 0.  */
+static int
+pe_coff_word_size (bfd *abfd)
+{
+  const char *target = bfd_get_target (abfd);
+
+  if (strcmp (target, "pe-x86-64") == 0
+      || strcmp (target, "pei-x86-64") == 0
+      || strcmp (target, "pe-aarch64") == 0
+      || strcmp (target, "pei-aarch64") == 0)
+    return 8;
+  if (strcmp (target, "pe-i386") == 0
+      || strcmp (target, "pei-i386") == 0
+      || strcmp (target, "pe-arm-wince-little") == 0
+      || strcmp (target, "pei-arm-wince-little") == 0)
+    return 4;
+  return 0;
+}
+
 /* Get the index of the named section in our own array, which contains
    text, data and bss in that order.  Return PE_SECTION_INDEX_INVALID
    if passed an unrecognised section name.  */
@@ -306,20 +326,9 @@ read_pe_exported_syms (minimal_symbol_reader &reader,
   unsigned char *expdata, *erva;
   unsigned long name_rvas, ordinals, nexp, ordbase;
   int otherix = PE_SECTION_TABLE_SIZE;
-  int is_pe64 = 0;
-  int is_pe32 = 0;
 
-  char const *target = bfd_get_target (objfile->obfd.get ());
-
-  is_pe64 = (strcmp (target, "pe-x86-64") == 0
-	     || strcmp (target, "pei-x86-64") == 0
-	     || strcmp (target, "pe-aarch64") == 0
-	     || strcmp (target, "pei-aarch64") == 0);
-  is_pe32 = (strcmp (target, "pe-i386") == 0
-	     || strcmp (target, "pei-i386") == 0
-	     || strcmp (target, "pe-arm-wince-little") == 0
-	     || strcmp (target, "pei-arm-wince-little") == 0);
-  if (!is_pe32 && !is_pe64)
+  int word_size = pe_coff_word_size (dll);
+  if (word_size == 0)
     {
       /* This is not a recognized PE format file.  Abort now, because
 	 the code is untested on anything else.  *FIXME* test on
@@ -346,14 +355,14 @@ read_pe_exported_syms (minimal_symbol_reader &reader,
   /* Get pe_header, optional header and numbers of export entries.  */
   pe_header_offset = pe_get32 (dll, 0x3c);
   opthdr_ofs = pe_header_offset + 4 + 20;
-  if (is_pe64)
+  if (word_size == 8)
     num_entries = pe_get32 (dll, opthdr_ofs + 108);
   else
     num_entries = pe_get32 (dll, opthdr_ofs + 92);
 
   if (num_entries < 1)		/* No exports.  */
     return;
-  if (is_pe64)
+  if (word_size == 8)
     {
       export_opthdrrva = pe_get32 (dll, opthdr_ofs + 112);
       export_opthdrsize = pe_get32 (dll, opthdr_ofs + 116);
@@ -599,25 +608,11 @@ pe_text_section_offset (struct bfd *abfd)
 {
   unsigned long pe_header_offset, i;
   unsigned long nsections, secptr;
-  int is_pe64 = 0;
-  int is_pe32 = 0;
-  char const *target;
 
   if (!abfd)
     return DEFAULT_COFF_PE_TEXT_SECTION_OFFSET;
 
-  target = bfd_get_target (abfd);
-
-  is_pe64 = (strcmp (target, "pe-x86-64") == 0
-	     || strcmp (target, "pei-x86-64") == 0
-	     || strcmp (target, "pe-aarch64") == 0
-	     || strcmp (target, "pei-aarch64") == 0);
-  is_pe32 = (strcmp (target, "pe-i386") == 0
-	     || strcmp (target, "pei-i386") == 0
-	     || strcmp (target, "pe-arm-wince-little") == 0
-	     || strcmp (target, "pei-arm-wince-little") == 0);
-
-  if (!is_pe32 && !is_pe64)
+  if (pe_coff_word_size (abfd) == 0)
     {
       /* This is not a recognized PE format file.  Abort now, because
 	 the code is untested on anything else.  *FIXME* test on
