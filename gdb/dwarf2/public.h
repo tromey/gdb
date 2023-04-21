@@ -20,9 +20,22 @@
 #ifndef DWARF2_PUBLIC_H
 #define DWARF2_PUBLIC_H
 
-extern bool dwarf2_has_info (struct objfile *,
-			     const struct dwarf2_debug_sections *,
-			     bool = false);
+/* Try to locate the sections we need for DWARF 2 debugging
+   information and return true if we have enough to do something.
+
+   NAMES points to the dwarf2 section names, or is NULL if the standard
+   ELF names are used.
+
+   CAN_COPY is true for formats where symbol interposition is possible
+   and so symbol values must follow copy relocation rules.
+
+   OFFSET is applied to all symbol addresses.  This was added to
+   handle Windows DLLs that were processed by the 'rebase' utility,
+   which does not relocate the DWARF.  */
+extern bool dwarf2_has_info (struct objfile *objfile,
+			     const struct dwarf2_debug_sections *names,
+			     bool can_copy = false,
+			     CORE_ADDR offset = 0);
 
 /* A DWARF names index variant.  */
 enum class dw_index_kind

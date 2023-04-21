@@ -423,8 +423,10 @@ struct dwarf2_per_bfd
      dwarf2 section names, or is NULL if the standard ELF names are
      used.  CAN_COPY is true for formats where symbol
      interposition is possible and so symbol values must follow copy
-     relocation rules.  */
-  dwarf2_per_bfd (bfd *obfd, const dwarf2_debug_sections *names, bool can_copy);
+     relocation rules.  OFFSET is the address offset that is passed to
+     dwarf2_has_info, which see.  */
+  dwarf2_per_bfd (bfd *obfd, const dwarf2_debug_sections *names, bool can_copy,
+		  CORE_ADDR offset);
 
   ~dwarf2_per_bfd ();
 
@@ -556,6 +558,9 @@ public:
 
   /* The address map that is used by the DWARF index code.  */
   struct addrmap *index_addrmap = nullptr;
+
+  /* An offset to be applied to all addresses.  */
+  CORE_ADDR address_offset;
 };
 
 /* An iterator for all_units that is based on index.  This

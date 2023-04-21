@@ -643,6 +643,33 @@ pe_text_section_offset (struct bfd *abfd)
   return DEFAULT_COFF_PE_TEXT_SECTION_OFFSET;
 }
 
+/* See coff-pe-read.h.  */
+
+CORE_ADDR
+pe_rebase_offset (bfd *abfd)
+{
+  int word_size = pe_coff_word_size (abfd);
+  if (word_size == 0)
+    return 0;
+
+  asection *text_section = bfd_get_section_by_name (abfd, ".text");
+  if (text_section == nullptr)
+    return 0;
+
+  asection *defaddr = bfd_get_section_by_name (abfd, ".debug_pe_defaddr");
+  if (defaddr == nullptr || bfd_section_size (defaddr) != word_size)
+    return 0;
+
+  CORE_ADDR orig_addr;
+  bfd_byte data[8];
+  if (!bfd_get_section_contents (abfd, defaddr, data, 0, word_size))
+    return 0;
+  orig_addr = bfd_get (word_size, abfd, data);
+
+  ULONGEST text_vma = bfd_section_vma (text_section);
+  return text_vma - orig_addr;
+}
+
 /* Implements "show debug coff_pe_read" command.  */
 
 static void

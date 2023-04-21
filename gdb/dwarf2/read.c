@@ -1251,9 +1251,10 @@ line_header_eq_voidp (const void *item_lhs, const void *item_rhs)
 /* See declaration.  */
 
 dwarf2_per_bfd::dwarf2_per_bfd (bfd *obfd, const dwarf2_debug_sections *names,
-				bool can_copy_)
+				bool can_copy_, CORE_ADDR offset)
   : obfd (obfd),
-    can_copy (can_copy_)
+    can_copy (can_copy_),
+    address_offset (offset)
 {
   if (names == NULL)
     names = &dwarf2_elf_names;
@@ -1344,17 +1345,13 @@ dwarf2_per_objfile::set_symtab (const dwarf2_per_cu_data *per_cu,
   this->m_symtabs[per_cu->index] = symtab;
 }
 
-/* Try to locate the sections we need for DWARF 2 debugging
-   information and return true if we have enough to do something.
-   NAMES points to the dwarf2 section names, or is NULL if the standard
-   ELF names are used.  CAN_COPY is true for formats where symbol
-   interposition is possible and so symbol values must follow copy
-   relocation rules.  */
+/* See dwarf2/public.h.  */
 
 bool
 dwarf2_has_info (struct objfile *objfile,
 		 const struct dwarf2_debug_sections *names,
-		 bool can_copy)
+		 bool can_copy,
+		 CORE_ADDR offset)
 {
   if (objfile->flags & OBJF_READNEVER)
     return false;
@@ -1381,14 +1378,15 @@ dwarf2_has_info (struct objfile *objfile,
 	    {
 	      /* No, create it now.  */
 	      per_bfd = new dwarf2_per_bfd (objfile->obfd.get (), names,
-					    can_copy);
+					    can_copy, offset);
 	      dwarf2_per_bfd_bfd_data_key.set (objfile->obfd.get (), per_bfd);
 	    }
 	}
       else
 	{
 	  /* No sharing possible, create one specifically for this objfile.  */
-	  per_bfd = new dwarf2_per_bfd (objfile->obfd.get (), names, can_copy);
+	  per_bfd = new dwarf2_per_bfd (objfile->obfd.get (), names,
+					can_copy, offset);
 	  dwarf2_per_bfd_objfile_data_key.set (objfile, per_bfd);
 	}
 

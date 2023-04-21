@@ -35,4 +35,14 @@ extern void read_pe_exported_syms (minimal_symbol_reader &reader,
    Returns default value 0x1000 if information is not found.  */
 extern CORE_ADDR pe_text_section_offset (struct bfd *abfd);
 
+/* Return the address offset due to the use of the 'rebase' utility.
+   This offset will be applied to all addresses coming from the DWARF
+   reader.  The problem being solved here is that when the Windows
+   'rebase' utility is used on a DLL, the DWARF is not updated, so all
+   the addresses are wrong.  See
+   https://sourceware.org/bugzilla/show_bug.cgi?id=18027.  More recent
+   versions of binutils will add a section to a DLL so that this
+   situation can be detected.  */
+extern CORE_ADDR pe_rebase_offset (bfd *abfd);
+
 #endif /* !defined (COFF_PE_READ_H) */

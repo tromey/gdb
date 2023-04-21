@@ -720,7 +720,7 @@ coff_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
 			       *info->stabsects,
 			       info->stabstrsect->filepos, stabstrsize);
     }
-  if (dwarf2_has_info (objfile, NULL))
+  if (dwarf2_has_info (objfile, nullptr, false, pe_rebase_offset (abfd)))
     {
       /* DWARF2 sections.  */
       dwarf2_initialize_objfile (objfile);
