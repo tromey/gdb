@@ -965,9 +965,7 @@ generic_value_print_memberptr
     {
       /* Member pointers are essentially specific to C++, and so if we
 	 encounter one, we should print it according to C++ rules.  */
-      struct type *type = check_typedef (val->type ());
-      const gdb_byte *valaddr = val->contents_for_printing ().data ();
-      cp_print_class_member (valaddr, type, stream, "&");
+      cp_print_class_memberptr (val, stream);
     }
   else
     value_print_scalar_formatted (val, options, 0, stream);
