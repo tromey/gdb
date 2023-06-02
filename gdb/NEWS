@@ -3,6 +3,8 @@
 
 *** Changes since GDB 13
 
+* The minimum supported version of Python is now 3.4.
+
 * The AArch64 'org.gnu.gdb.aarch64.pauth' Pointer Authentication feature string
   has been deprecated in favor of the 'org.gnu.gdb.aarch64.pauth_v2' feature
   string.

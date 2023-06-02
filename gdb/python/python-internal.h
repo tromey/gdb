@@ -123,17 +123,6 @@ typedef unsigned long gdb_py_ulongest;
 
 #endif /* HAVE_LONG_LONG */
 
-#if PY_VERSION_HEX < 0x03020000
-typedef long Py_hash_t;
-#endif
-
-/* PyMem_RawMalloc appeared in Python 3.4.  For earlier versions, we can just
-   fall back to PyMem_Malloc.  */
-
-#if PY_VERSION_HEX < 0x03040000
-#define PyMem_RawMalloc PyMem_Malloc
-#endif
-
 /* PyObject_CallMethod's 'method' and 'format' parameters were missing
    the 'const' qualifier before Python 3.4.  Hence, we wrap the
    function in our own version to avoid errors with string literals.
