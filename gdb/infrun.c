@@ -2258,9 +2258,15 @@ maybe_software_singlestep (struct gdbarch *gdbarch)
 {
   bool hw_step = true;
 
-  if (execution_direction == EXEC_FORWARD
-      && gdbarch_software_single_step_p (gdbarch))
-    hw_step = !insert_single_step_breakpoints (gdbarch);
+  if (execution_direction == EXEC_FORWARD)
+    {
+      if (target_can_do_single_step () == 1)
+	{
+	  /* The target definitely has hardware single step.  */
+	}
+      else if (gdbarch_software_single_step_p (gdbarch))
+	hw_step = !insert_single_step_breakpoints (gdbarch);
+    }
 
   return hw_step;
 }
