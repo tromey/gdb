@@ -1384,7 +1384,7 @@ public: /* Remote specific methods.  */
   void remote_kill_k ();
 
   void extended_remote_disable_randomization (int val);
-  int extended_remote_run (const std::string &args);
+  int extended_remote_run (const char *exec_file, const std::string &args);
 
   void send_environment_packet (const char *action,
 				const char *packet,
@@ -1431,7 +1431,7 @@ static const target_info extended_remote_target_info = {
 /* Set up the extended remote target by extending the standard remote
    target and adding to it.  */
 
-class extended_remote_target final : public remote_target
+class extended_remote_target : public remote_target
 {
 public:
   const target_info &info () const override
@@ -1451,6 +1451,22 @@ public:
 
   void post_attach (int) override;
   bool supports_disable_randomization () override;
+};
+
+static const target_info local_server_target_info = {
+  "local-server",
+  N_("Local target using gdb-specific protocol"),
+  remote_doc
+};
+
+class local_server_target : public extended_remote_target
+{
+public:
+  const target_info &info () const override
+  { return local_server_target_info; }
+
+  bool filesystem_is_local () override
+  { return true; }
 };
 
 struct stop_reply : public notif_event
@@ -10745,11 +10761,11 @@ remote_target::extended_remote_disable_randomization (int val)
 }
 
 int
-remote_target::extended_remote_run (const std::string &args)
+remote_target::extended_remote_run (const char *exec_file,
+				    const std::string &args)
 {
   struct remote_state *rs = get_remote_state ();
   int len;
-  const char *remote_exec_file = get_remote_exec_file ();
 
   /* If the user has disabled vRun support, or we have detected that
      support is not available, do not try it.  */
@@ -10759,10 +10775,10 @@ remote_target::extended_remote_run (const std::string &args)
   strcpy (rs->buf.data (), "vRun;");
   len = strlen (rs->buf.data ());
 
-  if (strlen (remote_exec_file) * 2 + len >= get_remote_packet_size ())
+  if (strlen (exec_file) * 2 + len >= get_remote_packet_size ())
     error (_("Remote file name too long for run packet"));
-  len += 2 * bin2hex ((gdb_byte *) remote_exec_file, rs->buf.data () + len,
-		      strlen (remote_exec_file));
+  len += 2 * bin2hex ((gdb_byte *) exec_file, rs->buf.data () + len,
+		      strlen (exec_file));
 
   if (!args.empty ())
     {
@@ -10803,7 +10819,7 @@ remote_target::extended_remote_run (const std::string &args)
 		 "try \"set remote exec-file\"?"));
       else
 	error (_("Running \"%s\" on the remote target failed"),
-	       remote_exec_file);
+	       exec_file);
     default:
       gdb_assert_not_reached ("bad switch");
     }
@@ -10923,7 +10939,12 @@ extended_remote_target::create_inferior (const char *exec_file,
   int run_worked;
   char *stop_reply;
   struct remote_state *rs = get_remote_state ();
-  const char *remote_exec_file = get_remote_exec_file ();
+  const char *remote_exec_file;
+
+  if (filesystem_is_local ())
+    remote_exec_file = exec_file;
+  else
+    remote_exec_file = get_remote_exec_file ();
 
   /* If running asynchronously, register the target file descriptor
      with the event loop.  */
@@ -10953,7 +10974,7 @@ Remote replied unexpectedly while setting startup-with-shell: %s"),
   extended_remote_set_inferior_cwd ();
 
   /* Now restart the remote server.  */
-  run_worked = extended_remote_run (args) != -1;
+  run_worked = extended_remote_run (remote_exec_file, args) != -1;
   if (!run_worked)
     {
       /* vRun was not supported.  Fail if we need it to do what the
@@ -16089,6 +16110,7 @@ _initialize_remote ()
 {
   add_target (remote_target_info, remote_target::open);
   add_target (extended_remote_target_info, extended_remote_target::open);
+  add_target (local_server_target_info, local_server_target::open);
 
   /* Hook into new objfile notification.  */
   gdb::observers::new_objfile.attach (remote_new_objfile, "remote");
