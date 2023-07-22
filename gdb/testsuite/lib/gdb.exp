@@ -9481,7 +9481,7 @@ namespace eval critical {
 	proc $name {args} [format {
 	    set result [uplevel [list %s {*}$args]]
 	    if {$result == %s} {
-		unsupported "error adding gdb index"
+		unsupported "$name failed"
 		return -code return 0
 	    }
 	} $name $bad_result]
