@@ -311,22 +311,6 @@ read_pe_exported_syms (minimal_symbol_reader &reader,
 
   char const *target = bfd_get_target (objfile->obfd.get ());
 
-  std::vector<struct read_pe_section_data> section_data
-    (PE_SECTION_TABLE_SIZE);
-
-  for (i=0; i < PE_SECTION_TABLE_SIZE; i++)
-    {
-      section_data[i].vma_offset = 0;
-      section_data[i].rva_start = 1;
-      section_data[i].rva_end = 0;
-    };
-  section_data[PE_SECTION_INDEX_TEXT].ms_type = mst_text;
-  section_data[PE_SECTION_INDEX_TEXT].section_name = ".text";
-  section_data[PE_SECTION_INDEX_DATA].ms_type = mst_data;
-  section_data[PE_SECTION_INDEX_DATA].section_name = ".data";
-  section_data[PE_SECTION_INDEX_BSS].ms_type = mst_bss;
-  section_data[PE_SECTION_INDEX_BSS].section_name = ".bss";
-
   is_pe64 = (strcmp (target, "pe-x86-64") == 0
 	     || strcmp (target, "pei-x86-64") == 0
 	     || strcmp (target, "pe-aarch64") == 0
@@ -342,6 +326,22 @@ read_pe_exported_syms (minimal_symbol_reader &reader,
 	 further architectures and loosen or remove this test.  */
       return;
     }
+
+  std::vector<struct read_pe_section_data> section_data
+    (PE_SECTION_TABLE_SIZE);
+
+  for (i=0; i < PE_SECTION_TABLE_SIZE; i++)
+    {
+      section_data[i].vma_offset = 0;
+      section_data[i].rva_start = 1;
+      section_data[i].rva_end = 0;
+    };
+  section_data[PE_SECTION_INDEX_TEXT].ms_type = mst_text;
+  section_data[PE_SECTION_INDEX_TEXT].section_name = ".text";
+  section_data[PE_SECTION_INDEX_DATA].ms_type = mst_data;
+  section_data[PE_SECTION_INDEX_DATA].section_name = ".data";
+  section_data[PE_SECTION_INDEX_BSS].ms_type = mst_bss;
+  section_data[PE_SECTION_INDEX_BSS].section_name = ".bss";
 
   /* Get pe_header, optional header and numbers of export entries.  */
   pe_header_offset = pe_get32 (dll, 0x3c);
