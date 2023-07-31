@@ -272,26 +272,42 @@ read_pe_truncate_name (char *dll_name)
     *last_point = '\0';
 }
 
-/* Low-level support functions, direct from the ld module pe-dll.c.  */
-static unsigned int
-pe_get16 (bfd *abfd, int where)
+
+/* A helper class that allows range-checked reading from a PE.  */
+struct pe_reader
 {
-  unsigned char b[2];
+  pe_reader (bfd *pe)
+  : m_pe (pe),
+    m_size (bfd_get_size (pe))
+  {
+  }
 
-  bfd_seek (abfd, (file_ptr) where, SEEK_SET);
-  bfd_bread (b, (bfd_size_type) 2, abfd);
-  return b[0] + (b[1] << 8);
-}
+  bool get16 (unsigned int where, unsigned int &result)
+  {
+    unsigned char b[2];
 
-static unsigned int
-pe_get32 (bfd *abfd, int where)
-{
-  unsigned char b[4];
+    if (where + 2 >= m_size)
+      return false;
 
-  bfd_seek (abfd, (file_ptr) where, SEEK_SET);
-  bfd_bread (b, (bfd_size_type) 4, abfd);
-  return b[0] + (b[1] << 8) + (b[2] << 16) + (b[3] << 24);
-}
+    bfd_seek (m_pe, (file_ptr) where, SEEK_SET);
+    bfd_bread (b, (bfd_size_type) 2, m_pe);
+    result = b[0] + (b[1] << 8);
+    return true;
+  }
+
+  bool get32 (int where, unsigned char &result)
+  {
+    unsigned char b[4];
+
+    if (where + 4 >= m_size)
+      return false;
+
+    bfd_seek (m_pe, (file_ptr) where, SEEK_SET);
+    bfd_bread (b, (bfd_size_type) 4, abfd);
+    result = b[0] + (b[1] << 8) + (b[2] << 16) + (b[3] << 24);
+    return true;
+  }
+};
 
 static unsigned int
 pe_as16 (void *ptr)
