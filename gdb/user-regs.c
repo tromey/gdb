@@ -223,9 +223,19 @@ maintenance_print_user_registers (const char *args, int from_tty)
   struct gdb_user_regs *regs = get_user_regs (gdbarch);
   regnum = gdbarch_num_cooked_regs (gdbarch);
 
-  gdb_printf (" %-11s %3s\n", "Name", "Nr");
+  struct ui_out *uiout = current_uiout;
+  ui_out_emit_table table_emitter (uiout, 2, -1, "user-registers");
+  uiout->table_header (11, ui_left, "name", "Name");
+  uiout->table_header (3, ui_right, "number", "Nr");
+
+  uiout->table_body ();
   for (reg = regs->first; reg != NULL; reg = reg->next, ++regnum)
-    gdb_printf (" %-11s %3d\n", reg->name, regnum);
+    {
+      ui_out_emit_tuple tuple_emitter (uiout, nullptr);
+      uiout->field_string ("name", reg->name);
+      uiout->field_signed ("number", regnum);
+      uiout->text ("\n");
+    }
 }
 
 void _initialize_user_regs ();
