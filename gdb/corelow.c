@@ -54,6 +54,7 @@
 #include "gdbcmd.h"
 #include "xml-tdesc.h"
 #include "memtag.h"
+#include "cli/cli-style.h"
 
 #ifndef O_LARGEFILE
 #define O_LARGEFILE 0
@@ -1444,25 +1445,21 @@ get_current_core_target ()
 void
 core_target::info_proc_mappings (struct gdbarch *gdbarch)
 {
-  if (!m_core_file_mappings.empty ())
-    {
-      gdb_printf (_("Mapped address spaces:\n\n"));
-      if (gdbarch_addr_bit (gdbarch) == 32)
-	{
-	  gdb_printf ("\t%10s %10s %10s %10s %s\n",
-		      "Start Addr",
-		      "  End Addr",
-		      "      Size", "    Offset", "objfile");
-	}
-      else
-	{
-	  gdb_printf ("  %18s %18s %10s %10s %s\n",
-		      "Start Addr",
-		      "  End Addr",
-		      "      Size", "    Offset", "objfile");
-	}
-    }
+  if (m_core_file_mappings.empty ())
+    return;
 
+  struct ui_out *uiout = current_uiout;
+  uiout->text (_("Mapped address spaces:\n\n"));
+  ui_out_emit_table table_emitter (uiout, 5, -1, "mappings");
+  int width = gdbarch_addr_bit (gdbarch) == 32 ? 10 : 18;
+  uiout->table_header (width, ui_right, "start", "Start Addr");
+  uiout->table_header (width, ui_right, "end", "End Addr");
+  uiout->table_header (10, ui_right, "size", "Size");
+  uiout->table_header (10, ui_right, "offset", "Offset");
+  uiout->table_header (10, ui_left, "objfile", "objfile");
+
+  uiout->table_body ();
+  ui_file_style filenames = file_name_style.style ();
   for (const target_section &tsp : m_core_file_mappings)
     {
       ULONGEST start = tsp.addr;
@@ -1470,20 +1467,13 @@ core_target::info_proc_mappings (struct gdbarch *gdbarch)
       ULONGEST file_ofs = tsp.the_bfd_section->filepos;
       const char *filename = bfd_get_filename (tsp.the_bfd_section->owner);
 
-      if (gdbarch_addr_bit (gdbarch) == 32)
-	gdb_printf ("\t%10s %10s %10s %10s %s\n",
-		    paddress (gdbarch, start),
-		    paddress (gdbarch, end),
-		    hex_string (end - start),
-		    hex_string (file_ofs),
-		    filename);
-      else
-	gdb_printf ("  %18s %18s %10s %10s %s\n",
-		    paddress (gdbarch, start),
-		    paddress (gdbarch, end),
-		    hex_string (end - start),
-		    hex_string (file_ofs),
-		    filename);
+      ui_out_emit_tuple tuple_emitter (uiout, nullptr);
+      uiout->field_core_addr ("start", gdbarch, start);
+      uiout->field_core_addr ("end", gdbarch, end);
+      uiout->field_string ("size", hex_string (end - start));
+      uiout->field_string ("offset", hex_string (file_ofs));
+      uiout->field_string ("objfile", filename, filenames);
+      uiout->text ("\n");
     }
 }
 
