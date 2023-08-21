@@ -116,10 +116,10 @@ create_signatured_type_table_from_debug_names
    struct dwarf2_section_info *section,
    struct dwarf2_section_info *abbrev_section)
 {
-  struct objfile *objfile = per_objfile->objfile;
+  /* struct objfile *objfile = per_objfile->objfile; */
 
-  section->read (objfile);
-  abbrev_section->read (objfile);
+  /* section->read (objfile); */
+  /* abbrev_section->read (objfile); */
 
   htab_up sig_types_hash = allocate_signatured_type_table ();
 
@@ -197,7 +197,7 @@ read_debug_names_from_section (struct objfile *objfile,
   if ((section->get_flags () & SEC_HAS_CONTENTS) == 0)
     return false;
 
-  section->read (objfile);
+  /* section->read (objfile); */
 
   map.dwarf5_byte_order = gdbarch_byte_order (objfile->arch ());
 
