@@ -3283,7 +3283,6 @@ get_gdb_index_contents_from_section (objfile *obj, T *section_owner)
      is 32-bit.  So we need an explicit narrowing conversion here.
      This is fine, because it's impossible to allocate or mmap an
      array/buffer larger than what size_t can represent.  */
-  section->require ();
   return gdb::make_array_view (section->buffer, section->size);
 }
 
