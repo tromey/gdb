@@ -4903,7 +4903,6 @@ build_type_psymtabs (dwarf2_per_objfile *per_objfile,
 	  || tu.abbrev_offset != abbrev_offset)
 	{
 	  abbrev_offset = tu.abbrev_offset;
-	  per_objfile->per_bfd->abbrev.require ();
 	  abbrev_table =
 	    abbrev_table::read (&per_objfile->per_bfd->abbrev, abbrev_offset);
 	  ++tu_stats->nr_uniq_abbrev_tables;
