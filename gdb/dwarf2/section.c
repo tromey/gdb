@@ -193,8 +193,9 @@ dwarf2_section_info::read_string (LONGEST str_offset, const char *form_name)
   if (buffer == NULL)
     {
       if (get_bfd_section () == nullptr)
-	error (_("Dwarf Error: %s used without required section"),
-	       form_name);
+	error (_("Dwarf Error: %s used without required "
+		 "section [in module %s]"),
+	       form_name, get_file_name ());
       else
 	error (_("Dwarf Error: %s used without %s section [in module %s]"),
 	       form_name, get_name (), get_file_name ());
