@@ -691,6 +691,8 @@ SECTION
 	The easiest way to report a BFD error to the user is to
 	use <<bfd_perror>>.
 
+	The BFD error is thread-local.
+
 SUBSECTION
 	Type <<bfd_error_type>>
 
@@ -728,10 +730,10 @@ CODE_FRAGMENT
 .
 */
 
-static bfd_error_type bfd_error;
-static bfd_error_type input_error;
-static bfd *input_bfd;
-static char *_bfd_error_buf;
+static TLS bfd_error_type bfd_error;
+static TLS bfd_error_type input_error;
+static TLS bfd *input_bfd;
+static TLS char *_bfd_error_buf;
 
 const char *const bfd_errmsgs[] =
 {
