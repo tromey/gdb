@@ -350,6 +350,7 @@ syms.c
 sysdep.h
 targets.c
 tekhex.c
+threads.c
 trad-core.c
 vax1knetbsd.c
 vaxnetbsd.c

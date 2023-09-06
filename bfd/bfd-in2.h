@@ -2,8 +2,8 @@
    generated from "bfd-in.h", "libbfd.c", "hash.c", "section.c",
    "syms.c", "archive.c", "archures.c", "bfd.c", "bfdio.c", "bfdwin.c",
    "cache.c", "compress.c", "corefile.c", "format.c", "linker.c",
-   "opncls.c", "reloc.c", "simple.c", "stab-syms.c", "stabs.c" and
-   "targets.c".
+   "opncls.c", "reloc.c", "simple.c", "stab-syms.c", "stabs.c",
+   "targets.c" and "threads.c".
    Run "make headers" in your build bfd/ to regenerate.  */
 
 /* Main header file for the bfd library -- portable access to object files.
@@ -8071,6 +8071,9 @@ const bfd_target *bfd_iterate_over_targets
     void *data);
 
 const char *bfd_flavour_name (enum bfd_flavour flavour);
+
+/* Extracted from threads.c.  */
+void bfd_thread_cleanup (void);
 
 #ifdef __cplusplus
 }

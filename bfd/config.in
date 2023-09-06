@@ -191,6 +191,9 @@
 /* Define if <sys/procfs.h> has pstatus_t. */
 #undef HAVE_PSTATUS_T
 
+/* Have PTHREAD_PRIO_INHERIT. */
+#undef HAVE_PTHREAD_PRIO_INHERIT
+
 /* Define if <sys/procfs.h> has pxstatus_t. */
 #undef HAVE_PXSTATUS_T
 
@@ -267,6 +270,10 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* Define to necessary symbol if this constant uses a non-standard name on
+   your system. */
+#undef PTHREAD_CREATE_JOINABLE
+
 /* The size of `int', as computed by sizeof. */
 #undef SIZEOF_INT
 
@@ -302,6 +309,9 @@
 
 /* Use mmap if it's available? */
 #undef USE_MMAP
+
+/* Define to allow multiple threads */
+#undef USE_PTHREADS
 
 /* Define if we should default to creating read-only plt entries */
 #undef USE_SECUREPLT

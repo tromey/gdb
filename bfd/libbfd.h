@@ -1,7 +1,8 @@
 /* DO NOT EDIT!  -*- buffer-read-only: t -*-  This file is automatically
    generated from "libbfd-in.h", "libbfd.c", "bfd.c", "bfdio.c",
    "archive.c", "archures.c", "bfdwin.c", "cache.c", "hash.c", "linker.c",
-   "opncls.c", "reloc.c", "section.c", "stabs.c" and "targets.c".
+   "opncls.c", "reloc.c", "section.c", "stabs.c", "targets.c" and
+   "threads.c".
    Run "make headers" in your build bfd/ to regenerate.  */
 
 /* libbfd.h -- Declarations used by bfd library *implementation*.
@@ -3675,6 +3676,16 @@ struct per_xvec_message
 };
 
 struct per_xvec_message **_bfd_per_xvec_warn (const bfd_target *, size_t) ATTRIBUTE_HIDDEN;
+
+/* Extracted from threads.c.  */
+
+void _bfd_thread_init (void) ATTRIBUTE_HIDDEN;
+
+
+void bfd_lock (void) ATTRIBUTE_HIDDEN;
+
+
+void bfd_unlock (void) ATTRIBUTE_HIDDEN;
 
 #ifdef __cplusplus
 }

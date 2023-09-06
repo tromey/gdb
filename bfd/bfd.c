@@ -1745,6 +1745,7 @@ bfd_init (void)
   _bfd_error_program_name = NULL;
   _bfd_error_internal = error_handler_fprintf;
   _bfd_assert_handler = _bfd_default_assert_handler;
+  _bfd_thread_init ();
 
   return BFD_INIT_MAGIC;
 }

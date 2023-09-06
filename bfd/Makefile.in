@@ -113,6 +113,7 @@ target_triplet = @target@
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/../config/acx.m4 \
+	$(top_srcdir)/../config/ax_pthread.m4 \
 	$(top_srcdir)/../config/bfd64.m4 \
 	$(top_srcdir)/../config/depstand.m4 \
 	$(top_srcdir)/../config/gettext-sister.m4 \
@@ -177,7 +178,8 @@ am__objects_1 = archive.lo archures.lo bfd.lo bfdio.lo bfdwin.lo \
 	cache.lo coff-bfd.lo compress.lo corefile.lo elf-properties.lo \
 	format.lo hash.lo libbfd.lo linker.lo merge.lo opncls.lo \
 	reloc.lo section.lo simple.lo stab-syms.lo stabs.lo syms.lo \
-	targets.lo binary.lo ihex.lo srec.lo tekhex.lo verilog.lo
+	targets.lo binary.lo ihex.lo srec.lo tekhex.lo verilog.lo \
+	threads.lo
 am_libbfd_la_OBJECTS = $(am__objects_1)
 libbfd_la_OBJECTS = $(am_libbfd_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -392,6 +394,9 @@ PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 POSUB = @POSUB@
+PTHREAD_CC = @PTHREAD_CC@
+PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
+PTHREAD_LIBS = @PTHREAD_LIBS@
 RANLIB = @RANLIB@
 REPORT_BUGS_TEXI = @REPORT_BUGS_TEXI@
 REPORT_BUGS_TO = @REPORT_BUGS_TO@
@@ -422,6 +427,7 @@ am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
 am__tar = @am__tar@
 am__untar = @am__untar@
+ax_pthread_config = @ax_pthread_config@
 bfd64_libs = @bfd64_libs@
 bfd_backends = @bfd_backends@
 bfd_default_target_size = @bfd_default_target_size@
@@ -514,7 +520,7 @@ libbfd_la_LDFLAGS = $(am__append_1) -release `cat libtool-soversion` \
 # case both are empty.
 ZLIB = @zlibdir@ -lz
 ZLIBINC = @zlibinc@
-AM_CFLAGS = $(WARN_CFLAGS) $(ZLIBINC) $(ZSTD_CFLAGS)
+AM_CFLAGS = $(WARN_CFLAGS) $(PTHREAD_CFLAGS) $(ZLIBINC) $(ZSTD_CFLAGS)
 AM_CPPFLAGS = -DBINDIR='"$(bindir)"' -DLIBDIR='"$(libdir)"' \
 	@LARGEFILE_CPPFLAGS@ @HDEFINES@ @COREFLAG@ @TDEFINES@ \
 	$(CSEARCH) $(CSWITCHES) $(HAVEVECS) @INCINTL@
@@ -543,7 +549,7 @@ BFD32_LIBS_CFILES = \
 	compress.c corefile.c elf-properties.c format.c hash.c \
 	libbfd.c linker.c merge.c opncls.c reloc.c \
 	section.c simple.c stab-syms.c stabs.c syms.c targets.c \
-	binary.c ihex.c srec.c tekhex.c verilog.c
+	binary.c ihex.c srec.c tekhex.c verilog.c threads.c
 
 BFD64_LIBS_CFILES = archive64.c
 
@@ -1206,12 +1212,12 @@ libbfd_la_LIBADD = `cat ofiles` @SHARED_LIBADD@ $(LIBDL) $(ZLIB) $(ZSTD_LIBS) ..
 BFD_H_FILES = bfd-in.h libbfd.c hash.c section.c syms.c \
 	archive.c archures.c bfd.c bfdio.c bfdwin.c \
 	cache.c compress.c corefile.c format.c linker.c opncls.c \
-	reloc.c simple.c stab-syms.c stabs.c targets.c
+	reloc.c simple.c stab-syms.c stabs.c targets.c threads.c
 
 BFD64_H_FILES = archive64.c
 LIBBFD_H_FILES = libbfd-in.h libbfd.c bfd.c bfdio.c \
 	archive.c archures.c bfdwin.c cache.c hash.c linker.c opncls.c \
-	reloc.c section.c stabs.c targets.c
+	reloc.c section.c stabs.c targets.c threads.c
 
 LIBCOFF_H_FILES = libcoff-in.h coffcode.h
 
@@ -1723,6 +1729,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/syms.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/targets.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tekhex.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/threads.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/trad-core.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vax1knetbsd.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vaxnetbsd.Plo@am__quote@

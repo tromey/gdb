@@ -57,7 +57,7 @@ ZLIBINC = @zlibinc@
 
 WARN_CFLAGS = @WARN_CFLAGS@
 NO_WERROR = @NO_WERROR@
-AM_CFLAGS = $(WARN_CFLAGS) $(ZLIBINC) $(ZSTD_CFLAGS)
+AM_CFLAGS = $(WARN_CFLAGS) $(PTHREAD_CFLAGS) $(ZLIBINC) $(ZSTD_CFLAGS)
 AM_CPPFLAGS = -DBINDIR='"$(bindir)"' -DLIBDIR='"$(libdir)"' @LARGEFILE_CPPFLAGS@
 if PLUGINS
 bfdinclude_HEADERS += $(INCDIR)/plugin-api.h
@@ -88,7 +88,7 @@ BFD32_LIBS_CFILES = \
 	compress.c corefile.c elf-properties.c format.c hash.c \
 	libbfd.c linker.c merge.c opncls.c reloc.c \
 	section.c simple.c stab-syms.c stabs.c syms.c targets.c \
-	binary.c ihex.c srec.c tekhex.c verilog.c
+	binary.c ihex.c srec.c tekhex.c verilog.c threads.c
 
 BFD64_LIBS_CFILES = archive64.c
 
@@ -922,11 +922,11 @@ stmp-bfd-h: bfd-in3.h
 BFD_H_FILES = bfd-in.h libbfd.c hash.c section.c syms.c \
 	archive.c archures.c bfd.c bfdio.c bfdwin.c \
 	cache.c compress.c corefile.c format.c linker.c opncls.c \
-	reloc.c simple.c stab-syms.c stabs.c targets.c
+	reloc.c simple.c stab-syms.c stabs.c targets.c threads.c
 BFD64_H_FILES = archive64.c
 LIBBFD_H_FILES = libbfd-in.h libbfd.c bfd.c bfdio.c \
 	archive.c archures.c bfdwin.c cache.c hash.c linker.c opncls.c \
-	reloc.c section.c stabs.c targets.c
+	reloc.c section.c stabs.c targets.c threads.c
 LIBCOFF_H_FILES = libcoff-in.h coffcode.h
 
 headers: stmp-bin2-h stmp-lbfd-h stmp-lcoff-h

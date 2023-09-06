@@ -234,6 +234,9 @@ AC_CHECK_DECLS([___lc_codepage_func], [], [], [[#include <locale.h>]])
 BFD_BINARY_FOPEN
 
 AX_TLS
+AX_PTHREAD([
+  AC_DEFINE(USE_PTHREADS, 1, [Define to allow multiple threads])
+])
 
 # Link in zlib/zstd if we can.  This allows us to read compressed debug sections.
 # This is used only by compress.c.

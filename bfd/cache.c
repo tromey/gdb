@@ -165,6 +165,7 @@ bfd_cache_delete (bfd *abfd)
 {
   bool ret;
 
+  bfd_lock ();
   if (fclose ((FILE *) abfd->iostream) == 0)
     ret = true;
   else
@@ -179,6 +180,7 @@ bfd_cache_delete (bfd *abfd)
   --open_files;
   abfd->flags |= BFD_CLOSED_BY_CACHE;
 
+  bfd_unlock ();
   return ret;
 }
 
@@ -277,19 +279,31 @@ bfd_cache_lookup_worker (bfd *abfd, enum cache_flag flag)
 static file_ptr
 cache_btell (struct bfd *abfd)
 {
+  bfd_lock ();
   FILE *f = bfd_cache_lookup (abfd, CACHE_NO_OPEN);
   if (f == NULL)
-    return abfd->where;
-  return _bfd_real_ftell (f);
+    {
+      bfd_unlock ();
+      return abfd->where;
+    }
+  file_ptr result = _bfd_real_ftell (f);
+  bfd_unlock ();
+  return result;
 }
 
 static int
 cache_bseek (struct bfd *abfd, file_ptr offset, int whence)
 {
+  bfd_lock ();
   FILE *f = bfd_cache_lookup (abfd, whence != SEEK_CUR ? CACHE_NO_SEEK : CACHE_NORMAL);
   if (f == NULL)
-    return -1;
-  return _bfd_real_fseek (f, offset, whence);
+    {
+      bfd_unlock ();
+      return -1;
+    }
+  int result = _bfd_real_fseek (f, offset, whence);
+  bfd_unlock ();
+  return result;
 }
 
 /* Note that archive entries don't have streams; they share their parent's.
@@ -337,12 +351,16 @@ cache_bread_1 (FILE *f, void *buf, file_ptr nbytes)
 static file_ptr
 cache_bread (struct bfd *abfd, void *buf, file_ptr nbytes)
 {
+  bfd_lock ();
   file_ptr nread = 0;
   FILE *f;
 
   f = bfd_cache_lookup (abfd, CACHE_NORMAL);
   if (f == NULL)
-    return -1;
+    {
+      bfd_unlock ();
+      return -1;
+    }
 
   /* Some filesystems are unable to handle reads that are too large
      (for instance, NetApp shares with oplocks turned off).  To avoid
@@ -373,57 +391,75 @@ cache_bread (struct bfd *abfd, void *buf, file_ptr nbytes)
 	break;
     }
 
+  bfd_unlock ();
   return nread;
 }
 
 static file_ptr
 cache_bwrite (struct bfd *abfd, const void *from, file_ptr nbytes)
 {
+  bfd_lock ();
   file_ptr nwrite;
   FILE *f = bfd_cache_lookup (abfd, CACHE_NORMAL);
 
   if (f == NULL)
-    return 0;
+    {
+      bfd_unlock ();
+      return 0;
+    }
   nwrite = fwrite (from, 1, nbytes, f);
   if (nwrite < nbytes && ferror (f))
     {
       bfd_set_error (bfd_error_system_call);
+      bfd_unlock ();
       return -1;
     }
+  bfd_unlock ();
   return nwrite;
 }
 
 static int
 cache_bclose (struct bfd *abfd)
 {
+  /* No locking needed here, it's handled by the callee.  */
   return bfd_cache_close (abfd) - 1;
 }
 
 static int
 cache_bflush (struct bfd *abfd)
 {
+  bfd_lock ();
   int sts;
   FILE *f = bfd_cache_lookup (abfd, CACHE_NO_OPEN);
 
   if (f == NULL)
-    return 0;
+    {
+      bfd_unlock ();
+      return 0;
+    }
   sts = fflush (f);
   if (sts < 0)
     bfd_set_error (bfd_error_system_call);
+  bfd_unlock ();
   return sts;
 }
 
 static int
 cache_bstat (struct bfd *abfd, struct stat *sb)
 {
+  bfd_lock ();
   int sts;
   FILE *f = bfd_cache_lookup (abfd, CACHE_NO_SEEK_ERROR);
 
   if (f == NULL)
-    return -1;
+    {
+      bfd_unlock ();
+      return -1;
+    }
   sts = fstat (fileno (f), sb);
   if (sts < 0)
     bfd_set_error (bfd_error_system_call);
+  bfd_unlock ();
   return sts;
 }
 
@@ -439,6 +475,7 @@ cache_bmmap (struct bfd *abfd ATTRIBUTE_UNUSED,
 {
   void *ret = (void *) -1;
 
+  bfd_lock ();
   if ((abfd->flags & BFD_IN_MEMORY) != 0)
     abort ();
 #ifdef HAVE_MMAP
@@ -451,7 +488,10 @@ cache_bmmap (struct bfd *abfd ATTRIBUTE_UNUSED,
 
       f = bfd_cache_lookup (abfd, CACHE_NO_SEEK_ERROR);
       if (f == NULL)
-	return ret;
+	{
+	  bfd_unlock ();
+	  return ret;
+	}
 
       if (pagesize_m1 == 0)
 	pagesize_m1 = getpagesize () - 1;
@@ -472,6 +512,7 @@ cache_bmmap (struct bfd *abfd ATTRIBUTE_UNUSED,
     }
 #endif
 
+  bfd_unlock ();
   return ret;
 }
 
@@ -495,16 +536,21 @@ DESCRIPTION
 bool
 bfd_cache_init (bfd *abfd)
 {
+  bfd_lock ();
   BFD_ASSERT (abfd->iostream != NULL);
   if (open_files >= bfd_cache_max_open ())
     {
       if (! close_one ())
-	return false;
+	{
+	  bfd_unlock ();
+	  return false;
+	}
     }
   abfd->iovec = &cache_iovec;
   insert (abfd);
   abfd->flags &= ~BFD_CLOSED_BY_CACHE;
   ++open_files;
+  bfd_unlock ();
   return true;
 }
 
@@ -534,6 +580,8 @@ bfd_cache_close (bfd *abfd)
     /* Previously closed.  */
     return true;
 
+  /* Note: no locking needed in this function, as it is handled by
+     bfd_cache_delete.  */
   return bfd_cache_delete (abfd);
 }
 
@@ -559,6 +607,7 @@ bfd_cache_close_all (void)
 {
   bool ret = true;
 
+  bfd_lock ();
   while (bfd_last_cache != NULL)
     {
       bfd *prev_bfd_last_cache = bfd_last_cache;
@@ -571,6 +620,7 @@ bfd_cache_close_all (void)
 	break;
     }
 
+  bfd_unlock ();
   return ret;
 }
 
@@ -592,12 +642,16 @@ DESCRIPTION
 FILE *
 bfd_open_file (bfd *abfd)
 {
+  bfd_lock ();
   abfd->cacheable = true;	/* Allow it to be closed later.  */
 
   if (open_files >= bfd_cache_max_open ())
     {
       if (! close_one ())
-	return NULL;
+	{
+	  bfd_unlock ();
+	  return NULL;
+	}
     }
 
   switch (abfd->direction)
@@ -656,8 +710,12 @@ bfd_open_file (bfd *abfd)
   else
     {
       if (! bfd_cache_init (abfd))
-	return NULL;
+	{
+	  bfd_unlock ();
+	  return NULL;
+	}
     }
 
+  bfd_unlock ();
   return (FILE *) abfd->iostream;
 }
