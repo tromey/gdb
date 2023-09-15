@@ -71,6 +71,10 @@ struct objalloc_chunk
   ((sizeof (struct objalloc_chunk) + OBJALLOC_ALIGN - 1)	\
    &~ (OBJALLOC_ALIGN - 1))
 
+#if __SANITIZE_ADDRESS__
+#define SANITIZE
+#endif
+
 /* We ask for this much memory each time we create a chunk which is to
    hold small objects.  */
 
