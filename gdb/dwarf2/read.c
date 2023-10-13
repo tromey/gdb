@@ -1781,6 +1781,9 @@ read_addrmap_from_aranges (dwarf2_per_objfile *per_objfile,
 			   dwarf2_section_info *section,
 			   addrmap *mutable_map)
 {
+  if (section->empty ())
+    return;
+
   struct objfile *objfile = per_objfile->objfile;
   bfd *abfd = objfile->obfd.get ();
   struct gdbarch *gdbarch = objfile->arch ();
@@ -1811,7 +1814,6 @@ read_addrmap_from_aranges (dwarf2_per_objfile *per_objfile,
 
   const bfd_endian dwarf5_byte_order = gdbarch_byte_order (gdbarch);
 
-  section->require ();
   const gdb_byte *addr = section->buffer;
 
   while (addr < section->buffer + section->size)
