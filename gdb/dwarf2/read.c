@@ -1782,7 +1782,7 @@ read_addrmap_from_aranges (dwarf2_per_objfile *per_objfile,
 			   addrmap *mutable_map)
 {
   if (section->empty ())
-    return;
+    return true;
 
   struct objfile *objfile = per_objfile->objfile;
   bfd *abfd = objfile->obfd.get ();
