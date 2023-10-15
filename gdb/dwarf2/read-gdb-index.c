@@ -219,7 +219,7 @@ dw2_symtab_iter_init (struct dw2_symtab_iterator *iter,
   gdb_assert (!index.symbol_name_slot_invalid (namei));
   offset_type vec_idx = index.symbol_vec_index (namei);
 
-  iter->vec = offset_view (index.constant_pool.slice (vec_idx));
+  iter->vec = offset_view (index.constant_pool.subspan (vec_idx));
   iter->length = iter->vec[0];
 }
 
@@ -375,7 +375,7 @@ dw2_expand_marked_cus
     = *(gdb::checked_static_cast<mapped_gdb_index *>
 	(per_objfile->per_bfd->index_table.get ()));
 
-  offset_view vec (index.constant_pool.slice (index.symbol_vec_index (idx)));
+  offset_view vec (index.constant_pool.subspan (index.symbol_vec_index (idx)));
   vec_len = vec[0];
   for (vec_idx = 0; vec_idx < vec_len; ++vec_idx)
     {
@@ -624,7 +624,7 @@ to use the section anyway."),
       ++i;
     }
 
-  map->constant_pool = buffer.slice (metadata[i]);
+  map->constant_pool = buffer.subspan (metadata[i]);
 
   if (map->constant_pool.empty () && !map->symbol_table.empty ())
     {
