@@ -1111,7 +1111,7 @@ define_symbol (CORE_ADDR valu, const char *string, int desc, int type,
 	  sym->set_type (read_type (&p, objfile));
 	  goto process_prototype_types;
 	}
-      /*FALLTHROUGH */
+      [[fallthrough]];
 
     case 'R':
       /* Parameter which is in a register.  */

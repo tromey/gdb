@@ -9844,7 +9844,7 @@ remote_target::putpkt_binary (const char *buf, int cnt)
 	      return 1;
 	    case '-':
 	      remote_debug_printf_nofunc ("Received Nak");
-	      /* FALLTHROUGH */
+	      [[fallthrough]];
 	    case SERIAL_TIMEOUT:
 	      tcount++;
 	      if (tcount > 3)

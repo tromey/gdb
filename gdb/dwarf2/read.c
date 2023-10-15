@@ -6709,7 +6709,7 @@ process_die (struct die_info *die, struct dwarf2_cu *cu)
 	 instead.  */
       if (cu->lang () != language_ada)
 	break;
-      /* FALLTHROUGH */
+      [[fallthrough]];
     case DW_TAG_base_type:
     case DW_TAG_subrange_type:
     case DW_TAG_generic_subrange:
@@ -16604,7 +16604,7 @@ cooked_indexer::index_dies (cutu_reader *reader,
 	    case DW_TAG_module:
 	      if (this_entry == nullptr)
 		break;
-	      /* FALLTHROUGH */
+	      [[fallthrough]];
 	    case DW_TAG_namespace:
 	      /* We don't check THIS_ENTRY for a namespace, to handle
 		 the ancient G++ workaround pointed out above.  */
@@ -17311,7 +17311,7 @@ read_attribute_value (const struct die_reader_specs *reader,
 	  info_ptr += bytes_read;
 	  break;
 	}
-      /* FALLTHROUGH */
+      [[fallthrough]];
     case DW_FORM_line_strp:
       if (!cu->per_cu->is_dwz)
 	{
@@ -17321,7 +17321,7 @@ read_attribute_value (const struct die_reader_specs *reader,
 	  info_ptr += bytes_read;
 	  break;
 	}
-      /* FALLTHROUGH */
+      [[fallthrough]];
     case DW_FORM_GNU_strp_alt:
       {
 	dwz_file *dwz = dwarf2_get_dwz_file (per_objfile->per_bfd, true);
@@ -19366,7 +19366,7 @@ new_symbol (struct die_info *die, struct type *type, struct dwarf2_cu *cu,
 	case DW_TAG_unspecified_type:
 	  if (cu->lang () == language_ada)
 	    break;
-	  /* FALLTHROUGH */
+	  [[fallthrough]];
 	case DW_TAG_typedef:
 	case DW_TAG_array_type:
 	case DW_TAG_base_type:
@@ -20347,7 +20347,7 @@ dwarf2_name (struct die_info *die, struct dwarf2_cu *cu)
     case DW_TAG_template_value_param:
       if (attr_name == nullptr)
 	return unnamed_template_tag_name (die, cu);
-      /* FALLTHROUGH.  */
+      [[fallthrough]];
     case DW_TAG_class_type:
     case DW_TAG_interface_type:
     case DW_TAG_structure_type:

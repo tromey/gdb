@@ -451,7 +451,7 @@ m2_language::value_print_inner (struct value *val, struct ui_file *stream,
 	  value_print_inner (v, stream, recurse, options);
 	  break;
 	}
-      /* FALLTHROUGH */
+      [[fallthrough]];
 
     case TYPE_CODE_REF:
     case TYPE_CODE_ENUM:

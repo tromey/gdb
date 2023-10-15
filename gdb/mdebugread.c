@@ -3430,7 +3430,7 @@ parse_partial_symbols (minimal_symbol_reader &reader,
 					   mst_file_text,
 					   SECT_OFF_TEXT (objfile));
 
-		  /* FALLTHROUGH */
+		  [[fallthrough]];
 
 		case stProc:
 		  /* Ignore all parameter symbol records.  */
