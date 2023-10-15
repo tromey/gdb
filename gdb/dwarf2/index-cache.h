@@ -21,7 +21,7 @@
 #define DWARF_INDEX_CACHE_H
 
 #include "dwarf2/index-common.h"
-#include "gdbsupport/array-view.h"
+#include "gdbsupport/gdb-span.h"
 #include "symfile.h"
 
 class dwarf2_per_bfd;
@@ -84,12 +84,12 @@ public:
   void disable ();
 
   /* Look for an index file matching BUILD_ID.  If found, return the contents
-     as an array_view and store the underlying resources (allocated memory,
-     mapped file, etc) in RESOURCE.  The returned array_view is valid as long
+     as an span and store the underlying resources (allocated memory,
+     mapped file, etc) in RESOURCE.  The returned span is valid as long
      as RESOURCE is not destroyed.
 
      If no matching index file is found, return an empty array view.  */
-  gdb::array_view<const gdb_byte>
+  gdb::span<const gdb_byte>
   lookup_gdb_index (const bfd_build_id *build_id,
 		    std::unique_ptr<index_cache_resource> *resource);
 

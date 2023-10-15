@@ -39,7 +39,7 @@ class offset_view
 public:
   offset_view () = default;
 
-  explicit offset_view (gdb::array_view<const gdb_byte> bytes)
+  explicit offset_view (gdb::span<const gdb_byte> bytes)
     : m_bytes (bytes)
   {
   }
@@ -67,7 +67,7 @@ public:
 
 private:
   /* The underlying bytes.  */
-  gdb::array_view<const gdb_byte> m_bytes;
+  gdb::span<const gdb_byte> m_bytes;
 };
 
 /* A description of .gdb_index index.  The file format is described in
@@ -79,16 +79,16 @@ struct mapped_gdb_index final : public mapped_index_base
   int version = 0;
 
   /* The address table data.  */
-  gdb::array_view<const gdb_byte> address_table;
+  gdb::span<const gdb_byte> address_table;
 
   /* The symbol table, implemented as a hash table.  */
   offset_view symbol_table;
 
   /* A pointer to the constant pool.  */
-  gdb::array_view<const gdb_byte> constant_pool;
+  gdb::span<const gdb_byte> constant_pool;
 
-  /* The shortcut table data.  */
-  gdb::array_view<const gdb_byte> shortcut_table;
+  /* The shortcut table data. */
+  gdb::span<const gdb_byte> shortcut_table;
 
   /* Return the index into the constant pool of the name of the IDXth
      symbol in the symbol table.  */
@@ -331,7 +331,7 @@ mapped_gdb_index::make_quick_functions () const
 static bool
 read_gdb_index_from_buffer (const char *filename,
 			    bool deprecated_ok,
-			    gdb::array_view<const gdb_byte> buffer,
+			    gdb::span<const gdb_byte> buffer,
 			    mapped_gdb_index *map,
 			    const gdb_byte **cu_list,
 			    offset_type *cu_list_elements,
@@ -407,13 +407,13 @@ to use the section anyway."),
   const gdb_byte *address_table = addr + metadata[i];
   const gdb_byte *address_table_end = addr + metadata[i + 1];
   map->address_table
-    = gdb::array_view<const gdb_byte> (address_table, address_table_end);
+    = gdb::span<const gdb_byte> (address_table, address_table_end);
   ++i;
 
   const gdb_byte *symbol_table = addr + metadata[i];
   const gdb_byte *symbol_table_end = addr + metadata[i + 1];
   map->symbol_table
-    = offset_view (gdb::array_view<const gdb_byte> (symbol_table,
+    = offset_view (gdb::span<const gdb_byte> (symbol_table,
 						    symbol_table_end));
 
   ++i;
@@ -423,7 +423,7 @@ to use the section anyway."),
       const gdb_byte *shortcut_table = addr + metadata[i];
       const gdb_byte *shortcut_table_end = addr + metadata[i + 1];
       map->shortcut_table
-	= gdb::array_view<const gdb_byte> (shortcut_table, shortcut_table_end);
+	= gdb::span<const gdb_byte> (shortcut_table, shortcut_table_end);
       ++i;
     }
 
@@ -434,7 +434,7 @@ to use the section anyway."),
       /* An empty constant pool implies that all symbol table entries are
 	 empty.  Make map->symbol_table.empty () == true.  */
       map->symbol_table
-	= offset_view (gdb::array_view<const gdb_byte> (symbol_table,
+	= offset_view (gdb::span<const gdb_byte> (symbol_table,
 							symbol_table));
     }
 
@@ -626,7 +626,7 @@ dwarf2_read_gdb_index
   struct objfile *objfile = per_objfile->objfile;
   dwarf2_per_bfd *per_bfd = per_objfile->per_bfd;
 
-  gdb::array_view<const gdb_byte> main_index_contents
+  gdb::span<const gdb_byte> main_index_contents
     = get_gdb_index_contents (objfile, per_bfd);
 
   if (main_index_contents.empty ())
@@ -653,7 +653,7 @@ dwarf2_read_gdb_index
       const gdb_byte *dwz_types_ignore;
       offset_type dwz_types_elements_ignore;
 
-      gdb::array_view<const gdb_byte> dwz_index_content
+      gdb::span<const gdb_byte> dwz_index_content
 	= get_gdb_index_contents_dwz (objfile, dwz);
 
       if (dwz_index_content.empty ())

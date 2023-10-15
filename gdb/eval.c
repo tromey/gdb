@@ -582,7 +582,7 @@ evaluate_var_msym_value (enum noside noside,
 value *
 evaluate_subexp_do_call (expression *exp, enum noside noside,
 			 value *callee,
-			 gdb::array_view<value *> argvec,
+			 gdb::span<value *> argvec,
 			 const char *function_name,
 			 type *default_return_type)
 {
@@ -746,7 +746,7 @@ scope_operation::evaluate_funcall (struct type *expect_type,
 
   for (int i = 0; i < args.size (); ++i)
     argvec[i + 1] = args[i]->evaluate_with_coercion (exp, noside);
-  gdb::array_view<value *> arg_view = argvec;
+  gdb::span<value *> arg_view = argvec;
 
   value *callee = nullptr;
   if (function_name != nullptr)
@@ -794,7 +794,7 @@ structop_member_base::evaluate_funcall (struct type *expect_type,
     lhs = std::get<0> (m_storage)->evaluate (nullptr, exp, noside);
 
   std::vector<value *> vals (args.size () + 1);
-  gdb::array_view<value *> val_view = vals;
+  gdb::span<value *> val_view = vals;
   /* If the function is a virtual function, then the aggregate
      value (providing the structure) plays its part by providing
      the vtable.  Otherwise, it is just along for the ride: call
@@ -901,7 +901,7 @@ structop_base_operation::evaluate_funcall
     vals[i + 1] = args[i]->evaluate_with_coercion (exp, noside);
 
   /* The array view includes the `this' pointer.  */
-  gdb::array_view<value *> arg_view (vals);
+  gdb::span<value *> arg_view (vals);
 
   int static_memfuncp;
   value *callee;
@@ -1900,7 +1900,7 @@ eval_binop_assign_modify (struct type *expect_type, struct expression *exp,
 static struct value *
 eval_op_objc_msgcall (struct type *expect_type, struct expression *exp,
 		      enum noside noside, CORE_ADDR selector,
-		      value *target, gdb::array_view<value *> args)
+		      value *target, gdb::span<value *> args)
 {
   CORE_ADDR responds_selector = 0;
   CORE_ADDR method_selector = 0;
@@ -2169,7 +2169,7 @@ eval_op_objc_msgcall (struct type *expect_type, struct expression *exp,
 static struct value *
 eval_multi_subscript (struct type *expect_type, struct expression *exp,
 		      enum noside noside, value *arg1,
-		      gdb::array_view<value *> args)
+		      gdb::span<value *> args)
 {
   for (value *arg2 : args)
     {
@@ -2234,7 +2234,7 @@ objc_msgcall_operation::evaluate (struct type *expect_type,
 
   return eval_op_objc_msgcall (expect_type, exp, noside, std::
 			       get<0> (m_storage), target,
-			       gdb::make_array_view (argvec,
+			       gdb::make_span (argvec,
 						     args.size () + 3));
 }
 
@@ -2249,7 +2249,7 @@ multi_subscript_operation::evaluate (struct type *expect_type,
   for (int ix = 0; ix < values.size (); ++ix)
     argvec[ix] = values[ix]->evaluate_with_coercion (exp, noside);
   return eval_multi_subscript (expect_type, exp, noside, arg1,
-			       gdb::make_array_view (argvec, values.size ()));
+			       gdb::make_span (argvec, values.size ()));
 }
 
 value *

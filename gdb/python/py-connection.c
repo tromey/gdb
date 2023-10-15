@@ -318,7 +318,7 @@ struct py_send_packet_callbacks : public send_remote_packet_callbacks
 
   /* There's nothing to do when the packet is sent.  */
 
-  void sending (gdb::array_view<const char> &buf) override
+  void sending (gdb::span<const char> &buf) override
   { /* Nothing.  */ }
 
   /* When the result is returned create a Python object and assign this
@@ -327,7 +327,7 @@ struct py_send_packet_callbacks : public send_remote_packet_callbacks
      internal error flags will be set.  If the result we got back from the
      remote is empty then set the result to None.  */
 
-  void received (gdb::array_view<const char> &buf) override
+  void received (gdb::span<const char> &buf) override
   {
     if (buf.size () > 0 && buf.data ()[0] != '\0')
       m_result.reset (PyBytes_FromStringAndSize (buf.data (), buf.size ()));
@@ -419,7 +419,7 @@ connpy_send_packet (PyObject *self, PyObject *args, PyObject *kw)
       scoped_restore_current_thread restore_thread;
       switch_to_target_no_thread (conn->target);
 
-      gdb::array_view<const char> view (packet_str, packet_len);
+      gdb::span<const char> view (packet_str, packet_len);
       py_send_packet_callbacks callbacks;
       send_remote_packet (view, &callbacks);
       PyObject *result = callbacks.result ().release ();

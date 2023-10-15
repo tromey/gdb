@@ -46,7 +46,7 @@ you lose
 
 template<typename T, typename>
 T
-extract_integer (gdb::array_view<const gdb_byte> buf, enum bfd_endian byte_order)
+extract_integer (gdb::span<const gdb_byte> buf, enum bfd_endian byte_order)
 {
   typename std::make_unsigned<T>::type retval = 0;
 
@@ -87,10 +87,10 @@ That operation is not available on integers of more than %d bytes."),
 }
 
 /* Explicit instantiations.  */
-template LONGEST extract_integer<LONGEST> (gdb::array_view<const gdb_byte> buf,
+template LONGEST extract_integer<LONGEST> (gdb::span<const gdb_byte> buf,
 					   enum bfd_endian byte_order);
 template ULONGEST extract_integer<ULONGEST>
-  (gdb::array_view<const gdb_byte> buf, enum bfd_endian byte_order);
+  (gdb::span<const gdb_byte> buf, enum bfd_endian byte_order);
 
 /* Sometimes a long long unsigned integer can be extracted as a
    LONGEST value.  This is done so that we can print these values

@@ -202,7 +202,7 @@ struct index_cache_resource_mmap final : public index_cache_resource
 
 /* See dwarf-index-cache.h.  */
 
-gdb::array_view<const gdb_byte>
+gdb::span<const gdb_byte>
 index_cache::lookup_gdb_index (const bfd_build_id *build_id,
 			       std::unique_ptr<index_cache_resource> *resource)
 {
@@ -231,7 +231,7 @@ index_cache::lookup_gdb_index (const bfd_build_id *build_id,
       /* Yay, it worked!  Hand the resource to the caller.  */
       resource->reset (mmap_resource);
 
-      return gdb::array_view<const gdb_byte>
+      return gdb::span<const gdb_byte>
 	  ((const gdb_byte *) mmap_resource->mapping.get (),
 	   mmap_resource->mapping.size ());
     }
@@ -248,7 +248,7 @@ index_cache::lookup_gdb_index (const bfd_build_id *build_id,
 
 /* See dwarf-index-cache.h.  This is a no-op on unsupported systems.  */
 
-gdb::array_view<const gdb_byte>
+gdb::span<const gdb_byte>
 index_cache::lookup_gdb_index (const bfd_build_id *build_id,
 			       std::unique_ptr<index_cache_resource> *resource)
 {

@@ -27,7 +27,7 @@ bool startup_with_shell = true;
 /* See common-inferior.h.  */
 
 std::string
-construct_inferior_arguments (gdb::array_view<char * const> argv)
+construct_inferior_arguments (gdb::span<char * const> argv)
 {
   std::string result;
 

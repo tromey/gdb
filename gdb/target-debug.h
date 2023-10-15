@@ -160,7 +160,7 @@
   target_debug_do_print (plongest (X))
 #define target_debug_print_traceframe_info_up(X) \
   target_debug_do_print (host_address_to_string (X.get ()))
-#define target_debug_print_gdb_array_view_const_int(X)	\
+#define target_debug_print_gdb_span_const_int(X)	\
   target_debug_do_print (host_address_to_string (X.data ()))
 #define target_debug_print_record_print_flags(X) \
   target_debug_do_print (plongest (X))
@@ -201,7 +201,7 @@ target_debug_print_target_wait_flags (target_wait_flags options)
 }
 
 static void
-target_debug_print_signals (gdb::array_view<const unsigned char> sigs)
+target_debug_print_signals (gdb::span<const unsigned char> sigs)
 {
   gdb_puts ("{", gdb_stdlog);
 
@@ -221,7 +221,7 @@ target_debug_print_size_t (size_t size)
 }
 
 static void
-target_debug_print_gdb_array_view_const_gdb_byte (gdb::array_view<const gdb_byte> vector)
+target_debug_print_gdb_span_const_gdb_byte (gdb::span<const gdb_byte> vector)
 {
   gdb_puts ("{", gdb_stdlog);
 
@@ -236,7 +236,7 @@ target_debug_print_gdb_array_view_const_gdb_byte (gdb::array_view<const gdb_byte
 static void
 target_debug_print_const_gdb_byte_vector_r (const gdb::byte_vector &vector)
 {
-  target_debug_print_gdb_array_view_const_gdb_byte (vector);
+  target_debug_print_gdb_span_const_gdb_byte (vector);
 }
 
 static void

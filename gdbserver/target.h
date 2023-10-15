@@ -27,7 +27,7 @@
 #include "target/wait.h"
 #include "target/waitstatus.h"
 #include "mem-break.h"
-#include "gdbsupport/array-view.h"
+#include "gdbsupport/gdb-span.h"
 #include "gdbsupport/btrace-common.h"
 #include <vector>
 #include "gdbsupport/byte-vector.h"
@@ -302,7 +302,7 @@ public:
   /* Target specific qSupported support.  FEATURES is an array of
      features unsupported by the core of GDBserver.  */
   virtual void process_qsupported
-    (gdb::array_view<const char * const> features);
+    (gdb::span<const char * const> features);
 
   /* Return true if the target supports tracepoints, false otherwise.  */
   virtual bool supports_tracepoints ();

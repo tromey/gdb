@@ -45,28 +45,28 @@
 /* Local functions.  */
 
 static int typecmp (bool staticp, bool varargs, int nargs,
-		    struct field t1[], const gdb::array_view<value *> t2);
+		    struct field t1[], const gdb::span<value *> t2);
 
 static struct value *search_struct_field (const char *, struct value *, 
 					  struct type *, int);
 
 static struct value *search_struct_method (const char *, struct value **,
-					   std::optional<gdb::array_view<value *>>,
+					   std::optional<gdb::span<value *>>,
 					   LONGEST, int *, struct type *);
 
-static int find_oload_champ_namespace (gdb::array_view<value *> args,
+static int find_oload_champ_namespace (gdb::span<value *> args,
 				       const char *, const char *,
 				       std::vector<symbol *> *oload_syms,
 				       badness_vector *,
 				       const int no_adl);
 
-static int find_oload_champ_namespace_loop (gdb::array_view<value *> args,
+static int find_oload_champ_namespace_loop (gdb::span<value *> args,
 					    const char *, const char *,
 					    int, std::vector<symbol *> *oload_syms,
 					    badness_vector *, int *,
 					    const int no_adl);
 
-static int find_oload_champ (gdb::array_view<value *> args,
+static int find_oload_champ (gdb::span<value *> args,
 			     size_t num_fns,
 			     fn_field *methods,
 			     xmethod_worker_up *xmethods,
@@ -956,7 +956,7 @@ value_one (struct type *type)
 	error (_("Could not determine the vector bounds"));
 
       val = value::allocate (type);
-      gdb::array_view<gdb_byte> val_contents = val->contents_writeable ();
+      gdb::span<gdb_byte> val_contents = val->contents_writeable ();
       int elt_len = eltype->length ();
 
       for (i = 0; i < high_bound - low_bound + 1; i++)
@@ -1684,7 +1684,7 @@ value_ind (struct value *arg1)
    don't currently enforce any restriction on their types).  */
 
 struct value *
-value_array (int lowbound, gdb::array_view<struct value *> elemvec)
+value_array (int lowbound, gdb::span<struct value *> elemvec)
 {
   int idx;
   ULONGEST typelength;
@@ -1762,7 +1762,7 @@ value_string (const gdb_byte *ptr, ssize_t count, struct type *char_type)
 
 
 /* See if we can pass arguments in T2 to a function which takes arguments
-   of types T1.  T1 is a list of NARGS arguments, and T2 is an array_view
+   of types T1.  T1 is a list of NARGS arguments, and T2 is an span
    of the values we're trying to pass.  If some arguments need coercion of
    some sort, then the coerced values are written into T2.  Return value is
    0 if the arguments could be matched, or the position at which they
@@ -1780,7 +1780,7 @@ value_string (const gdb_byte *ptr, ssize_t count, struct type *char_type)
 
 static int
 typecmp (bool staticp, bool varargs, int nargs,
-	 struct field t1[], gdb::array_view<value *> t2)
+	 struct field t1[], gdb::span<value *> t2)
 {
   int i;
 
@@ -2188,7 +2188,7 @@ search_struct_field (const char *name, struct value *arg1,
 
 static struct value *
 search_struct_method (const char *name, struct value **arg1p,
-		      std::optional<gdb::array_view<value *>> args,
+		      std::optional<gdb::span<value *>> args,
 		      LONGEST offset, int *static_memfuncp,
 		      struct type *type)
 {
@@ -2324,7 +2324,7 @@ search_struct_method (const char *name, struct value **arg1p,
 
 struct value *
 value_struct_elt (struct value **argp,
-		  std::optional<gdb::array_view<value *>> args,
+		  std::optional<gdb::span<value *>> args,
 		  const char *name, int *static_memfuncp, const char *err)
 {
   struct type *t;
@@ -2484,7 +2484,7 @@ value_struct_elt_bitpos (struct value **argp, int bitpos, struct type *ftype,
 static void
 find_method_list (struct value **argp, const char *method,
 		  LONGEST offset, struct type *type,
-		  gdb::array_view<fn_field> *methods,
+		  gdb::span<fn_field> *methods,
 		  std::vector<xmethod_worker_up> *xmethods,
 		  struct type **basetype, LONGEST *boffset)
 {
@@ -2509,7 +2509,7 @@ find_method_list (struct value **argp, const char *method,
 	    {
 	      int len = TYPE_FN_FIELDLIST_LENGTH (type, i);
 	      f = TYPE_FN_FIELDLIST1 (type, i);
-	      *methods = gdb::make_array_view (f, len);
+	      *methods = gdb::make_span (f, len);
 
 	      *basetype = type;
 	      *boffset = offset;
@@ -2576,7 +2576,7 @@ find_method_list (struct value **argp, const char *method,
 static void
 value_find_oload_method_list (struct value **argp, const char *method,
 			      LONGEST offset,
-			      gdb::array_view<fn_field> *methods,
+			      gdb::span<fn_field> *methods,
 			      std::vector<xmethod_worker_up> *xmethods,
 			      struct type **basetype, LONGEST *boffset)
 {
@@ -2616,7 +2616,7 @@ value_find_oload_method_list (struct value **argp, const char *method,
 
    If no incomplete types are present, an empty string is returned.  */
 static std::string
-incomplete_type_hint (gdb::array_view<value *> args)
+incomplete_type_hint (gdb::span<value *> args)
 {
   int incomplete_types = 0;
   std::string incomplete_arg_names;
@@ -2699,7 +2699,7 @@ incomplete_type_hint (gdb::array_view<value *> args)
    resolution is permitted.  */
 
 int
-find_overload_match (gdb::array_view<value *> args,
+find_overload_match (gdb::span<value *> args,
 		     const char *name, enum oload_search_type method,
 		     struct value **objp, struct symbol *fsym,
 		     struct value **valp, struct symbol **symp, 
@@ -2722,7 +2722,7 @@ find_overload_match (gdb::array_view<value *> args,
 
   struct value *temp = obj;
   /* For methods, the list of overloaded methods.  */
-  gdb::array_view<fn_field> methods;
+  gdb::span<fn_field> methods;
   /* For non-methods, the list of overloaded function symbols.  */
   std::vector<symbol *> functions;
   /* For xmethods, the vector of xmethod workers.  */
@@ -3048,7 +3048,7 @@ find_overload_match (gdb::array_view<value *> args,
    argument dependent lookup is not performed.  */
 
 static int
-find_oload_champ_namespace (gdb::array_view<value *> args,
+find_oload_champ_namespace (gdb::span<value *> args,
 			    const char *func_name,
 			    const char *qualified_name,
 			    std::vector<symbol *> *oload_syms,
@@ -3074,7 +3074,7 @@ find_oload_champ_namespace (gdb::array_view<value *> args,
    find_oload_champ_namespace.  */
 
 static int
-find_oload_champ_namespace_loop (gdb::array_view<value *> args,
+find_oload_champ_namespace_loop (gdb::span<value *> args,
 				 const char *func_name,
 				 const char *qualified_name,
 				 int namespace_len,
@@ -3190,7 +3190,7 @@ find_oload_champ_namespace_loop (gdb::array_view<value *> args,
    quality of the match in OLOAD_CHAMP_BV.  */
 
 static int
-find_oload_champ (gdb::array_view<value *> args,
+find_oload_champ (gdb::span<value *> args,
 		  size_t num_fns,
 		  fn_field *methods,
 		  xmethod_worker_up *xmethods,

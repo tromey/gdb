@@ -190,7 +190,7 @@ child_path (const char *parent, const char *child)
 /* See gdbsupport/pathstuff.h.  */
 
 std::string
-path_join (gdb::array_view<const char *> paths)
+path_join (gdb::span<const char *> paths)
 {
   std::string ret;
 

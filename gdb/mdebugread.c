@@ -4590,7 +4590,7 @@ sort_blocks (struct symtab *s)
    */
   if (bv->num_blocks () > FIRST_LOCAL_BLOCK + 1)
     {
-      gdb::array_view<block *> blocks_view = bv->blocks ();
+      gdb::span<block *> blocks_view = bv->blocks ();
 
       std::sort (blocks_view.begin () + FIRST_LOCAL_BLOCK,
 		 blocks_view.end (), block_is_less_than);

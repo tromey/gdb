@@ -92,7 +92,7 @@ struct property_addr_info
   struct type *type;
 
   /* If not NULL, a buffer containing the object's value.  */
-  gdb::array_view<const gdb_byte> valaddr;
+  gdb::span<const gdb_byte> valaddr;
 
   /* The address of that object.  */
   CORE_ADDR addr;
@@ -122,7 +122,7 @@ bool dwarf2_evaluate_property (const struct dynamic_prop *prop,
 			       const frame_info_ptr &frame,
 			       const property_addr_info *addr_stack,
 			       CORE_ADDR *value,
-			       gdb::array_view<CORE_ADDR> push_values = {});
+			       gdb::span<CORE_ADDR> push_values = {});
 
 /* A helper for the compiler interface that compiles a single dynamic
    property to C code.

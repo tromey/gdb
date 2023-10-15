@@ -14796,7 +14796,7 @@ arm_record_test (void)
 class test_arm_instruction_reader : public arm_instruction_reader
 {
 public:
-  explicit test_arm_instruction_reader (gdb::array_view<const uint32_t> insns)
+  explicit test_arm_instruction_reader (gdb::span<const uint32_t> insns)
     : m_insns (insns)
   {}
 
@@ -14809,7 +14809,7 @@ public:
   }
 
 private:
-  const gdb::array_view<const uint32_t> m_insns;
+  const gdb::span<const uint32_t> m_insns;
 };
 
 static void

@@ -1586,7 +1586,7 @@ dwarf2_locexpr_baton_eval (const struct dwarf2_locexpr_baton *dlbaton,
 			   const frame_info_ptr &frame,
 			   const struct property_addr_info *addr_stack,
 			   CORE_ADDR *valp,
-			   gdb::array_view<CORE_ADDR> push_values,
+			   gdb::span<CORE_ADDR> push_values,
 			   bool *is_reference)
 {
   if (dlbaton == NULL || dlbaton->size == 0)
@@ -1647,7 +1647,7 @@ dwarf2_evaluate_property (const dynamic_prop *prop,
 			  const frame_info_ptr &initial_frame,
 			  const property_addr_info *addr_stack,
 			  CORE_ADDR *value,
-			  gdb::array_view<CORE_ADDR> push_values)
+			  gdb::span<CORE_ADDR> push_values)
 {
   if (prop == NULL)
     return false;
@@ -1823,7 +1823,7 @@ dwarf2_compile_property_to_c (string_file *stream,
    expression.  */
 
 static enum symbol_needs_kind
-dwarf2_get_symbol_read_needs (gdb::array_view<const gdb_byte> expr,
+dwarf2_get_symbol_read_needs (gdb::span<const gdb_byte> expr,
 			      dwarf2_per_cu_data *per_cu,
 			      dwarf2_per_objfile *per_objfile,
 			      bfd_endian byte_order,
@@ -2156,7 +2156,7 @@ dwarf2_get_symbol_read_needs (gdb::array_view<const gdb_byte> expr,
 	    if (symbol_needs != SYMBOL_NEEDS_FRAME)
 	      {
 		gdbarch *arch = baton.per_objfile->objfile->arch ();
-		gdb::array_view<const gdb_byte> sub_expr (baton.data,
+		gdb::span<const gdb_byte> sub_expr (baton.data,
 							  baton.size);
 		symbol_needs
 		  = dwarf2_get_symbol_read_needs (sub_expr,
@@ -2209,7 +2209,7 @@ dwarf2_get_symbol_read_needs (gdb::array_view<const gdb_byte> expr,
 	    if (symbol_needs != SYMBOL_NEEDS_FRAME)
 	      {
 		gdbarch *arch = baton.per_objfile->objfile->arch ();
-		gdb::array_view<const gdb_byte> sub_expr (baton.data,
+		gdb::span<const gdb_byte> sub_expr (baton.data,
 							  baton.size);
 		symbol_needs
 		  = dwarf2_get_symbol_read_needs (sub_expr,
@@ -3088,7 +3088,7 @@ locexpr_get_symbol_read_needs (struct symbol *symbol)
     = (struct dwarf2_locexpr_baton *) SYMBOL_LOCATION_BATON (symbol);
 
   gdbarch *arch = dlbaton->per_objfile->objfile->arch ();
-  gdb::array_view<const gdb_byte> expr (dlbaton->data, dlbaton->size);
+  gdb::span<const gdb_byte> expr (dlbaton->data, dlbaton->size);
 
   return dwarf2_get_symbol_read_needs (expr,
 				       dlbaton->per_cu,

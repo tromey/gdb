@@ -56,7 +56,7 @@ void trad_frame_set_reg_value (struct trad_frame_cache *this_cache,
    contained in BYTES with size SIZE.  */
 void trad_frame_set_reg_value_bytes (struct trad_frame_cache *this_trad_cache,
 				     int regnum,
-				     gdb::array_view<const gdb_byte> bytes);
+				     gdb::span<const gdb_byte> bytes);
 
 struct value *trad_frame_get_register (struct trad_frame_cache *this_trad_cache,
 				       const frame_info_ptr &this_frame,
@@ -114,7 +114,7 @@ struct trad_frame_saved_reg
   /* Encode that the saved register's value is stored as a sequence of bytes.
      This is useful when the value is larger than what primitive types
      can hold.  */
-  void set_value_bytes (gdb::array_view<const gdb_byte> bytes)
+  void set_value_bytes (gdb::span<const gdb_byte> bytes)
   {
     /* Allocate the space and copy the data bytes.  */
     gdb_byte *data = FRAME_OBSTACK_CALLOC (bytes.size (), gdb_byte);

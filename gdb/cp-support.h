@@ -25,7 +25,7 @@
 #include "symtab.h"
 #include "gdbsupport/gdb_vecs.h"
 #include "gdbsupport/gdb_obstack.h"
-#include "gdbsupport/array-view.h"
+#include "gdbsupport/gdb-span.h"
 #include <vector>
 
 /* Opaque declarations.  */
@@ -111,7 +111,7 @@ extern std::vector<symbol *> make_symbol_overload_list (const char *,
 							const char *);
 
 extern void add_symbol_overload_list_adl
-  (gdb::array_view<type *> arg_types,
+  (gdb::span<type *> arg_types,
    const char *func_name,
    std::vector<symbol *> *overload_list);
 

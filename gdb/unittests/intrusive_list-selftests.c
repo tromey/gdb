@@ -76,7 +76,7 @@ struct intrusive_list_test
 
   static void
   verify_items (const ListType &list,
-		gdb::array_view<const typename ListType::value_type *> expected)
+		gdb::span<const typename ListType::value_type *> expected)
   {
     int i = 0;
 

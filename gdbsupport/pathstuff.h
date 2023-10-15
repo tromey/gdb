@@ -21,7 +21,7 @@
 #define COMMON_PATHSTUFF_H
 
 #include "gdbsupport/byte-vector.h"
-#include "gdbsupport/array-view.h"
+#include "gdbsupport/gdb-span.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -67,7 +67,7 @@ extern const char *child_path (const char *parent, const char *child);
    The first element can be absolute or relative.  All the others must be
    relative.  */
 
-extern std::string path_join (gdb::array_view<const char *> paths);
+extern std::string path_join (gdb::span<const char *> paths);
 
 /* Same as the above, but accept paths as distinct parameters.  */
 
@@ -81,7 +81,7 @@ path_join (Args... paths)
   std::array<const char *, sizeof... (Args)> path_array
     { paths... };
 
-  return path_join (gdb::array_view<const char *> (path_array));
+  return path_join (gdb::span<const char *> (path_array));
 }
 
 /* Return whether PATH contains a directory separator character.  */

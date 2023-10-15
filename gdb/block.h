@@ -21,7 +21,7 @@
 #define BLOCK_H
 
 #include "dictionary.h"
-#include "gdbsupport/array-view.h"
+#include "gdbsupport/gdb-span.h"
 
 /* Opaque declarations.  */
 
@@ -152,21 +152,21 @@ struct block : public allocate_on_obstack<block>
   { m_multidict = multidict; }
 
   /* Return a view on this block's ranges.  */
-  gdb::array_view<blockrange> ranges ()
+  gdb::span<blockrange> ranges ()
   {
     if (m_ranges == nullptr)
       return {};
     else
-      return gdb::make_array_view (m_ranges->range, m_ranges->nranges);
+      return gdb::make_span (m_ranges->range, m_ranges->nranges);
   }
 
   /* Const version of the above.  */
-  gdb::array_view<const blockrange> ranges () const
+  gdb::span<const blockrange> ranges () const
   {
     if (m_ranges == nullptr)
       return {};
     else
-      return gdb::make_array_view (m_ranges->range, m_ranges->nranges);
+      return gdb::make_span (m_ranges->range, m_ranges->nranges);
   }
 
   /* Set this block's ranges array.  */
@@ -358,16 +358,16 @@ struct global_block : public block
 struct blockvector
 {
   /* Return a view on the blocks of this blockvector.  */
-  gdb::array_view<struct block *> blocks ()
+  gdb::span<struct block *> blocks ()
   {
-    return gdb::array_view<struct block *> (m_blocks, m_num_blocks);
+    return gdb::span<struct block *> (m_blocks, m_num_blocks);
   }
 
   /* Const version of the above.  */
-  gdb::array_view<const struct block *const> blocks () const
+  gdb::span<const struct block *const> blocks () const
   {
     const struct block **blocks = (const struct block **) m_blocks;
-    return gdb::array_view<const struct block *const> (blocks, m_num_blocks);
+    return gdb::span<const struct block *const> (blocks, m_num_blocks);
   }
 
   /* Return the block at index I.  */

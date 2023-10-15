@@ -993,8 +993,8 @@ ada_value_print_inner (struct value *val, struct ui_file *stream, int recurse,
 
   const gdb_byte *valaddr = val->contents_for_printing ().data ();
   CORE_ADDR address = val->address ();
-  gdb::array_view<const gdb_byte> view
-    = gdb::make_array_view (valaddr, type->length ());
+  gdb::span<const gdb_byte> view
+    = gdb::make_span (valaddr, type->length ());
   type = ada_check_typedef (resolve_dynamic_type (type, view, address));
   if (type != saved_type)
     {

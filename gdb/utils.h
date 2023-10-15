@@ -20,7 +20,7 @@
 #define UTILS_H
 
 #include "exceptions.h"
-#include "gdbsupport/array-view.h"
+#include "gdbsupport/gdb-span.h"
 #include "gdbsupport/function-view.h"
 #include "gdbsupport/scoped_restore.h"
 #include <chrono>

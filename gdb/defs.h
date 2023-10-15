@@ -61,7 +61,7 @@
 
 #include "gdbsupport/host-defs.h"
 #include "gdbsupport/enum-flags.h"
-#include "gdbsupport/array-view.h"
+#include "gdbsupport/gdb-span.h"
 
 /* Scope types enumerator.  List the types of scopes the compiler will
    accept.  */
@@ -453,10 +453,10 @@ enum symbol_needs_kind
 /* In findvar.c.  */
 
 template<typename T, typename = RequireLongest<T>>
-T extract_integer (gdb::array_view<const gdb_byte>, enum bfd_endian byte_order);
+T extract_integer (gdb::span<const gdb_byte>, enum bfd_endian byte_order);
 
 static inline LONGEST
-extract_signed_integer (gdb::array_view<const gdb_byte> buf,
+extract_signed_integer (gdb::span<const gdb_byte> buf,
 			enum bfd_endian byte_order)
 {
   return extract_integer<LONGEST> (buf, byte_order);
@@ -466,12 +466,12 @@ static inline LONGEST
 extract_signed_integer (const gdb_byte *addr, int len,
 			enum bfd_endian byte_order)
 {
-  return extract_signed_integer (gdb::array_view<const gdb_byte> (addr, len),
+  return extract_signed_integer (gdb::span<const gdb_byte> (addr, len),
 				 byte_order);
 }
 
 static inline ULONGEST
-extract_unsigned_integer (gdb::array_view<const gdb_byte> buf,
+extract_unsigned_integer (gdb::span<const gdb_byte> buf,
 			  enum bfd_endian byte_order)
 {
   return extract_integer<ULONGEST> (buf, byte_order);
@@ -481,7 +481,7 @@ static inline ULONGEST
 extract_unsigned_integer (const gdb_byte *addr, int len,
 			  enum bfd_endian byte_order)
 {
-  return extract_unsigned_integer (gdb::array_view<const gdb_byte> (addr, len),
+  return extract_unsigned_integer (gdb::span<const gdb_byte> (addr, len),
 				   byte_order);
 }
 
