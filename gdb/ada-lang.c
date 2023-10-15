@@ -4576,7 +4576,7 @@ ada_convert_actual (struct value *actual, struct type *formal_type0)
 
 	      actual_type = ada_check_typedef (actual->type ());
 	      val = value::allocate (actual_type);
-	      copy (actual->contents (), val->contents_raw ());
+	      gdb::copy (actual->contents (), val->contents_raw ());
 	      actual = ensure_lval (val);
 	    }
 	  result = value_addr (actual);
