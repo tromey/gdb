@@ -804,12 +804,12 @@ public:
 
   void mourn_inferior () override;
 
-  void pass_signals (gdb::array_view<const unsigned char>) override;
+  void pass_signals (gdb::span<const unsigned char>) override;
 
   int set_syscall_catchpoint (int, bool, int,
-			      gdb::array_view<const int>) override;
+			      gdb::span<const int>) override;
 
-  void program_signals (gdb::array_view<const unsigned char>) override;
+  void program_signals (gdb::span<const unsigned char>) override;
 
   bool thread_alive (ptid_t ptid) override;
 
@@ -827,7 +827,7 @@ public:
 					     int handle_len,
 					     inferior *inf) override;
 
-  gdb::array_view<const gdb_byte> thread_info_to_thread_handle (struct thread_info *tp)
+  gdb::span<const gdb_byte> thread_info_to_thread_handle (struct thread_info *tp)
     override;
 
   void stop (ptid_t) override;
@@ -2931,7 +2931,7 @@ record_currthread (struct remote_state *rs, ptid_t currthread)
    it can simply pass through to the inferior without reporting.  */
 
 void
-remote_target::pass_signals (gdb::array_view<const unsigned char> pass_signals)
+remote_target::pass_signals (gdb::span<const unsigned char> pass_signals)
 {
   if (m_features.packet_support (PACKET_QPassSignals) != PACKET_DISABLE)
     {
@@ -2981,7 +2981,7 @@ remote_target::pass_signals (gdb::array_view<const unsigned char> pass_signals)
 
 int
 remote_target::set_syscall_catchpoint (int pid, bool needed, int any_count,
-				       gdb::array_view<const int> syscall_counts)
+				       gdb::span<const int> syscall_counts)
 {
   const char *catch_packet;
   enum packet_result result;
@@ -3051,7 +3051,7 @@ remote_target::set_syscall_catchpoint (int pid, bool needed, int any_count,
    signals it should pass through to the inferior when detaching.  */
 
 void
-remote_target::program_signals (gdb::array_view<const unsigned char> signals)
+remote_target::program_signals (gdb::span<const unsigned char> signals)
 {
   if (m_features.packet_support (PACKET_QProgramSignals) != PACKET_DISABLE)
     {
@@ -11784,7 +11784,7 @@ struct cli_packet_command_callbacks : public send_remote_packet_callbacks
   /* Called before the packet is sent.  BUF is the packet content before
      the protocol specific prefix, suffix, and escaping is added.  */
 
-  void sending (gdb::array_view<const char> &buf) override
+  void sending (gdb::span<const char> &buf) override
   {
     gdb_puts ("sending: ");
     print_packet (buf);
@@ -11793,7 +11793,7 @@ struct cli_packet_command_callbacks : public send_remote_packet_callbacks
 
   /* Called with BUF, the reply from the remote target.  */
 
-  void received (gdb::array_view<const char> &buf) override
+  void received (gdb::span<const char> &buf) override
   {
     gdb_puts ("received: \"");
     print_packet (buf);
@@ -11806,7 +11806,7 @@ private:
      '\x??' with '??' replaced by the hexadecimal value of the byte.  */
 
   static void
-  print_packet (gdb::array_view<const char> &buf)
+  print_packet (gdb::span<const char> &buf)
   {
     string_file stb;
 
@@ -11826,7 +11826,7 @@ private:
 /* See remote.h.  */
 
 void
-send_remote_packet (gdb::array_view<const char> &buf,
+send_remote_packet (gdb::span<const char> &buf,
 		    send_remote_packet_callbacks *callbacks)
 {
   if (buf.size () == 0 || buf.data ()[0] == '\0')
@@ -11845,7 +11845,7 @@ send_remote_packet (gdb::array_view<const char> &buf,
   if (bytes < 0)
     error (_("error while fetching packet from remote target"));
 
-  gdb::array_view<const char> view (&rs->buf[0], bytes);
+  gdb::span<const char> view (&rs->buf[0], bytes);
   callbacks->received (view);
 }
 
@@ -11855,8 +11855,8 @@ static void
 cli_packet_command (const char *args, int from_tty)
 {
   cli_packet_command_callbacks cb;
-  gdb::array_view<const char> view
-    = gdb::make_array_view (args, args == nullptr ? 0 : strlen (args));
+  gdb::span<const char> view
+    = gdb::make_span (args, args == nullptr ? 0 : strlen (args));
   send_remote_packet (view, &cb);
 }
 
@@ -14861,7 +14861,7 @@ remote_target::thread_handle_to_thread_info (const gdb_byte *thread_handle,
   return NULL;
 }
 
-gdb::array_view<const gdb_byte>
+gdb::span<const gdb_byte>
 remote_target::thread_info_to_thread_handle (struct thread_info *tp)
 {
   remote_thread_info *priv = get_remote_thread_info (tp);

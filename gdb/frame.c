@@ -1312,7 +1312,7 @@ frame_unwind_register_value (frame_info_ptr next_frame, int regnum)
 	  else
 	    {
 	      int i;
-	      gdb::array_view<const gdb_byte> buf = value->contents ();
+	      gdb::span<const gdb_byte> buf = value->contents ();
 
 	      gdb_printf (&debug_file, " bytes=");
 	      gdb_printf (&debug_file, "[");
@@ -1478,7 +1478,7 @@ deprecated_frame_register_read (frame_info_ptr frame, int regnum,
 bool
 get_frame_register_bytes (frame_info_ptr frame, int regnum,
 			  CORE_ADDR offset,
-			  gdb::array_view<gdb_byte> buffer,
+			  gdb::span<gdb_byte> buffer,
 			  int *optimizedp, int *unavailablep)
 {
   struct gdbarch *gdbarch = get_frame_arch (frame);
@@ -1567,7 +1567,7 @@ get_frame_register_bytes (frame_info_ptr frame, int regnum,
 void
 put_frame_register_bytes (frame_info_ptr frame, int regnum,
 			  CORE_ADDR offset,
-			  gdb::array_view<const gdb_byte> buffer)
+			  gdb::span<const gdb_byte> buffer)
 {
   struct gdbarch *gdbarch = get_frame_arch (frame);
 
@@ -2987,7 +2987,7 @@ get_frame_address_space (frame_info_ptr frame)
 
 void
 get_frame_memory (frame_info_ptr this_frame, CORE_ADDR addr,
-		  gdb::array_view<gdb_byte> buffer)
+		  gdb::span<gdb_byte> buffer)
 {
   read_memory (addr, buffer.data (), buffer.size ());
 }
@@ -3014,7 +3014,7 @@ get_frame_memory_unsigned (frame_info_ptr this_frame, CORE_ADDR addr,
 
 bool
 safe_frame_unwind_memory (frame_info_ptr this_frame,
-			  CORE_ADDR addr, gdb::array_view<gdb_byte> buffer)
+			  CORE_ADDR addr, gdb::span<gdb_byte> buffer)
 {
   /* NOTE: target_read_memory returns zero on success!  */
   return target_read_memory (addr, buffer.data (), buffer.size ()) == 0;

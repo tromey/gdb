@@ -1224,7 +1224,7 @@ enum symbol_subclass_kind
   SYMBOL_RUST_VTABLE
 };
 
-extern gdb::array_view<const struct symbol_impl> symbol_impls;
+extern gdb::span<const struct symbol_impl> symbol_impls;
 
 bool symbol_matches_domain (enum language symbol_language,
 			    domain_enum symbol_domain,

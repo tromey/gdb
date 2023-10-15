@@ -46,7 +46,7 @@
 #include <vector>
 #include "completer.h"
 #include "gdbsupport/selftest.h"
-#include "gdbsupport/array-view.h"
+#include "gdbsupport/gdb-span.h"
 #include "cli/cli-style.h"
 #include "expop.h"
 #include "inferior.h"
@@ -1005,7 +1005,7 @@ value::allocate_optimized_out (struct type *type)
 
 /* Accessor methods.  */
 
-gdb::array_view<gdb_byte>
+gdb::span<gdb_byte>
 value::contents_raw ()
 {
   int unit_size = gdbarch_addressable_memory_unit_size (arch ());
@@ -1013,17 +1013,17 @@ value::contents_raw ()
   allocate_contents (true);
 
   ULONGEST length = type ()->length ();
-  return gdb::make_array_view
+  return gdb::make_span
     (m_contents.get () + m_embedded_offset * unit_size, length);
 }
 
-gdb::array_view<gdb_byte>
+gdb::span<gdb_byte>
 value::contents_all_raw ()
 {
   allocate_contents (true);
 
   ULONGEST length = enclosing_type ()->length ();
-  return gdb::make_array_view (m_contents.get (), length);
+  return gdb::make_span (m_contents.get (), length);
 }
 
 /* Look at value.h for description.  */
@@ -1096,29 +1096,29 @@ value::require_available () const
     throw_error (NOT_AVAILABLE_ERROR, _("value is not available"));
 }
 
-gdb::array_view<const gdb_byte>
+gdb::span<const gdb_byte>
 value::contents_for_printing ()
 {
   if (m_lazy)
     fetch_lazy ();
 
   ULONGEST length = enclosing_type ()->length ();
-  return gdb::make_array_view (m_contents.get (), length);
+  return gdb::make_span (m_contents.get (), length);
 }
 
-gdb::array_view<const gdb_byte>
+gdb::span<const gdb_byte>
 value::contents_for_printing () const
 {
   gdb_assert (!m_lazy);
 
   ULONGEST length = enclosing_type ()->length ();
-  return gdb::make_array_view (m_contents.get (), length);
+  return gdb::make_span (m_contents.get (), length);
 }
 
-gdb::array_view<const gdb_byte>
+gdb::span<const gdb_byte>
 value::contents_all ()
 {
-  gdb::array_view<const gdb_byte> result = contents_for_printing ();
+  gdb::span<const gdb_byte> result = contents_for_printing ();
   require_not_optimized_out ();
   require_available ();
   return result;
@@ -1189,10 +1189,10 @@ value::contents_copy_raw (struct value *dst, LONGEST dst_offset,
 					    TARGET_CHAR_BIT * length));
 
   /* Copy the data.  */
-  gdb::array_view<gdb_byte> dst_contents
+  gdb::span<gdb_byte> dst_contents
     = dst->contents_all_raw ().slice (dst_offset * unit_size,
 				      copy_length * unit_size);
-  gdb::array_view<const gdb_byte> src_contents
+  gdb::span<const gdb_byte> src_contents
     = contents_all_raw ().slice (src_offset * unit_size,
 				 copy_length * unit_size);
   gdb::copy (src_contents, dst_contents);
@@ -1235,8 +1235,8 @@ value::contents_copy_raw_bitwise (struct value *dst, LONGEST dst_bit_offset,
 					    bit_length));
 
   /* Copy the data.  */
-  gdb::array_view<gdb_byte> dst_contents = dst->contents_all_raw ();
-  gdb::array_view<const gdb_byte> src_contents = contents_all_raw ();
+  gdb::span<gdb_byte> dst_contents = dst->contents_all_raw ();
+  gdb::span<const gdb_byte> src_contents = contents_all_raw ();
   copy_bitwise (dst_contents.data (), dst_bit_offset,
 		src_contents.data (), src_bit_offset,
 		copy_bit_length,
@@ -1258,16 +1258,16 @@ value::contents_copy (struct value *dst, LONGEST dst_offset,
   contents_copy_raw (dst, dst_offset, src_offset, length);
 }
 
-gdb::array_view<const gdb_byte>
+gdb::span<const gdb_byte>
 value::contents ()
 {
-  gdb::array_view<const gdb_byte> result = contents_writeable ();
+  gdb::span<const gdb_byte> result = contents_writeable ();
   require_not_optimized_out ();
   require_available ();
   return result;
 }
 
-gdb::array_view<gdb_byte>
+gdb::span<gdb_byte>
 value::contents_writeable ()
 {
   if (m_lazy)
@@ -1526,10 +1526,10 @@ value::copy () const
 
       gdb_assert (m_contents != nullptr);
       const auto &arg_view
-	= gdb::make_array_view (m_contents.get (), length);
+	= gdb::make_span (m_contents.get (), length);
 
       val->allocate_contents (false);
-      gdb::array_view<gdb_byte> val_contents
+      gdb::span<gdb_byte> val_contents
 	= val->contents_all_raw ().slice (0, length);
 
       gdb::copy (arg_view, val_contents);
@@ -2526,7 +2526,7 @@ value::from_xmethod (xmethod_worker_up &&worker)
 /* See value.h.  */
 
 struct type *
-value::result_type_of_xmethod (gdb::array_view<value *> argv)
+value::result_type_of_xmethod (gdb::span<value *> argv)
 {
   gdb_assert (type ()->code () == TYPE_CODE_XMETHOD
 	      && m_lval == lval_xcallable && !argv.empty ());
@@ -2537,7 +2537,7 @@ value::result_type_of_xmethod (gdb::array_view<value *> argv)
 /* See value.h.  */
 
 struct value *
-value::call_xmethod (gdb::array_view<value *> argv)
+value::call_xmethod (gdb::span<value *> argv)
 {
   gdb_assert (type ()->code () == TYPE_CODE_XMETHOD
 	      && m_lval == lval_xcallable && !argv.empty ());
@@ -2583,7 +2583,7 @@ value_as_mpz (struct value *val)
 
   gdb_mpz result;
 
-  gdb::array_view<const gdb_byte> valbytes = val->contents ();
+  gdb::span<const gdb_byte> valbytes = val->contents ();
   enum bfd_endian byte_order = type_byte_order (type);
 
   /* Handle integers that are either not a multiple of the word size,
@@ -2806,7 +2806,7 @@ unpack_long (struct type *type, const gdb_byte *valaddr)
     case TYPE_CODE_FIXED_POINT:
       {
 	gdb_mpq vq;
-	vq.read_fixed_point (gdb::make_array_view (valaddr, len),
+	vq.read_fixed_point (gdb::make_span (valaddr, len),
 			     byte_order, nosign,
 			     type->fixed_point_scaling_factor ());
 
@@ -3554,9 +3554,9 @@ value_from_contents_and_address (struct type *type,
 				 CORE_ADDR address,
 				 frame_info_ptr frame)
 {
-  gdb::array_view<const gdb_byte> view;
+  gdb::span<const gdb_byte> view;
   if (valaddr != nullptr)
-    view = gdb::make_array_view (valaddr, type->length ());
+    view = gdb::make_span (valaddr, type->length ());
   struct type *resolved_type = resolve_dynamic_type (type, view, address,
 						     &frame);
   struct type *resolved_type_no_typedef = check_typedef (resolved_type);
@@ -3732,7 +3732,7 @@ readjust_indirect_value_type (struct value *value, struct type *enc_type,
   gdb_assert (original_type->is_pointer_or_reference ());
 
   struct type *original_target_type = original_type->target_type ();
-  gdb::array_view<const gdb_byte> view;
+  gdb::span<const gdb_byte> view;
   struct type *resolved_original_target_type
     = resolve_dynamic_type (original_target_type, view,
 			    original_value_address);
@@ -3972,7 +3972,7 @@ value::fetch_lazy_register ()
       else
 	{
 	  int i;
-	  gdb::array_view<const gdb_byte> buf = new_val->contents ();
+	  gdb::span<const gdb_byte> buf = new_val->contents ();
 
 	  if (new_val->lval () == lval_register)
 	    gdb_printf (&debug_file, " register=%d",
@@ -4131,8 +4131,8 @@ test_ranges_contain ()
 /* Check that RANGES contains the same ranges as EXPECTED.  */
 
 static bool
-check_ranges_vector (gdb::array_view<const range> ranges,
-		     gdb::array_view<const range> expected)
+check_ranges_vector (gdb::span<const range> ranges,
+		     gdb::span<const range> expected)
 {
   return ranges == expected;
 }

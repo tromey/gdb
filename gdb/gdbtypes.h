@@ -45,7 +45,7 @@
  */
 
 #include "hashtab.h"
-#include "gdbsupport/array-view.h"
+#include "gdbsupport/gdb-span.h"
 #include "gdbsupport/gdb-hashtab.h"
 #include <optional>
 #include "gdbsupport/offset-type.h"
@@ -223,7 +223,7 @@ struct variant_part;
 struct variant : allocate_on_obstack
 {
   /* * The discriminant ranges for this variant.  */
-  gdb::array_view<discriminant_range> discriminants;
+  gdb::span<discriminant_range> discriminants;
 
   /* * The fields controlled by this variant.  This is inclusive on
      the low end and exclusive on the high end.  A variant may not
@@ -233,7 +233,7 @@ struct variant : allocate_on_obstack
   int last_field;
 
   /* * Variant parts controlled by this variant.  */
-  gdb::array_view<variant_part> parts;
+  gdb::span<variant_part> parts;
 
   /* * Return true if this is the default variant.  The default
      variant can be recognized because it has no associated
@@ -266,7 +266,7 @@ struct variant_part : allocate_on_obstack
 
   /* * The variants that are controlled by this variant part.  Note
      that these will always be sorted by field number.  */
-  gdb::array_view<variant> variants;
+  gdb::span<variant> variants;
 };
 
 
@@ -299,7 +299,7 @@ union dynamic_prop_data
      used to control which fields end up in the final type during
      dynamic type resolution.  */
 
-  const gdb::array_view<variant_part> *variant_parts;
+  const gdb::span<variant_part> *variant_parts;
 
   /* Once a variant type is resolved, we may want to be able to go
      from the resolved type to the original type.  In this case we
@@ -372,14 +372,14 @@ struct dynamic_prop
     m_data.baton = baton;
   }
 
-  const gdb::array_view<variant_part> *variant_parts () const
+  const gdb::span<variant_part> *variant_parts () const
   {
     gdb_assert (m_kind == PROP_VARIANT_PARTS);
 
     return m_data.variant_parts;
   }
 
-  void set_variant_parts (gdb::array_view<variant_part> *variant_parts)
+  void set_variant_parts (gdb::span<variant_part> *variant_parts)
   {
     m_kind = PROP_VARIANT_PARTS;
     m_data.variant_parts = variant_parts;
@@ -2620,7 +2620,7 @@ extern CORE_ADDR get_pointer_type_max (struct type *);
    memory).  In this situation, 'is_dynamic_type' will still return
    true for the return value of this function.  */
 extern struct type *resolve_dynamic_type
-  (struct type *type, gdb::array_view<const gdb_byte> valaddr,
+  (struct type *type, gdb::span<const gdb_byte> valaddr,
    CORE_ADDR addr, const frame_info_ptr *frame = nullptr);
 
 /* * Predicate if the type has dynamic values, which are not resolved yet.
@@ -2754,8 +2754,8 @@ extern int compare_ranks (struct rank a, struct rank b);
 extern int compare_badness (const badness_vector &,
 			    const badness_vector &);
 
-extern badness_vector rank_function (gdb::array_view<type *> parms,
-				     gdb::array_view<value *> args);
+extern badness_vector rank_function (gdb::span<type *> parms,
+				     gdb::span<value *> args);
 
 extern struct rank rank_one_type (struct type *, struct type *,
 				  struct value *);

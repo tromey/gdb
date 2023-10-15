@@ -3272,15 +3272,15 @@ gdb_realpath_tests ()
   gdb_realpath_check_trailer ("", "");
 }
 
-/* Test the gdb_argv::as_array_view method.  */
+/* Test the gdb_argv::as_span method.  */
 
 static void
-gdb_argv_as_array_view_test ()
+gdb_argv_as_span_test ()
 {
   {
     gdb_argv argv;
 
-    gdb::array_view<char *> view = argv.as_array_view ();
+    gdb::span<char *> view = argv.as_span ();
 
     SELF_CHECK (view.data () == nullptr);
     SELF_CHECK (view.size () == 0);
@@ -3288,7 +3288,7 @@ gdb_argv_as_array_view_test ()
   {
     gdb_argv argv ("une bonne 50");
 
-    gdb::array_view<char *> view = argv.as_array_view ();
+    gdb::span<char *> view = argv.as_span ();
 
     SELF_CHECK (view.size () == 3);
     SELF_CHECK (strcmp (view[0], "une") == 0);
@@ -3772,7 +3772,7 @@ When set, debugging messages will be marked with seconds and microseconds."),
 
 #if GDB_SELF_TEST
   selftests::register_test ("gdb_realpath", gdb_realpath_tests);
-  selftests::register_test ("gdb_argv_array_view", gdb_argv_as_array_view_test);
+  selftests::register_test ("gdb_argv_span", gdb_argv_as_span_test);
   selftests::register_test ("strncmp_iw_with_mode",
 			    strncmp_iw_with_mode_tests);
   selftests::register_test ("pager", test_pager);

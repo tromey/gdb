@@ -24,7 +24,7 @@
 #include <vector>
 #include "gdbsupport/byte-vector.h"
 #include "gdbsupport/gdb_unique_ptr.h"
-#include "gdbsupport/array-view.h"
+#include "gdbsupport/gdb-span.h"
 #include "poison.h"
 #include <string_view>
 
@@ -199,7 +199,7 @@ gdb::byte_vector hex2bin (const char *hex);
    represented as a 2 character hex string, with spaces separating each
    individual byte.  */
 
-extern std::string bytes_to_string (gdb::array_view<const gdb_byte> bytes);
+extern std::string bytes_to_string (gdb::span<const gdb_byte> bytes);
 
 /* See bytes_to_string above.  This takes a BUFFER pointer and LENGTH
    rather than an array view.  */

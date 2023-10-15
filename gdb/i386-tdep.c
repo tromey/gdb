@@ -3901,7 +3901,7 @@ i386_register_to_value (frame_info_ptr frame, int regnum,
       gdb_assert (register_size (gdbarch, regnum) == 4);
 
       if (!get_frame_register_bytes (frame, regnum, 0,
-				     gdb::make_array_view (to,
+				     gdb::make_span (to,
 							register_size (gdbarch,
 								       regnum)),
 				     optimizedp, unavailablep))
