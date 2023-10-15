@@ -182,7 +182,7 @@ dw2_expand_marked_cus
     = *(gdb::checked_static_cast<mapped_gdb_index *>
 	(per_objfile->per_bfd->index_table.get ()));
 
-  offset_view vec (index.constant_pool.slice (index.symbol_vec_index (idx)));
+  offset_view vec (index.constant_pool.subspan (index.symbol_vec_index (idx)));
   vec_len = vec[0];
   for (vec_idx = 0; vec_idx < vec_len; ++vec_idx)
     {
@@ -427,7 +427,7 @@ to use the section anyway."),
       ++i;
     }
 
-  map->constant_pool = buffer.slice (metadata[i]);
+  map->constant_pool = buffer.subspan (metadata[i]);
 
   if (map->constant_pool.empty () && !map->symbol_table.empty ())
     {

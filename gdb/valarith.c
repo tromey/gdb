@@ -522,7 +522,7 @@ value_x_binop (struct value *arg1, struct value *arg2, enum exp_opcode op,
       error (_("Invalid binary operation specified."));
     }
 
-  argvec[0] = value_user_defined_op (&arg1, argvec.slice (1), tstr,
+  argvec[0] = value_user_defined_op (&arg1, argvec.subspan (1), tstr,
 				     &static_memfuncp, noside);
 
   if (argvec[0])
@@ -530,7 +530,7 @@ value_x_binop (struct value *arg1, struct value *arg2, enum exp_opcode op,
       if (static_memfuncp)
 	{
 	  argvec[1] = argvec[0];
-	  argvec = argvec.slice (1);
+	  argvec = argvec.subspan (1);
 	}
       if (argvec[0]->type ()->code () == TYPE_CODE_XMETHOD)
 	{
@@ -539,13 +539,13 @@ value_x_binop (struct value *arg1, struct value *arg2, enum exp_opcode op,
 	  if (noside == EVAL_AVOID_SIDE_EFFECTS)
 	    {
 	      struct type *return_type
-		= argvec[0]->result_type_of_xmethod (argvec.slice (1));
+		= argvec[0]->result_type_of_xmethod (argvec.subspan (1));
 
 	      if (return_type == NULL)
 		error (_("Xmethod is missing return type."));
 	      return value::zero (return_type, arg1->lval ());
 	    }
-	  return argvec[0]->call_xmethod (argvec.slice (1));
+	  return argvec[0]->call_xmethod (argvec.subspan (1));
 	}
       if (noside == EVAL_AVOID_SIDE_EFFECTS)
 	{
@@ -555,7 +555,7 @@ value_x_binop (struct value *arg1, struct value *arg2, enum exp_opcode op,
 	  return value::zero (return_type, arg1->lval ());
 	}
       return call_function_by_hand (argvec[0], NULL,
-				    argvec.slice (1, 2 - static_memfuncp));
+				    argvec.subspan (1, 2 - static_memfuncp));
     }
   throw_error (NOT_FOUND_ERROR,
 	       _("member function %s not found"), tstr);
@@ -635,7 +635,7 @@ value_x_unop (struct value *arg1, enum exp_opcode op, enum noside noside)
       error (_("Invalid unary operation specified."));
     }
 
-  argvec[0] = value_user_defined_op (&arg1, argvec.slice (1, nargs), tstr,
+  argvec[0] = value_user_defined_op (&arg1, argvec.subspan (1, nargs), tstr,
 				     &static_memfuncp, noside);
 
   if (argvec[0])
@@ -643,7 +643,7 @@ value_x_unop (struct value *arg1, enum exp_opcode op, enum noside noside)
       if (static_memfuncp)
 	{
 	  argvec[1] = argvec[0];
-	  argvec = argvec.slice (1);
+	  argvec = argvec.subspan (1);
 	}
       if (argvec[0]->type ()->code () == TYPE_CODE_XMETHOD)
 	{
@@ -652,13 +652,13 @@ value_x_unop (struct value *arg1, enum exp_opcode op, enum noside noside)
 	  if (noside == EVAL_AVOID_SIDE_EFFECTS)
 	    {
 	      struct type *return_type
-		= argvec[0]->result_type_of_xmethod (argvec[1]);
+		= argvec[0]->result_type_of_xmethod (argvec.subspan (1));
 
 	      if (return_type == NULL)
 		error (_("Xmethod is missing return type."));
 	      return value::zero (return_type, arg1->lval ());
 	    }
-	  return argvec[0]->call_xmethod (argvec[1]);
+	  return argvec[0]->call_xmethod (argvec.subspan (1));
 	}
       if (noside == EVAL_AVOID_SIDE_EFFECTS)
 	{
@@ -668,7 +668,7 @@ value_x_unop (struct value *arg1, enum exp_opcode op, enum noside noside)
 	  return value::zero (return_type, arg1->lval ());
 	}
       return call_function_by_hand (argvec[0], NULL,
-				    argvec.slice (1, nargs));
+				    argvec.subspan (1, nargs));
     }
   throw_error (NOT_FOUND_ERROR,
 	       _("member function %s not found"), tstr);
@@ -731,8 +731,8 @@ value_concat (struct value *arg1, struct value *arg2)
   gdb::span<gdb_byte> contents = result->contents_raw ();
   gdb::span<const gdb_byte> lhs_contents = arg1->contents ();
   gdb::span<const gdb_byte> rhs_contents = arg2->contents ();
-  gdb::copy (lhs_contents, contents.slice (0, lhs_contents.size ()));
-  gdb::copy (rhs_contents, contents.slice (lhs_contents.size ()));
+  gdb::copy (lhs_contents, contents.subspan (0, lhs_contents.size ()));
+  gdb::copy (rhs_contents, contents.subspan (lhs_contents.size ()));
 
   return result;
 }
@@ -1402,8 +1402,8 @@ value_vector_widen (struct value *scalar_value, struct type *vector_type)
 
   for (i = 0; i < high_bound - low_bound + 1; i++)
     /* Duplicate the contents of elval into the destination vector.  */
-    copy (elval->contents_all (),
-	  val_contents.slice (i * elt_len, elt_len));
+    gdb::copy (elval->contents_all (),
+	       val_contents.subspan (i * elt_len, elt_len));
 
   return val;
 }
@@ -1450,8 +1450,8 @@ vector_binop (struct value *val1, struct value *val2, enum exp_opcode op)
     {
       value *tmp = value_binop (value_subscript (val1, i),
 				value_subscript (val2, i), op);
-      copy (tmp->contents_all (),
-	    val_contents.slice (i * elsize, elsize));
+      gdb::copy (tmp->contents_all (),
+		 val_contents.subspan (i * elsize, elsize));
      }
 
   return val;
@@ -1745,8 +1745,8 @@ value_neg (struct value *arg1)
       for (i = 0; i < high_bound - low_bound + 1; i++)
 	{
 	  value *tmp = value_neg (value_subscript (arg1, i));
-	  copy (tmp->contents_all (),
-		val_contents.slice (i * elt_len, elt_len));
+	  gdb::copy (tmp->contents_all (),
+		     val_contents.subspan (i * elt_len, elt_len));
 	}
       return val;
     }
@@ -1796,8 +1796,8 @@ value_complement (struct value *arg1)
       for (i = 0; i < high_bound - low_bound + 1; i++)
 	{
 	  value *tmp = value_complement (value_subscript (arg1, i));
-	  copy (tmp->contents_all (),
-		val_contents.slice (i * elt_len, elt_len));
+	  gdb::copy (tmp->contents_all (),
+		     val_contents.subspan (i * elt_len, elt_len));
 	}
     }
   else if (type->code () == TYPE_CODE_COMPLEX)

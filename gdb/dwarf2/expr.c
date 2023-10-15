@@ -1034,8 +1034,8 @@ dwarf_expr_context::fetch_result (struct type *type, struct type *subobj_type,
 	    if (gdbarch_byte_order (arch) == BFD_ENDIAN_BIG)
 	      subobj_offset += n - max;
 
-	    copy (val->contents_all ().slice (subobj_offset, len),
-		  retval->contents_raw ());
+	    gdb::copy (val->contents_all ().subspan (subobj_offset, len),
+		       retval->contents_raw ());
 	  }
 	  break;
 

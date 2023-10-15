@@ -9163,8 +9163,8 @@ ada_promote_array_of_integrals (struct type *type, struct value *val)
       struct value *elt = value_cast (elt_type, value_subscript (val, lo + i));
       int elt_len = elt_type->length ();
 
-      gdb::copy (elt->contents_all (), res_contents.slice (elt_len * i,
-							   elt_len));
+      gdb::copy (elt->contents_all (), res_contents.subspan (elt_len * i,
+							     elt_len));
     }
 
   return res;

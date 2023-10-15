@@ -23,6 +23,17 @@
 #include <type_traits>
 #include "gdbsupport/gdb_assert.h"
 
+#if __cplusplus >= 202002L
+
+#include <span>
+
+namespace gdb {
+template<typename T>
+using span = std::span<T>;
+} /* namespace gdb */
+
+#else /* __cplusplus < 202002L */
+
 /* a span is an abstraction that provides a non-owning view
    over a sequence of contiguous objects.
 
@@ -181,11 +192,11 @@ public:
   constexpr size_type size () const noexcept { return m_size; }
   constexpr bool empty () const noexcept { return m_size == 0; }
 
-  /* Slice an array view.  */
+  /* Sub-spans of a span.  */
 
   /* Return a new array view over SIZE elements starting at START.  */
   [[nodiscard]]
-  constexpr span<T> slice (size_type start, size_type size) const noexcept
+  constexpr span<T> subspan (size_type start, size_type size) const noexcept
   {
 #if defined(_GLIBCXX_DEBUG)
     gdb_assert (start + size <= m_size);
@@ -196,7 +207,7 @@ public:
   /* Return a new array view over all the elements after START,
      inclusive.  */
   [[nodiscard]]
-  constexpr span<T> slice (size_type start) const noexcept
+  constexpr span<T> subspan (size_type start) const noexcept
   {
 #if defined(_GLIBCXX_DEBUG)
     gdb_assert (start <= m_size);
@@ -208,6 +219,12 @@ private:
   T *m_array;
   size_type m_size;
 };
+
+} /* namespace gdb */
+
+#endif /* __cplusplus < 202002L */
+
+namespace gdb {
 
 /* Copy the contents referenced by the array view SRC to the array view DEST.
 
@@ -294,4 +311,4 @@ make_span (U *array, size_t size) noexcept
 
 } /* namespace gdb */
 
-#endif
+#endif /* COMMON_SPAN_H */
