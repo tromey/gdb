@@ -53,6 +53,17 @@ extern struct value *call_function_by_hand (struct value *function,
 					    type *default_return_type,
 					    gdb::span<value *> args);
 
+/* An overload that accepts a single argument.  */
+
+static inline struct value *
+call_function_by_hand (struct value *function,
+		       type *default_return_type,
+		       value *arg)
+{
+  return call_function_by_hand (function, default_return_type,
+				gdb::make_span (arg));
+}
+
 /* Similar to call_function_by_hand and additional call
    register_dummy_frame_dtor with DUMMY_DTOR and DUMMY_DTOR_DATA for the
    created inferior call dummy frame.  */
