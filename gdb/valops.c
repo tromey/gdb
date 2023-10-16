@@ -4147,10 +4147,10 @@ cast_into_complex (struct type *type, struct value *val)
       struct value *im_val = value::allocate (val_real_type);
       int len = val_real_type->length ();
 
-      copy (val->contents ().subspan (0, len),
-	    re_val->contents_raw ());
-      copy (val->contents ().subspan (len, len),
-	    im_val->contents_raw ());
+      gdb::copy (val->contents ().subspan (0, len),
+		 re_val->contents_raw ());
+      gdb::copy (val->contents ().subspan (len, len),
+		 im_val->contents_raw ());
 
       return value_literal_complex (re_val, im_val, type);
     }
