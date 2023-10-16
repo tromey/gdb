@@ -11036,7 +11036,7 @@ clear_command (const char *arg, int from_tty)
 	error (_("No source file specified."));
 
       default_match = 1;
-      sals = last_sal;
+      sals = gdb::make_span (&last_sal, 1);
     }
 
   /* We don't call resolve_sal_pc here.  That's not as bad as it
