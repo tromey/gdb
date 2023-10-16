@@ -962,8 +962,8 @@ value_one (struct type *type)
       for (i = 0; i < high_bound - low_bound + 1; i++)
 	{
 	  value *tmp = value_one (eltype);
-	  copy (tmp->contents_all (),
-		val_contents.subspan (i * elt_len, elt_len));
+	  gdb::copy (tmp->contents_all (),
+		     val_contents.subspan (i * elt_len, elt_len));
 	}
     }
   else
