@@ -4100,10 +4100,10 @@ value_literal_complex (struct value *arg1,
 
   int len = real_type->length ();
 
-  copy (arg1->contents (),
-	val->contents_raw ().subspan (0, len));
-  copy (arg2->contents (),
-	val->contents_raw ().subspan (len, len));
+  gdb::copy (arg1->contents (),
+	     val->contents_raw ().subspan (0, len));
+  gdb::copy (arg2->contents (),
+	     val->contents_raw ().subspan (len, len));
 
   return val;
 }
