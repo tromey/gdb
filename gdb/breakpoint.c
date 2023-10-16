@@ -12517,7 +12517,7 @@ strace_marker_create_breakpoints_sal (struct gdbarch *gdbarch,
       std::unique_ptr<tracepoint> tp
 	(new tracepoint (gdbarch,
 			 type_wanted,
-			 lsal.sals[i],
+			 gdb::make_span (lsal.sals[i]),
 			 std::move (locspec),
 			 NULL,
 			 std::move (cond_string),
