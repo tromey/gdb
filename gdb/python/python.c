@@ -971,7 +971,7 @@ gdbpy_decode_line (PyObject *self, PyObject *args)
 	{
 	  set_default_source_symtab_and_line ();
 	  def_sal = get_current_source_symtab_and_line ();
-	  sals = def_sal;
+	  sals = gdb::make_span (def_sal);
 	}
     }
   catch (const gdb_exception &ex)
