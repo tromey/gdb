@@ -1334,7 +1334,7 @@ value_assign (struct value *toval, struct value *fromval)
      implies the returned value is not lazy, even if TOVAL was.  */
   val = toval->copy ();
   val->set_lazy (false);
-  copy (fromval->contents (), val->contents_raw ());
+  gdb::copy (fromval->contents (), val->contents_raw ());
 
   /* We copy over the enclosing type and pointed-to offset from FROMVAL
      in the case of pointer types.  For object types, the enclosing type
