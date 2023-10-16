@@ -309,13 +309,7 @@ make_span (U *array, size_t size) noexcept
   return {array, size};
 }
 
-/* Create a span over a single object of the type of an
-   span element.  The created span has size==1.  This is
-   templated on U to allow constructing a span<const T> over a
-   (non-const) T.  The "convertible" requirement makes sure that you
-   can't create a span<T> over a const T.  */
-template<typename U,
-	 typename = Requires<DecayedConvertible<U>>>
+template<typename U>
 constexpr inline span<U>
 make_span (U &elem) noexcept
 {
@@ -323,8 +317,7 @@ make_span (U &elem) noexcept
 }
 
 /* Same as above, for rvalue references.  */
-template<typename U,
-	 typename = Requires<DecayedConvertible<U>>>
+template<typename U>
 constexpr inline span<U>
 make_span (U &&elem) noexcept
 {
