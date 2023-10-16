@@ -1509,7 +1509,7 @@ info_line_command (const char *arg, int from_tty)
       else
 	curr_sal.line = loc->line ();
 
-      sals = curr_sal;
+      sals = gdb::make_span (curr_sal);
     }
   else
     {
