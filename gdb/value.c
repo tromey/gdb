@@ -4320,7 +4320,8 @@ static bool
 check_ranges_vector (gdb::span<const range> ranges,
 		     gdb::span<const range> expected)
 {
-  return ranges == expected;
+  return std::equal (ranges.begin (), ranges.end (),
+		     expected.begin (), expected.end ());
 }
 
 /* Test the insert_into_bit_range_vector function.  */
