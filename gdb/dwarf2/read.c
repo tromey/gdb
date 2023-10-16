@@ -5074,8 +5074,8 @@ finalize_all_units (dwarf2_per_bfd *per_bfd)
   size_t nr_tus = per_bfd->tu_stats.nr_tus;
   size_t nr_cus = per_bfd->all_units.size () - nr_tus;
   gdb::span<dwarf2_per_cu_data_up> tmp = per_bfd->all_units;
-  per_bfd->all_comp_units = tmp.slice (0, nr_cus);
-  per_bfd->all_type_units = tmp.slice (nr_cus, nr_tus);
+  per_bfd->all_comp_units = tmp.subspan (0, nr_cus);
+  per_bfd->all_type_units = tmp.subspan (nr_cus, nr_tus);
 }
 
 /* See read.h.  */
@@ -5751,7 +5751,7 @@ alloc_rust_variant (struct obstack *obstack, struct type *type,
 	 We skipped the discriminant above.  */
       if (i != default_index)
 	{
-	  variants[var_idx].discriminants = ranges.slice (range_idx, 1);
+	  variants[var_idx].discriminants = ranges.subspan (range_idx, 1);
 	  ++range_idx;
 	}
 
@@ -11840,7 +11840,7 @@ convert_variant_range (struct obstack *obstack, const variant_field &variant,
 	      break;
 	    }
 	  bool is_range = data[0] == DW_DSC_range;
-	  data = data.slice (1);
+	  data = data.subspan (1);
 
 	  ULONGEST low, high;
 	  unsigned int bytes_read;
@@ -11855,7 +11855,7 @@ convert_variant_range (struct obstack *obstack, const variant_field &variant,
 	  else
 	    low = (ULONGEST) read_signed_leb128 (nullptr, data.data (),
 						 &bytes_read);
-	  data = data.slice (bytes_read);
+	  data = data.subspan (bytes_read);
 
 	  if (is_range)
 	    {
@@ -11870,7 +11870,7 @@ convert_variant_range (struct obstack *obstack, const variant_field &variant,
 	      else
 		high = (LONGEST) read_signed_leb128 (nullptr, data.data (),
 						     &bytes_read);
-	      data = data.slice (bytes_read);
+	      data = data.subspan (bytes_read);
 	    }
 	  else
 	    high = low;
