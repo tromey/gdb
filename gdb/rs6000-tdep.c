@@ -1088,7 +1088,7 @@ ppc_displaced_step_prepare  (gdbarch *arch, thread_info *thread,
       CORE_ADDR disp_step_buf_addr
 	= displaced_step_at_entry_point (thread->inf->arch ());
 
-      per_inferior->disp_step_buf.emplace (disp_step_buf_addr);
+      per_inferior->disp_step_buf.emplace (gdb::make_span (disp_step_buf_addr));
     }
 
   return per_inferior->disp_step_buf->prepare (thread, displaced_pc);
