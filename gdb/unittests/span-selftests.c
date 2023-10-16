@@ -524,7 +524,7 @@ run_tests ()
     gdb::span<gdb_byte> view = data;
 
     {
-      auto slc = view.slice (1, 3);
+      auto slc = view.subspan (1, 3);
       SELF_CHECK (slc.data () == data + 1);
       SELF_CHECK (slc.size () == 3);
       SELF_CHECK (slc[0] == data[1]);
@@ -532,7 +532,7 @@ run_tests ()
     }
 
     {
-      auto slc = view.slice (2);
+      auto slc = view.subspan (2);
       SELF_CHECK (slc.data () == data + 2);
       SELF_CHECK (slc.size () == 3);
       SELF_CHECK (slc[0] == view[2]);
@@ -560,8 +560,8 @@ run_copy_test ()
     std::vector<T> vec = {1, 2, 3, 4, 5, 6, 7, 8};
     gdb::span<T> v = vec;
 
-    copy (v.slice (1, 4),
-	  v.slice (2, 4));
+    copy (v.subspan (1, 4),
+	  v.subspan (2, 4));
 
     std::vector<T> expected = {1, 2, 2, 3, 4, 5, 7, 8};
     SELF_CHECK (vec == expected);
@@ -572,8 +572,8 @@ run_copy_test ()
     std::vector<T> vec = {1, 2, 3, 4, 5, 6, 7, 8};
     gdb::span<T> v = vec;
 
-    copy (v.slice (2, 4),
-	  v.slice (1, 4));
+    copy (v.subspan (2, 4),
+	  v.subspan (1, 4));
 
     std::vector<T> expected = {1, 3, 4, 5, 6, 6, 7, 8};
     SELF_CHECK (vec == expected);
@@ -584,8 +584,8 @@ run_copy_test ()
     std::vector<T> vec = {1, 2, 3, 4, 5, 6, 7, 8};
     gdb::span<T> v = vec;
 
-    copy (v.slice (2, 4),
-	  v.slice (2, 4));
+    copy (v.subspan (2, 4),
+	  v.subspan (2, 4));
 
     std::vector<T> expected = {1, 2, 3, 4, 5, 6, 7, 8};
     SELF_CHECK (vec == expected);
