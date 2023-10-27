@@ -20,12 +20,12 @@
 
 #include "gcc-c-interface.h"
 #include "gdbsupport/unordered_map.h"
+#include "block-symbol.h"
 
 struct ui_file;
 struct gdbarch;
 struct dwarf2_per_cu;
 struct dwarf2_per_objfile;
-struct symbol;
 struct dynamic_prop;
 
 /* Scope types enumerator.  List the types of scopes the compiler will
@@ -208,7 +208,7 @@ extern void eval_compile_command (struct command_line *cmd,
 
 extern void compile_dwarf_expr_to_c (string_file *stream,
 				     const char *result_name,
-				     struct symbol *sym,
+				     block_symbol sym,
 				     CORE_ADDR pc,
 				     struct gdbarch *arch,
 				     std::vector<bool> &registers_used,
@@ -248,7 +248,7 @@ extern void compile_dwarf_expr_to_c (string_file *stream,
 extern void compile_dwarf_bounds_to_c (string_file *stream,
 				       const char *result_name,
 				       const struct dynamic_prop *prop,
-				       struct symbol *sym, CORE_ADDR pc,
+				       block_symbol sym, CORE_ADDR pc,
 				       struct gdbarch *arch,
 				       std::vector<bool> &registers_used,
 				       unsigned int addr_size,

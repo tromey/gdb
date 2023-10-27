@@ -450,7 +450,7 @@ generate_vla_size (compile_instance *compiler,
 		   std::vector<bool> &registers_used,
 		   CORE_ADDR pc,
 		   struct type *type,
-		   struct symbol *sym)
+		   block_symbol sym)
 {
   type = check_typedef (type);
 
@@ -503,8 +503,9 @@ generate_c_for_for_one_variable (compile_instance *compiler,
 				 struct gdbarch *gdbarch,
 				 std::vector<bool> &registers_used,
 				 CORE_ADDR pc,
-				 struct symbol *sym)
+				 block_symbol bsym)
 {
+  struct symbol *sym = bsym.symbol;
 
   try
     {
@@ -515,7 +516,7 @@ generate_c_for_for_one_variable (compile_instance *compiler,
 	  string_file local_file;
 
 	  generate_vla_size (compiler, &local_file, gdbarch, registers_used, pc,
-			     sym->type (), sym);
+			     sym->type (), bsym);
 
 	  stream->write (local_file.c_str (), local_file.size ());
 	}
@@ -529,7 +530,7 @@ generate_c_for_for_one_variable (compile_instance *compiler,
 	     occurs in the middle.  */
 	  string_file local_file;
 
-	  computed_ops->generate_c_location (sym, &local_file, gdbarch,
+	  computed_ops->generate_c_location (bsym, &local_file, gdbarch,
 					     registers_used, pc,
 					     generated_name.get ());
 	  stream->write (local_file.c_str (), local_file.size ());
@@ -593,9 +594,12 @@ generate_c_for_variable_locations (compile_instance *compiler,
       /* Iterate over symbols in this block, generating code to
 	 compute the location of each local variable.  */
       for (struct symbol *sym : block_iterator_range (block))
-	if (symset.insert (sym->natural_name ()).second)
-	  generate_c_for_for_one_variable (compiler, stream, gdbarch,
-					   registers_used, pc, sym);
+	{
+	  block_symbol bsym { sym, block };
+	  if (symset.insert (sym->natural_name ()).second)
+	    generate_c_for_for_one_variable (compiler, stream, gdbarch,
+					     registers_used, pc, bsym);
+	}
 
       /* If we just finished the outermost block of a function, we're
 	 done.  */
