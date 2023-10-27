@@ -1572,7 +1572,6 @@ info_address_command (const char *exp, int from_tty)
 {
   struct gdbarch *gdbarch;
   int regno;
-  struct symbol *sym;
   struct bound_minimal_symbol msymbol;
   long val;
   struct obj_section *section;
@@ -1582,8 +1581,10 @@ info_address_command (const char *exp, int from_tty)
   if (exp == 0)
     error (_("Argument required."));
 
-  sym = lookup_symbol (exp, get_selected_block (&context_pc), VAR_DOMAIN,
-		       &is_a_field_of_this).symbol;
+  block_symbol bsym = lookup_symbol (exp, get_selected_block (&context_pc),
+				     VAR_DOMAIN,
+				     &is_a_field_of_this);
+  symbol *sym = bsym.symbol;
   if (sym == NULL)
     {
       if (is_a_field_of_this.type != NULL)
@@ -1660,7 +1661,7 @@ info_address_command (const char *exp, int from_tty)
 
     case LOC_LABEL:
       gdb_printf ("a label at address ");
-      load_addr = sym->value_address ();
+      load_addr = bsym.address ();
       fputs_styled (paddress (gdbarch, load_addr), address_style.style (),
 		    gdb_stdout);
       if (section_is_overlay (section))
@@ -1696,7 +1697,7 @@ info_address_command (const char *exp, int from_tty)
 
     case LOC_STATIC:
       gdb_printf (_("static storage at address "));
-      load_addr = sym->value_address ();
+      load_addr = bsym.address ();
       fputs_styled (paddress (gdbarch, load_addr), address_style.style (),
 		    gdb_stdout);
       if (section_is_overlay (section))
