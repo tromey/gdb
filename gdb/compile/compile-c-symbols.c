@@ -493,7 +493,7 @@ generate_vla_size (compile_instance *compiler,
 		   std::vector<bool> &registers_used,
 		   CORE_ADDR pc,
 		   struct type *type,
-		   struct symbol *sym)
+		   block_symbol sym)
 {
   type = check_typedef (type);
 
@@ -546,8 +546,9 @@ generate_c_for_for_one_variable (compile_instance *compiler,
 				 struct gdbarch *gdbarch,
 				 std::vector<bool> &registers_used,
 				 CORE_ADDR pc,
-				 struct symbol *sym)
+				 block_symbol bsym)
 {
+  struct symbol *sym = bsym.symbol;
 
   try
     {
@@ -558,7 +559,7 @@ generate_c_for_for_one_variable (compile_instance *compiler,
 	  string_file local_file;
 
 	  generate_vla_size (compiler, &local_file, gdbarch, registers_used, pc,
-			     sym->type (), sym);
+			     sym->type (), bsym);
 
 	  stream->write (local_file.c_str (), local_file.size ());
 	}
@@ -571,7 +572,7 @@ generate_c_for_for_one_variable (compile_instance *compiler,
 	     occurs in the middle.  */
 	  string_file local_file;
 
-	  SYMBOL_COMPUTED_OPS (sym)->generate_c_location (sym, &local_file,
+	  SYMBOL_COMPUTED_OPS (sym)->generate_c_location (bsym, &local_file,
 							  gdbarch,
 							  registers_used,
 							  pc,
@@ -639,9 +640,10 @@ generate_c_for_variable_locations (compile_instance *compiler,
 	 compute the location of each local variable.  */
       for (struct symbol *sym : block_iterator_range (block))
 	{
+	  block_symbol bsym { sym, block };
 	  if (!symbol_seen (symhash.get (), sym))
 	    generate_c_for_for_one_variable (compiler, stream, gdbarch,
-					     registers_used, pc, sym);
+					     registers_used, pc, bsym);
 	}
 
       /* If we just finished the outermost block of a function, we're
