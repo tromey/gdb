@@ -3717,17 +3717,16 @@ value_struct_elt_for_reference (struct type *domain, int offset,
 
 	  if (TYPE_FN_FIELD_STATIC_P (f, j))
 	    {
-	      struct symbol *s =
-		lookup_symbol (TYPE_FN_FIELD_PHYSNAME (f, j),
-			       0, SEARCH_FUNCTION_DOMAIN, 0).symbol;
+	      block_symbol s = lookup_symbol (TYPE_FN_FIELD_PHYSNAME (f, j),
+					      0, SEARCH_FUNCTION_DOMAIN, 0);
 
-	      if (s == NULL)
-		return NULL;
+	      if (!s.has_value ())
+		return nullptr;
 
 	      if (want_address)
-		return value_addr (read_var_value (s, 0, 0));
+		return value_addr (read_var_value (s, 0));
 	      else
-		return read_var_value (s, 0, 0);
+		return read_var_value (s, 0);
 	    }
 
 	  if (TYPE_FN_FIELD_VIRTUAL_P (f, j))
@@ -3748,14 +3747,13 @@ value_struct_elt_for_reference (struct type *domain, int offset,
 	    }
 	  else
 	    {
-	      struct symbol *s =
-		lookup_symbol (TYPE_FN_FIELD_PHYSNAME (f, j),
-			       0, SEARCH_FUNCTION_DOMAIN, 0).symbol;
+	      block_symbol s = lookup_symbol (TYPE_FN_FIELD_PHYSNAME (f, j),
+					      0, SEARCH_FUNCTION_DOMAIN, 0);
 
-	      if (s == NULL)
-		return NULL;
+	      if (!s.has_value ())
+		return nullptr;
 
-	      struct value *v = read_var_value (s, 0, 0);
+	      struct value *v = read_var_value (s, 0);
 	      if (!want_address)
 		result = v;
 	      else
@@ -4007,7 +4005,7 @@ value_of_this (const struct language_defn *lang)
 	   styled_string (variable_name_style.style (),
 			  lang->name_of_this ()));
 
-  return read_var_value (sym.symbol, sym.block, frame);
+  return read_var_value (sym, frame);
 }
 
 /* Return the value of the local variable, if one exists.  Return NULL
