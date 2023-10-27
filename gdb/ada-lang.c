@@ -110,8 +110,7 @@ static void ada_add_all_symbols (std::vector<struct block_symbol> &,
 static int is_nonfunction (const std::vector<struct block_symbol> &);
 
 static void add_defn_to_vec (std::vector<struct block_symbol> &,
-			     struct symbol *,
-			     const struct block *);
+			     block_symbol);
 
 static int possible_user_operator_p (enum exp_opcode, struct value **);
 
@@ -161,8 +160,6 @@ static struct value *value_subscript_packed (struct value *, int,
 
 static struct value *coerce_unspec_val_to_type (struct value *,
 						struct type *);
-
-static int lesseq_defined_than (struct symbol *, struct symbol *);
 
 static int equiv_types (struct type *, struct type *);
 
@@ -335,12 +332,9 @@ struct cache_entry
   std::string name;
   /* The namespace used during the lookup.  */
   domain_search_flags domain = 0;
-  /* The symbol returned by the lookup, or NULL if no matching symbol
-     was found.  */
-  struct symbol *sym = nullptr;
-  /* The block where the symbol was found, or NULL if no matching
-     symbol was found.  */
-  const struct block *block = nullptr;
+  /* The symbol returned by the lookup.  The 'symbol' field will be
+     NULL if no matching symbol was found.  */
+  block_symbol sym = {};
 };
 
 /* The symbol cache uses this type when searching.  */
@@ -4771,7 +4765,7 @@ ada_clear_symbol_cache (program_space *pspace)
 
 static int
 lookup_cached_symbol (const char *name, domain_search_flags domain,
-		      struct symbol **sym, const struct block **block)
+		      block_symbol *sym)
 {
   cache_entry_set &htab = get_ada_pspace_data (current_program_space);
   cache_entry_search search;
@@ -4783,18 +4777,18 @@ lookup_cached_symbol (const char *name, domain_search_flags domain,
     return 0;
   if (sym != nullptr)
     *sym = iter->sym;
-  if (block != nullptr)
-    *block = iter->block;
   return 1;
 }
 
-/* Assuming that (SYM, BLOCK) is the result of the lookup of NAME
+/* Assuming that SYM is the result of the lookup of NAME
    in domain DOMAIN, save this result in our symbol cache.  */
 
 static void
 cache_symbol (const char *name, domain_search_flags domain,
-	      struct symbol *sym, const struct block *block)
+	      block_symbol bsym)
 {
+  symbol *sym = bsym.symbol;
+
   /* Symbols for builtin types don't have a block.
      For now don't cache such symbols.  */
   if (sym != NULL && !sym->is_objfile_owned ())
@@ -4808,12 +4802,12 @@ cache_symbol (const char *name, domain_search_flags domain,
     {
       const blockvector &bv = *sym->symtab ()->compunit ()->blockvector ();
 
-      if (bv.global_block () != block && bv.static_block () != block)
+      if (bv.global_block () != bsym.block && bv.static_block () != bsym.block)
 	return;
     }
 
   cache_entry_set &tab = get_ada_pspace_data (current_program_space);
-  tab.insert (cache_entry {name, domain, sym, block});
+  tab.insert (cache_entry {name, domain, bsym});
 }
 
 				/* Symbol Lookup */
@@ -4839,13 +4833,12 @@ static struct symbol *
 standard_lookup (const char *name, const struct block *block,
 		 domain_search_flags domain)
 {
-  /* Initialize it just to avoid a GCC false warning.  */
-  struct block_symbol sym = {};
+  struct block_symbol sym;
 
-  if (lookup_cached_symbol (name, domain, &sym.symbol, NULL))
+  if (lookup_cached_symbol (name, domain, &sym))
     return sym.symbol;
   sym = ada_lookup_encoded_symbol (name, block, domain);
-  cache_symbol (name, domain, sym.symbol, sym.block);
+  cache_symbol (name, domain, sym);
   return sym.symbol;
 }
 
@@ -4885,12 +4878,15 @@ equiv_types (struct type *type0, struct type *type1)
   return 0;
 }
 
-/* True iff SYM0 represents the same entity as SYM1, or one that is
-   no more defined than that of SYM1.  */
+/* True iff BSYM0 represents the same entity as BSYM1, or one that is
+   no more defined than that of BSYM1.  */
 
 static int
-lesseq_defined_than (struct symbol *sym0, struct symbol *sym1)
+lesseq_defined_than (block_symbol bsym0, block_symbol bsym1)
 {
+  symbol *sym0 = bsym0.symbol;
+  symbol *sym1 = bsym1.symbol;
+
   if (sym0 == sym1)
     return 1;
   if (sym0->domain () != sym1->domain ()
@@ -4924,7 +4920,7 @@ lesseq_defined_than (struct symbol *sym0, struct symbol *sym1)
 	const char *name0 = sym0->linkage_name ();
 	const char *name1 = sym1->linkage_name ();
 	return (strcmp (name0, name1) == 0
-		&& sym0->value_address () == sym1->value_address ());
+		&& bsym0.address () == bsym1.address ());
       }
 
     default:
@@ -4937,8 +4933,7 @@ lesseq_defined_than (struct symbol *sym0, struct symbol *sym1)
 
 static void
 add_defn_to_vec (std::vector<struct block_symbol> &result,
-		 struct symbol *sym,
-		 const struct block *block)
+		 block_symbol info)
 {
   /* Do not try to complete stub types, as the debugger is probably
      already scanning all symbols matching a certain name at the
@@ -4951,19 +4946,15 @@ add_defn_to_vec (std::vector<struct block_symbol> &result,
 
   for (int i = result.size () - 1; i >= 0; i -= 1)
     {
-      if (lesseq_defined_than (sym, result[i].symbol))
+      if (lesseq_defined_than (info, result[i]))
 	return;
-      else if (lesseq_defined_than (result[i].symbol, sym))
+      else if (lesseq_defined_than (result[i], info))
 	{
-	  result[i].symbol = sym;
-	  result[i].block = block;
+	  result[i] = info;
 	  return;
 	}
     }
 
-  struct block_symbol info;
-  info.symbol = sym;
-  info.block = block;
   result.push_back (info);
 }
 
@@ -5443,13 +5434,12 @@ struct match_data
 bool
 match_data::operator() (struct block_symbol *bsym)
 {
-  const struct block *block = bsym->block;
   struct symbol *sym = bsym->symbol;
 
   if (sym == NULL)
     {
       if (!found_sym && arg_sym != NULL)
-	add_defn_to_vec (*resultp, arg_sym, block);
+	add_defn_to_vec (*resultp, { arg_sym, bsym->block });
       found_sym = false;
       arg_sym = NULL;
     }
@@ -5462,7 +5452,7 @@ match_data::operator() (struct block_symbol *bsym)
       else
 	{
 	  found_sym = true;
-	  add_defn_to_vec (*resultp, sym, block);
+	  add_defn_to_vec (*resultp, *bsym);
 	}
     }
   return true;
@@ -5634,8 +5624,6 @@ ada_add_all_symbols (std::vector<struct block_symbol> &result,
 		     int full_search,
 		     int *made_global_lookup_p)
 {
-  struct symbol *sym;
-
   if (made_global_lookup_p)
     *made_global_lookup_p = 0;
 
@@ -5670,11 +5658,11 @@ ada_add_all_symbols (std::vector<struct block_symbol> &result,
      already performed this search before.  If we have, then return
      the same result.  */
 
-  if (lookup_cached_symbol (ada_lookup_name (lookup_name),
-			    domain, &sym, &block))
+  block_symbol sym;
+  if (lookup_cached_symbol (ada_lookup_name (lookup_name), domain, &sym))
     {
-      if (sym != NULL)
-	add_defn_to_vec (result, sym, block);
+      if (sym.symbol != nullptr)
+	add_defn_to_vec (result, sym);
       return;
     }
 
@@ -5722,11 +5710,10 @@ ada_lookup_symbol_list_worker (const lookup_name_info &lookup_name,
   remove_extra_symbols (results);
 
   if (results.empty () && full_search && syms_from_global_search)
-    cache_symbol (ada_lookup_name (lookup_name), domain, NULL, NULL);
+    cache_symbol (ada_lookup_name (lookup_name), domain, {});
 
   if (results.size () == 1 && full_search && syms_from_global_search)
-    cache_symbol (ada_lookup_name (lookup_name), domain,
-		  results[0].symbol, results[0].block);
+    cache_symbol (ada_lookup_name (lookup_name), domain, results[0]);
 
   remove_irrelevant_renamings (&results, block);
   return results;
@@ -6064,7 +6051,7 @@ ada_add_block_symbols (std::vector<struct block_symbol> &result,
 	      else
 		{
 		  found_sym = true;
-		  add_defn_to_vec (result, sym, block);
+		  add_defn_to_vec (result, { sym, block });
 		}
 	    }
 	}
@@ -6077,7 +6064,7 @@ ada_add_block_symbols (std::vector<struct block_symbol> &result,
 
   if (!found_sym && arg_sym != NULL)
     {
-      add_defn_to_vec (result, arg_sym, block);
+      add_defn_to_vec (result, { arg_sym, block });
     }
 
   if (!lookup_name.ada ().wild_match_p ())
@@ -6113,7 +6100,7 @@ ada_add_block_symbols (std::vector<struct block_symbol> &result,
 		    else
 		      {
 			found_sym = true;
-			add_defn_to_vec (result, sym, block);
+			add_defn_to_vec (result, { sym, block });
 		      }
 		  }
 	      }
@@ -6124,7 +6111,7 @@ ada_add_block_symbols (std::vector<struct block_symbol> &result,
 	 They aren't parameters, right?  */
       if (!found_sym && arg_sym != NULL)
 	{
-	  add_defn_to_vec (result, arg_sym, block);
+	  add_defn_to_vec (result, { arg_sym, block });
 	}
     }
 }
@@ -13099,8 +13086,10 @@ ada_add_exceptions_from_frame (compiled_regex *preg,
 	    default:
 	      if (ada_is_exception_sym (sym))
 		{
+		  block_symbol bsym { sym, block };
+
 		  struct ada_exc_info info = {sym->print_name (),
-					      sym->value_address ()};
+					      bsym.address ()};
 
 		  exceptions->push_back (info);
 		}
@@ -13158,8 +13147,10 @@ ada_add_global_exceptions (compiled_regex *preg,
 		if (ada_is_non_standard_exception_sym (sym)
 		    && name_matches_regex (sym->natural_name ()))
 		  {
+		    block_symbol bsym { sym, b };
+
 		    struct ada_exc_info info
-		      = {sym->print_name (), sym->value_address ()};
+		      = {sym->print_name (), bsym.address ()};
 
 		    exceptions->push_back (info);
 		  }
