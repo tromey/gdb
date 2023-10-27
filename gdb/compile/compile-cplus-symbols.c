@@ -82,7 +82,7 @@ convert_one_symbol (compile_cplus_instance *instance,
 
 	case LOC_LABEL:
 	  kind = GCC_CP_SYMBOL_LABEL;
-	  addr = sym.symbol->value_address ();
+	  addr = sym.address ();
 	  break;
 
 	case LOC_BLOCK:
@@ -175,7 +175,7 @@ convert_one_symbol (compile_cplus_instance *instance,
 
 	case LOC_STATIC:
 	  kind = GCC_CP_SYMBOL_VARIABLE;
-	  addr = sym.symbol->value_address ();
+	  addr = sym.address ();
 	  break;
 
 	case LOC_FINAL_VALUE:

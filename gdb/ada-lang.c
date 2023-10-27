@@ -5101,8 +5101,7 @@ remove_extra_symbols (std::vector<struct block_symbol> &syms)
 			     syms[j].symbol->linkage_name ()) == 0
 		  && (syms[i].symbol->aclass ()
 		      == syms[j].symbol->aclass ())
-		  && syms[i].symbol->value_address ()
-		  == syms[j].symbol->value_address ())
+		  && syms[i].address () == syms[j].address ())
 		remove_p = true;
 	    }
 	}
