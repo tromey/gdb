@@ -1788,7 +1788,7 @@ dwarf2_compile_property_to_c (string_file *stream,
 			      std::vector<bool> &registers_used,
 			      const struct dynamic_prop *prop,
 			      CORE_ADDR pc,
-			      struct symbol *sym)
+			      block_symbol sym)
 {
 #if defined (HAVE_COMPILE)
   const dwarf2_property_baton *baton = prop->baton ();
@@ -3852,12 +3852,13 @@ locexpr_tracepoint_var_ref (struct symbol *symbol, struct agent_expr *ax,
 /* symbol_computed_ops 'generate_c_location' method.  */
 
 static void
-locexpr_generate_c_location (struct symbol *sym, string_file *stream,
+locexpr_generate_c_location (block_symbol bsym, string_file *stream,
 			     struct gdbarch *gdbarch,
 			     std::vector<bool> &registers_used,
 			     CORE_ADDR pc, const char *result_name)
 {
 #if defined (HAVE_COMPILE)
+  symbol *sym = bsym.symbol;
   struct dwarf2_locexpr_baton *dlbaton
     = (struct dwarf2_locexpr_baton *) SYMBOL_LOCATION_BATON (sym);
   unsigned int addr_size = dlbaton->per_cu->addr_size ();
@@ -3866,7 +3867,7 @@ locexpr_generate_c_location (struct symbol *sym, string_file *stream,
   if (expr.empty ())
     error (_("symbol \"%s\" is optimized out"), sym->natural_name ());
 
-  compile_dwarf_expr_to_c (stream, result_name, sym, pc, gdbarch,
+  compile_dwarf_expr_to_c (stream, result_name, bsym, pc, gdbarch,
 			   registers_used, addr_size, expr, dlbaton->per_cu,
 			   dlbaton->per_objfile);
 #else
@@ -4084,12 +4085,13 @@ loclist_tracepoint_var_ref (struct symbol *symbol, struct agent_expr *ax,
 /* symbol_computed_ops 'generate_c_location' method.  */
 
 static void
-loclist_generate_c_location (struct symbol *sym, string_file *stream,
+loclist_generate_c_location (block_symbol bsym, string_file *stream,
 			     struct gdbarch *gdbarch,
 			     std::vector<bool> &registers_used,
 			     CORE_ADDR pc, const char *result_name)
 {
 #if defined (HAVE_COMPILE)
+  symbol *sym = bsym.symbol;
   struct dwarf2_loclist_baton *dlbaton
     = (struct dwarf2_loclist_baton *) SYMBOL_LOCATION_BATON (sym);
   unsigned int addr_size = dlbaton->per_cu->addr_size ();
@@ -4098,7 +4100,7 @@ loclist_generate_c_location (struct symbol *sym, string_file *stream,
   if (expr.empty ())
     error (_("symbol \"%s\" is optimized out"), sym->natural_name ());
 
-  compile_dwarf_expr_to_c (stream, result_name, sym, pc, gdbarch,
+  compile_dwarf_expr_to_c (stream, result_name, bsym, pc, gdbarch,
 			   registers_used, addr_size, expr, dlbaton->per_cu,
 			   dlbaton->per_objfile);
 #else

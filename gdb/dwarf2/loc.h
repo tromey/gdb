@@ -23,6 +23,7 @@
 #include "gdbtypes.h"
 #include "dwarf2/attribute.h"
 #include "dwarf2/expr.h"
+#include "block-symbol.h"
 
 struct symbol_computed_ops;
 struct dwarf2_per_objfile;
@@ -116,7 +117,7 @@ void dwarf2_compile_property_to_c (string_file *stream,
 				   std::vector<bool> &registers_used,
 				   const struct dynamic_prop *prop,
 				   CORE_ADDR address,
-				   struct symbol *sym);
+				   block_symbol sym);
 
 /* The symbol location baton types used by the DWARF-2 reader (i.e.
    SYMBOL_LOCATION_BATON for a LOC_COMPUTED symbol).  "struct

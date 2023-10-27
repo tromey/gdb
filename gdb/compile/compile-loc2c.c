@@ -592,7 +592,7 @@ static void
 do_compile_dwarf_expr_to_c (int indent, string_file *stream,
 			    const char *type_name,
 			    const char *result_name,
-			    struct symbol *sym, CORE_ADDR pc,
+			    block_symbol bsym, CORE_ADDR pc,
 			    struct gdbarch *arch,
 			    std::vector<bool> &registers_used,
 			    unsigned int addr_size,
@@ -604,6 +604,8 @@ do_compile_dwarf_expr_to_c (int indent, string_file *stream,
   /* We keep a counter so that labels and other objects we create have
      unique names.  */
   static unsigned int scope;
+
+  struct symbol *sym = bsym.symbol;
 
   enum bfd_endian byte_order = gdbarch_byte_order (arch);
   int need_tempvar = 0;
@@ -640,7 +642,7 @@ do_compile_dwarf_expr_to_c (int indent, string_file *stream,
 		 "there is no selected frame"),
 	       sym->print_name ());
 
-      val = read_var_value (sym, NULL, frame);
+      val = read_var_value (bsym, frame);
       if (val->lval () != lval_memory)
 	error (_("Symbol \"%s\" cannot be used for compilation evaluation "
 		 "as its address has not been found."),
@@ -909,7 +911,7 @@ do_compile_dwarf_expr_to_c (int indent, string_file *stream,
 		       (long) (op_ptr - base));
 
 	    do_compile_dwarf_expr_to_c (indent, stream, GCC_UINTPTR, fb_name,
-					sym, pc, arch, registers_used,
+					bsym, pc, arch, registers_used,
 					addr_size, frame_base_expr, nullptr,
 					per_cu, per_objfile);
 
@@ -1094,7 +1096,7 @@ do_compile_dwarf_expr_to_c (int indent, string_file *stream,
 			   "__cfa_%ld", (long) (op_ptr - base));
 
 		do_compile_dwarf_expr_to_c (indent, stream, GCC_UINTPTR,
-					    cfa_name, sym, pc, arch,
+					    cfa_name, bsym, pc, arch,
 					    registers_used, addr_size,
 					    cfa_expr, &text_offset, per_cu,
 					    per_objfile);
@@ -1140,7 +1142,7 @@ do_compile_dwarf_expr_to_c (int indent, string_file *stream,
 
 void
 compile_dwarf_expr_to_c (string_file *stream, const char *result_name,
-			 struct symbol *sym, CORE_ADDR pc,
+			 block_symbol sym, CORE_ADDR pc,
 			 struct gdbarch *arch,
 			 std::vector<bool> &registers_used,
 			 unsigned int addr_size,
@@ -1159,7 +1161,7 @@ void
 compile_dwarf_bounds_to_c (string_file *stream,
 			   const char *result_name,
 			   const struct dynamic_prop *prop,
-			   struct symbol *sym, CORE_ADDR pc,
+			   block_symbol sym, CORE_ADDR pc,
 			   struct gdbarch *arch,
 			   std::vector<bool> &registers_used,
 			   unsigned int addr_size,
