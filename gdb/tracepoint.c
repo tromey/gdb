@@ -905,7 +905,7 @@ collection_list::add_memrange (struct gdbarch *gdbarch,
 /* Add a symbol to a collection list.  */
 
 void
-collection_list::collect_symbol (struct symbol *sym,
+collection_list::collect_symbol (block_symbol bsym,
 				 struct gdbarch *gdbarch,
 				 long frame_regno, long frame_offset,
 				 CORE_ADDR scope,
@@ -916,6 +916,7 @@ collection_list::collect_symbol (struct symbol *sym,
   bfd_signed_vma offset;
   int treat_as_expr = 0;
 
+  symbol *sym = bsym.symbol;
   len = check_typedef (sym->type ())->length ();
   switch (sym->aclass ())
     {
@@ -928,7 +929,7 @@ collection_list::collect_symbol (struct symbol *sym,
 		  sym->print_name (), plongest (sym->value_longest ()));
       break;
     case LOC_STATIC:
-      offset = sym->value_address ();
+      offset = bsym.address ();
       if (info_verbose)
 	{
 	  gdb_printf ("LOC_STATIC %s: collect %ld bytes at %s.\n",
@@ -1049,7 +1050,8 @@ collection_list::add_local_symbols (struct gdbarch *gdbarch, CORE_ADDR pc,
   auto do_collect_symbol = [&] (const char *print_name,
 				struct symbol *sym)
     {
-      collect_symbol (sym, gdbarch, frame_regno,
+      block_symbol bsym { sym, block };
+      collect_symbol (bsym, gdbarch, frame_regno,
 		      frame_offset, pc, trace_string);
       count++;
       add_wholly_collected (print_name);
@@ -1392,8 +1394,8 @@ encode_actions_1 (struct command_line *action,
 			expr::var_value_operation *vvo
 			  = (gdb::checked_static_cast<expr::var_value_operation *>
 			     (exp->op.get ()));
-			struct symbol *sym = vvo->get_symbol ();
-			const char *name = sym->natural_name ();
+			block_symbol sym = vvo->get_block_symbol ();
+			const char *name = sym.symbol->natural_name ();
 
 			collect->collect_symbol (sym,
 						 arch,
