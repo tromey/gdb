@@ -44,7 +44,7 @@
 
 static int block_depth (const struct block *);
 
-static void print_symbol (struct gdbarch *gdbarch, struct symbol *symbol,
+static void print_symbol (struct gdbarch *gdbarch, block_symbol symbol,
 			  int depth, ui_file *outfile);
 
 
@@ -329,7 +329,8 @@ dump_symtab_1 (struct symtab *symtab, struct ui_file *outfile)
 	    {
 	      try
 		{
-		  print_symbol (gdbarch, sym, depth + 1, outfile);
+		  block_symbol bsym { sym, b, objfile };
+		  print_symbol (gdbarch, bsym, depth + 1, outfile);
 		}
 	      catch (const gdb_exception_error &ex)
 		{
@@ -504,10 +505,12 @@ maintenance_print_symbols (const char *args, int from_tty)
 /* Print symbol SYMBOL on OUTFILE.  DEPTH says how far to indent.  */
 
 static void
-print_symbol (struct gdbarch *gdbarch, struct symbol *symbol,
+print_symbol (struct gdbarch *gdbarch, block_symbol bsymbol,
 	      int depth, ui_file *outfile)
 {
   struct obj_section *section;
+
+  symbol *symbol = bsymbol.symbol;
 
   if (symbol->is_objfile_owned ())
     section = symbol->obj_section (symbol->objfile ());
@@ -518,7 +521,7 @@ print_symbol (struct gdbarch *gdbarch, struct symbol *symbol,
   if (symbol->domain () == LABEL_DOMAIN)
     {
       gdb_printf (outfile, _("label %s at "), symbol->print_name ());
-      fputs_styled (paddress (gdbarch, symbol->value_address ()),
+      fputs_styled (paddress (gdbarch, bsymbol.address ()),
 		    address_style.style (), outfile);
       if (section)
 	gdb_printf (outfile, _(" section %s\n"),
@@ -588,7 +591,7 @@ print_symbol (struct gdbarch *gdbarch, struct symbol *symbol,
 
 	case LOC_STATIC:
 	  gdb_printf (outfile, _("static at "));
-	  fputs_styled (paddress (gdbarch, symbol->value_address ()),
+	  fputs_styled (paddress (gdbarch, bsymbol.address ()),
 			address_style.style (), outfile);
 	  if (section)
 	    gdb_printf (outfile, _(" section %s"),
@@ -629,7 +632,7 @@ print_symbol (struct gdbarch *gdbarch, struct symbol *symbol,
 
 	case LOC_LABEL:
 	  gdb_printf (outfile, _("label at "));
-	  fputs_styled (paddress (gdbarch, symbol->value_address ()),
+	  fputs_styled (paddress (gdbarch, bsymbol.address ()),
 			address_style.style (), outfile);
 	  if (section)
 	    gdb_printf (outfile, _(" section %s"),
