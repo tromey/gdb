@@ -667,6 +667,11 @@ public:
     return std::get<0> (m_storage).symbol;
   }
 
+  block_symbol get_block_symbol () const
+  {
+    return std::get<0> (m_storage);
+  }
+
 protected:
 
   void do_generate_ax (struct expression *exp,

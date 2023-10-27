@@ -270,7 +270,7 @@ public:
   void add_memrange (struct gdbarch *gdbarch,
 		     int type, bfd_signed_vma base,
 		     unsigned long len, CORE_ADDR scope);
-  void collect_symbol (struct symbol *sym,
+  void collect_symbol (block_symbol sym,
 		       struct gdbarch *gdbarch,
 		       long frame_regno, long frame_offset,
 		       CORE_ADDR scope,
