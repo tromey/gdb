@@ -2484,11 +2484,15 @@ info_scope_command (const char *args_in, int from_tty)
   resolve_sal_pc (&sals[0]);
   block = block_for_pc (sals[0].pc);
 
+  struct objfile *objfile = block->objfile ();
+
   while (block != 0)
     {
       QUIT;			/* Allow user to bail out with ^C.  */
       for (struct symbol *sym : block_iterator_range (block))
 	{
+	  bound_symbol bsym { sym, objfile };
+
 	  QUIT;			/* Allow user to bail out with ^C.  */
 	  if (count == 0)
 	    gdb_printf ("Scope for %s:\n", save_args);
@@ -2529,7 +2533,7 @@ info_scope_command (const char *args_in, int from_tty)
 		  break;
 		case LOC_STATIC:
 		  gdb_printf ("in static storage at address ");
-		  gdb_printf ("%s", paddress (gdbarch, sym->value_address ()));
+		  gdb_printf ("%s", paddress (gdbarch, bsym.address ()));
 		  break;
 		case LOC_REGISTER:
 		  /* GDBARCH is the architecture associated with the objfile
@@ -2573,7 +2577,7 @@ info_scope_command (const char *args_in, int from_tty)
 		  continue;
 		case LOC_LABEL:
 		  gdb_printf ("a label at address ");
-		  gdb_printf ("%s", paddress (gdbarch, sym->value_address ()));
+		  gdb_printf ("%s", paddress (gdbarch, bsym.address ()));
 		  break;
 		case LOC_BLOCK:
 		  gdb_printf ("a function at address ");
