@@ -151,7 +151,7 @@ convert_one_symbol (compile_cplus_instance *instance,
 			 sym.symbol->print_name ());
 	      }
 
-	    val = read_var_value (sym.symbol, sym.block, frame);
+	    val = read_var_value (sym, frame);
 	    if (val->lval () != lval_memory)
 	      error (_("Symbol \"%s\" cannot be used for compilation "
 		       "evaluation as its address has not been found."),
