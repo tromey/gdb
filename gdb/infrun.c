@@ -8904,7 +8904,7 @@ insert_exception_resume_breakpoint (struct thread_info *tp,
 
       vsym = lookup_symbol_search_name (sym->search_name (),
 					b, SEARCH_VAR_DOMAIN);
-      value = read_var_value (vsym.symbol, vsym.block, frame);
+      value = read_var_value (vsym, frame);
       /* If the value was optimized out, revert to the old behavior.  */
       if (! value->optimized_out ())
 	{

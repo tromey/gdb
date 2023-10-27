@@ -1176,6 +1176,9 @@ extern struct value *read_var_value (struct symbol *var,
 				     const struct block *var_block,
 				     const frame_info_ptr &frame);
 
+extern struct value *read_var_value (block_symbol var,
+				     const frame_info_ptr &frame);
+
 extern struct value *allocate_repeat_value (struct type *type, int count);
 
 extern struct value *value_mark (void);
