@@ -160,8 +160,6 @@ static struct value *value_subscript_packed (struct value *, int,
 static struct value *coerce_unspec_val_to_type (struct value *,
 						struct type *);
 
-static int lesseq_defined_than (struct symbol *, struct symbol *);
-
 static int equiv_types (struct type *, struct type *);
 
 static int is_name_suffix (const char *);
@@ -4814,12 +4812,15 @@ equiv_types (struct type *type0, struct type *type1)
   return 0;
 }
 
-/* True iff SYM0 represents the same entity as SYM1, or one that is
-   no more defined than that of SYM1.  */
+/* True iff BSYM0 represents the same entity as BSYM1, or one that is
+   no more defined than that of BSYM1.  */
 
 static int
-lesseq_defined_than (struct symbol *sym0, struct symbol *sym1)
+lesseq_defined_than (block_symbol bsym0, block_symbol bsym1)
 {
+  symbol *sym0 = bsym0.symbol;
+  symbol *sym1 = bsym1.symbol;
+
   if (sym0 == sym1)
     return 1;
   if (sym0->domain () != sym1->domain ()
@@ -4853,7 +4854,7 @@ lesseq_defined_than (struct symbol *sym0, struct symbol *sym1)
 	const char *name0 = sym0->linkage_name ();
 	const char *name1 = sym1->linkage_name ();
 	return (strcmp (name0, name1) == 0
-		&& sym0->value_address () == sym1->value_address ());
+		&& bsym0.address () == bsym1.address ());
       }
 
     default:
@@ -4869,6 +4870,8 @@ add_defn_to_vec (std::vector<struct block_symbol> &result,
 		 struct symbol *sym,
 		 const struct block *block)
 {
+  block_symbol info { sym, block };
+
   /* Do not try to complete stub types, as the debugger is probably
      already scanning all symbols matching a certain name at the
      time when this function is called.  Trying to replace the stub
@@ -4880,19 +4883,15 @@ add_defn_to_vec (std::vector<struct block_symbol> &result,
 
   for (int i = result.size () - 1; i >= 0; i -= 1)
     {
-      if (lesseq_defined_than (sym, result[i].symbol))
+      if (lesseq_defined_than (info, result[i]))
 	return;
-      else if (lesseq_defined_than (result[i].symbol, sym))
+      else if (lesseq_defined_than (result[i], info))
 	{
-	  result[i].symbol = sym;
-	  result[i].block = block;
+	  result[i] = info;
 	  return;
 	}
     }
 
-  struct block_symbol info;
-  info.symbol = sym;
-  info.block = block;
   result.push_back (info);
 }
 
@@ -12999,8 +12998,10 @@ ada_add_exceptions_from_frame (compiled_regex *preg,
 	    default:
 	      if (ada_is_exception_sym (sym))
 		{
+		  block_symbol bsym { sym, block };
+
 		  struct ada_exc_info info = {sym->print_name (),
-					      sym->value_address ()};
+					      bsym.address ()};
 
 		  exceptions->push_back (info);
 		}
@@ -13075,8 +13076,10 @@ ada_add_global_exceptions (compiled_regex *preg,
 		if (ada_is_non_standard_exception_sym (sym)
 		    && name_matches_regex (sym->natural_name (), preg))
 		  {
+		    block_symbol bsym { sym, b };
+
 		    struct ada_exc_info info
-		      = {sym->print_name (), sym->value_address ()};
+		      = {sym->print_name (), bsym.address ()};
 
 		    exceptions->push_back (info);
 		  }
