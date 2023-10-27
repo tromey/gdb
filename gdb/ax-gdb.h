@@ -106,7 +106,7 @@ extern agent_expr_up gen_trace_for_expr (CORE_ADDR, struct expression *,
 					 int);
 
 extern agent_expr_up gen_trace_for_var (CORE_ADDR, struct gdbarch *,
-					struct symbol *, int);
+					block_symbol, int);
 
 extern agent_expr_up gen_trace_for_return_address (CORE_ADDR,
 						   struct gdbarch *,

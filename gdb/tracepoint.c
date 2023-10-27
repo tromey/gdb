@@ -1010,7 +1010,7 @@ collection_list::collect_symbol (block_symbol bsym,
   if (treat_as_expr)
     {
       agent_expr_up aexpr = gen_trace_for_var (scope, gdbarch,
-					       sym, trace_string);
+					       bsym, trace_string);
 
       /* It can happen that the symbol is recorded as a computed
 	 location, but it's been optimized away and doesn't actually
