@@ -44,7 +44,7 @@
 
 static int block_depth (const struct block *);
 
-static void print_symbol (struct gdbarch *gdbarch, struct symbol *symbol,
+static void print_symbol (struct gdbarch *gdbarch, bound_symbol symbol,
 			  int depth, ui_file *outfile);
 
 
@@ -309,7 +309,8 @@ dump_symtab_1 (struct symtab *symtab, struct ui_file *outfile)
 	    {
 	      try
 		{
-		  print_symbol (gdbarch, sym, depth + 1, outfile);
+		  bound_symbol bsym { sym, objfile };
+		  print_symbol (gdbarch, bsym, depth + 1, outfile);
 		}
 	      catch (const gdb_exception_error &ex)
 		{
@@ -489,10 +490,12 @@ maintenance_print_symbols (const char *args, int from_tty)
 /* Print symbol SYMBOL on OUTFILE.  DEPTH says how far to indent.  */
 
 static void
-print_symbol (struct gdbarch *gdbarch, struct symbol *symbol,
+print_symbol (struct gdbarch *gdbarch, bound_symbol bsymbol,
 	      int depth, ui_file *outfile)
 {
   struct obj_section *section;
+
+  symbol *symbol = bsymbol.symbol;
 
   if (symbol->is_objfile_owned ())
     section = symbol->obj_section (symbol->objfile ());
@@ -503,7 +506,7 @@ print_symbol (struct gdbarch *gdbarch, struct symbol *symbol,
   if (symbol->domain () == LABEL_DOMAIN)
     {
       gdb_printf (outfile, "label %s at ", symbol->print_name ());
-      gdb_puts (paddress (gdbarch, symbol->value_address ()),
+      gdb_puts (paddress (gdbarch, bsymbol.address ()),
 		outfile);
       if (section)
 	gdb_printf (outfile, " section %s\n",
@@ -573,7 +576,7 @@ print_symbol (struct gdbarch *gdbarch, struct symbol *symbol,
 
 	case LOC_STATIC:
 	  gdb_printf (outfile, "static at ");
-	  gdb_puts (paddress (gdbarch, symbol->value_address ()), outfile);
+	  gdb_puts (paddress (gdbarch, bsymbol.address ()), outfile);
 	  if (section)
 	    gdb_printf (outfile, " section %s",
 			bfd_section_name (section->the_bfd_section));
@@ -613,7 +616,7 @@ print_symbol (struct gdbarch *gdbarch, struct symbol *symbol,
 
 	case LOC_LABEL:
 	  gdb_printf (outfile, "label at ");
-	  gdb_puts (paddress (gdbarch, symbol->value_address ()), outfile);
+	  gdb_puts (paddress (gdbarch, bsymbol.address ()), outfile);
 	  if (section)
 	    gdb_printf (outfile, " section %s",
 			bfd_section_name (section->the_bfd_section));
