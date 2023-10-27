@@ -396,7 +396,7 @@ static struct line_offset
 			      const char *variable);
 
 static bool symbol_to_sal (struct symtab_and_line *result,
-			   bool funfirstline, struct symbol *sym);
+			   bool funfirstline, block_symbol sym);
 
 static void add_matching_symbols_to_info (const char *name,
 					  symbol_name_match_type name_match_type,
@@ -2192,7 +2192,7 @@ convert_linespec_to_sals (struct linespec_state *state, linespec *ls)
 	  struct program_space *pspace
 	    = sym.symbol->symtab ()->compunit ()->objfile ()->pspace ();
 
-	  if (symbol_to_sal (&sal, state->funfirstline, sym.symbol)
+	  if (symbol_to_sal (&sal, state->funfirstline, sym)
 	      && state->maybe_add_address (pspace, sal.pc))
 	    add_sal_to_sals (state, &sals, &sal,
 			     sym.symbol->natural_name (), false);
@@ -2257,7 +2257,7 @@ convert_linespec_to_sals (struct linespec_state *state, linespec *ls)
 	      if (!found_ifunc)
 		{
 		  symtab_and_line sal;
-		  if (symbol_to_sal (&sal, state->funfirstline, sym.symbol)
+		  if (symbol_to_sal (&sal, state->funfirstline, sym)
 		      && state->maybe_add_address (pspace, sal.pc))
 		    add_sal_to_sals (state, &sals, &sal,
 				     sym.symbol->natural_name (), false);
@@ -4318,8 +4318,9 @@ add_matching_symbols_to_info (const char *name,
 
 static bool
 symbol_to_sal (struct symtab_and_line *result,
-	       bool funfirstline, struct symbol *sym)
+	       bool funfirstline, block_symbol bsym)
 {
+  symbol *sym = bsym.symbol;
   if (sym->loc_class () == LOC_BLOCK)
     {
       *result = find_function_start_sal (sym, funfirstline);
@@ -4327,13 +4328,13 @@ symbol_to_sal (struct symtab_and_line *result,
     }
   else
     {
-      if (sym->loc_class () == LOC_LABEL && sym->value_address () != 0)
+      if (sym->loc_class () == LOC_LABEL && bsym.address () != 0)
 	{
 	  *result = {};
 	  result->symtab = sym->symtab ();
 	  result->symbol = sym;
 	  result->line = sym->line ();
-	  result->pc = sym->value_address ();
+	  result->pc = bsym.address ();
 	  result->pspace = result->symtab->compunit ()->objfile ()->pspace ();
 	  result->explicit_pc = 1;
 	  return true;
@@ -4349,7 +4350,7 @@ symbol_to_sal (struct symtab_and_line *result,
 	  result->symtab = sym->symtab ();
 	  result->symbol = sym;
 	  result->line = sym->line ();
-	  result->pc = sym->value_address ();
+	  result->pc = bsym.address ();
 	  result->pspace = result->symtab->compunit ()->objfile ()->pspace ();
 	  return true;
 	}
