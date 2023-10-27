@@ -85,7 +85,7 @@ static void gen_frame_locals_address (struct agent_expr *);
 static void gen_offset (struct agent_expr *ax, int offset);
 static void gen_sym_offset (struct agent_expr *, struct symbol *);
 static void gen_var_ref (struct agent_expr *ax, struct axs_value *value,
-			 struct symbol *var);
+			 block_symbol var);
 
 
 static void gen_int_literal (struct agent_expr *ax,
@@ -514,8 +514,10 @@ gen_sym_offset (struct agent_expr *ax, struct symbol *var)
    symbol VAR.  Set VALUE to describe the result.  */
 
 static void
-gen_var_ref (struct agent_expr *ax, struct axs_value *value, struct symbol *var)
+gen_var_ref (struct agent_expr *ax, struct axs_value *value, block_symbol bvar)
 {
+  symbol *var = bvar.symbol;
+
   /* Dereference any typedefs.  */
   value->type = check_typedef (var->type ());
   value->optimized_out = 0;
@@ -533,7 +535,7 @@ gen_var_ref (struct agent_expr *ax, struct axs_value *value, struct symbol *var)
       break;
 
     case LOC_LABEL:		/* A goto label, being used as a value.  */
-      ax_const_l (ax, (LONGEST) var->value_address ());
+      ax_const_l (ax, (LONGEST) bvar.address ());
       value->kind = axs_rvalue;
       break;
 
@@ -543,7 +545,7 @@ gen_var_ref (struct agent_expr *ax, struct axs_value *value, struct symbol *var)
       /* Variable at a fixed location in memory.  Easy.  */
     case LOC_STATIC:
       /* Push the address of the variable.  */
-      ax_const_l (ax, var->value_address ());
+      ax_const_l (ax, bvar.address ());
       value->kind = axs_lvalue_memory;
       break;
 
@@ -1451,10 +1453,9 @@ gen_static_field (struct agent_expr *ax, struct axs_value *value,
   else
     {
       const char *phys_name = type->field (fieldno).loc_physname ();
-      struct symbol *sym = lookup_symbol (phys_name, 0,
-					  SEARCH_VAR_DOMAIN, 0).symbol;
+      block_symbol sym = lookup_symbol (phys_name, 0, SEARCH_VAR_DOMAIN, 0);
 
-      if (sym)
+      if (sym.has_value ())
 	{
 	  gen_var_ref (ax, value, sym);
   
@@ -1548,7 +1549,7 @@ gen_maybe_namespace_elt (struct agent_expr *ax, struct axs_value *value,
   if (sym.symbol == NULL)
     return 0;
 
-  gen_var_ref (ax, value, sym.symbol);
+  gen_var_ref (ax, value, sym);
 
   if (value->optimized_out)
     error (_("`%s' has been optimized out, cannot use"),
@@ -1891,7 +1892,7 @@ op_this_operation::do_generate_ax (struct expression *exp,
 				   struct axs_value *value,
 				   struct type *cast_type)
 {
-  struct symbol *sym, *func;
+  struct symbol *func;
   const struct block *b;
   const struct language_defn *lang;
 
@@ -1899,15 +1900,15 @@ op_this_operation::do_generate_ax (struct expression *exp,
   func = b->linkage_function ();
   lang = language_def (func->language ());
 
-  sym = lookup_language_this (lang, b).symbol;
-  if (!sym)
+  block_symbol sym = lookup_language_this (lang, b);
+  if (!sym.has_value ())
     error (_("no `%s' found"), lang->name_of_this ());
 
   gen_var_ref (ax, value, sym);
 
   if (value->optimized_out)
     error (_("`%s' has been optimized out, cannot use"),
-	   sym->print_name ());
+	   sym.symbol->print_name ());
 }
 
 void
@@ -1998,7 +1999,7 @@ var_value_operation::do_generate_ax (struct expression *exp,
 				     struct axs_value *value,
 				     struct type *cast_type)
 {
-  gen_var_ref (ax, value, std::get<0> (m_storage).symbol);
+  gen_var_ref (ax, value, std::get<0> (m_storage));
 
   if (value->optimized_out)
     error (_("`%s' has been optimized out, cannot use"),
@@ -2325,7 +2326,7 @@ gen_expr_unop (struct expression *exp,
 
 agent_expr_up
 gen_trace_for_var (CORE_ADDR scope, struct gdbarch *gdbarch,
-		   struct symbol *var, int trace_string)
+		   block_symbol var, int trace_string)
 {
   agent_expr_up ax (new agent_expr (gdbarch, scope));
   struct axs_value value;
