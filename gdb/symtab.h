@@ -1130,7 +1130,7 @@ struct symbol_computed_ops
      The generated C code must assign the location to a local
      variable; this variable's name is RESULT_NAME.  */
 
-  void (*generate_c_location) (struct symbol *symbol, string_file *stream,
+  void (*generate_c_location) (block_symbol symbol, string_file *stream,
 			       struct gdbarch *gdbarch,
 			       std::vector<bool> &registers_used,
 			       CORE_ADDR pc, const char *result_name);
