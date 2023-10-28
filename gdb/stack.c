@@ -423,14 +423,14 @@ print_frame_arg (const frame_print_options &fp_opts,
 
   annotate_arg_emitter arg_emitter;
   ui_out_emit_tuple tuple_emitter (uiout, NULL);
-  gdb_puts (arg->sym->print_name (), &stb);
+  gdb_puts (arg->sym.symbol->print_name (), &stb);
   if (arg->entry_kind == print_entry_values_compact)
     {
       /* It is OK to provide invalid MI-like stream as with
 	 PRINT_ENTRY_VALUE_COMPACT we never use MI.  */
       stb.puts ("=");
 
-      gdb_puts (arg->sym->print_name (), &stb);
+      gdb_puts (arg->sym.symbol->print_name (), &stb);
     }
   if (arg->entry_kind == print_entry_values_only
       || arg->entry_kind == print_entry_values_compact)
@@ -467,7 +467,7 @@ print_frame_arg (const frame_print_options &fp_opts,
 	      /* Use the appropriate language to display our symbol, unless the
 		 user forced the language to a specific language.  */
 	      if (language_mode == language_mode_auto)
-		language = language_def (arg->sym->language ());
+		language = language_def (arg->sym.symbol->language ());
 	      else
 		language = current_language;
 
@@ -498,7 +498,7 @@ print_frame_arg (const frame_print_options &fp_opts,
    exception.  */
 
 void
-read_frame_local (struct symbol *sym, const frame_info_ptr &frame,
+read_frame_local (block_symbol sym, const frame_info_ptr &frame,
 		  struct frame_arg *argp)
 {
   argp->sym = sym;
@@ -507,7 +507,7 @@ read_frame_local (struct symbol *sym, const frame_info_ptr &frame,
 
   try
     {
-      argp->val = read_var_value (sym, NULL, frame);
+      argp->val = read_var_value (sym, frame);
     }
   catch (const gdb_exception_error &except)
     {
@@ -520,7 +520,7 @@ read_frame_local (struct symbol *sym, const frame_info_ptr &frame,
 
 void
 read_frame_arg (const frame_print_options &fp_opts,
-		symbol *sym, const frame_info_ptr &frame,
+		block_symbol bsym, const frame_info_ptr &frame,
 		struct frame_arg *argp, struct frame_arg *entryargp)
 {
   struct value *val = NULL, *entryval = NULL;
@@ -532,7 +532,7 @@ read_frame_arg (const frame_print_options &fp_opts,
     {
       try
 	{
-	  val = read_var_value (sym, NULL, frame);
+	  val = read_var_value (bsym, frame);
 	}
       catch (const gdb_exception_error &except)
 	{
@@ -541,6 +541,7 @@ read_frame_arg (const frame_print_options &fp_opts,
 	}
     }
 
+  symbol *sym = bsym.symbol;
   if (const symbol_computed_ops *computed_ops = sym->computed_ops ();
       (computed_ops != nullptr
        && computed_ops->read_variable_at_entry != nullptr
@@ -654,7 +655,7 @@ read_frame_arg (const frame_print_options &fp_opts,
 
 	  try
 	    {
-	      val = read_var_value (sym, NULL, frame);
+	      val = read_var_value (bsym, frame);
 	    }
 	  catch (const gdb_exception_error &except)
 	    {
@@ -680,7 +681,7 @@ read_frame_arg (const frame_print_options &fp_opts,
       val_error = NULL;
     }
 
-  argp->sym = sym;
+  argp->sym = bsym;
   argp->val = val;
   argp->error.reset (val_error ? xstrdup (val_error) : NULL);
   if (!val && !val_error)
@@ -695,7 +696,7 @@ read_frame_arg (const frame_print_options &fp_opts,
   else
     argp->entry_kind = print_entry_values_no;
 
-  entryargp->sym = sym;
+  entryargp->sym = bsym;
   entryargp->val = entryval;
   entryargp->error.reset (entryval_error ? xstrdup (entryval_error) : NULL);
   if (!entryval && !entryval_error)
@@ -864,13 +865,13 @@ print_frame_args (const frame_print_options &fp_opts,
 
 	  if (!print_args)
 	    {
-	      arg.sym = sym;
+	      arg.sym = { sym, b };
 	      arg.entry_kind = print_entry_values_no;
-	      entryarg.sym = sym;
+	      entryarg.sym = { sym, b };
 	      entryarg.entry_kind = print_entry_values_no;
 	    }
 	  else
-	    read_frame_arg (fp_opts, sym, frame, &arg, &entryarg);
+	    read_frame_arg (fp_opts, { sym, b }, frame, &arg, &entryarg);
 
 	  if (arg.entry_kind != print_entry_values_only)
 	    print_frame_arg (fp_opts, &arg);
