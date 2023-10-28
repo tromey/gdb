@@ -115,12 +115,12 @@ bpfinishpy_pre_stop_hook (struct gdbpy_breakpoint_object *bp_obj)
     {
       scoped_value_mark free_values;
 
-      struct symbol *func_symbol =
+      block_symbol func_symbol =
 	symbol_object_to_symbol (self_finishbp->func_symbol);
       struct value *function =
 	value_object_to_value (self_finishbp->function_value);
       struct value *ret =
-	get_return_value (func_symbol, function);
+	get_return_value (func_symbol.symbol, function);
 
       if (ret)
 	{
@@ -271,7 +271,7 @@ bpfinishpy_init (PyObject *self, PyObject *args, PyObject *kwargs)
 		  PyErr_Clear ();
 
 		  self_bpfinish->func_symbol
-		    = symbol_to_symbol_object (function);
+		    = symbol_to_symbol_object (b_fun);
 		  PyErr_Clear ();
 		}
 	    }
