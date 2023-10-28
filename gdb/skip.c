@@ -205,7 +205,7 @@ skip_function_command (const char *arg, int from_tty)
   if (arg == NULL)
     {
       frame_info_ptr fi = get_selected_frame (_("No default function now."));
-      struct symbol *sym = get_frame_function (fi);
+      struct symbol *sym = get_frame_function (fi).symbol;
       const char *name = NULL;
 
       if (sym != NULL)

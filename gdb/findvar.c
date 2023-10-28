@@ -408,7 +408,7 @@ follow_static_link (frame_info_ptr frame,
      in.  */
   for (; frame != NULL; frame = get_prev_frame (frame))
     {
-      struct symbol *framefunc = get_frame_function (frame);
+      struct symbol *framefunc = get_frame_function (frame).symbol;
 
       /* Stacks can be quite deep: give the user a chance to stop this.  */
       QUIT;

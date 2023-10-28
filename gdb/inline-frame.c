@@ -179,7 +179,7 @@ inline_frame_this_id (frame_info_ptr this_frame,
      which generates DW_AT_entry_pc for inlined functions when
      possible.  If this attribute is available, we should use it
      in the frame ID (and eventually, to set breakpoints).  */
-  func = get_frame_function (this_frame);
+  func = get_frame_function (this_frame).symbol;
   gdb_assert (func != NULL);
   (*this_id).code_addr = func->value_block ()->entry_pc ();
   (*this_id).artificial_depth++;

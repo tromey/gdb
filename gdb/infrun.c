@@ -4846,7 +4846,7 @@ inline_frame_is_marked_for_skip (bool prev_frame, struct thread_info *tp)
 	break;
 
       sal = find_frame_sal (frame);
-      sym = get_frame_function (frame);
+      sym = get_frame_function (frame).symbol;
 
       if (sym != nullptr)
 	fn = sym->print_name ();
@@ -8390,7 +8390,7 @@ check_exception_resume (struct execution_control_state *ecs,
       return;
     }
 
-  func = get_frame_function (frame);
+  func = get_frame_function (frame).symbol;
   if (!func)
     return;
 

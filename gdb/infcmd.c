@@ -957,7 +957,7 @@ prepare_one_step (thread_info *tp, struct step_command_fsm *sm)
 
 	      frame = get_current_frame ();
 	      sal = find_frame_sal (frame);
-	      sym = get_frame_function (frame);
+	      sym = get_frame_function (frame).symbol;
 
 	      if (sym != nullptr)
 		fn = sym->print_name ();
@@ -1085,7 +1085,7 @@ jump_command (const char *arg, int from_tty)
   resolve_sal_pc (&sal);	/* May error out.  */
 
   /* See if we are trying to jump to another function.  */
-  fn = get_frame_function (get_current_frame ());
+  fn = get_frame_function (get_current_frame ()).symbol;
   sfn = find_pc_sect_containing_function (sal.pc,
 					  find_pc_mapped_section (sal.pc));
   if (fn != nullptr && sfn != fn)

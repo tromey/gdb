@@ -69,6 +69,7 @@
 
    */
 
+#include "block-symbol.h"
 #include "cli/cli-option.h"
 #include "frame-id.h"
 #include "gdbsupport/common-debug.h"
@@ -856,7 +857,7 @@ extern const struct block *get_frame_block (frame_info_ptr,
 
 extern const struct block *get_selected_block (CORE_ADDR *addr_in_block);
 
-extern struct symbol *get_frame_function (frame_info_ptr);
+extern block_symbol get_frame_function (frame_info_ptr);
 
 extern CORE_ADDR get_pc_function_start (CORE_ADDR);
 

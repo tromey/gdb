@@ -2833,7 +2833,7 @@ find_frame_sal (frame_info_ptr frame)
 	 function, which can not be inferred from get_frame_pc.  */
       next_frame = get_next_frame (frame);
       if (next_frame)
-	sym = get_frame_function (next_frame);
+	sym = get_frame_function (next_frame).symbol;
       else
 	sym = inline_skipped_symbol (inferior_thread ());
 
