@@ -98,8 +98,15 @@ struct symbol_object : public PyObject
 
 static_assert (gdb::is_python_allocatable_v<symbol_object>);
 
+template<>
+bool
+registry_slot_valid (block_symbol sym)
+{
+  return sym.has_value ();
+}
+
 static const gdbpy_registry<gdbpy_memoizing_registry_storage<symbol_object,
-  symbol *, &symbol_object::symbol>> sympy_registry;
+  block_symbol, &symbol_object::symbol>> sympy_registry;
 
 gdbpy_ref<>
 symbol_object::type ()
@@ -109,7 +116,7 @@ symbol_object::type ()
   if (symbol->type () == nullptr)
     return py_none ();
 
-  return type_to_type_object (symbol->type ());
+  return type_to_type_object (symbol.symbol->type ());
 }
 
 gdbpy_ref<>
@@ -120,7 +127,7 @@ symbol_object::symtab ()
   if (!symbol->is_objfile_owned ())
     return py_none ();
 
-  return symtab_to_symtab_object (symbol->symtab ());
+  return symtab_to_symtab_object (symbol.symbol->symtab ());
 }
 
 const char *
@@ -248,20 +255,20 @@ symbol_object::value (gdbpy_borrowed_ref<> args, gdbpy_opt_borrowed_ref<> kw)
    with the life-cycle of the object file associated with this
    symbol, if needed.  */
 static void
-set_symbol (symbol_object *obj, struct symbol *symbol)
+set_symbol (symbol_object *obj, block_symbol symbol)
 {
   obj->symbol = symbol;
-  if (symbol->is_objfile_owned ())
+  if (symbol.symbol->is_objfile_owned ())
     {
       /* Can it really happen that symbol->symtab () is NULL?  */
-      if (symbol->symtab () != nullptr)
+      if (symbol.symbol->symtab () != nullptr)
 	{
-	  sympy_registry.add (symbol->objfile (), obj);
+	  sympy_registry.add (symbol.symbol->objfile (), obj);
 	}
     }
   else
     {
-      sympy_registry.add (symbol->arch (), obj);
+      sympy_registry.add (symbol.symbol->arch (), obj);
     }
 }
 
@@ -299,11 +306,11 @@ safe_symbol_to_symbol_object (symbol *sym)
 }
 
 /* Return the symbol that is wrapped by this symbol object.  */
-struct symbol *
+block_symbol
 symbol_object_to_symbol (PyObject *obj)
 {
   if (! PyObject_TypeCheck (obj, &symbol_object_type))
-    return NULL;
+    return {};
   return ((symbol_object *) obj)->symbol;
 }
 
@@ -312,12 +319,12 @@ sympy_dealloc (PyObject *obj)
 {
   symbol_object *sym_obj = (symbol_object *) obj;
 
-  if (sym_obj->symbol != nullptr)
+  if (sym_obj->symbol.has_value ())
     {
-      if (sym_obj->symbol->is_objfile_owned ())
-	sympy_registry.remove (sym_obj->symbol->objfile (), sym_obj);
+      if (sym_obj->symbol.symbol->is_objfile_owned ())
+	sympy_registry.remove (sym_obj->symbol.symbol->objfile (), sym_obj);
       else
-	sympy_registry.remove (sym_obj->symbol->arch (), sym_obj);
+	sympy_registry.remove (sym_obj->symbol.symbol->arch (), sym_obj);
     }
 
   Py_TYPE (obj)->tp_free (obj);
@@ -396,6 +403,8 @@ gdbpy_lookup_global_symbol (gdbpy_borrowed_ref<> args,
   int domain = VAR_DOMAIN;
   const char *name;
   static const char *keywords[] = { "name", "domain", NULL };
+  block_symbol symbol;
+  PyObject *sym_obj;
 
   gdbpy_arg_parse_tuple_and_keywords (args, kw, "s|i", keywords, &name,
 				      &domain);

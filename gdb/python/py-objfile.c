@@ -468,9 +468,10 @@ objfpy_lookup_global_symbol (PyObject *self, PyObject *args, PyObject *kw)
   try
     {
       domain_search_flags flags = from_scripting_domain (domain);
-      struct symbol *sym = lookup_global_symbol_from_objfile
-	(obj->objfile, GLOBAL_BLOCK, symbol_name, flags).symbol;
-      if (sym == nullptr)
+      block_symbol sym
+	= lookup_global_symbol_from_objfile (obj->objfile, GLOBAL_BLOCK,
+					     symbol_name, flags);
+      if (!sym.has_value ())
 	return py_none ().release ();
 
       return symbol_to_symbol_object (sym).release ();
@@ -501,9 +502,10 @@ objfpy_lookup_static_symbol (PyObject *self, PyObject *args, PyObject *kw)
   try
     {
       domain_search_flags flags = from_scripting_domain (domain);
-      struct symbol *sym = lookup_global_symbol_from_objfile
-	(obj->objfile, STATIC_BLOCK, symbol_name, flags).symbol;
-      if (sym == nullptr)
+      block_symbol sym
+	= lookup_global_symbol_from_objfile (obj->objfile, STATIC_BLOCK,
+					     symbol_name, flags);
+      if (!sym.has_value ())
 	return py_none ().release ();
 
       return symbol_to_symbol_object (sym).release ();

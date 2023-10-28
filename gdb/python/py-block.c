@@ -168,7 +168,7 @@ blpy_get_function (PyObject *self, void *closure)
 
   sym = block->function ();
   if (sym)
-    return symbol_to_symbol_object (sym).release ();
+    return symbol_to_symbol_object ({ sym, block }).release ();
 
   return py_none ().release ();
 }
@@ -313,7 +313,7 @@ blpy_getitem (PyObject *self, PyObject *key)
   for (struct symbol *sym : block_iterator_range (block, &lookup_name))
     {
       /* Just stop at the first match */
-      return symbol_to_symbol_object (sym).release ();
+      return symbol_to_symbol_object ({ sym, block }).release ();
     }
 
   PyErr_SetObject (PyExc_KeyError, key);
@@ -447,7 +447,7 @@ blpy_block_syms_iternext (PyObject *self)
       return NULL;
     }
 
-  return symbol_to_symbol_object (sym).release ();
+  return symbol_to_symbol_object ({ sym, iter_obj->block }).release ();
 }
 
 static void

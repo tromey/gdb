@@ -355,6 +355,7 @@ frame_object::read_var (gdbpy_borrowed_ref<> args,
       gdb::unique_xmalloc_ptr<char> var_name
 	= safe_python_string_to_target_string (sym_obj);
 
+      const struct block *block = NULL;
       if (block_obj != nullptr)
 	{
 	  /* This call should only fail if the type of BLOCK_OBJ is wrong,

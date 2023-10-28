@@ -595,7 +595,7 @@ gdbpy_ref<> safe_target_to_connection_object (process_stratum_target *target);
 gdbpy_ref<> gdbpy_connections ();
 
 const struct block *block_object_to_block (PyObject *obj);
-struct symbol *symbol_object_to_symbol (PyObject *obj);
+block_symbol symbol_object_to_symbol (PyObject *obj);
 struct value *value_object_to_value (PyObject *self);
 struct value *convert_value_from_python (PyObject *obj);
 struct type *type_object_to_type (PyObject *obj);
