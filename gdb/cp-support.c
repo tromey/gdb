@@ -57,17 +57,17 @@ static void demangled_name_complaint (const char *name);
 
 /* Functions related to overload resolution.  */
 
-static void overload_list_add_symbol (struct symbol *sym,
+static void overload_list_add_symbol (block_symbol sym,
 				      const char *oload_name,
-				      std::vector<symbol *> *overload_list);
+				      std::vector<block_symbol> *overload_list);
 
 static void add_symbol_overload_list_using
   (const char *func_name, const char *the_namespace,
-   std::vector<symbol *> *overload_list);
+   std::vector<block_symbol> *overload_list);
 
 static void add_symbol_overload_list_qualified
   (const char *func_name,
-   std::vector<symbol *> *overload_list);
+   std::vector<block_symbol> *overload_list);
 
 /* The list of "maint cplus" commands.  */
 
@@ -1210,18 +1210,20 @@ cp_entire_prefix_len (const char *name)
    OVERLOAD_LIST.  */
 
 static void
-overload_list_add_symbol (struct symbol *sym,
+overload_list_add_symbol (block_symbol bsym,
 			  const char *oload_name,
-			  std::vector<symbol *> *overload_list)
+			  std::vector<block_symbol> *overload_list)
 {
+  symbol *sym = bsym.symbol;
+
   /* If there is no type information, we can't do anything, so
      skip.  */
   if (sym->type () == NULL)
     return;
 
   /* skip any symbols that we've already considered.  */
-  for (symbol *listed_sym : *overload_list)
-    if (strcmp (sym->linkage_name (), listed_sym->linkage_name ()) == 0)
+  for (block_symbol listed_sym : *overload_list)
+    if (strcmp (sym->linkage_name (), listed_sym.symbol->linkage_name ()) == 0)
       return;
 
   /* Get the demangled name without parameters */
@@ -1234,18 +1236,18 @@ overload_list_add_symbol (struct symbol *sym,
   if (strcmp (sym_name.get (), oload_name) != 0)
     return;
 
-  overload_list->push_back (sym);
+  overload_list->push_back (bsym);
 }
 
 /* Return a null-terminated list of pointers to function symbols that
    are named FUNC_NAME and are visible within NAMESPACE.  */
 
-struct std::vector<symbol *>
+struct std::vector<block_symbol>
 make_symbol_overload_list (const char *func_name,
 			   const char *the_namespace)
 {
   const char *name;
-  std::vector<symbol *> overload_list;
+  std::vector<block_symbol> overload_list;
 
   overload_list.reserve (100);
 
@@ -1273,12 +1275,15 @@ make_symbol_overload_list (const char *func_name,
 static void
 add_symbol_overload_list_block (const char *name,
 				const struct block *block,
-				std::vector<symbol *> *overload_list)
+				std::vector<block_symbol> *overload_list)
 {
   lookup_name_info lookup_name (name, symbol_name_match_type::FULL);
 
   for (struct symbol *sym : block_iterator_range (block, &lookup_name))
-    overload_list_add_symbol (sym, name, overload_list);
+    {
+      block_symbol bsym { sym, block };
+      overload_list_add_symbol (bsym, name, overload_list);
+    }
 }
 
 /* Adds the function FUNC_NAME from NAMESPACE to the overload set.  */
@@ -1286,7 +1291,7 @@ add_symbol_overload_list_block (const char *name,
 static void
 add_symbol_overload_list_namespace (const char *func_name,
 				    const char *the_namespace,
-				    std::vector<symbol *> *overload_list)
+				    std::vector<block_symbol> *overload_list)
 {
   const char *name;
   const struct block *block = NULL;
@@ -1322,9 +1327,10 @@ add_symbol_overload_list_namespace (const char *func_name,
    base types.  */
 
 static void
-add_symbol_overload_list_adl_namespace (struct type *type,
-					const char *func_name,
-					std::vector<symbol *> *overload_list)
+add_symbol_overload_list_adl_namespace
+     (struct type *type,
+      const char *func_name,
+      std::vector<block_symbol> *overload_list)
 {
   char *the_namespace;
   const char *type_name;
@@ -1374,7 +1380,7 @@ add_symbol_overload_list_adl_namespace (struct type *type,
 void
 add_symbol_overload_list_adl (gdb::array_view<type *> arg_types,
 			      const char *func_name,
-			      std::vector<symbol *> *overload_list)
+			      std::vector<block_symbol> *overload_list)
 {
   for (type *arg_type : arg_types)
     add_symbol_overload_list_adl_namespace (arg_type, func_name,
@@ -1389,7 +1395,7 @@ add_symbol_overload_list_adl (gdb::array_view<type *> arg_types,
 static void
 add_symbol_overload_list_using (const char *func_name,
 				const char *the_namespace,
-				std::vector<symbol *> *overload_list)
+				std::vector<block_symbol> *overload_list)
 {
   struct using_direct *current;
   const struct block *block;
@@ -1438,7 +1444,7 @@ add_symbol_overload_list_using (const char *func_name,
 
 static void
 add_symbol_overload_list_qualified (const char *func_name,
-				    std::vector<symbol *> *overload_list)
+				    std::vector<block_symbol> *overload_list)
 {
   const struct block *surrounding_static_block = 0;
 
