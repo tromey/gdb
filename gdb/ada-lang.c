@@ -10730,9 +10730,7 @@ ada_var_value_operation::evaluate_for_cast (struct type *expect_type,
 					    struct expression *exp,
 					    enum noside noside)
 {
-  value *val = evaluate_var_value (noside,
-				   std::get<0> (m_storage).block,
-				   std::get<0> (m_storage).symbol);
+  value *val = evaluate_var_value (noside, std::get<0> (m_storage));
 
   val = ada_value_cast (expect_type, val);
 
