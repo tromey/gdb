@@ -517,7 +517,7 @@ type_instance_operation::evaluate (struct type *expect_type,
 /* Helper for evaluating an OP_VAR_VALUE.  */
 
 value *
-evaluate_var_value (enum noside noside, const block *blk, symbol *var)
+evaluate_var_value (enum noside noside, block_symbol var)
 {
   /* JYG: We used to just return value::zero of the symbol type if
      we're asked to avoid side effects.  Otherwise we return
@@ -532,7 +532,7 @@ evaluate_var_value (enum noside noside, const block *blk, symbol *var)
 
   try
     {
-      ret = value_of_variable (var, blk);
+      ret = value_of_variable (var.symbol, var.block);
     }
 
   catch (const gdb_exception_error &except)
@@ -540,7 +540,7 @@ evaluate_var_value (enum noside noside, const block *blk, symbol *var)
       if (noside != EVAL_AVOID_SIDE_EFFECTS)
 	throw;
 
-      ret = value::zero (var->type (), not_lval);
+      ret = value::zero (var.symbol->type (), not_lval);
     }
 
   return ret;
@@ -558,7 +558,7 @@ var_value_operation::evaluate (struct type *expect_type,
   symbol *var = std::get<0> (m_storage).symbol;
   if (var->type ()->code () == TYPE_CODE_ERROR)
     error_unknown_type (var->print_name ());
-  return evaluate_var_value (noside, std::get<0> (m_storage).block, var);
+  return evaluate_var_value (noside, std::get<0> (m_storage));
 }
 
 } /* namespace expr */
@@ -700,8 +700,7 @@ var_value_operation::evaluate_funcall (struct type *expect_type,
 
   if (symp.symbol->type ()->code () == TYPE_CODE_ERROR)
     error_unknown_type (symp.symbol->print_name ());
-  value *callee = evaluate_var_value (noside, std::get<0> (m_storage).block,
-				      symp.symbol);
+  value *callee = evaluate_var_value (noside, symp);
 
   return evaluate_subexp_do_call (exp, noside, callee, argvec,
 				  nullptr, expect_type);
@@ -1108,7 +1107,7 @@ eval_op_func_static_var (struct type *expect_type, struct expression *exp,
   struct block_symbol sym = lookup_symbol (var, blk, VAR_DOMAIN, NULL);
   if (sym.symbol == NULL)
     error (_("No symbol \"%s\" in specified context."), var);
-  return evaluate_var_value (noside, sym.block, sym.symbol);
+  return evaluate_var_value (noside, sym);
 }
 
 /* Helper function that implements the body of OP_REGISTER.  */
@@ -2326,8 +2325,7 @@ adl_func_operation::evaluate (struct type *expect_type,
 		       nullptr, &symp, nullptr, 0, noside);
   if (symp.symbol->type ()->code () == TYPE_CODE_ERROR)
     error_unknown_type (symp.symbol->print_name ());
-  value *callee = evaluate_var_value (noside, std::get<1> (m_storage),
-				      symp.symbol);
+  value *callee = evaluate_var_value (noside, symp);
   return evaluate_subexp_do_call (exp, noside, callee, args,
 				  nullptr, expect_type);
 
@@ -2854,9 +2852,7 @@ var_value_operation::evaluate_for_cast (struct type *to_type,
 					struct expression *exp,
 					enum noside noside)
 {
-  value *val = evaluate_var_value (noside,
-				   std::get<0> (m_storage).block,
-				   std::get<0> (m_storage).symbol);
+  value *val = evaluate_var_value (noside, std::get<0> (m_storage));
 
   val = value_cast (to_type, val);
 
