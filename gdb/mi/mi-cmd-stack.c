@@ -537,18 +537,18 @@ list_arg_or_local (const struct frame_arg *arg, enum what_to_list what,
   if (values != PRINT_NO_VALUES || what == all)
     tuple_emitter.emplace (uiout, nullptr);
 
-  stb.puts (arg->sym->print_name ());
+  stb.puts (arg->sym.symbol->print_name ());
   if (arg->entry_kind == print_entry_values_only)
     stb.puts ("@entry");
   uiout->field_stream ("name", stb);
 
-  if (what == all && arg->sym->is_argument ())
+  if (what == all && arg->sym.symbol->is_argument ())
     uiout->field_signed ("arg", 1);
 
   if (values == PRINT_SIMPLE_VALUES)
     {
-      check_typedef (arg->sym->type ());
-      type_print (arg->sym->type (), "", &stb, -1);
+      check_typedef (arg->sym.symbol->type ());
+      type_print (arg->sym.symbol->type (), "", &stb, -1);
       uiout->field_stream ("type", stb);
     }
 
@@ -562,10 +562,10 @@ list_arg_or_local (const struct frame_arg *arg, enum what_to_list what,
 	    {
 	      value_print_options opts = get_no_prettyformat_print_options ();
 	      opts.deref_ref = true;
-	      if (arg->sym->is_argument ())
+	      if (arg->sym.symbol->is_argument ())
 		opts.raw = fp_opts.print_raw_frame_arguments;
 	      common_val_print (arg->val, &stb, 0, opts,
-				language_def (arg->sym->language ()));
+				language_def (arg->sym.symbol->language ()));
 	    }
 	  catch (const gdb_exception_error &except)
 	    {
