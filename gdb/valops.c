@@ -57,13 +57,13 @@ static struct value *search_struct_method (const char *, struct value **,
 
 static int find_oload_champ_namespace (gdb::array_view<value *> args,
 				       const char *, const char *,
-				       std::vector<symbol *> *oload_syms,
+				       std::vector<block_symbol> *oload_syms,
 				       badness_vector *,
 				       const int no_adl);
 
 static int find_oload_champ_namespace_loop (gdb::array_view<value *> args,
-					    const char *, const char *,
-					    int, std::vector<symbol *> *oload_syms,
+					    const char *, const char *, int,
+					    std::vector<block_symbol> *oload_syms,
 					    badness_vector *, int *,
 					    const int no_adl);
 
@@ -71,7 +71,7 @@ static int find_oload_champ (gdb::array_view<value *> args,
 			     size_t num_fns,
 			     fn_field *methods,
 			     xmethod_worker_up *xmethods,
-			     symbol **functions,
+			     block_symbol *functions,
 			     badness_vector *oload_champ_bv);
 
 static int oload_method_static_p (struct fn_field *, int);
@@ -2707,8 +2707,8 @@ incomplete_type_hint (gdb::array_view<value *> args)
 int
 find_overload_match (gdb::array_view<value *> args,
 		     const char *name, enum oload_search_type method,
-		     struct value **objp, struct symbol *fsym,
-		     struct value **valp, struct symbol **symp, 
+		     struct value **objp, block_symbol fsym,
+		     struct value **valp, block_symbol *symp,
 		     int *staticp, const int no_adl,
 		     const enum noside noside)
 {
@@ -2730,7 +2730,7 @@ find_overload_match (gdb::array_view<value *> args,
   /* For methods, the list of overloaded methods.  */
   gdb::array_view<fn_field> methods;
   /* For non-methods, the list of overloaded function symbols.  */
-  std::vector<symbol *> functions;
+  std::vector<block_symbol> functions;
   /* For xmethods, the vector of xmethod workers.  */
   std::vector<xmethod_worker_up> xmethods;
   struct type *basetype = NULL;
@@ -2873,15 +2873,15 @@ find_overload_match (gdb::array_view<value *> args,
       if (method == BOTH)
 	args[0] = value_ind (args[0]);
 
-      if (fsym)
+      if (fsym.symbol != nullptr)
 	{
-	  qualified_name = fsym->natural_name ();
+	  qualified_name = fsym.symbol->natural_name ();
 
 	  /* If we have a function with a C++ name, try to extract just
 	     the function part.  Do not try this for non-functions (e.g.
 	     function pointers).  */
 	  if (qualified_name
-	      && (check_typedef (fsym->type ())->code ()
+	      && (check_typedef (fsym.symbol->type ())->code ()
 		  == TYPE_CODE_FUNC))
 	    {
 	      temp_func = cp_func_name (qualified_name);
@@ -3057,7 +3057,7 @@ static int
 find_oload_champ_namespace (gdb::array_view<value *> args,
 			    const char *func_name,
 			    const char *qualified_name,
-			    std::vector<symbol *> *oload_syms,
+			    std::vector<block_symbol> *oload_syms,
 			    badness_vector *oload_champ_bv,
 			    const int no_adl)
 {
@@ -3084,7 +3084,7 @@ find_oload_champ_namespace_loop (gdb::array_view<value *> args,
 				 const char *func_name,
 				 const char *qualified_name,
 				 int namespace_len,
-				 std::vector<symbol *> *oload_syms,
+				 std::vector<block_symbol> *oload_syms,
 				 badness_vector *oload_champ_bv,
 				 int *oload_champ,
 				 const int no_adl)
@@ -3131,7 +3131,7 @@ find_oload_champ_namespace_loop (gdb::array_view<value *> args,
   strncpy (new_namespace, qualified_name, namespace_len);
   new_namespace[namespace_len] = '\0';
 
-  std::vector<symbol *> new_oload_syms
+  std::vector<block_symbol> new_oload_syms
     = make_symbol_overload_list (func_name, new_namespace);
 
   /* If we have reached the deepest level perform argument
@@ -3200,7 +3200,7 @@ find_oload_champ (gdb::array_view<value *> args,
 		  size_t num_fns,
 		  fn_field *methods,
 		  xmethod_worker_up *xmethods,
-		  symbol **functions,
+		  block_symbol *functions,
 		  badness_vector *oload_champ_bv)
 {
   /* A measure of how good an overloaded instance is.  */
@@ -3236,14 +3236,14 @@ find_oload_champ (gdb::array_view<value *> args,
 	      static_offset = oload_method_static_p (methods, ix);
 	    }
 	  else
-	    nparms = functions[ix]->type ()->num_fields ();
+	    nparms = functions[ix].symbol->type ()->num_fields ();
 
 	  parm_types.reserve (nparms);
 	  for (jj = 0; jj < nparms; jj++)
 	    {
 	      type *t = (methods != NULL
 			 ? (TYPE_FN_FIELD_ARGS (methods, ix)[jj].type ())
-			 : functions[ix]->type ()->field (jj).type ());
+			 : functions[ix].symbol->type ()->field (jj).type ());
 	      parm_types.push_back (t);
 	    }
 	}
@@ -3267,7 +3267,7 @@ find_oload_champ (gdb::array_view<value *> args,
 	    gdb_printf (gdb_stderr,
 			"Overloaded function instance "
 			"%s # of parms %d\n",
-			functions[ix]->demangled_name (),
+			functions[ix].symbol->demangled_name (),
 			(int) parm_types.size ());
 
 	  gdb_printf (gdb_stderr,

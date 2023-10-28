@@ -1294,8 +1294,8 @@ enum oload_search_type { NON_METHOD, METHOD, BOTH };
 extern int find_overload_match (gdb::array_view<value *> args,
 				const char *name,
 				enum oload_search_type method,
-				struct value **objp, struct symbol *fsym,
-				struct value **valp, struct symbol **symp,
+				struct value **objp, block_symbol fsym,
+				struct value **valp, block_symbol *symp,
 				int *staticp, const int no_adl,
 				enum noside noside);
 

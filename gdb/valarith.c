@@ -338,25 +338,24 @@ static struct value *
 value_user_defined_cpp_op (gdb::array_view<value *> args, char *oper,
 			   int *static_memfuncp, enum noside noside)
 {
-
-  struct symbol *symp = NULL;
   struct value *valp = NULL;
 
+  block_symbol symp;
   find_overload_match (args, oper, BOTH /* could be method */,
 		       &args[0] /* objp */,
-		       NULL /* pass NULL symbol since symbol is unknown */,
+		       {} /* pass NULL symbol since symbol is unknown */,
 		       &valp, &symp, static_memfuncp, 0, noside);
 
   if (valp)
     return valp;
 
-  if (symp)
+  if (symp.symbol != nullptr)
     {
       /* This is a non member function and does not
 	 expect a reference as its first argument
 	 rather the explicit structure.  */
       args[0] = value_ind (args[0]);
-      return value_of_variable (symp, 0);
+      return value_of_variable (symp.symbol, symp.block);
     }
 
   error (_("Could not find %s."), oper);
