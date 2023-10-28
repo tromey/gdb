@@ -556,7 +556,7 @@ f_language::value_print_inner (struct value *val, struct ui_file *stream,
 		  if (sym.symbol == nullptr)
 		    error (_("failed to find symbol for name list component %s"),
 			   field_name);
-		  field = value_of_variable (sym.symbol, sym.block);
+		  field = value_of_variable (sym);
 		}
 	      else
 		field = value_field (val, index);
@@ -657,7 +657,7 @@ info_common_command_for_block (const struct block *block, const char *comname,
 
 	    try
 	      {
-		val = value_of_variable (common->contents[index], block);
+		val = value_of_variable ({ common->contents[index], block });
 		value_print (val, gdb_stdout, &opts);
 	      }
 

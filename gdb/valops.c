@@ -130,7 +130,7 @@ find_function_in_inferior (const char *name, struct objfile **objf_p)
       if (objf_p)
 	*objf_p = sym.symbol->objfile ();
 
-      return value_of_variable (sym.symbol, sym.block);
+      return value_of_variable (sym);
     }
   else
     {
@@ -1381,26 +1381,27 @@ value_repeat (struct value *arg1, int count)
 }
 
 struct value *
-value_of_variable (struct symbol *var, const struct block *b)
+value_of_variable (block_symbol var)
 {
   frame_info_ptr frame = NULL;
 
-  if (symbol_read_needs_frame (var))
+  if (symbol_read_needs_frame (var.symbol))
     frame = get_selected_frame (_("No frame selected."));
 
-  return read_var_value (var, b, frame);
+  return read_var_value (var, frame);
 }
 
 struct value *
-address_of_variable (struct symbol *var, const struct block *b)
+address_of_variable (block_symbol bvar)
 {
+  symbol *var = bvar.symbol;
   struct type *type = var->type ();
   struct value *val;
 
   /* Evaluate it first; if the result is a memory address, we're fine.
      Lazy evaluation pays off here.  */
 
-  val = value_of_variable (var, b);
+  val = value_of_variable (bvar);
   type = val->type ();
 
   if ((val->lval () == lval_memory && val->lazy ())
@@ -3828,7 +3829,7 @@ value_maybe_namespace_elt (const struct type *curtype,
 	   && (sym.symbol->aclass () == LOC_TYPEDEF))
     result = value::allocate (sym.symbol->type ());
   else
-    result = value_of_variable (sym.symbol, sym.block);
+    result = value_of_variable (sym);
 
   if (want_address)
     result = value_addr (result);
