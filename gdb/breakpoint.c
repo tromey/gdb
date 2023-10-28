@@ -12862,7 +12862,7 @@ update_static_tracepoint (tracepoint *tp, struct symtab_and_line sal)
 		   tp->number, tp->static_trace_marker_id.c_str ());
 
 	  symtab_and_line sal2 = find_pc_line (tpmarker->address, 0);
-	  sym = find_pc_sect_function (tpmarker->address, NULL);
+	  sym = find_pc_sect_function (tpmarker->address, NULL).symbol;
 	  uiout->text ("Now in ");
 	  if (sym)
 	    {

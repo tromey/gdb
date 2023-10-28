@@ -637,7 +637,7 @@ build_address_symbolic (struct gdbarch *gdbarch,
      anything/stabs--it would be inconvenient to eliminate those minimal
      symbols anyway).  */
   msymbol = lookup_minimal_symbol_by_pc_section (addr, section);
-  symbol = find_pc_sect_function (addr, section);
+  symbol = find_pc_sect_function (addr, section).symbol;
 
   if (symbol)
     {
