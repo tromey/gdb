@@ -38,6 +38,7 @@
 #include "gdb-demangle.h"
 #include "split-name.h"
 #include "frame.h"
+#include "block-symbol.h"
 
 /* Opaque declarations.  */
 struct ui_file;
@@ -1519,19 +1520,6 @@ private:
    that minsym's address is returned; otherwise, this symbol's address is
    returned.  */
  CORE_ADDR get_maybe_copied_address () const;
-};
-
-/* Several lookup functions return both a symbol and the block in which the
-   symbol is found.  This structure is used in these cases.  */
-
-struct block_symbol
-{
-  /* The symbol that was found, or NULL if no symbol was found.  */
-  struct symbol *symbol;
-
-  /* If SYMBOL is not NULL, then this is the block in which the symbol is
-     defined.  */
-  const struct block *block;
 };
 
 /* Note: There is no accessor macro for symbol.owner because it is
