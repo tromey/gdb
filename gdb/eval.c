@@ -2037,7 +2037,7 @@ eval_op_objc_msgcall (struct type *expect_type, struct expression *exp,
 	(exp->gdbarch, addr, current_inferior ()->top_target ());
 
       /* Is it a high_level symbol?  */
-      sym = find_pc_function (addr);
+      sym = find_pc_function (addr).symbol;
       if (sym != NULL)
 	method = value_of_variable (sym, 0);
     }

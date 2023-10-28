@@ -132,21 +132,21 @@ get_frame_function (frame_info_ptr frame)
 /* Return the function containing pc value PC in section SECTION.
    Returns 0 if function is not known.  */
 
-struct symbol *
+block_symbol
 find_pc_sect_function (CORE_ADDR pc, struct obj_section *section)
 {
   const struct block *b = block_for_pc_sect (pc, section);
 
   if (b == 0)
-    return 0;
-  return b->linkage_function ();
+    return {};
+  return { b->linkage_function (), b };
 }
 
 /* Return the function containing pc value PC.
    Returns 0 if function is not known.  
    Backward compatibility, no section */
 
-struct symbol *
+block_symbol
 find_pc_function (CORE_ADDR pc)
 {
   return find_pc_sect_function (pc, find_pc_mapped_section (pc));
@@ -251,7 +251,7 @@ find_pc_partial_function_sym (CORE_ADDR pc,
 	 address of the function.  This will happen when the function
 	 has more than one range and the entry pc is not within the
 	 lowest range of addresses.  */
-      f = find_pc_sect_function (mapped_pc, section);
+      f = find_pc_sect_function (mapped_pc, section).symbol;
       if (f != NULL
 	  && (msymbol.minsym == NULL
 	      || (f->value_block ()->entry_pc ()
@@ -421,7 +421,7 @@ find_function_entry_range_from_pc (CORE_ADDR pc, const char **name,
 struct type *
 find_function_type (CORE_ADDR pc)
 {
-  struct symbol *sym = find_pc_function (pc);
+  struct symbol *sym = find_pc_function (pc).symbol;
 
   if (sym != NULL && sym->value_block ()->entry_pc () == pc)
     return sym->type ();
