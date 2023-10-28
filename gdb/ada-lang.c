@@ -13308,8 +13308,7 @@ public:
 
   /* Implement the "read_var_value" language_defn method for Ada.  */
 
-  struct value *read_var_value (struct symbol *var,
-				const struct block *var_block,
+  struct value *read_var_value (block_symbol var,
 				frame_info_ptr frame) const override
   {
     /* The only case where default_read_var_value is not sufficient
@@ -13317,13 +13316,13 @@ public:
     if (frame != nullptr)
       {
 	const struct block *frame_block = get_frame_block (frame, NULL);
-	if (frame_block != nullptr && ada_is_renaming_symbol (var))
-	  return ada_read_renaming_var_value (var, frame_block);
+	if (frame_block != nullptr && ada_is_renaming_symbol (var.symbol))
+	  return ada_read_renaming_var_value (var.symbol, frame_block);
       }
 
     /* This is a typical case where we expect the default_read_var_value
        function to work.  */
-    return language_defn::read_var_value (var, var_block, frame);
+    return language_defn::read_var_value (var, frame);
   }
 
   /* See language.h.  */
