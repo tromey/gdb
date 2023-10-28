@@ -2395,10 +2395,11 @@ clear_dangling_display_expressions (struct objfile *objfile)
    before printing the variable name.  */
 
 void
-print_variable_and_value (const char *name, struct symbol *var,
+print_variable_and_value (const char *name, block_symbol bvar,
 			  frame_info_ptr frame,
 			  struct ui_file *stream, int indent)
 {
+  symbol *var = bvar.symbol;
 
   if (!name)
     name = var->print_name ();
@@ -2411,11 +2412,7 @@ print_variable_and_value (const char *name, struct symbol *var,
       struct value *val;
       struct value_print_options opts;
 
-      /* READ_VAR_VALUE needs a block in order to deal with non-local
-	 references (i.e. to handle nested functions).  In this context, we
-	 print variables that are local to this frame, so we can avoid passing
-	 a block to it.  */
-      val = read_var_value (var, NULL, frame);
+      val = read_var_value (bvar, frame);
       get_user_print_options (&opts);
       opts.deref_ref = true;
       common_val_print_checked (val, stream, indent, &opts, current_language);
