@@ -252,7 +252,8 @@ bpfinishpy_init (PyObject *self, PyObject *args, PyObject *kwargs)
     {
       if (get_frame_pc_if_available (frame, &pc))
 	{
-	  struct symbol *function = find_pc_function (pc).symbol;
+	  block_symbol b_fun = find_pc_function (pc);
+	  symbol *function = b_fun.symbol;
 	  if (function != nullptr)
 	    {
 	      struct type *ret_type =
@@ -264,7 +265,7 @@ bpfinishpy_init (PyObject *self, PyObject *args, PyObject *kwargs)
 		  scoped_value_mark free_values;
 
 		  /* Ignore Python errors at this stage.  */
-		  value *func_value = read_var_value (function, NULL, frame);
+		  value *func_value = read_var_value (b_fun, frame);
 		  self_bpfinish->function_value
 		    = value_to_value_object (func_value);
 		  PyErr_Clear ();
