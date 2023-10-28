@@ -521,18 +521,18 @@ list_arg_or_local (const struct frame_arg *arg, enum what_to_list what,
 
   string_file stb;
 
-  stb.puts (arg->sym->print_name ());
+  stb.puts (arg->sym.symbol->print_name ());
   if (arg->entry_kind == print_entry_values_only)
     stb.puts ("@entry");
   uiout->field_stream ("name", stb);
 
-  if (what == all && arg->sym->is_argument ())
+  if (what == all && arg->sym.symbol->is_argument ())
     uiout->field_signed ("arg", 1);
 
   if (values == PRINT_SIMPLE_VALUES)
     {
-      check_typedef (arg->sym->type ());
-      type_print (arg->sym->type (), "", &stb, -1);
+      check_typedef (arg->sym.symbol->type ());
+      type_print (arg->sym.symbol->type (), "", &stb, -1);
       uiout->field_stream ("type", stb);
     }
 
@@ -549,7 +549,7 @@ list_arg_or_local (const struct frame_arg *arg, enum what_to_list what,
 	      get_no_prettyformat_print_options (&opts);
 	      opts.deref_ref = true;
 	      common_val_print (arg->val, &stb, 0, &opts,
-				language_def (arg->sym->language ()));
+				language_def (arg->sym.symbol->language ()));
 	    }
 	  catch (const gdb_exception_error &except)
 	    {
@@ -632,15 +632,15 @@ list_args_or_locals (const frame_print_options &fp_opts,
 	    }
 	  if (print_me)
 	    {
-	      struct symbol *sym2;
+	      block_symbol sym2;
 	      struct frame_arg arg, entryarg;
 
 	      if (sym->is_argument ())
 		sym2 = lookup_symbol_search_name (sym->search_name (),
-						  block, VAR_DOMAIN).symbol;
+						  block, VAR_DOMAIN);
 	      else
-		sym2 = sym;
-	      gdb_assert (sym2 != NULL);
+		sym2 = { sym, block };
+	      gdb_assert (sym2.symbol != nullptr);
 
 	      arg.sym = sym2;
 	      arg.entry_kind = print_entry_values_no;
@@ -650,7 +650,7 @@ list_args_or_locals (const frame_print_options &fp_opts,
 	      switch (values)
 		{
 		case PRINT_SIMPLE_VALUES:
-		  if (!mi_simple_type_p (sym2->type ()))
+		  if (!mi_simple_type_p (sym2.symbol->type ()))
 		    break;
 		  /* FALLTHROUGH */
 

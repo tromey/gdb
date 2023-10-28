@@ -931,7 +931,7 @@ extern frame_print_options user_frame_print_options;
 struct frame_arg
 {
   /* Symbol for this parameter used for example for its name.  */
-  struct symbol *sym = nullptr;
+  block_symbol sym = {};
 
   /* Value of the parameter.  It is NULL if ERROR is not NULL; if both VAL and
      ERROR are NULL this parameter's value should not be printed.  */
@@ -954,10 +954,10 @@ struct frame_arg
 };
 
 extern void read_frame_arg (const frame_print_options &fp_opts,
-			    symbol *sym, frame_info_ptr frame,
+			    block_symbol sym, frame_info_ptr frame,
 			    struct frame_arg *argp,
 			    struct frame_arg *entryargp);
-extern void read_frame_local (struct symbol *sym, frame_info_ptr frame,
+extern void read_frame_local (block_symbol sym, frame_info_ptr frame,
 			      struct frame_arg *argp);
 
 extern void info_args_command (const char *, int);
