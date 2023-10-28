@@ -2310,6 +2310,7 @@ struct print_variable_and_value_data
   bool print_shadowed;
   bool printed_shadowed_variables = false;
   bool omitted_shadowed_variables = false;
+  const struct block *block;
 
   void operator() (const char *print_name, struct symbol *sym,
 		   var_shadowing shadow_status);
@@ -2346,7 +2347,8 @@ print_variable_and_value_data::operator() (const char *print_name,
       return;
     }
 
-  print_variable_and_value (print_name, sym, frame, stream, num_tabs,
+  print_variable_and_value (print_name, { sym, block }, frame,
+			    stream, num_tabs,
 			    print_shadowed
 			    ? shadow_status : var_shadowing::NONE);
 
@@ -2394,6 +2396,7 @@ print_frame_local_vars (const frame_info_ptr &frame,
       return;
     }
 
+ FIXME: block;
   print_variable_and_value_data cb_data (regexp, t_regexp,
 					 get_frame_id (frame), 4 * num_tabs,
 					 stream, print_shadowed);
@@ -2582,6 +2585,7 @@ print_frame_arg_vars (const frame_info_ptr &frame,
       return;
     }
 
+ FIXME: block;
   print_variable_and_value_data cb_data (regexp, t_regexp,
 					 get_frame_id (frame), 0, stream, true);
 

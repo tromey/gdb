@@ -2362,7 +2362,7 @@ clear_dangling_display_expressions (struct objfile *objfile)
 /* See value.h.  */
 
 void
-print_variable_value (symbol *var, const frame_info_ptr &frame,
+print_variable_value (block_symbol bvar, const frame_info_ptr &frame,
 		      ui_file *stream, int indent,
 		      const language_defn *language,
 		      var_shadowing shadow_status)
@@ -2371,11 +2371,7 @@ print_variable_value (symbol *var, const frame_info_ptr &frame,
     {
       struct value *val;
 
-      /* READ_VAR_VALUE needs a block in order to deal with non-local
-	 references (i.e. to handle nested functions).  In this context, we
-	 print variables that are local to this frame, so we can avoid passing
-	 a block to it.  */
-      val = read_var_value (var, NULL, frame);
+      val = read_var_value (bvar, frame);
       value_print_options opts = get_user_print_options ();
       opts.deref_ref = true;
       common_val_print_checked (val, stream, indent, opts, language);

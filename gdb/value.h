@@ -1623,7 +1623,7 @@ extern void print_variable_value (symbol *var,
    variable shadowing information.  */
 
 extern void print_variable_and_value (const char *name,
-				      symbol *var,
+				      block_symbol bvar,
 				      const frame_info_ptr &frame,
 				      ui_file *stream,
 				      int indent,
