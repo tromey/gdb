@@ -114,18 +114,18 @@ get_pc_function_start (CORE_ADDR pc)
 
 /* Return the symbol for the function executing in frame FRAME.  */
 
-struct symbol *
+block_symbol
 get_frame_function (frame_info_ptr frame)
 {
   const struct block *bl = get_frame_block (frame, 0);
 
   if (bl == NULL)
-    return NULL;
+    return {};
 
   while (bl->function () == NULL && bl->superblock () != NULL)
     bl = bl->superblock ();
 
-  return bl->function ();
+  return { bl->function (), bl };
 }
 
 
