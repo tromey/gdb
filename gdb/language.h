@@ -308,19 +308,13 @@ struct language_defn
 				  struct ui_file *stream,
 				  const value_print_options *options) const;
 
-  /* Given a symbol VAR, the corresponding block VAR_BLOCK (if any) and a
-     stack frame id FRAME, read the value of the variable and return (pointer
-     to a) struct value containing the value.
-
-     VAR_BLOCK is needed if there's a possibility for VAR to be outside
-     FRAME.  This is what happens if FRAME correspond to a nested function
-     and VAR is defined in the outer function.  If callers know that VAR is
-     located in FRAME or is global/static, NULL can be passed as VAR_BLOCK.
+  /* Given a block_symbol VAR and a stack frame id FRAME, read the
+     value of the variable and return (pointer to a) struct value
+     containing the value.
 
      Throw an error if the variable cannot be found.  */
 
-  virtual struct value *read_var_value (struct symbol *var,
-					const struct block *var_block,
+  virtual struct value *read_var_value (block_symbol var,
 					frame_info_ptr frame) const;
 
   /* Return information about whether TYPE should be passed
