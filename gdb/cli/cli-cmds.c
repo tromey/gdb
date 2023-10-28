@@ -1040,7 +1040,7 @@ edit_command (const char *arg, int from_tty)
 		   paddress (get_current_arch (), sal.pc));
 
 	  gdbarch = sal.symtab->compunit ()->objfile ()->arch ();
-	  sym = find_pc_function (sal.pc);
+	  sym = find_pc_function (sal.pc).symbol;
 	  if (sym)
 	    gdb_printf ("%s is in %s (%s:%d).\n",
 			paddress (gdbarch, sal.pc),
@@ -1424,7 +1424,7 @@ list_command (const char *arg, int from_tty)
 	       paddress (get_current_arch (), sal.pc));
 
       gdbarch = sal.symtab->compunit ()->objfile ()->arch ();
-      sym = find_pc_function (sal.pc);
+      sym = find_pc_function (sal.pc).symbol;
       if (sym)
 	gdb_printf ("%s is in %s (%s:%d).\n",
 		    paddress (gdbarch, sal.pc),

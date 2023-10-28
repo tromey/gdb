@@ -762,7 +762,7 @@ call_site_target::iterate_over_addresses
 static struct symbol *
 func_addr_to_tail_call_list (struct gdbarch *gdbarch, CORE_ADDR addr)
 {
-  struct symbol *sym = find_pc_function (addr);
+  struct symbol *sym = find_pc_function (addr).symbol;
   struct type *type;
 
   if (sym == NULL || sym->value_block ()->entry_pc () != addr)
