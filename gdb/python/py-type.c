@@ -1065,7 +1065,7 @@ typy_template_argument (PyObject *self, PyObject *args)
   try
     {
       scoped_value_mark free_values;
-      struct value *val = value_of_variable (sym, block);
+      struct value *val = value_of_variable ({ sym, block });
       result = value_to_value_object (val);
     }
   catch (const gdb_exception &except)
