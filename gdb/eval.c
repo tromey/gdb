@@ -531,7 +531,7 @@ evaluate_var_value (enum noside noside, block_symbol var)
 
   try
     {
-      ret = value_of_variable (var.symbol, var.block);
+      ret = value_of_variable (var);
     }
 
   catch (const gdb_exception_error &except)
@@ -798,7 +798,7 @@ scope_operation::evaluate_funcall (struct type *expect_type,
       find_overload_match (arg_view, nullptr,
 			   NON_METHOD, nullptr, function,
 			   nullptr, &symp, nullptr, 1, noside);
-      callee = value_of_variable (symp.symbol, get_selected_block ());
+      callee = value_of_variable (symp);
     }
 
   return evaluate_subexp_do_call (exp, noside, callee, arg_view,
@@ -2105,17 +2105,15 @@ objc_msgcall_operation::evaluate (struct type *expect_type,
   addr = value_as_long (ret);
   if (addr)
     {
-      struct symbol *sym = NULL;
-
       /* The address might point to a function descriptor;
 	 resolve it to the actual code address instead.  */
       addr = gdbarch_convert_from_func_ptr_addr
 	(exp->gdbarch, addr, current_inferior ()->top_target ());
 
       /* Is it a high_level symbol?  */
-      sym = find_symbol_for_pc (addr).symbol;
-      if (sym != NULL)
-	method = value_of_variable (sym, 0);
+      block_symbol sym = find_symbol_for_pc (addr);
+      if (sym.has_value ())
+	method = value_of_variable (sym);
     }
 
   /* If we found a method with symbol information, check to see
@@ -2679,7 +2677,7 @@ var_value_operation::evaluate_for_address (struct expression *exp,
       return value::zero (type, not_lval);
     }
   else
-    return address_of_variable (var, std::get<0> (m_storage).block);
+    return address_of_variable (std::get<0> (m_storage));
 }
 
 value *
@@ -2692,8 +2690,7 @@ var_value_operation::evaluate_with_coercion (struct expression *exp,
       && !type->is_vector ()
       && CAST_IS_CONVERSION (exp->language_defn))
     {
-      struct value *val = address_of_variable (var,
-					       std::get<0> (m_storage).block);
+      struct value *val = address_of_variable (std::get<0> (m_storage));
       return value_cast (lookup_pointer_type (type->target_type ()), val);
     }
   return evaluate (nullptr, exp, noside);
