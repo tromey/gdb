@@ -316,8 +316,7 @@ frapy_block (PyObject *self, PyObject *args)
 static PyObject *
 frapy_function (PyObject *self, PyObject *args)
 {
-  block_symbol bsym = {};
-  struct symbol *sym = NULL;
+  block_symbol sym = {};
   frame_info_ptr frame;
 
   try
@@ -327,15 +326,14 @@ frapy_function (PyObject *self, PyObject *args)
       FRAPY_REQUIRE_VALID (self, frame);
 
       gdb::unique_xmalloc_ptr<char> funname
-	= find_frame_funname (frame, &funlang, &bsym);
-      sym = bsym.symbol;
+	= find_frame_funname (frame, &funlang, &sym);
     }
   catch (const gdb_exception &except)
     {
       GDB_PY_HANDLE_EXCEPTION (except);
     }
 
-  if (sym)
+  if (sym.symbol != nullptr)
     return symbol_to_symbol_object (sym);
 
   Py_RETURN_NONE;
@@ -481,8 +479,7 @@ frapy_read_var (PyObject *self, PyObject *args, PyObject *kw)
 {
   frame_info_ptr frame;
   PyObject *sym_obj, *block_obj = NULL;
-  struct symbol *var = NULL;	/* gcc-4.3.2 false warning.  */
-  const struct block *block = NULL;
+  block_symbol var;
 
   static const char *keywords[] = { "variable", "block", nullptr };
   if (!gdb_PyArg_ParseTupleAndKeywords (args, kw, "O|O!", keywords,
@@ -500,6 +497,7 @@ frapy_read_var (PyObject *self, PyObject *args, PyObject *kw)
       if (!var_name)
 	return NULL;
 
+      const struct block *block = NULL;
       if (block_obj != nullptr)
 	{
 	  /* This call should only fail if the type of BLOCK_OBJ is wrong,
@@ -517,8 +515,7 @@ frapy_read_var (PyObject *self, PyObject *args, PyObject *kw)
 	  if (!block)
 	    block = get_frame_block (frame, NULL);
 	  lookup_sym = lookup_symbol (var_name.get (), block, VAR_DOMAIN, NULL);
-	  var = lookup_sym.symbol;
-	  block = lookup_sym.block;
+	  var = lookup_sym;
 	}
       catch (const gdb_exception &except)
 	{
@@ -526,7 +523,7 @@ frapy_read_var (PyObject *self, PyObject *args, PyObject *kw)
 	  return NULL;
 	}
 
-      if (!var)
+      if (var.symbol == nullptr)
 	{
 	  PyErr_Format (PyExc_ValueError,
 			_("Variable '%s' not found."), var_name.get ());
@@ -548,7 +545,7 @@ frapy_read_var (PyObject *self, PyObject *args, PyObject *kw)
       FRAPY_REQUIRE_VALID (self, frame);
 
       scoped_value_mark free_values;
-      struct value *val = read_var_value (var, block, frame);
+      struct value *val = read_var_value (var, frame);
       result = value_to_value_object (val);
     }
   catch (const gdb_exception &except)
