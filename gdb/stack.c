@@ -2691,7 +2691,8 @@ return_command (const char *retval_exp, int from_tty)
   std::string query_prefix;
 
   thisframe = get_selected_frame ("No selected frame.");
-  thisfun = get_frame_function (thisframe).symbol;
+  block_symbol b_fun = get_frame_function (thisframe);
+  thisfun = b_fun.symbol;
   gdbarch = get_frame_arch (thisframe);
 
   if (get_frame_type (thisframe) == INLINE_FRAME)
@@ -2732,7 +2733,7 @@ return_command (const char *retval_exp, int from_tty)
 	return_value->fetch_lazy ();
 
       if (thisfun != NULL)
-	function = read_var_value (thisfun, NULL, thisframe);
+	function = read_var_value (b_fun, thisframe);
 
       rv_conv = RETURN_VALUE_REGISTER_CONVENTION;
       if (return_type->code () == TYPE_CODE_VOID)
