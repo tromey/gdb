@@ -1187,7 +1187,7 @@ call_function_by_hand_dummy (struct value *function,
 	  value *cctor_args[2] = { clone_ptr, original_arg };
 	  find_overload_match (gdb::make_array_view (cctor_args, 2),
 			       param_type->name (), METHOD,
-			       &clone_ptr, nullptr, &copy_ctor, nullptr,
+			       &clone_ptr, {}, &copy_ctor, nullptr,
 			       nullptr, 0, EVAL_NORMAL);
 
 	  if (copy_ctor == nullptr)

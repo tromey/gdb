@@ -693,15 +693,15 @@ var_value_operation::evaluate_funcall (struct type *expect_type,
   for (int i = 0; i < args.size (); ++i)
     argvec[i] = args[i]->evaluate_with_coercion (exp, noside);
 
-  struct symbol *symp;
+  block_symbol symp;
   find_overload_match (argvec, NULL, NON_METHOD,
-		       NULL, std::get<0> (m_storage).symbol,
+		       NULL, std::get<0> (m_storage),
 		       NULL, &symp, NULL, 0, noside);
 
-  if (symp->type ()->code () == TYPE_CODE_ERROR)
-    error_unknown_type (symp->print_name ());
+  if (symp.symbol->type ()->code () == TYPE_CODE_ERROR)
+    error_unknown_type (symp.symbol->print_name ());
   value *callee = evaluate_var_value (noside, std::get<0> (m_storage).block,
-				      symp);
+				      symp.symbol);
 
   return evaluate_subexp_do_call (exp, noside, callee, argvec,
 				  nullptr, expect_type);
@@ -722,7 +722,7 @@ scope_operation::evaluate_funcall (struct type *expect_type,
   const std::string &name = std::get<1> (m_storage);
   struct type *type = std::get<0> (m_storage);
 
-  symbol *function = NULL;
+  block_symbol function {};
   const char *function_name = NULL;
   std::vector<value *> argvec (1 + args.size ());
   if (type->code () == TYPE_CODE_NAMESPACE)
@@ -730,8 +730,8 @@ scope_operation::evaluate_funcall (struct type *expect_type,
       function = cp_lookup_symbol_namespace (type->name (),
 					     name.c_str (),
 					     get_selected_block (0),
-					     VAR_DOMAIN).symbol;
-      if (function == NULL)
+					     VAR_DOMAIN);
+      if (function.symbol == nullptr)
 	error (_("No symbol \"%s\" in namespace \"%s\"."),
 	       name.c_str (), type->name ());
     }
@@ -755,7 +755,7 @@ scope_operation::evaluate_funcall (struct type *expect_type,
       int static_memfuncp;
 
       find_overload_match (arg_view, function_name, METHOD,
-			   &argvec[0], nullptr, &callee, nullptr,
+			   &argvec[0], {}, &callee, nullptr,
 			   &static_memfuncp, 0, noside);
       if (!static_memfuncp)
 	{
@@ -769,12 +769,12 @@ scope_operation::evaluate_funcall (struct type *expect_type,
     }
   else
     {
-      symbol *symp;
+      block_symbol symp;
       arg_view = arg_view.slice (1);
       find_overload_match (arg_view, nullptr,
 			   NON_METHOD, nullptr, function,
 			   nullptr, &symp, nullptr, 1, noside);
-      callee = value_of_variable (symp, get_selected_block (0));
+      callee = value_of_variable (symp.symbol, get_selected_block (0));
     }
 
   return evaluate_subexp_do_call (exp, noside, callee, arg_view,
@@ -914,7 +914,7 @@ structop_base_operation::evaluate_funcall
 	 evaluation.  */
       value *val0 = vals[0];
       find_overload_match (arg_view, tstr, METHOD,
-			   &val0, nullptr, &callee, nullptr,
+			   &val0, {}, &callee, nullptr,
 			   &static_memfuncp, 0, noside);
       vals[0] = val0;
     }
@@ -2319,14 +2319,15 @@ adl_func_operation::evaluate (struct type *expect_type,
   for (int i = 0; i < arg_ops.size (); ++i)
     args[i] = arg_ops[i]->evaluate_with_coercion (exp, noside);
 
-  struct symbol *symp;
+  block_symbol symp;
   find_overload_match (args, std::get<0> (m_storage).c_str (),
 		       NON_METHOD,
-		       nullptr, nullptr,
+		       nullptr, {},
 		       nullptr, &symp, nullptr, 0, noside);
-  if (symp->type ()->code () == TYPE_CODE_ERROR)
-    error_unknown_type (symp->print_name ());
-  value *callee = evaluate_var_value (noside, std::get<1> (m_storage), symp);
+  if (symp.symbol->type ()->code () == TYPE_CODE_ERROR)
+    error_unknown_type (symp.symbol->print_name ());
+  value *callee = evaluate_var_value (noside, std::get<1> (m_storage),
+				      symp.symbol);
   return evaluate_subexp_do_call (exp, noside, callee, args,
 				  nullptr, expect_type);
 
