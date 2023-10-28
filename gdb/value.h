@@ -1344,8 +1344,7 @@ extern int using_struct_return (struct gdbarch *gdbarch,
 				struct value *function,
 				struct type *value_type);
 
-extern value *evaluate_var_value (enum noside noside, const block *blk,
-				  symbol *var);
+extern value *evaluate_var_value (enum noside noside, block_symbol var);
 
 extern value *evaluate_var_msym_value (enum noside noside,
 				       struct objfile *objfile,
