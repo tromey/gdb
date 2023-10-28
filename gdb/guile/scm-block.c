@@ -406,7 +406,7 @@ gdbscm_block_function (SCM self)
   sym = block->function ();
 
   if (sym != NULL)
-    return syscm_scm_from_symbol (sym);
+    return syscm_scm_from_symbol ({ sym, block });
   return SCM_BOOL_F;
 }
 
@@ -507,7 +507,7 @@ gdbscm_block_symbols (SCM self)
 
   for (struct symbol *sym : block_iterator_range (block))
     {
-      SCM s_scm = syscm_scm_from_symbol (sym);
+      SCM s_scm = syscm_scm_from_symbol ({ sym, block });
 
       result = scm_cons (s_scm, result);
     }
@@ -658,7 +658,7 @@ gdbscm_block_next_symbol_x (SCM self)
   if (sym == NULL)
     return gdbscm_end_of_iteration ();
 
-  return syscm_scm_from_symbol (sym);
+  return syscm_scm_from_symbol ({ sym, block });
 }
 
 /* (lookup-block address) -> <gdb:block>
