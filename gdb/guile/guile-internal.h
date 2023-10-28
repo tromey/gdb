@@ -538,7 +538,7 @@ extern SCM gdbscm_scm_from_host_string (const char *string, size_t len);
 
 extern int syscm_is_symbol (SCM scm);
 
-extern SCM syscm_scm_from_symbol (struct symbol *symbol);
+extern SCM syscm_scm_from_symbol (block_symbol symbol);
 
 extern struct symbol *syscm_get_valid_symbol_arg_unsafe
   (SCM self, int arg_pos, const char *func_name);

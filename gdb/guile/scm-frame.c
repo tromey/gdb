@@ -654,7 +654,7 @@ static SCM
 gdbscm_frame_function (SCM self)
 {
   frame_smob *f_smob;
-  struct symbol *sym = NULL;
+  block_symbol sym = {};
   bool found = false;
 
   f_smob = frscm_get_frame_smob_arg_unsafe (self, SCM_ARG1, FUNC_NAME);
@@ -666,7 +666,7 @@ gdbscm_frame_function (SCM self)
       if (frame != NULL)
 	{
 	  found = true;
-	  sym = find_pc_function (get_frame_address_in_block (frame)).symbol;
+	  sym = find_pc_function (get_frame_address_in_block (frame));
 	}
     }
   catch (const gdb_exception &except)
@@ -681,7 +681,7 @@ gdbscm_frame_function (SCM self)
 				   _("<gdb:frame>"));
     }
 
-  if (sym != NULL)
+  if (sym.symbol != nullptr)
     return syscm_scm_from_symbol (sym);
 
   return SCM_BOOL_F;
@@ -962,7 +962,8 @@ gdbscm_frame_read_var (SCM self, SCM symbol_scm, SCM rest)
 
   try
     {
-      value = read_var_value (var, block, frame_info_ptr (frame));
+      // FIXME
+      value = read_var_value ({ var, block }, frame_info_ptr (frame));
     }
   catch (const gdb_exception &except)
     {
