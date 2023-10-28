@@ -686,8 +686,7 @@ pending_framepy_function (PyObject *self, PyObject *args)
 
   PENDING_FRAMEPY_REQUIRE_VALID (pending_frame);
 
-  struct symbol *sym = nullptr;
-  block_symbol bsym;
+  block_symbol sym;
 
   try
     {
@@ -695,15 +694,14 @@ pending_framepy_function (PyObject *self, PyObject *args)
       frame_info_ptr frame = pending_frame->frame_info;
 
       gdb::unique_xmalloc_ptr<char> funname
-	= find_frame_funname (frame, &funlang, &bsym);
-      sym = bsym.symbol;
+	= find_frame_funname (frame, &funlang, &sym);
     }
   catch (const gdb_exception &except)
     {
       return gdbpy_handle_gdb_exception (nullptr, except);
     }
 
-  if (sym != nullptr)
+  if (sym.has_value ())
     return symbol_to_symbol_object (sym);
 
   Py_RETURN_NONE;
