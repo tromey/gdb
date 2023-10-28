@@ -41,24 +41,22 @@ enum mi_print_types
   MI_PRINT_LOCALS
 };
 
-/* Helper  function  to  extract  a  symbol, a  name  and  a  language
+/* Helper function to extract a symbol, a name and a language
    definition from a Python object that conforms to the "Symbol Value"
-   interface.  OBJ  is the Python  object to extract the  values from.
-   NAME is a  pass-through argument where the name of  the symbol will
-   be written.  NAME is allocated in  this function, but the caller is
+   interface.  OBJ is the Python object to extract the values from.
+   NAME is a pass-through argument where the name of the symbol will
+   be written.  NAME is allocated in this function, but the caller is
    responsible for clean up.  SYM is a pass-through argument where the
-   symbol will be written and  SYM_BLOCK is a pass-through argument to
-   write  the block where the symbol lies in.  In the case of the  API
-   returning a  string,  this will be set to NULL.  LANGUAGE is also a
-   pass-through  argument  denoting  the  language  attributed  to the
-   Symbol.  In the case of SYM being  NULL, this  will be  set to  the
-   current  language.  Returns  EXT_LANG_BT_ERROR  on  error  with the
-   appropriate Python exception set, and EXT_LANG_BT_OK on success.  */
+   symbol will be written.  In the case of the API returning a string,
+   this will be set to NULL.  LANGUAGE is also a pass-through argument
+   denoting the language attributed to the Symbol.  In the case of SYM
+   being NULL, this will be set to the current language.  Returns
+   EXT_LANG_BT_ERROR on error with the appropriate Python exception
+   set, and EXT_LANG_BT_OK on success.  */
 
 static enum ext_lang_bt_status
 extract_sym (PyObject *obj, gdb::unique_xmalloc_ptr<char> *name,
-	     struct symbol **sym, const struct block **sym_block,
-	     const struct language_defn **language)
+	     block_symbol *sym, const struct language_defn **language)
 {
   gdbpy_ref<> result (PyObject_CallMethod (obj, "symbol", NULL));
 
@@ -79,21 +77,19 @@ extract_sym (PyObject *obj, gdb::unique_xmalloc_ptr<char> *name,
 	 entirely synthetic symbol/value pairing.  In that case, use
 	 the current language.  */
       *language = current_language;
-      *sym = NULL;
-      *sym_block = NULL;
+      *sym = {};
     }
   else
     {
       /* This type checks 'result' during the conversion so we
 	 just call it unconditionally and check the return.  */
-      *sym = symbol_object_to_symbol (result.get ());
       /* TODO: currently, we have no way to recover the block in which SYMBOL
 	 was found, so we have no block to return.  Trying to evaluate SYMBOL
 	 will yield an incorrect value when it's located in a FRAME and
 	 evaluated from another frame (as permitted in nested functions).  */
-      *sym_block = NULL;
+      *sym = { symbol_object_to_symbol (result.get ()), nullptr };
 
-      if (*sym == NULL)
+      if (sym->symbol == NULL)
 	{
 	  PyErr_SetString (PyExc_RuntimeError,
 			   _("Unexpected value.  Expecting a "
@@ -103,13 +99,13 @@ extract_sym (PyObject *obj, gdb::unique_xmalloc_ptr<char> *name,
 
       /* Duplicate the symbol name, so the caller has consistency
 	 in garbage collection.  */
-      name->reset (xstrdup ((*sym)->print_name ()));
+      name->reset (xstrdup (sym->symbol->print_name ()));
 
       /* If a symbol is specified attempt to determine the language
 	 from the symbol.  If mode is not "auto", then the language
 	 has been explicitly set, use that.  */
       if (language_mode == language_mode_auto)
-	*language = language_def ((*sym)->language ());
+	*language = language_def (sym->symbol->language ());
       else
 	*language = current_language;
     }
@@ -443,21 +439,20 @@ enumerate_args (PyObject *iter,
     {
       const struct language_defn *language;
       gdb::unique_xmalloc_ptr<char> sym_name;
-      struct symbol *sym;
-      const struct block *sym_block;
+      block_symbol bsym;
       struct value *val;
       enum ext_lang_bt_status success = EXT_LANG_BT_ERROR;
 
-      success = extract_sym (item.get (), &sym_name, &sym, &sym_block,
-			     &language);
+      success = extract_sym (item.get (), &sym_name, &bsym, &language);
       if (success == EXT_LANG_BT_ERROR)
 	return EXT_LANG_BT_ERROR;
+      symbol *sym = bsym.symbol;
 
       success = extract_value (item.get (), &val);
       if (success == EXT_LANG_BT_ERROR)
 	return EXT_LANG_BT_ERROR;
 
-      if (sym && out->is_mi_like_p ()
+      if (sym != nullptr && out->is_mi_like_p ()
 	  && ! mi_should_print (sym, MI_PRINT_ARGS))
 	continue;
 
@@ -559,8 +554,6 @@ enumerate_locals (PyObject *iter,
       gdb::unique_xmalloc_ptr<char> sym_name;
       struct value *val;
       enum ext_lang_bt_status success = EXT_LANG_BT_ERROR;
-      struct symbol *sym;
-      const struct block *sym_block;
       int local_indent = 8 + (8 * indent);
       std::optional<ui_out_emit_tuple> tuple;
 
@@ -568,10 +561,11 @@ enumerate_locals (PyObject *iter,
       if (item == NULL)
 	break;
 
-      success = extract_sym (item.get (), &sym_name, &sym, &sym_block,
-			     &language);
+      block_symbol bsym;
+      success = extract_sym (item.get (), &sym_name, &bsym, &language);
       if (success == EXT_LANG_BT_ERROR)
 	return EXT_LANG_BT_ERROR;
+      symbol *sym = bsym.symbol;
 
       success = extract_value (item.get (), &val);
       if (success == EXT_LANG_BT_ERROR)
@@ -583,7 +577,7 @@ enumerate_locals (PyObject *iter,
 
       /* If the object did not provide a value, read it.  */
       if (val == NULL)
-	val = read_var_value (sym, sym_block, frame);
+	val = read_var_value (bsym, frame);
 
       /* With PRINT_NO_VALUES, MI does not emit a tuple normally as
 	 each output contains only one field.  The exception is
