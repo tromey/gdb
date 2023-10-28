@@ -3686,7 +3686,7 @@ skip_prologue_sal (struct symtab_and_line *sal)
 
   switch_to_program_space_and_thread (sal->pspace);
 
-  symbol *sym = find_symbol_for_pc_sect (sal->pc, sal->section);
+  symbol *sym = find_symbol_for_pc_sect (sal->pc, sal->section).symbol;
   objfile *objfile;
   CORE_ADDR pc;
   obj_section *section;
@@ -4094,7 +4094,7 @@ find_function_alias_target (bound_minimal_symbol msymbol)
   if (!msymbol_is_function (msymbol.objfile, msymbol.minsym, &func_addr))
     return NULL;
 
-  symbol *sym = find_symbol_for_pc (func_addr);
+  symbol *sym = find_symbol_for_pc (func_addr).symbol;
   if (sym != NULL
       && sym->loc_class () == LOC_BLOCK
       && sym->value_block ()->entry_pc () == func_addr)

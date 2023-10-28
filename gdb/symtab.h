@@ -2190,7 +2190,7 @@ extern struct type *lookup_enum (const char *, const struct block *);
    return value will not be an inlined function; the containing
    function will be returned instead.  */
 
-extern struct symbol *find_symbol_for_pc (CORE_ADDR);
+extern block_symbol find_symbol_for_pc (CORE_ADDR);
 
 /* Lookup the function symbol corresponding to the address.  The return value
    will be the closest enclosing function, which might be an inline
@@ -2202,7 +2202,7 @@ extern struct symbol *find_symbol_for_pc_maybe_inline (CORE_ADDR pc);
    return value will not be an inlined function; the containing
    function will be returned instead.  */
 
-extern struct symbol *find_symbol_for_pc_sect (CORE_ADDR, struct obj_section *);
+extern block_symbol find_symbol_for_pc_sect (CORE_ADDR, struct obj_section *);
 
 /* lookup the function symbol corresponding to the address and
    section.  The return value will be the closest enclosing function,

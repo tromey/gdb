@@ -1047,7 +1047,7 @@ edit_command (const char *arg, int from_tty)
 		   paddress (get_current_arch (), sal.pc));
 
 	  gdbarch = sal.symtab->compunit ().objfile ()->arch ();
-	  sym = find_symbol_for_pc (sal.pc);
+	  sym = find_symbol_for_pc (sal.pc).symbol;
 	  if (sym)
 	    gdb_printf ("%ps is in %ps (%ps:%ps).\n",
 			styled_string (address_style.style (),
@@ -1528,7 +1528,7 @@ list_command (const char *arg, int from_tty)
 	       paddress (get_current_arch (), sal.pc));
 
       struct gdbarch *gdbarch = sal.symtab->compunit ().objfile ()->arch ();
-      struct symbol *sym = find_symbol_for_pc (sal.pc);
+      struct symbol *sym = find_symbol_for_pc (sal.pc).symbol;
       if (sym != nullptr)
 	gdb_printf ("%ps is in %s (%ps:%ps).\n",
 		    styled_string (address_style.style (),
@@ -2311,7 +2311,7 @@ print_sal_location (const symtab_and_line &sal)
   else if (CORE_ADDR line_pc;
 	   find_pc_for_line (sal.symtab, sal.line, &line_pc))
     {
-      struct symbol *sym = find_symbol_for_pc (line_pc);
+      struct symbol *sym = find_symbol_for_pc (line_pc).symbol;
       if (sym != nullptr)
 	sym_name = sym->print_name ();
     }

@@ -2114,7 +2114,7 @@ objc_msgcall_operation::evaluate (struct type *expect_type,
 	(exp->gdbarch, addr, current_inferior ()->top_target ());
 
       /* Is it a high_level symbol?  */
-      sym = find_symbol_for_pc (addr);
+      sym = find_symbol_for_pc (addr).symbol;
       if (sym != NULL)
 	method = value_of_variable (sym, 0);
     }

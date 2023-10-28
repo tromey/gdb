@@ -1531,7 +1531,7 @@ until_next_command (int from_tty)
      not).  */
 
   pc = get_frame_pc (frame);
-  func = find_symbol_for_pc (pc);
+  func = find_symbol_for_pc (pc).symbol;
 
   if (!func)
     {
@@ -2013,7 +2013,7 @@ finish_command (const char *arg, int from_tty)
 
   /* Find the function we will return from.  */
   frame_info_ptr callee_frame = get_selected_frame ();
-  sm->function = find_symbol_for_pc (get_frame_pc (callee_frame));
+  sm->function = find_symbol_for_pc (get_frame_pc (callee_frame)).symbol;
   sm->return_buf = 0;    /* Initialize buffer address is not available.  */
 
   /* Determine the return convention.  If it is RETURN_VALUE_STRUCT_CONVENTION,

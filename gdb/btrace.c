@@ -557,7 +557,7 @@ ftrace_update_function (struct btrace_thread_info *btinfo,
      only a minimal symbol.  */
   if (pc.has_value ())
     {
-      fun = find_symbol_for_pc (*pc);
+      fun = find_symbol_for_pc (*pc).symbol;
       bound_minimal_symbol bmfun = lookup_minimal_symbol_by_pc (*pc);
       mfun = bmfun.minsym;
 

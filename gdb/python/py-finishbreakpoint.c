@@ -255,7 +255,7 @@ bpfinishpy_init (PyObject *self, PyObject *args, PyObject *kwargs)
       CORE_ADDR pc;
       if (get_frame_address_in_block_if_available (frame, &pc))
 	{
-	  struct symbol *function = find_symbol_for_pc (pc);
+	  struct symbol *function = find_symbol_for_pc (pc).symbol;
 	  if (function != nullptr)
 	    {
 	      struct type *ret_type =
