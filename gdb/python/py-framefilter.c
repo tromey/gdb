@@ -83,11 +83,7 @@ extract_sym (PyObject *obj, gdb::unique_xmalloc_ptr<char> *name,
     {
       /* This type checks 'result' during the conversion so we
 	 just call it unconditionally and check the return.  */
-      /* TODO: currently, we have no way to recover the block in which SYMBOL
-	 was found, so we have no block to return.  Trying to evaluate SYMBOL
-	 will yield an incorrect value when it's located in a FRAME and
-	 evaluated from another frame (as permitted in nested functions).  */
-      *sym = { symbol_object_to_symbol (result.get ()), nullptr };
+      *sym = symbol_object_to_symbol (result.get ());
 
       if (sym->symbol == NULL)
 	{

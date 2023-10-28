@@ -29,7 +29,7 @@
 struct symbol_object {
   PyObject_HEAD
   /* The GDB symbol structure this object is wrapping.  */
-  struct symbol *symbol;
+  block_symbol symbol;
   /* A symbol object is associated with an objfile, so keep track with
      doubly-linked list, rooted in the objfile.  This lets us
      invalidate the underlying struct symbol when the objfile is
@@ -40,10 +40,10 @@ struct symbol_object {
 
 /* Require a valid symbol.  All access to symbol_object->symbol should be
    gated by this call.  */
-#define SYMPY_REQUIRE_VALID(symbol_obj, symbol)		\
+#define SYMPY_REQUIRE_VALID(symbol_obj, val)		\
   do {							\
-    symbol = symbol_object_to_symbol (symbol_obj);	\
-    if (symbol == NULL)					\
+    val = symbol_object_to_symbol (symbol_obj);		\
+    if (val.symbol == NULL)				\
       {							\
 	PyErr_SetString (PyExc_RuntimeError,		\
 			 _("Symbol is invalid."));	\
@@ -60,7 +60,7 @@ struct symbol_object_deleter
       {
 	symbol_object *next = obj->next;
 
-	obj->symbol = NULL;
+	obj->symbol = {};
 	obj->next = NULL;
 	obj->prev = NULL;
 
@@ -76,11 +76,11 @@ static PyObject *
 sympy_str (PyObject *self)
 {
   PyObject *result;
-  struct symbol *symbol = NULL;
+  block_symbol symbol;
 
   SYMPY_REQUIRE_VALID (self, symbol);
 
-  result = PyUnicode_FromString (symbol->print_name ());
+  result = PyUnicode_FromString (symbol.symbol->print_name ());
 
   return result;
 }
@@ -88,56 +88,56 @@ sympy_str (PyObject *self)
 static PyObject *
 sympy_get_type (PyObject *self, void *closure)
 {
-  struct symbol *symbol = NULL;
+  block_symbol symbol;
 
   SYMPY_REQUIRE_VALID (self, symbol);
 
-  if (symbol->type () == NULL)
+  if (symbol.symbol->type () == NULL)
     {
       Py_INCREF (Py_None);
       return Py_None;
     }
 
-  return type_to_type_object (symbol->type ());
+  return type_to_type_object (symbol.symbol->type ());
 }
 
 static PyObject *
 sympy_get_symtab (PyObject *self, void *closure)
 {
-  struct symbol *symbol = NULL;
+  block_symbol symbol;
 
   SYMPY_REQUIRE_VALID (self, symbol);
 
-  if (!symbol->is_objfile_owned ())
+  if (!symbol.symbol->is_objfile_owned ())
     Py_RETURN_NONE;
 
-  return symtab_to_symtab_object (symbol->symtab ());
+  return symtab_to_symtab_object (symbol.symbol->symtab ());
 }
 
 static PyObject *
 sympy_get_name (PyObject *self, void *closure)
 {
-  struct symbol *symbol = NULL;
+  block_symbol symbol;
 
   SYMPY_REQUIRE_VALID (self, symbol);
 
-  return PyUnicode_FromString (symbol->natural_name ());
+  return PyUnicode_FromString (symbol.symbol->natural_name ());
 }
 
 static PyObject *
 sympy_get_linkage_name (PyObject *self, void *closure)
 {
-  struct symbol *symbol = NULL;
+  block_symbol symbol;
 
   SYMPY_REQUIRE_VALID (self, symbol);
 
-  return PyUnicode_FromString (symbol->linkage_name ());
+  return PyUnicode_FromString (symbol.symbol->linkage_name ());
 }
 
 static PyObject *
 sympy_get_print_name (PyObject *self, void *closure)
 {
-  struct symbol *symbol = NULL;
+  block_symbol symbol;
 
   SYMPY_REQUIRE_VALID (self, symbol);
 
@@ -147,32 +147,32 @@ sympy_get_print_name (PyObject *self, void *closure)
 static PyObject *
 sympy_get_addr_class (PyObject *self, void *closure)
 {
-  struct symbol *symbol = NULL;
+  block_symbol symbol;
 
   SYMPY_REQUIRE_VALID (self, symbol);
 
-  return gdb_py_object_from_longest (symbol->aclass ()).release ();
+  return gdb_py_object_from_longest (symbol.symbol->aclass ()).release ();
 }
 
 static PyObject *
 sympy_is_argument (PyObject *self, void *closure)
 {
-  struct symbol *symbol = NULL;
+  block_symbol symbol;
 
   SYMPY_REQUIRE_VALID (self, symbol);
 
-  return PyBool_FromLong (symbol->is_argument ());
+  return PyBool_FromLong (symbol.symbol->is_argument ());
 }
 
 static PyObject *
 sympy_is_constant (PyObject *self, void *closure)
 {
-  struct symbol *symbol = NULL;
+  block_symbol symbol;
   enum address_class theclass;
 
   SYMPY_REQUIRE_VALID (self, symbol);
 
-  theclass = symbol->aclass ();
+  theclass = symbol.symbol->aclass ();
 
   return PyBool_FromLong (theclass == LOC_CONST || theclass == LOC_CONST_BYTES);
 }
@@ -180,12 +180,12 @@ sympy_is_constant (PyObject *self, void *closure)
 static PyObject *
 sympy_is_function (PyObject *self, void *closure)
 {
-  struct symbol *symbol = NULL;
+  block_symbol symbol;
   enum address_class theclass;
 
   SYMPY_REQUIRE_VALID (self, symbol);
 
-  theclass = symbol->aclass ();
+  theclass = symbol.symbol->aclass ();
 
   return PyBool_FromLong (theclass == LOC_BLOCK);
 }
@@ -193,14 +193,14 @@ sympy_is_function (PyObject *self, void *closure)
 static PyObject *
 sympy_is_variable (PyObject *self, void *closure)
 {
-  struct symbol *symbol = NULL;
+  block_symbol symbol;
   enum address_class theclass;
 
   SYMPY_REQUIRE_VALID (self, symbol);
 
-  theclass = symbol->aclass ();
+  theclass = symbol.symbol->aclass ();
 
-  return PyBool_FromLong (!symbol->is_argument ()
+  return PyBool_FromLong (!symbol.symbol->is_argument ()
 			  && (theclass == LOC_LOCAL || theclass == LOC_REGISTER
 			      || theclass == LOC_STATIC || theclass == LOC_COMPUTED
 			      || theclass == LOC_OPTIMIZED_OUT));
@@ -212,14 +212,14 @@ sympy_is_variable (PyObject *self, void *closure)
 static PyObject *
 sympy_needs_frame (PyObject *self, void *closure)
 {
-  struct symbol *symbol = NULL;
+  block_symbol symbol;
   int result = 0;
 
   SYMPY_REQUIRE_VALID (self, symbol);
 
   try
     {
-      result = symbol_read_needs_frame (symbol);
+      result = symbol_read_needs_frame (symbol.symbol);
     }
   catch (const gdb_exception &except)
     {
@@ -237,11 +237,11 @@ sympy_needs_frame (PyObject *self, void *closure)
 static PyObject *
 sympy_line (PyObject *self, void *closure)
 {
-  struct symbol *symbol = NULL;
+  block_symbol symbol;
 
   SYMPY_REQUIRE_VALID (self, symbol);
 
-  return gdb_py_object_from_longest (symbol->line ()).release ();
+  return gdb_py_object_from_longest (symbol.symbol->line ()).release ();
 }
 
 /* Implementation of gdb.Symbol.is_valid (self) -> Boolean.
@@ -250,10 +250,10 @@ sympy_line (PyObject *self, void *closure)
 static PyObject *
 sympy_is_valid (PyObject *self, PyObject *args)
 {
-  struct symbol *symbol = NULL;
+  block_symbol symbol;
 
   symbol = symbol_object_to_symbol (self);
-  if (symbol == NULL)
+  if (symbol.symbol == NULL)
     Py_RETURN_FALSE;
 
   Py_RETURN_TRUE;
@@ -265,7 +265,7 @@ sympy_is_valid (PyObject *self, PyObject *args)
 static PyObject *
 sympy_value (PyObject *self, PyObject *args)
 {
-  struct symbol *symbol = NULL;
+  block_symbol symbol;
   frame_info_ptr frame_info = NULL;
   PyObject *frame_obj = NULL;
 
@@ -279,7 +279,7 @@ sympy_value (PyObject *self, PyObject *args)
     }
 
   SYMPY_REQUIRE_VALID (self, symbol);
-  if (symbol->aclass () == LOC_TYPEDEF)
+  if (symbol.symbol->aclass () == LOC_TYPEDEF)
     {
       PyErr_SetString (PyExc_TypeError, "cannot get the value of a typedef");
       return NULL;
@@ -295,15 +295,11 @@ sympy_value (PyObject *self, PyObject *args)
 	    error (_("invalid frame"));
 	}
 
-      if (symbol_read_needs_frame (symbol) && frame_info == NULL)
+      if (symbol_read_needs_frame (symbol.symbol) && frame_info == NULL)
 	error (_("symbol requires a frame to compute its value"));
 
-      /* TODO: currently, we have no way to recover the block in which SYMBOL
-	 was found, so we have no block to pass to read_var_value.  This will
-	 yield an incorrect value when symbol is not local to FRAME_INFO (this
-	 can happen with nested functions).  */
       scoped_value_mark free_values;
-      struct value *value = read_var_value (symbol, NULL, frame_info);
+      struct value *value = read_var_value (symbol, frame_info);
       result = value_to_value_object (value);
     }
   catch (const gdb_exception &except)
@@ -320,14 +316,14 @@ sympy_value (PyObject *self, PyObject *args)
    with the life-cycle of the object file associated with this
    symbol, if needed.  */
 static void
-set_symbol (symbol_object *obj, struct symbol *symbol)
+set_symbol (symbol_object *obj, block_symbol symbol)
 {
   obj->symbol = symbol;
   obj->prev = NULL;
-  if (symbol->is_objfile_owned ()
-      && symbol->symtab () != NULL)
+  if (symbol.symbol->is_objfile_owned ()
+      && symbol.symbol->symtab () != NULL)
     {
-      struct objfile *objfile = symbol->objfile ();
+      struct objfile *objfile = symbol.symbol->objfile ();
 
       obj->next = sympy_objfile_data_key.get (objfile);
       if (obj->next)
@@ -341,7 +337,7 @@ set_symbol (symbol_object *obj, struct symbol *symbol)
 /* Create a new symbol object (gdb.Symbol) that encapsulates the struct
    symbol object from GDB.  */
 PyObject *
-symbol_to_symbol_object (struct symbol *sym)
+symbol_to_symbol_object (block_symbol sym)
 {
   symbol_object *sym_obj;
 
@@ -353,11 +349,11 @@ symbol_to_symbol_object (struct symbol *sym)
 }
 
 /* Return the symbol that is wrapped by this symbol object.  */
-struct symbol *
+block_symbol
 symbol_object_to_symbol (PyObject *obj)
 {
   if (! PyObject_TypeCheck (obj, &symbol_object_type))
-    return NULL;
+    return {};
   return ((symbol_object *) obj)->symbol;
 }
 
@@ -368,13 +364,14 @@ sympy_dealloc (PyObject *obj)
 
   if (sym_obj->prev)
     sym_obj->prev->next = sym_obj->next;
-  else if (sym_obj->symbol != NULL
-	   && sym_obj->symbol->is_objfile_owned ()
-	   && sym_obj->symbol->symtab () != NULL)
-    sympy_objfile_data_key.set (sym_obj->symbol->objfile (), sym_obj->next);
+  else if (sym_obj->symbol.symbol != NULL
+	   && sym_obj->symbol.symbol->is_objfile_owned ()
+	   && sym_obj->symbol.symbol->symtab () != NULL)
+    sympy_objfile_data_key.set (sym_obj->symbol.symbol->objfile (),
+				sym_obj->next);
   if (sym_obj->next)
     sym_obj->next->prev = sym_obj->prev;
-  sym_obj->symbol = NULL;
+  sym_obj->symbol = {};
   Py_TYPE (obj)->tp_free (obj);
 }
 
@@ -384,11 +381,11 @@ static PyObject *
 sympy_repr (PyObject *self)
 {
   const auto symbol = symbol_object_to_symbol (self);
-  if (symbol == nullptr)
+  if (symbol.symbol == nullptr)
     return PyUnicode_FromFormat ("<%s (invalid)>", Py_TYPE (self)->tp_name);
 
   return PyUnicode_FromFormat ("<%s print_name=%s>", Py_TYPE (self)->tp_name,
-			       symbol->print_name ());
+			       symbol.symbol->print_name ());
 }
 
 /* Implementation of
@@ -404,7 +401,7 @@ gdbpy_lookup_symbol (PyObject *self, PyObject *args, PyObject *kw)
   struct field_of_this_result is_a_field_of_this;
   const char *name;
   static const char *keywords[] = { "name", "block", "domain", NULL };
-  struct symbol *symbol = NULL;
+  block_symbol symbol;
   PyObject *block_obj = NULL, *sym_obj, *bool_obj;
   const struct block *block = NULL;
 
@@ -433,7 +430,7 @@ gdbpy_lookup_symbol (PyObject *self, PyObject *args, PyObject *kw)
   try
     {
       symbol = lookup_symbol (name, block, (domain_enum) domain,
-			      &is_a_field_of_this).symbol;
+			      &is_a_field_of_this);
     }
   catch (const gdb_exception &except)
     {
@@ -444,7 +441,7 @@ gdbpy_lookup_symbol (PyObject *self, PyObject *args, PyObject *kw)
   if (ret_tuple == NULL)
     return NULL;
 
-  if (symbol)
+  if (symbol.symbol != nullptr)
     {
       sym_obj = symbol_to_symbol_object (symbol);
       if (!sym_obj)
@@ -472,7 +469,7 @@ gdbpy_lookup_global_symbol (PyObject *self, PyObject *args, PyObject *kw)
   int domain = VAR_DOMAIN;
   const char *name;
   static const char *keywords[] = { "name", "domain", NULL };
-  struct symbol *symbol = NULL;
+  block_symbol symbol;
   PyObject *sym_obj;
 
   if (!gdb_PyArg_ParseTupleAndKeywords (args, kw, "s|i", keywords, &name,
@@ -481,14 +478,14 @@ gdbpy_lookup_global_symbol (PyObject *self, PyObject *args, PyObject *kw)
 
   try
     {
-      symbol = lookup_global_symbol (name, NULL, (domain_enum) domain).symbol;
+      symbol = lookup_global_symbol (name, NULL, (domain_enum) domain);
     }
   catch (const gdb_exception &except)
     {
       GDB_PY_HANDLE_EXCEPTION (except);
     }
 
-  if (symbol)
+  if (symbol.symbol != nullptr)
     {
       sym_obj = symbol_to_symbol_object (symbol);
       if (!sym_obj)
@@ -512,7 +509,7 @@ gdbpy_lookup_static_symbol (PyObject *self, PyObject *args, PyObject *kw)
   const char *name;
   int domain = VAR_DOMAIN;
   static const char *keywords[] = { "name", "domain", NULL };
-  struct symbol *symbol = NULL;
+  block_symbol symbol = {};
   PyObject *sym_obj;
 
   if (!gdb_PyArg_ParseTupleAndKeywords (args, kw, "s|i", keywords, &name,
@@ -543,19 +540,18 @@ gdbpy_lookup_static_symbol (PyObject *self, PyObject *args, PyObject *kw)
   try
     {
       if (block != nullptr)
-	symbol
-	  = lookup_symbol_in_static_block (name, block,
-					   (domain_enum) domain).symbol;
+	symbol = lookup_symbol_in_static_block (name, block,
+						(domain_enum) domain);
 
-      if (symbol == nullptr)
-	symbol = lookup_static_symbol (name, (domain_enum) domain).symbol;
+      if (symbol.symbol == nullptr)
+	symbol = lookup_static_symbol (name, (domain_enum) domain);
     }
   catch (const gdb_exception &except)
     {
       GDB_PY_HANDLE_EXCEPTION (except);
     }
 
-  if (symbol)
+  if (symbol.symbol != nullptr)
     {
       sym_obj = symbol_to_symbol_object (symbol);
       if (!sym_obj)
@@ -612,10 +608,11 @@ gdbpy_lookup_static_symbols (PyObject *self, PyObject *args, PyObject *kw)
 
 	      if (block != nullptr)
 		{
-		  symbol *symbol = lookup_symbol_in_static_block
-		    (name, block, (domain_enum) domain).symbol;
+		  block_symbol symbol
+		    = lookup_symbol_in_static_block (name, block,
+						     (domain_enum) domain);
 
-		  if (symbol != nullptr)
+		  if (symbol.symbol != nullptr)
 		    {
 		      PyObject *sym_obj
 			= symbol_to_symbol_object (symbol);
