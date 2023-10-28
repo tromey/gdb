@@ -11389,7 +11389,7 @@ get_var_value (const char *name, const char *err_msg)
 	error (("%s"), err_msg);
     }
 
-  return value_of_variable (syms[0].symbol, syms[0].block);
+  return value_of_variable (syms[0]);
 }
 
 /* Value of integer variable named NAME in the current environment.

@@ -1574,7 +1574,7 @@ rust_structop::evaluate_funcall (struct type *expect_type,
   if (fn_type->field (0).type ()->code () == TYPE_CODE_PTR)
     args[0] = value_addr (args[0]);
 
-  value *function = address_of_variable (sym.symbol, block);
+  value *function = address_of_variable (sym);
 
   for (int i = 0; i < ops.size (); ++i)
     args[i + 1] = ops[i]->evaluate (nullptr, exp, noside);
