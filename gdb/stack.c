@@ -2270,6 +2270,7 @@ struct print_variable_and_value_data
   int num_tabs;
   struct ui_file *stream;
   int values_printed;
+  const struct block *block;
 
   void operator() (const char *print_name, struct symbol *sym);
 };
@@ -2298,7 +2299,8 @@ print_variable_and_value_data::operator() (const char *print_name,
       return;
     }
 
-  print_variable_and_value (print_name, sym, frame, stream, num_tabs);
+  print_variable_and_value (print_name, { sym, block }, frame,
+			    stream, num_tabs);
 
   values_printed = 1;
 }
@@ -2360,6 +2362,7 @@ print_frame_local_vars (const frame_info_ptr &frame,
   cb_data.num_tabs = 4 * num_tabs;
   cb_data.stream = stream;
   cb_data.values_printed = 0;
+  cb_data.block = block;
 
   /* Temporarily change the selected frame to the given FRAME.
      This allows routines that rely on the selected frame instead
@@ -2524,6 +2527,7 @@ print_frame_arg_vars (const frame_info_ptr &frame,
   cb_data.num_tabs = 0;
   cb_data.stream = stream;
   cb_data.values_printed = 0;
+  cb_data.block = func->value_block ();
 
   iterate_over_block_arg_vars (func->value_block (), cb_data);
 

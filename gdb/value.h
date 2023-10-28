@@ -1569,7 +1569,7 @@ extern int val_print_string (struct type *elttype, const char *encoding,
 			     const struct value_print_options *options);
 
 extern void print_variable_and_value (const char *name,
-				      struct symbol *var,
+				      block_symbol bvar,
 				      const frame_info_ptr &frame,
 				      struct ui_file *stream,
 				      int indent);
