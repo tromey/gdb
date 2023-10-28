@@ -665,7 +665,7 @@ gdbscm_frame_function (SCM self)
       if (frame != NULL)
 	{
 	  found = true;
-	  sym = find_pc_function (get_frame_address_in_block (frame));
+	  sym = find_pc_function (get_frame_address_in_block (frame)).symbol;
 	}
     }
   catch (const gdb_exception &except)

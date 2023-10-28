@@ -217,7 +217,7 @@ set_traceframe_context (const frame_info_ptr &trace_frame)
       && (trace_pc = get_frame_pc_if_available (trace_frame)))
     {
       traceframe_sal = find_pc_line (*trace_pc, 0);
-      traceframe_fun = find_pc_function (*trace_pc);
+      traceframe_fun = find_pc_function (*trace_pc).symbol;
 
       /* Save linenumber as "$trace_line", a debugger variable visible to
 	 users.  */
@@ -3624,7 +3624,7 @@ print_one_static_tracepoint_marker (int count,
   uiout->field_core_addr ("addr", marker.gdbarch, marker.address);
 
   sal = find_pc_line (marker.address, 0);
-  sym = find_pc_sect_function (marker.address, NULL);
+  sym = find_pc_sect_function (marker.address, NULL).symbol;
   if (sym)
     {
       uiout->text ("in ");
