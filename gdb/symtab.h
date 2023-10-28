@@ -1522,6 +1522,12 @@ private:
  CORE_ADDR get_maybe_copied_address () const;
 };
 
+inline CORE_ADDR
+block_symbol::address () const
+{
+  return symbol->value_address ();
+}
+
 /* Note: There is no accessor macro for symbol.owner because it is
    "private".  */
 

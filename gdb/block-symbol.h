@@ -34,6 +34,8 @@ struct block_symbol
   /* If SYMBOL is not NULL, then this is the block in which the symbol is
      defined.  */
   const struct block *block;
+
+  CORE_ADDR address () const;
 };
 
 #endif /* GDB_BLOCK_SYMBOL_H */
