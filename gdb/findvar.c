@@ -549,11 +549,10 @@ get_hosting_frame (struct symbol *var, const struct block *var_block,
 /* See language.h.  */
 
 struct value *
-language_defn::read_var_value (struct symbol *var,
-			       const struct block *var_block,
-			       frame_info_ptr frame) const
+language_defn::read_var_value (block_symbol bvar, frame_info_ptr frame) const
 {
   struct value *v;
+  symbol *var = bvar.symbol;
   struct type *type = var->type ();
   CORE_ADDR addr;
   enum symbol_needs_kind sym_need;
@@ -572,7 +571,7 @@ language_defn::read_var_value (struct symbol *var,
     error (_("Cannot read `%s' without registers"), var->print_name ());
 
   if (frame != NULL)
-    frame = get_hosting_frame (var, var_block, frame);
+    frame = get_hosting_frame (var, bvar.block, frame);
 
   if (SYMBOL_COMPUTED_OPS (var) != NULL)
     return SYMBOL_COMPUTED_OPS (var)->read_variable (var, frame);
@@ -598,11 +597,11 @@ language_defn::read_var_value (struct symbol *var,
 	if (overlay_debugging)
 	  {
 	    struct objfile *var_objfile = var->objfile ();
-	    addr = symbol_overlayed_address (var->value_address (),
+	    addr = symbol_overlayed_address (bvar.address (),
 					     var->obj_section (var_objfile));
 	  }
 	else
-	  addr = var->value_address ();
+	  addr = bvar.address ();
 
 	/* First convert the CORE_ADDR to a function pointer type, this
 	   ensures the gdbarch knows what type of pointer we are
@@ -635,10 +634,10 @@ language_defn::read_var_value (struct symbol *var,
     case LOC_STATIC:
       if (overlay_debugging)
 	addr
-	  = symbol_overlayed_address (var->value_address (),
+	  = symbol_overlayed_address (bvar.address (),
 				      var->obj_section (var->objfile ()));
       else
-	addr = var->value_address ();
+	addr = bvar.address ();
       break;
 
     case LOC_ARG:
@@ -790,7 +789,7 @@ read_var_value (block_symbol var, frame_info_ptr frame)
 
   gdb_assert (lang != NULL);
 
-  return lang->read_var_value (var.symbol, var.block, frame);
+  return lang->read_var_value (var, frame);
 }
 
 /* Install default attributes for register values.  */
