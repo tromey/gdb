@@ -2880,7 +2880,7 @@ find_frame_sal (const frame_info_ptr &frame)
 	 function, which can not be inferred from get_frame_pc.  */
       next_frame = get_next_frame (frame);
       if (next_frame)
-	sym = get_frame_function (next_frame);
+	sym = get_frame_function (next_frame).symbol;
       else
 	sym = inline_skipped_symbol (inferior_thread ());
 
@@ -3189,7 +3189,7 @@ frame_follow_static_link (const frame_info_ptr &initial_frame)
   frame_info_ptr frame = initial_frame;
   for (; frame != nullptr; frame = get_prev_frame (frame))
     {
-      struct symbol *framefunc = get_frame_function (frame);
+      struct symbol *framefunc = get_frame_function (frame).symbol;
 
       /* Stacks can be quite deep: give the user a chance to stop this.  */
       QUIT;

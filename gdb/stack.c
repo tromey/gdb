@@ -1273,7 +1273,7 @@ find_frame_funname (const frame_info_ptr &frame, enum language *funlang,
   if (funcp)
     *funcp = NULL;
 
-  func = get_frame_function (frame);
+  func = get_frame_function (frame).symbol;
   if (func)
     {
       const char *print_name = func->print_name ();
@@ -1502,7 +1502,7 @@ info_frame_command_core (const frame_info_ptr &fi, bool selected_frame_p)
     pc_regname = "pc";
 
   frame_pc = get_frame_pc_if_available (fi);
-  func = get_frame_function (fi);
+  func = get_frame_function (fi).symbol;
   symtab_and_line sal = find_frame_sal (fi);
   s = sal.symtab;
   gdb::unique_xmalloc_ptr<char> func_only;
@@ -2509,7 +2509,7 @@ print_frame_arg_vars (const frame_info_ptr &frame,
       return;
     }
 
-  func = get_frame_function (frame);
+  func = get_frame_function (frame).symbol;
   if (func == NULL)
     {
       if (!quiet)
@@ -2691,7 +2691,7 @@ return_command (const char *retval_exp, int from_tty)
   std::string query_prefix;
 
   thisframe = get_selected_frame ("No selected frame.");
-  thisfun = get_frame_function (thisframe);
+  thisfun = get_frame_function (thisframe).symbol;
   gdbarch = get_frame_arch (thisframe);
 
   if (get_frame_type (thisframe) == INLINE_FRAME)
