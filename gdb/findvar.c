@@ -784,19 +784,6 @@ language_defn::read_var_value (struct symbol *var,
 /* Calls VAR's language read_var_value hook with the given arguments.  */
 
 struct value *
-read_var_value (struct symbol *var, const struct block *var_block,
-		frame_info_ptr frame)
-{
-  const struct language_defn *lang = language_def (var->language ());
-
-  gdb_assert (lang != NULL);
-
-  return lang->read_var_value (var, var_block, frame);
-}
-
-/* Calls VAR's language read_var_value hook with the given arguments.  */
-
-struct value *
 read_var_value (block_symbol var, frame_info_ptr frame)
 {
   const struct language_defn *lang = language_def (var.symbol->language ());
