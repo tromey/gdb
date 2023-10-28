@@ -36,7 +36,7 @@ struct symbol_smob
   eqable_gdb_smob base;
 
   /* The GDB symbol structure this smob is wrapping.  */
-  struct symbol *symbol;
+  block_symbol symbol;
 };
 
 static const char symbol_smob_name[] = "gdb:symbol";
@@ -64,7 +64,7 @@ struct syscm_deleter
   {
     symbol_smob *s_smob = (symbol_smob *) *slot;
 
-    s_smob->symbol = NULL;
+    s_smob->symbol = {};
     return 1;
   }
 
@@ -96,7 +96,7 @@ syscm_hash_symbol_smob (const void *p)
 {
   const symbol_smob *s_smob = (const symbol_smob *) p;
 
-  return htab_hash_pointer (s_smob->symbol);
+  return htab_hash_pointer (s_smob->symbol.symbol);
 }
 
 /* Helper function to compute equality of symbol_smobs.  */
@@ -107,8 +107,8 @@ syscm_eq_symbol_smob (const void *ap, const void *bp)
   const symbol_smob *a = (const symbol_smob *) ap;
   const symbol_smob *b = (const symbol_smob *) bp;
 
-  return (a->symbol == b->symbol
-	  && a->symbol != NULL);
+  return (a->symbol.symbol == b->symbol.symbol
+	  && a->symbol.symbol != nullptr);
 }
 
 /* Return the struct symbol pointer -> SCM mapping table.
@@ -156,15 +156,15 @@ syscm_free_symbol_smob (SCM self)
 {
   symbol_smob *s_smob = (symbol_smob *) SCM_SMOB_DATA (self);
 
-  if (s_smob->symbol != NULL)
+  if (s_smob->symbol.symbol != nullptr)
     {
-      htab_t htab = syscm_get_symbol_map (s_smob->symbol);
+      htab_t htab = syscm_get_symbol_map (s_smob->symbol.symbol);
 
       gdbscm_clear_eqable_gsmob_ptr_slot (htab, &s_smob->base);
     }
 
   /* Not necessary, done to catch bugs.  */
-  s_smob->symbol = NULL;
+  s_smob->symbol = {};
 
   return 0;
 }
@@ -179,8 +179,8 @@ syscm_print_symbol_smob (SCM self, SCM port, scm_print_state *pstate)
   if (pstate->writingp)
     gdbscm_printf (port, "#<%s ", symbol_smob_name);
   gdbscm_printf (port, "%s",
-		 s_smob->symbol != NULL
-		 ? s_smob->symbol->print_name ()
+		 s_smob->symbol.symbol != nullptr
+		 ? s_smob->symbol.symbol->print_name ()
 		 : "<invalid>");
   if (pstate->writingp)
     scm_puts (">", port);
@@ -200,7 +200,7 @@ syscm_make_symbol_smob (void)
     scm_gc_malloc (sizeof (symbol_smob), symbol_smob_name);
   SCM s_scm;
 
-  s_smob->symbol = NULL;
+  s_smob->symbol.symbol = {};
   s_scm = scm_new_smob (symbol_smob_tag, (scm_t_bits) s_smob);
   gdbscm_init_eqable_gsmob (&s_smob->base, s_scm);
 
@@ -227,7 +227,7 @@ gdbscm_symbol_p (SCM scm)
    <gdb:symbol> object.  */
 
 SCM
-syscm_scm_from_symbol (struct symbol *symbol)
+syscm_scm_from_symbol (block_symbol symbol)
 {
   htab_t htab;
   eqable_gdb_smob **slot;
@@ -236,7 +236,7 @@ syscm_scm_from_symbol (struct symbol *symbol)
 
   /* If we've already created a gsmob for this symbol, return it.
      This makes symbols eq?-able.  */
-  htab = syscm_get_symbol_map (symbol);
+  htab = syscm_get_symbol_map (symbol.symbol);
   s_smob_for_lookup.symbol = symbol;
   slot = gdbscm_find_eqable_gsmob_ptr_slot (htab, &s_smob_for_lookup.base);
   if (*slot != NULL)
@@ -279,7 +279,7 @@ syscm_get_symbol_smob_arg_unsafe (SCM self, int arg_pos, const char *func_name)
 static int
 syscm_is_valid (symbol_smob *s_smob)
 {
-  return s_smob->symbol != NULL;
+  return s_smob->symbol.symbol != nullptr;
 }
 
 /* Throw a Scheme error if SELF is not a valid symbol smob.
@@ -311,7 +311,7 @@ syscm_get_valid_symbol_arg_unsafe (SCM self, int arg_pos,
   symbol_smob *s_smob = syscm_get_valid_symbol_smob_arg_unsafe (self, arg_pos,
 								func_name);
 
-  return s_smob->symbol;
+  return s_smob->symbol.symbol;
 }
 
 
@@ -337,7 +337,7 @@ gdbscm_symbol_type (SCM self)
 {
   symbol_smob *s_smob
     = syscm_get_valid_symbol_smob_arg_unsafe (self, SCM_ARG1, FUNC_NAME);
-  const struct symbol *symbol = s_smob->symbol;
+  const struct symbol *symbol = s_smob->symbol.symbol;
 
   if (symbol->type () == NULL)
     return SCM_BOOL_F;
@@ -354,7 +354,7 @@ gdbscm_symbol_symtab (SCM self)
 {
   symbol_smob *s_smob
     = syscm_get_valid_symbol_smob_arg_unsafe (self, SCM_ARG1, FUNC_NAME);
-  const struct symbol *symbol = s_smob->symbol;
+  const struct symbol *symbol = s_smob->symbol.symbol;
 
   if (!symbol->is_objfile_owned ())
     return SCM_BOOL_F;
@@ -368,7 +368,7 @@ gdbscm_symbol_name (SCM self)
 {
   symbol_smob *s_smob
     = syscm_get_valid_symbol_smob_arg_unsafe (self, SCM_ARG1, FUNC_NAME);
-  const struct symbol *symbol = s_smob->symbol;
+  const struct symbol *symbol = s_smob->symbol.symbol;
 
   return gdbscm_scm_from_c_string (symbol->natural_name ());
 }
@@ -380,7 +380,7 @@ gdbscm_symbol_linkage_name (SCM self)
 {
   symbol_smob *s_smob
     = syscm_get_valid_symbol_smob_arg_unsafe (self, SCM_ARG1, FUNC_NAME);
-  const struct symbol *symbol = s_smob->symbol;
+  const struct symbol *symbol = s_smob->symbol.symbol;
 
   return gdbscm_scm_from_c_string (symbol->linkage_name ());
 }
@@ -392,7 +392,7 @@ gdbscm_symbol_print_name (SCM self)
 {
   symbol_smob *s_smob
     = syscm_get_valid_symbol_smob_arg_unsafe (self, SCM_ARG1, FUNC_NAME);
-  const struct symbol *symbol = s_smob->symbol;
+  const struct symbol *symbol = s_smob->symbol.symbol;
 
   return gdbscm_scm_from_c_string (symbol->print_name ());
 }
@@ -404,7 +404,7 @@ gdbscm_symbol_addr_class (SCM self)
 {
   symbol_smob *s_smob
     = syscm_get_valid_symbol_smob_arg_unsafe (self, SCM_ARG1, FUNC_NAME);
-  const struct symbol *symbol = s_smob->symbol;
+  const struct symbol *symbol = s_smob->symbol.symbol;
 
   return scm_from_int (symbol->aclass ());
 }
@@ -416,7 +416,7 @@ gdbscm_symbol_argument_p (SCM self)
 {
   symbol_smob *s_smob
     = syscm_get_valid_symbol_smob_arg_unsafe (self, SCM_ARG1, FUNC_NAME);
-  const struct symbol *symbol = s_smob->symbol;
+  const struct symbol *symbol = s_smob->symbol.symbol;
 
   return scm_from_bool (symbol->is_argument ());
 }
@@ -428,7 +428,7 @@ gdbscm_symbol_constant_p (SCM self)
 {
   symbol_smob *s_smob
     = syscm_get_valid_symbol_smob_arg_unsafe (self, SCM_ARG1, FUNC_NAME);
-  const struct symbol *symbol = s_smob->symbol;
+  const struct symbol *symbol = s_smob->symbol.symbol;
   enum address_class theclass;
 
   theclass = symbol->aclass ();
@@ -443,7 +443,7 @@ gdbscm_symbol_function_p (SCM self)
 {
   symbol_smob *s_smob
     = syscm_get_valid_symbol_smob_arg_unsafe (self, SCM_ARG1, FUNC_NAME);
-  const struct symbol *symbol = s_smob->symbol;
+  const struct symbol *symbol = s_smob->symbol.symbol;
   enum address_class theclass;
 
   theclass = symbol->aclass ();
@@ -458,7 +458,7 @@ gdbscm_symbol_variable_p (SCM self)
 {
   symbol_smob *s_smob
     = syscm_get_valid_symbol_smob_arg_unsafe (self, SCM_ARG1, FUNC_NAME);
-  const struct symbol *symbol = s_smob->symbol;
+  const struct symbol *symbol = s_smob->symbol.symbol;
   enum address_class theclass;
 
   theclass = symbol->aclass ();
@@ -477,7 +477,7 @@ gdbscm_symbol_needs_frame_p (SCM self)
 {
   symbol_smob *s_smob
     = syscm_get_valid_symbol_smob_arg_unsafe (self, SCM_ARG1, FUNC_NAME);
-  struct symbol *symbol = s_smob->symbol;
+  struct symbol *symbol = s_smob->symbol.symbol;
   int result = 0;
 
   gdbscm_gdb_exception exc {};
@@ -502,7 +502,7 @@ gdbscm_symbol_line (SCM self)
 {
   symbol_smob *s_smob
     = syscm_get_valid_symbol_smob_arg_unsafe (self, SCM_ARG1, FUNC_NAME);
-  const struct symbol *symbol = s_smob->symbol;
+  const struct symbol *symbol = s_smob->symbol.symbol;
 
   return scm_from_int (symbol->line ());
 }
@@ -515,7 +515,7 @@ gdbscm_symbol_value (SCM self, SCM rest)
 {
   symbol_smob *s_smob
     = syscm_get_valid_symbol_smob_arg_unsafe (self, SCM_ARG1, FUNC_NAME);
-  struct symbol *symbol = s_smob->symbol;
+  block_symbol symbol = s_smob->symbol;
   SCM keywords[] = { frame_keyword, SCM_BOOL_F };
   int frame_pos = -1;
   SCM frame_scm = SCM_BOOL_F;
@@ -527,7 +527,7 @@ gdbscm_symbol_value (SCM self, SCM rest)
   if (!gdbscm_is_false (frame_scm))
     f_smob = frscm_get_frame_smob_arg_unsafe (frame_scm, frame_pos, FUNC_NAME);
 
-  if (symbol->aclass () == LOC_TYPEDEF)
+  if (symbol.symbol->aclass () == LOC_TYPEDEF)
     {
       gdbscm_out_of_range_error (FUNC_NAME, SCM_ARG1, self,
 				 _("cannot get the value of a typedef"));
@@ -545,14 +545,10 @@ gdbscm_symbol_value (SCM self, SCM rest)
 	    error (_("Invalid frame"));
 	}
       
-      if (symbol_read_needs_frame (symbol) && frame_info == NULL)
+      if (symbol_read_needs_frame (symbol.symbol) && frame_info == nullptr)
 	error (_("Symbol requires a frame to compute its value"));
 
-      /* TODO: currently, we have no way to recover the block in which SYMBOL
-	 was found, so we have no block to pass to read_var_value.  This will
-	 yield an incorrect value when symbol is not local to FRAME_INFO (this
-	 can happen with nested functions).  */
-      value = read_var_value (symbol, NULL, frame_info);
+      value = read_var_value (symbol, frame_info);
     }
   catch (const gdb_exception &except)
     {
@@ -578,7 +574,7 @@ gdbscm_lookup_symbol (SCM name_scm, SCM rest)
   int domain = VAR_DOMAIN;
   int block_arg_pos = -1, domain_arg_pos = -1;
   struct field_of_this_result is_a_field_of_this;
-  struct symbol *symbol = NULL;
+  block_symbol symbol = {};
 
   gdbscm_parse_function_args (FUNC_NAME, SCM_ARG1, keywords, "s#Oi",
 			      name_scm, &name, rest,
@@ -618,7 +614,7 @@ gdbscm_lookup_symbol (SCM name_scm, SCM rest)
   try
     {
       symbol = lookup_symbol (name, block, (domain_enum) domain,
-			      &is_a_field_of_this).symbol;
+			      &is_a_field_of_this);
     }
   catch (const gdb_exception &ex)
     {
@@ -628,7 +624,7 @@ gdbscm_lookup_symbol (SCM name_scm, SCM rest)
   xfree (name);
   GDBSCM_HANDLE_GDB_EXCEPTION (except);
 
-  if (symbol == NULL)
+  if (symbol.symbol == nullptr)
     return SCM_BOOL_F;
 
   return scm_list_2 (syscm_scm_from_symbol (symbol),
@@ -645,7 +641,7 @@ gdbscm_lookup_global_symbol (SCM name_scm, SCM rest)
   SCM keywords[] = { domain_keyword, SCM_BOOL_F };
   int domain_arg_pos = -1;
   int domain = VAR_DOMAIN;
-  struct symbol *symbol = NULL;
+  block_symbol symbol = {};
   gdbscm_gdb_exception except {};
 
   gdbscm_parse_function_args (FUNC_NAME, SCM_ARG1, keywords, "s#i",
@@ -654,7 +650,7 @@ gdbscm_lookup_global_symbol (SCM name_scm, SCM rest)
 
   try
     {
-      symbol = lookup_global_symbol (name, NULL, (domain_enum) domain).symbol;
+      symbol = lookup_global_symbol (name, NULL, (domain_enum) domain);
     }
   catch (const gdb_exception &ex)
     {
@@ -664,7 +660,7 @@ gdbscm_lookup_global_symbol (SCM name_scm, SCM rest)
   xfree (name);
   GDBSCM_HANDLE_GDB_EXCEPTION (except);
 
-  if (symbol == NULL)
+  if (symbol.symbol == nullptr)
     return SCM_BOOL_F;
 
   return syscm_scm_from_symbol (symbol);
