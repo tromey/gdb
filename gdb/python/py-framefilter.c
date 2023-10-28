@@ -312,7 +312,7 @@ py_print_single_arg (struct ui_out *out,
     {
       if (fa->val == NULL && fa->error == NULL)
 	return;
-      language = language_def (fa->sym->language ());
+      language = language_def (fa->sym.symbol->language ());
       val = fa->val;
     }
   else
@@ -340,12 +340,12 @@ py_print_single_arg (struct ui_out *out,
     {
       string_file stb;
 
-      gdb_puts (fa->sym->print_name (), &stb);
+      gdb_puts (fa->sym.symbol->print_name (), &stb);
       if (fa->entry_kind == print_entry_values_compact)
 	{
 	  stb.puts ("=");
 
-	  gdb_puts (fa->sym->print_name (), &stb);
+	  gdb_puts (fa->sym.symbol->print_name (), &stb);
 	}
       if (fa->entry_kind == print_entry_values_only
 	  || fa->entry_kind == print_entry_values_compact)
@@ -472,7 +472,7 @@ enumerate_args (PyObject *iter,
 	    }
 
 	  read_frame_arg (user_frame_print_options,
-			  sym, frame, &arg, &entryarg);
+			  bsym, frame, &arg, &entryarg);
 
 	  /* The object has not provided a value, so this is a frame
 	     argument to be read by GDB.  In this case we have to
