@@ -355,7 +355,7 @@ value_user_defined_cpp_op (gdb::array_view<value *> args, char *oper,
 	 expect a reference as its first argument
 	 rather the explicit structure.  */
       args[0] = value_ind (args[0]);
-      return value_of_variable (symp.symbol, symp.block);
+      return value_of_variable (symp);
     }
 
   error (_("Could not find %s."), oper);

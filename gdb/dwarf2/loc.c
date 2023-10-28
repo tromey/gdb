@@ -626,8 +626,8 @@ compute_var_value (const char *name)
 {
   struct block_symbol sym = lookup_symbol (name, nullptr, SEARCH_VAR_DOMAIN,
 					   nullptr);
-  if (sym.symbol != nullptr)
-    return value_of_variable (sym.symbol, sym.block);
+  if (sym.has_value ())
+    return value_of_variable (sym);
   return nullptr;
 }
 
