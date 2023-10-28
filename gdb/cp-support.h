@@ -107,13 +107,13 @@ extern gdb::unique_xmalloc_ptr<char> cp_remove_params
 extern gdb::unique_xmalloc_ptr<char> cp_remove_params_if_any
   (const char *demangled_name, bool completion_mode);
 
-extern std::vector<symbol *> make_symbol_overload_list (const char *,
-							const char *);
+extern std::vector<block_symbol> make_symbol_overload_list (const char *,
+							    const char *);
 
 extern void add_symbol_overload_list_adl
   (gdb::array_view<type *> arg_types,
    const char *func_name,
-   std::vector<symbol *> *overload_list);
+   std::vector<block_symbol> *overload_list);
 
 extern struct type *cp_lookup_rtti_type (const char *name,
 					 const struct block *block);
