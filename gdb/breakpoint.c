@@ -5283,7 +5283,7 @@ watchpoint_check (bpstat *bs)
 	{
 	  struct symbol *function;
 
-	  function = get_frame_function (fr);
+	  function = get_frame_function (fr).symbol;
 	  if (function == NULL
 	      || !function->value_block ()->contains (b->exp_valid_block))
 	    within_current_scope = false;
