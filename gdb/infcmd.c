@@ -1596,7 +1596,7 @@ struct finish_command_fsm : public thread_fsm
   breakpoint_up breakpoint;
 
   /* The function that we're stepping out of.  */
-  struct symbol *function = nullptr;
+  block_symbol function {};
 
   /* If the FSM finishes successfully, this stores the function's
      return value.  */
@@ -1629,14 +1629,14 @@ finish_command_fsm::should_stop (struct thread_info *tp)
 {
   struct return_value_info *rv = &return_value_info;
 
-  if (function != nullptr
+  if (function.symbol != nullptr
       && bpstat_find_breakpoint (tp->control.stop_bpstat,
 				 breakpoint.get ()) != nullptr)
     {
       /* We're done.  */
       set_finished ();
 
-      rv->type = function->type ()->target_type ();
+      rv->type = function.symbol->type ()->target_type ();
       if (rv->type == nullptr)
 	internal_error (_("finish_command: function has no target type"));
 
@@ -1644,13 +1644,13 @@ finish_command_fsm::should_stop (struct thread_info *tp)
 	{
 	  struct value *func;
 
-	  func = read_var_value (function, nullptr, get_current_frame ());
+	  func = read_var_value (function, get_current_frame ());
 
 	  if (return_buf != 0)
 	    /* Retrieve return value from the buffer where it was saved.  */
 	      rv->value = value_at (rv->type, return_buf);
 	  else
-	      rv->value = get_return_value (function, func);
+	      rv->value = get_return_value (function.symbol, func);
 
 	  if (rv->value != nullptr)
 	    rv->value_history_index = rv->value->record_latest ();
@@ -1883,22 +1883,22 @@ finish_command (const char *arg, int from_tty)
 
   /* Find the function we will return from.  */
   frame_info_ptr callee_frame = get_selected_frame (nullptr);
-  sm->function = find_pc_function (get_frame_pc (callee_frame)).symbol;
+  sm->function = find_pc_function (get_frame_pc (callee_frame));
   sm->return_buf = 0;    /* Initialize buffer address is not available.  */
 
   /* Determine the return convention.  If it is RETURN_VALUE_STRUCT_CONVENTION,
      attempt to determine the address of the return buffer.  */
-  if (sm->function != nullptr)
+  if (sm->function.symbol != nullptr)
     {
       enum return_value_convention return_value;
       struct gdbarch *gdbarch = get_frame_arch (callee_frame);
 
       struct type * val_type
-	= check_typedef (sm->function->type ()->target_type ());
+	= check_typedef (sm->function.symbol->type ()->target_type ());
 
       return_value
 	= gdbarch_return_value_as_value (gdbarch,
-					 read_var_value (sm->function, nullptr,
+					 read_var_value (sm->function,
 							 callee_frame),
 					 val_type, nullptr, nullptr, nullptr);
 
@@ -1916,10 +1916,11 @@ finish_command (const char *arg, int from_tty)
 	gdb_printf (_("Run back to call of "));
       else
 	{
-	  if (sm->function != nullptr && TYPE_NO_RETURN (sm->function->type ())
+	  if (sm->function.symbol != nullptr
+	      && TYPE_NO_RETURN (sm->function.symbol->type ())
 	      && !query (_("warning: Function %s does not return normally.\n"
 			   "Try to finish anyway? "),
-			 sm->function->print_name ()))
+			 sm->function.symbol->print_name ()))
 	    error (_("Not confirmed."));
 	  gdb_printf (_("Run till exit from "));
 	}
