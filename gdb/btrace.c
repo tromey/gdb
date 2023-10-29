@@ -78,7 +78,7 @@ ftrace_print_function_name (const struct btrace_function *bfun)
   struct symbol *sym;
 
   msym = bfun->msym;
-  sym = bfun->sym;
+  sym = bfun->sym.symbol;
 
   if (sym != NULL)
     return sym->print_name ();
@@ -98,7 +98,7 @@ ftrace_print_filename (const struct btrace_function *bfun)
   struct symbol *sym;
   const char *filename;
 
-  sym = bfun->sym;
+  sym = bfun->sym.symbol;
 
   if (sym != NULL)
     filename = symtab_to_filename_for_display (sym->symtab ());
@@ -192,7 +192,7 @@ ftrace_function_switched (const struct btrace_function *bfun,
   struct symbol *sym;
 
   msym = bfun->msym;
-  sym = bfun->sym;
+  sym = bfun->sym.symbol;
 
   /* If the minimal symbol changed, we certainly switched functions.  */
   if (mfun != NULL && msym != NULL
@@ -235,7 +235,7 @@ ftrace_function_switched (const struct btrace_function *bfun,
 static struct btrace_function *
 ftrace_new_function (struct btrace_thread_info *btinfo,
 		     struct minimal_symbol *mfun,
-		     struct symbol *fun)
+		     block_symbol fun)
 {
   int level;
   unsigned int number, insn_offset;
@@ -311,7 +311,7 @@ ftrace_fixup_caller (struct btrace_thread_info *btinfo,
 static struct btrace_function *
 ftrace_new_call (struct btrace_thread_info *btinfo,
 		 struct minimal_symbol *mfun,
-		 struct symbol *fun)
+		 block_symbol fun)
 {
   const unsigned int length = btinfo->functions.size ();
   struct btrace_function *bfun = ftrace_new_function (btinfo, mfun, fun);
@@ -331,7 +331,7 @@ ftrace_new_call (struct btrace_thread_info *btinfo,
 static struct btrace_function *
 ftrace_new_tailcall (struct btrace_thread_info *btinfo,
 		     struct minimal_symbol *mfun,
-		     struct symbol *fun)
+		     block_symbol fun)
 {
   const unsigned int length = btinfo->functions.size ();
   struct btrace_function *bfun = ftrace_new_function (btinfo, mfun, fun);
@@ -414,7 +414,7 @@ ftrace_find_call (struct btrace_thread_info *btinfo,
 static struct btrace_function *
 ftrace_new_return (struct btrace_thread_info *btinfo,
 		   struct minimal_symbol *mfun,
-		   struct symbol *fun)
+		   block_symbol fun)
 {
   struct btrace_function *prev, *bfun, *caller;
 
@@ -424,7 +424,7 @@ ftrace_new_return (struct btrace_thread_info *btinfo,
   /* It is important to start at PREV's caller.  Otherwise, we might find
      PREV itself, if PREV is a recursive function.  */
   caller = ftrace_find_call_by_number (btinfo, prev->up);
-  caller = ftrace_find_caller (btinfo, caller, mfun, fun);
+  caller = ftrace_find_caller (btinfo, caller, mfun, fun.symbol);
   if (caller != NULL)
     {
       /* The caller of PREV is the preceding btrace function segment in this
@@ -496,7 +496,7 @@ ftrace_new_return (struct btrace_thread_info *btinfo,
 static struct btrace_function *
 ftrace_new_switch (struct btrace_thread_info *btinfo,
 		   struct minimal_symbol *mfun,
-		   struct symbol *fun)
+		   block_symbol fun)
 {
   struct btrace_function *prev, *bfun;
 
@@ -524,13 +524,13 @@ ftrace_new_gap (struct btrace_thread_info *btinfo, int errcode,
   struct btrace_function *bfun;
 
   if (btinfo->functions.empty ())
-    bfun = ftrace_new_function (btinfo, NULL, NULL);
+    bfun = ftrace_new_function (btinfo, NULL, {});
   else
     {
       /* We hijack the previous function segment if it was empty.  */
       bfun = &btinfo->functions.back ();
       if (bfun->errcode != 0 || !bfun->insn.empty ())
-	bfun = ftrace_new_function (btinfo, NULL, NULL);
+	bfun = ftrace_new_function (btinfo, NULL, {});
     }
 
   bfun->errcode = errcode;
@@ -550,17 +550,16 @@ ftrace_update_function (struct btrace_thread_info *btinfo, CORE_ADDR pc)
 {
   struct bound_minimal_symbol bmfun;
   struct minimal_symbol *mfun;
-  struct symbol *fun;
   struct btrace_function *bfun;
 
   /* Try to determine the function we're in.  We use both types of symbols
      to avoid surprises when we sometimes get a full symbol and sometimes
      only a minimal symbol.  */
-  fun = find_pc_function (pc).symbol;
+  block_symbol fun = find_pc_function (pc);
   bmfun = lookup_minimal_symbol_by_pc (pc);
   mfun = bmfun.minsym;
 
-  if (fun == NULL && mfun == NULL)
+  if (fun.symbol == NULL && mfun == NULL)
     DEBUG_FTRACE ("no symbol at %s", core_addr_to_string_nz (pc));
 
   /* If we didn't have a function, we create one.  */
@@ -629,7 +628,7 @@ ftrace_update_function (struct btrace_thread_info *btinfo, CORE_ADDR pc)
 	      {
 		struct btrace_function *caller
 		  = ftrace_find_call_by_number (btinfo, bfun->up);
-		caller = ftrace_find_caller (btinfo, caller, mfun, fun);
+		caller = ftrace_find_caller (btinfo, caller, mfun, fun.symbol);
 		if (caller != NULL)
 		  return ftrace_new_return (btinfo, mfun, fun);
 	      }
@@ -637,7 +636,8 @@ ftrace_update_function (struct btrace_thread_info *btinfo, CORE_ADDR pc)
 	    /* If we can't determine the function for PC, we treat a jump at
 	       the end of the block as tail call if we're switching functions
 	       and as an intra-function branch if we don't.  */
-	    if (start == 0 && ftrace_function_switched (bfun, mfun, fun))
+	    if (start == 0 && ftrace_function_switched (bfun, mfun,
+							fun.symbol))
 	      return ftrace_new_tailcall (btinfo, mfun, fun);
 
 	    break;
@@ -646,7 +646,7 @@ ftrace_update_function (struct btrace_thread_info *btinfo, CORE_ADDR pc)
     }
 
   /* Check if we're switching functions for some other reason.  */
-  if (ftrace_function_switched (bfun, mfun, fun))
+  if (ftrace_function_switched (bfun, mfun, fun.symbol))
     {
       DEBUG_FTRACE ("switching from %s in %s at %s",
 		    ftrace_print_insn_addr (last),
@@ -707,7 +707,7 @@ ftrace_match_backtrace (struct btrace_thread_info *btinfo,
 
   for (matches = 0; lhs != NULL && rhs != NULL; ++matches)
     {
-      if (ftrace_function_switched (lhs, rhs->msym, rhs->sym))
+      if (ftrace_function_switched (lhs, rhs->msym, rhs->sym.symbol))
 	return 0;
 
       lhs = ftrace_get_caller (btinfo, lhs);
@@ -890,7 +890,7 @@ ftrace_connect_backtrace (struct btrace_thread_info *btinfo,
     {
       struct btrace_function *prev, *next;
 
-      gdb_assert (!ftrace_function_switched (lhs, rhs->msym, rhs->sym));
+      gdb_assert (!ftrace_function_switched (lhs, rhs->msym, rhs->sym.symbol));
 
       /* Connecting LHS and RHS may change the up link.  */
       prev = lhs;
