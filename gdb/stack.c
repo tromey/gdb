@@ -1265,21 +1265,21 @@ get_last_displayed_sal ()
 
 gdb::unique_xmalloc_ptr<char>
 find_frame_funname (const frame_info_ptr &frame, enum language *funlang,
-		    struct symbol **funcp)
+		    block_symbol *funcp)
 {
-  struct symbol *func;
+  block_symbol func;
   gdb::unique_xmalloc_ptr<char> funname;
 
   *funlang = language_unknown;
   if (funcp)
-    *funcp = NULL;
+    *funcp = {};
 
-  func = get_frame_function (frame).symbol;
-  if (func)
+  func = get_frame_function (frame);
+  if (func.has_value ())
     {
-      const char *print_name = func->print_name ();
+      const char *print_name = func.symbol->print_name ();
 
-      *funlang = func->language ();
+      *funlang = func.symbol->language ();
       if (funcp)
 	*funcp = func;
       if (*funlang == language_cplus)
@@ -1325,13 +1325,14 @@ print_frame (struct ui_out *uiout,
   struct gdbarch *gdbarch = get_frame_arch (frame);
   enum language funlang = language_unknown;
   struct value_print_options opts;
-  struct symbol *func;
   std::optional <CORE_ADDR> pc;
 
   pc = get_frame_pc_if_available (frame);
 
+  block_symbol bfunc;
   gdb::unique_xmalloc_ptr<char> funname
-    = find_frame_funname (frame, &funlang, &func);
+    = find_frame_funname (frame, &funlang, &bfunc);
+  struct symbol *func = bfunc.symbol;
 
   annotate_frame_begin (print_level ? frame_relative_level (frame) : 0,
 			gdbarch, pc.value_or (0));
