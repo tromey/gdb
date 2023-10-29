@@ -316,6 +316,7 @@ frapy_block (PyObject *self, PyObject *args)
 static PyObject *
 frapy_function (PyObject *self, PyObject *args)
 {
+  block_symbol bsym = {};
   struct symbol *sym = NULL;
   frame_info_ptr frame;
 
@@ -326,7 +327,8 @@ frapy_function (PyObject *self, PyObject *args)
       FRAPY_REQUIRE_VALID (self, frame);
 
       gdb::unique_xmalloc_ptr<char> funname
-	= find_frame_funname (frame, &funlang, &sym);
+	= find_frame_funname (frame, &funlang, &bsym);
+      sym = bsym.symbol;
     }
   catch (const gdb_exception &except)
     {
