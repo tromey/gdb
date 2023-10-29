@@ -341,7 +341,7 @@ recpy_bt_func_symbol (PyObject *self, void *closure)
   if (func == NULL)
     return NULL;
 
-  if (func->sym == NULL)
+  if (func->sym.symbol == nullptr)
     Py_RETURN_NONE;
 
   return symbol_to_symbol_object (func->sym);

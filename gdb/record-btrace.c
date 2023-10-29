@@ -1069,7 +1069,7 @@ btrace_compute_src_line_range (const struct btrace_function *bfun,
   begin = INT_MAX;
   end = INT_MIN;
 
-  sym = bfun->sym;
+  sym = bfun->sym.symbol;
   if (sym == NULL)
     goto out;
 
@@ -1101,7 +1101,7 @@ btrace_call_history_src_line (struct ui_out *uiout,
   struct symbol *sym;
   int begin, end;
 
-  sym = bfun->sym;
+  sym = bfun->sym.symbol;
   if (sym == NULL)
     return;
 
@@ -1135,7 +1135,7 @@ btrace_get_bfun_name (const struct btrace_function *bfun)
     return "??";
 
   msym = bfun->msym;
-  sym = bfun->sym;
+  sym = bfun->sym.symbol;
 
   if (sym != NULL)
     return sym->print_name ();
@@ -1167,7 +1167,7 @@ btrace_call_history (struct ui_out *uiout,
       struct symbol *sym;
 
       bfun = btrace_call_get (&it);
-      sym = bfun->sym;
+      sym = bfun->sym.symbol;
       msym = bfun->msym;
 
       /* Print the function index.  */
