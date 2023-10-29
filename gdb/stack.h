@@ -24,7 +24,7 @@ enum class var_shadowing;
 
 gdb::unique_xmalloc_ptr<char> find_frame_funname (const frame_info_ptr &frame,
 						  enum language *funlang,
-						  struct symbol **funcp);
+						  block_symbol *funcp);
 
 using iterate_over_block_arg_local_vars_cb
   = gdb::function_view<void (const char *print_name, struct symbol *sym)>;
