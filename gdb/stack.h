@@ -22,7 +22,7 @@
 
 gdb::unique_xmalloc_ptr<char> find_frame_funname (frame_info_ptr frame,
 						  enum language *funlang,
-						  struct symbol **funcp);
+						  block_symbol *funcp);
 
 typedef gdb::function_view<void (const char *print_name, struct symbol *sym)>
      iterate_over_block_arg_local_vars_cb;
