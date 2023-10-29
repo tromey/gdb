@@ -29,6 +29,7 @@
 #include "gdbsupport/btrace-common.h"
 #include "target/waitstatus.h"
 #include "gdbsupport/enum-flags.h"
+#include "block-symbol.h"
 
 #if defined (HAVE_LIBIPT)
 #  include <intel-pt.h>
@@ -131,7 +132,7 @@ enum btrace_pt_error
    We do not allow function segments without instructions otherwise.  */
 struct btrace_function
 {
-  btrace_function (struct minimal_symbol *msym_, struct symbol *sym_,
+  btrace_function (struct minimal_symbol *msym_, block_symbol sym_,
 		   unsigned int number_, unsigned int insn_offset_, int level_)
     : msym (msym_), sym (sym_), insn_offset (insn_offset_), number (number_),
       level (level_)
@@ -140,7 +141,7 @@ struct btrace_function
 
   /* The full and minimal symbol for the function.  Both may be NULL.  */
   struct minimal_symbol *msym;
-  struct symbol *sym;
+  block_symbol sym;
 
   /* The function segment numbers of the previous and next segment belonging to
      the same function.  If a function calls another function, the former will
