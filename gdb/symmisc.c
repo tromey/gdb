@@ -498,7 +498,7 @@ print_symbol (struct gdbarch *gdbarch, bound_symbol bsymbol,
   symbol *symbol = bsymbol.symbol;
 
   if (symbol->is_objfile_owned ())
-    section = symbol->obj_section (symbol->objfile ());
+    section = symbol->obj_section (bsymbol.objfile ());
   else
     section = NULL;
 

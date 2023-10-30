@@ -1639,7 +1639,7 @@ info_address_command (const char *exp, int from_tty)
   gdb_printf ("\" is ");
   val = sym->value_longest ();
   if (sym->is_objfile_owned ())
-    section = sym->obj_section (sym->objfile ());
+    section = sym->obj_section (bsym.objfile ());
   else
     section = NULL;
   gdbarch = sym->arch ();

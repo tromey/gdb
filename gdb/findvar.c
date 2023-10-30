@@ -556,7 +556,7 @@ language_defn::read_var_value (block_symbol bvar, frame_info_ptr frame) const
 	/* Put the constant back in target format.  */
 	if (overlay_debugging)
 	  {
-	    struct objfile *var_objfile = var->objfile ();
+	    struct objfile *var_objfile = bvar.objfile ();
 	    addr = symbol_overlayed_address (bvar.address (),
 					     var->obj_section (var_objfile));
 	  }
@@ -598,7 +598,7 @@ language_defn::read_var_value (block_symbol bvar, frame_info_ptr frame) const
       if (overlay_debugging)
 	addr
 	  = symbol_overlayed_address (bvar.address (),
-				      var->obj_section (var->objfile ()));
+				      var->obj_section (bvar.objfile ()));
       else
 	addr = bvar.address ();
       break;
@@ -640,7 +640,7 @@ language_defn::read_var_value (block_symbol bvar, frame_info_ptr frame) const
       if (overlay_debugging)
 	addr = symbol_overlayed_address
 	  (var->value_block ()->entry_pc (),
-	   var->obj_section (var->objfile ()));
+	   var->obj_section (bvar.objfile ()));
       else
 	addr = var->value_block ()->entry_pc ();
       break;
@@ -694,7 +694,7 @@ language_defn::read_var_value (block_symbol bvar, frame_info_ptr frame) const
 		/* Stop if a match is found.  */
 		return bmsym.minsym != nullptr;
 	     },
-	   var->objfile ());
+	   bvar.objfile ());
 
 	/* If we can't find the minsym there's a problem in the symbol info.
 	   The symbol exists in the debug info, but it's missing in the minsym
@@ -702,7 +702,7 @@ language_defn::read_var_value (block_symbol bvar, frame_info_ptr frame) const
 	if (bmsym.minsym == nullptr)
 	  {
 	    const char *flavour_name
-	      = objfile_flavour_name (var->objfile ());
+	      = objfile_flavour_name (bvar.objfile ());
 
 	    /* We can't get here unless we've opened the file, so flavour_name
 	       can't be NULL.  */

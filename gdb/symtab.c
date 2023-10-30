@@ -3769,7 +3769,6 @@ skip_prologue_using_linetable (CORE_ADDR func_addr)
 void
 skip_prologue_sal (struct symtab_and_line *sal)
 {
-  struct symbol *sym;
   struct symtab_and_line start_sal;
   CORE_ADDR pc, saved_pc;
   struct obj_section *section;
@@ -3796,10 +3795,11 @@ skip_prologue_sal (struct symtab_and_line *sal)
 
   switch_to_program_space_and_thread (sal->pspace);
 
-  sym = find_pc_sect_function (sal->pc, sal->section).symbol;
-  if (sym != NULL)
+  block_symbol bsym = find_pc_sect_function (sal->pc, sal->section);
+  symbol *sym = bsym.symbol;
+  if (sym != nullptr)
     {
-      objfile = sym->objfile ();
+      objfile = bsym.objfile ();
       pc = sym->value_block ()->entry_pc ();
       section = sym->obj_section (objfile);
       name = sym->linkage_name ();

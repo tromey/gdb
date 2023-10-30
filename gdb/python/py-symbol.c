@@ -323,7 +323,7 @@ set_symbol (symbol_object *obj, block_symbol symbol)
   if (symbol.symbol->is_objfile_owned ()
       && symbol.symbol->symtab () != NULL)
     {
-      struct objfile *objfile = symbol.symbol->objfile ();
+      struct objfile *objfile = symbol.objfile ();
 
       obj->next = sympy_objfile_data_key.get (objfile);
       if (obj->next)
@@ -367,7 +367,7 @@ sympy_dealloc (PyObject *obj)
   else if (sym_obj->symbol.symbol != NULL
 	   && sym_obj->symbol.symbol->is_objfile_owned ()
 	   && sym_obj->symbol.symbol->symtab () != NULL)
-    sympy_objfile_data_key.set (sym_obj->symbol.symbol->objfile (),
+    sympy_objfile_data_key.set (sym_obj->symbol.objfile (),
 				sym_obj->next);
   if (sym_obj->next)
     sym_obj->next->prev = sym_obj->prev;
