@@ -1555,6 +1555,12 @@ block_symbol::address () const
   return symbol->value_address ();
 }
 
+inline struct objfile *
+block_symbol::objfile () const
+{
+  return symbol->objfile ();
+}
+
 /* Note: There is no accessor macro for symbol.owner because it is
    "private".  */
 

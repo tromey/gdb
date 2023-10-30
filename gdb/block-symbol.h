@@ -21,6 +21,7 @@
 #define GDB_BLOCK_SYMBOL_H
 
 struct block;
+struct objfile;
 struct symbol;
 
 /* Several lookup functions return both a symbol and the block in which the
@@ -37,6 +38,8 @@ struct block_symbol
 
   /* Return the address of the symbol.  */
   CORE_ADDR address () const;
+
+  struct objfile *objfile () const;
 };
 
 #endif /* GDB_BLOCK_SYMBOL_H */
