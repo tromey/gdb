@@ -409,7 +409,6 @@ xstormy16_skip_prologue (struct gdbarch *gdbarch, CORE_ADDR pc)
 
   if (find_pc_partial_function (pc, &func_name, &func_addr, &func_end))
     {
-      struct symtab_and_line sal;
       struct symbol *sym;
       struct xstormy16_frame_cache cache;
       CORE_ADDR plg_end;
@@ -427,7 +426,7 @@ xstormy16_skip_prologue (struct gdbarch *gdbarch, CORE_ADDR pc)
       /* Don't use line number debug info for assembly source files.  */
       if (sym && sym->language () != language_asm)
 	{
-	  sal = find_pc_line (func_addr, 0);
+	  symtab_and_line sal = find_pc_line (func_addr, 0);
 	  if (sal.end && sal.end < func_end)
 	    {
 	      /* Found a line number, use it as end of prologue.  */

@@ -773,10 +773,9 @@ do_mixed_source_and_assembly (struct gdbarch *gdbarch,
   /* Add lines for every pc value.  */
   while (pc < high)
     {
-      struct symtab_and_line sal;
       int length;
 
-      sal = find_pc_line (pc, 0);
+      symtab_and_line sal = find_pc_line (pc, 0);
       length = gdb_insn_length (gdbarch, pc);
       pc += length;
 
@@ -819,13 +818,12 @@ do_mixed_source_and_assembly (struct gdbarch *gdbarch,
 
   while (pc < high)
     {
-      struct symtab_and_line sal;
       CORE_ADDR end_pc;
       int start_preceding_line_to_display = 0;
       int end_preceding_line_to_display = 0;
       int new_source_line = 0;
 
-      sal = find_pc_line (pc, 0);
+      symtab_and_line sal = find_pc_line (pc, 0);
 
       if (sal.symtab != last_symtab)
 	{

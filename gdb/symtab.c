@@ -3331,11 +3331,9 @@ find_pc_line (CORE_ADDR pc, int notcurrent)
 struct symtab *
 find_pc_line_symtab (CORE_ADDR pc)
 {
-  struct symtab_and_line sal;
-
   /* This always passes zero for NOTCURRENT to find_pc_line.
      There are currently no callers that ever pass non-zero.  */
-  sal = find_pc_line (pc, 0);
+  symtab_and_line sal = find_pc_line (pc, 0);
   return sal.symtab;
 }
 
@@ -3515,7 +3513,6 @@ find_line_pc_range (struct symtab_and_line sal, CORE_ADDR *startptr,
 		    CORE_ADDR *endptr)
 {
   CORE_ADDR startaddr;
-  struct symtab_and_line found_sal;
 
   startaddr = sal.pc;
   if (startaddr == 0 && !find_line_pc (sal.symtab, sal.line, &startaddr))
@@ -3528,7 +3525,7 @@ find_line_pc_range (struct symtab_and_line sal, CORE_ADDR *startptr,
      This also insures that we never give a range like "starts at 0x134
      and ends at 0x12c".  */
 
-  found_sal = find_pc_sect_line (startaddr, sal.section, 0);
+  symtab_and_line found_sal = find_pc_sect_line (startaddr, sal.section, 0);
   if (found_sal.line != sal.line)
     {
       /* The specified line (sal) has zero bytes.  */
@@ -3601,9 +3598,7 @@ find_line_common (const linetable *l, int lineno,
 bool
 find_pc_line_pc_range (CORE_ADDR pc, CORE_ADDR *startptr, CORE_ADDR *endptr)
 {
-  struct symtab_and_line sal;
-
-  sal = find_pc_line (pc, 0);
+  symtab_and_line sal = find_pc_line (pc, 0);
   *startptr = sal.pc;
   *endptr = sal.end;
   return sal.symtab != 0;
@@ -3977,7 +3972,6 @@ skip_prologue_sal (struct symtab_and_line *sal)
 CORE_ADDR
 skip_prologue_using_sal (struct gdbarch *gdbarch, CORE_ADDR func_addr)
 {
-  struct symtab_and_line prologue_sal;
   CORE_ADDR start_pc;
   CORE_ADDR end_pc;
   const struct block *bl;
@@ -3986,7 +3980,7 @@ skip_prologue_using_sal (struct gdbarch *gdbarch, CORE_ADDR func_addr)
   find_pc_partial_function (func_addr, NULL, &start_pc, &end_pc);
   start_pc += gdbarch_deprecated_function_start_offset (gdbarch);
 
-  prologue_sal = find_pc_line (start_pc, 0);
+  symtab_and_line prologue_sal = find_pc_line (start_pc, 0);
   if (prologue_sal.line != 0)
     {
       /* For languages other than assembly, treat two consecutive line
@@ -4023,9 +4017,7 @@ skip_prologue_using_sal (struct gdbarch *gdbarch, CORE_ADDR func_addr)
 
       while (prologue_sal.end < end_pc)
 	{
-	  struct symtab_and_line sal;
-
-	  sal = find_pc_line (prologue_sal.end, 0);
+	  symtab_and_line sal = find_pc_line (prologue_sal.end, 0);
 	  if (sal.line == 0)
 	    break;
 	  /* Assume that a consecutive SAL for the same (or larger)

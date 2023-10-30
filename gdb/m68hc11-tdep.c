@@ -753,7 +753,6 @@ static CORE_ADDR
 m68hc11_skip_prologue (struct gdbarch *gdbarch, CORE_ADDR pc)
 {
   CORE_ADDR func_addr, func_end;
-  struct symtab_and_line sal;
   struct m68hc11_unwind_cache tmp_cache = { 0 };
 
   /* If we have line debugging information, then the end of the
@@ -761,7 +760,7 @@ m68hc11_skip_prologue (struct gdbarch *gdbarch, CORE_ADDR pc)
      first source line.  */
   if (find_pc_partial_function (pc, NULL, &func_addr, &func_end))
     {
-      sal = find_pc_line (func_addr, 0);
+      symtab_and_line sal = find_pc_line (func_addr, 0);
       if (sal.end && sal.end < func_end)
 	return sal.end;
     }

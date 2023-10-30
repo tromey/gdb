@@ -1077,9 +1077,7 @@ btrace_compute_src_line_range (const struct btrace_function *bfun,
 
   for (const btrace_insn &insn : bfun->insn)
     {
-      struct symtab_and_line sal;
-
-      sal = find_pc_line (insn.pc, 0);
+      symtab_and_line sal = find_pc_line (insn.pc, 0);
       if (sal.symtab != symtab || sal.line == 0)
 	continue;
 

@@ -2465,21 +2465,20 @@ amd64_analyze_prologue (struct gdbarch *gdbarch,
 static CORE_ADDR
 amd64_skip_xmm_prologue (CORE_ADDR pc, CORE_ADDR start_pc)
 {
-  struct symtab_and_line start_pc_sal, next_sal;
   gdb_byte buf[4 + 8 * 7];
   int offset, xmmreg;
 
   if (pc == start_pc)
     return pc;
 
-  start_pc_sal = find_pc_sect_line (start_pc, NULL, 0);
+  symtab_and_line start_pc_sal = find_pc_sect_line (start_pc, NULL, 0);
   if (start_pc_sal.symtab == NULL
       || producer_is_gcc_ge_4 (start_pc_sal.symtab->compunit ()
 			       ->producer ()) < 6
       || start_pc_sal.pc != start_pc || pc >= start_pc_sal.end)
     return pc;
 
-  next_sal = find_pc_sect_line (start_pc_sal.end, NULL, 0);
+  symtab_and_line next_sal = find_pc_sect_line (start_pc_sal.end, NULL, 0);
   if (next_sal.line != start_pc_sal.line)
     return pc;
 

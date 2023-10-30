@@ -287,7 +287,6 @@ ft32_skip_prologue (struct gdbarch *gdbarch, CORE_ADDR pc)
 	{
 	  /* Can't determine prologue from the symbol table, need to examine
 	     instructions.  */
-	  struct symtab_and_line sal;
 	  struct symbol *sym;
 	  struct ft32_frame_cache cache;
 	  CORE_ADDR plg_end;
@@ -301,7 +300,7 @@ ft32_skip_prologue (struct gdbarch *gdbarch, CORE_ADDR pc)
 	  /* Don't use line number debug info for assembly source files.  */
 	  if ((sym != NULL) && sym->language () != language_asm)
 	    {
-	      sal = find_pc_line (func_addr, 0);
+	      symtab_and_line sal = find_pc_line (func_addr, 0);
 	      if (sal.end && sal.end < func_end)
 		{
 		  /* Found a line number, use it as end of prologue.  */

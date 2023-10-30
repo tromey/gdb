@@ -339,11 +339,10 @@ iq2000_skip_prologue (struct gdbarch *gdbarch, CORE_ADDR pc)
 
   if (find_pc_partial_function (pc, NULL, & func_addr, & func_end))
     {
-      struct symtab_and_line sal;
       struct iq2000_frame_cache cache;
 
       /* Found a function.  */
-      sal = find_pc_line (func_addr, 0);
+      symtab_and_line sal = find_pc_line (func_addr, 0);
       if (sal.end && sal.end < func_end)
 	/* Found a line number, use it as end of prologue.  */
 	return sal.end;

@@ -1336,14 +1336,13 @@ cris_skip_prologue (struct gdbarch *gdbarch, CORE_ADDR pc)
 {
   cris_gdbarch_tdep *tdep = gdbarch_tdep<cris_gdbarch_tdep> (gdbarch);
   CORE_ADDR func_addr, func_end;
-  struct symtab_and_line sal;
   CORE_ADDR pc_after_prologue;
   
   /* If we have line debugging information, then the end of the prologue
      should the first assembly instruction of the first source line.  */
   if (find_pc_partial_function (pc, NULL, &func_addr, &func_end))
     {
-      sal = find_pc_line (func_addr, 0);
+      symtab_and_line sal = find_pc_line (func_addr, 0);
       if (sal.end > 0 && sal.end < func_end)
 	return sal.end;
     }

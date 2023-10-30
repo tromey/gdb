@@ -2361,8 +2361,6 @@ call0_analyze_prologue (struct gdbarch *gdbarch,
   CORE_ADDR body_pc;	    /* The PC for the first non-prologue insn.  */
   CORE_ADDR end_pc;	    /* The PC for the lust function insn.  */
 
-  struct symtab_and_line prologue_sal;
-
   DEBUGTRACE ("call0_analyze_prologue (start = 0x%08x, pc = 0x%08x, ...)\n", 
 	      (int)start, (int)pc);
 
@@ -2379,7 +2377,7 @@ call0_analyze_prologue (struct gdbarch *gdbarch,
   end_pc = 0;
 
   /* Find out, if we have an information about the prologue from DWARF.  */
-  prologue_sal = find_pc_line (start, 0);
+  symtab_and_line prologue_sal = find_pc_line (start, 0);
   if (prologue_sal.line != 0) /* Found debug info.  */
     body_pc = prologue_sal.end;
 
@@ -2990,7 +2988,6 @@ Unable to decode Xtensa Window Interrupt Handler's code."));
 static CORE_ADDR
 xtensa_skip_prologue (struct gdbarch *gdbarch, CORE_ADDR start_pc)
 {
-  struct symtab_and_line prologue_sal;
   CORE_ADDR body_pc;
 
   DEBUGTRACE ("xtensa_skip_prologue (start_pc = 0x%08x)\n", (int) start_pc);
@@ -3001,7 +2998,7 @@ xtensa_skip_prologue (struct gdbarch *gdbarch, CORE_ADDR start_pc)
 
  /* Try to find first body line from debug info.  */
 
-  prologue_sal = find_pc_line (start_pc, 0);
+  symtab_and_line prologue_sal = find_pc_line (start_pc, 0);
   if (prologue_sal.line != 0) /* Found debug info.  */
     {
       /* In Call0,  it is possible to have a function with only one instruction

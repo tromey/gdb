@@ -1021,8 +1021,6 @@ arm_linux_copy_svc (struct gdbarch *gdbarch, struct regcache *regs,
 						 &return_to, &is_thumb);
   if (is_sigreturn)
     {
-      struct symtab_and_line sal;
-
       displaced_debug_printf ("found sigreturn/rt_sigreturn SVC call.  "
 			      "PC in frame = %lx",
 			      (unsigned long) get_frame_pc (frame));
@@ -1033,7 +1031,7 @@ arm_linux_copy_svc (struct gdbarch *gdbarch, struct regcache *regs,
       gdb_assert (inferior_thread ()->control.step_resume_breakpoint
 		  == NULL);
 
-      sal = find_pc_line (return_to, 0);
+      symtab_and_line sal = find_pc_line (return_to, 0);
       sal.pc = return_to;
       sal.section = find_pc_overlay (return_to);
       sal.explicit_pc = 1;

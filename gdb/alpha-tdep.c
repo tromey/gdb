@@ -649,13 +649,12 @@ typedef BP_MANIPULATION (alpha_break_insn) alpha_breakpoint;
 CORE_ADDR
 alpha_after_prologue (CORE_ADDR pc)
 {
-  struct symtab_and_line sal;
   CORE_ADDR func_addr, func_end;
 
   if (!find_pc_partial_function (pc, NULL, &func_addr, &func_end))
     return 0;
 
-  sal = find_pc_line (func_addr, 0);
+  symtab_and_line sal = find_pc_line (func_addr, 0);
   if (sal.end < func_end)
     return sal.end;
 

@@ -389,7 +389,6 @@ microblaze_unwind_pc (struct gdbarch *gdbarch, frame_info_ptr next_frame)
 static CORE_ADDR
 microblaze_skip_prologue (struct gdbarch *gdbarch, CORE_ADDR start_pc)
 {
-  struct symtab_and_line sal;
   CORE_ADDR func_start, func_end, ostart_pc;
   struct microblaze_frame_cache cache;
 
@@ -399,7 +398,7 @@ microblaze_skip_prologue (struct gdbarch *gdbarch, CORE_ADDR start_pc)
      Always analyze the prologue.  */
   if (find_pc_partial_function (start_pc, NULL, &func_start, &func_end))
     {
-      sal = find_pc_line (func_start, 0);
+      symtab_and_line sal = find_pc_line (func_start, 0);
 
       if (sal.end < func_end
 	  && start_pc <= sal.end)

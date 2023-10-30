@@ -569,12 +569,11 @@ pspy_find_pc_line (PyObject *o, PyObject *args)
 
   try
     {
-      struct symtab_and_line sal;
       scoped_restore_current_program_space saver;
 
       set_current_program_space (self->pspace);
 
-      sal = find_pc_line (pc, 0);
+      symtab_and_line sal = find_pc_line (pc, 0);
       result = symtab_and_line_to_sal_object (sal);
     }
   catch (const gdb_exception &except)

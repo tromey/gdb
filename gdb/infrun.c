@@ -5029,7 +5029,6 @@ inline_frame_is_marked_for_skip (bool prev_frame, struct thread_info *tp)
   for (; frame != nullptr; frame = get_prev_frame (frame))
     {
       const char *fn = nullptr;
-      symtab_and_line sal;
       struct symbol *sym;
 
       if (get_frame_id (frame) == tp->control.step_frame_id)
@@ -5037,7 +5036,7 @@ inline_frame_is_marked_for_skip (bool prev_frame, struct thread_info *tp)
       if (get_frame_type (frame) != INLINE_FRAME)
 	break;
 
-      sal = find_frame_sal (frame);
+      symtab_and_line sal = find_frame_sal (frame);
       sym = get_frame_function (frame).symbol;
 
       if (sym != nullptr)
@@ -7289,7 +7288,6 @@ handle_signal_stop (struct execution_control_state *ecs)
 static void
 process_event_stop_test (struct execution_control_state *ecs)
 {
-  struct symtab_and_line stop_pc_sal;
   frame_info_ptr frame;
   struct gdbarch *gdbarch;
   CORE_ADDR jmp_buf_pc;
@@ -7853,9 +7851,7 @@ process_event_stop_test (struct execution_control_state *ecs)
 	 files), just want to know whether *any* of them have line
 	 numbers.  find_pc_line handles this.  */
       {
-	struct symtab_and_line tmp_sal;
-
-	tmp_sal = find_pc_line (ecs->stop_func_start, 0);
+	symtab_and_line tmp_sal = find_pc_line (ecs->stop_func_start, 0);
 	if (tmp_sal.line != 0
 	    && !function_name_is_marked_for_skip (ecs->stop_func_name,
 						  tmp_sal)
@@ -7944,7 +7940,8 @@ process_event_stop_test (struct execution_control_state *ecs)
      stack of inlined frames, even if GDB actually believes that it is in a
      more outer frame.  This is checked for below by calls to
      inline_skipped_frames.  */
-  stop_pc_sal = find_pc_line (ecs->event_thread->stop_pc (), 0);
+  symtab_and_line stop_pc_sal
+    = find_pc_line (ecs->event_thread->stop_pc (), 0);
 
   /* NOTE: tausq/2004-05-24: This if block used to be done before all
      the trampoline processing logic, however, there are some trampolines 
@@ -8569,7 +8566,6 @@ handle_step_into_function_backward (struct gdbarch *gdbarch,
 				    struct execution_control_state *ecs)
 {
   struct compunit_symtab *cust;
-  struct symtab_and_line stop_func_sal;
 
   fill_in_stop_func (gdbarch, ecs);
 
@@ -8578,7 +8574,8 @@ handle_step_into_function_backward (struct gdbarch *gdbarch,
     ecs->stop_func_start
       = gdbarch_skip_prologue_noexcept (gdbarch, ecs->stop_func_start);
 
-  stop_func_sal = find_pc_line (ecs->event_thread->stop_pc (), 0);
+  symtab_and_line stop_func_sal
+    = find_pc_line (ecs->event_thread->stop_pc (), 0);
 
   /* OK, we're just going to keep stepping here.  */
   if (stop_func_sal.pc == ecs->event_thread->stop_pc ())

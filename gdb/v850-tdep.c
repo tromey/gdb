@@ -950,9 +950,7 @@ v850_skip_prologue (struct gdbarch *gdbarch, CORE_ADDR pc)
 
   if (find_pc_partial_function (pc, NULL, &func_addr, &func_end))
     {
-      struct symtab_and_line sal;
-
-      sal = find_pc_line (func_addr, 0);
+      symtab_and_line sal = find_pc_line (func_addr, 0);
       if (sal.line != 0 && sal.end < func_end)
 	return sal.end;
 

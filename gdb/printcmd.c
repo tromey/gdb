@@ -718,9 +718,7 @@ build_address_symbolic (struct gdbarch *gdbarch,
 
   if (print_symbol_filename)
     {
-      struct symtab_and_line sal;
-
-      sal = find_pc_sect_line (addr, section, 0);
+      symtab_and_line sal = find_pc_sect_line (addr, section, 0);
 
       if (sal.symtab)
 	{
@@ -801,7 +799,6 @@ find_instruction_backward (struct gdbarch *gdbarch, CORE_ADDR addr,
      a pc range.  */
   CORE_ADDR loop_start, loop_end, p;
   std::vector<CORE_ADDR> pcs;
-  struct symtab_and_line sal;
 
   *inst_read = 0;
   loop_start = loop_end = addr;
@@ -816,7 +813,7 @@ find_instruction_backward (struct gdbarch *gdbarch, CORE_ADDR addr,
   do
     {
       pcs.clear ();
-      sal = find_pc_sect_line (loop_start, NULL, 1);
+      symtab_and_line sal = find_pc_sect_line (loop_start, NULL, 1);
       if (sal.line <= 0)
 	{
 	  /* We reach here when line info is not available.  In this case,

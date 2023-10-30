@@ -1041,7 +1041,6 @@ sparc64_pseudo_register_write (struct gdbarch *gdbarch,
 static CORE_ADDR
 sparc64_skip_prologue (struct gdbarch *gdbarch, CORE_ADDR start_pc)
 {
-  struct symtab_and_line sal;
   CORE_ADDR func_start, func_end;
   struct sparc_frame_cache cache;
 
@@ -1049,7 +1048,7 @@ sparc64_skip_prologue (struct gdbarch *gdbarch, CORE_ADDR start_pc)
      using the debugging information.  */
   if (find_pc_partial_function (start_pc, NULL, &func_start, &func_end))
     {
-      sal = find_pc_line (func_start, 0);
+      symtab_and_line sal = find_pc_line (func_start, 0);
 
       if (sal.end < func_end
 	  && start_pc <= sal.end)

@@ -947,7 +947,6 @@ prepare_one_step (thread_info *tp, struct step_command_fsm *sm)
 	    {
 	      ptid_t resume_ptid;
 	      const char *fn = nullptr;
-	      symtab_and_line sal;
 	      struct symbol *sym;
 
 	      /* Pretend that we've ran.  */
@@ -957,7 +956,7 @@ prepare_one_step (thread_info *tp, struct step_command_fsm *sm)
 	      step_into_inline_frame (tp);
 
 	      frame = get_current_frame ();
-	      sal = find_frame_sal (frame);
+	      symtab_and_line sal = find_frame_sal (frame);
 	      sym = get_frame_function (frame).symbol;
 
 	      if (sym != nullptr)
@@ -1329,7 +1328,6 @@ until_next_command (int from_tty)
   frame_info_ptr frame;
   CORE_ADDR pc;
   struct symbol *func;
-  struct symtab_and_line sal;
   struct thread_info *tp = inferior_thread ();
   int thread = tp->global_num;
   struct until_next_fsm *sm;
@@ -1360,7 +1358,7 @@ until_next_command (int from_tty)
     }
   else
     {
-      sal = find_pc_line (pc, 0);
+      symtab_and_line sal = find_pc_line (pc, 0);
 
       tp->control.step_range_start = func->value_block ()->entry_pc ();
       tp->control.step_range_end = sal.end;
@@ -1664,7 +1662,6 @@ finish_command_fsm::do_async_reply_reason ()
 static void
 finish_backward (struct finish_command_fsm *sm)
 {
-  struct symtab_and_line sal;
   struct thread_info *tp = inferior_thread ();
   CORE_ADDR pc;
   CORE_ADDR func_addr;
@@ -1678,7 +1675,7 @@ finish_backward (struct finish_command_fsm *sm)
   if (find_pc_partial_function (pc, nullptr, &func_addr, nullptr) == 0)
     error (_("Cannot find bounds of current function"));
 
-  sal = find_pc_line (func_addr, 0);
+  symtab_and_line sal = find_pc_line (func_addr, 0);
   alt_entry_point = sal.pc;
   entry_point = alt_entry_point;
 
@@ -1734,10 +1731,9 @@ finish_forward (struct finish_command_fsm *sm, frame_info_ptr frame)
 {
   struct frame_id frame_id = get_frame_id (frame);
   struct gdbarch *gdbarch = get_frame_arch (frame);
-  struct symtab_and_line sal;
   struct thread_info *tp = inferior_thread ();
 
-  sal = find_pc_line (get_frame_pc (frame), 0);
+  symtab_and_line sal = find_pc_line (get_frame_pc (frame), 0);
   sal.pc = get_frame_pc (frame);
 
   sm->breakpoint = set_momentary_breakpoint (gdbarch, sal,

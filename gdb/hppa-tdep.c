@@ -1765,7 +1765,6 @@ restart:
 static CORE_ADDR
 after_prologue (CORE_ADDR pc)
 {
-  struct symtab_and_line sal;
   CORE_ADDR func_addr, func_end;
 
   /* If we can not find the symbol in the partial symbol table, then
@@ -1775,7 +1774,7 @@ after_prologue (CORE_ADDR pc)
     return 0;
 
   /* Get the line associated with FUNC_ADDR.  */
-  sal = find_pc_line (func_addr, 0);
+  symtab_and_line sal = find_pc_line (func_addr, 0);
 
   /* There are only two cases to consider.  First, the end of the source line
      is within the function bounds.  In that case we return the end of the

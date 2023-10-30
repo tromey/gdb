@@ -1270,7 +1270,6 @@ static int max_skip_non_prologue_insns = 40;
 static CORE_ADDR
 refine_prologue_limit (CORE_ADDR pc, CORE_ADDR lim_pc, int *trust_limit)
 {
-  struct symtab_and_line prologue_sal;
   CORE_ADDR start_pc = pc;
   CORE_ADDR end_pc;
 
@@ -1282,7 +1281,7 @@ refine_prologue_limit (CORE_ADDR pc, CORE_ADDR lim_pc, int *trust_limit)
   /* Start off not trusting the limit.  */
   *trust_limit = 0;
 
-  prologue_sal = find_pc_line (pc, 0);
+  symtab_and_line prologue_sal = find_pc_line (pc, 0);
   if (prologue_sal.line != 0)
     {
       int i;
@@ -1299,9 +1298,7 @@ refine_prologue_limit (CORE_ADDR pc, CORE_ADDR lim_pc, int *trust_limit)
 	   i > 0 && (lim_pc == 0 || addr < lim_pc);
 	   i--)
 	{
-	  struct symtab_and_line sal;
-
-	  sal = find_pc_line (addr, 0);
+	  symtab_and_line sal = find_pc_line (addr, 0);
 	  if (sal.line == 0)
 	    break;
 	  if (sal.line <= prologue_sal.line 

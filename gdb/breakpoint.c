@@ -8371,9 +8371,7 @@ breakpoint_up
 set_momentary_breakpoint_at_pc (struct gdbarch *gdbarch, CORE_ADDR pc,
 				enum bptype type)
 {
-  struct symtab_and_line sal;
-
-  sal = find_pc_line (pc, 0);
+  symtab_and_line sal = find_pc_line (pc, 0);
   sal.pc = pc;
   sal.section = find_pc_overlay (pc);
   sal.explicit_pc = 1;
@@ -8831,8 +8829,6 @@ static void
 parse_breakpoint_sals (location_spec *locspec,
 		       struct linespec_result *canonical)
 {
-  struct symtab_and_line cursal;
-
   if (locspec->type () == LINESPEC_LOCATION_SPEC)
     {
       const char *spec = as_linespec_location_spec (locspec)->spec_string;
@@ -8880,7 +8876,7 @@ parse_breakpoint_sals (location_spec *locspec,
 
      ObjC: However, don't match an Objective-C method name which
      may have a '+' or '-' succeeded by a '['.  */
-  cursal = get_current_source_symtab_and_line ();
+  symtab_and_line cursal = get_current_source_symtab_and_line ();
   if (last_displayed_sal_is_valid ())
     {
       const char *spec = NULL;
@@ -10936,10 +10932,9 @@ until_break_command (const char *arg, int from_tty, int anywhere)
 
   if (frame_id_p (caller_frame_id))
     {
-      struct symtab_and_line sal2;
       struct gdbarch *caller_gdbarch;
 
-      sal2 = find_pc_line (frame_unwind_caller_pc (frame), 0);
+      symtab_and_line sal2 = find_pc_line (frame_unwind_caller_pc (frame), 0);
       sal2.pc = frame_unwind_caller_pc (frame);
       caller_gdbarch = frame_unwind_caller_arch (frame);
 
@@ -13917,7 +13912,6 @@ insert_single_step_breakpoint (struct gdbarch *gdbarch,
 			       CORE_ADDR next_pc)
 {
   struct thread_info *tp = inferior_thread ();
-  struct symtab_and_line sal;
   CORE_ADDR pc = next_pc;
 
   if (tp->control.single_step_breakpoints == NULL)
@@ -13932,7 +13926,7 @@ insert_single_step_breakpoint (struct gdbarch *gdbarch,
 	= add_to_breakpoint_chain (std::move (b));
     }
 
-  sal = find_pc_line (pc, 0);
+  symtab_and_line sal = find_pc_line (pc, 0);
   sal.pc = pc;
   sal.section = find_pc_overlay (pc);
   sal.explicit_pc = 1;
