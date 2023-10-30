@@ -456,14 +456,13 @@ m32r_skip_prologue (struct gdbarch *gdbarch, CORE_ADDR pc)
 {
   enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
   CORE_ADDR func_addr, func_end;
-  struct symtab_and_line sal;
   LONGEST return_value;
 
   /* See what the symbol table says.  */
 
   if (find_pc_partial_function (pc, NULL, &func_addr, &func_end))
     {
-      sal = find_pc_line (func_addr, 0);
+      symtab_and_line sal = find_pc_line (func_addr, 0);
 
       if (sal.line != 0 && sal.end <= func_end)
 	{
@@ -485,10 +484,11 @@ m32r_skip_prologue (struct gdbarch *gdbarch, CORE_ADDR pc)
     return pc;
 
   /* Find the end of prologue.  */
-  if (decode_prologue (gdbarch, pc, func_end, &sal.end, NULL) < 0)
+  CORE_ADDR end_addr;
+  if (decode_prologue (gdbarch, pc, func_end, &end_addr, NULL) < 0)
     return pc;
 
-  return sal.end;
+  return end_addr;
 }
 
 struct m32r_unwind_cache
