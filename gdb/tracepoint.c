@@ -3594,9 +3594,6 @@ print_one_static_tracepoint_marker (int count,
 
   struct ui_out *uiout = current_uiout;
 
-  symtab_and_line sal;
-  sal.pc = marker.address;
-
   std::vector<breakpoint *> tracepoints
     = static_tracepoints_here (marker.address);
 
@@ -3622,7 +3619,7 @@ print_one_static_tracepoint_marker (int count,
 
   uiout->field_core_addr ("addr", marker.gdbarch, marker.address);
 
-  sal = find_pc_line (marker.address, 0);
+  symtab_and_line sal = find_pc_line (marker.address, 0);
   sym = find_pc_sect_function (marker.address, NULL).symbol;
   if (sym)
     {
