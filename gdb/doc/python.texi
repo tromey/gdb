@@ -5719,12 +5719,16 @@ object.
 @end defun
 
 @defun Frame.read_var (variable @r{[}, block@r{]})
-Return the value of @var{variable} in this frame.  If the optional
-argument @var{block} is provided, search for the variable from that
-block; otherwise start at the frame's current block (which is
-determined by the frame's current program counter).  The @var{variable}
-argument must be a string or a @code{gdb.Symbol} object; @var{block} must be a
-@code{gdb.Block} object.
+Return the value of @var{variable} in this frame.  @var{variable} must
+be a string or a @code{gdb.Symbol} object.
+
+If @var{variable} is a string, then @var{block} may be provided.  In
+this case, search for the variable from that block; otherwise start at
+the frame's current block (which is determined by the frame's current
+program counter).
+
+If @var{variable} is a @code{gdb.Symbol} object, then @var{block} is
+ignored.
 @end defun
 
 @defun Frame.select ()
