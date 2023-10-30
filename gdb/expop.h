@@ -229,8 +229,7 @@ extern bool check_objfile (const struct block *block,
 static inline bool
 check_objfile (const block_symbol &sym, struct objfile *objfile)
 {
-  return (check_objfile (sym.symbol, objfile)
-	  || check_objfile (sym.block, objfile));
+  return check_objfile (sym.objfile (), objfile);
 }
 
 static inline bool
