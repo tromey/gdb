@@ -2830,7 +2830,7 @@ find_frame_sal (frame_info_ptr frame)
 
   if (frame_inlined_callees (frame) > 0)
     {
-      struct symbol *sym;
+      block_symbol bsym;
 
       /* If the current frame has some inlined callees, and we have a next
 	 frame, then that frame must be an inlined frame.  In this case
@@ -2838,9 +2838,10 @@ find_frame_sal (frame_info_ptr frame)
 	 function, which can not be inferred from get_frame_pc.  */
       next_frame = get_next_frame (frame);
       if (next_frame)
-	sym = get_frame_function (next_frame).symbol;
+	sym = get_frame_function (next_frame);
       else
-	sym = inline_skipped_symbol (inferior_thread ());
+	bsym = inline_skipped_symbol (inferior_thread ());
+      symbol *sym = bsym.symbol;
 
       /* If frame is inline, it certainly has symbols.  */
       gdb_assert (sym);
