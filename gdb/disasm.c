@@ -578,7 +578,6 @@ do_mixed_source_and_assembly_deprecated
   int nlines;
   const struct linetable_entry *le;
   struct deprecated_dis_line_entry *mle;
-  struct symtab_and_line sal;
   int i;
   int out_of_order = 0;
   int next_line = 0;
@@ -637,7 +636,7 @@ do_mixed_source_and_assembly_deprecated
     {
       mle[newlines].line = le[i].line;
       mle[newlines].start_pc = le[i].pc (objfile);
-      sal = find_pc_line (le[i].pc (objfile), 0);
+      symtab_and_line sal = find_pc_line (le[i].pc (objfile), 0);
       mle[newlines].end_pc = sal.end;
       newlines++;
     }
