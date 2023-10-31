@@ -1408,7 +1408,7 @@ block_lookup (const struct block *context, const char *raw_name)
 
   if (context == NULL
       && (syms.empty () || syms[0].symbol->aclass () != LOC_BLOCK))
-    symtab = lookup_symtab (name);
+    symtab = lookup_symtab (name).symtab;
   else
     symtab = NULL;
 

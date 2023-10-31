@@ -177,7 +177,7 @@ objfile::forget_cached_source_info ()
 bool
 objfile::map_symtabs_matching_filename
   (const char *name, const char *real_path,
-   gdb::function_view<bool (symtab *)> callback)
+   gdb::function_view<bool (bound_symtab)> callback)
 {
   if (debug_symfile)
     gdb_printf (gdb_stdlog,
@@ -210,6 +210,7 @@ objfile::map_symtabs_matching_filename
        going and true to continue, so we have to invert the result
        here, for expand_symtabs_matching.  */
     bool result = !iterate_over_some_symtabs (name, real_path,
+					      this,
 					      this->compunit_symtabs,
 					      last_made,
 					      callback);

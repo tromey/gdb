@@ -924,7 +924,7 @@ yylex (void)
     std::string tmp = copy_name (yylval.sval);
     struct symbol *sym;
 
-    if (lookup_symtab (tmp.c_str ()))
+    if (lookup_symtab (tmp.c_str ()).symtab != nullptr)
       return BLOCKNAME;
     sym = lookup_symbol (tmp.c_str (), pstate->expression_context_block,
 			 VAR_DOMAIN, 0).symbol;

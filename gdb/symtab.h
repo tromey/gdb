@@ -2067,7 +2067,7 @@ const char *multiple_symbols_select_mode (void);
 
 /* lookup a symbol table by source file name.  */
 
-extern struct symtab *lookup_symtab (const char *);
+extern bound_symtab lookup_symtab (const char *);
 
 /* An object of this type is passed as the 'is_a_field_of_this'
    argument to lookup_symbol and lookup_symbol_in_language.  */
@@ -2767,12 +2767,13 @@ bool compare_glob_filenames_for_search (const char *filename,
 
 bool iterate_over_some_symtabs (const char *name,
 				const char *real_path,
+				struct objfile *objfile,
 				struct compunit_symtab *first,
 				struct compunit_symtab *after_last,
-				gdb::function_view<bool (symtab *)> callback);
+				gdb::function_view<bool (bound_symtab)> callback);
 
 void iterate_over_symtabs (const char *name,
-			   gdb::function_view<bool (symtab *)> callback);
+			   gdb::function_view<bool (bound_symtab)> callback);
 
 
 std::vector<CORE_ADDR> find_pcs_for_symtab_line
@@ -2880,7 +2881,7 @@ public:
   void find_all_symbols (const std::string &name,
 			 const struct language_defn *language,
 			 enum search_domain search_domain,
-			 std::vector<symtab *> *search_symtabs,
+			 std::vector<bound_symtab> *search_symtabs,
 			 struct program_space *search_pspace);
 
   /* Reset this object to perform another search.  */
@@ -2892,7 +2893,7 @@ public:
 
 private:
   /* Matching debug symbols.  */
-  std::vector<block_symbol>  m_symbols;
+  std::vector<block_symbol> m_symbols;
 
   /* Matching non-debug symbols.  */
   std::vector<bound_minimal_symbol> m_minimal_symbols;

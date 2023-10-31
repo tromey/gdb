@@ -549,7 +549,7 @@ public:
      The result of this call is returned.  */
   bool map_symtabs_matching_filename
     (const char *name, const char *real_path,
-     gdb::function_view<bool (symtab *)> callback);
+     gdb::function_view<bool (bound_symtab)> callback);
 
   /* Check to see if the symbol is defined in a "partial" symbol table
      of this objfile.  BLOCK_INDEX should be either GLOBAL_BLOCK or

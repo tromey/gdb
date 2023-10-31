@@ -3080,7 +3080,7 @@ classify_name (struct parser_state *par_state, const struct block *block,
 	  /* See if it's a file name. */
 	  struct symtab *symtab;
 
-	  symtab = lookup_symtab (copy.c_str ());
+	  symtab = lookup_symtab (copy.c_str ()).symtab;
 	  if (symtab)
 	    {
 	      yylval.bval

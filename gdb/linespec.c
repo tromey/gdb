@@ -102,7 +102,7 @@ struct linespec
      If explicit.SOURCE_FILENAME is NULL (no user-specified filename),
      FILE_SYMTABS should contain one single NULL member.  This will cause the
      code to use the default symtab.  */
-  std::vector<symtab *> file_symtabs;
+  std::vector<bound_symtab> file_symtabs;
 
   /* A list of matching function symbols and minimal symbols.  Both lists
      may be empty if no matching symbols were found.  */
@@ -186,7 +186,7 @@ struct collect_info
   struct linespec_state *state;
 
   /* A list of symtabs to which to restrict matches.  */
-  const std::vector<symtab *> *file_symtabs;
+  const std::vector<bound_symtab> *file_symtabs;
 
   /* The result being accumulated.  */
   struct
@@ -362,7 +362,7 @@ static std::vector<symtab_and_line> decode_objc (struct linespec_state *self,
 						 linespec *ls,
 						 const char *arg);
 
-static std::vector<symtab *> symtabs_from_filename
+static std::vector<bound_symtab> symtabs_from_filename
   (const char *, struct program_space *pspace);
 
 static std::vector<block_symbol> find_label_symbols
@@ -372,7 +372,7 @@ static std::vector<block_symbol> find_label_symbols
    const char *name, bool completion_mode = false);
 
 static void find_linespec_symbols (struct linespec_state *self,
-				   const std::vector<symtab *> &file_symtabs,
+				   const std::vector<bound_symtab> &file_symtabs,
 				   const char *name,
 				   symbol_name_match_type name_match_type,
 				   std::vector<block_symbol> *symbols,
@@ -395,7 +395,7 @@ static void add_all_symbol_names_from_pspace
     (struct collect_info *info, struct program_space *pspace,
      const std::vector<const char *> &names, enum search_domain search_domain);
 
-static std::vector<symtab *>
+static std::vector<bound_symtab>
   collect_symtabs_from_filename (const char *file,
 				 struct program_space *pspace);
 
@@ -2037,7 +2037,7 @@ create_sals_line_offset (struct linespec_state *self,
      select_source_symtab that calls us with such an argument.  */
 
   if (ls->file_symtabs.size () == 1
-      && ls->file_symtabs.front () == nullptr)
+      && ls->file_symtabs.front ().symtab == nullptr)
     {
       set_current_program_space (self->program_space);
 
@@ -2337,7 +2337,7 @@ convert_explicit_location_spec_to_linespec
   else
     {
       /* A NULL entry means to use the default symtab.  */
-      result->file_symtabs.push_back (nullptr);
+      result->file_symtabs.push_back ({});
     }
 
   if (function_name != NULL)
@@ -2510,7 +2510,7 @@ parse_linespec (linespec_parser *parser, const char *arg,
     {
       /* A NULL entry means to use GLOBAL_DEFAULT_SYMTAB.  */
       if (parser->completion_tracker == NULL)
-	PARSER_RESULT (parser)->file_symtabs.push_back (nullptr);
+	PARSER_RESULT (parser)->file_symtabs.push_back ({});
 
       /* User specified a convenience variable or history value.  */
       gdb::unique_xmalloc_ptr<char> var = copy_token_string (token);
@@ -2574,7 +2574,7 @@ parse_linespec (linespec_parser *parser, const char *arg,
       else
 	{
 	  /* A NULL entry means to use GLOBAL_DEFAULT_SYMTAB.  */
-	  PARSER_RESULT (parser)->file_symtabs.push_back (nullptr);
+	  PARSER_RESULT (parser)->file_symtabs.push_back ({});
 	}
     }
   /* If the next token is not EOI, KEYWORD, or COMMA, issue an error.  */
@@ -2590,7 +2590,7 @@ parse_linespec (linespec_parser *parser, const char *arg,
   else
     {
       /* A NULL entry means to use GLOBAL_DEFAULT_SYMTAB.  */
-      PARSER_RESULT (parser)->file_symtabs.push_back (nullptr);
+      PARSER_RESULT (parser)->file_symtabs.push_back ({});
     }
 
   /* Parse the rest of the linespec.  */
@@ -3306,8 +3306,8 @@ decode_objc (struct linespec_state *self, linespec *ls, const char *arg)
   const char *new_argptr;
 
   info.state = self;
-  std::vector<symtab *> symtabs;
-  symtabs.push_back (nullptr);
+  std::vector<bound_symtab> symtabs;
+  symtabs.push_back ({});
 
   info.file_symtabs = &symtabs;
 
@@ -3428,7 +3428,7 @@ decode_compound_collector::operator () (block_symbol *bsym)
 
 static std::vector<block_symbol>
 lookup_prefix_sym (struct linespec_state *state,
-		   const std::vector<symtab *> &file_symtabs,
+		   const std::vector<bound_symtab> &file_symtabs,
 		   const char *class_name)
 {
   decode_compound_collector collector;
@@ -3437,7 +3437,7 @@ lookup_prefix_sym (struct linespec_state *state,
 
   for (const auto &elt : file_symtabs)
     {
-      if (elt == nullptr)
+      if (elt.symtab == nullptr)
 	{
 	  iterate_over_all_matching_symtabs (state, lookup_name,
 					     STRUCT_DOMAIN, ALL_DOMAIN,
@@ -3450,12 +3450,14 @@ lookup_prefix_sym (struct linespec_state *state,
 	{
 	  /* Program spaces that are executing startup should have
 	     been filtered out earlier.  */
-	  program_space *pspace = elt->compunit ()->objfile ()->pspace;
+	  program_space *pspace = elt.objfile->pspace;
 
 	  gdb_assert (!pspace->executing_startup);
 	  set_current_program_space (pspace);
-	  iterate_over_file_blocks (elt, lookup_name, STRUCT_DOMAIN, collector);
-	  iterate_over_file_blocks (elt, lookup_name, VAR_DOMAIN, collector);
+	  iterate_over_file_blocks (elt.symtab, lookup_name,
+				    STRUCT_DOMAIN, collector);
+	  iterate_over_file_blocks (elt.symtab, lookup_name,
+				    VAR_DOMAIN, collector);
 	}
     }
 
@@ -3556,7 +3558,7 @@ find_superclass_methods (std::vector<struct type *> &&superclasses,
 
 static void
 find_method (struct linespec_state *self,
-	     const std::vector<symtab *> &file_symtabs,
+	     const std::vector<bound_symtab> &file_symtabs,
 	     const char *class_name, const char *method_name,
 	     std::vector<block_symbol> *sym_classes,
 	     std::vector<block_symbol> *symbols,
@@ -3638,6 +3640,25 @@ find_method (struct linespec_state *self,
 
 namespace {
 
+/* Equality function for bound_symtab.  */
+
+static int
+eq_bound_symtab (const void *a, const void *b)
+{
+  const bound_symtab *ba = (const bound_symtab *) a;
+  const bound_symtab *bb = (const bound_symtab *) b;
+  return ba->symtab == bb->symtab;
+}
+
+/* Hash function for bound_symtab.  */
+
+static hashval_t
+hash_bound_symtab (const void *a)
+{
+  const bound_symtab *ba = (const bound_symtab *) a;
+  return htab_hash_pointer (ba->symtab);
+}
+
 /* This function object is a callback for iterate_over_symtabs, used
    when collecting all matching symtabs.  */
 
@@ -3645,37 +3666,37 @@ class symtab_collector
 {
 public:
   symtab_collector ()
-    : m_symtab_table (htab_create (1, htab_hash_pointer, htab_eq_pointer,
-				   NULL))
+    : m_symtab_table (htab_create (1, hash_bound_symtab, eq_bound_symtab,
+				   htab_delete_entry<bound_symtab>))
   {
   }
 
   /* Callable as a symbol_found_callback_ftype callback.  */
-  bool operator () (symtab *sym);
+  bool operator () (bound_symtab sym);
 
   /* Return an rvalue reference to the collected symtabs.  */
-  std::vector<symtab *> &&release_symtabs ()
+  std::vector<bound_symtab> &&release_symtabs ()
   {
     return std::move (m_symtabs);
   }
 
 private:
   /* The result vector of symtabs.  */
-  std::vector<symtab *> m_symtabs;
+  std::vector<bound_symtab> m_symtabs;
 
   /* This is used to ensure the symtabs are unique.  */
   htab_up m_symtab_table;
 };
 
 bool
-symtab_collector::operator () (struct symtab *symtab)
+symtab_collector::operator () (bound_symtab symtab)
 {
   void **slot;
 
-  slot = htab_find_slot (m_symtab_table.get (), symtab, INSERT);
+  slot = htab_find_slot (m_symtab_table.get (), &symtab, INSERT);
   if (!*slot)
     {
-      *slot = symtab;
+      *slot = new bound_symtab (symtab);
       m_symtabs.push_back (symtab);
     }
 
@@ -3688,7 +3709,7 @@ symtab_collector::operator () (struct symtab *symtab)
    SEARCH_PSPACE is not NULL, the search is restricted to just that
    program space.  */
 
-static std::vector<symtab *>
+static std::vector<bound_symtab>
 collect_symtabs_from_filename (const char *file,
 			       struct program_space *search_pspace)
 {
@@ -3718,11 +3739,11 @@ collect_symtabs_from_filename (const char *file,
 /* Return all the symtabs associated to the FILENAME.  If SEARCH_PSPACE is
    not NULL, the search is restricted to just that program space.  */
 
-static std::vector<symtab *>
+static std::vector<bound_symtab>
 symtabs_from_filename (const char *filename,
 		       struct program_space *search_pspace)
 {
-  std::vector<symtab *> result
+  std::vector<bound_symtab> result
     = collect_symtabs_from_filename (filename, search_pspace);
 
   if (result.empty ())
@@ -3743,7 +3764,7 @@ void
 symbol_searcher::find_all_symbols (const std::string &name,
 				   const struct language_defn *language,
 				   enum search_domain search_domain,
-				   std::vector<symtab *> *search_symtabs,
+				   std::vector<bound_symtab> *search_symtabs,
 				   struct program_space *search_pspace)
 {
   symbol_searcher_collect_info info;
@@ -3755,10 +3776,10 @@ symbol_searcher::find_all_symbols (const std::string &name,
 
   info.result.symbols = &m_symbols;
   info.result.minimal_symbols = &m_minimal_symbols;
-  std::vector<symtab *> all_symtabs;
+  std::vector<bound_symtab> all_symtabs;
   if (search_symtabs == nullptr)
     {
-      all_symtabs.push_back (nullptr);
+      all_symtabs.push_back ({});
       search_symtabs = &all_symtabs;
     }
   info.file_symtabs = search_symtabs;
@@ -3773,7 +3794,7 @@ symbol_searcher::find_all_symbols (const std::string &name,
 
 static void
 find_function_symbols (struct linespec_state *state,
-		       const std::vector<symtab *> &file_symtabs, const char *name,
+		       const std::vector<bound_symtab> &file_symtabs, const char *name,
 		       symbol_name_match_type name_match_type,
 		       std::vector<block_symbol> *symbols,
 		       std::vector<bound_minimal_symbol> *minsyms)
@@ -3801,7 +3822,7 @@ find_function_symbols (struct linespec_state *state,
 
 static void
 find_linespec_symbols (struct linespec_state *state,
-		       const std::vector<symtab *> &file_symtabs,
+		       const std::vector<bound_symtab> &file_symtabs,
 		       const char *lookup_name,
 		       symbol_name_match_type name_match_type,
 		       std::vector <block_symbol> *symbols,
@@ -3995,15 +4016,15 @@ decode_digits_list_mode (struct linespec_state *self,
   for (const auto &elt : ls->file_symtabs)
     {
       /* The logic above should ensure this.  */
-      gdb_assert (elt != NULL);
+      gdb_assert (elt.symtab != NULL);
 
-      program_space *pspace = elt->compunit ()->objfile ()->pspace;
+      program_space *pspace = elt.objfile->pspace;
       set_current_program_space (pspace);
 
       /* Simplistic search just for the list command.  */
-      val.symtab = find_line_symtab (elt, val.line, NULL, NULL);
+      val.symtab = find_line_symtab (elt.symtab, val.line, NULL, NULL);
       if (val.symtab == NULL)
-	val.symtab = elt;
+	val.symtab = elt.symtab;
       val.pspace = pspace;
       val.pc = 0;
       val.explicit_line = true;
@@ -4030,17 +4051,17 @@ decode_digits_ordinary (struct linespec_state *self,
       std::vector<CORE_ADDR> pcs;
 
       /* The logic above should ensure this.  */
-      gdb_assert (elt != NULL);
+      gdb_assert (elt.symtab != NULL);
 
-      program_space *pspace = elt->compunit ()->objfile ()->pspace;
+      program_space *pspace = elt.objfile->pspace;
       set_current_program_space (pspace);
 
-      pcs = find_pcs_for_symtab_line (elt, line, best_entry);
+      pcs = find_pcs_for_symtab_line (elt.symtab, line, best_entry);
       for (CORE_ADDR pc : pcs)
 	{
 	  symtab_and_line sal;
 	  sal.pspace = pspace;
-	  sal.symtab = elt;
+	  sal.symtab = elt.symtab;
 	  sal.line = line;
 	  sal.explicit_line = true;
 	  sal.pc = pc;
@@ -4318,7 +4339,7 @@ add_matching_symbols_to_info (const char *name,
 
   for (const auto &elt : *info->file_symtabs)
     {
-      if (elt == nullptr)
+      if (elt.symtab == nullptr)
 	{
 	  iterate_over_all_matching_symtabs (info->state, lookup_name,
 					     VAR_DOMAIN, search_domain,
@@ -4327,16 +4348,16 @@ add_matching_symbols_to_info (const char *name,
 	    { return info->add_symbol (bsym); });
 	  search_minsyms_for_name (info, lookup_name, pspace, NULL);
 	}
-      else if (pspace == NULL || pspace == elt->compunit ()->objfile ()->pspace)
+      else if (pspace == NULL || pspace == elt.objfile->pspace)
 	{
 	  int prev_len = info->result.symbols->size ();
 
 	  /* Program spaces that are executing startup should have
 	     been filtered out earlier.  */
-	  program_space *elt_pspace = elt->compunit ()->objfile ()->pspace;
+	  program_space *elt_pspace = elt.objfile->pspace;
 	  gdb_assert (!elt_pspace->executing_startup);
 	  set_current_program_space (elt_pspace);
-	  iterate_over_file_blocks (elt, lookup_name, VAR_DOMAIN,
+	  iterate_over_file_blocks (elt.symtab, lookup_name, VAR_DOMAIN,
 				    [&] (block_symbol *bsym)
 	    { return info->add_symbol (bsym); });
 
@@ -4345,8 +4366,8 @@ add_matching_symbols_to_info (const char *name,
 	     which we don't have debug info.  Check for a minimal symbol in
 	     this case.  */
 	  if (prev_len == info->result.symbols->size ()
-	      && elt->language () == language_asm)
-	    search_minsyms_for_name (info, lookup_name, pspace, elt);
+	      && elt.symtab->language () == language_asm)
+	    search_minsyms_for_name (info, lookup_name, pspace, elt.symtab);
 	}
     }
 }

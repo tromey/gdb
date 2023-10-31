@@ -577,9 +577,10 @@ compare_glob_filenames_for_search (const char *filename,
 bool
 iterate_over_some_symtabs (const char *name,
 			   const char *real_path,
+			   struct objfile *objfile,
 			   struct compunit_symtab *first,
 			   struct compunit_symtab *after_last,
-			   gdb::function_view<bool (symtab *)> callback)
+			   gdb::function_view<bool (bound_symtab)> callback)
 {
   struct compunit_symtab *cust;
   const char* base_name = lbasename (name);
@@ -594,7 +595,7 @@ iterate_over_some_symtabs (const char *name,
 	{
 	  if (compare_filenames_for_search (s->filename, name))
 	    {
-	      if (callback (s))
+	      if (callback ({s, objfile}))
 		return true;
 	      continue;
 	    }
@@ -607,7 +608,7 @@ iterate_over_some_symtabs (const char *name,
 
 	  if (compare_filenames_for_search (symtab_to_fullname (s), name))
 	    {
-	      if (callback (s))
+	      if (callback ({s, objfile}))
 		return true;
 	      continue;
 	    }
@@ -625,7 +626,7 @@ iterate_over_some_symtabs (const char *name,
 	      fullname = fullname_real_path.get ();
 	      if (FILENAME_CMP (real_path, fullname) == 0)
 		{
-		  if (callback (s))
+		  if (callback ({s, objfile}))
 		    return true;
 		  continue;
 		}
@@ -645,7 +646,7 @@ iterate_over_some_symtabs (const char *name,
 
 void
 iterate_over_symtabs (const char *name,
-		      gdb::function_view<bool (symtab *)> callback)
+		      gdb::function_view<bool (bound_symtab)> callback)
 {
   gdb::unique_xmalloc_ptr<char> real_path;
 
@@ -659,7 +660,7 @@ iterate_over_symtabs (const char *name,
 
   for (objfile *objfile : current_program_space->objfiles ())
     {
-      if (iterate_over_some_symtabs (name, real_path.get (),
+      if (iterate_over_some_symtabs (name, real_path.get (), objfile,
 				     objfile->compunit_symtabs, NULL,
 				     callback))
 	return;
@@ -679,12 +680,12 @@ iterate_over_symtabs (const char *name,
 /* A wrapper for iterate_over_symtabs that returns the first matching
    symtab, or NULL.  */
 
-struct symtab *
+bound_symtab
 lookup_symtab (const char *name)
 {
-  struct symtab *result = NULL;
+  bound_symtab result = {};
 
-  iterate_over_symtabs (name, [&] (symtab *symtab)
+  iterate_over_symtabs (name, [&] (bound_symtab symtab)
     {
       result = symtab;
       return true;
@@ -6059,9 +6060,9 @@ collect_file_symbol_completion_matches (completion_tracker &tracker,
 
   /* Go through symtabs for SRCFILE and check the externs and statics
      for symbols which match.  */
-  iterate_over_symtabs (srcfile, [&] (symtab *s)
+  iterate_over_symtabs (srcfile, [&] (bound_symtab s)
     {
-      add_symtab_completions (s->compunit (),
+      add_symtab_completions (s.symtab->compunit (),
 			      tracker, mode, lookup_name,
 			      sym_text, word, TYPE_CODE_UNDEF);
       return false;

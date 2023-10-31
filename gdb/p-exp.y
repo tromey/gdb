@@ -613,7 +613,7 @@ block	:	BLOCKNAME
 			    {
 			      std::string copy = copy_name ($1.stoken);
 			      struct symtab *tem =
-				  lookup_symtab (copy.c_str ());
+				  lookup_symtab (copy.c_str ()).symtab;
 			      if (tem)
 				$$ = (tem->compunit ()->blockvector ()
 				      ->static_block ());
@@ -1502,7 +1502,7 @@ yylex (void)
        no psymtabs (coff, xcoff, or some future change to blow away the
        psymtabs once once symbols are read).  */
     if ((sym && sym->aclass () == LOC_BLOCK)
-	|| lookup_symtab (tmp.c_str ()))
+	|| lookup_symtab (tmp.c_str ()).symtab != nullptr)
       {
 	yylval.ssym.sym.symbol = sym;
 	yylval.ssym.sym.block = NULL;
