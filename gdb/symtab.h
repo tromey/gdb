@@ -1772,6 +1772,12 @@ struct symtab
 
 using symtab_range = next_range<symtab>;
 
+struct bound_symtab
+{
+  struct symtab *symtab;
+  struct objfile *objfile;
+};
+
 /* Compunit symtabs contain the actual "symbol table", aka blockvector, as well
    as the list of all source files (what gdb has historically associated with
    the term "symtab").
