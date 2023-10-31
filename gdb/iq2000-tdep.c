@@ -202,25 +202,27 @@ iq2000_scan_prologue (struct gdbarch *gdbarch,
 		      struct iq2000_frame_cache *cache)
 {
   enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
-  struct symtab_and_line sal;
   CORE_ADDR pc;
   CORE_ADDR loop_end;
   int srcreg;
   int tgtreg;
   signed short offset;
 
+  CORE_ADDR end_pc;
   if (scan_end == (CORE_ADDR) 0)
     {
       loop_end = scan_start + 100;
-      sal.end = sal.pc = 0;
+      end_pc = 0;
     }
   else
     {
       loop_end = scan_end;
       if (fi)
-	sal = find_last_line_symbol (scan_start, scan_end, 0);
-      else
-	sal.end = 0;	/* Avoid GCC false warning.  */
+	{
+	  symtab_and_line sal
+	    = find_last_line_symbol (scan_start, scan_end, 0);
+	  end_pc = sal.end;
+	}
     }
 
   /* Saved registers:
@@ -300,7 +302,7 @@ iq2000_scan_prologue (struct gdbarch *gdbarch,
 	 1) If we have a subsequent line symbol, we can keep going.
 	 2) If not, we need to bail out and quit scanning instructions.  */
 
-      if (fi && sal.end && (pc < sal.end)) /* Keep scanning.  */
+      if (fi && end_pc && (pc < end_pc)) /* Keep scanning.  */
 	continue;
       else /* bail */
 	break;
