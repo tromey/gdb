@@ -1057,7 +1057,7 @@ linespec_lexer_peek_token (linespec_parser *parser)
 static void
 add_sal_to_sals (struct linespec_state *self,
 		 std::vector<symtab_and_line> *sals,
-		 struct symtab_and_line *sal,
+		 const struct symtab_and_line &sal,
 		 const char *symname, int literal_canonical)
 {
   sals->push_back (*sal);
@@ -1070,22 +1070,22 @@ add_sal_to_sals (struct linespec_state *self,
 					  self->canonical_names,
 					  sals->size ());
       canonical = &self->canonical_names[sals->size () - 1];
-      if (!literal_canonical && sal->symtab)
+      if (!literal_canonical && sal.symtab)
 	{
-	  symtab_to_fullname (sal->symtab);
+	  symtab_to_fullname (sal.symtab);
 
 	  /* Note that the filter doesn't have to be a valid linespec
 	     input.  We only apply the ":LINE" treatment to Ada for
 	     the time being.  */
-	  if (symname != NULL && sal->line != 0
+	  if (symname != NULL && sal.line != 0
 	      && self->language->la_language == language_ada)
 	    canonical->suffix = xstrprintf ("%s:%d", symname,
-					    sal->line).release ();
+					    sal.line).release ();
 	  else if (symname != NULL)
 	    canonical->suffix = xstrdup (symname);
 	  else
-	    canonical->suffix = xstrprintf ("%d", sal->line).release ();
-	  canonical->symtab = sal->symtab;
+	    canonical->suffix = xstrprintf ("%d", sal.line).release ();
+	  canonical->symtab = sal.symtab;
 	}
       else
 	{
@@ -2134,7 +2134,7 @@ create_sals_line_offset (struct linespec_state *self,
 	    if (self->funfirstline)
 	      skip_prologue_sal (&intermediate_results[i]);
 	    intermediate_results[i].symbol = sym;
-	    add_sal_to_sals (self, &values, &intermediate_results[i],
+	    add_sal_to_sals (self, &values, intermediate_results[i],
 			     sym ? sym->natural_name () : NULL, 0);
 	  }
     }
@@ -2165,7 +2165,7 @@ convert_address_location_to_sals (struct linespec_state *self,
   sal.symbol = find_pc_sect_containing_function (sal.pc, sal.section);
 
   std::vector<symtab_and_line> sals;
-  add_sal_to_sals (self, &sals, &sal, core_addr_to_string (address), 1);
+  add_sal_to_sals (self, &sals, sal, core_addr_to_string (address), 1);
 
   return sals;
 }
@@ -2188,7 +2188,7 @@ convert_linespec_to_sals (struct linespec_state *state, linespec *ls)
 
 	  if (symbol_to_sal (&sal, state->funfirstline, sym)
 	      && maybe_add_address (state->addr_set, pspace, sal.pc))
-	    add_sal_to_sals (state, &sals, &sal,
+	    add_sal_to_sals (state, &sals, sal,
 			     sym.symbol->natural_name (), 0);
 	}
     }
@@ -2252,7 +2252,7 @@ convert_linespec_to_sals (struct linespec_state *state, linespec *ls)
 		  symtab_and_line sal;
 		  if (symbol_to_sal (&sal, state->funfirstline, sym)
 		      && maybe_add_address (state->addr_set, pspace, sal.pc))
-		    add_sal_to_sals (state, &sals, &sal,
+		    add_sal_to_sals (state, &sals, sal,
 				     sym.symbol->natural_name (), 0);
 		}
 	    }
@@ -4030,7 +4030,7 @@ decode_digits_list_mode (struct linespec_state *self,
       val.explicit_line = true;
       fixme;
 
-      add_sal_to_sals (self, &values, &val, NULL, 0);
+      add_sal_to_sals (self, &values, val, NULL, 0);
     }
 
   return values;
@@ -4182,7 +4182,7 @@ minsym_found (struct linespec_state *self, struct objfile *objfile,
   sal.section = msymbol->obj_section (objfile);
 
   if (maybe_add_address (self->addr_set, objfile->pspace, sal.pc))
-    add_sal_to_sals (self, result, &sal, msymbol->natural_name (), 0);
+    add_sal_to_sals (self, result, sal, msymbol->natural_name (), 0);
 }
 
 /* Helper for search_minsyms_for_name that adds the symbol to the
