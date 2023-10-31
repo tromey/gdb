@@ -1060,7 +1060,7 @@ add_sal_to_sals (struct linespec_state *self,
 		 const struct symtab_and_line &sal,
 		 const char *symname, int literal_canonical)
 {
-  sals->push_back (*sal);
+  sals->push_back (sal);
 
   if (self->canonical)
     {
