@@ -3932,6 +3932,8 @@ skip_prologue_sal (struct symtab_and_line *sal)
   sal->symtab = start_sal.symtab;
   sal->line = start_sal.line;
   sal->end = start_sal.end;
+  fixme;
+  sal->objfile = start_sal.objfile;
 
   /* Check if we are now inside an inlined function.  If we can,
      use the call site of the function instead.  */
