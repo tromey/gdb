@@ -87,25 +87,24 @@ struct annotate_arg_emitter
   DISABLE_COPY_AND_ASSIGN (annotate_arg_emitter);
 };
 
-/* If annotations are turned on then print annotation describing the full
-   name of the source file S and the line number LINE and its corresponding
-   character position.
+/* If annotations are turned on then print annotation describing the
+   full name of SAL and its corresponding character position.
 
    MID_STATEMENT is nonzero if the PC is not at the beginning of that
    line.
 
-   The current symtab and line is updated to reflect S and LINE.
+   The current symtab and line is updated.
 
-   Return true if the annotation was printed and the current symtab and
-   line were updated, otherwise return false, which can happen if the
-   source file for S can't be found, or LINE is out of range.
+   Return true if the annotation was printed and the current symtab
+   and line were updated, otherwise return false, which can happen if
+   the source file can't be found, or if the line is out of range.
 
    This does leave GDB in the weird situation where, even when annotations
    are on, we only sometimes print the annotation, and only sometimes
    update the current symtab and line.  However, this particular annotation
    has behaved this way for some time, and front ends that still use
    annotations now depend on this behaviour.  */
-extern bool annotate_source_line (struct symtab *s, int line,
+extern bool annotate_source_line (const symtab_and_line &sal,
 				  int mid_statement, CORE_ADDR pc);
 
 extern void annotate_frame_begin (int, struct gdbarch *, CORE_ADDR);

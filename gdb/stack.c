@@ -1123,8 +1123,7 @@ print_frame_info (const frame_print_options &fp_opts,
       int mid_statement = ((print_what == SRC_LINE)
 			   && frame_show_address (frame, sal));
       if (annotation_level > 0
-	  && annotate_source_line (sal.symtab, sal.line, mid_statement,
-				   get_frame_pc (frame)))
+	  && annotate_source_line (sal, mid_statement, get_frame_pc (frame)))
 	{
 	  /* The call to ANNOTATE_SOURCE_LINE already printed the
 	     annotation for this source line, so we avoid the two cases

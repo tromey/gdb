@@ -1593,7 +1593,7 @@ info_line_command (const char *arg, int from_tty)
 	  /* If this is the only line, show the source code.  If it could
 	     not find the file, don't do anything special.  */
 	  if (annotation_level > 0 && sals.size () == 1)
-	    annotate_source_line (sal.symtab, sal.line, 0, start_pc);
+	    annotate_source_line (sal, 0, start_pc);
 	}
       else
 	/* Is there any case in which we get here, and have an address
