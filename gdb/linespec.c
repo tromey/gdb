@@ -4224,11 +4224,11 @@ static void
 search_minsyms_for_name (struct collect_info *info,
 			 const lookup_name_info &name,
 			 struct program_space *search_pspace,
-			 struct symtab *symtab)
+			 bound_symtab symtab)
 {
   std::vector<struct bound_minimal_symbol> minsyms;
 
-  if (symtab == NULL)
+  if (symtab.symtab == NULL)
     {
       for (struct program_space *pspace : program_spaces)
 	{
@@ -4254,16 +4254,16 @@ search_minsyms_for_name (struct collect_info *info,
     }
   else
     {
-      program_space *pspace = symtab->compunit ()->objfile ()->pspace;
+      program_space *pspace = symtab.objfile->pspace;
 
       if (search_pspace == NULL || pspace == search_pspace)
 	{
 	  set_current_program_space (pspace);
 	  iterate_over_minimal_symbols
-	    (symtab->compunit ()->objfile (), name,
+	    (symtab.objfile, name,
 	     [&] (struct minimal_symbol *msym)
 	       {
-		 add_minsym (msym, symtab->compunit ()->objfile (), symtab,
+		 add_minsym (msym, symtab.objfile, symtab.symtab,
 			     info->state->list_mode, &minsyms);
 		 return false;
 	       });
@@ -4346,7 +4346,7 @@ add_matching_symbols_to_info (const char *name,
 					     pspace, true,
 					     [&] (block_symbol *bsym)
 	    { return info->add_symbol (bsym); });
-	  search_minsyms_for_name (info, lookup_name, pspace, NULL);
+	  search_minsyms_for_name (info, lookup_name, pspace, {});
 	}
       else if (pspace == NULL || pspace == elt.objfile->pspace)
 	{
@@ -4367,7 +4367,7 @@ add_matching_symbols_to_info (const char *name,
 	     this case.  */
 	  if (prev_len == info->result.symbols->size ()
 	      && elt.symtab->language () == language_asm)
-	    search_minsyms_for_name (info, lookup_name, pspace, elt.symtab);
+	    search_minsyms_for_name (info, lookup_name, pspace, elt);
 	}
     }
 }
