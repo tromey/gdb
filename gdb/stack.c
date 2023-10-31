@@ -1246,6 +1246,7 @@ get_last_displayed_sal ()
       sal.pc = last_displayed_symtab_info.address ();
       sal.symtab = last_displayed_symtab_info.symtab ();
       sal.line = last_displayed_symtab_info.line ();
+      fixme;
     }
 
   return sal;
