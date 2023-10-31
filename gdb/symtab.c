@@ -3300,6 +3300,7 @@ find_pc_sect_line (CORE_ADDR pc, struct obj_section *section, int notcurrent)
       else
 	val.end = bv->global_block ()->end ();
     }
+  val.objfile = objfile;
   val.section = section;
   return val;
 }
