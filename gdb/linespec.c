@@ -4028,6 +4028,7 @@ decode_digits_list_mode (struct linespec_state *self,
       val.pspace = pspace;
       val.pc = 0;
       val.explicit_line = true;
+      fixme;
 
       add_sal_to_sals (self, &values, &val, NULL, 0);
     }
@@ -4398,6 +4399,7 @@ symbol_to_sal (struct symtab_and_line *result,
 	  result->pc = bsym.address ();
 	  result->pspace = bsym.objfile ()->pspace;
 	  result->explicit_pc = 1;
+	  result->objfile = bsym.objfile ();
 	  return 1;
 	}
       else if (funfirstline)
@@ -4413,6 +4415,7 @@ symbol_to_sal (struct symtab_and_line *result,
 	  result->line = sym->line ();
 	  result->pc = bsym.address ();
 	  result->pspace = bsym.objfile ()->pspace;
+	  result->objfile = bsym.objfile ();
 	  return 1;
 	}
     }
