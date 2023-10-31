@@ -257,7 +257,7 @@ public:
 
   /* Return the cached symtab.  If the cache is invalid nullptr is
      returned.  */
-  struct symtab *symtab () const
+  bound_symtab symtab () const
   { return m_symtab; }
 
   /* Return the cached line number.  If the cache is invalid 0 is
@@ -271,13 +271,13 @@ public:
     m_valid = false;
     m_pspace = nullptr;
     m_address = 0;
-    m_symtab = nullptr;
+    m_symtab = {};
     m_line = 0;
   }
 
   /* Store a new set of values in the cache.  */
   void set (struct program_space *pspace, CORE_ADDR address,
-	    struct symtab *symtab, int line)
+	    bound_symtab symtab, int line)
   {
     gdb_assert (pspace != nullptr);
 
@@ -299,7 +299,7 @@ private:
   CORE_ADDR m_address = 0;
 
   /* The last symtab displayed.  */
-  struct symtab *m_symtab = nullptr;
+  bound_symtab m_symtab = {};
 
   /* The last line number displayed.  */
   int m_line = 0;
@@ -1175,7 +1175,9 @@ print_frame_info (const frame_print_options &fp_opts,
       CORE_ADDR pc;
 
       if (get_frame_pc_if_available (frame, &pc))
-	last_displayed_symtab_info.set (sal.pspace, pc, sal.symtab, sal.line);
+	last_displayed_symtab_info.set (sal.pspace, pc,
+					{ sal.symtab, sal.objfile },
+					sal.line);
       else
 	last_displayed_symtab_info.invalidate ();
     }
@@ -1222,7 +1224,7 @@ get_last_displayed_addr (void)
 struct symtab*
 get_last_displayed_symtab (void)
 {
-  return last_displayed_symtab_info.symtab ();
+  return last_displayed_symtab_info.symtab ().symtab;
 }
 
 /* See stack.h.  */
@@ -1244,9 +1246,9 @@ get_last_displayed_sal ()
     {
       sal.pspace = last_displayed_symtab_info.pspace ();
       sal.pc = last_displayed_symtab_info.address ();
-      sal.symtab = last_displayed_symtab_info.symtab ();
+      sal.symtab = last_displayed_symtab_info.symtab ().symtab;
+      sal.objfile = last_displayed_symtab_info.symtab ().objfile;
       sal.line = last_displayed_symtab_info.line ();
-      fixme;
     }
 
   return sal;
