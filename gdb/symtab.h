@@ -1931,6 +1931,9 @@ struct compunit_symtab
   /* Return the language of this compunit_symtab.  */
   enum language language () const;
 
+  /* Return the architecture of this compunit.  */
+  gdbarch *arch () const;
+
   /* Unordered chain of all compunit symtabs of this objfile.  */
   struct compunit_symtab *next;
 

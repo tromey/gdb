@@ -432,6 +432,14 @@ compunit_symtab::language () const
   return symtab->language ();
 }
 
+/* See symtab.h.  */
+
+gdbarch *
+compunit_symtab::arch () const
+{
+  return objfile ()->arch ();
+}
+
 /* The relocated address of the minimal symbol, using the section
    offsets from OBJFILE.  */
 
@@ -3613,7 +3621,7 @@ find_function_start_sal_1 (CORE_ADDR func_addr, obj_section *section,
       && (sal.symtab->compunit ()->locations_valid ()
 	  || sal.symtab->language () == language_asm))
     {
-      struct gdbarch *gdbarch = sal.symtab->compunit ()->objfile ()->arch ();
+      struct gdbarch *gdbarch = sal.symtab->compunit ()->arch ();
 
       sal.pc = func_addr;
       if (gdbarch_skip_entrypoint_p (gdbarch))
@@ -6500,7 +6508,7 @@ symbol::arch () const
 {
   if (!is_objfile_owned ())
     return owner.arch;
-  return owner.symtab->compunit ()->objfile ()->arch ();
+  return owner.symtab->compunit ()->arch ();
 }
 
 /* See symtab.h.  */

@@ -7654,7 +7654,7 @@ get_sal_arch (struct symtab_and_line sal)
   if (sal.section)
     return sal.section->objfile->arch ();
   if (sal.symtab)
-    return sal.symtab->compunit ()->objfile ()->arch ();
+    return sal.symtab->compunit ()->arch ();
 
   return NULL;
 }
