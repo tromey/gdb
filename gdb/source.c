@@ -246,6 +246,7 @@ get_current_source_symtab_and_line (void)
   cursal.line = loc->line ();
   cursal.pc = 0;
   cursal.end = 0;
+  fixme;
   
   return cursal;
 }
