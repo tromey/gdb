@@ -2278,7 +2278,7 @@ extern struct type *find_function_type (CORE_ADDR pc);
 extern struct type *find_gnu_ifunc_target_type (CORE_ADDR resolver_funaddr);
 
 /* Find the GNU ifunc minimal symbol that matches SYM.  */
-extern bound_minimal_symbol find_gnu_ifunc (const symbol *sym);
+extern bound_minimal_symbol find_gnu_ifunc (block_symbol sym);
 
 extern void clear_pc_function_cache (void);
 

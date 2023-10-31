@@ -5674,14 +5674,15 @@ symbol_is_function_or_method (minimal_symbol *msymbol)
 /* See symtab.h.  */
 
 bound_minimal_symbol
-find_gnu_ifunc (const symbol *sym)
+find_gnu_ifunc (block_symbol bsym)
 {
+  symbol *sym = bsym.symbol;
   if (sym->aclass () != LOC_BLOCK)
     return {};
 
   lookup_name_info lookup_name (sym->search_name (),
 				symbol_name_match_type::SEARCH_NAME);
-  struct objfile *objfile = sym->objfile ();
+  struct objfile *objfile = bsym.objfile ();
 
   CORE_ADDR address = sym->value_block ()->entry_pc ();
   minimal_symbol *ifunc = NULL;

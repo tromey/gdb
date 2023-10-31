@@ -1187,7 +1187,7 @@ variable:	name_not_typename
 				 If so, prefer the ifunc symbol.  */
 
 			      bound_minimal_symbol resolver
-				= find_gnu_ifunc (sym.symbol);
+				= find_gnu_ifunc (sym);
 			      if (resolver.minsym != NULL)
 				pstate->push_new<var_msym_value_operation>
 				  (resolver);
