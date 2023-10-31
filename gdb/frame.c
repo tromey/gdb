@@ -2851,6 +2851,7 @@ find_frame_sal (frame_info_ptr frame)
 	{
 	  sal.symtab = sym->symtab ();
 	  sal.line = sym->line ();
+	  sal.objfile = bsym.objfile ();
 	}
       else
 	/* If the symbol does not have a location, we don't know where
