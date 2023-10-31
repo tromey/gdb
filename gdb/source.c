@@ -1519,6 +1519,7 @@ info_line_command (const char *arg, int from_tty)
 	curr_sal.line = last_line_listed;
       else
 	curr_sal.line = loc->line ();
+      fixme;
 
       sals = curr_sal;
     }
