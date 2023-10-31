@@ -4066,6 +4066,7 @@ decode_digits_ordinary (struct linespec_state *self,
 	  sal.line = line;
 	  sal.explicit_line = true;
 	  sal.pc = pc;
+	  sal.objfile = elt.objfile;
 	  sals.push_back (std::move (sal));
 	}
     }
