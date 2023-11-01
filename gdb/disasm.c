@@ -596,7 +596,7 @@ do_mixed_source_and_assembly_deprecated
   mle = (struct deprecated_dis_line_entry *)
     alloca (nlines * sizeof (struct deprecated_dis_line_entry));
 
-  struct objfile *objfile = symtab->compunit ()->objfile ();
+  struct objfile *objfile = bsymtab.objfile;
 
   unrelocated_addr unrel_low
     = unrelocated_addr (low - objfile->text_section_offset ());
