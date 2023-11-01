@@ -86,7 +86,7 @@ public:
   current_source_location () = default;
 
   /* Set the value.  */
-  void set (struct symtab *s, int l)
+  void set (bound_symtab s, int l)
   {
     m_symtab = s;
     m_line = l;
@@ -96,7 +96,7 @@ public:
   /* Get the symtab.  */
   struct symtab *symtab () const
   {
-    return m_symtab;
+    return m_symtab.symtab;
   }
 
   /* Get the line number.  */
@@ -105,11 +105,24 @@ public:
     return m_line;
   }
 
+  /* Return a symtab_and_line representation of this location.  */
+  symtab_and_line to_sal (program_space *pspace) const
+  {
+    symtab_and_line result;
+    result.pspace = pspace;
+    result.symtab = m_symtab.symtab;
+    result.line = m_line;
+    result.pc = 0;
+    result.end = 0;
+    result.objfile = m_symtab.objfile;
+    return result;
+  }
+
 private:
 
   /* Symtab of default file for listing lines of.  */
 
-  struct symtab *m_symtab = nullptr;
+  bound_symtab m_symtab = {};
 
   /* Default next line to list.  */
 
@@ -240,15 +253,7 @@ get_current_source_symtab_and_line (void)
 {
   symtab_and_line cursal;
   current_source_location *loc = get_source_location (current_program_space);
-
-  cursal.pspace = current_program_space;
-  cursal.symtab = loc->symtab ();
-  cursal.line = loc->line ();
-  cursal.pc = 0;
-  cursal.end = 0;
-  fixme;
-  
-  return cursal;
+  return loc->to_sal (current_program_space);
 }
 
 /* If the current source file for listing is not set, try and get a default.
@@ -279,18 +284,10 @@ set_default_source_symtab_and_line (void)
 struct symtab_and_line
 set_current_source_symtab_and_line (const symtab_and_line &sal)
 {
-  symtab_and_line cursal;
-
   current_source_location *loc = get_source_location (sal.pspace);
+  symtab_and_line cursal = loc->to_sal (sal.pspace);
 
-  cursal.pspace = sal.pspace;
-  cursal.symtab = loc->symtab ();
-  cursal.line = loc->line ();
-  cursal.pc = 0;
-  cursal.end = 0;
-  fixme;
-
-  loc->set (sal.symtab, sal.line);
+  loc->set ({ sal.symtab, sal.objfile }, sal.line);
 
   /* Force the next "list" to center around the current line.  */
   clear_lines_listed_range ();
@@ -304,7 +301,7 @@ void
 clear_current_source_symtab_and_line (void)
 {
   current_source_location *loc = get_source_location (current_program_space);
-  loc->set (nullptr, 0);
+  loc->set ({ nullptr, nullptr }, 0);
 }
 
 /* See source.h.  */
@@ -325,16 +322,17 @@ select_source_symtab ()
       if (sal.symtab == NULL)
 	/* We couldn't find the location of `main', possibly due to missing
 	   line number info, fall back to line 1 in the corresponding file.  */
-	loc->set (bsym.symbol->symtab (), 1);
+	loc->set ({ bsym.symbol->symtab (), bsym.objfile () }, 1);
       else
-	loc->set (sal.symtab, std::max (sal.line - (lines_to_list - 1), 1));
+	loc->set ({ sal.symtab, sal.objfile },
+		  std::max (sal.line - (lines_to_list - 1), 1));
       return;
     }
 
   /* Alright; find the last file in the symtab list (ignoring .h's
      and namespace symtabs).  */
 
-  struct symtab *new_symtab = nullptr;
+  bound_symtab new_symtab = {};
 
   for (objfile *ofp : current_program_space->objfiles ())
     {
@@ -347,22 +345,22 @@ select_source_symtab ()
 
 	      if (!(len > 2 && (strcmp (&name[len - 2], ".h") == 0
 				|| strcmp (name, "<<C++-namespaces>>") == 0)))
-		new_symtab = symtab;
+		new_symtab = { symtab, ofp };
 	    }
 	}
     }
 
   loc->set (new_symtab, 1);
-  if (new_symtab != nullptr)
+  if (new_symtab.symtab != nullptr)
     return;
 
   for (objfile *objfile : current_program_space->objfiles ())
     {
       symtab *s = objfile->find_last_source_symtab ();
       if (s)
-	new_symtab = s;
+	new_symtab = { s, objfile };
     }
-  if (new_symtab != nullptr)
+  if (new_symtab.symtab != nullptr)
     {
       loc->set (new_symtab,1);
       return;
@@ -1513,13 +1511,9 @@ info_line_command (const char *arg, int from_tty)
     {
       current_source_location *loc
 	= get_source_location (current_program_space);
-      curr_sal.symtab = loc->symtab ();
-      curr_sal.pspace = current_program_space;
+      curr_sal = loc->to_sal (current_program_space);
       if (last_line_listed != 0)
 	curr_sal.line = last_line_listed;
-      else
-	curr_sal.line = loc->line ();
-      fixme;
 
       sals = curr_sal;
     }
