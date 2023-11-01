@@ -146,7 +146,7 @@ DEF_ENUM_FLAGS_TYPE (enum print_source_lines_flag, print_source_lines_flags);
    number LINE and stopping before line number STOPLINE.  If this is
    not the command line version, then the source is shown in the source
    window otherwise it is simply printed.  */
-extern void print_source_lines (struct symtab *s, int line, int stopline,
+extern void print_source_lines (bound_symtab s, int line, int stopline,
 				print_source_lines_flags flags);
 
 /* Wrap up the logic to build a line number range for passing to
@@ -201,7 +201,7 @@ extern bool can_print_line (struct symtab *s, int line);
 
 /* Variation of previous print_source_lines that takes a range instead of a
    start and end line number.  */
-extern void print_source_lines (struct symtab *s, source_lines_range r,
+extern void print_source_lines (bound_symtab s, source_lines_range r,
 				print_source_lines_flags flags);
 
 /* Forget what we learned about line positions in source files, and

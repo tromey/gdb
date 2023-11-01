@@ -4022,9 +4022,17 @@ decode_digits_list_mode (struct linespec_state *self,
       set_current_program_space (pspace);
 
       /* Simplistic search just for the list command.  */
-      val.symtab = find_line_symtab (elt.symtab, val.line, NULL, NULL);
-      if (val.symtab == NULL)
-	val.symtab = elt.symtab;
+      bound_symtab btab = find_line_symtab (elt, val.line, NULL, NULL);
+      if (btab.symtab == NULL)
+	{
+	  val.symtab = elt.symtab;
+	  val.objfile = elt.objfile;
+	}
+      else
+	{
+	  val.symtab = btab.symtab;
+	  val.objfile = btab.objfile;
+	}
       val.pspace = pspace;
       val.pc = 0;
       val.explicit_line = true;

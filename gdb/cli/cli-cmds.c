@@ -1219,7 +1219,8 @@ list_around_line (const char *arg, symtab_and_line cursal)
       && get_lines_to_list () == 1 && first > 1)
     first -= 1;
 
-  print_source_lines (cursal.symtab, source_lines_range (first), 0);
+  print_source_lines ({ cursal.symtab, cursal.objfile },
+		      source_lines_range (first), 0);
 }
 
 static void
@@ -1251,7 +1252,7 @@ list_command (const char *arg, int from_tty)
       else if (arg == nullptr || arg[0] == '+')
 	{
 	  if (last_symtab_line (cursal.symtab) >= cursal.line)
-	    print_source_lines (cursal.symtab,
+	    print_source_lines ({ cursal.symtab, cursal.objfile },
 				source_lines_range (cursal.line), 0);
 	  else
 	    {
@@ -1269,7 +1270,7 @@ list_command (const char *arg, int from_tty)
 		   symtab_to_filename_for_display (cursal.symtab));
 	  source_lines_range range (get_first_line_listed (),
 				    source_lines_range::BACKWARD);
-	  print_source_lines (cursal.symtab, range, 0);
+	  print_source_lines ({ cursal.symtab, cursal.objfile }, range, 0);
 	}
 
       /* "list ." lists the default location again.  */
@@ -1455,7 +1456,7 @@ list_command (const char *arg, int from_tty)
     {
       source_lines_range range (sal_end.line + 1,
 				source_lines_range::BACKWARD);
-      print_source_lines (sal_end.symtab, range, 0);
+      print_source_lines ({ sal_end.symtab, sal_end.objfile }, range, 0);
     }
   else if (sal.symtab == 0)
     error (_("No default source file yet.  Do \"help list\"."));
@@ -1469,13 +1470,15 @@ list_command (const char *arg, int from_tty)
 	    first_line = 1;
 	  if (sals.size () > 1)
 	    print_sal_location (sal);
-	  print_source_lines (sal.symtab, source_lines_range (first_line), 0);
+	  print_source_lines ({ sal.symtab, sal.objfile },
+			      source_lines_range (first_line), 0);
 	}
     }
   else if (dummy_end)
-    print_source_lines (sal.symtab, source_lines_range (sal.line), 0);
+    print_source_lines ({ sal.symtab, sal.objfile },
+			source_lines_range (sal.line), 0);
   else
-    print_source_lines (sal.symtab,
+    print_source_lines ({ sal.symtab, sal.objfile },
 			source_lines_range (sal.line, (sal_end.line + 1)),
 			0);
 }

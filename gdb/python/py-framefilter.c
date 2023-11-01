@@ -1006,7 +1006,8 @@ py_print_frame (PyObject *filter, frame_filter_flags flags,
     {
       if (print_location_source)
 	out->text ("\n"); /* Newline after the location source.  */
-      print_source_lines (sal.symtab, sal.line, sal.line + 1, 0);
+      print_source_lines ({ sal.symtab, sal.objfile },
+			  sal.line, sal.line + 1, 0);
     }
 
   /* For MI we need to deal with the "children" list population of

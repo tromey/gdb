@@ -59,7 +59,6 @@ mi_cmd_disassemble (const char *command, const char *const *argv, int argc)
 
   int mode;
   gdb_disassembly_flags disasm_flags;
-  struct symtab *s;
 
   /* Which options have we processed ... */
   bool file_seen = false;
@@ -246,8 +245,8 @@ mi_cmd_disassemble (const char *command, const char *const *argv, int argc)
 
   if (line_seen && file_seen)
     {
-      s = lookup_symtab (file_string).symtab;
-      if (s == NULL)
+      bound_symtab s = lookup_symtab (file_string);
+      if (s.symtab == nullptr)
 	error (_("-data-disassemble: Invalid filename."));
       if (!find_line_pc (s, line_num, &start))
 	error (_("-data-disassemble: Invalid line number"));

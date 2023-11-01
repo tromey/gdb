@@ -3348,10 +3348,11 @@ find_pc_line_symtab (CORE_ADDR pc)
 
    If not found, return NULL.  */
 
-struct symtab *
-find_line_symtab (struct symtab *sym_tab, int line,
+bound_symtab
+find_line_symtab (bound_symtab bsym_tab, int line,
 		  int *index, bool *exact_match)
 {
+  symtab *sym_tab = bsym_tab.symtab;
   int exact = 0;  /* Initialized here to avoid a compiler warning.  */
 
   /* BEST_INDEX and BEST_LINETABLE identify the smallest linenumber > LINE
@@ -3359,11 +3360,11 @@ find_line_symtab (struct symtab *sym_tab, int line,
 
   int best_index;
   const struct linetable *best_linetable;
-  struct symtab *best_symtab;
+  bound_symtab best_symtab;
 
   /* First try looking it up in the given symtab.  */
-  best_linetable = sym_tab->linetable ();
-  best_symtab = sym_tab;
+  best_linetable = bsym_tab.symtab->linetable ();
+  best_symtab = bsym_tab;
   best_index = find_line_common (best_linetable, line, &exact, 0);
   if (best_index < 0 || !exact)
     {
@@ -3409,7 +3410,7 @@ find_line_symtab (struct symtab *sym_tab, int line,
 			{
 			  best_index = ind;
 			  best_linetable = l;
-			  best_symtab = s;
+			  best_symtab = { s, objfile };
 			  goto done;
 			}
 		      if (best == 0 || l->item[ind].line < best)
@@ -3417,7 +3418,7 @@ find_line_symtab (struct symtab *sym_tab, int line,
 			  best = l->item[ind].line;
 			  best_index = ind;
 			  best_linetable = l;
-			  best_symtab = s;
+			  best_symtab = { s, objfile };
 			}
 		    }
 		}
@@ -3426,7 +3427,7 @@ find_line_symtab (struct symtab *sym_tab, int line,
     }
 done:
   if (best_index < 0)
-    return NULL;
+    return {};
 
   if (index)
     *index = best_index;
@@ -3483,20 +3484,20 @@ find_pcs_for_symtab_line (struct symtab *symtab, int line,
    The source file is specified with a struct symtab.  */
 
 bool
-find_line_pc (struct symtab *symtab, int line, CORE_ADDR *pc)
+find_line_pc (bound_symtab symtab, int line, CORE_ADDR *pc)
 {
   const struct linetable *l;
   int ind;
 
   *pc = 0;
-  if (symtab == 0)
+  if (symtab.symtab == nullptr)
     return false;
 
   symtab = find_line_symtab (symtab, line, &ind, NULL);
-  if (symtab != NULL)
+  if (symtab.symtab != nullptr)
     {
-      l = symtab->linetable ();
-      *pc = l->item[ind].pc (symtab->compunit ()->objfile ());
+      l = symtab.symtab->linetable ();
+      *pc = l->item[ind].pc (symtab.symtab->compunit ()->objfile ());
       return true;
     }
   else
@@ -3516,7 +3517,8 @@ find_line_pc_range (struct symtab_and_line sal, CORE_ADDR *startptr,
   CORE_ADDR startaddr;
 
   startaddr = sal.pc;
-  if (startaddr == 0 && !find_line_pc (sal.symtab, sal.line, &startaddr))
+  if (startaddr == 0 && !find_line_pc ({ sal.symtab, sal.objfile },
+				       sal.line, &startaddr))
     return false;
 
   /* This whole function is based on address.  For example, if line 10 has

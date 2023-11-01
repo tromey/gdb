@@ -94,9 +94,9 @@ public:
   }
 
   /* Get the symtab.  */
-  struct symtab *symtab () const
+  bound_symtab symtab () const
   {
-    return m_symtab.symtab;
+    return m_symtab;
   }
 
   /* Get the line number.  */
@@ -272,7 +272,7 @@ set_default_source_symtab_and_line (void)
 
   /* Pull in a current source symtab if necessary.  */
   current_source_location *loc = get_source_location (current_program_space);
-  if (loc->symtab () == nullptr)
+  if (loc->symtab ().symtab == nullptr)
     select_source_symtab ();
 }
 
@@ -310,7 +310,7 @@ void
 select_source_symtab ()
 {
   current_source_location *loc = get_source_location (current_program_space);
-  if (loc->symtab () != nullptr)
+  if (loc->symtab ().symtab != nullptr)
     return;
 
   /* Make the default place to list be the function `main'
@@ -672,7 +672,7 @@ info_source_command (const char *ignore, int from_tty)
 {
   current_source_location *loc
     = get_source_location (current_program_space);
-  struct symtab *s = loc->symtab ();
+  struct symtab *s = loc->symtab ().symtab;
   struct compunit_symtab *cust;
 
   if (!s)
@@ -1284,7 +1284,7 @@ symtab_to_filename_for_display (struct symtab *symtab)
    starting with line number LINE and stopping before line number STOPLINE.  */
 
 static void
-print_source_lines_base (struct symtab *s, int line, int stopline,
+print_source_lines_base (bound_symtab s, int line, int stopline,
 			 print_source_lines_flags flags)
 {
   bool noprint = false;
@@ -1462,7 +1462,7 @@ print_source_lines_base (struct symtab *s, int line, int stopline,
 /* See source.h.  */
 
 void
-print_source_lines (struct symtab *s, int line, int stopline,
+print_source_lines (bound_symtab s, int line, int stopline,
 		    print_source_lines_flags flags)
 {
   print_source_lines_base (s, line, stopline, flags);
@@ -1471,7 +1471,7 @@ print_source_lines (struct symtab *s, int line, int stopline,
 /* See source.h.  */
 
 void
-print_source_lines (struct symtab *s, source_lines_range line_range,
+print_source_lines (bound_symtab s, source_lines_range line_range,
 		    print_source_lines_flags flags)
 {
   print_source_lines_base (s, line_range.startline (),
@@ -1616,15 +1616,17 @@ search_command_helper (const char *regex, int from_tty, bool forward)
 
   current_source_location *loc
     = get_source_location (current_program_space);
-  if (loc->symtab () == nullptr)
+  bound_symtab bsymtab = loc->symtab ();
+  symtab *symtab = bsymtab.symtab;
+  if (symtab == nullptr)
     select_source_symtab ();
 
   if (!source_open)
     error (_("source code access disabled"));
 
-  scoped_fd desc (open_source_file (loc->symtab ()));
+  scoped_fd desc (open_source_file (symtab));
   if (desc.get () < 0)
-    perror_with_name (symtab_to_filename_for_display (loc->symtab ()),
+    perror_with_name (symtab_to_filename_for_display (symtab),
 		      -desc.get ());
 
   int line = (forward
@@ -1633,12 +1635,12 @@ search_command_helper (const char *regex, int from_tty, bool forward)
 
   const std::vector<off_t> *offsets;
   if (line < 1
-      || !g_source_cache.get_line_charpos (loc->symtab (), &offsets)
+      || !g_source_cache.get_line_charpos (symtab, &offsets)
       || line > offsets->size ())
     error (_("Expression not found"));
 
   if (lseek (desc.get (), (*offsets)[line - 1], 0) < 0)
-    perror_with_name (symtab_to_filename_for_display (loc->symtab ()));
+    perror_with_name (symtab_to_filename_for_display (symtab));
 
   gdb_file_up stream = desc.to_file (FDOPEN_MODE);
   clearerr (stream.get ());
@@ -1673,7 +1675,7 @@ search_command_helper (const char *regex, int from_tty, bool forward)
       if (re_exec (buf.data ()) > 0)
 	{
 	  /* Match!  */
-	  print_source_lines (loc->symtab (), line, line + 1, 0);
+	  print_source_lines (bsymtab, line, line + 1, 0);
 	  set_internalvar_integer (lookup_internalvar ("_"), line);
 	  loc->set (loc->symtab (), std::max (line - lines_to_list / 2, 1));
 	  return;
@@ -1688,8 +1690,7 @@ search_command_helper (const char *regex, int from_tty, bool forward)
 	    break;
 	  if (fseek (stream.get (), (*offsets)[line - 1], 0) < 0)
 	    {
-	      const char *filename
-		= symtab_to_filename_for_display (loc->symtab ());
+	      const char *filename = symtab_to_filename_for_display (symtab);
 	      perror_with_name (filename);
 	    }
 	}

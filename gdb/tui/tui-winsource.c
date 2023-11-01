@@ -211,7 +211,7 @@ tui_update_source_windows_with_line (struct symtab_and_line sal)
   struct gdbarch *gdbarch = nullptr;
   if (sal.symtab != nullptr)
     {
-      find_line_pc (sal.symtab, sal.line, &sal.pc);
+      find_line_pc ({ sal.symtab, sal.objfile }, sal.line, &sal.pc);
       gdbarch = sal.symtab->compunit ()->arch ();
     }
 
@@ -479,9 +479,11 @@ tui_source_window_base::rerender ()
       frame_info_ptr frame = deprecated_safe_get_selected_frame ();
       struct gdbarch *gdbarch = get_frame_arch (frame);
 
-      struct symtab *s = find_pc_line_symtab (get_frame_pc (frame));
       if (this != TUI_SRC_WIN)
-	find_line_pc (s, cursal.line, &cursal.pc);
+	{
+	  symtab_and_line s = find_pc_line (get_frame_pc (frame), 0);
+	  find_line_pc ({ s.symtab, s.objfile }, cursal.line, &cursal.pc);
+	}
       update_source_window (gdbarch, cursal);
     }
   else

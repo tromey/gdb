@@ -570,7 +570,7 @@ dump_insns (struct gdbarch *gdbarch,
 static void
 do_mixed_source_and_assembly_deprecated
   (struct gdbarch *gdbarch, struct ui_out *uiout,
-   struct symtab *symtab,
+   bound_symtab bsymtab,
    CORE_ADDR low, CORE_ADDR high,
    int how_many, gdb_disassembly_flags flags)
 {
@@ -584,6 +584,7 @@ do_mixed_source_and_assembly_deprecated
   int num_displayed = 0;
   print_source_lines_flags psl_flags = 0;
 
+  struct symtab *symtab = bsymtab.symtab;
   gdb_assert (symtab != nullptr && symtab->linetable () != nullptr);
 
   nlines = symtab->linetable ()->nitems;
@@ -666,7 +667,8 @@ do_mixed_source_and_assembly_deprecated
 	      if (next_line == mle[i].line)
 		{
 		  outer_tuple_emitter.emplace (uiout, "src_and_asm_line");
-		  print_source_lines (symtab, next_line, mle[i].line + 1, psl_flags);
+		  print_source_lines (bsymtab, next_line, mle[i].line + 1,
+				      psl_flags);
 		}
 	      else
 		{
@@ -675,7 +677,7 @@ do_mixed_source_and_assembly_deprecated
 		    {
 		      ui_out_emit_tuple tuple_emitter (uiout,
 						       "src_and_asm_line");
-		      print_source_lines (symtab, next_line, next_line + 1,
+		      print_source_lines (bsymtab, next_line, next_line + 1,
 					  psl_flags);
 		      ui_out_emit_list temp_list_emitter (uiout,
 							  "line_asm_insn");
@@ -683,13 +685,15 @@ do_mixed_source_and_assembly_deprecated
 		  /* Print the last line and leave list open for
 		     asm instructions to be added.  */
 		  outer_tuple_emitter.emplace (uiout, "src_and_asm_line");
-		  print_source_lines (symtab, next_line, mle[i].line + 1, psl_flags);
+		  print_source_lines (bsymtab, next_line, mle[i].line + 1,
+				      psl_flags);
 		}
 	    }
 	  else
 	    {
 	      outer_tuple_emitter.emplace (uiout, "src_and_asm_line");
-	      print_source_lines (symtab, mle[i].line, mle[i].line + 1, psl_flags);
+	      print_source_lines (bsymtab, mle[i].line, mle[i].line + 1,
+				  psl_flags);
 	    }
 
 	  next_line = mle[i].line + 1;
@@ -911,13 +915,15 @@ do_mixed_source_and_assembly (struct gdbarch *gdbarch,
 		{
 		  ui_out_emit_tuple line_tuple_emitter (uiout,
 							"src_and_asm_line");
-		  print_source_lines (sal.symtab, l, l + 1, psl_flags);
+		  print_source_lines ({ sal.symtab, sal.objfile }, l, l + 1,
+				      psl_flags);
 		  ui_out_emit_list chain_line_emitter (uiout, "line_asm_insn");
 		}
 	    }
 	  tuple_emitter.emplace (uiout, "src_and_asm_line");
 	  if (sal.symtab != NULL)
-	    print_source_lines (sal.symtab, sal.line, sal.line + 1, psl_flags);
+	    print_source_lines ({ sal.symtab, sal.objfile },
+				sal.line, sal.line + 1, psl_flags);
 	  else
 	    uiout->text (_("--- no source info for this pc ---\n"));
 	  list_emitter.emplace (uiout, "line_asm_insn");
@@ -1189,7 +1195,8 @@ gdb_disassembly (struct gdbarch *gdbarch, struct ui_out *uiout,
   int nlines = -1;
 
   /* Assume symtab is valid for whole PC range.  */
-  symtab = find_pc_line_symtab (low);
+  symtab_and_line sal = find_pc_line (low, 0);
+  symtab = sal.symtab;
 
   if (symtab != NULL && symtab->linetable () != NULL)
     nlines = symtab->linetable ()->nitems;
@@ -1203,7 +1210,8 @@ gdb_disassembly (struct gdbarch *gdbarch, struct ui_out *uiout,
 				  how_many, flags);
 
   else if (flags & DISASSEMBLY_SOURCE_DEPRECATED)
-    do_mixed_source_and_assembly_deprecated (gdbarch, uiout, symtab,
+    do_mixed_source_and_assembly_deprecated (gdbarch, uiout,
+					     { sal.symtab, sal.objfile },
 					     low, high, how_many, flags);
 
   gdb_flush (gdb_stdout);

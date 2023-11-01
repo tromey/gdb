@@ -1161,7 +1161,8 @@ print_frame_info (const frame_print_options &fp_opts,
 	      uiout->text ("\t");
 	    }
 
-	  print_source_lines (sal.symtab, sal.line, sal.line + 1, 0);
+	  print_source_lines ({ sal.symtab, sal.objfile },
+			      sal.line, sal.line + 1, 0);
 	}
 
       /* If disassemble-next-line is set to on and there is line debug

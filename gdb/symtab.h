@@ -2401,7 +2401,7 @@ extern struct symtab *find_pc_line_symtab (CORE_ADDR);
 
 /* Given a symtab and line number, return the pc there.  */
 
-extern bool find_line_pc (struct symtab *, int, CORE_ADDR *);
+extern bool find_line_pc (bound_symtab, int, CORE_ADDR *);
 
 extern bool find_line_pc_range (struct symtab_and_line, CORE_ADDR *,
 				CORE_ADDR *);
@@ -2471,7 +2471,7 @@ completion_skip_symbol (complete_symbol_mode mode, Symbol *sym)
 
 bool matching_obj_sections (struct obj_section *, struct obj_section *);
 
-extern struct symtab *find_line_symtab (struct symtab *, int, int *, bool *);
+extern bound_symtab find_line_symtab (bound_symtab, int, int *, bool *);
 
 /* Given a function symbol SYM, find the symtab and line for the start
    of the function.  If FUNFIRSTLINE is true, we want the first line
