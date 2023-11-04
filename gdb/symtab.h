@@ -1527,6 +1527,27 @@ private:
  CORE_ADDR get_maybe_copied_address () const;
 };
 
+/* A bound symbol is a symbol that is bound to a particular objfile.
+   (Currently all symbols are intrinsically bound, but as part of the
+   objfile-splitting project, eventually they will not have this
+   backlink.)  */
+struct bound_symbol
+{
+  /* The symbol.  Can be NULL.  */
+  struct symbol *symbol;
+
+  /* The objfile.  If SYMBOL is non-NULL, then this must be as well.  */
+  struct objfile *objfile;
+
+  /* Compute the address of the symbol.  */
+  CORE_ADDR address () const
+  { return symbol->value_address (); }
+
+  /* Convenience method to access symbol contents.  */
+  struct symbol *operator-> () const
+  { return symbol; }
+};
+
 /* See block-symbol.h.  */
 inline CORE_ADDR
 block_symbol::address () const
