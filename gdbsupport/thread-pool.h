@@ -150,6 +150,9 @@ public:
      waited for.  */
   static constexpr size_t BLOCKING_PRIORITY = (size_t) -1;
 
+  /* A low priority.  */
+  static constexpr size_t LOW_PRIORITY = 0;
+
   /* Post a task to the thread pool.  A future is returned, which can
      be used to wait for the result.  */
   future<void> post_task (std::function<void ()> &&func,
