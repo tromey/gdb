@@ -183,7 +183,12 @@ thread_pool::set_thread_count (size_t num_threads)
   if (num_threads < m_thread_count)
     {
       for (size_t i = num_threads; i < m_thread_count; ++i)
-	m_tasks.emplace ();
+	{
+	  /* Use a high priority here because the user asked for the
+	     threads to shut down -- so shut them down as soon as
+	     possible.  */
+	  m_tasks.emplace (BLOCKING_PRIORITY, task_t {});
+	}
       m_tasks_cv.notify_all ();
     }
 
@@ -196,7 +201,8 @@ thread_pool::set_thread_count (size_t num_threads)
 #if CXX_STD_THREAD
 
 void
-thread_pool::do_post_task (std::packaged_task<void ()> &&func)
+thread_pool::do_post_task (std::packaged_task<void ()> &&func,
+			   size_t prio)
 {
   /* This assert is here to check that no tasks are posted to the pool between
      its initialization and sizing.  */
@@ -206,7 +212,7 @@ thread_pool::do_post_task (std::packaged_task<void ()> &&func)
   if (m_thread_count != 0)
     {
       std::lock_guard<std::mutex> guard (m_tasks_mutex);
-      m_tasks.emplace (std::move (t));
+      m_tasks.emplace (prio, std::move (t));
       m_tasks_cv.notify_one ();
     }
   else
@@ -237,8 +243,7 @@ thread_pool::thread_function ()
 	std::unique_lock<std::mutex> guard (m_tasks_mutex);
 	while (m_tasks.empty ())
 	  m_tasks_cv.wait (guard);
-	t = std::move (m_tasks.front());
-	m_tasks.pop ();
+	t = m_tasks.pop_task ();
       }
 
       if (!t.has_value ())

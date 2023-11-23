@@ -146,14 +146,19 @@ public:
 #endif
   }
 
+  /* A priority that can be used for tasks that will be immediately
+     waited for.  */
+  static constexpr size_t BLOCKING_PRIORITY = (size_t) -1;
+
   /* Post a task to the thread pool.  A future is returned, which can
      be used to wait for the result.  */
-  future<void> post_task (std::function<void ()> &&func)
+  future<void> post_task (std::function<void ()> &&func,
+			  size_t prio = BLOCKING_PRIORITY)
   {
 #if CXX_STD_THREAD
     std::packaged_task<void ()> task (std::move (func));
     future<void> result = task.get_future ();
-    do_post_task (std::packaged_task<void ()> (std::move (task)));
+    do_post_task (std::packaged_task<void ()> (std::move (task)), prio);
     return result;
 #else
     func ();
@@ -164,12 +169,13 @@ public:
   /* Post a task to the thread pool.  A future is returned, which can
      be used to wait for the result.  */
   template<typename T>
-  future<T> post_task (std::function<T ()> &&func)
+  future<T> post_task (std::function<T ()> &&func,
+		       size_t prio = BLOCKING_PRIORITY)
   {
 #if CXX_STD_THREAD
     std::packaged_task<T ()> task (std::move (func));
     future<T> result = task.get_future ();
-    do_post_task (std::packaged_task<void ()> (std::move (task)));
+    do_post_task (std::packaged_task<void ()> (std::move (task)), prio);
     return result;
 #else
     return future<T> (func ());
@@ -186,7 +192,7 @@ private:
 
   /* Post a task to the thread pool.  A future is returned, which can
      be used to wait for the result.  */
-  void do_post_task (std::packaged_task<void ()> &&func);
+  void do_post_task (std::packaged_task<void ()> &&func, size_t prio);
 
   /* The current thread count.  */
   size_t m_thread_count = 0;
@@ -194,11 +200,42 @@ private:
   /* A convenience typedef for the type of a task.  */
   typedef std::packaged_task<void ()> task_t;
 
-  /* The tasks that have not been processed yet.  An optional is used
-     to represent a task.  If the optional is empty, then this means
-     that the receiving thread should terminate.  If the optional is
-     non-empty, then it is an actual task to evaluate.  */
-  std::queue<std::optional<task_t>> m_tasks;
+  /* A convenience typedef for the element type of the priority queue.
+     The first element of the pair is the priority.  An optional is
+     used to represent a task.  If the optional is empty, then this
+     means that the receiving thread should terminate.  If the
+     optional is non-empty, then it is an actual task to evaluate.  */
+  typedef std::pair<size_t, std::optional<task_t>> element_t;
+
+  /* A comparison function for queue elements.  */
+  struct queue_compare
+  {
+    bool operator() (const element_t &a, const element_t &b) const
+    {
+      return a.first < b.first;
+    }
+  };
+
+  /* A subclass of priority_queue so that we can extract just the
+     highest-priority task.  This is needed because
+     priority_queue::top returns a const reference.  */
+  class queue : public std::priority_queue<element_t,
+					   std::vector<element_t>,
+					   queue_compare>
+  {
+  public:
+
+    std::optional<task_t> pop_task ()
+    {
+      std::pop_heap (c.begin (), c.end (), comp);
+      std::optional<task_t> result = std::move (c.back ().second);
+      c.pop_back ();
+      return result;
+    }
+  };
+
+  /* The tasks that have not been processed yet.*/
+  queue m_tasks;
 
   /* A condition variable and mutex that are used for communication
      between the main thread and the worker threads.  */
