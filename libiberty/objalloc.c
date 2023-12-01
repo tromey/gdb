@@ -82,7 +82,7 @@ struct objalloc_chunk
 
 /* A request for this amount or more is just passed through to malloc.  */
 
-#define BIG_REQUEST (512)
+#define BIG_REQUEST (1)
 
 /* Create an objalloc structure.  */
 
