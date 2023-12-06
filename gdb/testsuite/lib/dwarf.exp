@@ -564,9 +564,9 @@ namespace eval Dwarf {
     # for Fission.
     variable _abbrev_section
 
-    # The next available abbrev number in the current CU's abbrev
-    # table.
-    variable _abbrev_num
+    # This maps from abbrev contents (see _handle_DW_TAG) to the
+    # corresponding abbrev number.
+    variable _all_abbrevs
 
     # The string table for this assembly.  The key is the string; the
     # value is the label for that string.
@@ -899,34 +899,27 @@ namespace eval Dwarf {
 	return $name
     }
 
-    proc _handle_attribute { attr_name attr_value attr_form } {
+    proc _handle_attribute { abbrev_var attr_name attr_value attr_form } {
+	upvar $abbrev_var abbrev_list
+
 	variable _abbrev_section
 	variable _constants
 	variable _cu_version
 
 	_handle_DW_FORM $attr_form $attr_value
 
-	_defer_output $_abbrev_section {
-	    if { $attr_form eq "SPECIAL_expr" } {
-		if { $_cu_version < 4 } {
-		    set attr_form_comment "DW_FORM_block"
-		} else {
-		    set attr_form_comment "DW_FORM_exprloc"
-		}
-	    } else {
-		set attr_form_comment $attr_form
-	    }
-	    _op .uleb128 $_constants($attr_name) $attr_name
-	    _op .uleb128 $_constants($attr_form) $attr_form_comment
-	    if {$attr_form eq "DW_FORM_implicit_const"} {
-		_op .sleb128 $attr_value "the constant"
-	    }
+	set this_entry [list $attr_name $attr_form]
+	if {$attr_form eq "DW_FORM_implicit_const"} {
+	    lappend this_entry $attr_value
 	}
+	lappend abbrev_list $this_entry
     }
 
     # Handle macro attribute MACRO_AT_range.
 
-    proc _handle_macro_at_range { attr_value } {
+    proc _handle_macro_at_range { abbrev_var attr_value } {
+	upvar $abbrev_var abbrev_list
+
 	variable _cu_is_fission
 
 	if {[llength $attr_value] != 1} {
@@ -943,86 +936,133 @@ namespace eval Dwarf {
 	    set form DW_FORM_GNU_addr_index
 	}
 
-	_handle_attribute DW_AT_low_pc [lindex $result 0] $form
-	_handle_attribute DW_AT_high_pc \
+	_handle_attribute abbrev_list DW_AT_low_pc [lindex $result 0] $form
+	_handle_attribute abbrev_list DW_AT_high_pc \
 	    "[lindex $result 0] + [lindex $result 1]" $form
     }
 
     # Handle macro attribute MACRO_AT_func.
 
-    proc _handle_macro_at_func { attr_value } {
+    proc _handle_macro_at_func { abbrev_var attr_value } {
+	upvar $abbrev_var abbrev_list
+
 	if {[llength $attr_value] != 1} {
 	    error "usage: MACRO_AT_func { func file }"
 	}
-	_handle_attribute DW_AT_name [lindex $attr_value 0] DW_FORM_string
-	_handle_macro_at_range $attr_value
+	_handle_attribute abbrev_list \
+	    DW_AT_name [lindex $attr_value 0] DW_FORM_string
+	_handle_macro_at_range abbrev_list $attr_value
+    }
+
+    # Given an abbrev description, return the abbrev number.  This may
+    # create a new abbrev.
+    proc _get_abbrev_number {desc} {
+	variable _all_abbrevs
+
+	if {![info exists _all_abbrevs($desc)]} {
+	    variable _constants
+	    variable _abbrev_section
+	    variable _cu_version
+
+	    set my_abbrev [expr {[array size _all_abbrevs] + 1}]
+	    set _all_abbrevs($desc) $my_abbrev
+
+	    set attrs [lassign $desc tag_name has_children]
+	    _defer_output $_abbrev_section {
+		_op .uleb128 $my_abbrev "Abbrev start"
+		_op .uleb128 $_constants($tag_name) $tag_name
+		_op .byte $has_children "has_children"
+
+		foreach attr $attrs {
+		    lassign $attr attr_name attr_form value
+		    if { $attr_form eq "SPECIAL_expr" } {
+			if { $_cu_version < 4 } {
+			    set attr_form_comment "DW_FORM_block"
+			} else {
+			    set attr_form_comment "DW_FORM_exprloc"
+			}
+		    } else {
+			set attr_form_comment $attr_form
+		    }
+		    _op .uleb128 $_constants($attr_name) $attr_name
+		    _op .uleb128 $_constants($attr_form) $attr_form_comment
+		    if {$attr_form eq "DW_FORM_implicit_const"} {
+			_op .sleb128 $value "the constant"
+		    }
+		}
+
+		# Terminator.
+		_op .byte 0x0 "DW_AT - Terminator"
+		_op .byte 0x0 "DW_FORM - Terminator"
+	    }
+	}
+
+	return $_all_abbrevs($desc)
     }
 
     proc _handle_DW_TAG {tag_name {attrs {}} {children {}}} {
-	variable _abbrev_section
-	variable _abbrev_num
 	variable _constants
 
 	set has_children [expr {[string length $children] > 0}]
-	set my_abbrev [incr _abbrev_num]
 
-	# We somewhat wastefully emit a new abbrev entry for each tag.
-	# There's no reason for this other than laziness.
-	_defer_output $_abbrev_section {
-	    _op .uleb128 $my_abbrev "Abbrev start"
-	    _op .uleb128 $_constants($tag_name) $tag_name
-	    _op .byte $has_children "has_children"
-	}
+	# We compute the abbrev by building a list holding the tag,
+	# the has-children flag, and all the forms.  Then if that
+	# abbrev has not yet been seen, we create a new one; or we
+	# reuse the existing one.  Simultaneously we build any
+	# .debug_info output in a string and then write this
+	# afterward.
+	set abbrev_list [list $tag_name $has_children]
+	
+	set info_data [_defer_to_string {
+	    foreach attr $attrs {
+		set attr_name [_map_name [lindex $attr 0] _AT]
 
-	_op .uleb128 $my_abbrev "Abbrev ($tag_name)"
+		# When the length of ATTR is greater than 2, the last
+		# element of the list must be a form.  The second through
+		# the penultimate elements are joined together and
+		# evaluated using subst.  This allows constructs such as
+		# [gdb_target_symbol foo] to be used.
 
-	foreach attr $attrs {
-	    set attr_name [_map_name [lindex $attr 0] _AT]
-
-	    # When the length of ATTR is greater than 2, the last
-	    # element of the list must be a form.  The second through
-	    # the penultimate elements are joined together and
-	    # evaluated using subst.  This allows constructs such as
-	    # [gdb_target_symbol foo] to be used.
-
-	    if {[llength $attr] > 2} {
-	        set attr_value [uplevel 2 [list subst [join [lrange $attr 1 end-1]]]]
-	    } else {
-	        set attr_value [uplevel 2 [list subst [lindex $attr 1]]]
-	    }
-
-	    if { [string equal "MACRO_AT_func" $attr_name] } {
-		_handle_macro_at_func $attr_value
-	    } elseif { [string equal "MACRO_AT_range" $attr_name] } {
-		_handle_macro_at_range $attr_value
-	    } else {
 		if {[llength $attr] > 2} {
-		    set attr_form [uplevel 2 [list subst [lindex $attr end]]]
-
-		    if { [string index $attr_value 0] == ":" } {
-			# It is a label, get its value.
-			_guess_form $attr_value attr_value
-		    }
+		    set attr_value \
+			[uplevel 2 [list subst [join [lrange $attr 1 end-1]]]]
 		} else {
-		    set attr_form [_guess_form $attr_value attr_value]
-		    if { $attr_form eq "" } {
-			set attr_form [_default_form $attr_name]
-		    }
-		    if { $attr_form eq "" } {
-			error "No form for $attr_name $attr_value"
-		    }
+		    set attr_value [uplevel 2 [list subst [lindex $attr 1]]]
 		}
-		set attr_form [_map_name $attr_form _FORM]
 
-		_handle_attribute $attr_name $attr_value $attr_form
+		if { [string equal "MACRO_AT_func" $attr_name] } {
+		    _handle_macro_at_func abbrev_list $attr_value
+		} elseif { [string equal "MACRO_AT_range" $attr_name] } {
+		    _handle_macro_at_range abbrev_list $attr_value
+		} else {
+		    if {[llength $attr] > 2} {
+			set attr_form \
+			    [uplevel 2 [list subst [lindex $attr end]]]
+
+			if { [string index $attr_value 0] == ":" } {
+			    # It is a label, get its value.
+			    _guess_form $attr_value attr_value
+			}
+		    } else {
+			set attr_form [_guess_form $attr_value attr_value]
+			if { $attr_form eq "" } {
+			    set attr_form [_default_form $attr_name]
+			}
+			if { $attr_form eq "" } {
+			    error "No form for $attr_name $attr_value"
+			}
+		    }
+		    set attr_form [_map_name $attr_form _FORM]
+
+		    _handle_attribute abbrev_list \
+			$attr_name $attr_value $attr_form
+		}
 	    }
-	}
+	}]
 
-	_defer_output $_abbrev_section {
-	    # Terminator.
-	    _op .byte 0x0 "DW_AT - Terminator"
-	    _op .byte 0x0 "DW_FORM - Terminator"
-	}
+	set my_abbrev [_get_abbrev_number $abbrev_list]
+	_op .uleb128 $my_abbrev "Abbrev ($tag_name)"
+	_emit $info_data
 
 	if {$has_children} {
 	    uplevel 2 $children
@@ -1435,7 +1475,7 @@ namespace eval Dwarf {
 	variable _constants
 	variable _cu_count
 	variable _abbrev_section
-	variable _abbrev_num
+	variable _all_abbrevs
 	variable _cu_label
 	variable _cu_version
 	variable _cu_addr_size
@@ -1485,7 +1525,7 @@ namespace eval Dwarf {
 
 	set cu_num [incr _cu_count]
 	set my_abbrevs [_compute_label "abbrev${cu_num}_begin"]
-	set _abbrev_num 1
+	array unset _all_abbrevs
 
 	set _cu_label [_compute_label "cu${cu_num}_begin"]
 	set start_label [_compute_label "cu${cu_num}_start"]
@@ -1550,7 +1590,7 @@ namespace eval Dwarf {
     proc tu {options signature type_label body} {
 	variable _cu_count
 	variable _abbrev_section
-	variable _abbrev_num
+	variable _all_abbrevs
 	variable _cu_label
 	variable _cu_version
 	variable _cu_addr_size
@@ -1597,7 +1637,7 @@ namespace eval Dwarf {
 
 	set cu_num [incr _cu_count]
 	set my_abbrevs [_compute_label "abbrev${cu_num}_begin"]
-	set _abbrev_num 1
+	array unset _all_abbrevs
 
 	set _cu_label [_compute_label "cu${cu_num}_begin"]
 	set start_label [_compute_label "cu${cu_num}_start"]
