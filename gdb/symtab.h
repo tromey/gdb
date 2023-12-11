@@ -2264,10 +2264,14 @@ extern void clear_pc_function_cache (void);
 
 extern struct compunit_symtab *find_pc_compunit_symtab (CORE_ADDR);
 
+/* lookup full symbol table by address.  */
+
+extern struct compunit_symtab *find_pc_compunit_symtab (bound_minimal_symbol);
+
 /* lookup full symbol table by address and section.  */
 
-extern struct compunit_symtab *
-  find_pc_sect_compunit_symtab (CORE_ADDR, struct obj_section *);
+extern struct compunit_symtab *find_pc_sect_compunit_symtab
+     (CORE_ADDR, struct obj_section *, bound_minimal_symbol = {});
 
 extern bool find_pc_line_pc_range (CORE_ADDR, CORE_ADDR *, CORE_ADDR *);
 

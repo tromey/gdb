@@ -2820,22 +2820,25 @@ iterate_over_symbols_terminated
   return callback (&block_sym);
 }
 
-/* Find the compunit symtab associated with PC and SECTION.
-   This will read in debug info as necessary.  */
+/* Find the compunit symtab associated with PC and SECTION.  If
+   MSYMBOL is provided, it is assumed to be the minimal symbol
+   associated with PC; if it is empty then it will be looked up.  */
 
 struct compunit_symtab *
-find_pc_sect_compunit_symtab (CORE_ADDR pc, struct obj_section *section)
+find_pc_sect_compunit_symtab (CORE_ADDR pc,
+			      struct obj_section *section,
+			      bound_minimal_symbol msymbol)
 {
   struct compunit_symtab *best_cust = NULL;
   CORE_ADDR best_cust_range = 0;
-  struct bound_minimal_symbol msymbol;
 
   /* If we know that this is not a text address, return failure.  This is
      necessary because we loop based on the block's high and low code
      addresses, which do not include the data ranges, and because
      we call find_pc_sect_psymtab which has a similar restriction based
      on the partial_symtab's texthigh and textlow.  */
-  msymbol = lookup_minimal_symbol_by_pc_section (pc, section);
+  if (msymbol.minsym == nullptr)
+    msymbol = lookup_minimal_symbol_by_pc_section (pc, section);
   if (msymbol.minsym && msymbol.minsym->data_p ())
     return NULL;
 
@@ -2946,6 +2949,13 @@ struct compunit_symtab *
 find_pc_compunit_symtab (CORE_ADDR pc)
 {
   return find_pc_sect_compunit_symtab (pc, find_pc_mapped_section (pc));
+}
+
+struct compunit_symtab *
+find_pc_compunit_symtab (bound_minimal_symbol msym)
+{
+  CORE_ADDR pc = msym.value_address ();
+  return find_pc_sect_compunit_symtab (pc, find_pc_mapped_section (pc), msym);
 }
 
 /* See symtab.h.  */
@@ -4720,8 +4730,7 @@ global_symbol_searcher::expand_symtabs
 		     msymbols to the results list, and that requires that
 		     the symbols tables are expanded.  */
 		  if (kind == FUNCTIONS_DOMAIN
-		      ? (find_pc_compunit_symtab
-			 (msymbol->value_address (objfile)) == NULL)
+		      ? find_pc_compunit_symtab ({msymbol, objfile}) == nullptr
 		      : (lookup_symbol_in_objfile_from_linkage_name
 			 (objfile, msymbol->linkage_name (),
 			  VAR_DOMAIN)
@@ -4840,8 +4849,7 @@ global_symbol_searcher::add_matching_msymbols
 	      /* For functions we can do a quick check of whether the
 		 symbol might be found via find_pc_symtab.  */
 	      if (kind != FUNCTIONS_DOMAIN
-		  || (find_pc_compunit_symtab
-		      (msymbol->value_address (objfile)) == NULL))
+		  || find_pc_compunit_symtab ({msymbol, objfile}) == nullptr)
 		{
 		  if (lookup_symbol_in_objfile_from_linkage_name
 		      (objfile, msymbol->linkage_name (),
