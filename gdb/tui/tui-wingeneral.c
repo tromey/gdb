@@ -42,9 +42,6 @@ tui_batch_rendering::tui_batch_rendering ()
   : m_saved_suppress (suppress_output)
 {
   suppress_output = true;
-
-  for (const auto &win : all_tui_windows ())
-    win->no_refresh ();
 }
 
 /* See tui-data.h.  */
@@ -54,9 +51,6 @@ tui_batch_rendering::~tui_batch_rendering ()
   suppress_output = m_saved_suppress;
   if (!suppress_output)
     doupdate ();
-
-  for (const auto &win : all_tui_windows ())
-    win->refresh_window ();
 }
 
 /* See tui-data.h.  */
