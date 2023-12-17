@@ -409,7 +409,7 @@ tui_data_window::erase_data_content (const char *prompt)
 	x_pos = half_width - strlen (prompt);
       display_string (height / 2, x_pos, prompt);
     }
-  tui_wrefresh (handle.get ());
+  refresh_window ();
 }
 
 /* See tui-regs.h.  */
@@ -487,7 +487,7 @@ tui_data_window::check_register_values (frame_info_ptr frame)
 	}
     }
 
-  tui_wrefresh (handle.get ());
+  refresh_window ();
 }
 
 /* Display a register in a window.  If hilite is TRUE, then the value

@@ -62,9 +62,7 @@ tui_cmd_window::resize (int height_, int width_, int origin_x, int origin_y)
 void
 tui_refresh_cmd_win (void)
 {
-  WINDOW *w = TUI_CMD_WIN->handle.get ();
-
-  tui_wrefresh (w);
+  TUI_CMD_WIN->refresh_window ();
 
   /* FIXME: It's not clear why this is here.
      It was present in the original tui_puts code and is kept in order to

@@ -93,13 +93,8 @@ public:
   void refresh_window () override
   {
     if (m_inner_window != nullptr)
-      {
-	wnoutrefresh (handle.get ());
-	touchwin (m_inner_window.get ());
-	tui_wrefresh (m_inner_window.get ());
-      }
-    else
-      tui_win_info::refresh_window ();
+      wnoutrefresh (m_inner_window.get ());
+    tui_win_info::refresh_window ();
   }
 
   void resize (int height, int width, int origin_x, int origin_y) override;
@@ -268,8 +263,8 @@ tui_py_window::output (const char *text, bool full_window)
       tui_puts (text, m_inner_window.get ());
       if (full_window)
 	check_and_display_highlight_if_needed ();
-      else
-	tui_wrefresh (m_inner_window.get ());
+
+      refresh_window ();
     }
 }
 
