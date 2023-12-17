@@ -481,7 +481,12 @@ void
 tui_refresh_all_win (void)
 {
   clearok (curscr, TRUE);
-  tui_refresh_all ();
+  tui_batch_rendering defer;
+  for (tui_win_info *win_info : all_tui_windows ())
+    {
+      if (win_info->is_visible ())
+	win_info->refresh_window ();
+    }
 }
 
 void

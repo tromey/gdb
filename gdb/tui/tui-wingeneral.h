@@ -28,7 +28,6 @@ struct tui_win_info;
 
 extern void tui_unhighlight_win (struct tui_win_info *);
 extern void tui_highlight_win (struct tui_win_info *);
-extern void tui_refresh_all ();
 
 /* An RAII class that causes window refreshes to be deferred until its
    destruction (really the destruction of the outermost instance).
