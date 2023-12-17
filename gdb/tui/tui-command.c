@@ -56,11 +56,3 @@ tui_cmd_window::resize (int height_, int width_, int origin_x, int origin_y)
       wmove (handle.get (), 0, 0);
     }
 }
-
-/* See tui-command.h.  */
-
-void
-tui_refresh_cmd_win (void)
-{
-  TUI_CMD_WIN->refresh_window ();
-}

@@ -27,7 +27,7 @@ tui_file::puts (const char *linebuffer)
 {
   tui_puts (linebuffer);
   if (!m_buffered)
-    tui_refresh_cmd_win ();
+    TUI_CMD_WIN->refresh_window ();
 }
 
 void
@@ -35,13 +35,13 @@ tui_file::write (const char *buf, long length_buf)
 {
   tui_write (buf, length_buf);
   if (!m_buffered)
-    tui_refresh_cmd_win ();
+    TUI_CMD_WIN->refresh_window ();
 }
 
 void
 tui_file::flush ()
 {
   if (m_buffered)
-    tui_refresh_cmd_win ();
+    TUI_CMD_WIN->refresh_window ();
   stdio_file::flush ();
 }
