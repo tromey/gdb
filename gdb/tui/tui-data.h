@@ -56,7 +56,10 @@ public:
   tui_win_info (tui_win_info &&) = default;
   virtual ~tui_win_info () = default;
 
-  /* Call to refresh this window.  */
+  /* Call to refresh this window.  This should be used to flush the
+     window contents -- normally code should call this and not
+     wrefresh.  This method takes care to use wnoutrefresh when batch
+     rendering is being used.  */
   virtual void refresh_window ();
 
   /* Make this window visible or invisible.  */
@@ -251,15 +254,6 @@ struct tui_nobox_window : public virtual tui_win_info
   bool can_box () const final override
   {
     return false;
-  }
-};
-
-/* A TUI window that is not refreshed.  */
-
-struct tui_norefresh_window : public virtual tui_win_info
-{
-  virtual void refresh_window () final override
-  {
   }
 };
 

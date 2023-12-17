@@ -90,13 +90,6 @@ public:
   void do_scroll_vertical (int num_to_scroll) override;
   void do_scroll_horizontal (int num_to_scroll) override;
 
-  void refresh_window () override
-  {
-    if (m_inner_window != nullptr)
-      wnoutrefresh (m_inner_window.get ());
-    tui_win_info::refresh_window ();
-  }
-
   void resize (int height, int width, int origin_x, int origin_y) override;
 
   void click (int mouse_x, int mouse_y, int mouse_button) override;
@@ -264,6 +257,7 @@ tui_py_window::output (const char *text, bool full_window)
       if (full_window)
 	check_and_display_highlight_if_needed ();
 
+      wnoutrefresh (m_inner_window.get ());
       refresh_window ();
     }
 }
