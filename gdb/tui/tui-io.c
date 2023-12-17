@@ -519,7 +519,6 @@ tui_puts_internal (WINDOW *w, const char *string, int *height)
 {
   char c;
   int prev_col = 0;
-  bool saw_nl = false;
 
   while ((c = *string++) != 0)
     {
@@ -540,9 +539,6 @@ tui_puts_internal (WINDOW *w, const char *string, int *height)
 	    }
 	}
 
-      if (c == '\n')
-	saw_nl = true;
-
       do_tui_putc (w, c);
 
       if (height != nullptr)
@@ -556,8 +552,6 @@ tui_puts_internal (WINDOW *w, const char *string, int *height)
 
   if (TUI_CMD_WIN != nullptr && w == TUI_CMD_WIN->handle.get ())
     update_cmdwin_start_line ();
-  if (saw_nl)
-    wrefresh (w);
 }
 
 /* Readline callback.
@@ -646,8 +640,7 @@ tui_redisplay_readline (void)
     wmove (w, c_line, c_pos);
   TUI_CMD_WIN->start_line -= height - 1;
 
-  wrefresh (w);
-  fflush(stdout);
+  TUI_CMD_WIN->refresh_window ();
 }
 
 /* Readline callback to prepare the terminal.  It is called once each
@@ -719,7 +712,7 @@ tui_mld_puts (const struct match_list_displayer *displayer, const char *s)
 static void
 tui_mld_flush (const struct match_list_displayer *displayer)
 {
-  wrefresh (TUI_CMD_WIN->handle.get ());
+  TUI_CMD_WIN->refresh_window ();
 }
 
 /* TUI version of displayer.erase_entire_line.  */
@@ -1063,6 +1056,8 @@ tui_inject_newline_into_command_window ()
       /* Clear the line.  This will blink the gdb prompt since
 	 it will be redrawn at the same line.  */
       wclrtoeol (w);
+      /* This is one of the few wrefresh calls that is truly needed,
+	 because it flushes the screen before the delay.  */
       wrefresh (w);
       napms (20);
     }
