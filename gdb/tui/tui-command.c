@@ -63,9 +63,4 @@ void
 tui_refresh_cmd_win (void)
 {
   TUI_CMD_WIN->refresh_window ();
-
-  /* FIXME: It's not clear why this is here.
-     It was present in the original tui_puts code and is kept in order to
-     not introduce some subtle breakage.  */
-  fflush (stdout);
 }
