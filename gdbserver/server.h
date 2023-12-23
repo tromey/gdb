@@ -26,6 +26,9 @@
 #undef PACKAGE_VERSION
 #undef PACKAGE_STRING
 #undef PACKAGE_TARNAME
+#undef PACKAGE_URL
+#undef PACKAGE_BUGREPORT
+#undef VERSION
 
 #include <config.h>
 
