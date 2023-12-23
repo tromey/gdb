@@ -1,7 +1,18 @@
+#include "defs.h"
+
+#undef PACKAGE_NAME
+#undef PACKAGE
+#undef PACKAGE_VERSION
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_URL
+#undef VERSION
+
 #include "gdbserver/server.h"
 #include "gdbserver/target.h"
-#include "gdb/callback.h"
-#include "gdb/remote-sim.h"
+#include "sim/callback.h"
+#include "sim/sim.h"
 
 class sim_target : public process_stratum_target
 {
