@@ -255,7 +255,8 @@ LIBOBJS = @LIBOBJS@
 SOURCES = $(SFILES)
 TAGFILES = $(SOURCES)
 
-OBS = \
+# Object files included in libgdbserver.a.
+LIBRARY_OBJS = \
 	alloc.o \
 	ax.o \
 	debug.o \
@@ -275,9 +276,10 @@ OBS = \
 	version.o \
 	target/target.o \
 	target/waitstatus.o \
-	$(DEPFILES) \
 	$(LIBOBJS) \
 	$(XML_BUILTIN)
+
+OBS = $(LIBRARY_OBJS) $(DEPFILES)
 
 GDBREPLAY_OBS = \
 	gdbreplay.o \
@@ -322,7 +324,7 @@ FLAGS_TO_PASS = \
 # All generated files which can be included by another file.
 generated_files = config.h
 
-all: gdbserver$(EXEEXT) gdbreplay$(EXEEXT) $(extra_libraries)
+all: gdbserver$(EXEEXT) gdbreplay$(EXEEXT) libgdbserver.a $(extra_libraries)
 
 # Traditionally "install" depends on "all".  But it may be useful
 # not to; for example, if the user has made some trivial change to a
@@ -384,6 +386,11 @@ gdbreplay$(EXEEXT): $(sort $(GDBREPLAY_OBS)) $(LIBGNU) $(LIBIBERTY) \
 		$(GDBSUPPORT) $(LIBGNU) $(LIBGNU_EXTRA_LIBS) \
 		$(LIBIBERTY) $(INTL) $(WIN32APILIBS)
 
+libgdbserver.a: $(LIBRARY_OBJS)
+	-rm -f libgdbserver.a
+	$(AR) q libgdbserver.a $(LIBRARY_OBJS)
+	$(RANLIB) libgdbserver.a
+
 IPA_OBJS = \
 	alloc-ipa.o \
 	ax-ipa.o \
@@ -428,6 +435,7 @@ tags: TAGS
 mostlyclean clean:
 	rm -f *.o ${ADD_FILES} *~
 	rm -f gdbserver$(EXEEXT) gdbreplay$(EXEEXT) core make.log
+	rm -f libgdbserver.a
 	rm -f $(IPA_LIB)
 	rm -f *-generated.cc
 	rm -f stamp-xml
