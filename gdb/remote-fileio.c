@@ -37,9 +37,9 @@
 #endif
 #include <signal.h>
 
-static struct {
-  int *fd_map;
-  int fd_map_size;
+static struct
+{
+  std::vector<int> fd_map;
 } remote_fio_data;
 
 #define FIO_FD_INVALID		-1
@@ -51,16 +51,13 @@ static int remote_fio_system_call_allowed = 0;
 static int
 remote_fileio_init_fd_map (void)
 {
-  int i;
-
-  if (!remote_fio_data.fd_map)
+  if (remote_fio_data.fd_map.empty ())
     {
-      remote_fio_data.fd_map = XNEWVEC (int, 10);
-      remote_fio_data.fd_map_size = 10;
+      remote_fio_data.fd_map.resize (10);
       remote_fio_data.fd_map[0] = FIO_FD_CONSOLE_IN;
       remote_fio_data.fd_map[1] = FIO_FD_CONSOLE_OUT;
       remote_fio_data.fd_map[2] = FIO_FD_CONSOLE_OUT;
-      for (i = 3; i < 10; ++i)
+      for (int i = 3; i < 10; ++i)
 	remote_fio_data.fd_map[i] = FIO_FD_INVALID;
     }
   return 3;
@@ -69,25 +66,20 @@ remote_fileio_init_fd_map (void)
 static int
 remote_fileio_resize_fd_map (void)
 {
-  int i = remote_fio_data.fd_map_size;
-
-  if (!remote_fio_data.fd_map)
+  if (remote_fio_data.fd_map.empty ())
     return remote_fileio_init_fd_map ();
-  remote_fio_data.fd_map_size += 10;
-  remote_fio_data.fd_map =
-    (int *) xrealloc (remote_fio_data.fd_map,
-		      remote_fio_data.fd_map_size * sizeof (int));
-  for (; i < remote_fio_data.fd_map_size; i++)
+
+  int i = remote_fio_data.fd_map.size ();
+  remote_fio_data.fd_map.resize (i + 10);
+  for (; i < remote_fio_data.fd_map.size (); i++)
     remote_fio_data.fd_map[i] = FIO_FD_INVALID;
-  return remote_fio_data.fd_map_size - 10;
+  return remote_fio_data.fd_map.size () - 10;
 }
 
 static int
 remote_fileio_next_free_fd (void)
 {
-  int i;
-
-  for (i = 0; i < remote_fio_data.fd_map_size; ++i)
+  for (int i = 0; i < remote_fio_data.fd_map.size (); ++i)
     if (remote_fio_data.fd_map[i] == FIO_FD_INVALID)
       return i;
   return remote_fileio_resize_fd_map ();
@@ -106,7 +98,7 @@ static int
 remote_fileio_map_fd (int target_fd)
 {
   remote_fileio_init_fd_map ();
-  if (target_fd < 0 || target_fd >= remote_fio_data.fd_map_size)
+  if (target_fd < 0 || target_fd >= remote_fio_data.fd_map.size ())
     return FIO_FD_INVALID;
   return remote_fio_data.fd_map[target_fd];
 }
@@ -115,7 +107,7 @@ static void
 remote_fileio_close_target_fd (int target_fd)
 {
   remote_fileio_init_fd_map ();
-  if (target_fd >= 0 && target_fd < remote_fio_data.fd_map_size)
+  if (target_fd >= 0 && target_fd < remote_fio_data.fd_map.size ())
     remote_fio_data.fd_map[target_fd] = FIO_FD_INVALID;
 }
 
@@ -1147,21 +1139,12 @@ do_remote_fileio_request (remote_target *remote, char *buf)
 void
 remote_fileio_reset (void)
 {
-  int ix;
-
-  for (ix = 0; ix != remote_fio_data.fd_map_size; ix++)
+  for (int fd : remote_fio_data.fd_map)
     {
-      int fd = remote_fio_data.fd_map[ix];
-
       if (fd >= 0)
 	close (fd);
     }
-  if (remote_fio_data.fd_map)
-    {
-      xfree (remote_fio_data.fd_map);
-      remote_fio_data.fd_map = NULL;
-      remote_fio_data.fd_map_size = 0;
-    }
+  remote_fio_data.fd_map.clear ();
 }
 
 /* Handle a file I/O request.  BUF points to the packet containing the
