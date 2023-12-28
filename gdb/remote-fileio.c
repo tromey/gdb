@@ -1101,7 +1101,7 @@ remote_fileio_func_system (remote_target *remote, char *buf)
     remote_fileio_return_success (remote, WEXITSTATUS (ret));
 }
 
-static struct {
+static const struct {
   const char *name;
   void (*func)(remote_target *remote, char *);
 } remote_fio_func_map[] = {
