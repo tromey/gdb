@@ -66,6 +66,8 @@ noinst_LIBRARIES += %D%/libsim.a
 	%D%/libsim.a \
 	$(SIM_COMMON_LIBS)
 
+noinst_PROGRAMS += %D%/run %D%/barf
+
 %C%_SIM_EXTRA_HW_DEVICES = rv cris cris_900000xx
 
 ## rvdummy is just used for testing -- it runs on the same host as `run`.
