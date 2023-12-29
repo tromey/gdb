@@ -14,6 +14,9 @@
 #include "sim/callback.h"
 #include "sim/sim.h"
 
+// FIXME Moxie specific
+#define NUM_REGISTERS 19
+
 extern host_callback default_callback;
 
 struct sim_target : public process_stratum_target
@@ -95,17 +98,7 @@ struct sim_target : public process_stratum_target
 	status->set_exited (sigrc);
 	break;
       case sim_stopped:
-	switch (sigrc)
-	  {
-	  case GDB_SIGNAL_ABRT:
-	    quit ();
-	    break;
-	  case GDB_SIGNAL_INT:
-	  case GDB_SIGNAL_TRAP:
-	  default:
-	    status->set_stopped ((gdb_signal) sigrc);
-	    break;
-	  }
+	status->set_stopped ((gdb_signal) sigrc);
 	break;
       case sim_signalled:
 	status->set_signalled ((gdb_signal) sigrc);
@@ -119,38 +112,37 @@ struct sim_target : public process_stratum_target
     return ptid;
   }
 
+  int register_size (int regno)
+  {
+    return sim_fetch_register (m_sim, regno, nullptr, 0);
+  }
+
   void fetch_registers (regcache *regcache, int regno) override
   {
     if (regno == -1)
       {
-	for (regno = 0; regno < gdbarch_num_regs (gdbarch); regno++)
+	for (regno = 0; regno < NUM_REGISTERS; regno++)
 	  fetch_registers (regcache, regno);
 	return;
       }
 
-    // FIXME: if register does not exist or is
-    // "LEGACY_SIM_REGNO_IGNORE", just return here.
-
-    int regsize = register_size (regcache->tdesc, regno);
+    int regsize = register_size (regno);
     gdb::byte_vector buf (regsize, 0);
 
     sim_fetch_register (m_sim, regno, buf.data (), regsize);
-    regcache->raw_supply (regno, buf.data ());
+    regcache->raw_supply (regno, buf);
   }
 
   void store_registers (regcache *regcache, int regno) override
   {
     if (regno == -1)
       {
-	for (regno = 0; regno < gdbarch_num_regs (gdbarch); regno++)
+	for (regno = 0; regno < NUM_REGISTERS; regno++)
 	  store_registers (regcache, regno);
 	return;
       }
 
-    // FIXME: if register does not exist or is
-    // "LEGACY_SIM_REGNO_IGNORE", just return here.
-
-    int regsize = register_size (regcache->tdesc, regno);
+    int regsize = register_size (regno);
     gdb::byte_vector buf (regsize, 0);
 
     regcache->raw_collect (regno, buf);
