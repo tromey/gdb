@@ -16,7 +16,7 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-AM_CPPFLAGS_%C% = -DDTB="\"$(dtbdir)/moxie-gdb.dtb\""
+AM_CPPFLAGS_%C% = -DDTB="\"$(dtbdir)/moxie-gdb.dtb\"" -I$(top_srcdir)/../gdb/
 
 nodist_%C%_libsim_a_SOURCES = \
 	%D%/modules.c
@@ -37,13 +37,23 @@ noinst_LIBRARIES += %D%/libsim.a
 %D%/%.o: common/%.c ; $(SIM_COMPILE)
 -@am__include@ %D%/$(DEPDIR)/*.Po
 
+%D%/%.o: common/%.cc ; $(SIM_COMPILE)
+-@am__include@ %D%/$(DEPDIR)/*.Po
+
 %C%_run_SOURCES =
 %C%_run_LDADD = \
 	%D%/nrun.o \
 	%D%/libsim.a \
 	$(SIM_COMMON_LIBS)
 
-noinst_PROGRAMS += %D%/run
+%C%_barf_SOURCES =
+%C%_barf_LDADD = \
+	%D%/sim-target.o \
+	%D%/libsim.a \
+	$(SIM_COMMON_LIBS) \
+	../gdbserver/libgdbserver.a
+
+noinst_PROGRAMS += %D%/run %D%/barf
 
 dtbdir = $(datadir)/gdb/dtb
 

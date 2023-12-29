@@ -22,8 +22,6 @@ AM_CFLAGS_%C%_mloopv32f.o = $(SIM_CFLAG_WNO_UNUSED_BUT_SET_VARIABLE)
 ## Some CGEN assignments use variable names that are nested & repeated.
 AM_CFLAGS_%C%_mloopv10f.o += $(SIM_CFLAG_WNO_SHADOW_LOCAL)
 
-AM_CPPFLAGS += -I$(top_srcdir)/../gdb/
-
 nodist_%C%_libsim_a_SOURCES = \
 	%D%/modules.c
 %C%_libsim_a_SOURCES = \
@@ -62,23 +60,11 @@ noinst_LIBRARIES += %D%/libsim.a
 %D%/%.o: common/%.c ; $(SIM_COMPILE)
 -@am__include@ %D%/$(DEPDIR)/*.Po
 
-%D%/%.o: common/%.cc ; $(SIM_COMPILE)
--@am__include@ %D%/$(DEPDIR)/*.Po
-
 %C%_run_SOURCES =
 %C%_run_LDADD = \
 	%D%/nrun.o \
 	%D%/libsim.a \
 	$(SIM_COMMON_LIBS)
-
-%C%_barf_SOURCES =
-%C%_barf_LDADD = \
-	%D%/sim-target.o \
-	%D%/libsim.a \
-	$(SIM_COMMON_LIBS) \
-	../gdbserver/libgdbserver.a
-
-noinst_PROGRAMS += %D%/run %D%/barf
 
 %C%_SIM_EXTRA_HW_DEVICES = rv cris cris_900000xx
 
