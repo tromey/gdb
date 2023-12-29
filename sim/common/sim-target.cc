@@ -183,6 +183,13 @@ class sim_target : public process_stratum_target
     return 1;			// FIXME
   }
 
+  const gdb_byte *sw_breakpoint_from_kind (int kind, int *size)
+  {
+    /* We use the default supports_z_point_type, so currently this
+       should never be called.  */
+    return nullptr;
+  }
+
 private:
 
   /* Store the most recent resume request until the wait method is
