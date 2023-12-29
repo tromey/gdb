@@ -153,7 +153,7 @@ TESTS = testsuite/common/bits32m0$(EXEEXT) \
 @SIM_ENABLE_ARCH_cr16_TRUE@am__append_17 = cr16/simops.h
 @SIM_ENABLE_ARCH_cr16_TRUE@am__append_18 = $(cr16_BUILD_OUTPUTS)
 @SIM_ENABLE_ARCH_cris_TRUE@am__append_19 = cris/libsim.a
-@SIM_ENABLE_ARCH_cris_TRUE@am__append_20 = cris/run cris/barf
+@SIM_ENABLE_ARCH_cris_TRUE@am__append_20 = cris/run
 @SIM_ENABLE_ARCH_cris_TRUE@am__append_21 = cris/rvdummy
 @SIM_ENABLE_ARCH_cris_TRUE@am__append_22 = \
 @SIM_ENABLE_ARCH_cris_TRUE@	cris/engv10.h \
@@ -959,8 +959,7 @@ am__EXEEXT_9 = testsuite/common/bits32m0$(EXEEXT) \
 @SIM_ENABLE_ARCH_bfin_TRUE@am__EXEEXT_14 = bfin/run$(EXEEXT)
 @SIM_ENABLE_ARCH_bpf_TRUE@am__EXEEXT_15 = bpf/run$(EXEEXT)
 @SIM_ENABLE_ARCH_cr16_TRUE@am__EXEEXT_16 = cr16/run$(EXEEXT)
-@SIM_ENABLE_ARCH_cris_TRUE@am__EXEEXT_17 = cris/run$(EXEEXT) \
-@SIM_ENABLE_ARCH_cris_TRUE@	cris/barf$(EXEEXT)
+@SIM_ENABLE_ARCH_cris_TRUE@am__EXEEXT_17 = cris/run$(EXEEXT)
 @SIM_ENABLE_ARCH_d10v_TRUE@am__EXEEXT_18 = d10v/run$(EXEEXT)
 @SIM_ENABLE_ARCH_erc32_TRUE@am__EXEEXT_19 = erc32/run$(EXEEXT) \
 @SIM_ENABLE_ARCH_erc32_TRUE@	erc32/sis$(EXEEXT)
@@ -1026,9 +1025,6 @@ am_cr16_run_OBJECTS =
 cr16_run_OBJECTS = $(am_cr16_run_OBJECTS)
 @SIM_ENABLE_ARCH_cr16_TRUE@cr16_run_DEPENDENCIES = cr16/nrun.o \
 @SIM_ENABLE_ARCH_cr16_TRUE@	cr16/libsim.a $(am__DEPENDENCIES_4)
-cris_barf_SOURCES = cris/barf.c
-cris_barf_OBJECTS = cris/barf.$(OBJEXT)
-cris_barf_LDADD = $(LDADD)
 am_cris_run_OBJECTS =
 cris_run_OBJECTS = $(am_cris_run_OBJECTS)
 @SIM_ENABLE_ARCH_cris_TRUE@cris_run_DEPENDENCIES = cris/nrun.o \
@@ -1312,7 +1308,7 @@ SOURCES = $(aarch64_libsim_a_SOURCES) \
 	$(nodist_v850_libsim_a_SOURCES) $(aarch64_run_SOURCES) \
 	$(arm_run_SOURCES) $(avr_run_SOURCES) $(bfin_run_SOURCES) \
 	$(bpf_run_SOURCES) $(cr16_gencode_SOURCES) $(cr16_run_SOURCES) \
-	cris/barf.c $(cris_run_SOURCES) $(cris_rvdummy_SOURCES) \
+	$(cris_run_SOURCES) $(cris_rvdummy_SOURCES) \
 	$(d10v_gencode_SOURCES) $(d10v_run_SOURCES) \
 	$(erc32_run_SOURCES) erc32/sis.c \
 	$(example_synacor_run_SOURCES) $(frv_run_SOURCES) \
@@ -3930,12 +3926,6 @@ cr16/gencode.$(OBJEXT): cr16/$(am__dirstamp) \
 cr16/run$(EXEEXT): $(cr16_run_OBJECTS) $(cr16_run_DEPENDENCIES) $(EXTRA_cr16_run_DEPENDENCIES) cr16/$(am__dirstamp)
 	@rm -f cr16/run$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(cr16_run_OBJECTS) $(cr16_run_LDADD) $(LIBS)
-cris/barf.$(OBJEXT): cris/$(am__dirstamp) \
-	cris/$(DEPDIR)/$(am__dirstamp)
-
-cris/barf$(EXEEXT): $(cris_barf_OBJECTS) $(cris_barf_DEPENDENCIES) $(EXTRA_cris_barf_DEPENDENCIES) cris/$(am__dirstamp)
-	@rm -f cris/barf$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(cris_barf_OBJECTS) $(cris_barf_LDADD) $(LIBS)
 
 cris/run$(EXEEXT): $(cris_run_OBJECTS) $(cris_run_DEPENDENCIES) $(EXTRA_cris_run_DEPENDENCIES) cris/$(am__dirstamp)
 	@rm -f cris/run$(EXEEXT)
@@ -4204,7 +4194,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/version.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@cr16/$(DEPDIR)/gencode.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@cr16/$(DEPDIR)/modules.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@cris/$(DEPDIR)/barf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@cris/$(DEPDIR)/modules.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@cris/$(DEPDIR)/rvdummy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@d10v/$(DEPDIR)/gencode.Po@am__quote@
