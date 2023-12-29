@@ -1154,11 +1154,9 @@ remote_fileio_data::do_request (remote_target *remote, char *buf)
     { "gettimeofday", &remote_fileio_data::func_gettimeofday },
     { "isatty", &remote_fileio_data::func_isatty },
     { "system", &remote_fileio_data::func_system },
-    { nullptr, nullptr }
   };
 
   char *c;
-  int idx;
 
   quit_handler = remote_fileio_quit_handler;
 
@@ -1167,13 +1165,14 @@ remote_fileio_data::do_request (remote_target *remote, char *buf)
     *c++ = '\0';
   else
     c = strchr (buf, '\0');
-  for (idx = 0; remote_fio_func_map[idx].name; ++idx)
-    if (!strcmp (remote_fio_func_map[idx].name, buf))
-      break;
-  if (!remote_fio_func_map[idx].name)
-    remote_fileio_reply (remote, -1, FILEIO_ENOSYS);
-  else
-    (this->*remote_fio_func_map[idx].func) (remote, c);
+  for (const auto &entry : remote_fio_func_map)
+    if (!strcmp (entry.name, buf))
+      {
+	(this->*entry.func) (remote, c);
+	return;
+      }
+	
+  remote_fileio_reply (remote, -1, FILEIO_ENOSYS);
 }
 
 /* Close any open descriptors, and reinitialize the file mapping.  */
