@@ -158,7 +158,7 @@ class sim_target : public process_stratum_target
   int write_memory (CORE_ADDR memaddr, const unsigned char *myaddr, int len)
     override
   {
-    if (sim_write (m_sim, mem, myaddr, len) == len)
+    if (sim_write (m_sim, memaddr, myaddr, len) == len)
       return 0;
     return 1;
   }
