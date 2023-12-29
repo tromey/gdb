@@ -67,7 +67,7 @@ class sim_target : public process_stratum_target
   }
 
   ptid_t wait (ptid_t ptid, target_waitstatus *status,
-	       target_wait_flags options) override;
+	       target_wait_flags options) override
   {
     // FIXME do we really need to handle resume_stop here?
     if (m_resume.kind == resume_stop)
