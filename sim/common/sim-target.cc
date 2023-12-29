@@ -14,8 +14,17 @@
 #include "sim/callback.h"
 #include "sim/sim.h"
 
+extern host_callback default_callback;
+
 class sim_target : public process_stratum_target
 {
+  sim_target ()
+  {
+    default_callback.init (&default_callback);
+    m_sim = sim_open (SIM_OPEN_STANDALONE, &default_callback,
+		      nullptr, nullptr);
+  }
+
   ~sim_target ()
   {
     if (m_sim != nullptr)
@@ -180,26 +189,14 @@ private:
      called.  */
   thread_resume m_resume;
 
-  SIM_DESC m_sim = nullptr;
+  SIM_DESC m_sim;
 };
 
-static sim_target the_sim_target;
+static sim_target *the_sim_target;
 
 void
 initialize_low ()
 {
-  set_target_ops (&the_sim_target);
-
-  // gdb_callback = default_callback;
-  // gdb_callback.init (&gdb_callback);
-  // gdb_callback.write_stdout = gdb_os_write_stdout;
-  // gdb_callback.flush_stdout = gdb_os_flush_stdout;
-  // gdb_callback.write_stderr = gdb_os_write_stderr;
-  // gdb_callback.flush_stderr = gdb_os_flush_stderr;
-  // gdb_callback.printf_filtered = gdb_os_printf_filtered;
-  // gdb_callback.vprintf_filtered = gdb_os_vprintf_filtered;
-  // gdb_callback.evprintf_filtered = gdb_os_evprintf_filtered;
-  // gdb_callback.error = gdb_os_error;
-  // gdb_callback.poll_quit = gdb_os_poll_quit;
-  // gdb_callback.magic = HOST_CALLBACK_MAGIC;
+  the_sim_target = new sim_target ();
+  set_target_ops (the_sim_target);
 }
