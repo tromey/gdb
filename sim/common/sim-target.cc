@@ -183,20 +183,23 @@ private:
   SIM_DESC m_sim = nullptr;
 };
 
+static sim_target the_sim_target;
+
 void
-initialize_sim ()
+initialize_low ()
 {
-  gdb_callback = default_callback;
-  gdb_callback.init (&gdb_callback);
-  gdb_callback.write_stdout = gdb_os_write_stdout;
-  gdb_callback.flush_stdout = gdb_os_flush_stdout;
-  gdb_callback.write_stderr = gdb_os_write_stderr;
-  gdb_callback.flush_stderr = gdb_os_flush_stderr;
-  gdb_callback.printf_filtered = gdb_os_printf_filtered;
-  gdb_callback.vprintf_filtered = gdb_os_vprintf_filtered;
-  gdb_callback.evprintf_filtered = gdb_os_evprintf_filtered;
-  gdb_callback.error = gdb_os_error;
-  gdb_callback.poll_quit = gdb_os_poll_quit;
-  gdb_callback.magic = HOST_CALLBACK_MAGIC;
-  callbacks_initialized = 1;
+  set_target_ops (&the_sim_target);
+
+  // gdb_callback = default_callback;
+  // gdb_callback.init (&gdb_callback);
+  // gdb_callback.write_stdout = gdb_os_write_stdout;
+  // gdb_callback.flush_stdout = gdb_os_flush_stdout;
+  // gdb_callback.write_stderr = gdb_os_write_stderr;
+  // gdb_callback.flush_stderr = gdb_os_flush_stderr;
+  // gdb_callback.printf_filtered = gdb_os_printf_filtered;
+  // gdb_callback.vprintf_filtered = gdb_os_vprintf_filtered;
+  // gdb_callback.evprintf_filtered = gdb_os_evprintf_filtered;
+  // gdb_callback.error = gdb_os_error;
+  // gdb_callback.poll_quit = gdb_os_poll_quit;
+  // gdb_callback.magic = HOST_CALLBACK_MAGIC;
 }
