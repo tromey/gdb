@@ -37,8 +37,6 @@
 #endif
 #include <signal.h>
 
-static remote_fileio_data remote_fio_data;
-
 #define FIO_FD_INVALID		-1
 #define FIO_FD_CONSOLE_IN	-2
 #define FIO_FD_CONSOLE_OUT	-3
@@ -1141,14 +1139,6 @@ remote_fileio_data::do_request (remote_target *remote, char *buf)
   remote_fileio_reply (remote, -1, FILEIO_ENOSYS);
 }
 
-/* Close any open descriptors, and reinitialize the file mapping.  */
-
-void
-remote_fileio_reset ()
-{
-  remote_fio_data.reset ();
-}
-
 /* Handle a file I/O request.  BUF points to the packet containing the
    request.  CTRLC_PENDING_P should be nonzero if the target has not
    acknowledged the Ctrl-C sent asynchronously earlier.  */
@@ -1192,12 +1182,6 @@ remote_fileio_data::request (remote_target *remote,
     }
 
   quit_handler = remote_fileio_o_quit_handler;
-}
-
-void
-remote_fileio_request (remote_target *remote, char *buf, int ctrlc_pending_p)
-{
-  remote_fio_data.request (remote, buf, ctrlc_pending_p);
 }
 
 

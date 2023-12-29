@@ -603,6 +603,9 @@ public: /* data */
      qSupported.  */
   gdb_thread_options supported_thread_options = 0;
 
+  /* Data needed for remote fileio.  */
+  remote_fileio_data remote_fio;
+
 private:
   /* Asynchronous signal handle registered as event loop source for
      when we have pending events ready to be passed to the core.  */
@@ -4428,7 +4431,7 @@ remote_target::extended_remote_restart ()
   xsnprintf (rs->buf.data (), get_remote_packet_size (), "R%x", 0);
   putpkt (rs->buf);
 
-  remote_fileio_reset ();
+  rs->remote_fio.reset ();
 }
 
 /* Clean up connection to a remote debugger.  */
@@ -6068,7 +6071,6 @@ remote_target::open_1 (const char *name, int from_tty, int extended_p)
   /* Here the possibly existing remote target gets unpushed.  */
   target_preopen (from_tty);
 
-  remote_fileio_reset ();
   reopen_exec_file ();
   reread_symbols (from_tty);
 
@@ -8602,7 +8604,7 @@ remote_target::wait_as (ptid_t ptid, target_waitstatus *status,
 	     for a stop reply.  See the comments in putpkt_binary.  Set
 	     waiting_for_stop_reply to 0 temporarily.  */
 	  rs->waiting_for_stop_reply = 0;
-	  remote_fileio_request (this, buf, rs->ctrlc_pending_p);
+	  rs->remote_fio.request (this, buf, rs->ctrlc_pending_p);
 	  rs->ctrlc_pending_p = 0;
 	  /* GDB handled the File-I/O request, and the target is running
 	     again.  Keep waiting for events.  */

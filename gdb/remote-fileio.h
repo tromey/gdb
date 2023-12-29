@@ -65,14 +65,6 @@ private:
   std::vector<int> m_fd_map;
 };
 
-/* Unified interface to remote fileio, called in remote.c from
-   remote_wait () and remote_async_wait ().  */
-extern void remote_fileio_request (remote_target *remote,
-				   char *buf, int ctrlc_pending_p);
-
-/* Cleanup any remote fileio state.  */
-extern void remote_fileio_reset (void);
-
 /* Called from _initialize_remote ().  */
 extern void initialize_remote_fileio (
   struct cmd_list_element **remote_set_cmdlist,
