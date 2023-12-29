@@ -37,6 +37,7 @@ noinst_LIBRARIES += %D%/libsim.a
 %D%/%.o: common/%.c ; $(SIM_COMPILE)
 -@am__include@ %D%/$(DEPDIR)/*.Po
 
+%D%/%.o: WARN_CFLAGS =
 %D%/%.o: common/%.cc ; $(SIM_COMPILE)
 -@am__include@ %D%/$(DEPDIR)/*.Po
 
@@ -47,6 +48,7 @@ noinst_LIBRARIES += %D%/libsim.a
 	$(SIM_COMMON_LIBS)
 
 %C%_barf_SOURCES =
+%C%_barf_LINK = g++
 %C%_barf_LDADD = \
 	%D%/sim-target.o \
 	%D%/libsim.a \
