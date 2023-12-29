@@ -16,7 +16,7 @@
 
 extern host_callback default_callback;
 
-class sim_target : public process_stratum_target
+struct sim_target : public process_stratum_target
 {
   sim_target ()
   {
