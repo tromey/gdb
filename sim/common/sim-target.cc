@@ -172,7 +172,7 @@ class sim_target : public process_stratum_target
     return 1;
   }
 
-  void request_interrupt () const
+  void request_interrupt ()
   {
     sim_stop (m_sim);
   }
