@@ -144,7 +144,7 @@ class sim_target : public process_stratum_target
     int regsize = register_size (regcache->tdesc, regno);
     gdb::byte_vector buf (regsize, 0);
 
-    regcache->raw_collect (regno, buf.data ());
+    regcache->raw_collect (regno, buf);
     sim_store_register (m_sim, regno, buf.data (), regsize);
   }
 
