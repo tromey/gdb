@@ -77,6 +77,7 @@ class sim_target : public process_stratum_target
 
     // FIXME handle options?
     enum sim_stop reason = sim_running;
+    int sigrc;
     sim_stop_reason (m_sim, &reason, &sigrc);
 
     switch (reason)
