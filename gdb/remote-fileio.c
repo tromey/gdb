@@ -37,9 +37,40 @@
 #endif
 #include <signal.h>
 
-static struct
+static struct remote_fileio_data
 {
-  std::vector<int> fd_map;
+public:
+
+  void request (remote_target *remote,
+		char *buf, int ctrlc_pending_p);
+
+  void reset ();
+
+private:
+
+  int fd_to_targetfd (int fd);
+  int map_fd (int target_fd);
+  void close_target_fd (int target_fd);
+
+  void func_open (remote_target *remote, char *buf);
+  void func_close (remote_target *remote, char *buf);
+  void func_read (remote_target *remote, char *buf);
+  void func_write (remote_target *remote, char *buf);
+  void func_lseek (remote_target *remote, char *buf);
+  void func_rename (remote_target *remote, char *buf);
+  void func_unlink (remote_target *remote, char *buf);
+  void func_stat (remote_target *remote, char *buf);
+  void func_fstat (remote_target *remote, char *buf);
+  void func_gettimeofday (remote_target *remote, char *buf);
+  void func_isatty (remote_target *remote, char *buf);
+  void func_system (remote_target *remote, char *buf);
+  void do_request (remote_target *remote, char *buf);
+
+  int init_fd_map ();
+  int resize_fd_map ();
+  int next_free_fd ();
+
+  std::vector<int> m_fd_map;
 } remote_fio_data;
 
 #define FIO_FD_INVALID		-1
@@ -48,67 +79,78 @@ static struct
 
 static int remote_fio_system_call_allowed = 0;
 
-static int
-remote_fileio_init_fd_map (void)
+int
+remote_fileio_data::init_fd_map ()
 {
-  if (remote_fio_data.fd_map.empty ())
+  if (m_fd_map.empty ())
     {
-      remote_fio_data.fd_map.resize (10);
-      remote_fio_data.fd_map[0] = FIO_FD_CONSOLE_IN;
-      remote_fio_data.fd_map[1] = FIO_FD_CONSOLE_OUT;
-      remote_fio_data.fd_map[2] = FIO_FD_CONSOLE_OUT;
+      m_fd_map.resize (10);
+      m_fd_map[0] = FIO_FD_CONSOLE_IN;
+      m_fd_map[1] = FIO_FD_CONSOLE_OUT;
+      m_fd_map[2] = FIO_FD_CONSOLE_OUT;
       for (int i = 3; i < 10; ++i)
-	remote_fio_data.fd_map[i] = FIO_FD_INVALID;
+	m_fd_map[i] = FIO_FD_INVALID;
     }
   return 3;
 }
 
-static int
-remote_fileio_resize_fd_map (void)
+int
+remote_fileio_data::resize_fd_map ()
 {
-  if (remote_fio_data.fd_map.empty ())
-    return remote_fileio_init_fd_map ();
+  if (m_fd_map.empty ())
+    return init_fd_map ();
 
-  int i = remote_fio_data.fd_map.size ();
-  remote_fio_data.fd_map.resize (i + 10);
-  for (; i < remote_fio_data.fd_map.size (); i++)
-    remote_fio_data.fd_map[i] = FIO_FD_INVALID;
-  return remote_fio_data.fd_map.size () - 10;
+  int i = m_fd_map.size ();
+  m_fd_map.resize (i + 10);
+  for (; i < m_fd_map.size (); i++)
+    m_fd_map[i] = FIO_FD_INVALID;
+  return m_fd_map.size () - 10;
 }
 
-static int
-remote_fileio_next_free_fd (void)
+int
+remote_fileio_data::next_free_fd ()
 {
-  for (int i = 0; i < remote_fio_data.fd_map.size (); ++i)
-    if (remote_fio_data.fd_map[i] == FIO_FD_INVALID)
+  for (int i = 0; i < m_fd_map.size (); ++i)
+    if (m_fd_map[i] == FIO_FD_INVALID)
       return i;
-  return remote_fileio_resize_fd_map ();
+  return resize_fd_map ();
 }
 
-static int
-remote_fileio_fd_to_targetfd (int fd)
+int
+remote_fileio_data::fd_to_targetfd (int fd)
 {
-  int target_fd = remote_fileio_next_free_fd ();
+  int target_fd = next_free_fd ();
 
-  remote_fio_data.fd_map[target_fd] = fd;
+  m_fd_map[target_fd] = fd;
   return target_fd;
 }
 
-static int
-remote_fileio_map_fd (int target_fd)
+int
+remote_fileio_data::map_fd (int target_fd)
 {
-  remote_fileio_init_fd_map ();
-  if (target_fd < 0 || target_fd >= remote_fio_data.fd_map.size ())
+  init_fd_map ();
+  if (target_fd < 0 || target_fd >= m_fd_map.size ())
     return FIO_FD_INVALID;
-  return remote_fio_data.fd_map[target_fd];
+  return m_fd_map[target_fd];
 }
 
-static void
-remote_fileio_close_target_fd (int target_fd)
+void
+remote_fileio_data::close_target_fd (int target_fd)
 {
-  remote_fileio_init_fd_map ();
-  if (target_fd >= 0 && target_fd < remote_fio_data.fd_map.size ())
-    remote_fio_data.fd_map[target_fd] = FIO_FD_INVALID;
+  init_fd_map ();
+  if (target_fd >= 0 && target_fd < m_fd_map.size ())
+    m_fd_map[target_fd] = FIO_FD_INVALID;
+}
+
+void
+remote_fileio_data::reset ()
+{
+  for (int fd : m_fd_map)
+    {
+      if (fd >= 0)
+	close (fd);
+    }
+  m_fd_map.clear ();
 }
 
 static int
@@ -359,8 +401,8 @@ remote_fileio_return_success (remote_target *remote, int retcode)
   remote_fileio_reply (remote, retcode, 0);
 }
 
-static void
-remote_fileio_func_open (remote_target *remote, char *buf)
+void
+remote_fileio_data::func_open (remote_target *remote, char *buf)
 {
   CORE_ADDR ptrval;
   int length;
@@ -424,12 +466,12 @@ remote_fileio_func_open (remote_target *remote, char *buf)
       return;
     }
 
-  fd = remote_fileio_fd_to_targetfd (fd);
+  fd = fd_to_targetfd (fd);
   remote_fileio_return_success (remote, fd);
 }
 
-static void
-remote_fileio_func_close (remote_target *remote, char *buf)
+void
+remote_fileio_data::func_close (remote_target *remote, char *buf)
 {
   long num;
   int fd;
@@ -440,7 +482,7 @@ remote_fileio_func_close (remote_target *remote, char *buf)
       remote_fileio_ioerror (remote);
       return;
     }
-  fd = remote_fileio_map_fd ((int) num);
+  fd = map_fd ((int) num);
   if (fd == FIO_FD_INVALID)
     {
       remote_fileio_badfd (remote);
@@ -449,12 +491,12 @@ remote_fileio_func_close (remote_target *remote, char *buf)
 
   if (fd != FIO_FD_CONSOLE_IN && fd != FIO_FD_CONSOLE_OUT && close (fd))
     remote_fileio_return_errno (remote, -1);
-  remote_fileio_close_target_fd ((int) num);
+  close_target_fd ((int) num);
   remote_fileio_return_success (remote, 0);
 }
 
-static void
-remote_fileio_func_read (remote_target *remote, char *buf)
+void
+remote_fileio_data::func_read (remote_target *remote, char *buf)
 {
   long target_fd, num;
   LONGEST lnum;
@@ -470,7 +512,7 @@ remote_fileio_func_read (remote_target *remote, char *buf)
       remote_fileio_ioerror (remote);
       return;
     }
-  fd = remote_fileio_map_fd ((int) target_fd);
+  fd = map_fd ((int) target_fd);
   if (fd == FIO_FD_INVALID)
     {
       remote_fileio_badfd (remote);
@@ -579,8 +621,8 @@ remote_fileio_func_read (remote_target *remote, char *buf)
   xfree (buffer);
 }
 
-static void
-remote_fileio_func_write (remote_target *remote, char *buf)
+void
+remote_fileio_data::func_write (remote_target *remote, char *buf)
 {
   long target_fd, num;
   LONGEST lnum;
@@ -595,7 +637,7 @@ remote_fileio_func_write (remote_target *remote, char *buf)
       remote_fileio_ioerror (remote);
       return;
     }
-  fd = remote_fileio_map_fd ((int) target_fd);
+  fd = map_fd ((int) target_fd);
   if (fd == FIO_FD_INVALID)
     {
       remote_fileio_badfd (remote);
@@ -654,8 +696,8 @@ remote_fileio_func_write (remote_target *remote, char *buf)
   xfree (buffer);
 }
 
-static void
-remote_fileio_func_lseek (remote_target *remote, char *buf)
+void
+remote_fileio_data::func_lseek (remote_target *remote, char *buf)
 {
   long num;
   LONGEST lnum;
@@ -668,7 +710,7 @@ remote_fileio_func_lseek (remote_target *remote, char *buf)
       remote_fileio_ioerror (remote);
       return;
     }
-  fd = remote_fileio_map_fd ((int) num);
+  fd = map_fd ((int) num);
   if (fd == FIO_FD_INVALID)
     {
       remote_fileio_badfd (remote);
@@ -707,8 +749,8 @@ remote_fileio_func_lseek (remote_target *remote, char *buf)
     remote_fileio_return_success (remote, ret);
 }
 
-static void
-remote_fileio_func_rename (remote_target *remote, char *buf)
+void
+remote_fileio_data::func_rename (remote_target *remote, char *buf)
 {
   CORE_ADDR old_ptr, new_ptr;
   int old_len, new_len;
@@ -800,8 +842,8 @@ remote_fileio_func_rename (remote_target *remote, char *buf)
     remote_fileio_return_success (remote, ret);
 }
 
-static void
-remote_fileio_func_unlink (remote_target *remote, char *buf)
+void
+remote_fileio_data::func_unlink (remote_target *remote, char *buf)
 {
   CORE_ADDR ptrval;
   int length;
@@ -839,8 +881,8 @@ remote_fileio_func_unlink (remote_target *remote, char *buf)
     remote_fileio_return_success (remote, ret);
 }
 
-static void
-remote_fileio_func_stat (remote_target *remote, char *buf)
+void
+remote_fileio_data::func_stat (remote_target *remote, char *buf)
 {
   CORE_ADDR statptr, nameptr;
   int ret, namelength;
@@ -900,8 +942,8 @@ remote_fileio_func_stat (remote_target *remote, char *buf)
   remote_fileio_return_success (remote, ret);
 }
 
-static void
-remote_fileio_func_fstat (remote_target *remote, char *buf)
+void
+remote_fileio_data::func_fstat (remote_target *remote, char *buf)
 {
   CORE_ADDR ptrval;
   int fd, ret;
@@ -917,7 +959,7 @@ remote_fileio_func_fstat (remote_target *remote, char *buf)
       remote_fileio_ioerror (remote);
       return;
     }
-  fd = remote_fileio_map_fd ((int) target_fd);
+  fd = map_fd ((int) target_fd);
   if (fd == FIO_FD_INVALID)
     {
       remote_fileio_badfd (remote);
@@ -977,8 +1019,8 @@ remote_fileio_func_fstat (remote_target *remote, char *buf)
   remote_fileio_return_success (remote, ret);
 }
 
-static void
-remote_fileio_func_gettimeofday (remote_target *remote, char *buf)
+void
+remote_fileio_data::func_gettimeofday (remote_target *remote, char *buf)
 {
   LONGEST lnum;
   CORE_ADDR ptrval;
@@ -1028,8 +1070,8 @@ remote_fileio_func_gettimeofday (remote_target *remote, char *buf)
   remote_fileio_return_success (remote, ret);
 }
 
-static void
-remote_fileio_func_isatty (remote_target *remote, char *buf)
+void
+remote_fileio_data::func_isatty (remote_target *remote, char *buf)
 {
   long target_fd;
   int fd;
@@ -1040,13 +1082,13 @@ remote_fileio_func_isatty (remote_target *remote, char *buf)
       remote_fileio_ioerror (remote);
       return;
     }
-  fd = remote_fileio_map_fd ((int) target_fd);
+  fd = map_fd ((int) target_fd);
   int ret = fd == FIO_FD_CONSOLE_IN || fd == FIO_FD_CONSOLE_OUT ? 1 : 0;
   remote_fileio_return_success (remote, ret);
 }
 
-static void
-remote_fileio_func_system (remote_target *remote, char *buf)
+void
+remote_fileio_data::func_system (remote_target *remote, char *buf)
 {
   CORE_ADDR ptrval;
   int ret, length;
@@ -1093,28 +1135,28 @@ remote_fileio_func_system (remote_target *remote, char *buf)
     remote_fileio_return_success (remote, WEXITSTATUS (ret));
 }
 
-static const struct {
-  const char *name;
-  void (*func)(remote_target *remote, char *);
-} remote_fio_func_map[] = {
-  { "open", remote_fileio_func_open },
-  { "close", remote_fileio_func_close },
-  { "read", remote_fileio_func_read },
-  { "write", remote_fileio_func_write },
-  { "lseek", remote_fileio_func_lseek },
-  { "rename", remote_fileio_func_rename },
-  { "unlink", remote_fileio_func_unlink },
-  { "stat", remote_fileio_func_stat },
-  { "fstat", remote_fileio_func_fstat },
-  { "gettimeofday", remote_fileio_func_gettimeofday },
-  { "isatty", remote_fileio_func_isatty },
-  { "system", remote_fileio_func_system },
-  { NULL, NULL }
-};
-
-static void
-do_remote_fileio_request (remote_target *remote, char *buf)
+void
+remote_fileio_data::do_request (remote_target *remote, char *buf)
 {
+  static const struct {
+    const char *name;
+    void (remote_fileio_data::*func)(remote_target *remote, char *);
+  } remote_fio_func_map[] = {
+    { "open", &remote_fileio_data::func_open },
+    { "close", &remote_fileio_data::func_close },
+    { "read", &remote_fileio_data::func_read },
+    { "write", &remote_fileio_data::func_write },
+    { "lseek", &remote_fileio_data::func_lseek },
+    { "rename", &remote_fileio_data::func_rename },
+    { "unlink", &remote_fileio_data::func_unlink },
+    { "stat", &remote_fileio_data::func_stat },
+    { "fstat", &remote_fileio_data::func_fstat },
+    { "gettimeofday", &remote_fileio_data::func_gettimeofday },
+    { "isatty", &remote_fileio_data::func_isatty },
+    { "system", &remote_fileio_data::func_system },
+    { nullptr, nullptr }
+  };
+
   char *c;
   int idx;
 
@@ -1131,20 +1173,15 @@ do_remote_fileio_request (remote_target *remote, char *buf)
   if (!remote_fio_func_map[idx].name)
     remote_fileio_reply (remote, -1, FILEIO_ENOSYS);
   else
-    remote_fio_func_map[idx].func (remote, c);
+    (this->*remote_fio_func_map[idx].func) (remote, c);
 }
 
 /* Close any open descriptors, and reinitialize the file mapping.  */
 
 void
-remote_fileio_reset (void)
+remote_fileio_reset ()
 {
-  for (int fd : remote_fio_data.fd_map)
-    {
-      if (fd >= 0)
-	close (fd);
-    }
-  remote_fio_data.fd_map.clear ();
+  remote_fio_data.reset ();
 }
 
 /* Handle a file I/O request.  BUF points to the packet containing the
@@ -1152,7 +1189,8 @@ remote_fileio_reset (void)
    acknowledged the Ctrl-C sent asynchronously earlier.  */
 
 void
-remote_fileio_request (remote_target *remote, char *buf, int ctrlc_pending_p)
+remote_fileio_data::request (remote_target *remote,
+			     char *buf, int ctrlc_pending_p)
 {
   /* Save the previous quit handler, so we can restore it.  No need
      for a cleanup since we catch all exceptions below.  Note that the
@@ -1172,7 +1210,7 @@ remote_fileio_request (remote_target *remote, char *buf, int ctrlc_pending_p)
     {
       try
 	{
-	  do_remote_fileio_request (remote, buf);
+	  do_request (remote, buf);
 	}
       catch (const gdb_exception_forced_quit &ex)
 	{
@@ -1189,6 +1227,12 @@ remote_fileio_request (remote_target *remote, char *buf, int ctrlc_pending_p)
     }
 
   quit_handler = remote_fileio_o_quit_handler;
+}
+
+void
+remote_fileio_request (remote_target *remote, char *buf, int ctrlc_pending_p)
+{
+  remote_fio_data.request (remote, buf, ctrlc_pending_p);
 }
 
 
