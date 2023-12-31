@@ -48,7 +48,7 @@ noinst_LIBRARIES += %D%/libsim.a
 	$(SIM_COMMON_LIBS)
 
 %C%_barf_SOURCES =
-%C%_barf_LINK = g++
+%C%_barf_LINK = $(LIBTOOL) --mode=link $(CXX)
 %C%_barf_LDADD = \
 	%D%/sim-target.o \
 	%D%/libsim.a \

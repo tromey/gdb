@@ -2886,7 +2886,7 @@ testsuite_common_CPPFLAGS = \
 @SIM_ENABLE_ARCH_moxie_TRUE@	$(SIM_COMMON_LIBS)
 
 @SIM_ENABLE_ARCH_moxie_TRUE@moxie_barf_SOURCES = 
-@SIM_ENABLE_ARCH_moxie_TRUE@moxie_barf_LINK = g++
+@SIM_ENABLE_ARCH_moxie_TRUE@moxie_barf_LINK = $(LIBTOOL) --mode=link $(CXX)
 @SIM_ENABLE_ARCH_moxie_TRUE@moxie_barf_LDADD = \
 @SIM_ENABLE_ARCH_moxie_TRUE@	moxie/sim-target.o \
 @SIM_ENABLE_ARCH_moxie_TRUE@	moxie/libsim.a \
