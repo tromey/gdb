@@ -17,7 +17,8 @@
 // FIXME Moxie specific
 #define NUM_REGISTERS 19
 
-extern host_callback default_callback;
+// FIXME
+int using_threads = 0;
 
 struct sim_target : public process_stratum_target
 {
