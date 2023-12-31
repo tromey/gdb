@@ -2876,7 +2876,7 @@ testsuite_common_CPPFLAGS = \
 @SIM_ENABLE_ARCH_mn10300_TRUE@mn10300_IGEN_INSN_INC = mn10300/am33.igen mn10300/am33-2.igen
 @SIM_ENABLE_ARCH_mn10300_TRUE@mn10300_IGEN_DC = $(srcdir)/mn10300/mn10300.dc
 @SIM_ENABLE_ARCH_moxie_TRUE@AM_CPPFLAGS_moxie = -DDTB="\"$(dtbdir)/moxie-gdb.dtb\""
-@SIM_ENABLE_ARCH_moxie_TRUE@AM_CXXFLAGS_moxie = -I$(top_srcdir)/../gdb/
+@SIM_ENABLE_ARCH_moxie_TRUE@AM_CXXFLAGS = -I$(top_srcdir)/../gdb/
 @SIM_ENABLE_ARCH_moxie_TRUE@nodist_moxie_libsim_a_SOURCES = \
 @SIM_ENABLE_ARCH_moxie_TRUE@	moxie/modules.c
 
