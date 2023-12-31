@@ -32,7 +32,7 @@ date=$(sed -n -e 's/^.* BFD_VERSION_DATE \(.*\)$/\1/p' "$srcdir/../bfd/version.h
 sed -e "s/DATE/$date/" < "$srcdir/version.in" > version.tmp
 {
     echo '#include "gdbsupport/version.h"'
-    echo 'const char version[] = "'"$(sed q version.tmp)"'";'
+    echo 'const char gdb_version[] = "'"$(sed q version.tmp)"'";'
     echo 'const char host_name[] = "'"$host_alias"'";'
     echo 'const char target_name[] = "'"$target_alias"'";'
 } >> version.c-tmp
