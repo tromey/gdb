@@ -25,6 +25,10 @@ AC_PROG_INSTALL
 
 AC_CHECK_TOOL(DTC, dtc)
 
+# We require libtool to link with the in-tree libtool libraries
+# the proper way.
+LT_INIT
+
 dnl Setup toolchain settings for build-time tools..
 if test "x$cross_compiling" = "xno"; then
   : "${AR_FOR_BUILD:=\$(AR)}"
