@@ -1148,7 +1148,8 @@ moxie_barf_OBJECTS = $(am_moxie_barf_OBJECTS)
 @SIM_ENABLE_ARCH_moxie_TRUE@moxie_barf_DEPENDENCIES =  \
 @SIM_ENABLE_ARCH_moxie_TRUE@	moxie/sim-target.o moxie/libsim.a \
 @SIM_ENABLE_ARCH_moxie_TRUE@	$(am__DEPENDENCIES_4) \
-@SIM_ENABLE_ARCH_moxie_TRUE@	../gdbserver/libgdbserver.a
+@SIM_ENABLE_ARCH_moxie_TRUE@	../gdbserver/libgdbserver.a \
+@SIM_ENABLE_ARCH_moxie_TRUE@	../gdbsupport/libgdbsupport.a
 am_moxie_run_OBJECTS =
 moxie_run_OBJECTS = $(am_moxie_run_OBJECTS)
 @SIM_ENABLE_ARCH_moxie_TRUE@moxie_run_DEPENDENCIES = moxie/nrun.o \
@@ -2896,7 +2897,8 @@ testsuite_common_CPPFLAGS = \
 @SIM_ENABLE_ARCH_moxie_TRUE@	moxie/sim-target.o \
 @SIM_ENABLE_ARCH_moxie_TRUE@	moxie/libsim.a \
 @SIM_ENABLE_ARCH_moxie_TRUE@	$(SIM_COMMON_LIBS) \
-@SIM_ENABLE_ARCH_moxie_TRUE@	../gdbserver/libgdbserver.a
+@SIM_ENABLE_ARCH_moxie_TRUE@	../gdbserver/libgdbserver.a \
+@SIM_ENABLE_ARCH_moxie_TRUE@	../gdbsupport/libgdbsupport.a
 
 @SIM_ENABLE_ARCH_moxie_TRUE@dtbdir = $(datadir)/gdb/dtb
 @SIM_ENABLE_ARCH_moxie_TRUE@dtb_DATA = moxie/moxie-gdb.dtb

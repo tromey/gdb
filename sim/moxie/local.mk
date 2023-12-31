@@ -58,7 +58,8 @@ noinst_LIBRARIES += %D%/libsim.a
 	%D%/sim-target.o \
 	%D%/libsim.a \
 	$(SIM_COMMON_LIBS) \
-	../gdbserver/libgdbserver.a
+	../gdbserver/libgdbserver.a \
+	../gdbsupport/libgdbsupport.a
 
 noinst_PROGRAMS += %D%/run %D%/barf
 
