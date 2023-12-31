@@ -1924,6 +1924,13 @@ SIM_COMPILE = \
 	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(SIM_DEPBASE).Tpo -c -o $@ $< && \
 	$(am__mv) $(SIM_DEPBASE).Tpo $(SIM_DEPBASE).Po
 
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+
+SIM_COMPILE_CXX = \
+	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(SIM_DEPBASE).Tpo -c -o $@ $< && \
+	$(am__mv) $(SIM_DEPBASE).Tpo $(SIM_DEPBASE).Po
+
 AM_CPPFLAGS_common = -DSIM_COMMON_BUILD
 common_libcommon_a_SOURCES = \
 	common/callback.c \
@@ -5802,7 +5809,7 @@ testsuite/common/bits64m63.c: testsuite/common/bits-gen$(EXEEXT) testsuite/commo
 @SIM_ENABLE_ARCH_moxie_TRUE@-@am__include@ moxie/$(DEPDIR)/*.Po
 
 @SIM_ENABLE_ARCH_moxie_TRUE@moxie/%.o: WARN_CFLAGS =
-@SIM_ENABLE_ARCH_moxie_TRUE@moxie/%.o: common/%.cc ; $(SIM_COMPILE)
+@SIM_ENABLE_ARCH_moxie_TRUE@moxie/%.o: common/%.cc ; $(SIM_COMPILE_CXX)
 @SIM_ENABLE_ARCH_moxie_TRUE@-@am__include@ moxie/$(DEPDIR)/*.Po
 
 @SIM_ENABLE_ARCH_moxie_TRUE@moxie/moxie-gdb.dtb: @MAINT@ moxie/moxie-gdb.dts moxie/$(am__dirstamp)

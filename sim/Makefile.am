@@ -97,6 +97,11 @@ SIM_DEPBASE = $(@D)/$(DEPDIR)/$(@F:.o=)
 SIM_COMPILE = \
 	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(SIM_DEPBASE).Tpo -c -o $@ $< && \
 	$(am__mv) $(SIM_DEPBASE).Tpo $(SIM_DEPBASE).Po
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+SIM_COMPILE_CXX = \
+	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(SIM_DEPBASE).Tpo -c -o $@ $< && \
+	$(am__mv) $(SIM_DEPBASE).Tpo $(SIM_DEPBASE).Po
 
 include common/local.mk
 include igen/local.mk
