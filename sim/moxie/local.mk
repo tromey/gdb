@@ -18,7 +18,7 @@
 
 AM_CPPFLAGS_%C% = -DDTB="\"$(dtbdir)/moxie-gdb.dtb\""
 
-AM_CXXFLAGS_%C% = -I$(top_srcdir)/../gdb/
+AM_CXXFLAGS = -I$(top_srcdir)/../gdb/
 
 nodist_%C%_libsim_a_SOURCES = \
 	%D%/modules.c
