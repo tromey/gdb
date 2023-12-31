@@ -57,9 +57,9 @@ noinst_LIBRARIES += %D%/libsim.a
 %C%_barf_LDADD = \
 	%D%/sim-target.o \
 	%D%/libsim.a \
-	$(SIM_COMMON_LIBS) \
 	../gdbserver/libgdbserver.a \
-	../gdbsupport/libgdbsupport.a
+	../gdbsupport/libgdbsupport.a \
+	$(SIM_COMMON_LIBS) \
 
 noinst_PROGRAMS += %D%/run %D%/barf
 
