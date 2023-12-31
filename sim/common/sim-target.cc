@@ -22,13 +22,6 @@ int using_threads = 0;
 
 struct sim_target : public process_stratum_target
 {
-  sim_target ()
-  {
-    default_callback.init (&default_callback);
-    m_sim = sim_open (SIM_OPEN_STANDALONE, &default_callback,
-		      nullptr, nullptr);
-  }
-
   ~sim_target ()
   {
     if (m_sim != nullptr)
@@ -189,8 +182,40 @@ private:
      called.  */
   thread_resume m_resume;
 
-  SIM_DESC m_sim;
+  SIM_DESC m_sim = nullptr;
 };
+
+int
+sim_target::create_inferior (const char *program,
+			     const std::vector<char *> &program_args)
+{
+  default_callback.init (&default_callback);
+
+  struct bfd *prog_bfd = bfd_openr (program, nullptr);
+  // FIXME BFD errors.
+  if (prog_bfd == nullptr)
+    return -1;
+  if (!bfd_check_format (prog_bfd, bfd_object))
+    return -1;
+
+  m_sim = sim_open (SIM_OPEN_STANDALONE, &default_callback, prog_bfd,
+		    nullptr);
+  if (m_sim == nullptr)
+    return -1;
+
+  if (sim_load (m_sim, nullptr, prog_bfd, 0) == SIM_RC_FAIL)
+    return -1;
+
+  // bleah
+  std::vector<char *> args_with_null = program_args;
+  args_with_null.push_back (nullptr);
+  if (sim_create_inferior (m_sim, prog_bfd, args_with_null.data (),
+			   nullptr /* FIXME */)
+      == SIM_RC_FAIL)
+    return -1;
+
+  return 0;
+}
 
 static sim_target *the_sim_target;
 
