@@ -40,7 +40,7 @@ noinst_LIBRARIES += %D%/libsim.a
 -@am__include@ %D%/$(DEPDIR)/*.Po
 
 %D%/%.o: WARN_CFLAGS =
-%D%/%.o: common/%.cc ; $(SIM_COMPILE_CXX)
+%D%/%.o: common/%.cc ; echo HI BOB; $(SIM_COMPILE_CXX)
 -@am__include@ %D%/$(DEPDIR)/*.Po
 
 %C%_run_SOURCES =
