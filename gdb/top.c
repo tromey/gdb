@@ -1306,7 +1306,7 @@ print_gdb_version (struct ui_file *stream, bool interactive)
      program to parse, and is just canonical program name and version
      number, which starts after last space.  */
 
-  std::string v_str = string_printf ("GNU gdb %s%s", PKGVERSION, version);
+  std::string v_str = string_printf ("GNU gdb %s%s", PKGVERSION, gdb_version);
   gdb_printf (stream, "%ps\n",
 	      styled_string (version_style.style (), v_str.c_str ()));
 
@@ -2271,7 +2271,7 @@ affect future GDB sessions."),
   struct internalvar *major_version_var = create_internalvar ("_gdb_major");
   struct internalvar *minor_version_var = create_internalvar ("_gdb_minor");
   int vmajor = 0, vminor = 0, vrevision = 0;
-  sscanf (version, "%d.%d.%d", &vmajor, &vminor, &vrevision);
+  sscanf (gdb_version, "%d.%d.%d", &vmajor, &vminor, &vrevision);
   set_internalvar_integer (major_version_var, vmajor);
   set_internalvar_integer (minor_version_var, vminor + (vrevision > 0));
 }

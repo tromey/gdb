@@ -3805,7 +3805,7 @@ gdbserver_version (void)
 	  "gdbserver is free software, covered by the "
 	  "GNU General Public License.\n"
 	  "This gdbserver was configured as \"%s\"\n",
-	  PKGVERSION, version, host_name);
+	  PKGVERSION, gdb_version, host_name);
 }
 
 static void

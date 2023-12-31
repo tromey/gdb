@@ -341,7 +341,7 @@ gdbscm_guile_data_directory (void)
 static SCM
 gdbscm_gdb_version (void)
 {
-  return gdbscm_scm_from_c_string (version);
+  return gdbscm_scm_from_c_string (gdb_version);
 }
 
 /* (host-config) -> string */

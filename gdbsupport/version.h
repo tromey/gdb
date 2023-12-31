@@ -20,7 +20,7 @@
 #define COMMON_VERSION_H
 
 /* Version number of GDB, as a string.  */
-extern const char version[];
+extern const char gdb_version[];
 
 /* Canonical host name as a string.  */
 extern const char host_name[];

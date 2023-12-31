@@ -2281,7 +2281,7 @@ init_done:
   if (gdb_module == NULL)
     return false;
 
-  if (PyModule_AddStringConstant (gdb_module, "VERSION", version) < 0
+  if (PyModule_AddStringConstant (gdb_module, "VERSION", gdb_version) < 0
       || PyModule_AddStringConstant (gdb_module, "HOST_CONFIG", host_name) < 0
       || PyModule_AddStringConstant (gdb_module, "TARGET_CONFIG",
 				     target_name) < 0)
