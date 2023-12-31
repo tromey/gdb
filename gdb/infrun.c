@@ -7117,6 +7117,7 @@ handle_signal_stop (struct execution_control_state *ecs)
 
   /* Maybe this was a trap for a software breakpoint that has since
      been removed.  */
+  bool program_bp = false;
   if (random_signal && target_stopped_by_sw_breakpoint ())
     {
       if (gdbarch_program_breakpoint_here_p (gdbarch,
@@ -7125,6 +7126,7 @@ handle_signal_stop (struct execution_control_state *ecs)
 	  struct regcache *regcache;
 	  int decr_pc;
 
+	  program_bp = true;
 	  /* Re-adjust PC to what the program would see if GDB was not
 	     debugging it.  */
 	  regcache = get_thread_regcache (ecs->event_thread);
@@ -7163,7 +7165,8 @@ handle_signal_stop (struct execution_control_state *ecs)
   /* If not, perhaps stepping/nexting can.  */
   if (random_signal)
     random_signal = !(ecs->event_thread->stop_signal () == GDB_SIGNAL_TRAP
-		      && currently_stepping (ecs->event_thread));
+		      && currently_stepping (ecs->event_thread)
+		      && !program_bp);
 
   /* Perhaps the thread hit a single-step breakpoint of _another_
      thread.  Single-step breakpoints are transparent to the
