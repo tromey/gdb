@@ -191,6 +191,7 @@ sim_target::create_inferior (const char *program,
 {
   default_callback.init (&default_callback);
 
+  // FIXME don't leak this
   struct bfd *prog_bfd = bfd_openr (program, nullptr);
   // FIXME BFD errors.
   if (prog_bfd == nullptr)
