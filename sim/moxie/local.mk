@@ -16,7 +16,9 @@
 ## You should have received a copy of the GNU General Public License
 ## along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-AM_CPPFLAGS_%C% = -DDTB="\"$(dtbdir)/moxie-gdb.dtb\"" -I$(top_srcdir)/../gdb/
+AM_CPPFLAGS_%C% = -DDTB="\"$(dtbdir)/moxie-gdb.dtb\""
+
+AM_CXXFLAGS_%C% = -I$(top_srcdir)/../gdb/
 
 nodist_%C%_libsim_a_SOURCES = \
 	%D%/modules.c
@@ -48,7 +50,10 @@ noinst_LIBRARIES += %D%/libsim.a
 	$(SIM_COMMON_LIBS)
 
 %C%_barf_SOURCES =
-%C%_barf_LINK = $(LIBTOOL) --mode=link $(CXX)
+# FIXME
+%C%_barf_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXX) $(AM_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 %C%_barf_LDADD = \
 	%D%/sim-target.o \
 	%D%/libsim.a \
