@@ -314,47 +314,58 @@ cooked_index_shard::handle_gnat_encoded_entry (cooked_index_entry *entry,
   return make_unique_xstrndup (tail.data (), tail.length ());
 }
 
-/* See cooked-index.h.  */
+/* Traits for cooked_index_entry by-name hash table.  */
 
-void
-cooked_index_shard::finalize ()
+struct cooked_index_entry_traits
 {
-  auto hash_name_ptr = [] (const void *p)
-    {
-      const cooked_index_entry *entry = (const cooked_index_entry *) p;
-      return htab_hash_pointer (entry->name);
-    };
+  using value_type = cooked_index_entry *;
 
-  auto eq_name_ptr = [] (const void *a, const void *b) -> int
-    {
-      const cooked_index_entry *ea = (const cooked_index_entry *) a;
-      const cooked_index_entry *eb = (const cooked_index_entry *) b;
-      return ea->name == eb->name;
-    };
+  static bool is_empty (const value_type &v)
+  { return v == nullptr; }
 
   /* We can use pointer equality here because names come from
      .debug_str, which will normally be unique-ified by the linker.
      Also, duplicates are relatively harmless -- they just mean a bit
      of extra memory is used.  */
-  htab_up seen_names (htab_create_alloc (10, hash_name_ptr, eq_name_ptr,
-					 nullptr, xcalloc, xfree));
+  static bool equals (const value_type &lhs, const value_type &rhs)
+  {
+    return lhs->name == rhs->name;
+  }
 
-  auto hash_entry = [] (const void *e)
-    {
-      const cooked_index_entry *entry = (const cooked_index_entry *) e;
-      return dwarf5_djb_hash (entry->canonical);
-    };
+  static size_t hash (const value_type &v)
+  {
+    return htab_hash_pointer (v->name);
+  }
+};
 
-  auto eq_entry = [] (const void *a, const void *b) -> int
-    {
-      const cooked_index_entry *ae = (const cooked_index_entry *) a;
-      const std::string_view *sv = (const std::string_view *) b;
-      return (strlen (ae->canonical) == sv->length ()
-	      && strncasecmp (ae->canonical, sv->data (), sv->length ()) == 0);
-    };
+/* Traits for cooked_index_entry by-canonical-name hash table.  */
 
-  htab_up gnat_entries (htab_create_alloc (10, hash_entry, eq_entry,
-					   nullptr, xcalloc, xfree));
+struct canonical_entry_traits
+{
+  using value_type = cooked_index_entry *;
+
+  static bool is_empty (const value_type &v)
+  { return v == nullptr; }
+
+  static bool equals (const value_type &lhs, const std::string_view &rhs)
+  {
+    return (strlen (lhs->canonical) == rhs.length ()
+	    && strncasecmp (lhs->canonical, rhs.data (), rhs.length ()) == 0);
+  }
+
+  static size_t hash (const value_type &v)
+  {
+    return dwarf5_djb_hash (v->canonical);
+  }
+};
+
+/* See cooked-index.h.  */
+
+void
+cooked_index_shard::finalize ()
+{
+  gdb::traited_hash_table<cooked_index_entry_traits> seen_names;
+  gdb::traited_hash_table<canonical_entry_traits> gnat_entries;
 
   for (cooked_index_entry *entry : m_entries)
     {
@@ -378,9 +389,8 @@ cooked_index_shard::finalize ()
       else if (entry->per_cu->lang () == language_cplus
 	       || entry->per_cu->lang () == language_c)
 	{
-	  void **slot = htab_find_slot (seen_names.get (), entry,
-					INSERT);
-	  if (*slot == nullptr)
+	  auto insert_pair = seen_names.insert (entry);
+	  if (insert_pair.second)
 	    {
 	      gdb::unique_xmalloc_ptr<char> canon_name
 		= (entry->per_cu->lang () == language_cplus
@@ -393,12 +403,10 @@ cooked_index_shard::finalize ()
 		  entry->canonical = canon_name.get ();
 		  m_names.push_back (std::move (canon_name));
 		}
-	      *slot = entry;
 	    }
 	  else
 	    {
-	      const cooked_index_entry *other
-		= (const cooked_index_entry *) *slot;
+	      const cooked_index_entry *other = *insert_pair.first;
 	      entry->canonical = other->canonical;
 	    }
 	}
