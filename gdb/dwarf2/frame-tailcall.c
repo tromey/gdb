@@ -30,60 +30,74 @@
 #include "dwarf2/frame.h"
 #include "gdbarch.h"
 
-/* Contains struct tailcall_cache indexed by next_bottom_frame.  */
-static htab_t cache_htab;
-
 /* Associate structure of the unwinder to call_site_chain.  Lifetime of this
    structure is maintained by REFC decremented by dealloc_cache, all of them
    get deleted during reinit_frame_cache.  */
 struct tailcall_cache
 {
+  explicit tailcall_cache (const frame_info_ptr &frame)
+    : next_bottom_frame (frame.get ()),
+      prev_sp_p (false)
+  { }
+
   /* It must be the first one of this struct.  It is the furthest callee.  */
   frame_info *next_bottom_frame;
 
   /* Reference count.  The whole chain of virtual tail call frames shares one
      tailcall_cache.  */
-  int refc;
+  int refc = 1;
 
   /* Associated found virtual tail call frames chain, it is never NULL.  */
-  struct call_site_chain *chain;
+  gdb::unique_xmalloc_ptr<struct call_site_chain> chain;
 
   /* Cached pretended_chain_levels result.  */
-  int chain_levels;
+  int chain_levels = 0;
 
   /* Unwound PC from the top (caller) frame, as it is not contained
      in CHAIN.  */
-  CORE_ADDR prev_pc;
+  CORE_ADDR prev_pc = 0;
 
   /* Compensate SP in caller frames appropriately.  prev_sp and
      entry_cfa_sp_offset are valid only if PREV_SP_P.  PREV_SP is SP at the top
      (caller) frame.  ENTRY_CFA_SP_OFFSET is shift of SP in tail call frames
      against next_bottom_frame SP.  */
   unsigned prev_sp_p : 1;
-  CORE_ADDR prev_sp;
-  LONGEST entry_cfa_sp_offset;
+  CORE_ADDR prev_sp = 0;
+  LONGEST entry_cfa_sp_offset = 0;
 };
 
-/* hash_f for htab_create_alloc of cache_htab.  */
+/* Traits for the tailcall cache.  */
 
-static hashval_t
-cache_hash (const void *arg)
+struct tailcall_cache_traits
 {
-  const struct tailcall_cache *cache = (const struct tailcall_cache *) arg;
+  using value_type = std::unique_ptr<tailcall_cache>;
 
-  return htab_hash_pointer (cache->next_bottom_frame);
-}
+  static bool is_empty (const value_type &v)
+  { return v == nullptr; }
 
-/* eq_f for htab_create_alloc of cache_htab.  */
+  static bool equals (const value_type &lhs, const value_type &rhs)
+  {
+    return lhs->next_bottom_frame == rhs->next_bottom_frame;
+  }
 
-static int
-cache_eq (const void *arg1, const void *arg2)
-{
-  const struct tailcall_cache *cache1 = (const struct tailcall_cache *) arg1;
-  const struct tailcall_cache *cache2 = (const struct tailcall_cache *) arg2;
+  static bool equals (const value_type &lhs, const tailcall_cache *rhs)
+  {
+    return lhs->next_bottom_frame == rhs->next_bottom_frame;
+  }
 
-  return cache1->next_bottom_frame == cache2->next_bottom_frame;
-}
+  static size_t hash (const value_type &v)
+  {
+    return htab_hash_pointer (v->next_bottom_frame);
+  }
+
+  static size_t hash (const tailcall_cache *v)
+  {
+    return htab_hash_pointer (v->next_bottom_frame);
+  }
+};
+
+/* Contains struct tailcall_cache indexed by next_bottom_frame.  */
+static gdb::traited_hash_table<tailcall_cache_traits> cache_htab;
 
 /* Create new tailcall_cache for NEXT_BOTTOM_FRAME, NEXT_BOTTOM_FRAME must not
    yet have been indexed by cache_htab.  Caller holds one reference of the new
@@ -92,17 +106,13 @@ cache_eq (const void *arg1, const void *arg2)
 static struct tailcall_cache *
 cache_new_ref1 (frame_info_ptr next_bottom_frame)
 {
-  struct tailcall_cache *cache = XCNEW (struct tailcall_cache);
-  void **slot;
+  std::unique_ptr<tailcall_cache> cache
+    = std::make_unique<tailcall_cache> (next_bottom_frame);
+  tailcall_cache *result = cache.get ();
+  auto insert_pair = cache_htab.insert (std::move (cache));
+  gdb_assert (insert_pair.second);
 
-  cache->next_bottom_frame = next_bottom_frame.get ();
-  cache->refc = 1;
-
-  slot = htab_find_slot (cache_htab, cache, INSERT);
-  gdb_assert (*slot == NULL);
-  *slot = cache;
-
-  return cache;
+  return result;
 }
 
 /* Create new reference to CACHE.  */
@@ -125,11 +135,8 @@ cache_unref (struct tailcall_cache *cache)
 
   if (!--cache->refc)
     {
-      gdb_assert (htab_find_slot (cache_htab, cache, NO_INSERT) != NULL);
-      htab_remove_elt (cache_htab, cache);
-
-      xfree (cache->chain);
-      xfree (cache);
+      gdb_assert (cache_htab.find (cache) != cache_htab.end ());
+      cache_htab.erase (cache);
     }
 }
 
@@ -148,25 +155,18 @@ frame_is_tailcall (frame_info_ptr fi)
 static struct tailcall_cache *
 cache_find (frame_info_ptr fi)
 {
-  struct tailcall_cache *cache;
-  struct tailcall_cache search;
-  void **slot;
-
   while (frame_is_tailcall (fi))
     {
       fi = get_next_frame (fi);
       gdb_assert (fi != NULL);
     }
 
-  search.next_bottom_frame = fi.get();
-  search.refc = 1;
-  slot = htab_find_slot (cache_htab, &search, NO_INSERT);
-  if (slot == NULL)
-    return NULL;
+  struct tailcall_cache search (fi);
+  auto iter = cache_htab.find (&search);
+  if (iter == cache_htab.end ())
+    return nullptr;
 
-  cache = (struct tailcall_cache *) *slot;
-  gdb_assert (cache != NULL);
-  return cache;
+  return iter->get ();
 }
 
 /* Number of virtual frames between THIS_FRAME and CACHE->NEXT_BOTTOM_FRAME.
@@ -235,7 +235,7 @@ static CORE_ADDR
 pretend_pc (frame_info_ptr this_frame, struct tailcall_cache *cache)
 {
   int next_levels = existing_next_levels (this_frame, cache);
-  struct call_site_chain *chain = cache->chain;
+  struct call_site_chain *chain = cache->chain.get ();
 
   gdb_assert (chain != NULL);
 
@@ -430,9 +430,9 @@ dwarf2_tailcall_sniffer_first (frame_info_ptr this_frame,
 
   cache = cache_new_ref1 (this_frame);
   *tailcall_cachep = cache;
-  cache->chain = chain.release ();
+  cache->chain = std::move (chain);
   cache->prev_pc = prev_pc;
-  cache->chain_levels = pretended_chain_levels (cache->chain);
+  cache->chain_levels = pretended_chain_levels (cache->chain.get ());
   cache->prev_sp_p = prev_sp_p;
   if (cache->prev_sp_p)
     {
@@ -481,11 +481,3 @@ const struct frame_unwind dwarf2_tailcall_frame_unwind =
   tailcall_frame_dealloc_cache,
   tailcall_frame_prev_arch
 };
-
-void _initialize_tailcall_frame ();
-void
-_initialize_tailcall_frame ()
-{
-  cache_htab = htab_create_alloc (50, cache_hash, cache_eq, NULL, xcalloc,
-				  xfree);
-}
