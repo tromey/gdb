@@ -198,8 +198,29 @@ static int format_code[] = { 0, 't', 'd', 'x', 'o', 'z' };
 /* List of root variable objects.  */
 static std::list<struct varobj_root *> rootlist;
 
+/* Trait type for the varobj hash table.  */
+struct varobj_traits
+{
+  using value_type = varobj *;
+
+  static bool equals (const varobj *lhs, const varobj *rhs)
+  { return lhs == rhs; }
+
+  static bool equals (const varobj *lhs, const char *name)
+  { return lhs->obj_name == name; }
+
+  static bool is_empty (const varobj *v)
+  { return v == nullptr; }
+
+  static size_t hash (const varobj *v)
+  { return htab_hash_string (v->obj_name.c_str ()); }
+
+  static size_t hash (const char *s)
+  { return htab_hash_string (s); }
+};
+
 /* Pointer to the varobj hash table (built at run time).  */
-static htab_t varobj_table;
+static gdb::traited_hash_table<varobj_traits> varobj_table;
 
 
 
@@ -430,13 +451,11 @@ varobj_gen_name (void)
 struct varobj *
 varobj_get_handle (const char *objname)
 {
-  varobj *var = (varobj *) htab_find_with_hash (varobj_table, objname,
-						htab_hash_string (objname));
-
-  if (var == NULL)
+  auto iter = varobj_table.find (objname);
+  if (iter == varobj_table.end ())
     error (_("Variable object not found"));
 
-  return var;
+  return *iter;
 }
 
 /* Given the handle, return the name of the object.  */
@@ -1722,15 +1741,9 @@ delete_variable_1 (int *delcountp, struct varobj *var, bool only_children_p,
 static void
 install_variable (struct varobj *var)
 {
-  hashval_t hash = htab_hash_string (var->obj_name.c_str ());
-  void **slot = htab_find_slot_with_hash (varobj_table,
-					  var->obj_name.c_str (),
-					  hash, INSERT);
-  if (*slot != nullptr)
+  auto insert_pair = varobj_table.insert (var);
+  if (!insert_pair.second)
     error (_("Duplicate variable object name"));
-
-  /* Add varobj to hash table.  */
-  *slot = var;
 
   /* If root, add varobj to root list.  */
   if (is_root_p (var))
@@ -1741,8 +1754,7 @@ install_variable (struct varobj *var)
 static void
 uninstall_variable (struct varobj *var)
 {
-  hashval_t hash = htab_hash_string (var->obj_name.c_str ());
-  htab_remove_elt_with_hash (varobj_table, var->obj_name.c_str (), hash);
+  varobj_table.erase (var);
 
   if (varobjdebug)
     gdb_printf (gdb_stdlog, "Deleting %s\n", var->obj_name.c_str ());
@@ -2408,33 +2420,10 @@ varobj_invalidate_if_uses_objfile (struct objfile *objfile)
     });
 }
 
-/* A hash function for a varobj.  */
-
-static hashval_t
-hash_varobj (const void *a)
-{
-  const varobj *obj = (const varobj *) a;
-  return htab_hash_string (obj->obj_name.c_str ());
-}
-
-/* A hash table equality function for varobjs.  */
-
-static int
-eq_varobj_and_string (const void *a, const void *b)
-{
-  const varobj *obj = (const varobj *) a;
-  const char *name = (const char *) b;
-
-  return obj->obj_name == name;
-}
-
 void _initialize_varobj ();
 void
 _initialize_varobj ()
 {
-  varobj_table = htab_create_alloc (5, hash_varobj, eq_varobj_and_string,
-				    nullptr, xcalloc, xfree);
-
   add_setshow_zuinteger_cmd ("varobj", class_maintenance,
 			     &varobjdebug,
 			     _("Set varobj debugging."),
