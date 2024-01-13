@@ -4538,18 +4538,8 @@ private:
   /* The language that we're assuming when reading.  */
   enum language m_language;
 
-  /* Map from DIE ranges to newly-created entries.  See
-     m_deferred_entries to understand this.  */
-  parent_map m_die_range_map;
-
-  /* The generated DWARF can sometimes have the declaration for a
-     method in a class (or perhaps namespace) scope, with the
-     definition appearing outside this scope... just one of the many
-     bad things about DWARF.  In order to handle this situation, we
-     defer certain entries until the end of scanning, at which point
-     we'll know the containing context of all the DIEs that we might
-     have scanned.  This vector stores these deferred entries.  */
-  std::vector<cooked_index_entry *> m_deferred_entries;
+  /* Map from DIE ranges to newly-created entries.  */
+  parent_map *m_die_range_map = nullptr;
 };
 
 /* Subroutine of dwarf2_build_psymtabs_hard to simplify it.
@@ -4866,7 +4856,8 @@ cooked_index_worker::process_cus (size_t task_number, unit_iterator first,
 
   m_results[task_number] = result_type (thread_storage.release (),
 					complaint_handler.release (),
-					std::move (errors));
+					std::move (errors),
+					thread_storage.release_parent_maps ());
 }
 
 void
@@ -4876,7 +4867,10 @@ cooked_index_worker::done_reading ()
      can only be dealt with on the main thread.  */
   std::vector<std::unique_ptr<cooked_index_shard>> indexes;
   for (auto &one_result : m_results)
-    indexes.push_back (std::move (std::get<0> (one_result)));
+    {
+      indexes.push_back (std::move (std::get<0> (one_result)));
+      m_all_parents_map.add_maps (std::move (std::get<3> (one_result)));
+    }
 
   /* This has to wait until we read the CUs, we need the list of DWOs.  */
   process_skeletonless_type_units (m_per_objfile, &m_index_storage);
@@ -4884,11 +4878,14 @@ cooked_index_worker::done_reading ()
   indexes.push_back (m_index_storage.release ());
   indexes.shrink_to_fit ();
 
+  m_all_parents_map.add_maps (m_index_storage.release_parent_maps ());
+  m_all_parents_map.done_adding ();
+
   dwarf2_per_bfd *per_bfd = m_per_objfile->per_bfd;
   cooked_index *table
     = (gdb::checked_static_cast<cooked_index *>
        (per_bfd->index_table.get ()));
-  table->set_contents (std::move (indexes));
+  table->set_contents (std::move (indexes), &m_all_parents_map);
 }
 
 void
@@ -16325,13 +16322,9 @@ cooked_indexer::scan_attributes (dwarf2_per_cu_data *scanning_per_cu,
 
 	  if (*parent_entry == nullptr)
 	    {
-	      parent_map::addr_type addr
+	      /* Figure out the parent later, during finalization.  */
+	      *maybe_defer
 		= parent_map::form_addr (origin_offset, origin_is_dwz);
-	      if (new_reader->cu == reader->cu
-		  && new_info_ptr > watermark_ptr)
-		*maybe_defer = addr;
-	      else
-		*parent_entry = m_die_range_map.find (addr);
 	    }
 
 	  unsigned int bytes_read;
@@ -16429,7 +16422,12 @@ cooked_indexer::index_imported_unit (cutu_reader *reader,
 					      is_dwz, true);
   if (new_reader != nullptr)
     {
+      parent_map pmap;
+      scoped_restore save_pmap = make_scoped_restore (&m_die_range_map,
+						      &pmap);
+
       index_dies (new_reader, new_reader->info_ptr, nullptr, false);
+      m_index_storage->record_parent_map (std::move (pmap));
 
       reader->cu->add_dependence (new_reader->cu->per_cu);
     }
@@ -16450,7 +16448,7 @@ cooked_indexer::recurse (cutu_reader *reader,
       parent_map::addr_type start
 	= parent_map::form_addr (parent_entry->die_offset + 1,
 				 reader->cu->per_cu->is_dwz);
-      parent_index = m_die_range_map.add_entry (start, parent_entry);
+      parent_index = m_die_range_map->add_entry (start, parent_entry);
     }
 
   info_ptr = index_dies (reader, info_ptr, parent_entry, fully);
@@ -16461,7 +16459,7 @@ cooked_indexer::recurse (cutu_reader *reader,
       parent_map::addr_type end
 	= parent_map::form_addr (sect_offset (info_ptr - 1 - reader->buffer),
 				 reader->cu->per_cu->is_dwz);
-      m_die_range_map.set_end (parent_index, end);
+      m_die_range_map->set_end (parent_index, end);
     }
 
   return info_ptr;
@@ -16538,13 +16536,10 @@ cooked_indexer::index_dies (cutu_reader *reader,
       if (name != nullptr)
 	{
 	  if (defer != 0)
-	    {
-	      this_entry
-		= m_index_storage->add (this_die, abbrev->tag,
-					flags | IS_PARENT_DEFERRED, name,
-					defer, m_per_cu);
-	      m_deferred_entries.push_back (this_entry);
-	    }
+	    this_entry
+	      = m_index_storage->add (this_die, abbrev->tag,
+				      flags | IS_PARENT_DEFERRED, name,
+				      defer, m_per_cu);
 	  else
 	    this_entry
 	      = m_index_storage->add (this_die, abbrev->tag, flags, name,
@@ -16635,14 +16630,11 @@ cooked_indexer::make_index (cutu_reader *reader)
   find_file_and_directory (reader->comp_unit_die, reader->cu);
   if (!reader->comp_unit_die->has_children)
     return;
-  index_dies (reader, reader->info_ptr, nullptr, false);
 
-  for (const auto &entry : m_deferred_entries)
-    {
-      const cooked_index_entry *parent
-	= m_die_range_map.find (entry->get_deferred_parent ());
-      entry->resolve_parent (parent);
-    }
+  parent_map pmap;
+  scoped_restore save_pmap = make_scoped_restore (&m_die_range_map, &pmap);
+  index_dies (reader, reader->info_ptr, nullptr, false);
+  m_index_storage->record_parent_map (std::move (pmap));
 }
 
 /* An implementation of quick_symbol_functions for the cooked DWARF

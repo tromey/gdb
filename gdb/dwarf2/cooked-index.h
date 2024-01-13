@@ -392,9 +392,9 @@ private:
 
   /* Finalize the index.  This should be called a single time, when
      the index has been fully populated.  It enters all the entries
-     into the internal table.  This may be invoked in a worker
-     thread.  */
-  void finalize ();
+     into the internal table and fixes up all missing parent links.
+     This may be invoked in a worker thread.  */
+  void finalize (const parent_map_map *parent_maps);
 
   /* Storage for the entries.  */
   auto_obstack m_storage;
@@ -459,6 +459,16 @@ public:
     return &m_addrmap;
   }
 
+  void record_parent_map (parent_map map)
+  {
+    m_parent_maps.push_back (std::move (map));
+  }
+
+  parent_map_vector release_parent_maps ()
+  {
+    return std::move (m_parent_maps);
+  }
+
 private:
 
   /* Hash function for a cutu_reader.  */
@@ -473,6 +483,12 @@ private:
   htab_up m_reader_hash;
   /* The index shard that is being constructed.  */
   std::unique_ptr<cooked_index_shard> m_index;
+
+  /* Parent maps for each CU that is read.  It's unfortunate that we
+     have to keep these, but intra-CU references combined with
+     multi-threaded processing mean that we can't really know which
+     ones are worth preserving.  */
+  parent_map_vector m_parent_maps;
 
   /* A writeable addrmap being constructed by this scanner.  */
   addrmap_mutable m_addrmap;
@@ -544,13 +560,17 @@ private:
  		    unit_iterator end);
 
   /* Each thread returns a tuple holding a cooked index, any collected
-     complaints, and a vector of errors that should be printed.  The
-     latter is done because GDB's I/O system is not thread-safe.
-     run_on_main_thread could be used, but that would mean the
-     messages are printed after the prompt, which looks weird.  */
+     complaints, a vector of errors that should be printed, and a
+     vector of parent maps.
+
+     The errors are retained because GDB's I/O system is not
+     thread-safe.  run_on_main_thread could be used, but that would
+     mean the messages are printed after the prompt, which looks
+     weird.  */
   using result_type = std::tuple<std::unique_ptr<cooked_index_shard>,
 				 complaint_collection,
-				 std::vector<gdb_exception>>;
+				 std::vector<gdb_exception>,
+				 parent_map_vector>;
 
   /* The per-objfile object.  */
   dwarf2_per_objfile *m_per_objfile;
@@ -566,6 +586,10 @@ private:
      constructor, and this should only be done from the main thread.
      This is enforced in the cooked_index_worker constructor.  */
   deferred_warnings m_warnings;
+
+  /* A map of all parent maps.  Used during finalization to fix up
+     parent relationships.  */
+  parent_map_map m_all_parents_map;
 
 #if CXX_STD_THREAD
   /* Current state of this object.  */
@@ -655,7 +679,7 @@ public:
 
   /* Called by cooked_index_worker to set the contents of this index
      and transition to the MAIN_AVAILABLE state.  */
-  void set_contents (vec_type &&vec);
+  void set_contents (vec_type &&vec, const parent_map_map *parent_maps);
 
   /* A range over a vector of subranges.  */
   using range = range_chain<cooked_index_shard::range>;
