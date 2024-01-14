@@ -89,7 +89,7 @@ public:
 				  [] (const one_entry &entry,
 				      addr_type value)
       {
-	return value < std::get<0> (entry);
+	return value > std::get<0> (entry);
       });
     if (iter == end)
       return nullptr;
