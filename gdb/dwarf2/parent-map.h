@@ -84,34 +84,35 @@ public:
 
   const cooked_index_entry *find (addr_type search) const
   {
+    auto begin = m_map.cbegin ();
     auto end = m_map.cend ();
-    auto iter = std::lower_bound (m_map.cbegin (), end, search,
+    auto iter = std::lower_bound (begin, end, search,
 				  [] (const one_entry &entry,
 				      addr_type value)
-      {
-	return value > std::get<0> (entry);
+				   {
+	return std::get<0> (entry) > value;
       });
     if (iter == end)
       return nullptr;
 
-    /* Search forward for the last entry that contains SEARCH.  */
-    while (iter != end)
+    auto last = std::upper_bound (begin, end, search,
+				  [] (addr_type value,
+				      const one_entry &entry)
       {
-	auto next_iter = iter;
-	++next_iter;
+	return value < std::get<0> (entry);
+      });
 
-	if (search < std::get<0> (*next_iter)
-	    || search > std::get<1> (*next_iter))
+    /* Search forward for the last entry that contains SEARCH.  */
+    const cooked_index_entry *result = nullptr;
+    while (true)
+      {
+	if (search > std::get<0> (*iter) && search < std::get<1> (*iter))
+	  result = std::get<2> (*iter);
+	if (iter == last)
 	  break;
-
-	iter = next_iter;
+	++iter;
       }
-
-    if (iter == end
-	|| search < std::get<0> (*iter)
-	|| search > std::get<1> (*iter))
-      return nullptr;
-    return std::get<2> (*iter);
+    return result;
   }
 
 private:
