@@ -162,7 +162,7 @@ public:
 				  [] (const parent_map &entry,
 				      parent_map::addr_type value)
       {
-	return value < entry.lowest ();
+	return value > entry.highest ();
       });
 
     if (iter == m_maps.cend ())
