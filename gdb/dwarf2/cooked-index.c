@@ -615,12 +615,17 @@ cooked_index::set_contents (vec_type &&vec)
      this task were submitted earlier, it would have to wait for
      finalization.  However, that would take a slot in the global
      thread pool, and if enough such tasks were submitted at once, it
-     would cause a livelock.  */
+     would cause a livelock.
+     
+     Finalization is run at a lower priority than scanning, with the
+     idea being that if multiple objfiles are being scanned at once
+     (say during at "attach"), it's preferable to do as much of the
+     reading as possible before any finalization.  */
   gdb::task_group finalizers ([this, ctx = std::move (ctx)] ()
   {
     m_state->set (cooked_state::FINALIZED);
     maybe_write_index (m_per_bfd, ctx);
-  });
+  }, thread_pool::DEFAULT_PRIORITY - 10);
 
   for (auto &idx : m_vector)
     {
