@@ -28,8 +28,9 @@ class task_group::impl : public std::enable_shared_from_this<task_group::impl>
 {
 public:
 
-  explicit impl (std::function<void ()> &&done)
-    : m_done (std::move (done))
+  impl (std::function<void ()> &&done, size_t priority)
+    : m_done (std::move (done)),
+      m_priority (priority)
   { }
   DISABLE_COPY_AND_ASSIGN (impl);
 
@@ -50,6 +51,8 @@ public:
 
   /* True if started.  */
   bool m_started = false;
+  /* Priority to use.  */
+  size_t m_priority;
   /* The tasks.  */
   std::vector<std::function<void ()>> m_tasks;
   /* The 'done' function.  */
@@ -67,12 +70,12 @@ task_group::impl::start ()
       {
 	/* Be sure to capture a shared reference here.  */
 	shared_this->m_tasks[i] ();
-      });
+      }, m_priority);
     }
 }
 
-task_group::task_group (std::function<void ()> &&done)
-  : m_task (new impl (std::move (done)))
+task_group::task_group (std::function<void ()> &&done, size_t priority)
+  : m_task (new impl (std::move (done), priority))
 {
 }
 

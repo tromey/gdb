@@ -22,6 +22,8 @@
 
 #include <memory>
 
+#include "gdbsupport/thread-pool.h"
+
 namespace gdb
 {
 
@@ -33,7 +35,11 @@ class task_group
 {
 public:
 
-  explicit task_group (std::function<void ()> &&done);
+  /* Create a new task group.  DONE is a function to be run when all
+     the added tasks have completed.  PRIORITY is the priority to use
+     for all tasks.  */
+  task_group (std::function<void ()> &&done,
+	      size_t priority = thread_pool::DEFAULT_PRIORITY);
   DISABLE_COPY_AND_ASSIGN (task_group);
 
   /* Add a task to the task group.  All tasks must be added before the
