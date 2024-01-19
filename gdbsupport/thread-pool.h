@@ -147,17 +147,24 @@ public:
   }
 
   /* A priority that can be used for tasks that will be immediately
-     waited for.  */
+     waited for.  This cannot be used by ordinary code; it's reserved
+     for shutting down threads.  */
   static constexpr size_t BLOCKING_PRIORITY = (size_t) -1;
 
-  /* A low priority.  */
+  /* The default priority.  Code of course should not rely on this
+     exact value; but it's fine to raise or lower the priority of a
+     task by adding a constant to this.  */
+  static constexpr size_t DEFAULT_PRIORITY = 1000;
+
+  /* The lowest priority.  */
   static constexpr size_t LOW_PRIORITY = 0;
 
   /* Post a task to the thread pool.  A future is returned, which can
      be used to wait for the result.  */
   future<void> post_task (std::function<void ()> &&func,
-			  size_t prio = BLOCKING_PRIORITY)
+			  size_t prio = DEFAULT_PRIORITY)
   {
+    gdb_assert (prio != BLOCKING_PRIORITY);
 #if CXX_STD_THREAD
     std::packaged_task<void ()> task (std::move (func));
     future<void> result = task.get_future ();
@@ -173,8 +180,9 @@ public:
      be used to wait for the result.  */
   template<typename T>
   future<T> post_task (std::function<T ()> &&func,
-		       size_t prio = BLOCKING_PRIORITY)
+		       size_t prio = DEFAULT_PRIORITY)
   {
+    gdb_assert (prio != BLOCKING_PRIORITY);
 #if CXX_STD_THREAD
     std::packaged_task<T ()> task (std::move (func));
     future<T> result = task.get_future ();
