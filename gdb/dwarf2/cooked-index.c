@@ -625,7 +625,7 @@ cooked_index::set_contents (vec_type &&vec)
   {
     m_state->set (cooked_state::FINALIZED);
     maybe_write_index (m_per_bfd, ctx);
-  }, thread_pool::DEFAULT_PRIORITY - 10);
+  }, gdb::thread_pool::DEFAULT_PRIORITY - 10);
 
   for (auto &idx : m_vector)
     {
