@@ -51,12 +51,12 @@ public:
 
   /* True if started.  */
   bool m_started = false;
-  /* Priority to use.  */
-  size_t m_priority;
   /* The tasks.  */
   std::vector<std::function<void ()>> m_tasks;
   /* The 'done' function.  */
   std::function<void ()> m_done;
+  /* Priority to use.  */
+  size_t m_priority;
 };
 
 void
