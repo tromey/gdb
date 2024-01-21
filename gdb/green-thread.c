@@ -219,7 +219,7 @@ green_thread_target::fetch_registers (struct regcache *regcache, int regnum)
   const green_thread *gth = find_green_thread (regcache->ptid ());
   if (gth != nullptr)
     {
-      ptid_t base = gth->get_ptid ();
+      ptid_t base = gth->underlying_thread ();
       if (base != null_ptid)
 	{
 	  temporarily_change_regcache_ptid changer (regcache, base);
@@ -238,7 +238,7 @@ green_thread_target::store_registers (struct regcache *regcache, int regnum)
   const green_thread *gth = find_green_thread (regcache->ptid ());
   if (gth != nullptr)
     {
-      ptid_t base = gth->get_ptid ();
+      ptid_t base = gth->underlying_thread ();
       if (base != null_ptid)
 	{
 	  temporarily_change_regcache_ptid changer (regcache, base);
@@ -257,7 +257,7 @@ green_thread_target::prepare_to_store (struct regcache *regcache)
   const green_thread *gth = find_green_thread (regcache->ptid ());
   if (gth != nullptr)
     {
-      ptid_t base = gth->get_ptid ();
+      ptid_t base = gth->underlying_thread ();
       if (base != null_ptid)
 	{
 	  temporarily_change_regcache_ptid changer (regcache, base);
