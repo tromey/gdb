@@ -2813,7 +2813,7 @@ Return the current print options." },
 Output async record to MI channels if any." },
 
   { "create_green_thread", (PyCFunction) gdbpy_create_green_thread,
-    METH_VARARGS,
+    METH_VARARGS | METH_KEYWORDS,
     "create_green_thread (CALLBACK) -> GreenThread.\n\
 Create a new green thread." },
 
