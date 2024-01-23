@@ -321,7 +321,7 @@ bfd_check_format_matches (bfd *abfd, bfd_format format, char ***matching)
   struct bfd_preserve preserve, preserve_match;
   bfd_cleanup cleanup = NULL;
   bfd_error_handler_type orig_error_handler;
-  static int in_check_format;
+  static TLS int in_check_format;
 
   if (matching != NULL)
     *matching = NULL;

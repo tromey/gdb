@@ -1504,7 +1504,7 @@ err_sprintf (void *stream, const char *fmt, ...)
 /* Communicate the bfd processed by bfd_check_format_matches to the
    error handling function error_handler_sprintf.  */
 
-static bfd *error_handler_bfd;
+static TLS bfd *error_handler_bfd;
 
 /* An error handler that prints to a string, then dups that string to
    a per-xvec cache.  */
@@ -1538,7 +1538,7 @@ error_handler_sprintf (const char *fmt, va_list ap)
    function pointer permits a program linked against BFD to intercept
    the messages and deal with them itself.  */
 
-static bfd_error_handler_type _bfd_error_internal = error_handler_fprintf;
+static TLS bfd_error_handler_type _bfd_error_internal = error_handler_fprintf;
 
 /*
 FUNCTION

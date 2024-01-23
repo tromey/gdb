@@ -1458,8 +1458,8 @@ const bfd_target *const *const bfd_associated_vector = _bfd_associated_vector;
 const size_t _bfd_target_vector_entries = ARRAY_SIZE (_bfd_target_vector);
 
 /* A place to stash a warning from _bfd_check_format.  */
-static struct per_xvec_message *per_xvec_warn[ARRAY_SIZE (_bfd_target_vector)
-					      + 1];
+static TLS struct per_xvec_message *per_xvec_warn[ARRAY_SIZE (_bfd_target_vector)
+						  + 1];
 
 /* This array maps configuration triplets onto BFD vectors.  */
 

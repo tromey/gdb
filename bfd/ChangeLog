@@ -1,3 +1,12 @@
+2024-01-29  Tom Tromey  <tom@tromey.com>
+
+	PR gdb/31264
+	* targets.c (per_xvec_warn): Now thread-local.
+	* format.c (bfd_check_format_matches): Mark "in_check_format" as
+	thread-local.
+	* bfd.c (_bfd_error_internal, error_handler_bfd): Now
+	thread-local.
+
 2024-01-15  Nick Clifton  <nickc@redhat.com>
 
 	* 2.42 branch point.
