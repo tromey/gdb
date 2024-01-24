@@ -143,7 +143,11 @@ public:
 
   /* Return true if this operation uses OBJFILE (and will become
      dangling when OBJFILE is unloaded), otherwise return false.
-     OBJFILE must not be a separate debug info file.  */
+     OBJFILE must not be a separate debug info file.
+
+     Note that it is permissible for an object that only incidentally
+     references OBJFILE to instead clear its reference to OBJFILE and
+     then return false.  */
   virtual bool uses_objfile (struct objfile *objfile) const
   { return false; }
 
