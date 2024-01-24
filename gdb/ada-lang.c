@@ -9473,13 +9473,13 @@ ada_positional_component::assign (struct value *container,
 }
 
 bool
-ada_discrete_range_association::uses_objfile (struct objfile *objfile)
+ada_discrete_range_association::uses_objfile (struct objfile *objfile) const
 {
   return m_low->uses_objfile (objfile) || m_high->uses_objfile (objfile);
 }
 
 void
-ada_discrete_range_association::dump (ui_file *stream, int depth)
+ada_discrete_range_association::dump (ui_file *stream, int depth) const
 {
   gdb_printf (stream, _("%*sDiscrete range:\n"), depth, "");
   m_low->dump (stream, depth + 1);
@@ -9509,13 +9509,13 @@ ada_discrete_range_association::assign (struct value *container,
 }
 
 bool
-ada_name_association::uses_objfile (struct objfile *objfile)
+ada_name_association::uses_objfile (struct objfile *objfile) const
 {
   return m_val->uses_objfile (objfile);
 }
 
 void
-ada_name_association::dump (ui_file *stream, int depth)
+ada_name_association::dump (ui_file *stream, int depth) const
 {
   gdb_printf (stream, _("%*sName:\n"), depth, "");
   m_val->dump (stream, depth + 1);

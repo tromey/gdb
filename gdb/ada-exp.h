@@ -769,10 +769,10 @@ public:
 		       operation_up &op) = 0;
 
   /* Same as operation::uses_objfile.  */
-  virtual bool uses_objfile (struct objfile *objfile) = 0;
+  virtual bool uses_objfile (struct objfile *objfile) const = 0;
 
   /* Same as operation::dump.  */
-  virtual void dump (ui_file *stream, int depth) = 0;
+  virtual void dump (ui_file *stream, int depth) const = 0;
 
   virtual ~ada_association () = default;
 
@@ -836,9 +836,9 @@ public:
 	       LONGEST low, LONGEST high,
 	       operation_up &op) override;
 
-  bool uses_objfile (struct objfile *objfile) override;
+  bool uses_objfile (struct objfile *objfile) const override;
 
-  void dump (ui_file *stream, int depth) override;
+  void dump (ui_file *stream, int depth) const override;
 
 private:
 
@@ -864,9 +864,9 @@ public:
 	       LONGEST low, LONGEST high,
 	       operation_up &op) override;
 
-  bool uses_objfile (struct objfile *objfile) override;
+  bool uses_objfile (struct objfile *objfile) const override;
 
-  void dump (ui_file *stream, int depth) override;
+  void dump (ui_file *stream, int depth) const override;
 
 private:
 
