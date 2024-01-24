@@ -434,6 +434,62 @@ private:
   }
 };
 
+/* Cache the result of some kind of lookup.  This is used to memoize
+   symbol- or type-lookup in an expression, to avoid redoing the
+   lookup at each evaluation.  */
+template<typename T>
+class memoized
+{
+public:
+
+  memoized () = default;
+
+  bool uses_objfile (struct objfile *objfile) const
+  {
+    /* If our cached lookup uses OBJFILE, just clear the cache rather
+       than causing a complete reparse.  */
+    if (check_objfile (m_value, objfile))
+      m_value = nullptr;
+    return false;
+  }
+
+  void dump (struct ui_file *stream, int depth) const
+  {
+    /* Don't bother.  This can be changed later if it proves to be
+       needed.  */
+  }
+
+  /* Return the current value, or nullptr if not set.  */
+  T *get () const
+  { return m_value; }
+
+  /* Set the current value.  */
+  void set (T *value)
+  {
+    gdb_assert (m_value == nullptr);
+    m_value = value;
+  }
+
+private:
+
+  mutable T *m_value = nullptr;
+};
+
+template<typename T>
+static inline bool
+check_objfile (const memoized<T> &val, struct objfile *objfile)
+{
+  return val->uses_objfile (objfile);
+}
+
+template<typename T>
+void
+dump_for_expression (struct ui_file *stream, int depth,
+		     const memoized<T> &val)
+{
+  return val->dump (stream, depth);
+}
+
 /* The check_constant overloads are used to decide whether a given
    concrete operation is a constant.  This is done by checking the
    operands.  */
