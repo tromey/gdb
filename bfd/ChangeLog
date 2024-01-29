@@ -1,5 +1,9 @@
 2024-01-29  Tom Tromey  <tom@tromey.com>
 
+	* bfd.c (_bfd_doprnt): Do not call fputc.
+
+2024-01-29  Tom Tromey  <tom@tromey.com>
+
 	PR gdb/31264
 	* targets.c (per_xvec_warn): Now thread-local.
 	* format.c (bfd_check_format_matches): Mark "in_check_format" as
