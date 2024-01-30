@@ -1,5 +1,15 @@
 2024-01-29  Tom Tromey  <tom@tromey.com>
 
+	* bfd.c (bfd_print_callback): Rename from print_func.  Move into
+	comment.
+	(_bfd_doprnt): Update.
+	(bfd_print_error): New function.
+	(error_handler_fprintf, error_handler_sprintf): Use
+	bfd_print_error.
+	* bfd-in2.h: Rebuild.
+
+2024-01-29  Tom Tromey  <tom@tromey.com>
+
 	* bfd.c (_bfd_doprnt): Do not call fputc.
 
 2024-01-29  Tom Tromey  <tom@tromey.com>
