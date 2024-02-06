@@ -25,23 +25,17 @@ if {[build_executable "failed to prepare" $testfile $srcfile debug]} {
 
 set x_file ${srcdir}/${subdir}/$testfile.gdb
 
-global GDBFLAGS
-set saved_gdbflags $GDBFLAGS
-
 # Run the test proper.
 
 proc test {} {
     global inferior_exited_re
     global binfile
     global gdb_prompt
-    global saved_gdbflags GDBFLAGS
+    global GDBFLAGS
     global x_file
 
     gdb_exit
 
-    set GDBFLAGS "$GDBFLAGS -x $x_file $binfile"
-
-    set GDBFLAGS $saved_gdbflags
     append GDBFLAGS " -ex \"set height unlimited\""
     append GDBFLAGS " -x \"$x_file\""
     append GDBFLAGS " --args \"$binfile\""
@@ -65,6 +59,6 @@ proc test {} {
     }
 }
 
-test
-
-set GDBFLAGS $saved_gdbflags
+save_vars {GDBFLAGS} {
+    test
+}

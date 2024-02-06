@@ -27,9 +27,6 @@ if [is_remote host] {
   set file_arg [remote_download host $file_arg]
 }
 
-global GDBFLAGS
-set saved_gdbflags $GDBFLAGS
-
 # Returns true if the board can 'gdb -ex "start"', false otherwise.
 
 proc probe_can_run_cmdline  {} {
@@ -172,7 +169,8 @@ proc test_fg_execution_pagination_cancel { how } {
     }
 }
 
-save_vars { INTERNAL_GDBFLAGS } {
+save_vars { GDBFLAGS INTERNAL_GDBFLAGS } {
+    set saved_gdbflags $GDBFLAGS
     set INTERNAL_GDBFLAGS [string map {"-q" ""} $INTERNAL_GDBFLAGS]
 
     if {[probe_can_run_cmdline] > 0} {
@@ -183,5 +181,3 @@ save_vars { INTERNAL_GDBFLAGS } {
 	test_fg_execution_pagination_cancel "quit"
     }
 }
-
-set GDBFLAGS $saved_gdbflags

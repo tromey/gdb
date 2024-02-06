@@ -38,8 +38,6 @@ proc test_break { initial_load always_inserted break_command } {
     with_test_prefix "$prefix" {
 	gdb_exit
 
-	set saved_gdbflags $GDBFLAGS
-
 	# See "used to behave differently" further below.
 	if { $initial_load == "file" } {
 	    gdb_start
@@ -51,13 +49,14 @@ proc test_break { initial_load always_inserted break_command } {
 	    # implementations use as binary.
 	    set last_loaded_file $binfile
 
-	    set GDBFLAGS "$GDBFLAGS $binfile"
-	    gdb_start
+	    save_vars {GDBFLAGS} {
+		append GDBFLAGS " $binfile"
+		gdb_start
+	    }
 	}
 
 	gdb_reinitialize_dir $srcdir/$subdir
 	gdb_reload
-	set GDBFLAGS $saved_gdbflags
 
 	if {![runto_main]} {
 	    return
