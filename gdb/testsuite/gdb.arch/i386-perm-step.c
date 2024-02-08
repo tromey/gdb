@@ -24,9 +24,6 @@ int
 main (void)
 {
   asm ("int3");
-  for (int i = 0; i < 5; ++i)
-    {
-      nothing ();
-    }
+  nothing ();
   return 0;
 }
