@@ -28,4 +28,4 @@ if {![runto_main]} {
     return -1
 }
 
-gdb_test "next" .*
+gdb_test "step" .*
