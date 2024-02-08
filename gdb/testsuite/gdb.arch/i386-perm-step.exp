@@ -29,4 +29,5 @@ if {[gdb_start_cmd] < 0} {
 }
 gdb_test "" ".*reakpoint .*, main .*${srcfile}.*" "start"
 
+# The bug was a crash, so any expected output is fine here.
 gdb_test "step" .*
