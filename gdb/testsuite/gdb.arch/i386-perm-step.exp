@@ -27,5 +27,6 @@ if {[prepare_for_testing "failed to prepare" ${testfile} ${srcfile}]} {
 if {[gdb_start_cmd] < 0} {
     return -1
 }
+gdb_test "" ".*reakpoint .*, main .*${srcfile}.*" "start"
 
 gdb_test "step" .*
