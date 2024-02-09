@@ -26,8 +26,7 @@
 bool
 read_addrmap_from_aranges (dwarf2_per_objfile *per_objfile,
 			   dwarf2_section_info *section,
-			   addrmap_mutable *mutable_map,
-			   deferred_warnings *warn)
+			   addrmap_mutable *mutable_map)
 {
   /* Caller must ensure that the section has already been read.  */
   gdb_assert (section->readin);
@@ -77,13 +76,13 @@ read_addrmap_from_aranges (dwarf2_per_objfile *per_objfile,
       const uint8_t offset_size = dwarf5_is_dwarf64 ? 8 : 4;
       if (addr + entry_length > section->buffer + section->size)
 	{
-	  warn->warn (_("Section .debug_aranges in %s entry at offset %s "
-			"length %s exceeds section length %s, "
-			"ignoring .debug_aranges."),
-		      objfile_name (objfile),
-		      plongest (entry_addr - section->buffer),
-		      plongest (bytes_read + entry_length),
-		      pulongest (section->size));
+	  warning (_("Section .debug_aranges in %s entry at offset %s "
+		     "length %s exceeds section length %s, "
+		     "ignoring .debug_aranges."),
+		   objfile_name (objfile),
+		   plongest (entry_addr - section->buffer),
+		   plongest (bytes_read + entry_length),
+		   pulongest (section->size));
 	  return false;
 	}
 
@@ -92,7 +91,7 @@ read_addrmap_from_aranges (dwarf2_per_objfile *per_objfile,
       addr += 2;
       if (version != 2)
 	{
-	  warn->warn
+	  warning
 	    (_("Section .debug_aranges in %s entry at offset %s "
 	       "has unsupported version %d, ignoring .debug_aranges."),
 	     objfile_name (objfile),
@@ -107,22 +106,22 @@ read_addrmap_from_aranges (dwarf2_per_objfile *per_objfile,
 	= debug_info_offset_to_per_cu.find (sect_offset (debug_info_offset));
       if (per_cu_it == debug_info_offset_to_per_cu.cend ())
 	{
-	  warn->warn (_("Section .debug_aranges in %s entry at offset %s "
-			"debug_info_offset %s does not exists, "
-			"ignoring .debug_aranges."),
-		      objfile_name (objfile),
-		      plongest (entry_addr - section->buffer),
-		      pulongest (debug_info_offset));
+	  warning (_("Section .debug_aranges in %s entry at offset %s "
+		     "debug_info_offset %s does not exists, "
+		     "ignoring .debug_aranges."),
+		   objfile_name (objfile),
+		   plongest (entry_addr - section->buffer),
+		   pulongest (debug_info_offset));
 	  return false;
 	}
       const auto insertpair
 	= debug_info_offset_seen.insert (sect_offset (debug_info_offset));
       if (!insertpair.second)
 	{
-	  warn->warn (_("Section .debug_aranges in %s has duplicate "
-			"debug_info_offset %s, ignoring .debug_aranges."),
-		      objfile_name (objfile),
-		      sect_offset_str (sect_offset (debug_info_offset)));
+	  warning (_("Section .debug_aranges in %s has duplicate "
+		     "debug_info_offset %s, ignoring .debug_aranges."),
+		   objfile_name (objfile),
+		   sect_offset_str (sect_offset (debug_info_offset)));
 	  return false;
 	}
       dwarf2_per_cu_data *const per_cu = per_cu_it->second;
@@ -130,7 +129,7 @@ read_addrmap_from_aranges (dwarf2_per_objfile *per_objfile,
       const uint8_t address_size = *addr++;
       if (address_size < 1 || address_size > 8)
 	{
-	  warn->warn
+	  warning
 	    (_("Section .debug_aranges in %s entry at offset %s "
 	       "address_size %u is invalid, ignoring .debug_aranges."),
 	     objfile_name (objfile),
@@ -141,12 +140,12 @@ read_addrmap_from_aranges (dwarf2_per_objfile *per_objfile,
       const uint8_t segment_selector_size = *addr++;
       if (segment_selector_size != 0)
 	{
-	  warn->warn (_("Section .debug_aranges in %s entry at offset %s "
-			"segment_selector_size %u is not supported, "
-			"ignoring .debug_aranges."),
-		      objfile_name (objfile),
-		      plongest (entry_addr - section->buffer),
-		      segment_selector_size);
+	  warning (_("Section .debug_aranges in %s entry at offset %s "
+		     "segment_selector_size %u is not supported, "
+		     "ignoring .debug_aranges."),
+		   objfile_name (objfile),
+		   plongest (entry_addr - section->buffer),
+		   segment_selector_size);
 	  return false;
 	}
 
@@ -163,11 +162,11 @@ read_addrmap_from_aranges (dwarf2_per_objfile *per_objfile,
 	{
 	  if (addr + 2 * address_size > entry_end)
 	    {
-	      warn->warn (_("Section .debug_aranges in %s entry at offset %s "
-			    "address list is not properly terminated, "
-			    "ignoring .debug_aranges."),
-			  objfile_name (objfile),
-			  plongest (entry_addr - section->buffer));
+	      warning (_("Section .debug_aranges in %s entry at offset %s "
+			 "address list is not properly terminated, "
+			 "ignoring .debug_aranges."),
+		       objfile_name (objfile),
+		       plongest (entry_addr - section->buffer));
 	      return false;
 	    }
 	  ULONGEST start = extract_unsigned_integer (addr, address_size,

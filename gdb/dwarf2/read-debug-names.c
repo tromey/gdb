@@ -753,10 +753,7 @@ do_dwarf2_read_debug_names (dwarf2_per_objfile *per_objfile)
 
   per_bfd->debug_aranges.read (per_objfile->objfile);
   addrmap_mutable addrmap;
-  deferred_warnings warnings;
-  read_addrmap_from_aranges (per_objfile, &per_bfd->debug_aranges,
-			     &addrmap, &warnings);
-  warnings.emit ();
+  read_addrmap_from_aranges (per_objfile, &per_bfd->debug_aranges, &addrmap);
 
   map.shard = std::make_unique<cooked_index_shard> ();
   map.shard->install_addrmap (&addrmap);

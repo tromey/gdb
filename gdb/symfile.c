@@ -1234,8 +1234,7 @@ bool separate_debug_file_debug = false;
 
 static int
 separate_debug_file_exists (const std::string &name, unsigned long crc,
-			    struct objfile *parent_objfile,
-			    deferred_warnings *warnings)
+			    struct objfile *parent_objfile)
 {
   unsigned long file_crc;
   int file_crc_p;
@@ -1332,12 +1331,12 @@ separate_debug_file_exists (const std::string &name, unsigned long crc,
 	    gdb_printf (gdb_stdlog, "the debug information found in \"%s\""
 			" does not match \"%s\" (CRC mismatch).\n",
 			name.c_str (), objfile_name (parent_objfile));
-	  warnings->warn (_("the debug information found in \"%ps\""
-			    " does not match \"%ps\" (CRC mismatch)."),
-			  styled_string (file_name_style.style (),
-					 name.c_str ()),
-			  styled_string (file_name_style.style (),
-					 objfile_name (parent_objfile)));
+	  warning (_("the debug information found in \"%ps\""
+		     " does not match \"%ps\" (CRC mismatch)."),
+		   styled_string (file_name_style.style (),
+				  name.c_str ()),
+		   styled_string (file_name_style.style (),
+				  objfile_name (parent_objfile)));
 	}
 
       return 0;
@@ -1370,20 +1369,13 @@ show_debug_file_directory (struct ui_file *file, int from_tty,
    looking for.  CANON_DIR is the "realpath" form of DIR.
    DIR must contain a trailing '/'.
    Returns the path of the file with separate debug info, or an empty
-   string.
-
-   Any warnings generated as part of the lookup process are added to
-   WARNINGS.  If some other mechanism can be used to lookup the debug
-   information then the warning will not be shown, however, if GDB fails to
-   find suitable debug information using any approach, then any warnings
-   will be printed.  */
+   string.  */
 
 static std::string
 find_separate_debug_file (const char *dir,
 			  const char *canon_dir,
 			  const char *debuglink,
-			  unsigned long crc32, struct objfile *objfile,
-			  deferred_warnings *warnings)
+			  unsigned long crc32, struct objfile *objfile)
 {
   if (separate_debug_file_debug)
     gdb_printf (gdb_stdlog,
@@ -1394,7 +1386,7 @@ find_separate_debug_file (const char *dir,
   std::string debugfile = dir;
   debugfile += debuglink;
 
-  if (separate_debug_file_exists (debugfile, crc32, objfile, warnings))
+  if (separate_debug_file_exists (debugfile, crc32, objfile))
     return debugfile;
 
   /* Then try in the subdirectory named DEBUG_SUBDIRECTORY.  */
@@ -1403,7 +1395,7 @@ find_separate_debug_file (const char *dir,
   debugfile += "/";
   debugfile += debuglink;
 
-  if (separate_debug_file_exists (debugfile, crc32, objfile, warnings))
+  if (separate_debug_file_exists (debugfile, crc32, objfile))
     return debugfile;
 
   /* Then try in the global debugfile directories.
@@ -1449,7 +1441,7 @@ find_separate_debug_file (const char *dir,
       debugfile += dir_notarget;
       debugfile += debuglink;
 
-      if (separate_debug_file_exists (debugfile, crc32, objfile, warnings))
+      if (separate_debug_file_exists (debugfile, crc32, objfile))
 	return debugfile;
 
       const char *base_path = NULL;
@@ -1471,7 +1463,7 @@ find_separate_debug_file (const char *dir,
 	  debugfile += "/";
 	  debugfile += debuglink;
 
-	  if (separate_debug_file_exists (debugfile, crc32, objfile, warnings))
+	  if (separate_debug_file_exists (debugfile, crc32, objfile))
 	    return debugfile;
 
 	  /* If the file is in the sysroot, try using its base path in
@@ -1498,8 +1490,7 @@ find_separate_debug_file (const char *dir,
 	      debugfile += "/";
 	      debugfile += debuglink;
 
-	      if (separate_debug_file_exists (debugfile, crc32, objfile,
-					      warnings))
+	      if (separate_debug_file_exists (debugfile, crc32, objfile))
 		return debugfile;
 	    }
 	}
@@ -1530,8 +1521,7 @@ terminate_after_last_dir_separator (char *path)
 /* See symtab.h.  */
 
 std::string
-find_separate_debug_file_by_debuglink
-  (struct objfile *objfile, deferred_warnings *warnings)
+find_separate_debug_file_by_debuglink (struct objfile *objfile)
 {
   uint32_t crc32;
 
@@ -1551,8 +1541,7 @@ find_separate_debug_file_by_debuglink
 
   std::string debugfile
     = find_separate_debug_file (dir.c_str (), canon_dir.get (),
-				debuglink.get (), crc32, objfile,
-				warnings);
+				debuglink.get (), crc32, objfile);
 
   if (debugfile.empty ())
     {
@@ -1576,8 +1565,7 @@ find_separate_debug_file_by_debuglink
 							symlink_dir.get (),
 							debuglink.get (),
 							crc32,
-							objfile,
-							warnings);
+							objfile);
 		}
 	    }
 	}

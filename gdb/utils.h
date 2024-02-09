@@ -21,6 +21,8 @@
 
 #include "exceptions.h"
 #include "gdbsupport/array-view.h"
+#include "gdbsupport/function-view.h"
+#include "gdbsupport/scoped_restore.h"
 #include <chrono>
 
 struct completion_match_for_lcd;
@@ -373,7 +375,7 @@ assign_return_if_changed (T &lval, const T &val)
 }
 
 /* A function that can be used to intercept warnings.  */
-typedef void (*warning_hook_handler) (const char *, va_list);
+typedef gdb::function_view<void (const char *, va_list)> warning_hook_handler;
 
 /* Set the thread-local warning hook, and restore the old value when
    finished.  */
@@ -412,37 +414,52 @@ extern warning_hook_handler get_warning_hook_handler ();
    warning -- this ensures that each warning is formatted on its own line,
    and that any styling is emitted correctly.
 
-   This class helps with deferring warnings.  Warnings can be added to an
-   instance of this class with the 'warn' function, and all warnings can be
-   emitted with a single call to 'emit'.  */
+   This class helps with deferring warnings.  It intercepts warnings
+   on the current thread and stores them.  The stored warnings can
+   later be emitted with a single call to 'emit'.  */
 
 struct deferred_warnings
 {
-  deferred_warnings ()
+  /* Defer warnings.  If AUTO_EMPLACE is true (the default), then
+     warning interception will begin immediately.  If AUTO_EMPLACE is
+     false, then a separate call to the 'emplace' method is needed to
+     begin interception.  */
+  explicit deferred_warnings (bool auto_emplace = true)
     : m_can_style (gdb_stderr->can_emit_style_escape ())
   {
+    if (auto_emplace)
+      emplace ();
+  }
+
+  /* Start interception of warnings on the current thread.  This may
+     only be called once, and might be called by the constructor.  */
+  void emplace ()
+  {
+    gdb_assert (!m_save_warnings.has_value ());
+    m_save_warnings.emplace (*this);
   }
 
   /* Add a warning to the list of deferred warnings.  */
-  void warn (const char *format, ...) ATTRIBUTE_PRINTF(2,3)
+  void operator() (const char *format, va_list ap)
   {
     /* Generate the warning text into a string_file.  */
     string_file msg (m_can_style);
 
-    va_list args;
-    va_start (args, format);
-    msg.vprintf (format, args);
-    va_end (args);
+    msg.vprintf (format, ap);
 
     /* Move the text into the list of deferred warnings.  */
     m_warnings.emplace_back (std::move (msg));
   }
 
-  /* Emit all warnings.  */
-  void emit () const
+  /* Stop warning interception and emit all saved warnings.  */
+  void emit ()
   {
+    m_save_warnings.reset ();
     for (const auto &w : m_warnings)
       warning ("%s", w.c_str ());
+    /* If this object is reused, we don't want to re-emit the same
+       warnings again.  */
+    m_warnings.clear ();
   }
 
 private:
@@ -451,6 +468,9 @@ private:
      constructed.  This is done just once so that objects of this type
      can be used off the main thread.  */
   bool m_can_style;
+
+  /* The saved warning hook.  */
+  std::optional<scoped_restore_warning_hook> m_save_warnings;
 
   /* The list of all deferred warnings.  */
   std::vector<string_file> m_warnings;

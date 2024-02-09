@@ -4929,10 +4929,11 @@ cooked_index_debug_info::do_reading ()
 
   per_bfd->quick_file_names_table
     = create_quick_file_names_table (per_bfd->all_units.size ());
+
+  m_warnings.emplace ();
   if (!per_bfd->debug_aranges.empty ())
     read_addrmap_from_aranges (m_per_objfile, &per_bfd->debug_aranges,
-			       m_index_storage.get_addrmap (),
-			       &m_warnings);
+			       m_index_storage.get_addrmap ());
 
   /* We want to balance the load between the worker threads.  This is
      done by using the size of each CU as a rough estimate of how
