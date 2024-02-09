@@ -301,10 +301,6 @@ extern void demangler_warning (const char *file, int line,
 
 /* Misc. utilities.  */
 
-#ifdef HAVE_WAITPID
-extern pid_t wait_to_die_with_timeout (pid_t pid, int *status, int timeout);
-#endif
-
 extern int myread (int, char *, int);
 
 /* Resource limits used by getrlimit and setrlimit.  */

@@ -31,6 +31,7 @@
 #include <fcntl.h>
 #include "gdbsupport/filestuff.h"
 #include "gdbsupport/pathstuff.h"
+#include "gdbsupport/gdb_wait.h"
 
 #include <signal.h>
 
@@ -151,6 +152,78 @@ pipe_open (struct serial *scb, const char *name)
   signal (SIGPIPE, SIG_IGN);
 #endif
 }
+
+#ifdef HAVE_WAITPID
+
+#ifdef SIGALRM
+
+/* SIGALRM handler for waitpid_with_timeout.  */
+
+static void
+sigalrm_handler (int signo)
+{
+  /* Nothing to do.  */
+}
+
+#endif
+
+/* Wrapper to wait for child PID to die with TIMEOUT.
+   TIMEOUT is the time to stop waiting in seconds.
+   If TIMEOUT is zero, pass WNOHANG to waitpid.
+   Returns PID if it was successfully waited for, otherwise -1.
+
+   Timeouts are currently implemented with alarm and SIGALRM.
+   If the host does not support them, this waits "forever".
+   It would be odd though for a host to have waitpid and not SIGALRM.  */
+
+static pid_t
+wait_to_die_with_timeout (pid_t pid, int *status, int timeout)
+{
+  pid_t waitpid_result;
+
+  gdb_assert (pid > 0);
+  gdb_assert (timeout >= 0);
+
+  if (timeout > 0)
+    {
+#ifdef SIGALRM
+#if defined (HAVE_SIGACTION) && defined (SA_RESTART)
+      struct sigaction sa, old_sa;
+
+      sa.sa_handler = sigalrm_handler;
+      sigemptyset (&sa.sa_mask);
+      sa.sa_flags = 0;
+      sigaction (SIGALRM, &sa, &old_sa);
+#else
+      sighandler_t ofunc;
+
+      ofunc = signal (SIGALRM, sigalrm_handler);
+#endif
+
+      alarm (timeout);
+#endif
+
+      waitpid_result = waitpid (pid, status, 0);
+
+#ifdef SIGALRM
+      alarm (0);
+#if defined (HAVE_SIGACTION) && defined (SA_RESTART)
+      sigaction (SIGALRM, &old_sa, NULL);
+#else
+      signal (SIGALRM, ofunc);
+#endif
+#endif
+    }
+  else
+    waitpid_result = waitpid (pid, status, WNOHANG);
+
+  if (waitpid_result == pid)
+    return pid;
+  else
+    return -1;
+}
+
+#endif /* HAVE_WAITPID */
 
 static void
 pipe_close (struct serial *scb)
