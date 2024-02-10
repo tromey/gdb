@@ -3541,14 +3541,14 @@ set_gdbarch_make_symbol_special (struct gdbarch *gdbarch,
   gdbarch->make_symbol_special = make_symbol_special;
 }
 
-CORE_ADDR
-gdbarch_adjust_dwarf2_addr (struct gdbarch *gdbarch, CORE_ADDR pc)
+unrelocated_addr
+gdbarch_adjust_dwarf2_addr (struct gdbarch *gdbarch, objfile_per_bfd_storage *per_bfd, unrelocated_addr pc)
 {
   gdb_assert (gdbarch != NULL);
   gdb_assert (gdbarch->adjust_dwarf2_addr != NULL);
   if (gdbarch_debug >= 2)
     gdb_printf (gdb_stdlog, "gdbarch_adjust_dwarf2_addr called\n");
-  return gdbarch->adjust_dwarf2_addr (pc);
+  return gdbarch->adjust_dwarf2_addr (per_bfd, pc);
 }
 
 void

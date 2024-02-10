@@ -173,6 +173,8 @@ extern CORE_ADDR mips_unmake_compact_addr (CORE_ADDR addr);
 /* Tell if the program counter value in MEMADDR is in a standard
    MIPS function.  */
 extern int mips_pc_is_mips (CORE_ADDR memaddr);
+extern int mips_pc_is_mips (objfile_per_bfd_storage *per_bfd,
+			    unrelocated_addr memaddr);
 
 /* Tell if the program counter value in MEMADDR is in a MIPS16
    function.  */

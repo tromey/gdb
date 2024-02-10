@@ -222,8 +222,9 @@ default_make_symbol_special (struct symbol *sym, struct objfile *objfile)
 
 /* See arch-utils.h.  */
 
-CORE_ADDR
-default_adjust_dwarf2_addr (CORE_ADDR pc)
+unrelocated_addr
+default_adjust_dwarf2_addr (objfile_per_bfd_storage *per_bfd,
+			    unrelocated_addr pc)
 {
   return pc;
 }

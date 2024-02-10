@@ -145,12 +145,16 @@ typedef std::vector<dwarf2_fde *> dwarf2_fde_table;
 struct comp_unit
 {
   comp_unit (struct objfile *objf)
-    : abfd (objf->obfd.get ())
+    : abfd (objf->obfd.get ()),
+      per_bfd (objf->per_bfd)
   {
   }
 
   /* Keep the bfd convenient.  */
   bfd *abfd;
+
+  /* Also the per-bfd.  */
+  objfile_per_bfd_storage *per_bfd;
 
   /* Pointer to the .debug_frame section loaded into memory.  */
   const gdb_byte *dwarf_frame_buffer = nullptr;
@@ -1965,14 +1969,17 @@ decode_frame_entry_1 (struct gdbarch *gdbarch,
 	= read_encoded_value (unit, fde->cie->encoding, fde->cie->ptr_size,
 			      buf, &bytes_read, (unrelocated_addr) 0);
       fde->initial_location
-	= (unrelocated_addr) gdbarch_adjust_dwarf2_addr (gdbarch, init_addr);
+	= gdbarch_adjust_dwarf2_addr (gdbarch, unit->per_bfd,
+				      (unrelocated_addr) init_addr);
       buf += bytes_read;
 
       ULONGEST range
 	= read_encoded_value (unit, fde->cie->encoding & 0x0f,
 			      fde->cie->ptr_size, buf, &bytes_read,
 			      (unrelocated_addr) 0);
-      ULONGEST addr = gdbarch_adjust_dwarf2_addr (gdbarch, init_addr + range);
+      ULONGEST addr
+	= (ULONGEST) gdbarch_adjust_dwarf2_addr (gdbarch, unit->per_bfd,
+						 (unrelocated_addr) (init_addr + range));
       fde->address_range = addr - (ULONGEST) fde->initial_location;
       buf += bytes_read;
 

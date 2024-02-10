@@ -105,7 +105,8 @@ void default_make_symbol_special (struct symbol *sym, struct objfile *objfile);
 
 /* Do nothing default implementation of gdbarch_adjust_dwarf2_addr.  */
 
-CORE_ADDR default_adjust_dwarf2_addr (CORE_ADDR pc);
+unrelocated_addr default_adjust_dwarf2_addr (objfile_per_bfd_storage *per_bfd,
+					     unrelocated_addr pc);
 
 /* Do nothing default implementation of gdbarch_adjust_dwarf2_line.  */
 

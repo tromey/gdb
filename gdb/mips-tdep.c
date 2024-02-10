@@ -356,10 +356,22 @@ is_compact_addr (CORE_ADDR addr)
   return ((addr) & 1);
 }
 
+static int
+is_compact_addr (unrelocated_addr addr)
+{
+  return ((CORE_ADDR) addr & 1);
+}
+
 /* Return one iff ADDR denotes standard ISA code.  */
 
 static int
 is_mips_addr (CORE_ADDR addr)
+{
+  return !is_compact_addr (addr);
+}
+
+static int
+is_mips_addr (unrelocated_addr addr)
 {
   return !is_compact_addr (addr);
 }
@@ -388,12 +400,26 @@ unmake_compact_addr (CORE_ADDR addr)
   return ((addr) & ~(CORE_ADDR) 1);
 }
 
+static unrelocated_addr
+unmake_compact_addr (unrelocated_addr addr)
+{
+  return (unrelocated_addr) (to_underlying (addr) & ~(CORE_ADDR) 1);
+}
+
 /* Add the ISA (compression) bit to ADDR.  */
 
 static CORE_ADDR
 make_compact_addr (CORE_ADDR addr)
 {
   return ((addr) | (CORE_ADDR) 1);
+}
+
+/* Add the ISA (compression) bit to ADDR.  */
+
+static unrelocated_addr
+make_compact_addr (unrelocated_addr addr)
+{
+  return (unrelocated_addr) (to_underlying (addr) | (CORE_ADDR) 1);
 }
 
 /* Extern version of unmake_compact_addr; we use a separate function
@@ -1225,6 +1251,21 @@ mips_pc_is_mips (CORE_ADDR memaddr)
     return is_mips_addr (memaddr);
 }
 
+int
+mips_pc_is_mips (objfile_per_bfd_storage *per_bfd, unrelocated_addr memaddr)
+{
+  /* Flags indicating that this is a MIPS16 or microMIPS function is
+     stored by elfread.c in the high bit of the info field.  Use this
+     to decide if the function is standard MIPS.  Otherwise if bit 0
+     of the address is clear, then this is a standard MIPS function.  */
+  minimal_symbol *sym
+    = lookup_minimal_symbol_by_pc (per_bfd, make_compact_addr (memaddr));
+  if (sym != nullptr)
+    return msymbol_is_mips (sym);
+  else
+    return is_mips_addr (memaddr);
+}
+
 /* Tell if the program counter value in MEMADDR is in a MIPS16 function.  */
 
 int
@@ -1307,6 +1348,14 @@ mips_adjust_dwarf2_addr (CORE_ADDR pc)
 {
   pc = unmake_compact_addr (pc);
   return mips_pc_is_mips (pc) ? pc : make_compact_addr (pc);
+}
+
+static unrelocated_addr
+mips_adjust_dwarf2_addr (objfile_per_bfd_storage *per_bfd,
+			 unrelocated_addr pc)
+{
+  pc = unmake_compact_addr (pc);
+  return mips_pc_is_mips (per_bfd, pc) ? pc : make_compact_addr (pc);
 }
 
 /* Recalculate the line record requested so that the resulting PC has

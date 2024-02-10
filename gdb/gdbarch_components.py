@@ -1497,9 +1497,9 @@ sure addresses in FDE, range records, etc. referring to compressed
 code have the ISA bit set, matching line information and the symbol
 table.
 """,
-    type="CORE_ADDR",
+    type="unrelocated_addr",
     name="adjust_dwarf2_addr",
-    params=[("CORE_ADDR", "pc")],
+    params=[("objfile_per_bfd_storage *", "per_bfd"), ("unrelocated_addr", "pc")],
     predefault="default_adjust_dwarf2_addr",
     invalid=False,
 )

@@ -862,8 +862,8 @@ extern void set_gdbarch_make_symbol_special (struct gdbarch *gdbarch, gdbarch_ma
    code have the ISA bit set, matching line information and the symbol
    table. */
 
-typedef CORE_ADDR (gdbarch_adjust_dwarf2_addr_ftype) (CORE_ADDR pc);
-extern CORE_ADDR gdbarch_adjust_dwarf2_addr (struct gdbarch *gdbarch, CORE_ADDR pc);
+typedef unrelocated_addr (gdbarch_adjust_dwarf2_addr_ftype) (objfile_per_bfd_storage *per_bfd, unrelocated_addr pc);
+extern unrelocated_addr gdbarch_adjust_dwarf2_addr (struct gdbarch *gdbarch, objfile_per_bfd_storage *per_bfd, unrelocated_addr pc);
 extern void set_gdbarch_adjust_dwarf2_addr (struct gdbarch *gdbarch, gdbarch_adjust_dwarf2_addr_ftype *adjust_dwarf2_addr);
 
 /* Adjust the address updated by a line entry in a backend-specific way.
