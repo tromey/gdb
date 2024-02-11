@@ -170,7 +170,6 @@ abbrev_table::read (struct dwarf2_section_info *section,
       bool has_specification_or_origin = false;
       bool has_name = false;
       bool has_linkage_name = false;
-      bool has_external = false;
 
       /* Now read in declarations.  */
       int num_attrs = 0;
@@ -203,10 +202,6 @@ abbrev_table::read (struct dwarf2_section_info *section,
 	    case DW_AT_declaration:
 	      if (cur_attr.form == DW_FORM_flag_present)
 		has_hardcoded_declaration = true;
-	      break;
-
-	    case DW_AT_external:
-	      has_external = true;
 	      break;
 
 	    case DW_AT_specification:
@@ -293,9 +288,11 @@ abbrev_table::read (struct dwarf2_section_info *section,
 	     the correct scope.  */
 	  cur_abbrev->interesting = true;
 	}
-      else if (has_hardcoded_declaration
-	       && (cur_abbrev->tag != DW_TAG_variable || !has_external))
-	cur_abbrev->interesting = false;
+      else if (has_hardcoded_declaration)
+	{
+	  /* Something that is just a declaration is uninteresting.  */
+	  cur_abbrev->interesting = false;
+	}
       else if (!tag_interesting_for_index (cur_abbrev->tag))
 	cur_abbrev->interesting = false;
       else
