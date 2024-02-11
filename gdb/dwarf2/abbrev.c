@@ -155,10 +155,17 @@ abbrev_table::read (struct dwarf2_section_info *section,
       cur_abbrev->has_children = read_1_byte (abfd, abbrev_ptr);
       abbrev_ptr += 1;
 
+      /* The indexer must examine many DIEs to build the cooked index.
+	 However, some DIEs don't really need to be examined in
+	 detail.  Whether a DIE is "interesting" or not -- i.e.,
+	 whether it is likely to contribute to the index, or can
+	 simply be skipped -- is largely a static property of the
+	 abbrev.  This code keeps track of a number of properties of
+	 the abbrev and then sets the 'interesting' flag
+	 appropriately.  */
       unsigned int size = 0;
       unsigned int sibling_offset = -1;
       bool is_csize = true;
-
       bool has_hardcoded_declaration = false;
       bool has_specification_or_origin = false;
       bool has_name = false;

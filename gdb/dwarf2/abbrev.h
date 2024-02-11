@@ -47,8 +47,17 @@ struct abbrev_info
   ENUM_BITFIELD (dwarf_tag) tag : 16;
   /* True if the DIE has children.  */
   bool has_children;
+  /* True if this DIE is likely to be interesting to the initial
+     scanner.  See abbrev_table::read for more details on this.  */
   bool interesting;
+  /* If the DIE has a constant size, this is the size in bytes.  This
+     can be used to efficiently skip the DIE.  This is zero when the
+     DIE has variable size.  */
   unsigned short size_if_constant;
+  /* If the DIE has DW_AT_sibling using DW_FORM_ref4, and this appears
+     at a constant offset from the start of the DIE, then this holds
+     the offset.  Otherwise, it is -1.  This can be used to
+     efficiently skip a DIE.  */
   unsigned short sibling_offset;
   /* Number of attributes.  */
   unsigned short num_attrs;
