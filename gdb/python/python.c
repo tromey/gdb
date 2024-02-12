@@ -977,7 +977,7 @@ gdbpy_parse_and_eval (PyObject *self, PyObject *args, PyObject *kw)
 	flags |= PARSER_LEAVE_BLOCK_ALONE;
     }
 
-  PyObject *result = nullptr;
+  gdbpy_ref<> result;
   try
     {
       scoped_value_mark free_values;
@@ -998,7 +998,7 @@ gdbpy_parse_and_eval (PyObject *self, PyObject *args, PyObject *kw)
       GDB_PY_HANDLE_EXCEPTION (except);
     }
 
-  return result;
+  return result.release ();
 }
 
 /* Implementation of gdb.invalidate_cached_frames.  */

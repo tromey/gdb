@@ -446,7 +446,7 @@ python_xmethod_worker::do_get_result_type (value *obj,
       if (!types_equal (obj_type, this_type))
 	obj = value_cast (this_type, obj);
     }
-  gdbpy_ref<> py_value_obj (value_to_value_object (obj));
+  gdbpy_ref<> py_value_obj = value_to_value_object (obj);
   if (py_value_obj == NULL)
     {
       gdbpy_print_stack ();
@@ -466,14 +466,14 @@ python_xmethod_worker::do_get_result_type (value *obj,
 
   for (i = 0; i < args.size (); i++)
     {
-      PyObject *py_value_arg = value_to_value_object (args[i]);
+      gdbpy_ref<> py_value_arg = value_to_value_object (args[i]);
 
       if (py_value_arg == NULL)
 	{
 	  gdbpy_print_stack ();
 	  return EXT_LANG_RC_ERROR;
 	}
-      PyTuple_SET_ITEM (py_arg_tuple.get (), i + 1, py_value_arg);
+      PyTuple_SET_ITEM (py_arg_tuple.get (), i + 1, py_value_arg.release ());
     }
 
   gdbpy_ref<> py_result_type
@@ -531,7 +531,7 @@ python_xmethod_worker::invoke (struct value *obj,
       if (!types_equal (obj_type, this_type))
 	obj = value_cast (this_type, obj);
     }
-  gdbpy_ref<> py_value_obj (value_to_value_object (obj));
+  gdbpy_ref<> py_value_obj = value_to_value_object (obj);
   if (py_value_obj == NULL)
     {
       gdbpy_print_stack ();
@@ -551,7 +551,7 @@ python_xmethod_worker::invoke (struct value *obj,
 
   for (i = 0; i < args.size (); i++)
     {
-      PyObject *py_value_arg = value_to_value_object (args[i]);
+      gdbpy_ref<> py_value_arg = value_to_value_object (args[i]);
 
       if (py_value_arg == NULL)
 	{
@@ -559,7 +559,7 @@ python_xmethod_worker::invoke (struct value *obj,
 	  error (_("Error while executing Python code."));
 	}
 
-      PyTuple_SET_ITEM (py_arg_tuple.get (), i + 1, py_value_arg);
+      PyTuple_SET_ITEM (py_arg_tuple.get (), i + 1, py_value_arg.release ());
     }
 
   gdbpy_ref<> py_result (PyObject_CallObject (m_py_worker,

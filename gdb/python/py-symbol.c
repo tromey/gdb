@@ -285,7 +285,7 @@ sympy_value (PyObject *self, PyObject *args)
       return NULL;
     }
 
-  PyObject *result = nullptr;
+  gdbpy_ref<> result;
   try
     {
       if (frame_obj != NULL)
@@ -311,7 +311,7 @@ sympy_value (PyObject *self, PyObject *args)
       GDB_PY_HANDLE_EXCEPTION (except);
     }
 
-  return result;
+  return result.release ();
 }
 
 /* Given a symbol, and a symbol_object that has previously been

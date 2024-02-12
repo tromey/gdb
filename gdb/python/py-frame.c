@@ -258,7 +258,7 @@ static PyObject *
 frapy_read_register (PyObject *self, PyObject *args, PyObject *kw)
 {
   PyObject *pyo_reg_id;
-  PyObject *result = nullptr;
+  gdbpy_ref<> result;
 
   static const char *keywords[] = { "register", nullptr };
   if (!gdb_PyArg_ParseTupleAndKeywords (args, kw, "O", keywords, &pyo_reg_id))
@@ -290,7 +290,7 @@ frapy_read_register (PyObject *self, PyObject *args, PyObject *kw)
       GDB_PY_HANDLE_EXCEPTION (except);
     }
 
-  return result;
+  return result.release ();
 }
 
 /* Implementation of gdb.Frame.block (self) -> gdb.Block.
@@ -559,7 +559,7 @@ frapy_read_var (PyObject *self, PyObject *args, PyObject *kw)
       return NULL;
     }
 
-  PyObject *result = nullptr;
+  gdbpy_ref<> result;
   try
     {
       FRAPY_REQUIRE_VALID (self, frame);
@@ -573,7 +573,7 @@ frapy_read_var (PyObject *self, PyObject *args, PyObject *kw)
       GDB_PY_HANDLE_EXCEPTION (except);
     }
 
-  return result;
+  return result.release ();
 }
 
 /* Select this frame.  */

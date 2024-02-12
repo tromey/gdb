@@ -112,7 +112,7 @@ stpy_convert_to_value (PyObject *self, PyObject *args)
       return NULL;
     }
 
-  PyObject *result = nullptr;
+  gdbpy_ref<> result;
   try
     {
       scoped_value_mark free_values;
@@ -152,7 +152,7 @@ stpy_convert_to_value (PyObject *self, PyObject *args)
       GDB_PY_HANDLE_EXCEPTION (except);
     }
 
-  return result;
+  return result.release ();
 }
 
 static void
