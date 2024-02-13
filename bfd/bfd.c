@@ -1534,10 +1534,17 @@ err_sprintf (void *stream, const char *fmt, ...)
   return total;
 }
 
-/* Communicate the bfd processed by bfd_check_format_matches to the
-   error handling function error_handler_sprintf.  */
+/* Communicate the error-message container processed by
+   bfd_check_format_matches to the error handling function
+   error_handler_sprintf.  When non-NULL, _bfd_error_handler will call
+   error_handler_sprintf; when NULL, _bfd_error_internal will be used
+   instead.  */
 
-static bfd *error_handler_bfd;
+static TLS struct per_xvec_messages *error_handler_messages;
+
+/* A special value for error_handler_messages that indicates that the
+   error should simply be ignored.  */
+#define IGNORE_ERROR_MESSAGES ((struct per_xvec_messages *) -1)
 
 /* An error handler that prints to a string, then dups that string to
    a per-xvec cache.  */
@@ -1554,12 +1561,12 @@ error_handler_sprintf (const char *fmt, va_list ap)
   _bfd_print (err_sprintf, &error_stream, fmt, ap);
 
   size_t len = error_stream.ptr - error_buf;
-  struct per_xvec_message **warn
-    = _bfd_per_xvec_warn (error_handler_bfd->xvec, len + 1);
-  if (*warn)
+  struct per_xvec_message *warn
+    = _bfd_per_xvec_warn (error_handler_messages, len + 1);
+  if (warn)
     {
-      memcpy ((*warn)->message, error_buf, len);
-      (*warn)->message[len] = 0;
+      memcpy (warn->message, error_buf, len);
+      warn->message[len] = 0;
     }
 }
 
@@ -1597,7 +1604,14 @@ _bfd_error_handler (const char *fmt, ...)
   va_list ap;
 
   va_start (ap, fmt);
-  _bfd_error_internal (fmt, ap);
+  if (error_handler_messages == IGNORE_ERROR_MESSAGES)
+    {
+      /* Nothing.  */
+    }
+  else if (error_handler_messages != NULL)
+    error_handler_sprintf (fmt, ap);
+  else
+    _bfd_error_internal (fmt, ap);
   va_end (ap);
 }
 
@@ -1628,18 +1642,42 @@ INTERNAL_FUNCTION
 	_bfd_set_error_handler_caching
 
 SYNOPSIS
-	bfd_error_handler_type _bfd_set_error_handler_caching (bfd *);
+	struct per_xvec_messages *_bfd_set_error_handler_caching (struct per_xvec_messages *);
 
 DESCRIPTION
 	Set the BFD error handler function to one that stores messages
-	to the per_xvec_warn array.  Returns the previous function.
+	to the per_xvec_warn array.  Returns the previous BFD to which
+	messages are stored.  Note that two sequential calls to this
+	with a non-NULL BFD will cause output to be dropped, rather
+	than gathered.
 */
 
-bfd_error_handler_type
-_bfd_set_error_handler_caching (bfd *abfd)
+struct per_xvec_messages *
+_bfd_set_error_handler_caching (struct per_xvec_messages *messages)
 {
-  error_handler_bfd = abfd;
-  return bfd_set_error_handler (error_handler_sprintf);
+  struct per_xvec_messages *old = error_handler_messages;
+  if (old == NULL)
+    error_handler_messages = messages;
+  else
+    error_handler_messages = IGNORE_ERROR_MESSAGES;
+  return old;
+}
+
+/*
+INTERNAL_FUNCTION
+	_bfd_restore_error_handler_caching
+
+SYNOPSIS
+	void _bfd_restore_error_handler_caching (struct per_xvec_messages *);
+
+DESCRIPTION
+	Reset the BFD error handler function an earlier value.
+*/
+
+void
+_bfd_restore_error_handler_caching (struct per_xvec_messages *old)
+{
+  error_handler_messages = old;
 }
 
 /*

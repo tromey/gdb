@@ -1457,9 +1457,6 @@ const bfd_target *const *const bfd_associated_vector = _bfd_associated_vector;
    number of entries that the array could possibly need.  */
 const size_t _bfd_target_vector_entries = ARRAY_SIZE (_bfd_target_vector);
 
-/* A place to stash a warning from _bfd_check_format.  */
-static struct per_xvec_message *per_xvec_warn[ARRAY_SIZE (_bfd_target_vector)
-					      + 1];
 
 /* This array maps configuration triplets onto BFD vectors.  */
 
@@ -1488,11 +1485,22 @@ INTERNAL
 .  char message[];
 .};
 .
+.{* A list of per_xvec_message objects.  The targ field
+.   indicates which xvec this list holds.  The abfd field is
+.   only needed in the root entry of the list.  *}
+.struct per_xvec_messages
+.{
+.  bfd *abfd;
+.  const bfd_target *targ;
+.  struct per_xvec_message *messages;
+.  struct per_xvec_messages *next;
+.};
+.
 INTERNAL_FUNCTION
 	_bfd_per_xvec_warn
 
 SYNOPSIS
-	struct per_xvec_message **_bfd_per_xvec_warn (const bfd_target *, size_t);
+	struct per_xvec_message *_bfd_per_xvec_warn (struct per_xvec_messages *, size_t);
 
 DESCRIPTION
 	Return a location for the given target xvec to use for
@@ -1505,19 +1513,36 @@ DESCRIPTION
 	pointer to a NULL pointer on allocation failure.
 */
 
-struct per_xvec_message **
-_bfd_per_xvec_warn (const bfd_target *targ, size_t alloc)
+struct per_xvec_message *
+_bfd_per_xvec_warn (struct per_xvec_messages *messages, size_t alloc)
 {
-  size_t idx;
+  const bfd_target *targ = messages->abfd->xvec;
 
-  if (!targ)
-    return per_xvec_warn;
-  for (idx = 0; idx < ARRAY_SIZE (_bfd_target_vector); idx++)
-    if (_bfd_target_vector[idx] == targ)
-      break;
-  struct per_xvec_message **m = per_xvec_warn + idx;
-  if (!alloc)
-    return m;
+  struct per_xvec_messages *prev = NULL;
+  struct per_xvec_messages *iter = messages;
+
+  for (iter = messages; iter != NULL; iter = iter->next)
+    {
+      if (iter->targ == targ || iter->targ == NULL)
+	break;
+      prev = iter;
+    }
+
+  if (iter == NULL)
+    {
+      iter = bfd_malloc (sizeof (*iter));
+      if (iter == NULL)
+	return NULL;
+      iter->abfd = messages->abfd;
+      iter->targ = targ;
+      iter->messages = NULL;
+      iter->next = NULL;
+      prev->next = iter;
+    }
+  else if (iter->targ == NULL)
+    iter->targ = targ;
+
+  struct per_xvec_message **m = &iter->messages;
   int count = 0;
   while (*m)
     {
@@ -1531,7 +1556,7 @@ _bfd_per_xvec_warn (const bfd_target *targ, size_t alloc)
       if (*m != NULL)
 	(*m)->next = NULL;
     }
-  return m;
+  return *m;
 }
 
 /* Find a target vector, given a name or configuration triplet.  */
