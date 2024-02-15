@@ -795,7 +795,9 @@ lookup_minimal_symbol_by_pc_section (CORE_ADDR pc_in, struct obj_section *sectio
 
   for (objfile *objfile : section->objfile->separate_debug_objfiles ())
     {
-      CORE_ADDR pc = pc_in;
+      unrelocated_addr unrel_pc;
+      if (!frob_address (objfile, pc_in, &unrel_pc))
+	continue;
 
       /* If this objfile has a minimal symbol table, go search it
 	 using a binary search.  */
@@ -826,9 +828,7 @@ lookup_minimal_symbol_by_pc_section (CORE_ADDR pc_in, struct obj_section *sectio
 
 	     Warning: this code is trickier than it would appear at first.  */
 
-	  unrelocated_addr unrel_pc;
-	  if (frob_address (objfile, pc, &unrel_pc)
-	      && unrel_pc >= msymbol[lo].unrelocated_address ())
+	  if (unrel_pc >= msymbol[lo].unrelocated_address ())
 	    {
 	      while (msymbol[hi].unrelocated_address () > unrel_pc)
 		{
