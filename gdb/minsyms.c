@@ -875,13 +875,11 @@ lookup_minimal_symbol_by_pc_section (CORE_ADDR pc_in, struct obj_section *sectio
 		      continue;
 		    }
 
-		  /* If SECTION was specified, skip any symbol from
-		     wrong section.  */
-		  if (section
-		      /* Some types of debug info, such as COFF,
+		  /* Skip any symbol from wrong section.  */
+		  if (/* Some types of debug info, such as COFF,
 			 don't fill the bfd_section member, so don't
 			 throw away symbols on those platforms.  */
-		      && msymbol[hi].obj_section (objfile) != nullptr
+		      msymbol[hi].obj_section (objfile) != nullptr
 		      && (!matching_obj_sections
 			  (msymbol[hi].obj_section (objfile),
 			   section)))
