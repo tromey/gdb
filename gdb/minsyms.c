@@ -900,8 +900,8 @@ lookup_minimal_symbol_by_pc_section (CORE_ADDR pc_in, struct obj_section *sectio
 		      && (msymbol[hi].size () == msymbol[hi - 1].size ())
 		      && (msymbol[hi].unrelocated_address ()
 			  == msymbol[hi - 1].unrelocated_address ())
-		      && (msymbol[hi].obj_section (objfile)
-			  == msymbol[hi - 1].obj_section (objfile)))
+		      && (msymbol[hi].section_index ()
+			  == msymbol[hi - 1].section_index ()))
 		    {
 		      hi--;
 		      continue;
