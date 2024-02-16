@@ -747,6 +747,214 @@ msym_prefer_to_msym_type (lookup_msym_prefer prefer)
   gdb_assert_not_reached ("unhandled lookup_msym_prefer");
 }
 
+/* Worker function for the various public overloads.  Looks in PER_BFD
+   for a symbol at UNREL_PC.  PREVIOUS is an out parameter that is set
+   to the closest symbol appearing before UNREL_PC.  WANT_TYPE
+   indicates which sections to look for.  WRONG_SECTION is a predicate
+   that is passed a symbol to decide if it is in the wrong section for
+   some reason other than not matching WANT_TYPE.  */
+
+static minimal_symbol *
+lookup_minimal_symbol_by_pc
+     (objfile_per_bfd_storage *per_bfd,
+      unrelocated_addr unrel_pc,
+      minimal_symbol **previous,
+      minimal_symbol_type want_type,
+      gdb::function_view<bool (minimal_symbol *)> wrong_section)
+{
+  /* If there is a minimal symbol table, go search it using a binary
+     search.  */
+  if (per_bfd->minimal_symbol_count == 0)
+    return nullptr;
+
+  int best_zero_sized = -1;
+  minimal_symbol *best_symbol = nullptr;
+
+  minimal_symbol *msymbol = per_bfd->msymbols.get ();
+  int lo = 0;
+  int hi = per_bfd->minimal_symbol_count - 1;
+
+  /* This code assumes that the minimal symbols are sorted by
+     ascending address values.  If the pc value is greater than or
+     equal to the first symbol's address, then some symbol in this
+     minimal symbol table is a suitable candidate for being the
+     "best" symbol.  This includes the last real symbol, for cases
+     where the pc value is larger than any address in this vector.
+
+     By iterating until the address associated with the current
+     hi index (the endpoint of the test interval) is less than
+     or equal to the desired pc value, we accomplish two things:
+     (1) the case where the pc value is larger than any minimal
+     symbol address is trivially solved, (2) the address associated
+     with the hi index is always the one we want when the iteration
+     terminates.  In essence, we are iterating the test interval
+     down until the pc value is pushed out of it from the high end.
+
+     Warning: this code is trickier than it would appear at first.  */
+
+  if (unrel_pc >= msymbol[lo].unrelocated_address ())
+    {
+      while (msymbol[hi].unrelocated_address () > unrel_pc)
+	{
+	  /* pc is still strictly less than highest address.  */
+	  /* Note "new" will always be >= lo.  */
+	  int newobj = (lo + hi) / 2;
+	  if ((msymbol[newobj].unrelocated_address () >= unrel_pc)
+	      || (lo == newobj))
+	    {
+	      hi = newobj;
+	    }
+	  else
+	    {
+	      lo = newobj;
+	    }
+	}
+
+      /* If we have multiple symbols at the same address, we want
+	 hi to point to the last one.  That way we can find the
+	 right symbol if it has an index greater than hi.  */
+      while (hi < per_bfd->minimal_symbol_count - 1
+	     && (msymbol[hi].unrelocated_address ()
+		 == msymbol[hi + 1].unrelocated_address ()))
+	hi++;
+
+      /* Skip various undesirable symbols.  */
+      while (hi >= 0)
+	{
+	  /* Skip any absolute symbols.  This is apparently
+	     what adb and dbx do, and is needed for the CM-5.
+	     There are two known possible problems: (1) on
+	     ELF, apparently end, edata, etc. are absolute.
+	     Not sure ignoring them here is a big deal, but if
+	     we want to use them, the fix would go in
+	     elfread.c.  (2) I think shared library entry
+	     points on the NeXT are absolute.  If we want
+	     special handling for this it probably should be
+	     triggered by a special mst_abs_or_lib or some
+	     such.  */
+
+	  if (msymbol[hi].type () == mst_abs)
+	    {
+	      hi--;
+	      continue;
+	    }
+
+	  /* Skip any symbol from the wrong section.  */
+	  if (wrong_section (&msymbol[hi]))
+	    {
+	      hi--;
+	      continue;
+	    }
+
+	  /* If we are looking for a trampoline and this is a
+	     text symbol, or the other way around, check the
+	     preceding symbol too.  If they are otherwise
+	     identical prefer that one.  */
+	  if (hi > 0
+	      && msymbol[hi].type () != want_type
+	      && msymbol[hi - 1].type () == want_type
+	      && (msymbol[hi].size () == msymbol[hi - 1].size ())
+	      && (msymbol[hi].unrelocated_address ()
+		  == msymbol[hi - 1].unrelocated_address ())
+	      && (msymbol[hi].section_index ()
+		  == msymbol[hi - 1].section_index ()))
+	    {
+	      hi--;
+	      continue;
+	    }
+
+	  /* If the minimal symbol has a zero size, save it
+	     but keep scanning backwards looking for one with
+	     a non-zero size.  A zero size may mean that the
+	     symbol isn't an object or function (e.g. a
+	     label), or it may just mean that the size was not
+	     specified.  */
+	  if (msymbol[hi].size () == 0)
+	    {
+	      if (best_zero_sized == -1)
+		best_zero_sized = hi;
+	      hi--;
+	      continue;
+	    }
+
+	  /* If we are past the end of the current symbol, try
+	     the previous symbol if it has a larger overlapping
+	     size.  This happens on i686-pc-linux-gnu with glibc;
+	     the nocancel variants of system calls are inside
+	     the cancellable variants, but both have sizes.  */
+	  if (hi > 0
+	      && msymbol[hi].size () != 0
+	      && unrel_pc >= msymbol[hi].unrelocated_end_address ()
+	      && unrel_pc < msymbol[hi - 1].unrelocated_end_address ())
+	    {
+	      hi--;
+	      continue;
+	    }
+
+	  /* Otherwise, this symbol must be as good as we're going
+	     to get.  */
+	  break;
+	}
+
+      /* If HI has a zero size, and best_zero_sized is set,
+	 then we had two or more zero-sized symbols; prefer
+	 the first one we found (which may have a higher
+	 address).  Also, if we ran off the end, be sure
+	 to back up.  */
+      if (best_zero_sized != -1
+	  && (hi < 0 || msymbol[hi].size () == 0))
+	hi = best_zero_sized;
+
+      /* If the minimal symbol has a non-zero size, and this
+	 PC appears to be outside the symbol's contents, then
+	 refuse to use this symbol.  If we found a zero-sized
+	 symbol with an address greater than this symbol's,
+	 use that instead.  We assume that if symbols have
+	 specified sizes, they do not overlap.  */
+
+      if (hi >= 0
+	  && msymbol[hi].size () != 0
+	  && unrel_pc >= msymbol[hi].unrelocated_end_address ())
+	{
+	  if (best_zero_sized != -1)
+	    hi = best_zero_sized;
+	  else
+	    {
+	      /* If needed record this symbol as the closest
+		 previous symbol.  */
+	      if (*previous == nullptr
+		  || (msymbol[hi].unrelocated_address ()
+		      > (*previous)->unrelocated_address ()))
+		*previous = &msymbol[hi];
+	    }
+	  /* Done.  */
+	  return best_symbol;
+	}
+
+      if (hi >= 0
+	  && (best_symbol == nullptr
+	      || (best_symbol->unrelocated_address ()
+		  < msymbol[hi].unrelocated_address ())))
+	best_symbol = &msymbol[hi];
+    }
+
+  return best_symbol;
+}
+
+/* See minsyms.h.  */
+
+minimal_symbol *
+lookup_minimal_symbol_by_pc (objfile_per_bfd_storage *per_bfd,
+			     unrelocated_addr addr)
+{
+  minimal_symbol *ignore = nullptr;
+  return lookup_minimal_symbol_by_pc (per_bfd, addr, &ignore, mst_text,
+				      [] (minimal_symbol *msym)
+    {
+      return msym->type () != mst_text;
+    });
+}
+
 /* See minsyms.h.
 
    Note that we need to look through ALL the minimal symbol tables
@@ -760,10 +968,6 @@ lookup_minimal_symbol_by_pc_section (CORE_ADDR pc_in, struct obj_section *sectio
 				     lookup_msym_prefer prefer,
 				     bound_minimal_symbol *previous)
 {
-  int lo;
-  int hi;
-  int newobj;
-  struct minimal_symbol *msymbol;
   struct minimal_symbol *best_symbol = NULL;
   struct objfile *best_objfile = NULL;
   struct bound_minimal_symbol result;
@@ -800,199 +1004,44 @@ lookup_minimal_symbol_by_pc_section (CORE_ADDR pc_in, struct obj_section *sectio
       if (!frob_address (objfile, pc_in, &unrel_pc))
 	continue;
 
-      /* If this objfile has a minimal symbol table, go search it
-	 using a binary search.  */
-
-      if (objfile->per_bfd->minimal_symbol_count > 0)
+      minimal_symbol *this_previous = nullptr;
+      minimal_symbol *minsym
+	= lookup_minimal_symbol_by_pc (objfile->per_bfd, unrel_pc,
+				       &this_previous, want_type,
+				       [&] (minimal_symbol *check_sym)
 	{
-	  int best_zero_sized = -1;
+	  /* Some types of debug info, such as COFF, don't fill the
+	     bfd_section member, so don't throw away symbols on those
+	     platforms.  */
+	  return (check_sym->obj_section (objfile) != nullptr
+		  && !matching_obj_sections (check_sym->obj_section (objfile),
+					     section));
+	});
 
-	  msymbol = objfile->per_bfd->msymbols.get ();
-	  lo = 0;
-	  hi = objfile->per_bfd->minimal_symbol_count - 1;
-
-	  /* This code assumes that the minimal symbols are sorted by
-	     ascending address values.  If the pc value is greater than or
-	     equal to the first symbol's address, then some symbol in this
-	     minimal symbol table is a suitable candidate for being the
-	     "best" symbol.  This includes the last real symbol, for cases
-	     where the pc value is larger than any address in this vector.
-
-	     By iterating until the address associated with the current
-	     hi index (the endpoint of the test interval) is less than
-	     or equal to the desired pc value, we accomplish two things:
-	     (1) the case where the pc value is larger than any minimal
-	     symbol address is trivially solved, (2) the address associated
-	     with the hi index is always the one we want when the iteration
-	     terminates.  In essence, we are iterating the test interval
-	     down until the pc value is pushed out of it from the high end.
-
-	     Warning: this code is trickier than it would appear at first.  */
-
-	  if (unrel_pc >= msymbol[lo].unrelocated_address ())
+      /* If needed record this symbol as the closest previous
+	 symbol.  */
+      if (previous != nullptr)
+	{
+	  if (previous->minsym == nullptr
+	      || (this_previous->unrelocated_address ()
+		  > previous->minsym->unrelocated_address ()))
 	    {
-	      while (msymbol[hi].unrelocated_address () > unrel_pc)
-		{
-		  /* pc is still strictly less than highest address.  */
-		  /* Note "new" will always be >= lo.  */
-		  newobj = (lo + hi) / 2;
-		  if ((msymbol[newobj].unrelocated_address () >= unrel_pc)
-		      || (lo == newobj))
-		    {
-		      hi = newobj;
-		    }
-		  else
-		    {
-		      lo = newobj;
-		    }
-		}
-
-	      /* If we have multiple symbols at the same address, we want
-		 hi to point to the last one.  That way we can find the
-		 right symbol if it has an index greater than hi.  */
-	      while (hi < objfile->per_bfd->minimal_symbol_count - 1
-		     && (msymbol[hi].unrelocated_address ()
-			 == msymbol[hi + 1].unrelocated_address ()))
-		hi++;
-
-	      /* Skip various undesirable symbols.  */
-	      while (hi >= 0)
-		{
-		  /* Skip any absolute symbols.  This is apparently
-		     what adb and dbx do, and is needed for the CM-5.
-		     There are two known possible problems: (1) on
-		     ELF, apparently end, edata, etc. are absolute.
-		     Not sure ignoring them here is a big deal, but if
-		     we want to use them, the fix would go in
-		     elfread.c.  (2) I think shared library entry
-		     points on the NeXT are absolute.  If we want
-		     special handling for this it probably should be
-		     triggered by a special mst_abs_or_lib or some
-		     such.  */
-
-		  if (msymbol[hi].type () == mst_abs)
-		    {
-		      hi--;
-		      continue;
-		    }
-
-		  /* Skip any symbol from wrong section.  */
-		  if (/* Some types of debug info, such as COFF,
-			 don't fill the bfd_section member, so don't
-			 throw away symbols on those platforms.  */
-		      msymbol[hi].obj_section (objfile) != nullptr
-		      && (!matching_obj_sections
-			  (msymbol[hi].obj_section (objfile),
-			   section)))
-		    {
-		      hi--;
-		      continue;
-		    }
-
-		  /* If we are looking for a trampoline and this is a
-		     text symbol, or the other way around, check the
-		     preceding symbol too.  If they are otherwise
-		     identical prefer that one.  */
-		  if (hi > 0
-		      && msymbol[hi].type () != want_type
-		      && msymbol[hi - 1].type () == want_type
-		      && (msymbol[hi].size () == msymbol[hi - 1].size ())
-		      && (msymbol[hi].unrelocated_address ()
-			  == msymbol[hi - 1].unrelocated_address ())
-		      && (msymbol[hi].section_index ()
-			  == msymbol[hi - 1].section_index ()))
-		    {
-		      hi--;
-		      continue;
-		    }
-
-		  /* If the minimal symbol has a zero size, save it
-		     but keep scanning backwards looking for one with
-		     a non-zero size.  A zero size may mean that the
-		     symbol isn't an object or function (e.g. a
-		     label), or it may just mean that the size was not
-		     specified.  */
-		  if (msymbol[hi].size () == 0)
-		    {
-		      if (best_zero_sized == -1)
-			best_zero_sized = hi;
-		      hi--;
-		      continue;
-		    }
-
-		  /* If we are past the end of the current symbol, try
-		     the previous symbol if it has a larger overlapping
-		     size.  This happens on i686-pc-linux-gnu with glibc;
-		     the nocancel variants of system calls are inside
-		     the cancellable variants, but both have sizes.  */
-		  if (hi > 0
-		      && msymbol[hi].size () != 0
-		      && unrel_pc >= msymbol[hi].unrelocated_end_address ()
-		      && unrel_pc < msymbol[hi - 1].unrelocated_end_address ())
-		    {
-		      hi--;
-		      continue;
-		    }
-
-		  /* Otherwise, this symbol must be as good as we're going
-		     to get.  */
-		  break;
-		}
-
-	      /* If HI has a zero size, and best_zero_sized is set,
-		 then we had two or more zero-sized symbols; prefer
-		 the first one we found (which may have a higher
-		 address).  Also, if we ran off the end, be sure
-		 to back up.  */
-	      if (best_zero_sized != -1
-		  && (hi < 0 || msymbol[hi].size () == 0))
-		hi = best_zero_sized;
-
-	      /* If the minimal symbol has a non-zero size, and this
-		 PC appears to be outside the symbol's contents, then
-		 refuse to use this symbol.  If we found a zero-sized
-		 symbol with an address greater than this symbol's,
-		 use that instead.  We assume that if symbols have
-		 specified sizes, they do not overlap.  */
-
-	      if (hi >= 0
-		  && msymbol[hi].size () != 0
-		  && unrel_pc >= msymbol[hi].unrelocated_end_address ())
-		{
-		  if (best_zero_sized != -1)
-		    hi = best_zero_sized;
-		  else
-		    {
-		      /* If needed record this symbol as the closest
-			 previous symbol.  */
-		      if (previous != nullptr)
-			{
-			  if (previous->minsym == nullptr
-			      || (msymbol[hi].unrelocated_address ()
-				  > previous->minsym->unrelocated_address ()))
-			    {
-			      previous->minsym = &msymbol[hi];
-			      previous->objfile = objfile;
-			    }
-			}
-		      /* Go on to the next object file.  */
-		      continue;
-		    }
-		}
-
-	      /* The minimal symbol indexed by hi now is the best one in this
-		 objfile's minimal symbol table.  See if it is the best one
-		 overall.  */
-
-	      if (hi >= 0
-		  && ((best_symbol == NULL) ||
-		      (best_symbol->unrelocated_address () <
-		       msymbol[hi].unrelocated_address ())))
-		{
-		  best_symbol = &msymbol[hi];
-		  best_objfile = objfile;
-		}
+	      previous->minsym = this_previous;
+	      previous->objfile = objfile;
 	    }
+	  /* Go on to the next object file.  */
+	  continue;
+	}
+
+      /* MINSYM now is the best one in this objfile's minimal symbol
+	 table.  See if it is the best one overall.  */
+      if (minsym != nullptr
+	  && ((best_symbol == NULL) ||
+	      (best_symbol->unrelocated_address ()
+	       < minsym->unrelocated_address ())))
+	{
+	  best_symbol = minsym;
+	  best_objfile = objfile;
 	}
     }
 

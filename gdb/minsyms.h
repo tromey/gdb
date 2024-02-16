@@ -301,6 +301,13 @@ struct bound_minimal_symbol lookup_minimal_symbol_by_pc_section
 
 struct bound_minimal_symbol lookup_minimal_symbol_by_pc (CORE_ADDR);
 
+/* Overload of lookup_minimal_symbol_by_pc that only references the
+   (unrelocated) per-BFD object and only searches the text
+   section.  */
+
+minimal_symbol *lookup_minimal_symbol_by_pc (objfile_per_bfd_storage *per_bfd,
+					     unrelocated_addr addr);
+
 /* Iterate over all the minimal symbols in the objfile OBJF which
    match NAME.  Both the ordinary and demangled names of each symbol
    are considered.  The caller is responsible for canonicalizing NAME,
