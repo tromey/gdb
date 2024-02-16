@@ -968,9 +968,7 @@ lookup_minimal_symbol_by_pc_section (CORE_ADDR pc_in, struct obj_section *sectio
 				     lookup_msym_prefer prefer,
 				     bound_minimal_symbol *previous)
 {
-  struct minimal_symbol *best_symbol = NULL;
-  struct objfile *best_objfile = NULL;
-  struct bound_minimal_symbol result;
+  struct bound_minimal_symbol best = {};
 
   if (previous != nullptr)
     {
@@ -1036,18 +1034,13 @@ lookup_minimal_symbol_by_pc_section (CORE_ADDR pc_in, struct obj_section *sectio
       /* MINSYM now is the best one in this objfile's minimal symbol
 	 table.  See if it is the best one overall.  */
       if (minsym != nullptr
-	  && ((best_symbol == NULL) ||
-	      (best_symbol->unrelocated_address ()
-	       < minsym->unrelocated_address ())))
-	{
-	  best_symbol = minsym;
-	  best_objfile = objfile;
-	}
+	  && (best.minsym == nullptr
+	      || (best.minsym->unrelocated_address ()
+		  < minsym->unrelocated_address ())))
+	best = { minsym, objfile };
     }
 
-  result.minsym = best_symbol;
-  result.objfile = best_objfile;
-  return result;
+  return best;
 }
 
 /* See minsyms.h.  */
