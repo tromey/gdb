@@ -982,8 +982,8 @@ lookup_minimal_symbol_by_pc_section (CORE_ADDR pc_in, struct obj_section *sectio
 
 	      if (hi >= 0
 		  && (best.minsym == nullptr
-		      || (best.minsym->unrelocated_address ()
-			  < msymbol[hi].unrelocated_address ())))
+		      || (best.value_address ()
+			  < msymbol[hi].value_address (objfile))))
 		best = { &msymbol[hi],  objfile };
 	    }
 	}
