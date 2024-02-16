@@ -762,10 +762,7 @@ lookup_minimal_symbol_by_pc_section (CORE_ADDR pc_in, struct obj_section *sectio
   int lo;
   int hi;
   int newobj;
-  struct minimal_symbol *msymbol;
-  struct minimal_symbol *best_symbol = NULL;
-  struct objfile *best_objfile = NULL;
-  struct bound_minimal_symbol result;
+  struct bound_minimal_symbol best = {};
 
   if (previous != nullptr)
     {
@@ -806,7 +803,7 @@ lookup_minimal_symbol_by_pc_section (CORE_ADDR pc_in, struct obj_section *sectio
 	{
 	  int best_zero_sized = -1;
 
-	  msymbol = objfile->per_bfd->msymbols.get ();
+	  struct minimal_symbol *msymbol = objfile->per_bfd->msymbols.get ();
 	  lo = 0;
 	  hi = objfile->per_bfd->minimal_symbol_count - 1;
 
@@ -984,20 +981,15 @@ lookup_minimal_symbol_by_pc_section (CORE_ADDR pc_in, struct obj_section *sectio
 		 overall.  */
 
 	      if (hi >= 0
-		  && ((best_symbol == NULL) ||
-		      (best_symbol->unrelocated_address () <
-		       msymbol[hi].unrelocated_address ())))
-		{
-		  best_symbol = &msymbol[hi];
-		  best_objfile = objfile;
-		}
+		  && (best.minsym == nullptr
+		      || (best.minsym->unrelocated_address ()
+			  < msymbol[hi].unrelocated_address ())))
+		best = { &msymbol[hi],  objfile };
 	    }
 	}
     }
 
-  result.minsym = best_symbol;
-  result.objfile = best_objfile;
-  return result;
+  return best;
 }
 
 /* See minsyms.h.  */
