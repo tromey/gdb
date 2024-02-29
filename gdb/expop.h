@@ -380,7 +380,11 @@ public:
 
   bool uses_objfile (struct objfile *objfile) const override
   {
-    return do_check_objfile<0, Arg...> (objfile, m_storage);
+    return std::apply ([=] (auto ...objs)
+			 {
+			   return (... || check_objfile (objs, objfile));
+			 },
+		       m_storage);
   }
 
   void dump (struct ui_file *stream, int depth) const override
@@ -411,26 +415,6 @@ private:
   {
     dump_for_expression (stream, depth, std::get<I> (value));
     do_dump<I + 1, T...> (stream, depth, value);
-  }
-
-  /* do_check_objfile does the work of checking whether this object
-     refers to OBJFILE.  */
-  template<int I, typename... T>
-  typename std::enable_if<I == sizeof... (T), bool>::type
-  do_check_objfile (struct objfile *objfile, const std::tuple<T...> &value)
-    const
-  {
-    return false;
-  }
-
-  template<int I, typename... T>
-  typename std::enable_if<I < sizeof... (T), bool>::type
-  do_check_objfile (struct objfile *objfile, const std::tuple<T...> &value)
-    const
-  {
-    if (check_objfile (std::get<I> (value), objfile))
-      return true;
-    return do_check_objfile<I + 1, T...> (objfile, value);
   }
 };
 
