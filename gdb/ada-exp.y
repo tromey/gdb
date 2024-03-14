@@ -101,6 +101,8 @@ struct ada_parse_state
   std::unordered_map<std::string, std::vector<ada_index_var_operation *>>
        iterated_associations;
 
+  auto_obstack temp_space;
+
 private:
 
   /* We don't have a good way to manage non-POD data in Yacc, so store
@@ -1234,8 +1236,6 @@ primary	:	'*' primary		%prec '.'
 #define yyrestart ada_yyrestart
 #define yytext ada_yytext
 
-static struct obstack temp_parse_space;
-
 /* The following kludge was found necessary to prevent conflicts between */
 /* defs.h and non-standard stdlib.h files.  */
 #define qsort __qsort__dummy
@@ -1255,8 +1255,6 @@ ada_parse (struct parser_state *par_state)
 							par_state->debug);
 
   lexer_init (yyin);		/* (Re-)initialize lexer.  */
-  obstack_free (&temp_parse_space, NULL);
-  obstack_init (&temp_parse_space);
 
   int result = yyparse ();
   if (!result)
@@ -1323,7 +1321,7 @@ write_object_renaming (struct parser_state *par_state,
   if (orig_left_context == NULL)
     orig_left_context = get_selected_block (NULL);
 
-  name = obstack_strndup (&temp_parse_space, renamed_entity,
+  name = obstack_strndup (&ada_parser->temp_space, renamed_entity,
 			  renamed_entity_len);
   ada_lookup_encoded_symbol (name, orig_left_context, SEARCH_VFT, &sym_info);
   if (sym_info.symbol == NULL)
@@ -1389,7 +1387,8 @@ write_object_renaming (struct parser_state *par_state,
 	    if (end == NULL)
 	      end = renaming_expr + strlen (renaming_expr);
 
-	    index_name = obstack_strndup (&temp_parse_space, renaming_expr,
+	    index_name = obstack_strndup (&ada_parser->temp_space,
+					  renaming_expr,
 					  end - renaming_expr);
 	    renaming_expr = end;
 
@@ -1608,10 +1607,10 @@ static void
 write_ambiguous_var (struct parser_state *par_state,
 		     const struct block *block, const char *name, int len)
 {
-  struct symbol *sym = new (&temp_parse_space) symbol ();
+  struct symbol *sym = new (&ada_parser->temp_space) symbol ();
 
   sym->set_domain (UNDEF_DOMAIN);
-  sym->set_linkage_name (obstack_strndup (&temp_parse_space, name, len));
+  sym->set_linkage_name (obstack_strndup (&ada_parser->temp_space, name, len));
   sym->set_language (language_ada, nullptr);
 
   block_symbol bsym { sym, block };
@@ -1719,7 +1718,8 @@ write_var_or_type (struct parser_state *par_state,
     }
 
   name_len = name_storage.size ();
-  encoded_name = obstack_strndup (&temp_parse_space, name_storage.c_str (),
+  encoded_name = obstack_strndup (&ada_parser->temp_space,
+				  name_storage.c_str (),
 				  name_len);
   for (depth = 0; depth < MAX_RENAMING_CHAIN_LENGTH; depth += 1)
     {
@@ -1765,7 +1765,8 @@ write_var_or_type (struct parser_state *par_state,
 	      {
 		int alloc_len = renaming_len + name_len - tail_index + 1;
 		char *new_name
-		  = (char *) obstack_alloc (&temp_parse_space, alloc_len);
+		  = (char *) obstack_alloc (&ada_parser->temp_space,
+					    alloc_len);
 		strncpy (new_name, renaming, renaming_len);
 		strcpy (new_name + renaming_len, encoded_name + tail_index);
 		encoded_name = new_name;
@@ -1986,11 +1987,4 @@ type_system_address (struct parser_state *par_state)
 				      par_state->gdbarch (),
 				      "system__address");
   return  type != NULL ? type : parse_type (par_state)->builtin_data_ptr;
-}
-
-void _initialize_ada_exp ();
-void
-_initialize_ada_exp ()
-{
-  obstack_init (&temp_parse_space);
 }
