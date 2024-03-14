@@ -67,6 +67,9 @@ static struct parser_state *pstate = NULL;
 
 using namespace expr;
 
+/* A convenience typedef.  */
+typedef std::unique_ptr<ada_assign_operation> ada_assign_up;
+
 /* Data that must be held for the duration of a parse.  */
 
 struct ada_parse_state
@@ -89,6 +92,10 @@ struct ada_parse_state
 
   /* The associations being constructed during this parse.  */
   std::vector<ada_association_up> associations;
+
+  /* The stack of currently active assignment expressions.  This is used
+     to implement '@', the target name symbol.  */
+  std::vector<ada_assign_up> assignments;
 
 private:
 
@@ -437,13 +444,6 @@ make_tick_completer (struct stoken tok)
 	  (new ada_tick_completer (std::string (tok.ptr, tok.length))));
 }
 
-/* A convenience typedef.  */
-typedef std::unique_ptr<ada_assign_operation> ada_assign_up;
-
-/* The stack of currently active assignment expressions.  This is used
-   to implement '@', the target name symbol.  */
-static std::vector<ada_assign_up> assignments;
-
 /* Track currently active iterated assignment names.  */
 static std::unordered_map<std::string, std::vector<ada_index_var_operation *>>
      iterated_associations;
@@ -528,14 +528,14 @@ exp1	:	exp
 			{ ada_wrap2<comma_operation> (BINOP_COMMA); }
 	| 	primary ASSIGN
 			{
-			  assignments.emplace_back
+			  ada_parser->assignments.emplace_back
 			    (new ada_assign_operation (ada_pop (), nullptr));
 			}
 		exp   /* Extension for convenience */
 			{
 			  ada_assign_up assign
-			    = std::move (assignments.back ());
-			  assignments.pop_back ();
+			    = std::move (ada_parser->assignments.back ());
+			  ada_parser->assignments.pop_back ();
 			  value *lhs_val = (assign->eval_for_resolution
 					    (pstate->expout.get ()));
 
@@ -646,11 +646,11 @@ primary :     	aggregate
 
 primary :	'@'
 			{
-			  if (assignments.empty ())
+			  if (ada_parser->assignments.empty ())
 			    error (_("the target name symbol ('@') may only "
 				     "appear in an assignment context"));
 			  ada_assign_operation *current
-			    = assignments.back ().get ();
+			    = ada_parser->assignments.back ().get ();
 			  pstate->push_new<ada_target_operation> (current);
 			}
 	;
@@ -1257,7 +1257,6 @@ ada_parse (struct parser_state *par_state)
   lexer_init (yyin);		/* (Re-)initialize lexer.  */
   obstack_free (&temp_parse_space, NULL);
   obstack_init (&temp_parse_space);
-  assignments.clear ();
   iterated_associations.clear ();
 
   int result = yyparse ();
