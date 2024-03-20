@@ -110,8 +110,9 @@ macro_free (void *object, struct macro_table *t)
 /* If the macro table T has a bcache, then cache the LEN bytes at ADDR
    there, and return the cached copy.  Otherwise, just xmalloc a copy
    of the bytes, and return a pointer to that.  */
-static const void *
-macro_bcache (struct macro_table *t, const void *addr, int len)
+template<typename U>
+static const U *
+macro_bcache (struct macro_table *t, const U *addr, int len)
 {
   if (t->bcache)
     return t->bcache->insert (addr, len);
@@ -120,7 +121,7 @@ macro_bcache (struct macro_table *t, const void *addr, int len)
       void *copy = xmalloc (len);
 
       memcpy (copy, addr, len);
-      return copy;
+      return (const U *) copy;
     }
 }
 
@@ -131,7 +132,7 @@ macro_bcache (struct macro_table *t, const void *addr, int len)
 static const char *
 macro_bcache_str (struct macro_table *t, const char *s)
 {
-  return (const char *) macro_bcache (t, s, strlen (s) + 1);
+  return macro_bcache (t, s, strlen (s) + 1);
 }
 
 
@@ -572,8 +573,7 @@ new_macro_definition (struct macro_table *t,
 	cached_argv[i] = macro_bcache_str (t, argv[i]);
 
       /* Now bcache the array of argument pointers itself.  */
-      d->argv = ((const char * const *)
-		 macro_bcache (t, cached_argv, cached_argv_size));
+      d->argv = macro_bcache (t, cached_argv, cached_argv_size);
     }
 
   /* We don't bcache the entire definition structure because it's got
