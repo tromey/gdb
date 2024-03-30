@@ -3839,7 +3839,7 @@ and the list of auto-loaded scripts can be printed.
 @table @code
 @anchor{set auto-load guile-scripts}
 @kindex set auto-load guile-scripts
-@item set auto-load guile-scripts [on|off]
+@item set auto-load guile-scripts @r{[}on@r{|}off@r{]}
 Enable or disable the auto-loading of Guile scripts.
 
 @anchor{show auto-load guile-scripts}

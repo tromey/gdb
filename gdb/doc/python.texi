@@ -162,14 +162,14 @@ The following commands are intended to help debug @value{GDBN} itself:
 @table @code
 @kindex set debug py-breakpoint
 @kindex show debug py-breakpoint
-@item set debug py-breakpoint on@r{|}off
+@item set debug py-breakpoint @r{[}on@r{|}off@r{]}
 @itemx show debug py-breakpoint
 When @samp{on}, @value{GDBN} prints debug messages related to the
 Python breakpoint API.  This is @samp{off} by default.
 
 @kindex set debug py-unwind
 @kindex show debug py-unwind
-@item set debug py-unwind on@r{|}off
+@item set debug py-unwind @r{[}on@r{|}off@r{]}
 @itemx show debug py-unwind
 When @samp{on}, @value{GDBN} prints debug messages related to the
 Python unwinder API.  This is @samp{off} by default.
@@ -8155,7 +8155,7 @@ and the list of auto-loaded scripts can be printed.
 @table @code
 @anchor{set auto-load python-scripts}
 @kindex set auto-load python-scripts
-@item set auto-load python-scripts [on|off]
+@item set auto-load python-scripts @r{[}on@r{|}off@r{]}
 Enable or disable the auto-loading of Python scripts.
 
 @anchor{show auto-load python-scripts}
