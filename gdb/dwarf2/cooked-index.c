@@ -642,7 +642,7 @@ cooked_index::set_contents (vec_type &&vec, deferred_warnings *warn)
      finalization.  However, that would take a slot in the global
      thread pool, and if enough such tasks were submitted at once, it
      would cause a livelock.  */
-  gdb::task_group finalizers ([this] ()
+  gdb::task_group finalizers ([this, =] ()
   {
     m_state->set (cooked_state::FINALIZED);
     m_state->write_to_cache (index_for_writing (), warn);
