@@ -92,8 +92,7 @@ struct reg_buffer_common
   void raw_supply (int regnum, const gdb_byte *src)
   {
     raw_supply (regnum,
-		gdb::make_span (src,
-				      regcache_register_size (this, regnum)));
+		gdb::make_span (src, regcache_register_size (this, regnum)));
   }
 
   /* Collect register REGNUM from this register buffer and store its contents in
@@ -103,15 +102,13 @@ struct reg_buffer_common
 
   void raw_collect (int regnum, uint64_t *dst) const
   {
-    raw_collect (regnum,
-		 gdb::make_span ((gdb_byte *) dst, sizeof (*dst)));
+    raw_collect (regnum, gdb::make_span ((gdb_byte *) dst, sizeof (*dst)));
   };
 
   void raw_collect (int regnum, gdb_byte *dst)
   {
     raw_collect (regnum,
-		 gdb::make_span (dst,
-				       regcache_register_size (this, regnum)));
+		 gdb::make_span (dst, regcache_register_size (this, regnum)));
   }
 
   /* Compare the contents of the register stored in the regcache (ignoring the
