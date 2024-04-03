@@ -23,11 +23,7 @@
 #include <type_traits>
 #include "gdbsupport/gdb_assert.h"
 
-#if __has_include(<version>)
-#include <version>
-#endif
-
-#ifdef __cpp_lib_span
+#if __cplusplus >= 202002L
 
 #include <span>
 
@@ -36,9 +32,9 @@ template<typename T>
 using span = std::span<T>;
 } /* namespace gdb */
 
-#else /* __cpp_lib_span  */
+#else /* __cplusplus < 202002L */
 
-/* A span is an abstraction that provides a non-owning view
+/* a span is an abstraction that provides a non-owning view
    over a sequence of contiguous objects.
 
    A way to put it is that span is to std::vector (and
@@ -226,7 +222,7 @@ private:
 
 } /* namespace gdb */
 
-#endif /* __cpp_lib_span */
+#endif /* __cplusplus < 202002L */
 
 namespace gdb {
 
