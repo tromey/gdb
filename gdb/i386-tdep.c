@@ -3545,7 +3545,7 @@ i386_pseudo_register_write (gdbarch *gdbarch, const frame_info_ptr &next_frame,
 	    = bndr_value->contents_writeable ();
 
 	  /* Copy lower bytes directly.  */
-	  copy (buf.subspan (0, size), bndr_view.subspan (0, size));
+	  gdb::copy (buf.subspan (0, size), bndr_view.subspan (0, size));
 
 	  /* Convert and then copy upper bytes.  */
 	  ULONGEST upper
