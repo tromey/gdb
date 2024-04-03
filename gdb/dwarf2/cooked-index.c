@@ -458,7 +458,7 @@ cooked_index_shard::find (const std::string &name, bool completing) const
 void
 cooked_index_worker::start ()
 {
-  gdb::thread_pool::g_thread_pool->post_task ([=] ()
+  gdb::thread_pool::g_thread_pool->post_task ([this] ()
   {
     try
       {
