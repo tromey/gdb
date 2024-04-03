@@ -622,7 +622,7 @@ readable_regcache::raw_read (int regnum, gdb::span<gdb_byte> dst)
   if (m_register_status[regnum] != REG_VALID)
     memset (dst.data (), 0, dst.size ());
   else
-    copy (register_buffer (regnum), dst);
+    gdb::copy (register_buffer (regnum), dst);
 
   return m_register_status[regnum];
 }
