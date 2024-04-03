@@ -158,7 +158,7 @@ extract_typed_address (const gdb_byte *buf, struct type *type)
    target-format integer at ADDR which is LEN bytes long.  */
 template<typename T, typename>
 void
-store_integer (gdb::array_view<gdb_byte> dst, enum bfd_endian byte_order,
+store_integer (gdb::span<gdb_byte> dst, enum bfd_endian byte_order,
 	       T val)
 {
   gdb_byte *p;
@@ -186,10 +186,10 @@ store_integer (gdb::array_view<gdb_byte> dst, enum bfd_endian byte_order,
 }
 
 /* Explicit instantiations.  */
-template void store_integer (gdb::array_view<gdb_byte> dst,
+template void store_integer (gdb::span<gdb_byte> dst,
 			     bfd_endian byte_order, LONGEST val);
 
-template void store_integer (gdb::array_view<gdb_byte> dst,
+template void store_integer (gdb::span<gdb_byte> dst,
 			     bfd_endian byte_order, ULONGEST val);
 
 /* Store the address ADDR as a pointer of type TYPE at BUF, in target
@@ -514,7 +514,7 @@ language_defn::read_var_value (struct symbol *var,
 	  store_unsigned_integer (bytes, len,
 				  type_byte_order (type),
 				  var->value_longest ());
-	  gdb::array_view<const gdb_byte> view (bytes, len);
+	  gdb::span<const gdb_byte> view (bytes, len);
 
 	  /* Value is a constant byte-sequence.  */
 	  type = resolve_dynamic_type (type, view, /* Unused address.  */ 0);
@@ -557,7 +557,7 @@ language_defn::read_var_value (struct symbol *var,
     case LOC_CONST_BYTES:
       if (is_dynamic_type (type))
 	{
-	  gdb::array_view<const gdb_byte> view (var->value_bytes (),
+	  gdb::span<const gdb_byte> view (var->value_bytes (),
 						type->length ());
 
 	  /* Value is a constant byte-sequence.  */

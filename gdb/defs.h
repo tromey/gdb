@@ -495,18 +495,18 @@ extern CORE_ADDR extract_typed_address (const gdb_byte *buf,
    target-format integer at ADDR which is LEN bytes long.  */
 
 template<typename T, typename = RequireLongest<T>>
-extern void store_integer (gdb::array_view<gdb_byte> dst,
+extern void store_integer (gdb::span<gdb_byte> dst,
 			   bfd_endian byte_order, T val);
 
 template<typename T>
 static inline void
 store_integer (gdb_byte *addr, int len, bfd_endian byte_order, T val)
 {
-  return store_integer (gdb::make_array_view (addr, len), byte_order, val);
+  return store_integer (gdb::make_span (addr, len), byte_order, val);
 }
 
 static inline void
-store_signed_integer (gdb::array_view<gdb_byte> dst, bfd_endian byte_order,
+store_signed_integer (gdb::span<gdb_byte> dst, bfd_endian byte_order,
 		      LONGEST val)
 {
   return store_integer (dst, byte_order, val);
@@ -516,12 +516,12 @@ static inline void
 store_signed_integer (gdb_byte *addr, int len, bfd_endian byte_order,
 		      LONGEST val)
 {
-  return store_signed_integer (gdb::make_array_view (addr, len), byte_order,
+  return store_signed_integer (gdb::make_span (addr, len), byte_order,
 			       val);
 }
 
 static inline void
-store_unsigned_integer (gdb::array_view<gdb_byte> dst, bfd_endian byte_order,
+store_unsigned_integer (gdb::span<gdb_byte> dst, bfd_endian byte_order,
 			ULONGEST val)
 {
   return store_integer (dst, byte_order, val);
@@ -531,7 +531,7 @@ static inline void
 store_unsigned_integer (gdb_byte *addr, int len, bfd_endian byte_order,
 			ULONGEST val)
 {
-  return store_unsigned_integer (gdb::make_array_view (addr, len), byte_order,
+  return store_unsigned_integer (gdb::make_span (addr, len), byte_order,
 				 val);
 }
 

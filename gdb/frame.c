@@ -1108,7 +1108,7 @@ get_frame_func (const frame_info_ptr &this_frame)
 std::unique_ptr<readonly_detached_regcache>
 frame_save_as_regcache (const frame_info_ptr &this_frame)
 {
-  auto cooked_read = [this_frame] (int regnum, gdb::array_view<gdb_byte> buf)
+  auto cooked_read = [this_frame] (int regnum, gdb::span<gdb_byte> buf)
     {
       if (!deprecated_frame_register_read (this_frame, regnum, buf.data ()))
 	return REG_UNAVAILABLE;
@@ -1432,7 +1432,7 @@ read_frame_register_unsigned (const frame_info_ptr &frame, int regnum,
 
 void
 put_frame_register (const frame_info_ptr &next_frame, int regnum,
-		     gdb::array_view<const gdb_byte> buf)
+		     gdb::span<const gdb_byte> buf)
 {
   gdbarch *gdbarch = frame_unwind_arch (next_frame);
   int realnum;

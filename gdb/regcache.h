@@ -169,7 +169,7 @@ extern struct type *register_type (struct gdbarch *gdbarch, int regnum);
 extern int register_size (struct gdbarch *gdbarch, int regnum);
 
 using register_read_ftype
-  = gdb::function_view<register_status (int, gdb::array_view<gdb_byte>)>;
+  = gdb::function_view<register_status (int, gdb::span<gdb_byte>)>;
 
 /* A (register_number, register_value) pair.  */
 
@@ -198,7 +198,7 @@ public:
   enum register_status get_register_status (int regnum) const override;
 
   /* See gdbsupport/common-regcache.h.  */
-  void raw_collect (int regnum, gdb::array_view<gdb_byte> dst) const override;
+  void raw_collect (int regnum, gdb::span<gdb_byte> dst) const override;
 
   /* Deprecated overload of the above.  */
   void raw_collect (int regnum, void *dst) const;
@@ -214,14 +214,14 @@ public:
   /* Collect part of register REGNUM from this register buffer.  Start at OFFSET
      in register.  The size is given by the size of DST.  */
   void raw_collect_part (int regnum, int offset,
-			 gdb::array_view<gdb_byte> dst) const;
+			 gdb::span<gdb_byte> dst) const;
 
   /* Deprecated overload of the above.  */
   void raw_collect_part (int regnum, int offset, int len, gdb_byte *dst) const
-  { raw_collect_part (regnum, offset, gdb::make_array_view (dst, len)); }
+  { raw_collect_part (regnum, offset, gdb::make_span (dst, len)); }
 
   /* See gdbsupport/common-regcache.h.  */
-  void raw_supply (int regnum, gdb::array_view<const gdb_byte> src) override;
+  void raw_supply (int regnum, gdb::span<const gdb_byte> src) override;
 
   /* Deprecated overload of the above.  */
   void raw_supply (int regnum, const void *src);
@@ -246,7 +246,7 @@ public:
      the register.  The size is given by the size of SRC.  The rest of the
      register left untouched.  */
   void raw_supply_part (int regnum, int offset,
-			gdb::array_view<const gdb_byte> src);
+			gdb::span<const gdb_byte> src);
 
   void invalidate (int regnum);
 
@@ -263,9 +263,9 @@ protected:
 
   /* Return a view on register REGNUM's buffer cache.  */
   template <typename ElemType>
-  gdb::array_view<ElemType> register_buffer (int regnum) const;
-  gdb::array_view<const gdb_byte> register_buffer (int regnum) const;
-  gdb::array_view<gdb_byte> register_buffer (int regnum);
+  gdb::span<ElemType> register_buffer (int regnum) const;
+  gdb::span<const gdb_byte> register_buffer (int regnum) const;
+  gdb::span<gdb_byte> register_buffer (int regnum);
 
   /* Save a register cache.  The set of registers saved into the
      regcache determined by the save_reggroup.  COOKED_READ returns
@@ -295,7 +295,7 @@ public:
 
   /* Transfer a raw register [0..NUM_REGS) from core-gdb to this regcache,
      return its value in *BUF and return its availability status.  */
-  register_status raw_read (int regnum, gdb::array_view<gdb_byte> dst);
+  register_status raw_read (int regnum, gdb::span<gdb_byte> dst);
 
   /* Deprecated overload of the above.  */
   register_status raw_read (int regnum, gdb_byte *dst);
@@ -305,19 +305,19 @@ public:
 
   /* Partial transfer of raw registers.  Return the status of the register.  */
   register_status raw_read_part (int regnum, int offset,
-				 gdb::array_view<gdb_byte> dst);
+				 gdb::span<gdb_byte> dst);
 
   /* Deprecated overload of the above.  */
   register_status raw_read_part (int regnum, int offset, int len,
 				 gdb_byte *dst)
-  { return raw_read_part (regnum, offset, gdb::make_array_view (dst, len)); }
+  { return raw_read_part (regnum, offset, gdb::make_span (dst, len)); }
 
   /* Make certain that the register REGNUM is up-to-date.  */
   virtual void raw_update (int regnum) = 0;
 
   /* Transfer a raw register [0..NUM_REGS+NUM_PSEUDO_REGS) from core-gdb to
      this regcache, return its value in DST and return its availability status.  */
-  register_status cooked_read (int regnum, gdb::array_view<gdb_byte> dst);
+  register_status cooked_read (int regnum, gdb::span<gdb_byte> dst);
   register_status cooked_read (int regnum, gdb_byte *dst);
 
   template<typename T, typename = RequireLongest<T>>
@@ -325,11 +325,11 @@ public:
 
   /* Partial transfer of a cooked register.  */
   register_status cooked_read_part (int regnum, int offset,
-				    gdb::array_view<gdb_byte> dst);
+				    gdb::span<gdb_byte> dst);
 
   /* Deprecated overload of the above.  */
   register_status cooked_read_part (int regnum, int offset, int len, gdb_byte *src)
-  { return cooked_read_part (regnum, offset, gdb::make_array_view (src, len)); }
+  { return cooked_read_part (regnum, offset, gdb::make_span (src, len)); }
 
   /* Read register REGNUM from the regcache and return a new value.  This
      will call mark_value_bytes_unavailable as appropriate.  */
@@ -340,7 +340,7 @@ protected:
   /* Perform a partial register transfer using a read, modify, write
      operation.  Will fail if register is currently invalid.  */
   register_status read_part (int regnum, int offset,
-			     gdb::array_view<gdb_byte> dst, bool is_raw);
+			     gdb::span<gdb_byte> dst, bool is_raw);
 };
 
 /* Buffer of registers, can be read and written.  */
@@ -376,7 +376,7 @@ public:
   /* Update the value of raw register REGNUM (in the range [0..NUM_REGS)) and
      transfer its value to core-gdb.  */
 
-  void raw_write (int regnum, gdb::array_view<const gdb_byte> src);
+  void raw_write (int regnum, gdb::span<const gdb_byte> src);
 
   /* Deprecated overload of the above.  */
   void raw_write (int regnum, const gdb_byte *src);
@@ -385,7 +385,7 @@ public:
   void raw_write (int regnum, T val);
 
   /* Transfer of pseudo-registers.  */
-  void cooked_write (int regnum, gdb::array_view<const gdb_byte> src);
+  void cooked_write (int regnum, gdb::span<const gdb_byte> src);
 
   /* Deprecated overload of the above.  */
   void cooked_write (int regnum, const gdb_byte *src);
@@ -398,20 +398,20 @@ public:
   /* Partial transfer of raw registers.  Perform read, modify, write style
      operations.  */
   void raw_write_part (int regnum, int offset,
-		       gdb::array_view<const gdb_byte> src);
+		       gdb::span<const gdb_byte> src);
 
   /* Deprecated overload of the above.  */
   void raw_write_part (int regnum, int offset, int len, const gdb_byte *src)
-  { raw_write_part (regnum, offset, gdb::make_array_view (src, len)); }
+  { raw_write_part (regnum, offset, gdb::make_span (src, len)); }
 
   /* Partial transfer of a cooked register.  Perform read, modify, write style
      operations.  */
   void cooked_write_part (int regnum, int offset,
-			  gdb::array_view<const gdb_byte> src);
+			  gdb::span<const gdb_byte> src);
 
   /* Deprecated overload of the above.  */
   void cooked_write_part (int regnum, int offset, int len, const gdb_byte *src)
-  { cooked_write_part (regnum, offset, gdb::make_array_view (src, len)); }
+  { cooked_write_part (regnum, offset, gdb::make_span (src, len)); }
 
   /* Transfer a set of registers (as described by REGSET) between
      REGCACHE and BUF.  If REGNUM == -1, transfer all registers
@@ -479,7 +479,7 @@ private:
   /* Perform a partial register transfer using a read, modify, write
      operation.  */
   register_status write_part (int regnum, int offset,
-			      gdb::array_view<const gdb_byte> src,
+			      gdb::span<const gdb_byte> src,
 			      bool is_raw);
 
   /* The inferior to switch to, to make target calls.

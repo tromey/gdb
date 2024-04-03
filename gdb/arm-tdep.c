@@ -9185,9 +9185,9 @@ arm_store_return_value (struct type *type, struct regcache *regs,
 	  if (is_fixed_point_type (type))
 	    {
 	      gdb_mpz unscaled;
-	      unscaled.read (gdb::make_array_view (valbuf, type->length ()),
+	      unscaled.read (gdb::make_span (valbuf, type->length ()),
 			     byte_order, type->is_unsigned ());
-	      unscaled.write (gdb::make_array_view (tmpbuf, sizeof (tmpbuf)),
+	      unscaled.write (gdb::make_span (tmpbuf, sizeof (tmpbuf)),
 			      byte_order, type->is_unsigned ());
 	    }
 	  else
@@ -9909,7 +9909,7 @@ arm_neon_quad_write (struct gdbarch *gdbarch, struct regcache *regcache,
 
 static void
 arm_neon_quad_write (gdbarch *gdbarch, const frame_info_ptr &next_frame,
-		     int quad_reg_index, gdb::array_view<const gdb_byte> buf)
+		     int quad_reg_index, gdb::span<const gdb_byte> buf)
 {
   std::string raw_reg_name = string_printf ("d%d", quad_reg_index << 1);
   int double_regnum
@@ -9923,7 +9923,7 @@ arm_neon_quad_write (gdbarch *gdbarch, const frame_info_ptr &next_frame,
 
 static void
 arm_mve_pseudo_write (gdbarch *gdbarch, const frame_info_ptr &next_frame,
-		      int pseudo_reg_num, gdb::array_view<const gdb_byte> buf)
+		      int pseudo_reg_num, gdb::span<const gdb_byte> buf)
 {
   arm_gdbarch_tdep *tdep = gdbarch_tdep<arm_gdbarch_tdep> (gdbarch);
 
@@ -9934,7 +9934,7 @@ arm_mve_pseudo_write (gdbarch *gdbarch, const frame_info_ptr &next_frame,
 static void
 arm_pseudo_write (gdbarch *gdbarch, const frame_info_ptr &next_frame,
 		  const int pseudo_reg_num,
-		  gdb::array_view<const gdb_byte> buf)
+		  gdb::span<const gdb_byte> buf)
 {
   arm_gdbarch_tdep *tdep = gdbarch_tdep<arm_gdbarch_tdep> (gdbarch);
 

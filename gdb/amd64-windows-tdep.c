@@ -1347,7 +1347,7 @@ static const gdb_byte amd64_sigdelayed_bytes[] = {
   /* 4 bytes for tls::stackptr operand.  */
 };
 
-static const gdb::array_view<const gdb_byte> amd64_sig_patterns[] {
+static const gdb::span<const gdb_byte> amd64_sig_patterns[] {
   { amd64_sigbe_bytes },
   { amd64_sigdelayed_bytes },
 };

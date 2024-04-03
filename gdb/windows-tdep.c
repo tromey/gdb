@@ -1226,7 +1226,7 @@ struct cygwin_sigwrapper_frame_cache
 
 static bool
 insns_match_pattern (CORE_ADDR pc,
-		     const gdb::array_view<const gdb_byte> pattern)
+		     const gdb::span<const gdb_byte> pattern)
 {
   for (size_t i = 0; i < pattern.size (); i++)
     {
@@ -1248,7 +1248,7 @@ static void
 cygwin_sigwrapper_frame_analyze
   (struct gdbarch *gdbarch,
    CORE_ADDR start, CORE_ADDR end,
-   gdb::array_view<const gdb::array_view<const gdb_byte>> patterns_list,
+   gdb::span<const gdb::array_view<const gdb_byte>> patterns_list,
    int *tlsoffset)
 {
   enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
@@ -1394,7 +1394,7 @@ cygwin_sigwrapper_frame_sniffer (const struct frame_unwind *self_,
 /* Cygwin sigwapper unwinder.  */
 
 cygwin_sigwrapper_frame_unwind::cygwin_sigwrapper_frame_unwind
-  (gdb::array_view<const gdb::array_view<const gdb_byte>> patterns_list)
+  (gdb::span<const gdb::array_view<const gdb_byte>> patterns_list)
     : frame_unwind (),
       patterns_list (patterns_list)
 {

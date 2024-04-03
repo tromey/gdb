@@ -3447,7 +3447,7 @@ i386_pseudo_register_read_value (gdbarch *gdbarch, const frame_info_ptr &next_fr
 	    {
 	      bfd_endian byte_order
 		= gdbarch_byte_order (frame_unwind_arch (next_frame));
-	      gdb::array_view<gdb_byte> upper_bytes
+	      gdb::span<gdb_byte> upper_bytes
 		= result->contents_raw ().slice (size, size);
 	      ULONGEST upper
 		= extract_unsigned_integer (upper_bytes, byte_order);
@@ -3518,7 +3518,7 @@ i386_pseudo_register_read_value (gdbarch *gdbarch, const frame_info_ptr &next_fr
 void
 i386_pseudo_register_write (gdbarch *gdbarch, const frame_info_ptr &next_frame,
 			    const int pseudo_reg_num,
-			    gdb::array_view<const gdb_byte> buf)
+			    gdb::span<const gdb_byte> buf)
 {
   if (i386_mmx_regnum_p (gdbarch, pseudo_reg_num))
     {
@@ -3541,7 +3541,7 @@ i386_pseudo_register_write (gdbarch *gdbarch, const frame_info_ptr &next_frame,
 	  int raw_regnum = I387_BND0R_REGNUM (tdep) + reg_index;
 
 	  value *bndr_value = value_of_register (raw_regnum, next_frame);
-	  gdb::array_view<gdb_byte> bndr_view
+	  gdb::span<gdb_byte> bndr_view
 	    = bndr_value->contents_writeable ();
 
 	  /* Copy lower bytes directly.  */
