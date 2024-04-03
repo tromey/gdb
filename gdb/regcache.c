@@ -973,7 +973,7 @@ readable_regcache::read_part (int regnum, int offset,
     return status;
 
   /* Copy out.  */
-  copy (reg.slice (offset, dst.size ()), dst);
+  copy (reg.subspan (offset, dst.size ()), dst);
   return REG_VALID;
 }
 
@@ -1004,7 +1004,7 @@ reg_buffer::raw_collect_part (int regnum, int offset,
   gdb_byte *reg_buf = (gdb_byte *) alloca (reg_size);
   auto reg = gdb::make_span (reg_buf, reg_size);
   raw_collect (regnum, reg);
-  copy (reg.slice (offset, dst.size ()), dst);
+  copy (reg.subspan (offset, dst.size ()), dst);
 }
 
 /* See regcache.h.  */
@@ -1049,7 +1049,7 @@ regcache::write_part (int regnum, int offset,
     return status;
 
   /* Update buffer, then write back to regcache.  */
-  copy (src, reg.slice (offset, src.size ()));
+  copy (src, reg.subspan (offset, src.size ()));
 
   if (is_raw)
     raw_write (regnum, reg);
@@ -1088,7 +1088,7 @@ reg_buffer::raw_supply_part (int regnum, int offset,
   raw_collect (regnum, reg);
 
   /* Write to buffer, then write out.  */
-  copy (src, reg.slice (offset, src.size ()));
+  copy (src, reg.subspan (offset, src.size ()));
   raw_supply (regnum, reg);
 }
 
@@ -1387,7 +1387,7 @@ reg_buffer::raw_compare (int regnum, const void *buf, int offset) const
 
   gdb::span<const gdb_byte> regbuf = register_buffer (regnum);
   gdb_assert (offset <= regbuf.size ());
-  regbuf = regbuf.slice (offset);
+  regbuf = regbuf.subspan (offset);
 
   return memcmp (buf, regbuf.data (), regbuf.size ()) == 0;
 }

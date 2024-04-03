@@ -1344,7 +1344,7 @@ valpy_get_bytes (PyObject *self, void *closure)
       return value_obj->content_bytes;
     }
 
-  gdb::array_view<const gdb_byte> contents;
+  gdb::span<const gdb_byte> contents;
   try
     {
       contents = value->contents ();

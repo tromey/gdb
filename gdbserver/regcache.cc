@@ -532,7 +532,7 @@ regcache::raw_compare (int regnum, const void *buf, int offset) const
 
   gdb::span<const gdb_byte> regbuf = register_data (this, regnum);
   gdb_assert (offset < regbuf.size ());
-  regbuf = regbuf.slice (offset);
+  regbuf = regbuf.subspan (offset);
 
   return memcmp (buf, regbuf.data (), regbuf.size ()) == 0;
 }

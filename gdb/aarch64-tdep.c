@@ -3313,7 +3313,7 @@ aarch64_pseudo_write_1 (gdbarch *gdbarch, const frame_info_ptr &next_frame,
   memset (raw_buf, 0, register_size (gdbarch, AARCH64_V0_REGNUM));
 
   gdb::span<gdb_byte> raw_view (raw_buf, raw_reg_size);
-  copy (buf, raw_view.slice (0, buf.size ()));
+  copy (buf, raw_view.subspan (0, buf.size ()));
   put_frame_register (next_frame, raw_regnum, raw_view);
 }
 
@@ -3342,15 +3342,15 @@ aarch64_sme_pseudo_register_write (gdbarch *gdbarch, const frame_info_ptr &next_
   {
     /* Create a view only on the portion of za we want to write.  */
     gdb::span<gdb_byte> za_view
-      = za_value->contents_writeable ().slice (offsets.starting_offset);
+      = za_value->contents_writeable ().subspan (offsets.starting_offset);
 
     /* Copy the requested data.  */
     for (int chunks = 0; chunks < offsets.chunks; chunks++)
       {
 	gdb::span<const gdb_byte> src
-	  = data.slice (chunks * offsets.chunk_size, offsets.chunk_size);
+	  = data.subspan (chunks * offsets.chunk_size, offsets.chunk_size);
 	gdb::span<gdb_byte> dst
-	  = za_view.slice (chunks * offsets.stride_size, offsets.chunk_size);
+	  = za_view.subspan (chunks * offsets.stride_size, offsets.chunk_size);
 	copy (src, dst);
       }
   }
@@ -3384,7 +3384,7 @@ aarch64_pseudo_write (gdbarch *gdbarch, const frame_info_ptr &next_frame,
       /* First zero-out the contents of X.  */
       gdb_byte bytes[8] {};
       gdb::span<gdb_byte> bytes_view (bytes);
-      copy (buf, bytes_view.slice (offset, 4));
+      copy (buf, bytes_view.subspan (offset, 4));
 
       /* Write to the bottom 4 bytes of X.  */
       put_frame_register (next_frame, x_regnum, bytes_view);

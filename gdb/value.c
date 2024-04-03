@@ -4142,12 +4142,12 @@ pseudo_to_concat_raw (const frame_info_ptr &next_frame,
 
   int raw_reg_1_size = register_size (arch, raw_reg_1_num);
   put_frame_register (next_frame, raw_reg_1_num,
-		      pseudo_buf.slice (src_offset, raw_reg_1_size));
+		      pseudo_buf.subspan (src_offset, raw_reg_1_size));
   src_offset += raw_reg_1_size;
 
   int raw_reg_2_size = register_size (arch, raw_reg_2_num);
   put_frame_register (next_frame, raw_reg_2_num,
-		      pseudo_buf.slice (src_offset, raw_reg_2_size));
+		      pseudo_buf.subspan (src_offset, raw_reg_2_size));
   src_offset += raw_reg_2_size;
 
   gdb_assert (src_offset == pseudo_buf.size ());
@@ -4196,17 +4196,17 @@ pseudo_to_concat_raw (const frame_info_ptr &next_frame,
 
   int raw_reg_1_size = register_size (arch, raw_reg_1_num);
   put_frame_register (next_frame, raw_reg_1_num,
-		      pseudo_buf.slice (src_offset, raw_reg_1_size));
+		      pseudo_buf.subspan (src_offset, raw_reg_1_size));
   src_offset += raw_reg_1_size;
 
   int raw_reg_2_size = register_size (arch, raw_reg_2_num);
   put_frame_register (next_frame, raw_reg_2_num,
-		      pseudo_buf.slice (src_offset, raw_reg_2_size));
+		      pseudo_buf.subspan (src_offset, raw_reg_2_size));
   src_offset += raw_reg_2_size;
 
   int raw_reg_3_size = register_size (arch, raw_reg_3_num);
   put_frame_register (next_frame, raw_reg_3_num,
-		      pseudo_buf.slice (src_offset, raw_reg_3_size));
+		      pseudo_buf.subspan (src_offset, raw_reg_3_size));
   src_offset += raw_reg_3_size;
 
   gdb_assert (src_offset == pseudo_buf.size ());
