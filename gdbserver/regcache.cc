@@ -314,11 +314,11 @@ regcache_register_size (const reg_buffer_common *regcache, int n)
     (gdb::checked_static_cast<const struct regcache *> (regcache)->tdesc, n);
 }
 
-static gdb::array_view<gdb_byte>
+static gdb::span<gdb_byte>
 register_data (const struct regcache *regcache, int n)
 {
   const gdb::reg &reg = find_register_by_number (regcache->tdesc, n);
-  return gdb::make_array_view (regcache->registers + reg.offset / 8,
+  return gdb::make_span (regcache->registers + reg.offset / 8,
 			       reg.size / 8);
 }
 
@@ -327,13 +327,13 @@ supply_register (struct regcache *regcache, int n, const void *vbuf)
 {
   const gdb::reg &reg = find_register_by_number (regcache->tdesc, n);
   const gdb_byte *buf = static_cast<const gdb_byte *> (vbuf);
-  return regcache->raw_supply (n, gdb::make_array_view (buf, reg.size / 8));
+  return regcache->raw_supply (n, gdb::make_span (buf, reg.size / 8));
 }
 
 /* See gdbsupport/common-regcache.h.  */
 
 void
-regcache::raw_supply (int n, gdb::array_view<const gdb_byte> src)
+regcache::raw_supply (int n, gdb::span<const gdb_byte> src)
 {
   auto dst = register_data (this, n);
 
@@ -434,13 +434,13 @@ collect_register (struct regcache *regcache, int n, void *vbuf)
 {
   const gdb::reg &reg = find_register_by_number (regcache->tdesc, n);
   gdb_byte *buf = static_cast<gdb_byte *> (vbuf);
-  regcache->raw_collect (n, gdb::make_array_view (buf, reg.size / 8));
+  regcache->raw_collect (n, gdb::make_span (buf, reg.size / 8));
 }
 
 /* See gdbsupport/common-regcache.h.  */
 
 void
-regcache::raw_collect (int n, gdb::array_view<gdb_byte> dst) const
+regcache::raw_collect (int n, gdb::span<gdb_byte> dst) const
 {
   auto src = register_data (this, n);
   copy (src, dst);
@@ -530,7 +530,7 @@ regcache::raw_compare (int regnum, const void *buf, int offset) const
 {
   gdb_assert (buf != NULL);
 
-  gdb::array_view<const gdb_byte> regbuf = register_data (this, regnum);
+  gdb::span<const gdb_byte> regbuf = register_data (this, regnum);
   gdb_assert (offset < regbuf.size ());
   regbuf = regbuf.slice (offset);
 
