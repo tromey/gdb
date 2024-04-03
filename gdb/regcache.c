@@ -741,7 +741,7 @@ readable_regcache::cooked_read (int regnum, gdb::span<gdb_byte> dst)
 	 regnum);
 
       if (computed->entirely_available ())
-	copy (computed->contents_raw (), dst);
+	gdb::copy (computed->contents_raw (), dst);
       else
 	{
 	  memset (dst.data (), 0, dst.size ());
