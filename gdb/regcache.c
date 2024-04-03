@@ -726,7 +726,7 @@ readable_regcache::cooked_read (int regnum, gdb::span<gdb_byte> dst)
   if (m_has_pseudo && m_register_status[regnum] != REG_UNKNOWN)
     {
       if (m_register_status[regnum] == REG_VALID)
-	copy (register_buffer (regnum), dst);
+	gdb::copy (register_buffer (regnum), dst);
       else
 	memset (dst.data (), 0, dst.size ());
 
