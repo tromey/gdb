@@ -973,7 +973,7 @@ readable_regcache::read_part (int regnum, int offset,
     return status;
 
   /* Copy out.  */
-  copy (reg.subspan (offset, dst.size ()), dst);
+  gdb::copy (reg.subspan (offset, dst.size ()), dst);
   return REG_VALID;
 }
 
