@@ -35,7 +35,8 @@ static insn_t
 loongarch_fetch_instruction (CORE_ADDR pc)
 {
   size_t insn_len = loongarch_insn_length (0);
-  gdb_byte buf[insn_len];
+  gdb_byte buf[4];
+  gdb_assert (insn_len <= 4);
   int err;
 
   err = target_read_memory (pc, buf, insn_len);
