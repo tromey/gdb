@@ -2032,8 +2032,11 @@ fbsd_get_thread_local_address (struct gdbarch *gdbarch, CORE_ADDR dtv_addr,
 {
   LONGEST tls_index = fbsd_get_tls_index (gdbarch, lm_addr);
 
-  gdb_byte buf[gdbarch_ptr_bit (gdbarch) / TARGET_CHAR_BIT];
-  if (target_read_memory (dtv_addr, buf, sizeof buf) != 0)
+  gdb_byte buf[sizeof (CORE_ADDR)];
+  size_t nbytes = gdbarch_ptr_bit (gdbarch) / TARGET_CHAR_BIT;
+  gdb_assert (nbytes <= sizeof buf);
+
+  if (target_read_memory (dtv_addr, buf, nbytes) != 0)
     throw_error (TLS_GENERIC_ERROR,
 		 _("Cannot find thread-local variables on this target"));
 
@@ -2042,7 +2045,7 @@ fbsd_get_thread_local_address (struct gdbarch *gdbarch, CORE_ADDR dtv_addr,
 					       builtin->builtin_data_ptr, buf);
 
   addr += (tls_index + 1) * builtin->builtin_data_ptr->length ();
-  if (target_read_memory (addr, buf, sizeof buf) != 0)
+  if (target_read_memory (addr, buf, nbytes) != 0)
     throw_error (TLS_GENERIC_ERROR,
 		 _("Cannot find thread-local variables on this target"));
 
