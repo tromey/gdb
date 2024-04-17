@@ -22,27 +22,19 @@
 #   ./gdb/check-include-guards.py gdb/*.h
 
 
-import glob
 import re
 import sys
-
-status = 0
 
 DEF = re.compile("^#ifndef ([A-Za-z0-9_]+)\n")
 OLDDEF = re.compile("^#if !defined *\\(([A-Za-z0-9_]+)\\)\n")
 
 
-def failure(filename, ndx, text):
-    print(filename + ":" + str(ndx + 1) + ": " + text)
-    global status
-    status = 1
+def failure(filename: str, ndx: int, text: str):
+    print(filename + ":" + str(ndx + 1) + ": " + text, file=sys.stderr)
+    sys.exit(1)
 
 
-def headers(dirname):
-    return glob.iglob(dirname + "/*.h")
-
-
-def skip_comments_and_blanks(ndx, contents):
+def skip_comments_and_blanks(ndx: int, contents: list[str]):
     while ndx < len(contents) and contents[ndx].startswith("/*"):
         while ndx < len(contents):
             ndx += 1
@@ -56,12 +48,12 @@ def skip_comments_and_blanks(ndx, contents):
     return ndx
 
 
-def write_header(filename, contents):
+def write_header(filename: str, contents: list[str]):
     with open(filename, "w") as f:
         f.writelines(contents)
 
 
-def check_header(filename):
+def check_header(filename: str):
     # Turn x/y-z.h into X_Y_Z_H.
     assert filename.endswith(".h")
     expected = filename.replace("-", "_")
@@ -70,28 +62,28 @@ def check_header(filename):
     expected = expected.upper()
     with open(filename) as f:
         contents = list(f)
+    if len(contents) == 0:
+        # Empty file -- pathological but we can just ignore rather
+        # than crashing.
+        return
     if "THIS FILE IS GENERATED" in contents[0]:
         # Ignore.
         return
     if not contents[0].startswith("/*"):
         failure(filename, 0, "header should start with comment")
-        return
     i = skip_comments_and_blanks(0, contents)
     if i == len(contents):
         failure(filename, i, "unterminated intro comment or missing body")
-        return
     m = DEF.match(contents[i])
     force_rewrite = False
     if not m:
         m = OLDDEF.match(contents[i])
         if not m:
             failure(filename, i, "no header guard")
-            return
         force_rewrite = True
     symbol = m.group(1)
     updated = False
     if symbol != expected:
-        failure(filename, i, "symbol should be: " + expected)
         force_rewrite = True
     if force_rewrite:
         contents[i] = "#ifndef " + expected + "\n"
@@ -99,20 +91,15 @@ def check_header(filename):
     i += 1
     if i == len(contents):
         failure(filename, i, "premature EOF")
-        return
     if not contents[i].startswith("#define "):
         failure(filename, i, "no define of header guard")
-        return
     if contents[i] != "#define " + expected + "\n":
-        failure(filename, i, "wrong symbol name in define")
         contents[i] = "#define " + expected + "\n"
         updated = True
     i = len(contents) - 1
     if not contents[i].startswith("#endif"):
         failure(filename, i, "no trailing endif")
-        return
     if contents[i] != "#endif /* " + expected + " */\n":
-        failure(filename, i, "incorrect endif")
         contents[i] = "#endif /* " + expected + " */\n"
         updated = True
     if updated:
@@ -121,5 +108,3 @@ def check_header(filename):
 
 for filename in sys.argv[1:]:
     check_header(filename)
-
-sys.exit(status)

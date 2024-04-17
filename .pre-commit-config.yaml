@@ -22,3 +22,13 @@ repos:
     - id: isort
       types_or: [file]
       files: 'gdb/.*\.py(\.in)?$'
+  - repo: local
+    hooks:
+    - id: check-include-guards
+      name: check-include-guards
+      language: python
+      entry: gdb/check-include-guards.py
+      # This matches headers in gdbsupport, gdbserver, gdb, and the
+      # immediate subdirectories of gdb (e.g., gdb/nat) -- but,
+      # importantly, not gdb/testsuite/*/*.h.
+      files: '^(gdb(support|server)?)/[^/]*(/[^/]*)?\.h$'
