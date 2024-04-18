@@ -19,8 +19,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef TUI_TUI_SOURCE_H
-#define TUI_TUI_SOURCE_H
+#ifndef GDB_TUI_TUI_SOURCE_H
+#define GDB_TUI_TUI_SOURCE_H
 
 #include "tui/tui-data.h"
 #include "tui-winsource.h"
@@ -84,4 +84,4 @@ private:
   gdb::unique_xmalloc_ptr<char> m_fullname;
 };
 
-#endif /* TUI_TUI_SOURCE_H */
+#endif /* GDB_TUI_TUI_SOURCE_H */

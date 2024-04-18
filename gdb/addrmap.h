@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef ADDRMAP_H
-#define ADDRMAP_H
+#ifndef GDB_ADDRMAP_H
+#define GDB_ADDRMAP_H
 
 #include "splay-tree.h"
 #include "gdbsupport/function-view.h"
@@ -222,4 +222,4 @@ private:
 void addrmap_dump (struct addrmap *map, struct ui_file *outfile,
 		   void *payload);
 
-#endif /* ADDRMAP_H */
+#endif /* GDB_ADDRMAP_H */

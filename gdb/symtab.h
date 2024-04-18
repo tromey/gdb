@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#if !defined (SYMTAB_H)
-#define SYMTAB_H 1
+#ifndef GDB_SYMTAB_H
+#define GDB_SYMTAB_H
 
 #include <array>
 #include <vector>
@@ -2974,4 +2974,4 @@ extern void info_sources_worker (struct ui_out *uiout,
 
 std::optional<CORE_ADDR> find_epilogue_using_linetable (CORE_ADDR func_addr);
 
-#endif /* !defined(SYMTAB_H) */
+#endif /* GDB_SYMTAB_H */

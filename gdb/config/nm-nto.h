@@ -19,11 +19,11 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef CONFIG_NM_NTO_H
-#define CONFIG_NM_NTO_H
+#ifndef GDB_CONFIG_NM_NTO_H
+#define GDB_CONFIG_NM_NTO_H
 
 /* Setup the valid realtime signal range.  */
 #define REALTIME_LO 41
 #define REALTIME_HI 56
 
-#endif /* CONFIG_NM_NTO_H */
+#endif /* GDB_CONFIG_NM_NTO_H */

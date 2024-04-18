@@ -16,8 +16,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef STABSREAD_H
-#define STABSREAD_H
+#ifndef GDB_STABSREAD_H
+#define GDB_STABSREAD_H
 
 struct objfile;
 struct legacy_psymtab;
@@ -215,4 +215,4 @@ extern void init_header_files (void);
 
 extern void scan_file_globals (struct objfile *objfile);
 
-#endif /* STABSREAD_H */
+#endif /* GDB_STABSREAD_H */

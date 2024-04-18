@@ -21,8 +21,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#if !defined (GDBCMD_H)
-#define GDBCMD_H 1
+#ifndef GDB_GDBCMD_H
+#define GDB_GDBCMD_H
 
 #include "command.h"
 #include "ui-out.h"
@@ -69,4 +69,4 @@ extern void print_command_lines (struct ui_out *,
 extern struct cmd_list_element *style_set_list;
 extern struct cmd_list_element *style_show_list;
 
-#endif /* !defined (GDBCMD_H) */
+#endif /* GDB_GDBCMD_H */

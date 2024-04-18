@@ -19,8 +19,8 @@
 
 /* Interface routines for core, executable, etc.  */
 
-#if !defined (GDBCORE_H)
-#define GDBCORE_H 1
+#ifndef GDB_GDBCORE_H
+#define GDB_GDBCORE_H
 
 struct type;
 struct regcache;
@@ -196,4 +196,4 @@ private:
   std::string m_storage;
 };
 
-#endif /* !defined (GDBCORE_H) */
+#endif /* GDB_GDBCORE_H */

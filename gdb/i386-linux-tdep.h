@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef I386_LINUX_TDEP_H
-#define I386_LINUX_TDEP_H
+#ifndef GDB_I386_LINUX_TDEP_H
+#define GDB_I386_LINUX_TDEP_H
 
 #include "gdbsupport/x86-xstate.h"
 
@@ -83,4 +83,4 @@ extern int i386_linux_gregset_reg_offset[];
 /* Return x86 siginfo type.  */
 extern struct type *x86_linux_get_siginfo_type (struct gdbarch *gdbarch);
 
-#endif /* i386-linux-tdep.h */
+#endif /* GDB_I386_LINUX_TDEP_H */

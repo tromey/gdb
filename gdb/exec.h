@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef EXEC_H
-#define EXEC_H
+#ifndef GDB_EXEC_H
+#define GDB_EXEC_H
 
 #include "target.h"
 #include "progspace.h"
@@ -105,4 +105,4 @@ extern void print_section_info (const std::vector<target_section> *table,
 extern void try_open_exec_file (const char *exec_file_host,
 				struct inferior *inf,
 				symfile_add_flags add_flags);
-#endif
+#endif /* GDB_EXEC_H */

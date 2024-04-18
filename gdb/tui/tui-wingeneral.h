@@ -19,8 +19,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef TUI_TUI_WINGENERAL_H
-#define TUI_TUI_WINGENERAL_H
+#ifndef GDB_TUI_TUI_WINGENERAL_H
+#define GDB_TUI_TUI_WINGENERAL_H
 
 #include "gdb_curses.h"
 
@@ -53,4 +53,4 @@ private:
    suppressed via tui_suppress_output, do not call wrefresh.  */
 extern void tui_wrefresh (WINDOW *win);
 
-#endif /* TUI_TUI_WINGENERAL_H */
+#endif /* GDB_TUI_TUI_WINGENERAL_H */

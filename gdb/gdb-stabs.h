@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef GDB_STABS_H
-#define GDB_STABS_H
+#ifndef GDB_GDB_STABS_H
+#define GDB_GDB_STABS_H
 
 /* This file exists to hold the common definitions required of most of
    the symbol-readers that end up using stabs.  The common use of
@@ -75,4 +75,4 @@ extern const registry<objfile>::key<dbx_symfile_info> dbx_objfile_data_key;
 #define DBX_BSS_SECTION(o)	(DBX_SYMFILE_INFO(o)->bss_section)
 #define DBX_STAB_SECTION(o)	(DBX_SYMFILE_INFO(o)->stab_section)
 
-#endif /* GDB_STABS_H */
+#endif /* GDB_GDB_STABS_H */

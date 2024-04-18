@@ -18,8 +18,8 @@
 /* Support for printing a backtrace when GDB hits an error.  This is not
    for printing backtraces of the inferior, but backtraces of GDB itself.  */
 
-#ifndef BT_UTILS_H
-#define BT_UTILS_H
+#ifndef GDB_BT_UTILS_H
+#define GDB_BT_UTILS_H
 
 #ifdef HAVE_LIBBACKTRACE
 # include "backtrace.h"
@@ -71,4 +71,4 @@ extern void gdb_internal_backtrace ();
 extern void gdb_internal_backtrace_set_cmd (const char *args, int from_tty,
 					    cmd_list_element *c);
 
-#endif /* BT_UTILS_H */
+#endif /* GDB_BT_UTILS_H */

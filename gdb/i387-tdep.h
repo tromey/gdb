@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef I387_TDEP_H
-#define I387_TDEP_H
+#ifndef GDB_I387_TDEP_H
+#define GDB_I387_TDEP_H
 
 struct gdbarch;
 class frame_info_ptr;
@@ -185,4 +185,4 @@ extern void i387_return_value (struct gdbarch *gdbarch,
    all memory range can be accessed.  */
 extern void i387_reset_bnd_regs (struct gdbarch *gdbarch,
 				 struct regcache *regcache);
-#endif /* i387-tdep.h */
+#endif /* GDB_I387_TDEP_H */

@@ -16,8 +16,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef REMOTE_H
-#define REMOTE_H
+#ifndef GDB_REMOTE_H
+#define GDB_REMOTE_H
 
 #include "remote-notif.h"
 
@@ -121,4 +121,4 @@ extern void send_remote_packet (gdb::array_view<const char> &buf,
 
 extern bool is_remote_target (process_stratum_target *target);
 
-#endif
+#endif /* GDB_REMOTE_H */

@@ -17,10 +17,10 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef I386_LINUX_NAT_H
-#define I386_LINUX_NAT_H 1
+#ifndef GDB_I386_LINUX_NAT_H
+#define GDB_I386_LINUX_NAT_H
 
 /* Does the current host support the GETFPXREGS request? */
 extern int have_ptrace_getfpxregs;
 
-#endif
+#endif /* GDB_I386_LINUX_NAT_H */

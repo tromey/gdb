@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef PYTHON_PYTHON_INTERNAL_H
-#define PYTHON_PYTHON_INTERNAL_H
+#ifndef GDB_PYTHON_PYTHON_INTERNAL_H
+#define GDB_PYTHON_PYTHON_INTERNAL_H
 
 #include "extension.h"
 #include "extension-priv.h"
@@ -1035,4 +1035,4 @@ extern std::optional<int> gdbpy_print_insn (struct gdbarch *gdbarch,
 					    CORE_ADDR address,
 					    disassemble_info *info);
 
-#endif /* PYTHON_PYTHON_INTERNAL_H */
+#endif /* GDB_PYTHON_PYTHON_INTERNAL_H */

@@ -15,8 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef TUI_TUI_LOCATION_H
-#define TUI_TUI_LOCATION_H
+#ifndef GDB_TUI_TUI_LOCATION_H
+#define GDB_TUI_TUI_LOCATION_H
 
 #include "tui/tui.h"
 #include "tui/tui.h"
@@ -90,4 +90,4 @@ private:
 
 extern tui_location_tracker tui_location;
 
-#endif /* TUI_TUI_LOCATION_H */
+#endif /* GDB_TUI_TUI_LOCATION_H */

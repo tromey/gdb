@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef MEMRANGE_H
-#define MEMRANGE_H
+#ifndef GDB_MEMRANGE_H
+#define GDB_MEMRANGE_H
 
 /* Defines a [START, START + LENGTH) memory range.  */
 
@@ -64,4 +64,4 @@ extern int address_in_mem_range (CORE_ADDR addr,
 
 extern void normalize_mem_ranges (std::vector<mem_range> *memory);
 
-#endif
+#endif /* GDB_MEMRANGE_H */

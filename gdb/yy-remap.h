@@ -15,8 +15,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef YY_REMAP_H
-#define YY_REMAP_H
+#ifndef GDB_YY_REMAP_H
+#define GDB_YY_REMAP_H
 
 /* Remap normal yacc parser interface names (yyparse, yylex, yyerror,
    etc), as well as gratuitiously global symbol names, so we can have
@@ -97,4 +97,4 @@
 # define YYFPRINTF parser_fprintf
 #endif
 
-#endif /* YY_REMAP_H */
+#endif /* GDB_YY_REMAP_H */

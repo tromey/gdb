@@ -19,8 +19,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef NTO_TDEP_H
-#define NTO_TDEP_H
+#ifndef GDB_NTO_TDEP_H
+#define GDB_NTO_TDEP_H
 
 #include "solist.h"
 #include "osabi.h"
@@ -191,4 +191,4 @@ LONGEST nto_read_auxv_from_initial_stack (CORE_ADDR initial_stack,
 
 struct nto_inferior_data *nto_inferior_data (struct inferior *inf);
 
-#endif /* NTO_TDEP_H */
+#endif /* GDB_NTO_TDEP_H */

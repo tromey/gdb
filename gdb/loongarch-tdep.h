@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef LOONGARCH_TDEP_H
-#define LOONGARCH_TDEP_H
+#ifndef GDB_LOONGARCH_TDEP_H
+#define GDB_LOONGARCH_TDEP_H
 
 #include "gdbarch.h"
 #include "arch/loongarch.h"
@@ -44,4 +44,4 @@ struct loongarch_gdbarch_tdep : gdbarch_tdep_base
   CORE_ADDR (*syscall_next_pc) (const frame_info_ptr &frame) = nullptr;
 };
 
-#endif /* LOONGARCH_TDEP_H  */
+#endif /* GDB_LOONGARCH_TDEP_H */

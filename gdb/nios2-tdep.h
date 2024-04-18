@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef NIOS2_TDEP_H
-#define NIOS2_TDEP_H
+#ifndef GDB_NIOS2_TDEP_H
+#define GDB_NIOS2_TDEP_H
 
 #include "gdbarch.h"
 
@@ -87,4 +87,4 @@ struct nios2_gdbarch_tdep : gdbarch_tdep_base
 extern const struct target_desc *tdesc_nios2_linux;
 extern const struct target_desc *tdesc_nios2;
 
-#endif /* NIOS2_TDEP_H */
+#endif /* GDB_NIOS2_TDEP_H */

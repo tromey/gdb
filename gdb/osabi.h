@@ -16,8 +16,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef OSABI_H
-#define OSABI_H
+#ifndef GDB_OSABI_H
+#define GDB_OSABI_H
 
 /* * List of known OS ABIs.  If you change this, make sure to update the
    table in osabi.c.  */
@@ -92,4 +92,4 @@ const char *osabi_triplet_regexp (enum gdb_osabi osabi);
 void generic_elf_osabi_sniff_abi_tag_sections (bfd *, asection *,
 					       enum gdb_osabi *);
 
-#endif /* OSABI_H */
+#endif /* GDB_OSABI_H */

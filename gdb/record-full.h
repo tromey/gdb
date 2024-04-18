@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef RECORD_FULL_H
-#define RECORD_FULL_H
+#ifndef GDB_RECORD_FULL_H
+#define GDB_RECORD_FULL_H
 
 extern bool record_full_memory_query;
 
@@ -31,4 +31,4 @@ extern int record_full_is_used (void);
 
 extern scoped_restore_tmpl<int> record_full_gdb_operation_disable_set ();
 
-#endif /* RECORD_FULL_H */
+#endif /* GDB_RECORD_FULL_H */

@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef BUILD_ID_H
-#define BUILD_ID_H
+#ifndef GDB_BUILD_ID_H
+#define GDB_BUILD_ID_H
 
 #include "gdb_bfd.h"
 #include "gdbsupport/rsp-low.h"
@@ -70,4 +70,4 @@ build_id_to_string (const bfd_build_id *build_id)
   return bin2hex (build_id->data, build_id->size);
 }
 
-#endif /* BUILD_ID_H */
+#endif /* GDB_BUILD_ID_H */

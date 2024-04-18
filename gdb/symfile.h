@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#if !defined (SYMFILE_H)
-#define SYMFILE_H
+#ifndef GDB_SYMFILE_H
+#define GDB_SYMFILE_H
 
 /* This file requires that you first include "bfd.h".  */
 #include "symtab.h"
@@ -379,4 +379,4 @@ extern int readnow_symbol_files;
 
 extern int readnever_symbol_files;
 
-#endif /* !defined(SYMFILE_H) */
+#endif /* GDB_SYMFILE_H */

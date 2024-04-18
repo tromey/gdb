@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#if !defined (ADA_LANG_H)
-#define ADA_LANG_H 1
+#ifndef GDB_ADA_LANG_H
+#define GDB_ADA_LANG_H
 
 class frame_info_ptr;
 struct inferior;
@@ -435,4 +435,4 @@ extern block_symbol ada_resolve_variable (struct symbol *sym,
 extern struct type *ada_index_type (struct type *type, int n,
 				    const char *name);
 
-#endif
+#endif /* GDB_ADA_LANG_H */

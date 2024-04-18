@@ -17,8 +17,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#ifndef EXTENSION_H
-#define EXTENSION_H
+#ifndef GDB_EXTENSION_H
+#define GDB_EXTENSION_H
 
 #include "mi/mi-cmds.h"
 #include "gdbsupport/array-view.h"
@@ -428,4 +428,4 @@ private:
   bool m_prev_cooperative_sigint_handling_disabled;
 };
 
-#endif /* EXTENSION_H */
+#endif /* GDB_EXTENSION_H */

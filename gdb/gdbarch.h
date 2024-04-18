@@ -18,8 +18,8 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 
-#ifndef GDBARCH_H
-#define GDBARCH_H
+#ifndef GDB_GDBARCH_H
+#define GDB_GDBARCH_H
 
 #include <vector>
 #include "frame.h"
@@ -370,4 +370,4 @@ gdbarch_num_cooked_regs (gdbarch *arch)
   return gdbarch_num_regs (arch) + gdbarch_num_pseudo_regs (arch);
 }
 
-#endif
+#endif /* GDB_GDBARCH_H */
