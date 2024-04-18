@@ -22,3 +22,17 @@ repos:
     - id: isort
       types_or: [file]
       files: 'gdb/.*\.py(\.in)?$'
+  - repo: local
+    hooks:
+    - id: make-target-delegates
+      name: make-target-delegates
+      language: python
+      entry: gdb/make-target-delegates.py
+      files: '^gdb/(make-target-delegates\.py|target\.h)$'
+  - repo: local
+    hooks:
+    - id: gdbarch
+      name: gdbarch
+      language: python
+      entry: gdb/gdbarch.py
+      files: '^gdb/gdbarch.*\.py$'

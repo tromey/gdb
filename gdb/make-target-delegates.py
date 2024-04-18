@@ -20,6 +20,7 @@
 # Usage:
 #    make-target-delegates.py
 
+import os
 import re
 from typing import Dict, List, TextIO
 
@@ -340,6 +341,10 @@ def print_class(
 
 delegators: List[str] = []
 entries: Dict[str, Entry] = {}
+
+# Maybe we're being run from the pre-commit hook.
+if not os.path.exists("target.h") and os.path.exists("gdb/target.h"):
+    os.chdir("gdb")
 
 for current_line in scan_target_h():
     # See comments in scan_target_h.  Here we strip away the leading

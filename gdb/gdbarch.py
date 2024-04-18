@@ -19,6 +19,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import textwrap
 
 # gdbarch_components is imported only for its side-effect of filling
@@ -33,11 +34,6 @@ def indentation(n_columns: int):
     return "\t" * (n_columns // 8) + " " * (n_columns % 8)
 
 
-copyright = gdbcopyright.copyright(
-    "gdbarch.py", "Dynamic architecture support for GDB, the GNU debugger."
-)
-
-
 def info(c: Component):
     "Filter function to only allow Info components."
     return type(c) is Info
@@ -47,6 +43,14 @@ def not_info(c: Component):
     "Filter function to omit Info components."
     return type(c) is not Info
 
+
+# Maybe we're being run from the pre-commit hook.
+if not os.path.exists("gdbarch.h") and os.path.exists("gdb/gdbarch.h"):
+    os.chdir("gdb")
+
+copyright = gdbcopyright.copyright(
+    "gdbarch.py", "Dynamic architecture support for GDB, the GNU debugger."
+)
 
 with open("gdbarch-gen.h", "w") as f:
     print(copyright, file=f)
