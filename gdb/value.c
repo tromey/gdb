@@ -1883,6 +1883,28 @@ struct internalvar
     : name (std::move (name))
   {}
 
+  ~internalvar ()
+  {
+    clear_internalvar (this);
+  }
+
+  internalvar (internalvar &&other)
+    : kind (other.kind),
+      u (other.u)
+  {
+    other.kind = INTERNALVAR_VOID;
+  }
+
+  internalvar &operator= (internalvar &&other)
+  {
+    kind = other.kind;
+    u = other.u;
+    other.kind = INTERNALVAR_VOID;
+    return *this;
+  }
+
+  DISABLE_COPY_AND_ASSIGN (internalvar);
+
   std::string name;
 
   /* We support various different kinds of content of an internal variable.
@@ -2318,6 +2340,14 @@ clear_internalvar (struct internalvar *var)
 
     case INTERNALVAR_STRING:
       xfree (var->u.string);
+      break;
+
+    case INTERNALVAR_FUNCTION:
+      if (var->u.fn.canonical)
+	{
+	  xfree (var->u.fn.function->name);
+	  xfree (var->u.fn.function);
+	}
       break;
 
     default:
@@ -4514,5 +4544,6 @@ and exceeds this limit will cause an error."),
   add_final_cleanup ([] ()
     {
       all_values.clear ();
+      internalvars.clear ();
     });
 }
