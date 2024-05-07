@@ -49,12 +49,6 @@ public:
     /* Just ignore it.  */
   }
 
-  void set_logging (ui_file_up logfile, bool logging_redirect,
-		    bool debug_redirect) override
-  {
-    /* Just ignore it.  */
-  }
-
   ui_out *interp_ui_out () override
   {
     return m_ui_out.get ();
