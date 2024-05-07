@@ -241,7 +241,8 @@ ui::handle_redirections (int from_tty)
   ui_file *tee = nullptr;
   if (!logging_redirect || !debug_redirect)
     {
-      tee = new tee_file (m_logging_stdout, std::move (log));
+      // FIXME
+      tee = new tee_file (m_logging_stdout, logfile_p /* std::move (log) */);
       m_log_owner.reset (tee);
     }
   else
