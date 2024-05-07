@@ -152,8 +152,8 @@ mi_cmd_gdb_exit (const char *command, const char *const *argv, int argc)
   if (mi != nullptr)
     {
       /* We have to print everything right here because we never return.  */
-      if (current_token)
-	gdb_puts (current_token, current_ui->m_logging_stdout);
+      if (mi->current_token)
+	gdb_puts (mi->current_token, current_ui->m_logging_stdout);
       gdb_puts ("^exit\n", current_ui->m_logging_stdout);
       mi_out_put (current_uiout, current_ui->m_logging_stdout);
       gdb_flush (current_ui->m_logging_stdout);
