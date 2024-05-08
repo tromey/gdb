@@ -467,4 +467,20 @@ private:
   bool m_needs_timestamp = true;
 };
 
+/* A ui_file that simply forwards.  */
+
+class passthrough_file : public wrapped_file
+{
+public:
+  explicit passthrough_file (ui_file *stream)
+    : wrapped_file (stream)
+  {
+  }
+
+  DISABLE_COPY_AND_ASSIGN (passthrough_file);
+
+  void write (const char *buf, long len) override
+  { m_stream->write (buf, len); }
+};
+
 #endif
