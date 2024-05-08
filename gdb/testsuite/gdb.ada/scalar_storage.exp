@@ -20,6 +20,9 @@ load_lib "ada.exp"
 
 require allow_ada_tests
 
+# LLVM does not support scalar storage order.
+require !ada_llvm
+
 standard_ada_testfile storage
 
 if {[gdb_compile_ada "${srcfile}" "${binfile}" executable [list debug ]] != "" } {

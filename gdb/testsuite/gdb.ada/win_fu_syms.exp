@@ -17,6 +17,9 @@ load_lib "ada.exp"
 
 require allow_ada_tests
 
+# Currently gnat-llvm does not supply a shared libgnat.
+require !ada_llvm
+
 standard_ada_testfile foo
 
 if {[gdb_compile_ada "${srcfile}" "${binfile}" executable [list debug additional_flags=-bargs additional_flags=-shared additional_flags=-margs]] != "" } {
