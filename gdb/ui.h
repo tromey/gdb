@@ -184,7 +184,7 @@ struct ui
 /* The main UI.  This is the UI that is bound to stdin/stdout/stderr.
    It always exists and is created automatically when GDB starts
    up.  */
-extern struct ui *main_ui;
+extern struct ui *main_ui ();
 
 /* The current UI.  */
 extern struct ui *current_ui;

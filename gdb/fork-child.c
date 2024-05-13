@@ -47,8 +47,8 @@ get_exec_wrapper ()
 void
 gdb_flush_out_err ()
 {
-  gdb_flush (main_ui->m_gdb_stdout);
-  gdb_flush (main_ui->m_gdb_stderr);
+  gdb_flush (main_ui ()->m_gdb_stdout);
+  gdb_flush (main_ui ()->m_gdb_stderr);
 }
 
 /* The ui structure that will be saved on 'prefork_hook' and
@@ -98,7 +98,7 @@ postfork_child_hook ()
 
   /* Make sure we switch to main_ui here in order to be able to
      use the gdb_printf/warning/error functions.  */
-  current_ui = main_ui;
+  current_ui = main_ui ();
 
   /* Create a new session for the inferior process, if necessary.
      It will also place the inferior in a separate process group.  */

@@ -30,13 +30,21 @@
 
 /* See top.h.  */
 
-struct ui *main_ui;
+static struct ui *the_main_ui;
 struct ui *current_ui;
 struct ui *ui_list;
 
 /* The highest UI number ever assigned.  */
 
 static int highest_ui_num;
+
+/* See ui.h.  */
+
+ui *
+main_ui ()
+{
+  return the_main_ui;
+}
 
 /* See top.h.  */
 
@@ -66,10 +74,15 @@ ui::ui (FILE *instream_, FILE *outstream_, FILE *errstream_)
 	;
       last->next = this;
     }
+
+  if (the_main_ui == nullptr)
+    the_main_ui = this;
 }
 
 ui::~ui ()
 {
+  gdb_assert (this != the_main_ui);
+
   struct ui *ui, *uiprev;
 
   uiprev = NULL;
@@ -119,10 +132,10 @@ stdin_event_handler (int error, gdb_client_data client_data)
   if (error)
     {
       /* Switch to the main UI, so diagnostics always go there.  */
-      current_ui = main_ui;
+      current_ui = main_ui ();
 
       ui->unregister_file_handler ();
-      if (main_ui == ui)
+      if (main_ui () == ui)
 	{
 	  /* If stdin died, we may as well kill gdb.  */
 	  gdb_printf (gdb_stderr, _("error detected on stdin\n"));

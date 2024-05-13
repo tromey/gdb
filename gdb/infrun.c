@@ -4589,7 +4589,7 @@ fetch_inferior_event ()
   /* Events are always processed with the main UI as current UI.  This
      way, warnings, debug output, etc. are always consistently sent to
      the main console.  */
-  scoped_restore save_ui = make_scoped_restore (&current_ui, main_ui);
+  scoped_restore save_ui = make_scoped_restore (&current_ui, main_ui ());
 
   /* Temporarily disable pagination.  Otherwise, the user would be
      given an option to press 'q' to quit, which would cause an early

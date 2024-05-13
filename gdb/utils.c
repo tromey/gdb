@@ -797,7 +797,7 @@ defaulted_query (const char *ctlstr, const char defchar, va_list args)
   if (current_ui->instream != current_ui->stdin_stream
       || !current_ui->input_interactive_p ()
       /* Restrict queries to the main UI.  */
-      || current_ui != main_ui)
+      || current_ui != main_ui ())
     {
       target_terminal::scoped_restore_terminal_state term_state;
       target_terminal::ours_for_output ();

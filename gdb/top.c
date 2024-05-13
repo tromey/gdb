@@ -1714,7 +1714,7 @@ undo_terminal_modifications_before_exit (void)
 
   target_terminal::ours ();
 
-  current_ui = main_ui;
+  current_ui = main_ui ();
 
 #if defined(TUI)
   tui_disable ();

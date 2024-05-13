@@ -938,7 +938,7 @@ target_terminal::inferior (void)
      inferior-tty" is in effect), when some UI other than the main one
      calls target_terminal::inferior, then we leave the main UI's
      terminal settings as is.  */
-  if (ui != main_ui)
+  if (ui != main_ui ())
     return;
 
   /* If GDB is resuming the inferior in the foreground, install
@@ -968,7 +968,7 @@ target_terminal::restore_inferior (void)
   struct ui *ui = current_ui;
 
   /* See target_terminal::inferior().  */
-  if (ui->prompt_state != PROMPT_BLOCKED || ui != main_ui)
+  if (ui->prompt_state != PROMPT_BLOCKED || ui != main_ui ())
     return;
 
   /* Restore the terminal settings of inferiors that were in the
@@ -1048,7 +1048,7 @@ target_terminal::ours ()
   struct ui *ui = current_ui;
 
   /* See target_terminal::inferior.  */
-  if (ui != main_ui)
+  if (ui != main_ui ())
     return;
 
   if (m_terminal_state == target_terminal_state::is_ours)
@@ -1066,7 +1066,7 @@ target_terminal::ours_for_output ()
   struct ui *ui = current_ui;
 
   /* See target_terminal::inferior.  */
-  if (ui != main_ui)
+  if (ui != main_ui ())
     return;
 
   if (!target_terminal::is_inferior ())

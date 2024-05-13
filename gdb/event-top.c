@@ -306,7 +306,7 @@ change_line_handler (int editing)
 
   /* We can only have one instance of readline, so we only allow
      editing on the main UI.  */
-  if (ui != main_ui)
+  if (ui != main_ui ())
     return;
 
   /* Don't try enabling editing if the interpreter doesn't support it
@@ -317,7 +317,7 @@ change_line_handler (int editing)
 
   if (editing)
     {
-      gdb_assert (ui == main_ui);
+      gdb_assert (ui == main_ui ());
 
       /* Turn on editing by using readline.  */
       ui->call_readline = gdb_rl_callback_read_char_wrapper;
@@ -350,7 +350,7 @@ static bool callback_handler_installed;
 void
 gdb_rl_callback_handler_remove (void)
 {
-  gdb_assert (current_ui == main_ui);
+  gdb_assert (current_ui == main_ui ());
 
   rl_callback_handler_remove ();
   callback_handler_installed = false;
@@ -363,7 +363,7 @@ gdb_rl_callback_handler_remove (void)
 void
 gdb_rl_callback_handler_install (const char *prompt)
 {
-  gdb_assert (current_ui == main_ui);
+  gdb_assert (current_ui == main_ui ());
 
   /* Calling rl_callback_handler_install resets readline's input
      buffer.  Calling this when we were already processing input
@@ -379,7 +379,7 @@ gdb_rl_callback_handler_install (const char *prompt)
 void
 gdb_rl_callback_handler_reinstall (void)
 {
-  gdb_assert (current_ui == main_ui);
+  gdb_assert (current_ui == main_ui ());
 
   if (!callback_handler_installed)
     {
@@ -1351,7 +1351,7 @@ gdb_setup_readline (int editing)
      one instance of readline.  Also, INSTREAM might be nullptr when
      executing a user-defined command.  */
   if (ui->instream != nullptr && ISATTY (ui->instream)
-      && editing && ui == main_ui)
+      && editing && ui == main_ui ())
     {
       /* Tell gdb that we will be using the readline library.  This
 	 could be overwritten by a command in .gdbinit like 'set
