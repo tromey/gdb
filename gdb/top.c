@@ -615,6 +615,8 @@ execute_fn_to_ui_file (struct ui_file *file, std::function<void(void)> fn)
 
   scoped_restore save_async = make_scoped_restore (&current_ui->async, 0);
 
+  // FIXME NEED TO RESET raw-* here -- document the scneario
+
   {
     ui_out_redirect_pop redirect_popper (current_uiout, file);
 

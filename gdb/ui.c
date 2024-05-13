@@ -38,6 +38,10 @@ struct ui *ui_list;
 
 static int highest_ui_num;
 
+// FIXME
+struct ui_file *raw_stdout;
+struct ui_file *raw_stderr;
+
 /* See ui.h.  */
 
 ui *
@@ -52,6 +56,8 @@ void
 set_current_ui (ui *new_ui)
 {
   the_current_ui = new_ui;
+  raw_stdout = m_gdb_stdout;
+  raw_stderr = m_gdb_stderr;
 }
 
 /* See top.h.  */

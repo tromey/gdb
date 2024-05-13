@@ -24,6 +24,9 @@
 
 struct interp;
 
+extern struct ui_file *raw_stdout;
+extern struct ui_file *raw_stderr;
+
 /* Prompt state.  */
 
 enum prompt_state
