@@ -31,7 +31,7 @@
 /* See top.h.  */
 
 static struct ui *the_main_ui;
-struct ui *current_ui;
+struct ui *the_current_ui;
 struct ui *ui_list;
 
 /* The highest UI number ever assigned.  */
@@ -132,7 +132,7 @@ stdin_event_handler (int error, gdb_client_data client_data)
   if (error)
     {
       /* Switch to the main UI, so diagnostics always go there.  */
-      current_ui = main_ui ();
+      set_current_ui (main_ui ());
 
       ui->unregister_file_handler ();
       if (main_ui () == ui)
@@ -151,7 +151,7 @@ stdin_event_handler (int error, gdb_client_data client_data)
     {
       /* Switch to the UI whose input descriptor woke up the event
 	 loop.  */
-      current_ui = ui;
+      set_current_ui (ui);
 
       /* This makes sure a ^C immediately followed by further input is
 	 always processed in that order.  E.g,. with input like
@@ -292,7 +292,7 @@ new_ui_command (const char *args, int from_tty)
   tty_name = argv[1];
 
   {
-    scoped_restore save_ui = make_scoped_restore (&current_ui);
+    scoped_restore_current_ui save_ui;
 
     /* Open specified terminal.  Note: we used to open it three times,
        once for each of stdin/stdout/stderr, but that does not work
@@ -304,7 +304,7 @@ new_ui_command (const char *args, int from_tty)
 
     ui->async = 1;
 
-    current_ui = ui.get ();
+    set_current_ui (ui.get ());
 
     set_top_level_interpreter (interpreter_name, true);
 

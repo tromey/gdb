@@ -674,7 +674,7 @@ captured_main_1 (struct captured_main_args *context)
   /* Note: `error' cannot be called before this point, because the
      caller will crash when trying to print the exception.  Also, this
      will set the main UI as a side effect.  */
-  current_ui = new ui (stdin, stdout, stderr);
+  set_current_ui (new ui (stdin, stdout, stderr));
 
   gdb_stdtargin = gdb_stdin;
 

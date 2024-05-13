@@ -414,7 +414,7 @@ void
 wait_sync_command_done (void)
 {
   /* Processing events may change the current UI.  */
-  scoped_restore save_ui = make_scoped_restore (&current_ui);
+  scoped_restore_current_ui save_ui;
   struct ui *ui = current_ui;
 
   /* We're about to wait until the target stops after having resumed
@@ -982,8 +982,7 @@ public:
     : m_handler_orig (current_ui->input_handler),
       m_already_prompted_orig (current_ui->command_editing
 			       ? rl_already_prompted : 0),
-      m_target_is_async_orig (target_is_async_p ()),
-      m_save_ui (&current_ui)
+      m_target_is_async_orig (target_is_async_p ())
   {
     current_ui->input_handler = gdb_readline_wrapper_line;
     current_ui->secondary_prompt_depth++;
@@ -1032,7 +1031,7 @@ private:
   int m_target_is_async_orig;
 
   /* Processing events may change the current UI.  */
-  scoped_restore_tmpl<struct ui *> m_save_ui;
+  scoped_restore_current_ui m_save_ui;
 };
 
 char *
@@ -1710,18 +1709,16 @@ quit_confirm (void)
 static void
 undo_terminal_modifications_before_exit (void)
 {
-  struct ui *saved_top_level = current_ui;
+  scoped_restore_current_ui save_top_level;
 
   target_terminal::ours ();
 
-  current_ui = main_ui ();
+  set_current_ui (main_ui ());
 
 #if defined(TUI)
   tui_disable ();
 #endif
   gdb_disable_readline ();
-
-  current_ui = saved_top_level;
 }
 
 

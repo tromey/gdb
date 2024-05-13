@@ -654,7 +654,7 @@ call_thread_fsm::should_stop (struct thread_info *thread)
      that is sufficient for wait_sync_command_done.  */
   if (!this->should_notify_stop ())
     {
-      scoped_restore save_ui = make_scoped_restore (&current_ui, waiting_ui);
+      scoped_restore_current_ui save_ui (waiting_ui);
       gdb_assert (current_ui->prompt_state == PROMPT_BLOCKED);
       async_enable_stdin ();
     }

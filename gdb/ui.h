@@ -187,19 +187,47 @@ struct ui
 extern struct ui *main_ui ();
 
 /* The current UI.  */
-extern struct ui *current_ui;
+extern struct ui *the_current_ui;
+#define current_ui (the_current_ui + 0)
+
+extern void set_current_ui (ui *the_ui);
 
 /* The list of all UIs.  */
 extern struct ui *ui_list;
+
+/* Save and restore the current UI.  */
+class scoped_restore_current_ui
+{
+public:
+
+  scoped_restore_current_ui ()
+    : m_save_ui (current_ui)
+  {
+  }
+
+  explicit scoped_restore_current_ui (ui *new_ui)
+    : m_save_ui (current_ui)
+  {
+    set_current_ui (new_ui);
+  }
+
+  ~scoped_restore_current_ui ()
+  { set_current_ui (m_save_ui); }
+
+  DISABLE_COPY_AND_ASSIGN (scoped_restore_current_ui);
+
+private:
+
+  struct ui *m_save_ui;
+};
 
 /* State for SWITCH_THRU_ALL_UIS.  */
 class switch_thru_all_uis
 {
 public:
 
-  switch_thru_all_uis () : m_iter (ui_list), m_save_ui (&current_ui)
+  switch_thru_all_uis () : m_iter (ui_list), m_save_ui (ui_list)
   {
-    current_ui = ui_list;
   }
 
   DISABLE_COPY_AND_ASSIGN (switch_thru_all_uis);
@@ -216,7 +244,7 @@ public:
   {
     m_iter = m_iter->next;
     if (m_iter != NULL)
-      current_ui = m_iter;
+      set_current_ui (m_iter);
   }
 
  private:
@@ -225,7 +253,7 @@ public:
   struct ui *m_iter;
 
   /* Save and restore current_ui.  */
-  scoped_restore_tmpl<struct ui *> m_save_ui;
+  scoped_restore_current_ui m_save_ui;
 };
 
   /* Traverse through all UI, and switch the current UI to the one

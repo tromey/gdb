@@ -80,7 +80,7 @@ postfork_hook (pid_t pid)
   inferior_appeared (inf, pid);
 
   gdb_assert (saved_ui != NULL);
-  current_ui = saved_ui;
+  set_current_ui (saved_ui);
   saved_ui = NULL;
 
   new_tty_postfork ();
@@ -98,7 +98,7 @@ postfork_child_hook ()
 
   /* Make sure we switch to main_ui here in order to be able to
      use the gdb_printf/warning/error functions.  */
-  current_ui = main_ui ();
+  set_current_ui (main_ui ());
 
   /* Create a new session for the inferior process, if necessary.
      It will also place the inferior in a separate process group.  */
