@@ -46,6 +46,14 @@ main_ui ()
   return the_main_ui;
 }
 
+/* See ui.h.  */
+
+void
+set_current_ui (ui *new_ui)
+{
+  the_current_ui = new_ui;
+}
+
 /* See top.h.  */
 
 ui::ui (FILE *instream_, FILE *outstream_, FILE *errstream_)
