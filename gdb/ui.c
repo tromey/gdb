@@ -81,8 +81,6 @@ ui::ui (FILE *instream_, FILE *outstream_, FILE *errstream_)
 
 ui::~ui ()
 {
-  gdb_assert (this != the_main_ui);
-
   struct ui *ui, *uiprev;
 
   uiprev = NULL;
