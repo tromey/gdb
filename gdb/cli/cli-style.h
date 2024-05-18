@@ -118,6 +118,9 @@ extern cli_style_option highlight_style;
 /* The title style.  */
 extern cli_style_option title_style;
 
+/* Style used for command names.  */
+extern cli_style_option command_style;
+
 /* The metadata style.  */
 extern cli_style_option metadata_style;
 

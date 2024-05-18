@@ -1875,7 +1875,8 @@ Type \"help%s\" followed by a class name for a list of commands in ",
       gdb_printf (stream, "that class.");
 
       gdb_printf (stream, "\n\
-Type \"help all\" for the list of all commands.");
+Type \"%ps\" for the list of all commands.",
+		  styled_string (command_style.style (), "help all"));
     }
 
   gdb_printf (stream, "\nType \"help%s\" followed by %scommand name ",
@@ -1886,9 +1887,12 @@ Type \"help all\" for the list of all commands.");
   gdb_puts ("full ", stream);
   stream->wrap_here (0);
   gdb_puts ("documentation.\n", stream);
-  gdb_puts ("Type \"apropos word\" to search "
-	    "for commands related to \"word\".\n", stream);
-  gdb_puts ("Type \"apropos -v word\" for full documentation", stream);
+  gdb_printf (stream,
+	      "Type \"%ps\" to search "
+	      "for commands related to \"word\".\n",
+	      styled_string (command_style.style (), "apropos word"));
+  gdb_printf (stream, "Type \"%ps\" for full documentation",
+	      styled_string (command_style.style (), "apropos -v word"));
   stream->wrap_here (0);
   gdb_puts (" of commands related to \"word\".\n", stream);
   gdb_puts ("Command name abbreviations are allowed if unambiguous.\n",
