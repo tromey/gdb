@@ -5591,24 +5591,31 @@ rbreak_command (const char *regexp, int from_tty)
   scoped_rbreak_breakpoints finalize;
   for (const symbol_search &p : symbols)
     {
-      if (p.msymbol.minsym == NULL)
+      try
 	{
-	  struct symtab *symtab = p.symbol->symtab ();
-	  const char *fullname = symtab_to_fullname (symtab);
+	  if (p.msymbol.minsym == NULL)
+	    {
+	      struct symtab *symtab = p.symbol->symtab ();
+	      const char *fullname = symtab_to_fullname (symtab);
 
-	  string = string_printf ("%s:'%s'", fullname,
-				  p.symbol->linkage_name ());
-	  break_command (&string[0], from_tty);
-	  print_symbol_info (p.symbol, p.block, nullptr);
+	      string = string_printf ("%s:'%s'", fullname,
+				      p.symbol->linkage_name ());
+	      break_command (&string[0], from_tty);
+	      print_symbol_info (p.symbol, p.block, nullptr);
+	    }
+	  else
+	    {
+	      string = string_printf ("'%s'",
+				      p.msymbol.minsym->linkage_name ());
+
+	      break_command (&string[0], from_tty);
+	      gdb_printf ("<function, no debug info> %s;\n",
+			  p.msymbol.minsym->print_name ());
+	    }
 	}
-      else
+      catch (const gdb_exception_error &ex)
 	{
-	  string = string_printf ("'%s'",
-				  p.msymbol.minsym->linkage_name ());
-
-	  break_command (&string[0], from_tty);
-	  gdb_printf ("<function, no debug info> %s;\n",
-		      p.msymbol.minsym->print_name ());
+	  exception_print (gdb_stderr, ex);
 	}
     }
 }
