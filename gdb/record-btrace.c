@@ -3134,10 +3134,10 @@ Set what memory accesses are allowed during replay."), _("\
 Show what memory accesses are allowed during replay."),
 			   _("Default is READ-ONLY.\n\n\
 The btrace record target does not trace data.\n\
-The memory therefore corresponds to the live target and not \
+The memory therefore corresponds to the live target and not\n\
 to the current replay position.\n\n\
 When READ-ONLY, allow accesses to read-only memory during replay.\n\
-When READ-WRITE, allow accesses to read-only and read-write memory during \
+When READ-WRITE, allow accesses to read-only and read-write memory during\n\
 replay."),
 			   NULL, cmd_show_replay_memory_access,
 			   &set_record_btrace_cmdlist,
@@ -3181,10 +3181,10 @@ Show the cpu to be used for trace decode."),
 			    &record_btrace_conf.bts.size,
 			    _("Set the record/replay bts buffer size."),
 			    _("Show the record/replay bts buffer size."), _("\
-When starting recording request a trace buffer of this size.  \
-The actual buffer size may differ from the requested size.  \
+When starting recording request a trace buffer of this size.\n\
+The actual buffer size may differ from the requested size.\n\
 Use \"info record\" to see the actual buffer size.\n\n\
-Bigger buffers allow longer recording but also take more time to process \
+Bigger buffers allow longer recording but also take more time to process\n\
 the recorded execution trace.\n\n\
 The trace buffer size may not be changed while recording."), NULL,
 			    show_record_bts_buffer_size_value,
@@ -3203,9 +3203,9 @@ The trace buffer size may not be changed while recording."), NULL,
 			    &record_btrace_conf.pt.size,
 			    _("Set the record/replay pt buffer size."),
 			    _("Show the record/replay pt buffer size."), _("\
-Bigger buffers allow longer recording but also take more time to process \
+Bigger buffers allow longer recording but also take more time to process\n\
 the recorded execution.\n\
-The actual buffer size may differ from the requested size.  Use \"info record\" \
+The actual buffer size may differ from the requested size.  Use \"info record\"\n\
 to see the actual buffer size."), NULL, show_record_pt_buffer_size_value,
 			    &set_record_btrace_pt_cmdlist,
 			    &show_record_btrace_pt_cmdlist);

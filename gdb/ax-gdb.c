@@ -2655,7 +2655,8 @@ If not, generate remote agent bytecode for current frame pc address."),
 	   &maintenancelist);
 
   add_cmd ("agent-printf", class_maintenance, maint_agent_printf_command,
-	   _("Translate an expression into remote "
-	     "agent bytecode for evaluation and display the bytecodes."),
+	   _("\
+Translate an expression into remote agent bytecode display the bytecodes.\n\
+The expression is translated for evaluation, not tracing."),
 	   &maintenancelist);
 }
