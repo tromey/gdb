@@ -1,6 +1,6 @@
 /* Python green thread interface.
 
-   Copyright (C) 2023 Free Software Foundation, Inc.
+   Copyright (C) 2023, 2024 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -88,8 +88,7 @@ py_green_thread::fetch_registers (struct regcache *regcache, int regnum) const
     }
 
   scoped_restore set_regcache = make_scoped_restore (&m_regcache, regcache);
-  gdbpy_ref<> result (PyObject_CallMethod (m_obj.get (), "fetch", "O",
-					   reg_obj.get ()));
+  gdbpy_ref<> result (gdbpy_call_method (m_obj.get (), "fetch", reg_obj.get ()));
   if (result == nullptr)
     gdbpy_handle_exception ();
 }
@@ -110,8 +109,7 @@ py_green_thread::store_registers (struct regcache *regcache, int regnum) const
     }
 
   scoped_restore set_regcache = make_scoped_restore (&m_regcache, regcache);
-  gdbpy_ref<> result (PyObject_CallMethod (m_obj.get (), "store", "O",
-					   reg_obj.get ()));
+  gdbpy_ref<> result (gdbpy_call_method (m_obj.get (), "store", reg_obj.get ()));
   if (result == nullptr)
     gdbpy_handle_exception ();
 }
@@ -121,9 +119,7 @@ py_green_thread::underlying_thread () const
 {
   gdbpy_enter enter_py;
 
-  gdbpy_ref<> result (PyObject_CallMethod (m_obj.get (),
-					   "underlying_thread",
-					   nullptr));
+  gdbpy_ref<> result (gdbpy_call_method (m_obj.get (), "underlying_thread"));
   if (result == nullptr)
     gdbpy_handle_exception ();
   if (result == Py_None)
@@ -139,7 +135,7 @@ py_green_thread::get_pid_name () const
 {
   gdbpy_enter enter_py;
 
-  gdbpy_ref<> result (PyObject_CallMethod (m_obj.get (), "name", nullptr));
+  gdbpy_ref<> result (gdbpy_call_method (m_obj.get (), "name"));
   if (result == nullptr)
     gdbpy_handle_exception ();
   gdb::unique_xmalloc_ptr<char> str = gdbpy_obj_to_string (result.get ());

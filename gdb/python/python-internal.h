@@ -174,6 +174,12 @@ struct gdbpy_method_format<unsigned>
   static constexpr char format = 'I';
 };
 
+template<>
+struct gdbpy_method_format<PyObject *>
+{
+  static constexpr char format = 'O';
+};
+
 /* A helper function to compute the PyObject_CallMethod /
    Py_BuildValue format given the argument types.  */
 
