@@ -2372,6 +2372,8 @@ get_prev_frame_always_1 (const frame_info_ptr &this_frame)
       struct minimal_symbol *morestack_msym;
       const char *morestack_name = NULL;
 
+      // FIXME
+
       /* gcc -fsplit-stack __morestack can continue the stack anywhere.  */
       this_pc_in_block = get_frame_address_in_block (this_frame);
       morestack_msym = lookup_minimal_symbol_by_pc (this_pc_in_block).minsym;
