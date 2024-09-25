@@ -20,6 +20,9 @@ import gdb
 the_window = None
 
 
+tui_status = False
+
+
 class TestWindow:
     def __init__(self, win):
         global the_window
@@ -62,3 +65,11 @@ def change_window_title():
 
 
 gdb.register_window_type("fail", failwin)
+
+
+def set_tui_status(ev):
+    global tui_status
+    tui_status = ev.status
+
+
+gdb.events.tui_status.connect(set_tui_status)

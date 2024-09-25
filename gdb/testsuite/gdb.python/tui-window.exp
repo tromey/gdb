@@ -43,6 +43,9 @@ if {![Term::enter_tui]} {
     return
 }
 
+Term::command "python print('tui_status=' + str(tui_status))"
+Term::check_contents "tui start event" "tui_status=True"
+
 Term::command "layout test"
 Term::check_contents "test title" \
     "This Is The Title"
@@ -63,3 +66,8 @@ Term::resize 51 51
 Term::check_contents "Window was updated" "Test: 2"
 
 Term::command "layout fail"
+
+Term::command "tui disable"
+gdb_test "python print('tui_status=' + str(tui_status))" \
+    "tui_status=False" \
+    "tui disable event"
