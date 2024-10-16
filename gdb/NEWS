@@ -51,6 +51,8 @@
 
 * Python API
 
+  ** GDB no longer supports Python versions less than 3.4.
+
   ** Added gdb.record.clear.  Clears the trace data of the current recording.
      This forces re-decoding of the trace for successive commands.
 
