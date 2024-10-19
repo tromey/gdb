@@ -10812,7 +10812,7 @@ remote_target::extended_remote_run (const char *exec_file,
 	 possible.  */
       if (result.textual_err_msg ())
 	error (("%s"), result.err_msg ());
-      if (remote_exec_file[0] == '\0')
+      if (exec_file[0] == '\0')
 	error (_("Running the default executable on the remote target failed; "
 		 "try \"set remote exec-file\"?"));
       else
