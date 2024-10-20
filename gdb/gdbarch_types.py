@@ -157,7 +157,7 @@ class Function(Component):
     def set_list(self):
         """Return the formal parameter list of the caller function,
         as a string.  This list includes the gdbarch."""
-        arch_arg = ("struct gdbarch *", "gdbarch")
+        arch_arg = ("const struct gdbarch *", "gdbarch")
         arch_tuple = [arch_arg]
         return join_params(arch_tuple + list(self.params))
 
@@ -172,6 +172,16 @@ class Method(Function):
     def param_list(self):
         "See superclass."
         return self.set_list()
+
+    def set_list(self):
+        """Return the formal parameter list of the caller function,
+        as a string.  This list includes the gdbarch."""
+        # Note the gdbarch parameter is not 'const' -- this is
+        # desirable but requires modifying a large number of callback
+        # functions.
+        arch_arg = ("struct gdbarch *", "gdbarch")
+        arch_tuple = [arch_arg]
+        return join_params(arch_tuple + list(self.params))
 
     def actuals(self):
         "See superclass."

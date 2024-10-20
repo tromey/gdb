@@ -59,7 +59,7 @@ with open("gdbarch-gen.h", "w") as f:
     for c in filter(info, components):
         print(file=f)
         print(
-            f"""extern {c.type} gdbarch_{c.name} (struct gdbarch *gdbarch);
+            f"""extern {c.type} gdbarch_{c.name} (const struct gdbarch *gdbarch);
 /* set_gdbarch_{c.name}() - not applicable - pre-initialized.  */""",
             file=f,
         )
@@ -91,12 +91,15 @@ with open("gdbarch-gen.h", "w") as f:
 
         if c.predicate:
             print(file=f)
-            print(f"extern bool gdbarch_{c.name}_p (struct gdbarch *gdbarch);", file=f)
+            print(
+                f"extern bool gdbarch_{c.name}_p (const struct gdbarch *gdbarch);",
+                file=f,
+            )
 
         print(file=f)
         if isinstance(c, Value):
             print(
-                f"extern {c.type} gdbarch_{c.name} (struct gdbarch *gdbarch);",
+                f"extern {c.type} gdbarch_{c.name} (const struct gdbarch *gdbarch);",
                 file=f,
             )
             print(
@@ -295,7 +298,7 @@ with open("gdbarch-gen.c", "w") as f:
         if c.predicate:
             print(file=f)
             print("bool", file=f)
-            print(f"gdbarch_{c.name}_p (struct gdbarch *gdbarch)", file=f)
+            print(f"gdbarch_{c.name}_p (const struct gdbarch *gdbarch)", file=f)
             print("{", file=f)
             print("  gdb_assert (gdbarch != NULL);", file=f)
             print(f"  return {c.get_predicate()};", file=f)
@@ -347,7 +350,7 @@ with open("gdbarch-gen.c", "w") as f:
         elif isinstance(c, Value):
             print(file=f)
             print(f"{c.type}", file=f)
-            print(f"gdbarch_{c.name} (struct gdbarch *gdbarch)", file=f)
+            print(f"gdbarch_{c.name} (const struct gdbarch *gdbarch)", file=f)
             print("{", file=f)
             print("  gdb_assert (gdbarch != NULL);", file=f)
             if isinstance(c.invalid, str):
@@ -382,7 +385,7 @@ with open("gdbarch-gen.c", "w") as f:
             assert isinstance(c, Info)
             print(file=f)
             print(f"{c.type}", file=f)
-            print(f"gdbarch_{c.name} (struct gdbarch *gdbarch)", file=f)
+            print(f"gdbarch_{c.name} (const struct gdbarch *gdbarch)", file=f)
             print("{", file=f)
             print("  gdb_assert (gdbarch != NULL);", file=f)
             print("  if (gdbarch_debug >= 2)", file=f)
