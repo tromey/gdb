@@ -16178,6 +16178,7 @@ cooked_indexer::scan_attributes (dwarf2_per_cu_data *scanning_per_cu,
   std::optional<unrelocated_addr> low_pc;
   std::optional<unrelocated_addr> high_pc;
   bool high_pc_relative = false;
+  bool inlined = false;
 
   for (int i = 0; i < abbrev->num_attrs; ++i)
     {
@@ -16300,6 +16301,14 @@ cooked_indexer::scan_attributes (dwarf2_per_cu_data *scanning_per_cu,
 				  m_index_storage->get_addrmap (),
 				  scanning_per_cu, abbrev->tag);
 	    }
+	  break;
+
+	case DW_AT_inline:
+	  {
+	    ULONGEST val = attr.constant_value (0);
+	    if (val == DW_INL_inlined || val == DW_INL_declared_inlined)
+	      inlined = true;
+	  }
 	  break;
 	}
     }
@@ -16611,7 +16620,6 @@ cooked_indexer::index_dies (cutu_reader *reader,
 	     have linkage name present but name is absent.  */
 	  if (name != nullptr
 	      || (abbrev->tag != DW_TAG_subprogram
-		  && abbrev->tag != DW_TAG_inlined_subroutine
 		  && abbrev->tag != DW_TAG_entry_point))
 	    flags = flags | IS_LINKAGE;
 	  m_index_storage->add (this_die, abbrev->tag, flags,
