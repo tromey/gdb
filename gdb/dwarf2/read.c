@@ -16613,7 +16613,6 @@ cooked_indexer::index_dies (cutu_reader *reader,
 	      = m_index_storage->add (this_die, abbrev->tag, flags, name,
 				      this_parent_entry, m_per_cu);
 	  if (is_inlined)
-	    // Note which CU we use here.
 	    m_index_storage->add_inlined (reader->cu->per_cu, this_entry);
 	}
 
@@ -16633,8 +16632,6 @@ cooked_indexer::index_dies (cutu_reader *reader,
 	    = m_index_storage->add (this_die, abbrev->tag, flags,
 				    linkage_name, nullptr, m_per_cu);
 	  if (is_inlined)
-	    // FIXME do we need the per-cu here.
-	    // kind of sad we have to do this
 	    m_index_storage->add_inlined (reader->cu->per_cu, linkage_entry);
 	}
 
