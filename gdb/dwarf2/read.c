@@ -16635,7 +16635,7 @@ cooked_indexer::index_dies (cutu_reader *reader,
 	  if (is_inlined)
 	    // FIXME do we need the per-cu here.
 	    // kind of sad we have to do this
-	    m_index_storage->add_inlined (reader->cu->per_cu, linkage_name);
+	    m_index_storage->add_inlined (reader->cu->per_cu, linkage_entry);
 	}
 
       if (abbrev->has_children)
