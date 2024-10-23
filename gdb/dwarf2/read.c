@@ -4559,6 +4559,7 @@ private:
 				   const cooked_index_entry **parent_entry,
 				   parent_map::addr_type *maybe_defer,
 				   bool *is_enum_class,
+				   bool *is_inlined,
 				   bool for_specification);
 
   /* Handle DW_TAG_imported_unit, by scanning the DIE to find
@@ -16120,6 +16121,8 @@ cooked_indexer::ensure_cu_exists (cutu_reader *reader,
     = dwarf2_find_containing_comp_unit (sect_off, is_dwz,
 					per_objfile->per_bfd);
 
+  m_index_storage->record_inclusion (reader->cu->per_cu, per_cu);
+
   /* When scanning, we only want to visit a given CU a single time.
      Doing this check here avoids self-imports as well.  */
   if (for_scanning)
@@ -16169,6 +16172,7 @@ cooked_indexer::scan_attributes (dwarf2_per_cu_data *scanning_per_cu,
 				 const cooked_index_entry **parent_entry,
 				 parent_map::addr_type *maybe_defer,
 				 bool *is_enum_class,
+				 bool *is_inlined,
 				 bool for_specification)
 {
   bool origin_is_dwz = false;
@@ -16178,7 +16182,6 @@ cooked_indexer::scan_attributes (dwarf2_per_cu_data *scanning_per_cu,
   std::optional<unrelocated_addr> low_pc;
   std::optional<unrelocated_addr> high_pc;
   bool high_pc_relative = false;
-  bool inlined = false;
 
   for (int i = 0; i < abbrev->num_attrs; ++i)
     {
@@ -16307,7 +16310,7 @@ cooked_indexer::scan_attributes (dwarf2_per_cu_data *scanning_per_cu,
 	  {
 	    ULONGEST val = attr.constant_value (0);
 	    if (val == DW_INL_inlined || val == DW_INL_declared_inlined)
-	      inlined = true;
+	      *is_inlined = true;
 	  }
 	  break;
 	}
@@ -16389,7 +16392,7 @@ cooked_indexer::scan_attributes (dwarf2_per_cu_data *scanning_per_cu,
 	scan_attributes (scanning_per_cu, new_reader, new_info_ptr,
 			 new_info_ptr, new_abbrev, name, linkage_name,
 			 flags, nullptr, parent_entry, maybe_defer,
-			 is_enum_class, true);
+			 is_enum_class, is_inlined, true);
     }
 
   if (!for_specification)
@@ -16568,6 +16571,7 @@ cooked_indexer::index_dies (cutu_reader *reader,
       sect_offset sibling {};
       const cooked_index_entry *this_parent_entry = parent_entry;
       bool is_enum_class = false;
+      bool is_inlined = false;
 
       /* The scope of a DW_TAG_entry_point cooked_index_entry is the one of
 	 its surrounding subroutine.  */
@@ -16576,7 +16580,7 @@ cooked_indexer::index_dies (cutu_reader *reader,
       info_ptr = scan_attributes (reader->cu->per_cu, reader, info_ptr,
 				  info_ptr, abbrev, &name, &linkage_name,
 				  &flags, &sibling, &this_parent_entry,
-				  &defer, &is_enum_class, false);
+				  &defer, &is_enum_class, &is_inlined, false);
       /* A DW_TAG_entry_point inherits its static/extern property from
 	 the enclosing subroutine.  */
       if (abbrev->tag == DW_TAG_entry_point)
@@ -16608,6 +16612,9 @@ cooked_indexer::index_dies (cutu_reader *reader,
 	    this_entry
 	      = m_index_storage->add (this_die, abbrev->tag, flags, name,
 				      this_parent_entry, m_per_cu);
+	  if (is_inlined)
+	    // Note which CU we use here.
+	    m_index_storage->add_inlined (reader->cu->per_cu, this_entry);
 	}
 
       if (linkage_name != nullptr)
@@ -16622,8 +16629,13 @@ cooked_indexer::index_dies (cutu_reader *reader,
 	      || (abbrev->tag != DW_TAG_subprogram
 		  && abbrev->tag != DW_TAG_entry_point))
 	    flags = flags | IS_LINKAGE;
-	  m_index_storage->add (this_die, abbrev->tag, flags,
-				linkage_name, nullptr, m_per_cu);
+	  cooked_index_entry *linkage_entry
+	    = m_index_storage->add (this_die, abbrev->tag, flags,
+				    linkage_name, nullptr, m_per_cu);
+	  if (is_inlined)
+	    // FIXME do we need the per-cu here.
+	    // kind of sad we have to do this
+	    m_index_storage->add_inlined (reader->cu->per_cu, linkage_name);
 	}
 
       if (abbrev->has_children)

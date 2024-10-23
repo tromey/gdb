@@ -240,7 +240,11 @@ struct cooked_index_entry : public allocate_on_obstack<cooked_index_entry>
   ENUM_BITFIELD (language) lang : LANGUAGE_BITS;
   /* The offset of this DIE.  */
   sect_offset die_offset;
-  /* The CU from which this entry originates.  */
+  /* The CU from which this entry originates.  When one CU imports
+     another, this will point to the outermost CU on whose behalf the
+     imported CU was read.  (If there are multiple such CUs, one is
+     chosen via a race.)  Note, though, that for the case of inline
+     functions, the entry will be cloned once for each such CU.  */
   dwarf2_per_cu_data *per_cu;
 
 private:
@@ -428,6 +432,28 @@ public:
     return std::move (m_parent_map);
   }
 
+  /* Record that the FROM CU included the TO CU.  */
+  void record_inclusion (dwarf2_per_cu_data *from,
+			 dwarf2_per_cu_data *to)
+  {
+    m_inclusions[from].push_back (to);
+  }
+
+  /* Take note of an inline function (a function with DW_AT_inline
+     indicating that it has in fact bee inlined) that appeared in CU.
+     Note that CU must be the one in which the entry appeared (unlike
+     the entry's CU, which is the outermost includer).  The
+     finalization step will then clone all such inlined function
+     entries into *all* the outermost includers, not just the one that
+     happened to win the race.  This is needed because a lookup
+     matching such a function must cause the expansion of all inlining
+     CUs; and furthermore having cloned entries makes any written
+     indexes correct as well.  */
+  void add_inlined (dwarf2_per_cu_data *cu, cooked_index_entry *entry)
+  {
+    m_inlines[cu].push_back (entry);
+  }
+
 private:
 
   /* Hash function for a cutu_reader.  */
@@ -448,6 +474,16 @@ private:
 
   /* A writeable addrmap being constructed by this scanner.  */
   addrmap_mutable m_addrmap;
+
+  /* Map from a CU to a list of all inline functions found in that
+     CU.  */
+  std::unordered_map<dwarf2_per_cu_data *,
+		     std::vector<cooked_index_entry *>> m_inlines;
+
+  /* Map from a CU to a list of all the CUs that it directly
+     includes.  */
+  std::unordered_map<dwarf2_per_cu_data *,
+		     std::vector<dwarf2_per_cu_data *>> m_inclusions;
 };
 
 /* The possible states of the index.  See the explanatory comment
