@@ -687,17 +687,6 @@ Method(
 )
 
 Method(
-    type="void",
-    name="print_vector_info",
-    params=[
-        ("struct ui_file *", "file"),
-        ("const frame_info_ptr &", "frame"),
-        ("const char *", "args"),
-    ],
-    predicate=True,
-)
-
-Method(
     comment="""
 MAP a GDB RAW register number onto a simulator register number.  See
 also include/...-sim.h.

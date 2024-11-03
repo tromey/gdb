@@ -96,7 +96,6 @@ struct gdbarch
   gdbarch_code_of_frame_writable_ftype *code_of_frame_writable = default_code_of_frame_writable;
   gdbarch_print_registers_info_ftype *print_registers_info = default_print_registers_info;
   gdbarch_print_float_info_ftype *print_float_info = default_print_float_info;
-  gdbarch_print_vector_info_ftype *print_vector_info = nullptr;
   gdbarch_register_sim_regno_ftype *register_sim_regno = legacy_register_sim_regno;
   gdbarch_cannot_fetch_register_ftype *cannot_fetch_register = cannot_register_not;
   gdbarch_cannot_store_register_ftype *cannot_store_register = cannot_register_not;
@@ -355,7 +354,6 @@ verify_gdbarch (struct gdbarch *gdbarch)
   /* Skip verify of code_of_frame_writable, invalid_p == 0.  */
   /* Skip verify of print_registers_info, invalid_p == 0.  */
   /* Skip verify of print_float_info, invalid_p == 0.  */
-  /* Skip verify of print_vector_info, has predicate.  */
   /* Skip verify of register_sim_regno, invalid_p == 0.  */
   /* Skip verify of cannot_fetch_register, invalid_p == 0.  */
   /* Skip verify of cannot_store_register, invalid_p == 0.  */
@@ -733,12 +731,6 @@ gdbarch_dump (struct gdbarch *gdbarch, struct ui_file *file)
   gdb_printf (file,
 	      "gdbarch_dump: print_float_info = <%s>\n",
 	      host_address_to_string (gdbarch->print_float_info));
-  gdb_printf (file,
-	      "gdbarch_dump: gdbarch_print_vector_info_p() = %d\n",
-	      gdbarch_print_vector_info_p (gdbarch));
-  gdb_printf (file,
-	      "gdbarch_dump: print_vector_info = <%s>\n",
-	      host_address_to_string (gdbarch->print_vector_info));
   gdb_printf (file,
 	      "gdbarch_dump: register_sim_regno = <%s>\n",
 	      host_address_to_string (gdbarch->register_sim_regno));
@@ -2309,30 +2301,6 @@ set_gdbarch_print_float_info (struct gdbarch *gdbarch,
 			      gdbarch_print_float_info_ftype print_float_info)
 {
   gdbarch->print_float_info = print_float_info;
-}
-
-bool
-gdbarch_print_vector_info_p (struct gdbarch *gdbarch)
-{
-  gdb_assert (gdbarch != NULL);
-  return gdbarch->print_vector_info != NULL;
-}
-
-void
-gdbarch_print_vector_info (struct gdbarch *gdbarch, struct ui_file *file, const frame_info_ptr &frame, const char *args)
-{
-  gdb_assert (gdbarch != NULL);
-  gdb_assert (gdbarch->print_vector_info != NULL);
-  if (gdbarch_debug >= 2)
-    gdb_printf (gdb_stdlog, "gdbarch_print_vector_info called\n");
-  gdbarch->print_vector_info (gdbarch, file, frame, args);
-}
-
-void
-set_gdbarch_print_vector_info (struct gdbarch *gdbarch,
-			       gdbarch_print_vector_info_ftype print_vector_info)
-{
-  gdbarch->print_vector_info = print_vector_info;
 }
 
 int
