@@ -4443,8 +4443,7 @@ breakpoint_init_inferior (inferior *inf, inf_context context)
    - When continuing from a location with an ordinary breakpoint, we
      actually single step once before calling insert_breakpoints.
    - When continuing from a location with a permanent breakpoint, we
-     need to use the `SKIP_PERMANENT_BREAKPOINT' macro, provided by
-     the target, to advance the PC past the breakpoint.  */
+     advance the PC past the breakpoint manually.  */
 
 enum breakpoint_here
 breakpoint_here_p (const address_space *aspace, CORE_ADDR pc)

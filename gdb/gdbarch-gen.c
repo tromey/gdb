@@ -186,7 +186,6 @@ struct gdbarch
   const char * gcore_bfd_target = 0;
   int vtable_function_descriptors = 0;
   int vbit_in_delta = 0;
-  gdbarch_skip_permanent_breakpoint_ftype *skip_permanent_breakpoint = default_skip_permanent_breakpoint;
   ULONGEST max_insn_length = 0;
   gdbarch_displaced_step_copy_insn_ftype *displaced_step_copy_insn = nullptr;
   gdbarch_displaced_step_hw_singlestep_ftype *displaced_step_hw_singlestep = default_displaced_step_hw_singlestep;
@@ -450,7 +449,6 @@ verify_gdbarch (struct gdbarch *gdbarch)
   /* Skip verify of gcore_bfd_target, has predicate.  */
   /* Skip verify of vtable_function_descriptors, invalid_p == 0.  */
   /* Skip verify of vbit_in_delta, invalid_p == 0.  */
-  /* Skip verify of skip_permanent_breakpoint, invalid_p == 0.  */
   /* Skip verify of max_insn_length, has predicate.  */
   /* Skip verify of displaced_step_copy_insn, invalid_p == 0.  */
   /* Skip verify of displaced_step_hw_singlestep, invalid_p == 0.  */
@@ -1086,9 +1084,6 @@ gdbarch_dump (struct gdbarch *gdbarch, struct ui_file *file)
   gdb_printf (file,
 	      "gdbarch_dump: vbit_in_delta = %s\n",
 	      plongest (gdbarch->vbit_in_delta));
-  gdb_printf (file,
-	      "gdbarch_dump: skip_permanent_breakpoint = <%s>\n",
-	      host_address_to_string (gdbarch->skip_permanent_breakpoint));
   gdb_printf (file,
 	      "gdbarch_dump: gdbarch_max_insn_length_p() = %d\n",
 	      gdbarch_max_insn_length_p (gdbarch));
@@ -4024,23 +4019,6 @@ set_gdbarch_vbit_in_delta (struct gdbarch *gdbarch,
 			   int vbit_in_delta)
 {
   gdbarch->vbit_in_delta = vbit_in_delta;
-}
-
-void
-gdbarch_skip_permanent_breakpoint (struct gdbarch *gdbarch, struct regcache *regcache)
-{
-  gdb_assert (gdbarch != NULL);
-  gdb_assert (gdbarch->skip_permanent_breakpoint != NULL);
-  if (gdbarch_debug >= 2)
-    gdb_printf (gdb_stdlog, "gdbarch_skip_permanent_breakpoint called\n");
-  gdbarch->skip_permanent_breakpoint (regcache);
-}
-
-void
-set_gdbarch_skip_permanent_breakpoint (struct gdbarch *gdbarch,
-				       gdbarch_skip_permanent_breakpoint_ftype skip_permanent_breakpoint)
-{
-  gdbarch->skip_permanent_breakpoint = skip_permanent_breakpoint;
 }
 
 bool

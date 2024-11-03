@@ -1803,17 +1803,6 @@ significant bit of the pfn for pointers to virtual member functions.
     invalid=False,
 )
 
-Function(
-    comment="""
-Advance PC to next instruction in order to skip a permanent breakpoint.
-""",
-    type="void",
-    name="skip_permanent_breakpoint",
-    params=[("struct regcache *", "regcache")],
-    predefault="default_skip_permanent_breakpoint",
-    invalid=False,
-)
-
 Value(
     comment="""
 The maximum length of an instruction on this architecture in bytes.

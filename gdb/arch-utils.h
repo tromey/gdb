@@ -335,13 +335,6 @@ extern bool default_program_breakpoint_here_p (struct gdbarch *gdbarch,
 
 extern int default_vsyscall_range (struct gdbarch *gdbarch, struct mem_range *range);
 
-/* Default way to advance the PC to the next instruction in order to
-   skip a permanent breakpoint.  Increments the PC by the size of a
-   software breakpoint instruction, as determined with
-   gdbarch_breakpoint_from_pc.  This matches how the breakpoints
-   module determines whether a breakpoint is permanent.  */
-extern void default_skip_permanent_breakpoint (struct regcache *regcache);
-
 /* Symbols for gdbarch_infcall_mmap; their Linux PROT_* system
    definitions would be dependent on compilation host.  */
 #define GDB_MMAP_PROT_READ	0x1	/* Page can be read.  */
