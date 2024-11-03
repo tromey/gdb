@@ -2469,21 +2469,6 @@ Return the "auto" target wide charset.
 
 Value(
     comment="""
-If non-empty, this is a file extension that will be opened in place
-of the file extension reported by the shared library list.
-
-This is most useful for toolchains that use a post-linker tool,
-where the names of the files run on the target differ in extension
-compared to the names of the files GDB should load for debug info.
-""",
-    type="const char *",
-    name="solib_symbols_extension",
-    invalid=False,
-    printer="pstring (gdbarch->solib_symbols_extension)",
-)
-
-Value(
-    comment="""
 If true, the target OS has DOS-based file system semantics.  That
 is, absolute paths include a drive name, and the backslash is
 considered a directory separator.

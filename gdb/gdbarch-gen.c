@@ -231,7 +231,6 @@ struct gdbarch
   gdbarch_guess_tracepoint_registers_ftype *guess_tracepoint_registers = default_guess_tracepoint_registers;
   gdbarch_auto_charset_ftype *auto_charset = default_auto_charset;
   gdbarch_auto_wide_charset_ftype *auto_wide_charset = default_auto_wide_charset;
-  const char * solib_symbols_extension = 0;
   int has_dos_based_file_system = 0;
   gdbarch_gen_return_address_ftype *gen_return_address = default_gen_return_address;
   gdbarch_info_proc_ftype *info_proc = nullptr;
@@ -501,7 +500,6 @@ verify_gdbarch (struct gdbarch *gdbarch)
   /* Skip verify of guess_tracepoint_registers, invalid_p == 0.  */
   /* Skip verify of auto_charset, invalid_p == 0.  */
   /* Skip verify of auto_wide_charset, invalid_p == 0.  */
-  /* Skip verify of solib_symbols_extension, invalid_p == 0.  */
   /* Skip verify of has_dos_based_file_system, invalid_p == 0.  */
   /* Skip verify of gen_return_address, invalid_p == 0.  */
   /* Skip verify of info_proc, has predicate.  */
@@ -1280,9 +1278,6 @@ gdbarch_dump (struct gdbarch *gdbarch, struct ui_file *file)
   gdb_printf (file,
 	      "gdbarch_dump: auto_wide_charset = <%s>\n",
 	      host_address_to_string (gdbarch->auto_wide_charset));
-  gdb_printf (file,
-	      "gdbarch_dump: solib_symbols_extension = %s\n",
-	      pstring (gdbarch->solib_symbols_extension));
   gdb_printf (file,
 	      "gdbarch_dump: has_dos_based_file_system = %s\n",
 	      plongest (gdbarch->has_dos_based_file_system));
@@ -4929,23 +4924,6 @@ set_gdbarch_auto_wide_charset (struct gdbarch *gdbarch,
 			       gdbarch_auto_wide_charset_ftype auto_wide_charset)
 {
   gdbarch->auto_wide_charset = auto_wide_charset;
-}
-
-const char *
-gdbarch_solib_symbols_extension (struct gdbarch *gdbarch)
-{
-  gdb_assert (gdbarch != NULL);
-  /* Skip verify of solib_symbols_extension, invalid_p == 0.  */
-  if (gdbarch_debug >= 2)
-    gdb_printf (gdb_stdlog, "gdbarch_solib_symbols_extension called\n");
-  return gdbarch->solib_symbols_extension;
-}
-
-void
-set_gdbarch_solib_symbols_extension (struct gdbarch *gdbarch,
-				     const char * solib_symbols_extension)
-{
-  gdbarch->solib_symbols_extension = solib_symbols_extension;
 }
 
 int
