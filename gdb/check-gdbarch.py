@@ -84,7 +84,4 @@ for line in fileinput.input(files=files):
 for elt in defined_names - set_names:
     print(f"never set: {elt}")
 for elt in defined_names - called_names:
-    # Don't report _p functions here, predicate=True is sometimes used
-    # to allow optional functions.
-    if not elt.endswith("_p"):
-        print(f"never called: {elt}")
+    print(f"never called: {elt}")

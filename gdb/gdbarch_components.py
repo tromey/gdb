@@ -453,7 +453,7 @@ Implementations should be migrated to implement pseudo_register_write instead.
         ("int", "cookednum"),
         ("const gdb_byte *", "buf"),
     ],
-    predicate=True,
+    invalid=False,
 )
 
 Value(
@@ -1600,7 +1600,7 @@ Fetch the pointer to the ith function argument.
         ("int", "argi"),
         ("struct type *", "type"),
     ],
-    predicate=True,
+    invalid=False,
 )
 
 Method(
@@ -1649,7 +1649,7 @@ Given a bfd OBFD, segment ADDRESS and SIZE, create a memory tag section to be du
     type="asection *",
     name="create_memtag_section",
     params=[("bfd *", "obfd"), ("CORE_ADDR", "address"), ("size_t", "size")],
-    predicate=True,
+    invalid=False,
 )
 
 Method(
@@ -1659,7 +1659,7 @@ Given a memory tag section OSEC, fill OSEC's contents with the appropriate tag d
     type="bool",
     name="fill_memtag_section",
     params=[("asection *", "osec")],
-    predicate=True,
+    invalid=False,
 )
 
 Method(
@@ -1829,7 +1829,7 @@ that case.
     type="displaced_step_copy_insn_closure_up",
     name="displaced_step_copy_insn",
     params=[("CORE_ADDR", "from"), ("CORE_ADDR", "to"), ("struct regcache *", "regs")],
-    predicate=True,
+    invalid=False,
 )
 
 Method(
@@ -1971,8 +1971,7 @@ offset adjusted; etc.
     type="void",
     name="relocate_instruction",
     params=[("CORE_ADDR *", "to"), ("CORE_ADDR", "from")],
-    predicate=True,
-    predefault="NULL",
+    invalid=False,
 )
 
 Function(
