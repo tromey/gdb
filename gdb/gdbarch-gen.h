@@ -1531,12 +1531,6 @@ typedef void (gdbarch_guess_tracepoint_registers_ftype) (struct gdbarch *gdbarch
 extern void gdbarch_guess_tracepoint_registers (struct gdbarch *gdbarch, struct regcache *regcache, CORE_ADDR addr);
 extern void set_gdbarch_guess_tracepoint_registers (struct gdbarch *gdbarch, gdbarch_guess_tracepoint_registers_ftype *guess_tracepoint_registers);
 
-/* Return the "auto" target charset. */
-
-typedef const char * (gdbarch_auto_charset_ftype) ();
-extern const char * gdbarch_auto_charset (struct gdbarch *gdbarch);
-extern void set_gdbarch_auto_charset (struct gdbarch *gdbarch, gdbarch_auto_charset_ftype *auto_charset);
-
 /* Return the "auto" target wide charset. */
 
 typedef const char * (gdbarch_auto_wide_charset_ftype) ();

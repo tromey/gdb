@@ -317,7 +317,6 @@ extern void default_gen_return_address (struct gdbarch *gdbarch,
 					struct axs_value *value,
 					CORE_ADDR scope);
 
-extern const char *default_auto_charset (void);
 extern const char *default_auto_wide_charset (void);
 
 extern int default_return_in_first_hidden_param_p (struct gdbarch *,

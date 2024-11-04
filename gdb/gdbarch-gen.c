@@ -227,7 +227,6 @@ struct gdbarch
   gdbarch_has_shared_address_space_ftype *has_shared_address_space = default_has_shared_address_space;
   gdbarch_fast_tracepoint_valid_at_ftype *fast_tracepoint_valid_at = default_fast_tracepoint_valid_at;
   gdbarch_guess_tracepoint_registers_ftype *guess_tracepoint_registers = default_guess_tracepoint_registers;
-  gdbarch_auto_charset_ftype *auto_charset = default_auto_charset;
   gdbarch_auto_wide_charset_ftype *auto_wide_charset = default_auto_wide_charset;
   int has_dos_based_file_system = 0;
   gdbarch_gen_return_address_ftype *gen_return_address = default_gen_return_address;
@@ -494,7 +493,6 @@ verify_gdbarch (struct gdbarch *gdbarch)
   /* Skip verify of has_shared_address_space, invalid_p == 0.  */
   /* Skip verify of fast_tracepoint_valid_at, invalid_p == 0.  */
   /* Skip verify of guess_tracepoint_registers, invalid_p == 0.  */
-  /* Skip verify of auto_charset, invalid_p == 0.  */
   /* Skip verify of auto_wide_charset, invalid_p == 0.  */
   /* Skip verify of has_dos_based_file_system, invalid_p == 0.  */
   /* Skip verify of gen_return_address, invalid_p == 0.  */
@@ -1259,9 +1257,6 @@ gdbarch_dump (struct gdbarch *gdbarch, struct ui_file *file)
   gdb_printf (file,
 	      "gdbarch_dump: guess_tracepoint_registers = <%s>\n",
 	      host_address_to_string (gdbarch->guess_tracepoint_registers));
-  gdb_printf (file,
-	      "gdbarch_dump: auto_charset = <%s>\n",
-	      host_address_to_string (gdbarch->auto_charset));
   gdb_printf (file,
 	      "gdbarch_dump: auto_wide_charset = <%s>\n",
 	      host_address_to_string (gdbarch->auto_wide_charset));
@@ -4836,23 +4831,6 @@ set_gdbarch_guess_tracepoint_registers (struct gdbarch *gdbarch,
 					gdbarch_guess_tracepoint_registers_ftype guess_tracepoint_registers)
 {
   gdbarch->guess_tracepoint_registers = guess_tracepoint_registers;
-}
-
-const char *
-gdbarch_auto_charset (struct gdbarch *gdbarch)
-{
-  gdb_assert (gdbarch != NULL);
-  gdb_assert (gdbarch->auto_charset != NULL);
-  if (gdbarch_debug >= 2)
-    gdb_printf (gdb_stdlog, "gdbarch_auto_charset called\n");
-  return gdbarch->auto_charset ();
-}
-
-void
-set_gdbarch_auto_charset (struct gdbarch *gdbarch,
-			  gdbarch_auto_charset_ftype auto_charset)
-{
-  gdbarch->auto_charset = auto_charset;
 }
 
 const char *
