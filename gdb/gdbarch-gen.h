@@ -220,8 +220,6 @@ extern void set_gdbarch_pseudo_register_write (struct gdbarch *gdbarch, gdbarch_
 
    Implementations should be migrated to implement pseudo_register_write instead. */
 
-extern bool gdbarch_deprecated_pseudo_register_write_p (struct gdbarch *gdbarch);
-
 typedef void (gdbarch_deprecated_pseudo_register_write_ftype) (struct gdbarch *gdbarch, struct regcache *regcache, int cookednum, const gdb_byte *buf);
 extern void gdbarch_deprecated_pseudo_register_write (struct gdbarch *gdbarch, struct regcache *regcache, int cookednum, const gdb_byte *buf);
 extern void set_gdbarch_deprecated_pseudo_register_write (struct gdbarch *gdbarch, gdbarch_deprecated_pseudo_register_write_ftype *deprecated_pseudo_register_write);
@@ -939,8 +937,6 @@ extern void set_gdbarch_register_reggroup_p (struct gdbarch *gdbarch, gdbarch_re
 
 /* Fetch the pointer to the ith function argument. */
 
-extern bool gdbarch_fetch_pointer_argument_p (struct gdbarch *gdbarch);
-
 typedef CORE_ADDR (gdbarch_fetch_pointer_argument_ftype) (const frame_info_ptr &frame, int argi, struct type *type);
 extern CORE_ADDR gdbarch_fetch_pointer_argument (struct gdbarch *gdbarch, const frame_info_ptr &frame, int argi, struct type *type);
 extern void set_gdbarch_fetch_pointer_argument (struct gdbarch *gdbarch, gdbarch_fetch_pointer_argument_ftype *fetch_pointer_argument);
@@ -976,15 +972,11 @@ extern void set_gdbarch_find_memory_regions (struct gdbarch *gdbarch, gdbarch_fi
 
 /* Given a bfd OBFD, segment ADDRESS and SIZE, create a memory tag section to be dumped to a core file */
 
-extern bool gdbarch_create_memtag_section_p (struct gdbarch *gdbarch);
-
 typedef asection * (gdbarch_create_memtag_section_ftype) (struct gdbarch *gdbarch, bfd *obfd, CORE_ADDR address, size_t size);
 extern asection * gdbarch_create_memtag_section (struct gdbarch *gdbarch, bfd *obfd, CORE_ADDR address, size_t size);
 extern void set_gdbarch_create_memtag_section (struct gdbarch *gdbarch, gdbarch_create_memtag_section_ftype *create_memtag_section);
 
 /* Given a memory tag section OSEC, fill OSEC's contents with the appropriate tag data */
-
-extern bool gdbarch_fill_memtag_section_p (struct gdbarch *gdbarch);
 
 typedef bool (gdbarch_fill_memtag_section_ftype) (struct gdbarch *gdbarch, asection *osec);
 extern bool gdbarch_fill_memtag_section (struct gdbarch *gdbarch, asection *osec);
@@ -1113,8 +1105,6 @@ extern void set_gdbarch_max_insn_length (struct gdbarch *gdbarch, ULONGEST max_i
    core falls back to stepping past the instruction in-line instead in
    that case. */
 
-extern bool gdbarch_displaced_step_copy_insn_p (struct gdbarch *gdbarch);
-
 typedef displaced_step_copy_insn_closure_up (gdbarch_displaced_step_copy_insn_ftype) (struct gdbarch *gdbarch, CORE_ADDR from, CORE_ADDR to, struct regcache *regs);
 extern displaced_step_copy_insn_closure_up gdbarch_displaced_step_copy_insn (struct gdbarch *gdbarch, CORE_ADDR from, CORE_ADDR to, struct regcache *regs);
 extern void set_gdbarch_displaced_step_copy_insn (struct gdbarch *gdbarch, gdbarch_displaced_step_copy_insn_ftype *displaced_step_copy_insn);
@@ -1216,8 +1206,6 @@ extern void set_gdbarch_displaced_step_buffer_length (struct gdbarch *gdbarch, U
    should be adjusted to return to the instruction after OLDLOC;
    relative branches, and other PC-relative instructions need the
    offset adjusted; etc. */
-
-extern bool gdbarch_relocate_instruction_p (struct gdbarch *gdbarch);
 
 typedef void (gdbarch_relocate_instruction_ftype) (struct gdbarch *gdbarch, CORE_ADDR *to, CORE_ADDR from);
 extern void gdbarch_relocate_instruction (struct gdbarch *gdbarch, CORE_ADDR *to, CORE_ADDR from);
