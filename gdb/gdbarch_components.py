@@ -2401,17 +2401,6 @@ On entry, regcache has all registers marked as unavailable.
 
 Function(
     comment="""
-Return the "auto" target charset.
-""",
-    type="const char *",
-    name="auto_charset",
-    params=[],
-    predefault="default_auto_charset",
-    invalid=False,
-)
-
-Function(
-    comment="""
 Return the "auto" target wide charset.
 """,
     type="const char *",
