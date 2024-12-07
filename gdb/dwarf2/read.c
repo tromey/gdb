@@ -1575,6 +1575,23 @@ struct readnow_functions : public dwarf2_base_index_functions
      domain_search_flags domain,
      expand_symtabs_lang_matcher lang_matcher) override
   {
+    dwarf2_per_objfile *per_objfile = get_dwarf2_per_objfile (objfile);
+    auto_bool_vector marked;
+    dw_expand_symtabs_matching_file_matcher (per_objfile, marked,
+					     file_matcher);
+
+    for (const auto &per_cu : per_objfile->per_bfd->all_units)
+      {
+	QUIT;
+
+	if (per_cu->is_debug_types)
+	  continue;
+	if (!dw2_expand_symtabs_matching_one (per_cu.get (), per_objfile,
+					      marked, file_matcher,
+					      expansion_notify,
+					      lang_matcher))
+	  return false;
+      }
     return true;
   }
 };
@@ -2002,13 +2019,15 @@ dw2_expand_symtabs_matching_one
 	return true;
     }
 
-  bool symtab_was_null = !per_objfile->symtab_set_p (per_cu);
   compunit_symtab *symtab
     = dw2_instantiate_symtab (per_cu, per_objfile, false);
   gdb_assert (symtab != nullptr);
 
-  if (expansion_notify != NULL && symtab_was_null)
-    return expansion_notify (symtab);
+  if (expansion_notify != nullptr)
+    {
+      marked.set (per_cu->index, true);
+      return expansion_notify (symtab);
+    }
 
   return true;
 }
@@ -2035,13 +2054,6 @@ dw_expand_symtabs_matching_file_matcher
       QUIT;
 
       if (per_cu->is_debug_types)
-	{
-	  marked.set (per_cu->index, true);
-	  continue;
-	}
-
-      /* We only need to look at symtabs not already expanded.  */
-      if (per_objfile->symtab_set_p (per_cu.get ()))
 	{
 	  marked.set (per_cu->index, true);
 	  continue;
@@ -4413,6 +4425,12 @@ load_full_comp_unit (dwarf2_per_cu *this_cu,
 		      pretend_language);
   if (reader.is_dummy ())
     return;
+
+  /* We always need the file names filled in so that
+     expand_symtabs_matching can match filenames.  It's convenient to
+     do this here.  */
+  if (!this_cu->files_read)
+    dw2_get_file_names_reader (reader.cu (), reader.top_level_die ());
 
   struct dwarf2_cu *cu = reader.cu ();
   const gdb_byte *info_ptr = reader.info_ptr ();
@@ -14864,10 +14882,6 @@ cooked_index_functions::expand_symtabs_matching
 							  completing))
 	{
 	  QUIT;
-
-	  /* No need to consider symbols from expanded CUs.  */
-	  if (per_objfile->symtab_set_p (entry->per_cu))
-	    continue;
 
 	  /* We don't need to consider symbols from some CUs.  */
 	  if (marked.is_set (entry->per_cu->index))
