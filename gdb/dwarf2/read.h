@@ -109,7 +109,6 @@ struct dwarf2_per_cu
       lto_artificial (false),
       queued (false),
       m_header_read_in (false),
-      mark (false),
       files_read (false),
       scanned (false),
       section (section),
@@ -176,10 +175,6 @@ public:
      Don't access this field directly.  It should be private, but we can't make
      it private at the moment.  */
   mutable packed<bool, 1> m_header_read_in;
-
-  /* A temporary mark bit used when iterating over all CUs in
-     expand_symtabs_matching.  */
-  packed<unsigned int, 1> mark;
 
   /* True if we've tried to read the file table.  There will be no
      point in trying to read it again next time.  */
@@ -1169,6 +1164,34 @@ struct dwarf2_base_index_functions : public quick_symbol_functions
 			     bool need_fullname) override;
 };
 
+/* This is used to track whether a CU has already been visited during
+   symbol expansion.  It is an auto-resizing bool vector.  */
+class auto_bool_vector
+{
+public:
+
+  auto_bool_vector () = default;
+
+  /* Return true if element I is set.  */
+  bool is_set (size_t i) const
+  {
+    if (i < m_vec.size ())
+      return m_vec[i];
+    return false;
+  }
+
+  /* Set a value in this vector, growing it automatically.  */
+  void set (size_t i, bool value)
+  {
+    if (m_vec.size () < i + 1)
+      m_vec.resize (i + 1);
+    m_vec[i] = value;
+  }
+
+private:
+  std::vector<bool> m_vec;
+};
+
 /* If FILE_MATCHER is NULL or if PER_CU has
    dwarf2_per_cu_quick_data::MARK set (see
    dw_expand_symtabs_matching_file_matcher), expand the CU and call
@@ -1177,6 +1200,7 @@ struct dwarf2_base_index_functions : public quick_symbol_functions
 extern bool dw2_expand_symtabs_matching_one
   (dwarf2_per_cu *per_cu,
    dwarf2_per_objfile *per_objfile,
+   auto_bool_vector &marked,
    expand_symtabs_file_matcher file_matcher,
    expand_symtabs_expansion_listener expansion_notify,
    expand_symtabs_lang_matcher lang_matcher);
@@ -1187,6 +1211,7 @@ extern bool dw2_expand_symtabs_matching_one
 
 extern void dw_expand_symtabs_matching_file_matcher
   (dwarf2_per_objfile *per_objfile,
+   auto_bool_vector &marked,
    expand_symtabs_file_matcher file_matcher);
 
 /* Return pointer to string at .debug_str offset STR_OFFSET.  */
