@@ -23,7 +23,6 @@
 #include "inferior.h"
 #include "annotate.h"
 #include "ui-out.h"
-#include "serial.h"
 #include "gdbthread.h"
 #include "ui.h"
 #include <optional>
@@ -31,9 +30,6 @@
 static void
 print_flush (void)
 {
-  struct ui *ui = current_ui;
-  struct serial *gdb_stdout_serial;
-
   if (deprecated_error_begin_hook)
     deprecated_error_begin_hook ();
 
@@ -44,22 +40,9 @@ print_flush (void)
       target_terminal::ours_for_output ();
     }
 
-  /* We want all output to appear now, before we print the error.  We
-     have 2 levels of buffering we have to flush (it's possible that
-     some of these should be changed to flush the lower-level ones
-     too):  */
-
-  /* 1.  The stdio buffer.  */
+  /* We want all output to appear now, before we print the error.  */
   gdb_flush (gdb_stdout);
   gdb_flush (gdb_stderr);
-
-  /* 2.  The system-level buffer.  */
-  gdb_stdout_serial = serial_fdopen (fileno (ui->outstream));
-  if (gdb_stdout_serial)
-    {
-      serial_drain_output (gdb_stdout_serial);
-      serial_un_fdopen (gdb_stdout_serial);
-    }
 
   annotate_error_begin ();
 }
