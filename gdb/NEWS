@@ -40,6 +40,12 @@ show riscv numeric-register-names
   (e.g 'x1') or their abi names (e.g. 'ra').
   Defaults to 'off', matching the old behaviour (abi names).
 
+set style emoji on|off|auto
+show style emoji
+  Controls whether GDB can display emoji.  The default is "auto",
+  which means emoji will be displayed in some situations when
+  the host charset is UTF-8.
+
 * Python API
 
   ** New class gdb.Color for dealing with colors.

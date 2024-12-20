@@ -23,6 +23,7 @@
 #include "cli/cli-style.h"
 #include "source-cache.h"
 #include "observable.h"
+#include "charset.h"
 
 /* True if styling is enabled.  */
 
@@ -41,6 +42,10 @@ bool source_styling = true;
    consulted when cli_styling is true.  */
 
 bool disassembler_styling = true;
+
+/* User-settable variable controlling emoji output.  */
+
+static auto_boolean emoji_styling = AUTO_BOOLEAN_AUTO;
 
 /* Names of intensities; must correspond to
    ui_file_style::intensity.  */
@@ -322,6 +327,41 @@ show_style_disassembler (struct ui_file *file, int from_tty,
     gdb_printf (file, _("Disassembler output styling is disabled.\n"));
 }
 
+/* Implement 'show style emoji'.  */
+
+static void
+show_emoji_styling (struct ui_file *file, int from_tty,
+		    struct cmd_list_element *c, const char *value)
+{
+  if (emoji_styling == AUTO_BOOLEAN_TRUE)
+    gdb_printf (file, _("CLI emoji styling is enabled.\n"));
+  else if (emoji_styling == AUTO_BOOLEAN_FALSE)
+    gdb_printf (file, _("CLI emoji styling is disabled.\n"));
+  else
+    gdb_printf (file, _("CLI emoji styling is automatic (currently %s).\n"),
+		emojis_ok () ? _("enabled") : _("disabled"));
+}
+
+/* See cli-style.h.  */
+
+bool
+emojis_ok ()
+{
+  if (!cli_styling || emoji_styling == AUTO_BOOLEAN_FALSE)
+    return false;
+  if (emoji_styling == AUTO_BOOLEAN_TRUE)
+    return true;
+  return strcmp (host_charset (), "UTF-8") == 0;
+}
+
+/* See cli-style.h.  */
+
+void
+no_emojis ()
+{
+  emoji_styling = AUTO_BOOLEAN_FALSE;
+}
+
 void _initialize_cli_style ();
 void
 _initialize_cli_style ()
@@ -341,6 +381,13 @@ Set whether CLI styling is enabled."), _("\
 Show whether CLI is enabled."), _("\
 If enabled, output to the terminal is styled."),
 			   set_style_enabled, show_style_enabled,
+			   &style_set_list, &style_show_list);
+
+  add_setshow_auto_boolean_cmd ("emoji", no_class, &emoji_styling, _("\
+Set whether emoji output is enabled."), _("\
+Show whether emoji output is enabled."), _("\
+If enabled, emojis may be displayed."),
+			   nullptr, show_emoji_styling,
 			   &style_set_list, &style_show_list);
 
   add_setshow_boolean_cmd ("sources", no_class, &source_styling, _("\

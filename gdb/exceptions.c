@@ -27,6 +27,7 @@
 #include "gdbthread.h"
 #include "ui.h"
 #include <optional>
+#include "cli/cli-style.h"
 
 static void
 print_flush (void)
@@ -107,6 +108,8 @@ exception_print (struct ui_file *file, const struct gdb_exception &e)
   if (e.reason < 0 && e.message != NULL)
     {
       print_flush ();
+      if (emojis_ok ())
+	gdb_puts ("❌️ ", file);
       print_exception (file, e);
     }
 }
@@ -120,6 +123,9 @@ exception_fprintf (struct ui_file *file, const struct gdb_exception &e,
       va_list args;
 
       print_flush ();
+
+      if (emojis_ok ())
+	gdb_puts ("❌️ ", file);
 
       /* Print the prefix.  */
       va_start (args, prefix);

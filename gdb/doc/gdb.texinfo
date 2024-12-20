@@ -27881,6 +27881,16 @@ value, then @value{GDBN} will change this to @samp{off} at startup.
 @item show style enabled
 Show the current state of styling.
 
+@item set style emoji @samp{auto|on|off}
+Enable or disable the use of emoji.  On most hosts, the default is
+@samp{auto}, meaning that emoji will only be used if the host
+character set is @samp{UTF-8}; however, on Windows the default is
+@samp{off} when using the console.  Note that disabling styling as a
+whole will also prevent emoji display.
+
+@item show style emoji
+Show the current state of emoji output.
+
 @item set style sources @samp{on|off}
 Enable or disable source code styling.  This affects whether source
 code, such as the output of the @code{list} command, is styled.  The
