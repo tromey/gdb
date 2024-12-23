@@ -124,6 +124,18 @@ struct main_info
 
 static const registry<program_space>::key<main_info> main_progspace_key;
 
+/* Ensure that the current language has been set.  Normally the
+   language is set lazily.  However, when performing a symbol lookup,
+   this could result in a recursive call into the lookup code in some
+   cases.  This function can be called to ensure that this does not
+   happen.  */
+
+static void
+require_language_to_be_set ()
+{
+  get_current_language ();
+}
+
 /* The default symbol cache size.
    There is no extra cpu cost for large N (except when flushing the cache,
    which is rare).  The value here is just a first attempt.  A better default
@@ -2295,6 +2307,8 @@ lookup_symbol_in_block (const char *name, symbol_name_match_type match_type,
 {
   struct symbol *sym;
 
+  require_language_to_be_set ();
+
   if (symbol_lookup_debug)
     {
       struct objfile *objfile
@@ -2329,6 +2343,8 @@ lookup_global_symbol_from_objfile (struct objfile *main_objfile,
 				   const domain_search_flags domain)
 {
   gdb_assert (block_index == GLOBAL_BLOCK || block_index == STATIC_BLOCK);
+
+  require_language_to_be_set ();
 
   for (objfile *objfile : main_objfile->separate_debug_objfiles ())
     {
@@ -2554,6 +2570,8 @@ lookup_symbol_in_static_block (const char *name,
 			       const struct block *block,
 			       const domain_search_flags domain)
 {
+  require_language_to_be_set ();
+
   if (block == nullptr)
     return {};
 
@@ -2679,6 +2697,7 @@ lookup_global_or_static_symbol (const char *name,
 struct block_symbol
 lookup_static_symbol (const char *name, const domain_search_flags domain)
 {
+  require_language_to_be_set ();
   return lookup_global_or_static_symbol (name, STATIC_BLOCK, nullptr, domain);
 }
 
@@ -2689,6 +2708,8 @@ lookup_global_symbol (const char *name,
 		      const struct block *block,
 		      const domain_search_flags domain)
 {
+  require_language_to_be_set ();
+
   /* If a block was passed in, we want to search the corresponding
      global block first.  This yields "more expected" behavior, and is
      needed to support 'FILENAME'::VARIABLE lookups.  */
