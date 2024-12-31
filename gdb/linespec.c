@@ -1134,12 +1134,7 @@ iterate_over_all_matching_symtabs
 
       for (objfile *objfile : pspace->objfiles ())
 	{
-	  objfile->expand_symtabs_matching (NULL, &lookup_name, NULL, NULL,
-					    (SEARCH_GLOBAL_BLOCK
-					     | SEARCH_STATIC_BLOCK),
-					    domain);
-
-	  for (compunit_symtab *cu : objfile->compunits ())
+	  auto expand_callback = [&] (compunit_symtab *cu)
 	    {
 	      struct symtab *symtab = cu->primary_filetab ();
 
@@ -1166,7 +1161,15 @@ iterate_over_all_matching_symtabs
 			 });
 		    }
 		}
-	    }
+
+	      return true;
+	    };
+
+	  objfile->expand_symtabs_matching (nullptr, &lookup_name,
+					    nullptr, expand_callback,
+					    (SEARCH_GLOBAL_BLOCK
+					     | SEARCH_STATIC_BLOCK),
+					    domain);
 	}
     }
 }
