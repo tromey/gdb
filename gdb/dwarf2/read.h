@@ -1309,4 +1309,10 @@ extern int dwarf2_ranges_read (unsigned offset, unrelocated_addr *low_return,
 extern file_and_directory &find_file_and_directory (die_info *die,
 						    dwarf2_cu *cu);
 
+/* A helper function that decides if a given symbol is an Ada Pragma
+   Import or Pragma Export.  */
+
+extern bool is_ada_import_or_export (dwarf2_cu *cu, const char *name,
+				     const char *linkagename);
+
 #endif /* GDB_DWARF2_READ_H */
