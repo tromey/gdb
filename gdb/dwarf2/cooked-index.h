@@ -807,6 +807,8 @@ struct cooked_index_functions : public dwarf2_base_index_functions
   {
     wait (objfile, false);
   }
+
+  void consistency_check (objfile *objfile) override;
 };
 
 #endif /* GDB_DWARF2_COOKED_INDEX_H */

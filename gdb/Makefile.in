@@ -1093,6 +1093,7 @@ COMMON_SFILES = \
 	dwarf2/aranges.c \
 	dwarf2/attribute.c \
 	dwarf2/comp-unit-head.c \
+	dwarf2/consistency.c \
 	dwarf2/cooked-index.c \
 	dwarf2/cu.c \
 	dwarf2/die.c \
