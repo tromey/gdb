@@ -1220,6 +1220,18 @@ Selftests have been disabled for this build.\n"));
 #endif
 }
 
+/* Check consistency of currently expanded psymtabs vs symtabs.  */
+
+static void
+maintenance_check_psymtabs (const char *ignore, int from_tty)
+{
+  for (objfile *objfile : current_program_space->objfiles ())
+    {
+      for (const auto &iter : objfile->qf)
+	iter->consistency_check (objfile);
+    }
+}
+
 
 void _initialize_maint_cmds ();
 void
@@ -1451,6 +1463,11 @@ If a filter is given, only the tests with that value in their name will ran."),
 
   add_cmd ("selftests", class_maintenance, maintenance_info_selftests,
 	 _("List the registered selftests."), &maintenanceinfolist);
+
+  add_cmd ("psymtabs", class_maintenance, maintenance_check_psymtabs,
+	   _("\
+Check consistency of currently expanded psymtabs versus symtabs."),
+	   &maintenancechecklist);
 
   add_setshow_boolean_cmd ("profile", class_maintenance,
 			   &maintenance_profile_p, _("\

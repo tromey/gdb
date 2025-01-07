@@ -651,6 +651,8 @@ struct psymbol_functions : public quick_symbol_functions
 			     gdb::function_view<symbol_filename_ftype> fun,
 			     bool need_fullname) override;
 
+  void consistency_check (objfile *objfile) override;
+
   /* Return a range adapter for the psymtabs.  */
   psymtab_storage::partial_symtab_range partial_symbols
        (struct objfile *objfile);

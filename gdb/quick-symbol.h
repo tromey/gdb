@@ -202,6 +202,16 @@ struct quick_symbol_functions
   virtual void compute_main_name (struct objfile *objfile)
   {
   }
+
+  /* Check the consistency of the symbols coming from OBJFILE.  This
+     should do whatever consistency checks make sense for the
+     implementation; for example comparing that the "partial" symbols
+     match up with the expanded symbols.  This should print any
+     resulting problems.  */
+  virtual void consistency_check (objfile *objfile)
+  {
+    gdb_printf ("No consistency checks available for this format.\n");
+  }
 };
 
 typedef std::unique_ptr<quick_symbol_functions> quick_symbol_functions_up;

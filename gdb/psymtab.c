@@ -1446,106 +1446,96 @@ maintenance_info_psymtabs (const char *regexp, int from_tty)
       }
 }
 
-/* Check consistency of currently expanded psymtabs vs symtabs.  */
+/* See quick_symbol_functions::consistency_check in
+   quick-symbol.h.  */
 
-static void
-maintenance_check_psymtabs (const char *ignore, int from_tty)
+void
+psymbol_functions::consistency_check (objfile *objfile)
 {
   struct symbol *sym;
   struct compunit_symtab *cust = NULL;
   const struct blockvector *bv;
   const struct block *b;
 
-  for (objfile *objfile : current_program_space->objfiles ())
+  for (partial_symtab *ps : partial_symbols (objfile))
     {
-      for (const auto &iter : objfile->qf)
+      struct gdbarch *gdbarch = objfile->arch ();
+
+      /* We don't call psymtab_to_symtab here because that may cause symtab
+	 expansion.  When debugging a problem it helps if checkers leave
+	 things unchanged.  */
+      cust = ps->get_compunit_symtab (objfile);
+
+      /* First do some checks that don't require the associated symtab.  */
+      if (ps->text_high (objfile) < ps->text_low (objfile))
 	{
-	  psymbol_functions *psf
-	    = dynamic_cast<psymbol_functions *> (iter.get ());
-	  if (psf == nullptr)
+	  gdb_printf ("Psymtab ");
+	  gdb_puts (ps->filename);
+	  gdb_printf (" covers bad range ");
+	  gdb_puts (paddress (gdbarch, ps->text_low (objfile)));
+	  gdb_printf (" - ");
+	  gdb_puts (paddress (gdbarch, ps->text_high (objfile)));
+	  gdb_printf ("\n");
+	  continue;
+	}
+
+      /* Now do checks requiring the associated symtab.  */
+      if (cust == NULL)
+	continue;
+      bv = cust->blockvector ();
+      b = bv->static_block ();
+      for (const partial_symbol *psym : ps->static_psymbols)
+	{
+	  /* Skip symbols for inlined functions without address.  These may
+	     or may not have a match in the full symtab.  */
+	  if (psym->aclass == LOC_BLOCK
+	      && psym->ginfo.value_address () == 0)
 	    continue;
 
-	  for (partial_symtab *ps : psf->partial_symbols (objfile))
+	  lookup_name_info lookup_name
+	    (psym->ginfo.search_name (), symbol_name_match_type::SEARCH_NAME);
+	  sym = block_lookup_symbol (b, lookup_name,
+				     to_search_flags (psym->domain));
+	  if (!sym)
 	    {
-	      struct gdbarch *gdbarch = objfile->arch ();
-
-	      /* We don't call psymtab_to_symtab here because that may cause symtab
-		 expansion.  When debugging a problem it helps if checkers leave
-		 things unchanged.  */
-	      cust = ps->get_compunit_symtab (objfile);
-
-	      /* First do some checks that don't require the associated symtab.  */
-	      if (ps->text_high (objfile) < ps->text_low (objfile))
-		{
-		  gdb_printf ("Psymtab ");
-		  gdb_puts (ps->filename);
-		  gdb_printf (" covers bad range ");
-		  gdb_puts (paddress (gdbarch, ps->text_low (objfile)));
-		  gdb_printf (" - ");
-		  gdb_puts (paddress (gdbarch, ps->text_high (objfile)));
-		  gdb_printf ("\n");
-		  continue;
-		}
-
-	      /* Now do checks requiring the associated symtab.  */
-	      if (cust == NULL)
-		continue;
-	      bv = cust->blockvector ();
-	      b = bv->static_block ();
-	      for (const partial_symbol *psym : ps->static_psymbols)
-		{
-		  /* Skip symbols for inlined functions without address.  These may
-		     or may not have a match in the full symtab.  */
-		  if (psym->aclass == LOC_BLOCK
-		      && psym->ginfo.value_address () == 0)
-		    continue;
-
-		  lookup_name_info lookup_name
-		    (psym->ginfo.search_name (), symbol_name_match_type::SEARCH_NAME);
-		  sym = block_lookup_symbol (b, lookup_name,
-					     to_search_flags (psym->domain));
-		  if (!sym)
-		    {
-		      gdb_printf ("Static symbol `");
-		      gdb_puts (psym->ginfo.linkage_name ());
-		      gdb_printf ("' only found in ");
-		      gdb_puts (ps->filename);
-		      gdb_printf (" psymtab\n");
-		    }
-		}
-	      b = bv->global_block ();
-	      for (const partial_symbol *psym : ps->global_psymbols)
-		{
-		  lookup_name_info lookup_name
-		    (psym->ginfo.search_name (), symbol_name_match_type::SEARCH_NAME);
-		  sym = block_lookup_symbol (b, lookup_name,
-					     to_search_flags (psym->domain));
-		  if (!sym)
-		    {
-		      gdb_printf ("Global symbol `");
-		      gdb_puts (psym->ginfo.linkage_name ());
-		      gdb_printf ("' only found in ");
-		      gdb_puts (ps->filename);
-		      gdb_printf (" psymtab\n");
-		    }
-		}
-	      if (ps->unrelocated_text_high () != unrelocated_addr (0)
-		  && (ps->text_low (objfile) < b->start ()
-		      || ps->text_high (objfile) > b->end ()))
-		{
-		  gdb_printf ("Psymtab ");
-		  gdb_puts (ps->filename);
-		  gdb_printf (" covers ");
-		  gdb_puts (paddress (gdbarch, ps->text_low (objfile)));
-		  gdb_printf (" - ");
-		  gdb_puts (paddress (gdbarch, ps->text_high (objfile)));
-		  gdb_printf (" but symtab covers only ");
-		  gdb_puts (paddress (gdbarch, b->start ()));
-		  gdb_printf (" - ");
-		  gdb_puts (paddress (gdbarch, b->end ()));
-		  gdb_printf ("\n");
-		}
+	      gdb_printf ("Static symbol `");
+	      gdb_puts (psym->ginfo.linkage_name ());
+	      gdb_printf ("' only found in ");
+	      gdb_puts (ps->filename);
+	      gdb_printf (" psymtab\n");
 	    }
+	}
+      b = bv->global_block ();
+      for (const partial_symbol *psym : ps->global_psymbols)
+	{
+	  lookup_name_info lookup_name
+	    (psym->ginfo.search_name (), symbol_name_match_type::SEARCH_NAME);
+	  sym = block_lookup_symbol (b, lookup_name,
+				     to_search_flags (psym->domain));
+	  if (!sym)
+	    {
+	      gdb_printf ("Global symbol `");
+	      gdb_puts (psym->ginfo.linkage_name ());
+	      gdb_printf ("' only found in ");
+	      gdb_puts (ps->filename);
+	      gdb_printf (" psymtab\n");
+	    }
+	}
+      if (ps->unrelocated_text_high () != unrelocated_addr (0)
+	  && (ps->text_low (objfile) < b->start ()
+	      || ps->text_high (objfile) > b->end ()))
+	{
+	  gdb_printf ("Psymtab ");
+	  gdb_puts (ps->filename);
+	  gdb_printf (" covers ");
+	  gdb_puts (paddress (gdbarch, ps->text_low (objfile)));
+	  gdb_printf (" - ");
+	  gdb_puts (paddress (gdbarch, ps->text_high (objfile)));
+	  gdb_printf (" but symtab covers only ");
+	  gdb_puts (paddress (gdbarch, b->start ()));
+	  gdb_printf (" - ");
+	  gdb_puts (paddress (gdbarch, b->end ()));
+	  gdb_printf ("\n");
 	}
     }
 }
@@ -1571,9 +1561,4 @@ List the partial symbol tables for all object files.\n\
 This does not include information about individual partial symbols,\n\
 just the symbol table structures themselves."),
 	   &maintenanceinfolist);
-
-  add_cmd ("psymtabs", class_maintenance, maintenance_check_psymtabs,
-	   _("\
-Check consistency of currently expanded psymtabs versus symtabs."),
-	   &maintenancechecklist);
 }
