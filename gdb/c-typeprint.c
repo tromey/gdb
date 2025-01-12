@@ -1401,9 +1401,9 @@ c_type_print_base_1 (struct type *type, struct ui_file *stream,
 
     case TYPE_CODE_ENUM:
       c_type_print_modifier (type, stream, 0, 1, language);
-      gdb_printf (stream, "enum ");
+      gdb_printf (stream, "enum");
       if (type->is_declared_class ())
-	gdb_printf (stream, "class ");
+	gdb_printf (stream, " class");
       /* Print the tag name if it exists.
 	 The aCC compiler emits a spurious 
 	 "{unnamed struct}"/"{unnamed union}"/"{unnamed enum}"
@@ -1412,9 +1412,8 @@ c_type_print_base_1 (struct type *type, struct ui_file *stream,
       if (type->name () != NULL
 	  && !startswith (type->name (), "{unnamed"))
 	{
+	  gdb_puts (" ", stream);
 	  print_name_maybe_canonical (type->name (), flags, stream);
-	  if (show > 0)
-	    gdb_puts (" ", stream);
 	}
 
       stream->wrap_here (4);
@@ -1423,12 +1422,10 @@ c_type_print_base_1 (struct type *type, struct ui_file *stream,
 	  /* If we just printed a tag name, no need to print anything
 	     else.  */
 	  if (type->name () == NULL)
-	    gdb_printf (stream, "{...}");
+	    gdb_printf (stream, " {...}");
 	}
       else if (show > 0 || type->name () == NULL)
 	{
-	  LONGEST lastval = 0;
-
 	  /* We can't handle this case perfectly, as DWARF does not
 	     tell us whether or not the underlying type was specified
 	     in the source (and other debug formats don't provide this
@@ -1442,28 +1439,24 @@ c_type_print_base_1 (struct type *type, struct ui_file *stream,
 	      struct type *underlying = check_typedef (type->target_type ());
 
 	      if (underlying->name () != NULL)
-		gdb_printf (stream, ": %s ", underlying->name ());
+		gdb_printf (stream, " : %s ", underlying->name ());
 	    }
 
-	  gdb_printf (stream, "{");
+	  gdb_printf (stream, "\n%*s{", level, "");
 	  len = type->num_fields ();
 	  for (i = 0; i < len; i++)
 	    {
 	      QUIT;
 	      if (i)
-		gdb_printf (stream, ", ");
-	      stream->wrap_here (4);
+		gdb_printf (stream, ",\n");
+	      gdb_printf (stream, "%*s", level + 4, "");
 	      fputs_styled (type->field (i).name (),
 			    variable_name_style.style (), stream);
-	      if (lastval != type->field (i).loc_enumval ())
-		{
-		  gdb_printf (stream, " = %s",
-			      plongest (type->field (i).loc_enumval ()));
-		  lastval = type->field (i).loc_enumval ();
-		}
-	      lastval++;
+	      stream->wrap_here (level + 4);
+	      gdb_printf (stream, " = %s",
+			  plongest (type->field (i).loc_enumval ()));
 	    }
-	  gdb_printf (stream, "}");
+	  gdb_printf (stream, "\n%*s}", level, "");
 	}
       break;
 
