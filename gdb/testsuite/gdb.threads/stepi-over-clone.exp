@@ -168,7 +168,7 @@ proc test {non_stop displaced third_thread} {
 		    verbose -log "XXX: Consume the initial command"
 		    exp_continue
 		}
-		-re "^\\\[New Thread\[^\r\n\]+\\\]\r\n" {
+		-re "^\\\[New thread $decimal\\\.$decimal: Thread\[^\r\n\]+\\\]\r\n" {
 		    verbose -log "XXX: Consume new thread line"
 		    incr stepi_new_thread_count
 		    exp_continue

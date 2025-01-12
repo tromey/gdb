@@ -330,7 +330,9 @@ add_thread_with_info (process_stratum_target *targ, ptid_t ptid,
   result->priv = std::move (priv);
 
   if (print_thread_events)
-    gdb_printf (_("[New %s]\n"), target_pid_to_str (ptid).c_str ());
+    gdb_printf (_("[New thread %s: %s]\n"),
+		print_full_thread_id (result),
+		target_pid_to_str (ptid).c_str ());
 
   annotate_new_thread ();
   return result;

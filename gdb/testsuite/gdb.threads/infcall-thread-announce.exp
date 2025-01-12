@@ -41,13 +41,13 @@ proc check_thread_count { adjustment } {
 
 with_test_prefix "starting threads" {
     gdb_test "call (void) start_thread()" \
-	"\\\[New Thread \[^\r\n\]+\\\]" \
+	"\\\[New thread $decimal\\\.$decimal: Thread \[^\r\n\]+\\\]" \
 	"start a new thread, return value discarded"
     check_thread_count +1
 
     foreach_with_prefix call_type { print call } {
 	gdb_test "$call_type start_thread()" \
-	    "\\\[New Thread \[^\r\n\]+\\\]\r\n\\\$$decimal = 1" \
+	    "\\\[New thread $decimal\\\.$decimal: Thread \[^\r\n\]+\\\]\r\n\\\$$decimal = 1" \
 	    "start another new thread"
 	check_thread_count +1
     }
