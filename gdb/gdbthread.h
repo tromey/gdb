@@ -864,10 +864,6 @@ extern struct cmd_list_element *thread_cmd_list;
 
 extern void thread_command (const char *tidstr, int from_tty);
 
-/* Print notices on thread events (attach, detach, etc.), set with
-   `set print thread-events'.  */
-extern bool print_thread_events;
-
 /* Prints the list of threads and their details on UIOUT.  If
    REQUESTED_THREADS, a list of GDB ids/ranges, is not NULL, only
    print threads whose ID is included in the list.  If PID is not -1,

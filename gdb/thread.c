@@ -51,6 +51,9 @@
 #include "interps.h"
 #include "record-full.h"
 
+/* Print notices when new threads are attached and detached.  */
+static bool print_thread_events = true;
+
 /* See gdbthread.h.  */
 
 bool debug_threads = false;
@@ -2059,8 +2062,6 @@ thread_find_command (const char *arg, int from_tty)
     gdb_printf (_("No threads match '%s'\n"), arg);
 }
 
-/* Print notices when new threads are attached and detached.  */
-bool print_thread_events = true;
 static void
 show_print_thread_events (struct ui_file *file, int from_tty,
 			  struct cmd_list_element *c, const char *value)
