@@ -88,7 +88,8 @@ gdb_test "ptype union tu_link" "type = union tu_link \{\[\r\n\]+\[ \t\]+struct l
 # test ptype command with enums
 #
 
-gdb_test "ptype primary" "type = enum .red, green, blue.*" "ptype unnamed enumeration" 
+gdb_test "ptype primary" "type = enum \{\r\n *red = 0,\r\n *green = 1,\r\n *blue = 2\r\n\}" \
+    "ptype unnamed enumeration"
 
 gdb_test "ptype enum colors" "type = enum colors \{\r\n *yellow = 0,\r\n *purple = 1,\r\n *pink = 2\r\n\}.*" "ptype named enumeration" 
 
