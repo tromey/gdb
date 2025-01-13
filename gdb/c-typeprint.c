@@ -1442,14 +1442,14 @@ c_type_print_base_1 (struct type *type, struct ui_file *stream,
 		gdb_printf (stream, " : %s", underlying->name ());
 	    }
 
-	  gdb_printf (stream, " {\n");
+	  gdb_printf (stream, " {");
 	  len = type->num_fields ();
 	  for (i = 0; i < len; i++)
 	    {
 	      QUIT;
 	      if (i)
-		gdb_printf (stream, ",\n");
-	      gdb_printf (stream, "%*s", level + 4, "");
+		gdb_printf (stream, ",");
+	      gdb_printf (stream, "\n%*s", level + 4, "");
 	      fputs_styled (type->field (i).name (),
 			    variable_name_style.style (), stream);
 	      stream->wrap_here (level + 4);

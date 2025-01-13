@@ -109,10 +109,10 @@ if { [prepare_for_testing "failed to prepare" ${testfile} \
 
 gdb_test "print sizeof(enum E)" " = 4"
 
-gdb_test "ptype enum EU" "type = enum EU {TWO = 2}" \
+gdb_test "ptype enum EU" "type = enum EU {\r\n *TWO = 2\r\n}" \
     "ptype EU in enum C"
 gdb_test_no_output "set lang c++"
-gdb_test "ptype enum EU" "type = enum EU : unsigned int {TWO = 2}" \
+gdb_test "ptype enum EU" "type = enum EU : unsigned int {\r\n *TWO = 2\r\n}" \
     "ptype EU in C++"
 
 gdb_test "p ns::val1" \
