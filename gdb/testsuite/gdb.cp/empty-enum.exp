@@ -53,10 +53,10 @@ gdb_test "print arg2" " = 4"
 set have_xfail [expr [test_compiler_info gcc-*] && [gcc_major_version] < 5]
 
 gdb_test_multiple "ptype arg1" "" {
-    -re -wrap "type = enum enum1 : unsigned int \\{\\}" {
+    -re -wrap "type = enum enum1 : unsigned int \\{\r\n\\}" {
 	pass $gdb_test_name
     }
-    -re -wrap "type = enum enum1 \\{\\}" {
+    -re -wrap "type = enum enum1 \\{\r\n\\}" {
 	if { $have_xfail } {
 	    setup_xfail *-*-* gcc/16063
 	}
@@ -65,10 +65,10 @@ gdb_test_multiple "ptype arg1" "" {
 }
 
 gdb_test_multiple "ptype arg2" "" {
-    -re -wrap "type = enum class enum2 : unsigned char \\{\\}" {
+    -re -wrap "type = enum class enum2 : unsigned char \\{\r\n\\}" {
 	pass $gdb_test_name
     }
-    -re -wrap "type = enum class enum2 \\{\\}" {
+    -re -wrap "type = enum class enum2 \\{\r\n\\}" {
 	if { $have_xfail } {
 	    setup_xfail *-*-* gcc/16063
 	}

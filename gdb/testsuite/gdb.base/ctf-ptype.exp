@@ -43,12 +43,12 @@ gdb_load $binfile
 # pre-2.4.5 versions of gcc and most non-gcc compilers).
 
 gdb_test_multiple "ptype red1" "ptype unnamed enumeration member" {
-    -re "type = enum primary1_tag \{red1, green1, blue1\}.*$gdb_prompt $" {
+    -re "type = enum primary1_tag \{\r\n *red1 = 1,\r\n *green1 = 1,\r\n *blue1 = 2\r\n\}.*$gdb_prompt $" {
 	# The workaround is in effect.  As this is a compiler, not GDB,
 	# bug, we'll make it a PASS but perhaps it should be an XFAIL.
 	pass "ptype unnamed enumeration member (worked around)"
     }
-    -re "type = enum \{red1, green1, blue1\}.*$gdb_prompt $" {
+    -re "type = enum \{\r\n *red1 = 1,\r\n *green1 = 1,\r\n *blue1 = 2\r\n\}.*$gdb_prompt $" {
 	pass "ptype unnamed enumeration member"
     }
 }
