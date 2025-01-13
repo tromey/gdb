@@ -1439,10 +1439,10 @@ c_type_print_base_1 (struct type *type, struct ui_file *stream,
 	      struct type *underlying = check_typedef (type->target_type ());
 
 	      if (underlying->name () != NULL)
-		gdb_printf (stream, " : %s ", underlying->name ());
+		gdb_printf (stream, " : %s", underlying->name ());
 	    }
 
-	  gdb_printf (stream, "\n%*s{", level, "");
+	  gdb_printf (stream, " {\n");
 	  len = type->num_fields ();
 	  for (i = 0; i < len; i++)
 	    {
