@@ -122,6 +122,6 @@ SpacesInSquareBrackets: false
 Standard: Cpp11
 # StatementMacros: do we have any?
 TabWidth: 8
-# TypenameMacros: do we have any?
+TypenameMacros: [ENUM_BITFIELD]
 UseCRLF: false
 UseTab: ForContinuationAndIndentation
