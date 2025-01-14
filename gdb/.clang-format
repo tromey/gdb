@@ -124,4 +124,4 @@ Standard: Cpp11
 TabWidth: 8
 # TypenameMacros: do we have any?
 UseCRLF: false
-UseTab: Never
+UseTab: ForContinuationAndIndentation
