@@ -583,12 +583,15 @@ proc cp_test_ptype_class { in_exp in_testname in_key in_tag in_class_table
 		enum {
 		    set expected_result \
 			"enum $nested_name (: (unsigned )?int )?\{"
+		    set i 0
 		    foreach c $nested_children {
-			append expected_result "$c, "
+			if {$i > 0} {
+			    append expected_result ","
+			}
+			append expected_result "\r\n *$c = $i"
+			incr i
 		    }
-		    set expected_result \
-			[string trimright $expected_result { ,}]
-		    append expected_result "\};"
+		    append expected_result "\r\n *\};"
 		    cp_ptype_class_verbose \
 			"Expecting enum result: $expected_result"
 		    if {![regexp -- $expected_result $actual_line]} {
