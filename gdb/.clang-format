@@ -59,14 +59,7 @@ DisableFormat:   false
 # The docs say not to use this.
 # ExperimentalAutoDetectBinPacking: false
 FixNamespaceComments: true
-ForEachMacros:
-  - ALL_BLOCK_SYMBOLS
-  - ALL_BLOCK_SYMBOLS_WITH_NAME
-  - ALL_BREAKPOINTS
-  - ALL_BREAKPOINTS_SAFE
-  - ALL_BP_LOCATIONS
-  - ALL_BP_LOCATIONS_AT_ADDR
-  # FIXME many more here
+# ForEachMacros:  [ we don't currently have any ]
 IncludeBlocks:   Preserve
 IncludeCategories:
   - Regex:           '^"(common-defs.h|defs.h|server.h)/'
