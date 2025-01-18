@@ -161,7 +161,7 @@ proc make_enum {result_var id parent_list indent_lvl log} {
 
     if {$log} {
 	indent $indent_lvl
-	send_log "enum $s \{\r\n *$a = 0,\r\n *$b = 1,\r\n $c = 2\r\n *\};\n"
+	send_log "enum $s \{$a, $b, $c\};\n"
     }
 }
 
