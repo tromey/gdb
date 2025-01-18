@@ -311,28 +311,19 @@ static void
 print_enum_type (struct type *type, struct ui_file *stream)
 {
   int len = type->num_fields ();
-  int i;
-  LONGEST lastval;
 
   gdb_printf (stream, "(");
-  stream->wrap_here (1);
 
-  lastval = 0;
-  for (i = 0; i < len; i++)
+  for (int i = 0; i < len; i++)
     {
       QUIT;
       if (i)
-	gdb_printf (stream, ", ");
-      stream->wrap_here (4);
+	gdb_printf (stream, ",");
+      gdb_printf (stream, "\n    ");
       fputs_styled (ada_enum_name (type->field (i).name ()),
 		    variable_name_style.style (), stream);
-      if (lastval != type->field (i).loc_enumval ())
-	{
-	  gdb_printf (stream, " => %s",
-		      plongest (type->field (i).loc_enumval ()));
-	  lastval = type->field (i).loc_enumval ();
-	}
-      lastval += 1;
+      gdb_printf (stream, " => %s",
+		  plongest (type->field (i).loc_enumval ()));
     }
   gdb_printf (stream, ")");
 }
