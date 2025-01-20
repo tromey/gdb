@@ -3001,6 +3001,11 @@ elf_begin (void)
   memset (&groups, 0, sizeof (groups));
 
 #ifdef TC_OBJ_ATTR
+  /* Set the object attribute version for the output object to the default
+     value supported by the backend.  */
+  elf_obj_attr_version (stdoutput)
+    = get_elf_backend_data (stdoutput)->default_obj_attr_version;
+
   oav1_attr_info_init ();
 #endif /* TC_OBJ_ATTR */
 }

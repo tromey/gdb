@@ -549,7 +549,16 @@
 #define elf_backend_obj_attrs_arg_type		NULL
 #endif
 #ifndef elf_backend_obj_attrs_section_type
-#define elf_backend_obj_attrs_section_type		SHT_GNU_ATTRIBUTES
+#define elf_backend_obj_attrs_section_type	SHT_GNU_ATTRIBUTES
+#endif
+#ifndef elf_backend_default_obj_attr_version
+#define elf_backend_default_obj_attr_version	OBJ_ATTR_V1
+#endif
+#ifndef elf_backend_obj_attrs_version_dec
+#define elf_backend_obj_attrs_version_dec	_bfd_obj_attrs_version_dec
+#endif
+#ifndef elf_backend_obj_attrs_version_enc
+#define elf_backend_obj_attrs_version_enc	_bfd_obj_attrs_version_enc
 #endif
 #ifndef elf_backend_obj_attrs_order
 #define elf_backend_obj_attrs_order		NULL
@@ -800,7 +809,7 @@
 #ifndef elf_backend_symbol_section_index
 #define elf_backend_symbol_section_index NULL
 #endif
- 
+
 #ifndef elf_match_priority
 #define elf_match_priority \
   (ELF_ARCH == bfd_arch_unknown ? 2 \
@@ -928,6 +937,9 @@ static const struct elf_backend_data elfNN_bed =
   elf_backend_obj_attrs_section,
   elf_backend_obj_attrs_arg_type,
   elf_backend_obj_attrs_section_type,
+  elf_backend_default_obj_attr_version,
+  elf_backend_obj_attrs_version_dec,
+  elf_backend_obj_attrs_version_enc,
   elf_backend_obj_attrs_order,
   elf_backend_obj_attrs_handle_unknown,
   elf_backend_parse_gnu_properties,

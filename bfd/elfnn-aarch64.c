@@ -10827,7 +10827,24 @@ static const struct elf_size_info elfNN_aarch64_size_info =
 #define elf_backend_extern_protected_data 0
 #define elf_backend_hash_symbol elf_aarch64_hash_symbol
 
+/* In OAv2, the presence of a vendor prefix means that the contents (syntax) can
+   be fully parsed, even if the interpretation of each tag is unknown.*/
+#undef	elf_backend_obj_attrs_vendor
+#define elf_backend_obj_attrs_vendor		"aeabi"
 #undef	elf_backend_obj_attrs_section
 #define elf_backend_obj_attrs_section		SEC_AARCH64_ATTRIBUTES
+/* In OAv2, the type of an attribute is specified by the subsection that
+   contains it.  */
+#define elf_backend_obj_attrs_arg_type		NULL
+#undef	elf_backend_obj_attrs_section_type
+#define elf_backend_obj_attrs_section_type	SHT_AARCH64_ATTRIBUTES
+#undef	elf_backend_default_obj_attr_version
+#define elf_backend_default_obj_attr_version	OBJ_ATTR_V2
+#undef	elf_backend_obj_attrs_version_dec
+#define elf_backend_obj_attrs_version_dec \
+  _bfd_aarch64_obj_attrs_version_dec
+#undef	elf_backend_obj_attrs_version_enc
+#define elf_backend_obj_attrs_version_enc \
+  _bfd_aarch64_obj_attrs_version_enc
 
 #include "elfNN-target.h"

@@ -236,6 +236,12 @@ _bfd_aarch64_elf_write_core_note (bfd *, char *, int *, int, ...)
 #define elf_backend_grok_psinfo		_bfd_aarch64_elf_grok_psinfo
 #define elf_backend_write_core_note	_bfd_aarch64_elf_write_core_note
 
+extern obj_attr_version_t
+_bfd_aarch64_obj_attrs_version_dec (uint8_t) ATTRIBUTE_HIDDEN;
+
+extern uint8_t
+_bfd_aarch64_obj_attrs_version_enc (obj_attr_version_t) ATTRIBUTE_HIDDEN;
+
 extern bfd *
 _bfd_aarch64_elf_link_setup_gnu_properties (struct bfd_link_info *)
   ATTRIBUTE_HIDDEN;

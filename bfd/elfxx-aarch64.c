@@ -868,6 +868,25 @@ _bfd_aarch64_elf_check_gnu_properties_linked_dynamic_objects (
 	pbfd);
 }
 
+/* Decode the encoded version number corresponding to the Object Attribute
+   version.  Return the version on success, UNSUPPORTED on failure.  */
+obj_attr_version_t
+_bfd_aarch64_obj_attrs_version_dec (uint8_t encoded_version)
+{
+  if (encoded_version == 'A')
+    return OBJ_ATTR_V2;
+  return OBJ_ATTR_VERSION_UNSUPPORTED;
+}
+
+/* Encode the Object Attribute version into a byte.  */
+uint8_t
+_bfd_aarch64_obj_attrs_version_enc (obj_attr_version_t version)
+{
+  if (version == OBJ_ATTR_V2)
+    return 'A';
+  abort ();
+}
+
 /* Find the first input bfd with GNU property and merge it with GPROP.  If no
    such input is found, add it to a new section at the last input.  Update
    GPROP accordingly.  */

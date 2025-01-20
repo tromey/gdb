@@ -20,9 +20,29 @@
 
 #include "sysdep.h"
 #include "bfd.h"
+#include "doubly-linked-list.h"
 #include "libiberty.h"
 #include "libbfd.h"
 #include "elf-bfd.h"
+
+/* Decode the encoded version number corresponding to the Object Attribute
+   version.  Return the version on success, UNSUPPORTED on failure.  */
+obj_attr_version_t
+_bfd_obj_attrs_version_dec (uint8_t encoded_version)
+{
+  if (encoded_version == 'A')
+    return OBJ_ATTR_V1;
+  return OBJ_ATTR_VERSION_UNSUPPORTED;
+}
+
+/* Encode the Object Attribute version into a byte.  */
+uint8_t
+_bfd_obj_attrs_version_enc (obj_attr_version_t version)
+{
+  if (version == OBJ_ATTR_V1)
+    return 'A';
+  abort ();
+}
 
 /* Return the number of bytes needed by I in uleb128 format.  */
 static uint32_t
@@ -210,10 +230,14 @@ write_vendor_obj_attrs_v1 (bfd *abfd, bfd_byte *contents, bfd_vma size,
 static void
 write_obj_attr_section_v1 (bfd *abfd, bfd_byte *buffer, bfd_vma size)
 {
+  /* This function should only be called for object attributes version 1.  */
+  BFD_ASSERT (elf_obj_attr_version (abfd) == OBJ_ATTR_V1);
+
   bfd_byte *p = buffer;
 
-  /* <format-version: ‘A’>  */
-  *(p++) = 'A';
+  const struct elf_backend_data *be = get_elf_backend_data (abfd);
+  /* <format-version: uint8>  */
+  *(p++) = be->obj_attrs_version_enc (elf_obj_attr_version (abfd));
 
   for (int vendor = OBJ_ATTR_FIRST; vendor <= OBJ_ATTR_LAST; ++vendor)
     {
@@ -421,6 +445,12 @@ _bfd_elf_copy_obj_attributes (bfd *ibfd, bfd *obfd)
       || bfd_get_flavour (obfd) != bfd_target_elf_flavour)
     return;
 
+  obj_attr_version_t version = elf_obj_attr_version (ibfd);
+  elf_obj_attr_version (obfd) = version;
+
+  if (version == OBJ_ATTR_VERSION_NONE)
+    return;
+
   for (vendor = OBJ_ATTR_FIRST; vendor <= OBJ_ATTR_LAST; vendor++)
     {
       in_attr
@@ -492,6 +522,8 @@ bfd_elf_obj_attrs_arg_type (bfd *abfd,
 			    obj_attr_vendor_t vendor,
 			    obj_attr_tag_t tag)
 {
+  /* This function should only be called for object attributes version 1.  */
+  BFD_ASSERT (elf_obj_attr_version (abfd) == OBJ_ATTR_V1);
   switch (vendor)
     {
     case OBJ_ATTR_PROC:
@@ -629,6 +661,8 @@ bfd_elf_parse_attr_section_v1 (bfd *abfd, bfd_byte *p, bfd_byte *p_end)
 void
 _bfd_elf_parse_attributes (bfd *abfd, Elf_Internal_Shdr * hdr)
 {
+  elf_obj_attr_version (abfd) = OBJ_ATTR_VERSION_NONE;
+
   /* PR 17512: file: 2844a11d.  */
   if (hdr->sh_size == 0)
     return;
@@ -651,18 +685,20 @@ _bfd_elf_parse_attributes (bfd *abfd, Elf_Internal_Shdr * hdr)
 
   unsigned char *cursor = data;
 
-  /* The first character is the version of the attributes.
-     Currently only version 'A' is recognised here.  */
-  if (*cursor != 'A')
+  /* The first character is the version of the attributes.  */
+  obj_attr_version_t version
+    = get_elf_backend_data (abfd)->obj_attrs_version_dec (*cursor);
+  if (version == OBJ_ATTR_VERSION_UNSUPPORTED || version > OBJ_ATTR_VERSION_MAX)
     {
-      _bfd_error_handler (_("%pB: error: unknown attributes version '%c'(%d) "
-			    "- expecting 'A'\n"), abfd, *cursor, *cursor);
+      _bfd_error_handler (_("%pB: error: unknown attributes version '%c'(%d)\n"),
+			  abfd, *cursor, *cursor);
       bfd_set_error (bfd_error_wrong_format);
       goto free_data;
     }
 
   ++cursor;
 
+  elf_obj_attr_version (abfd) = version;
   bfd_elf_parse_attr_section_v1 (abfd, cursor, data + hdr->sh_size);
 
  free_data:
@@ -686,6 +722,11 @@ _bfd_elf_merge_object_attributes (bfd *ibfd, struct bfd_link_info *info)
   obj_attribute *in_attr;
   obj_attribute *out_attr;
   int vendor;
+
+  /* Set the object attribute version for the output object to the recommended
+     value by the backend.  */
+  elf_obj_attr_version (obfd)
+    = get_elf_backend_data (obfd)->default_obj_attr_version;
 
   /* The only common attribute is currently Tag_compatibility,
      accepted in both processor and "gnu" sections.  */
@@ -833,6 +874,244 @@ _bfd_elf_merge_unknown_attribute_list (bfd *ibfd, bfd *obfd)
 
   return result;
 }
+
+/* Create a new object attribute with key TAG and value VAL.
+   Return a pointer to it.  */
+
+obj_attr_v2_t *
+bfd_elf_obj_attr_v2_init (obj_attr_tag_t tag,
+			  union obj_attr_value_v2 val)
+{
+  obj_attr_v2_t *attr = XCNEW (obj_attr_v2_t);
+  attr->tag = tag;
+  attr->val = val;
+  return attr;
+}
+
+/* Free memory allocated by the object attribute ATTR.  */
+
+void
+_bfd_elf_obj_attr_v2_free (obj_attr_v2_t *attr, obj_attr_encoding_v2_t encoding)
+{
+  if (encoding == OA_ENC_NTBS)
+    /* Note: this field never holds a string literal.  */
+    free ((char *) attr->val.string);
+  free (attr);
+}
+
+/* Copy an object attribute OTHER, and return a pointer to the copy.  */
+
+obj_attr_v2_t *
+_bfd_elf_obj_attr_v2_copy (const obj_attr_v2_t *other,
+			   obj_attr_encoding_v2_t encoding)
+{
+  union obj_attr_value_v2 val;
+  if (encoding == OA_ENC_NTBS)
+    val.string
+      = (other->val.string != NULL
+	 ? xstrdup (other->val.string)
+	 : NULL);
+  else if (encoding == OA_ENC_ULEB128)
+    val.uint = other->val.uint;
+  else
+    abort ();
+
+  return bfd_elf_obj_attr_v2_init (other->tag, val);
+}
+
+/* Compare two object attributes based on their TAG value only (partial
+   ordering), and return an integer indicating the result of the comparison,
+   as follows:
+   - 0, if A1 and A2 are equal.
+   - a negative value if A1 is less than A2.
+   - a positive value if A1 is greater than A2.  */
+
+int
+_bfd_elf_obj_attr_v2_cmp (const obj_attr_v2_t *a1, const obj_attr_v2_t *a2)
+{
+  if (a1->tag < a2->tag)
+    return -1;
+  if (a1->tag > a2->tag)
+    return 1;
+  return 0;
+}
+
+/* Return an object attribute in SUBSEC matching TAG or NULL if one is not
+   found.  SORTED specifies whether the given list is ordered by tag number.
+   This allows an early return if we find a higher numbered tag.  */
+
+obj_attr_v2_t *
+_bfd_obj_attr_v2_find_by_tag (const obj_attr_subsection_v2_t *subsec,
+			      obj_attr_tag_t tag,
+			      bool sorted)
+{
+  for (obj_attr_v2_t *attr = subsec->first;
+       attr != NULL;
+       attr = attr->next)
+    {
+      if (attr->tag == tag)
+	return attr;
+      if (sorted && attr->tag > tag)
+	break;
+    }
+  return NULL;
+}
+
+/* Sort the object attributes inside a subsection.
+   Note: since a subsection is a list of attributes, the sorting algorithm is
+   implemented with a merge sort.
+   See more details in libiberty/doubly-linked-list.h  */
+
+LINKED_LIST_MUTATIVE_OPS_DECL (obj_attr_subsection_v2_t,
+			       obj_attr_v2_t, /* extern */)
+LINKED_LIST_MERGE_SORT_DECL (obj_attr_subsection_v2_t,
+			     obj_attr_v2_t, /* extern */)
+
+/* Create a new object attribute subsection with the following properties:
+   - NAME: the name of the subsection.  Note: this parameter never holds a
+     string literal, so the value has to be freeable.
+   - SCOPE: the scope of the subsection (public or private).
+   - OPTIONAL: whether this subsection is optional (true) or required (false).
+   - ENCODING: the expected encoding for the attributes values (ULEB128 or NTBS).
+   Return a pointer to it.  */
+
+obj_attr_subsection_v2_t *
+bfd_elf_obj_attr_subsection_v2_init (const char *name,
+				      obj_attr_subsection_scope_v2_t scope,
+				      bool optional,
+				      obj_attr_encoding_v2_t encoding)
+{
+  obj_attr_subsection_v2_t *subsection = XCNEW (obj_attr_subsection_v2_t);
+  subsection->name = name;
+  subsection->scope = scope;
+  subsection->optional = optional;
+  subsection->encoding = encoding;
+  return subsection;
+}
+
+/* Free memory allocated by the object attribute subsection SUBSEC.  */
+
+void
+_bfd_elf_obj_attr_subsection_v2_free (obj_attr_subsection_v2_t *subsec)
+{
+  obj_attr_v2_t *attr = subsec->first;
+  while (attr != NULL)
+    {
+      obj_attr_v2_t *a = attr;
+      attr = attr->next;
+      _bfd_elf_obj_attr_v2_free (a, subsec->encoding);
+    }
+  /* Note: this field never holds a string literal.  */
+  free ((char *) subsec->name);
+  free (subsec);
+}
+
+/* Deep copy an object attribute subsection OTHER, and return a pointer to the
+   copy.  */
+
+obj_attr_subsection_v2_t *
+_bfd_elf_obj_attr_subsection_v2_copy (const obj_attr_subsection_v2_t *other)
+{
+  obj_attr_subsection_v2_t *new_subsec
+    = bfd_elf_obj_attr_subsection_v2_init (xstrdup (other->name), other->scope,
+					    other->optional, other->encoding);
+  for (obj_attr_v2_t *attr = other->first;
+       attr != NULL;
+       attr = attr->next)
+    {
+      obj_attr_v2_t *new_attr = _bfd_elf_obj_attr_v2_copy (attr, other->encoding);
+      LINKED_LIST_APPEND (obj_attr_v2_t) (new_subsec, new_attr);
+    }
+  return new_subsec;
+}
+
+/* Compare two object attribute subsections based on all their properties.
+   This operator can be used to obtain a total order in a collection.
+   Return an integer indicating the result of the comparison, as follows:
+   - 0, if S1 and S2 are equal.
+   - a negative value if S1 is less than S2.
+   - a positive value if S1 is greater than S2.
+
+   NB: the scope is computed from the name, so is not used for the
+   comparison.  */
+
+int
+_bfd_elf_obj_attr_subsection_v2_cmp (const obj_attr_subsection_v2_t *s1,
+				     const obj_attr_subsection_v2_t *s2)
+{
+  int res = strcmp (s1->name, s2->name);
+  if (res != 0)
+    return res;
+
+  /* Note: The comparison of the encoding and optionality of subsections
+     is entirely arbitrary.  The numeric values could be completely flipped
+     around without any effect.  Likewise, assigning higher priority to
+     optionality than to encoding is artificial.  The desired properties for
+     this comparison operator are reflexivity, transitivity, antisymmetry,
+     and totality, in order to achieve a total ordering when sorting a
+     collection of subsections.
+     If the nature of this ordering were to change in the future, it would
+     have no functional impact (but e.g. testsuite expectations might still
+     need adjusting) on the final merged result in the output file.  Only the
+     order of the serialized subsections would differ, which does not affect
+     the interpretation of the object attributes.
+     Similarly, the ordering of subsections and attributes in an input file
+     does not affect the merge process in ld.  The merge process never assumes
+     any particular ordering from the input files, it always sorts the
+     subsections and attributes before merging.  This means that using an
+     older version of gas with a newer ld is safe, and vice versa as long as
+     no new features are used that the older ld doesn't know of.
+     In conclusion, the (arbitrary) criteria used to sort subsections during
+     the merge process are entirely internal to ld and have no effect on the
+     merge result.  */
+
+  if (!s1->optional && s2->optional)
+    return -1;
+  else if (s1->optional && !s2->optional)
+    return 1;
+
+  if (s1->encoding < s2->encoding)
+    return -1;
+  else if (s1->encoding > s2->encoding)
+    return 1;
+
+  return 0;
+}
+
+/* Return a subsection in the list FIRST matching NAME, or NULL if one is not
+   found.  SORTED specifies whether the given list is ordered by name.
+   This allows an early return if we find a alphabetically-higher name.  */
+
+obj_attr_subsection_v2_t *
+bfd_obj_attr_subsection_v2_find_by_name (obj_attr_subsection_v2_t *first,
+					 const char *name,
+					 bool sorted)
+{
+  for (obj_attr_subsection_v2_t *s = first;
+       s != NULL;
+       s = s->next)
+    {
+      int cmp = strcmp (s->name, name);
+      if (cmp == 0)
+	return s;
+      else if (sorted && cmp > 0)
+	break;
+    }
+  return NULL;
+}
+
+/* Sort the subsections in a vendor section.
+   Note: since a section is a list of subsections, the sorting algorithm is
+   implemented with a merge sort.
+   See more details in libiberty/doubly-linked-list.h  */
+
+LINKED_LIST_MUTATIVE_OPS_DECL (obj_attr_subsection_list_t,
+			       obj_attr_subsection_v2_t, /* extern */)
+LINKED_LIST_MERGE_SORT_DECL (obj_attr_subsection_list_t,
+			     obj_attr_subsection_v2_t, /* extern */)
+
+/* Serialize the object attributes in ABFD into the vendor section of
+   OUTPUT_BFD.  */
 
 bool _bfd_elf_write_section_object_attributes
   (bfd *abfd, struct bfd_link_info *info ATTRIBUTE_UNUSED)
