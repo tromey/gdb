@@ -3210,8 +3210,6 @@ extern obj_attr_subsection_v2_t *bfd_elf_obj_attr_subsection_v2_init
   (const char *, obj_attr_subsection_scope_v2_t, bool, obj_attr_encoding_v2_t);
 extern void _bfd_elf_obj_attr_subsection_v2_free (obj_attr_subsection_v2_t *)
   ATTRIBUTE_HIDDEN;
-extern obj_attr_subsection_v2_t *_bfd_elf_obj_attr_subsection_v2_copy
-  (const obj_attr_subsection_v2_t *) ATTRIBUTE_HIDDEN;
 extern int _bfd_elf_obj_attr_subsection_v2_cmp
   (const obj_attr_subsection_v2_t *, const obj_attr_subsection_v2_t *)
   ATTRIBUTE_HIDDEN;

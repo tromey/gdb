@@ -757,25 +757,15 @@ bfd_elf_add_obj_attr_int_string (bfd *abfd,
   return elf_add_obj_attr_int_string (abfd, vendor, tag, i, s, NULL);
 }
 
-/* Copy the object attributes from IBFD to OBFD.  */
-void
-_bfd_elf_copy_obj_attributes (bfd *ibfd, bfd *obfd)
+/* Copy object attributes v1 from IBFD to OBFD.  */
+static void
+oav1_copy_attributes (bfd *ibfd, bfd *obfd)
 {
   obj_attribute *in_attr;
   obj_attribute *out_attr;
   obj_attribute_list *list;
   int i;
   obj_attr_vendor_t vendor;
-
-  if (bfd_get_flavour (ibfd) != bfd_target_elf_flavour
-      || bfd_get_flavour (obfd) != bfd_target_elf_flavour)
-    return;
-
-  obj_attr_version_t version = elf_obj_attr_version (ibfd);
-  elf_obj_attr_version (obfd) = version;
-
-  if (version == OBJ_ATTR_VERSION_NONE)
-    return;
 
   for (vendor = OBJ_ATTR_FIRST; vendor <= OBJ_ATTR_LAST; vendor++)
     {
@@ -823,6 +813,54 @@ _bfd_elf_copy_obj_attributes (bfd *ibfd, bfd *obfd)
 	  if (!ok)
 	    bfd_perror (_("error adding attribute"));
 	}
+    }
+}
+
+static obj_attr_subsection_v2_t *
+oav2_obj_attr_subsection_v2_copy (const obj_attr_subsection_v2_t *);
+
+/* Copy object attributes v2 from IBFD to OBFD.  */
+static void
+oav2_copy_attributes (bfd *ibfd, bfd *obfd)
+{
+  const obj_attr_subsection_list_t *in_attr_subsecs
+    = &elf_obj_attr_subsections (ibfd);
+  obj_attr_subsection_list_t *out_attr_subsecs
+    = &elf_obj_attr_subsections (obfd);
+
+  for (const obj_attr_subsection_v2_t *isubsec = in_attr_subsecs->first;
+       isubsec != NULL;
+       isubsec = isubsec->next)
+    {
+      obj_attr_subsection_v2_t *osubsec
+	= oav2_obj_attr_subsection_v2_copy (isubsec);
+      LINKED_LIST_APPEND (obj_attr_subsection_v2_t) (out_attr_subsecs, osubsec);
+    }
+}
+
+/* Copy the object attributes from IBFD to OBFD.  */
+void
+_bfd_elf_copy_obj_attributes (bfd *ibfd, bfd *obfd)
+{
+  if (bfd_get_flavour (ibfd) != bfd_target_elf_flavour
+      || bfd_get_flavour (obfd) != bfd_target_elf_flavour)
+    return;
+
+  obj_attr_version_t version = elf_obj_attr_version (ibfd);
+  elf_obj_attr_version (obfd) = version;
+
+  switch (version)
+    {
+    case OBJ_ATTR_VERSION_NONE:
+      break;
+    case OBJ_ATTR_V1:
+      oav1_copy_attributes (ibfd, obfd);
+      break;
+    case OBJ_ATTR_V2:
+      oav2_copy_attributes (ibfd, obfd);
+      break;
+    default:
+      abort ();
     }
 }
 
@@ -1593,8 +1631,8 @@ _bfd_elf_obj_attr_subsection_v2_free (obj_attr_subsection_v2_t *subsec)
 /* Deep copy an object attribute subsection OTHER, and return a pointer to the
    copy.  */
 
-obj_attr_subsection_v2_t *
-_bfd_elf_obj_attr_subsection_v2_copy (const obj_attr_subsection_v2_t *other)
+static obj_attr_subsection_v2_t *
+oav2_obj_attr_subsection_v2_copy (const obj_attr_subsection_v2_t *other)
 {
   obj_attr_subsection_v2_t *new_subsec
     = bfd_elf_obj_attr_subsection_v2_init (xstrdup (other->name), other->scope,
