@@ -763,7 +763,7 @@ public:
 		   });
 
 	m_name_table_string_offs.push_back_reorder
-	  (m_debugstrlookup.lookup (name.c_str ())); /* ??? */
+	  (m_debugstrlookup.lookup (name.c_str ()));
 	m_name_table_entry_offs.push_back_reorder (m_entry_pool.size ());
 
 	for (const cooked_index_entry *entry : these_entries)
@@ -928,11 +928,21 @@ private:
   {
   public:
 
-    /* Object constructor to be called for current DWARF2_PER_BFD.  */
-    debug_str_lookup (dwarf2_per_bfd *per_bfd)
-      : m_abfd (per_bfd->obfd),
-	m_per_bfd (per_bfd)
+    /* Object constructor to be called for current DWARF2_PER_BFD.
+       All .debug_str section strings are automatically stored.  */
+    explicit debug_str_lookup (dwarf2_per_bfd *per_bfd)
+      : m_per_bfd (per_bfd)
     {
+      gdb_assert (per_bfd->str.readin);
+      const gdb_byte *data = per_bfd->str.buffer;
+      if (data == nullptr)
+	return;
+      while (data < per_bfd->str.buffer + per_bfd->str.size)
+	{
+	  const char *const s = reinterpret_cast<const char *> (data);
+	  m_str_table.emplace (c_str_view (s), data - per_bfd->str.buffer);
+	  data += strlen (s) + 1;
+	}
     }
 
     /* Return offset of symbol name S in the .debug_str section.  Add
@@ -940,13 +950,6 @@ private:
        yet.  */
     size_t lookup (const char *s)
     {
-      /* Most strings will have come from the string table
-	 already.  */
-      const gdb_byte *b = (const gdb_byte *) s;
-      if (b >= m_per_bfd->str.buffer
-	  && b < m_per_bfd->str.buffer + m_per_bfd->str.size)
-	return b - m_per_bfd->str.buffer;
-
       const auto it = m_str_table.find (c_str_view (s));
       if (it != m_str_table.end ())
 	return it->second;
@@ -965,7 +968,6 @@ private:
 
   private:
     gdb::unordered_map<c_str_view, size_t, c_str_view_hasher> m_str_table;
-    bfd *const m_abfd;
     dwarf2_per_bfd *m_per_bfd;
 
     /* Data to add at the end of .debug_str for new needed symbol names.  */
