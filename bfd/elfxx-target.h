@@ -560,6 +560,12 @@
 #ifndef elf_backend_obj_attrs_version_enc
 #define elf_backend_obj_attrs_version_enc	_bfd_obj_attrs_version_enc
 #endif
+#ifndef elf_backend_obj_attr_v2_known_subsections
+#define elf_backend_obj_attr_v2_known_subsections	NULL
+#endif
+#ifndef elf_backend_obj_attr_v2_known_subsections_size
+#define elf_backend_obj_attr_v2_known_subsections_size	0
+#endif
 #ifndef elf_backend_obj_attrs_order
 #define elf_backend_obj_attrs_order		NULL
 #endif
@@ -940,6 +946,8 @@ static const struct elf_backend_data elfNN_bed =
   elf_backend_default_obj_attr_version,
   elf_backend_obj_attrs_version_dec,
   elf_backend_obj_attrs_version_enc,
+  elf_backend_obj_attr_v2_known_subsections,
+  elf_backend_obj_attr_v2_known_subsections_size,
   elf_backend_obj_attrs_order,
   elf_backend_obj_attrs_handle_unknown,
   elf_backend_parse_gnu_properties,

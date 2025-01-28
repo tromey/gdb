@@ -21,8 +21,10 @@
 #include "sysdep.h"
 #include "bfd.h"
 #include "elf-bfd.h"
+#include "elf/aarch64.h"
 #include "elfxx-aarch64.h"
 #include "libbfd.h"
+#include "libiberty.h"
 #include <stdarg.h>
 #include <string.h>
 
@@ -886,6 +888,53 @@ _bfd_aarch64_obj_attrs_version_enc (obj_attr_version_t version)
     return 'A';
   abort ();
 }
+
+/* List of known attributes in the subsection "aeabi_feature_and_bits".
+   Note: the array below has to be sorted by the tag's integer value that can
+   be found in the document "Build Attributes for the Arm® 64-bit Architecture
+   (AArch64)".  */
+static const obj_attr_info_t known_attrs_aeabi_feature_and_bits[] =
+{
+  { .tag = {"Tag_Feature_BTI", Tag_Feature_BTI} },
+  { .tag = {"Tag_Feature_PAC", Tag_Feature_PAC} },
+  { .tag = {"Tag_Feature_GCS", Tag_Feature_GCS} },
+};
+
+/* List of known attributes in the subsection "aeabi_pauthabi".
+   Notes:
+   - "aeabi_pauthabi" is a required subsection to use PAuthABI (which is
+     today only supported by LLVM, unsupported by GCC 15 and lower. There is no
+     plan to add support for it in the future). A value of 0 for any the tags
+     below means that the user did not permit this entity to use the PAuthABI.
+   - the array below has to be sorted by the tag's integer value that can be
+     found in the document "Build Attributes for the Arm® 64-bit Architecture
+     (AArch64)".  */
+static const obj_attr_info_t known_attrs_aeabi_pauthabi[] =
+{
+  { .tag = {"Tag_PAuth_Platform", Tag_PAuth_Platform} },
+  { .tag = {"Tag_PAuth_Schema", Tag_PAuth_Schema} },
+};
+
+/* List of known subsections.
+   Note: this array is exported by the backend, and has to be sorted using
+   the same criteria as in _bfd_elf_obj_attr_subsection_v2_cmp().  */
+const known_subsection_v2_t aarch64_obj_attr_v2_known_subsections[2] =
+{
+  {
+    .subsec_name = "aeabi_feature_and_bits",
+    .known_attrs = known_attrs_aeabi_feature_and_bits,
+    .optional = true,
+    .encoding = OA_ENC_ULEB128,
+    .len = ARRAY_SIZE (known_attrs_aeabi_feature_and_bits),
+  },
+  {
+    .subsec_name = "aeabi_pauthabi",
+    .known_attrs = known_attrs_aeabi_pauthabi,
+    .optional = false,
+    .encoding = OA_ENC_ULEB128,
+    .len = ARRAY_SIZE (known_attrs_aeabi_pauthabi),
+  },
+};
 
 /* Find the first input bfd with GNU property and merge it with GPROP.  If no
    such input is found, add it to a new section at the last input.  Update

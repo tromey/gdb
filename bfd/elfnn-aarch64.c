@@ -10846,5 +10846,12 @@ static const struct elf_size_info elfNN_aarch64_size_info =
 #undef	elf_backend_obj_attrs_version_enc
 #define elf_backend_obj_attrs_version_enc \
   _bfd_aarch64_obj_attrs_version_enc
+/* Object attributes v2 specific values.  */
+#undef	elf_backend_obj_attr_v2_known_subsections
+#define elf_backend_obj_attr_v2_known_subsections \
+  aarch64_obj_attr_v2_known_subsections
+#undef	elf_backend_obj_attr_v2_known_subsections_size
+#define elf_backend_obj_attr_v2_known_subsections_size \
+  ARRAY_SIZE(aarch64_obj_attr_v2_known_subsections)
 
 #include "elfNN-target.h"

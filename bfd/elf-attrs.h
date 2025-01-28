@@ -21,6 +21,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "hidden.h"
 
 typedef enum obj_attr_version {
   OBJ_ATTR_VERSION_NONE = 0,
@@ -46,6 +47,9 @@ typedef enum obj_attr_encoding_v2
   ((enum obj_attr_encoding_v2) ((value) + 1))
 #define obj_attr_encoding_v2_to_u8(value) \
   ((uint8_t) ((value) - 1))
+
+extern const char *
+bfd_oav2_encoding_to_string (obj_attr_encoding_v2_t);
 
 typedef union obj_attr_value_v2 {
   uint32_t uint;
@@ -108,6 +112,9 @@ typedef struct obj_attr_subsection_v2 {
   struct obj_attr_v2 *last;
 } obj_attr_subsection_v2_t;
 
+extern const char *
+bfd_oav2_comprehension_to_string (bool);
+
 typedef struct obj_attr_subsection_list
 {
   /* A pointer to the first node of the list.  */
@@ -119,3 +126,39 @@ typedef struct obj_attr_subsection_list
   /* The size of the list.  */
   unsigned int size;
 } obj_attr_subsection_list_t;
+
+typedef struct {
+  const char *const name;
+  obj_attr_tag_t value;
+} obj_attr_tag_info_t;
+
+/* Attribute information.  */
+typedef struct {
+  obj_attr_tag_info_t tag;
+  obj_attr_value_v2_t default_value;
+} obj_attr_info_t;
+
+typedef struct
+{
+  const char *const subsec_name;
+  const obj_attr_info_t *known_attrs;
+  const bool optional;
+  const obj_attr_encoding_v2_t encoding;
+  const size_t len;
+} known_subsection_v2_t;
+
+struct elf_backend_data;
+
+extern const known_subsection_v2_t *
+bfd_obj_attr_v2_identify_subsection (const struct elf_backend_data *,
+				     const char *);
+
+extern const obj_attr_info_t *
+_bfd_obj_attr_v2_find_known_by_tag (const struct elf_backend_data *,
+				    const char *,
+				    obj_attr_tag_t) ATTRIBUTE_HIDDEN;
+
+extern const char *
+_bfd_obj_attr_v2_tag_to_string (const struct elf_backend_data *,
+				const char *,
+				obj_attr_tag_t) ATTRIBUTE_HIDDEN;

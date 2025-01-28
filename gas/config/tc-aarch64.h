@@ -374,4 +374,9 @@ void tc_pe_dwarf2_emit_offset (symbolS *, unsigned int);
 
 #endif /* TE_PE */
 
+#ifdef OBJ_ELF
+/* The target supports Object Attributes v2.  */
+#define TC_OBJ_ATTR_v2 1
+#endif /* OBJ_ELF */
+
 #endif /* TC_AARCH64 */

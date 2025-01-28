@@ -3006,7 +3006,9 @@ elf_begin (void)
   elf_obj_attr_version (stdoutput)
     = get_elf_backend_data (stdoutput)->default_obj_attr_version;
 
+#if TC_OBJ_ATTR_v1
   oav1_attr_info_init ();
+#endif /* TC_OBJ_ATTR_v1 */
 #endif /* TC_OBJ_ATTR */
 }
 
@@ -3025,9 +3027,9 @@ elf_end (void)
       free (groups.head);
     }
 
-#ifdef TC_OBJ_ATTR
+#if TC_OBJ_ATTR_v1
   oav1_attr_info_exit ();
-#endif /* TC_OBJ_ATTR */
+#endif /* TC_OBJ_ATTR_v1 */
 }
 
 #ifdef USE_EMULATIONS

@@ -258,6 +258,154 @@ bfd_elf_set_obj_attr_contents (bfd *abfd, bfd_byte *buffer, bfd_vma size)
   write_obj_attr_section_v1 (abfd, buffer, size);
 }
 
+/* The first two tags in gnu-testing namespace are known (from the perspective
+   of GNU ld), and so have a name and can be initialized to the default value
+   ('0' or NULL) depending on the encoding specified on the subsection.  Any
+   tags above 1 will be considered unknown, so will be default initialized in
+   the same way but its status will be set to obj_attr_subsection_v2_unknown.
+   If the tag is unknown, ld can drop it if it is inside an optional subsection,
+   whereas ld will raise an error in a required subsection.
+   Note: the array below has to be sorted by the tag's integer value.  */
+static const obj_attr_info_t known_attrs_gnu_testing[] =
+{
+  { .tag = {"GNUTestTag_0", 0} },
+  { .tag = {"GNUTestTag_1", 1} },
+};
+
+/* List of known GNU subsections.
+   Note: this array has to be sorted using the same criteria as in
+   _bfd_elf_obj_attr_subsection_v2_cmp().  */
+static const known_subsection_v2_t obj_attr_v2_known_gnu_subsections[] =
+{
+  {
+    /* Note: the currently set values for the subsection name, its optionality,
+       and encoding are irrelevant for a testing subsection.  These values are
+       unused.  This entry is only a placeholder for list of known GNU testing
+       tags.  */
+    .subsec_name = NULL,
+    .known_attrs = known_attrs_gnu_testing,
+    .optional = true,
+    .encoding = OA_ENC_ULEB128,
+    .len = ARRAY_SIZE (known_attrs_gnu_testing),
+  },
+  /* Note for the future: GNU subsections can be added here below.  */
+};
+
+/* Return True if the given subsection name is part of the reserved testing
+   namespace, i.e. SUBSEC_NAME begins with "gnu-testing".  */
+static bool
+gnu_testing_namespace (const char *subsec_name)
+{
+  return strncmp ("gnu_testing_", subsec_name, 12) == 0;
+}
+
+/* Identify the scope of a subsection from its name.
+   Note: the code below needs to be kept in sync with the code of
+   elf_parse_attrs_subsection_v2() in binutils/readelf.c.  */
+obj_attr_subsection_scope_v2_t
+bfd_elf_obj_attr_subsection_v2_scope (const bfd *abfd, const char *subsec_name)
+{
+  const char *vendor_name = get_elf_backend_data (abfd)->obj_attrs_vendor;
+  obj_attr_subsection_scope_v2_t scope = OA_SUBSEC_PRIVATE;
+  size_t vendor_name_len = strlen (vendor_name);
+  if (strncmp (subsec_name, vendor_name, vendor_name_len) == 0
+      && subsec_name[vendor_name_len] == '_')
+    scope = OA_SUBSEC_PUBLIC;
+  return scope;
+}
+
+/* Search for a subsection matching NAME in the list of subsections known from
+   bfd (generic or backend-specific).  Return the subsection information if it
+   is found, or NULL otherwise.  */
+const known_subsection_v2_t *
+bfd_obj_attr_v2_identify_subsection (const struct elf_backend_data *bed,
+				     const char *name)
+{
+  /* Check known backend subsections.  */
+  const known_subsection_v2_t *known_subsections
+    = bed->obj_attr_v2_known_subsections;
+  const size_t known_subsections_size = bed->obj_attr_v2_known_subsections_size;
+
+  for (unsigned i = 0; i < known_subsections_size; ++i)
+    {
+      int cmp = strcmp (known_subsections[i].subsec_name, name);
+      if (cmp == 0)
+	return &known_subsections[i];
+      else if (cmp > 0)
+	break;
+    }
+
+  /* Check known GNU subsections.  */
+  /* Note for the future: search known GNU subsections here.  Don't forget to
+     skip the first entry (placeholder for GNU testing subsection).  */
+
+  /* Check whether this subsection is a GNU testing subsection.  */
+  if (gnu_testing_namespace (name))
+    return &obj_attr_v2_known_gnu_subsections[0];
+
+  return NULL;
+}
+
+/* Search for the attribute information associated to TAG in the list of known
+   tags registered in the known subsection SUBSEC.  Return the tag information
+   if it is found, NULL otherwise.  */
+static const obj_attr_info_t *
+identify_tag (const known_subsection_v2_t *subsec, obj_attr_tag_t tag)
+{
+  for (unsigned i = 0; i < subsec->len; ++i)
+    {
+      const obj_attr_info_t *known_attr = &subsec->known_attrs[i];
+      if (known_attr->tag.value == tag)
+	return known_attr;
+      else if (known_attr->tag.value > tag)
+	break;
+    }
+  return NULL;
+}
+
+/* Return the attribute information associated to the pair SUBSEC, TAG if it
+   exists, NULL otherwise.  */
+const obj_attr_info_t *
+_bfd_obj_attr_v2_find_known_by_tag (const struct elf_backend_data *bed,
+				    const char *subsec_name,
+				    obj_attr_tag_t tag)
+{
+  const known_subsection_v2_t *subsec_info
+    = bfd_obj_attr_v2_identify_subsection (bed, subsec_name);
+  if (subsec_info != NULL)
+    return identify_tag (subsec_info, tag);
+  return NULL;
+}
+
+/* To-string function for the pair <SUBSEC, TAG>.
+   Returns the attribute information associated to TAG if it is found,
+   or "Tag_unknown_<N>" otherwise.  */
+const char *
+_bfd_obj_attr_v2_tag_to_string (const struct elf_backend_data *bed,
+				const char *subsec_name,
+				obj_attr_tag_t tag)
+{
+  const obj_attr_info_t *attr_info
+    = _bfd_obj_attr_v2_find_known_by_tag (bed, subsec_name, tag);
+  if (attr_info != NULL)
+    return xstrdup (attr_info->tag.name);
+  return xasprintf ("Tag_unknown_%lu", tag);
+}
+
+/* To-string function for the subsection parameter "comprehension".  */
+const char *
+bfd_oav2_comprehension_to_string (bool comprehension)
+{
+  return comprehension ? "optional" : "required";
+}
+
+/* To-string function for the subsection parameter "encoding".  */
+const char *
+bfd_oav2_encoding_to_string (obj_attr_encoding_v2_t encoding)
+{
+  return (encoding == OA_ENC_ULEB128) ? "ULEB128" : "NTBS";
+}
+
 /* Allocate/find an object attribute.  */
 obj_attribute *
 bfd_elf_new_obj_attr (bfd *abfd, obj_attr_vendor_t vendor, obj_attr_tag_t tag)

@@ -1667,6 +1667,12 @@ struct elf_backend_data
   /* Encode the object attributes version into the output object.  */
   uint8_t (*obj_attrs_version_enc) (obj_attr_version_t);
 
+  /* The known subsections and attributes (v2 only).  */
+  const known_subsection_v2_t *obj_attr_v2_known_subsections;
+
+  /* The size of the array of known subsections.  */
+  const size_t obj_attr_v2_known_subsections_size;
+
   /* This function determines the order in which any attributes are
      written.  It must be defined for input in the range
      LEAST_KNOWN_OBJ_ATTRIBUTE..NUM_KNOWN_OBJ_ATTRIBUTES-1 (this range
@@ -3211,6 +3217,8 @@ extern int _bfd_elf_obj_attr_subsection_v2_cmp
   ATTRIBUTE_HIDDEN;
 extern obj_attr_subsection_v2_t *bfd_obj_attr_subsection_v2_find_by_name
   (obj_attr_subsection_v2_t *, const char *, bool);
+extern obj_attr_subsection_scope_v2_t bfd_elf_obj_attr_subsection_v2_scope
+  (const bfd *, const char *);
 LINKED_LIST_MUTATIVE_OPS_PROTOTYPE (obj_attr_subsection_list_t,
 				    obj_attr_subsection_v2_t,
 				    ATTRIBUTE_HIDDEN);

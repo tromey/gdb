@@ -2410,6 +2410,20 @@ s_tlsdescldr (int ignored ATTRIBUTE_UNUSED)
 
   demand_empty_rest_of_line ();
 }
+
+/* Parse a .aeabi_subsection directive.  */
+static void
+s_aarch64_aeabi_subsection (int ignored ATTRIBUTE_UNUSED)
+{
+  obj_attr_process_subsection ();
+}
+
+/* Parse a .aeabi_attribute directive.  */
+static void
+s_aarch64_aeabi_attribute (int ignored ATTRIBUTE_UNUSED)
+{
+  obj_attr_process_attribute (OBJ_ATTR_PROC);
+}
 #endif	/* OBJ_ELF */
 
 #ifdef TE_PE
@@ -2491,6 +2505,8 @@ const pseudo_typeS md_pseudo_table[] = {
   {"tlsdesccall", s_tlsdesccall, 0},
   {"tlsdescldr", s_tlsdescldr, 0},
   {"variant_pcs", s_variant_pcs, 0},
+  {"aeabi_subsection", s_aarch64_aeabi_subsection, 0},
+  {"aeabi_attribute", s_aarch64_aeabi_attribute, 0},
 #endif
 #if defined(OBJ_ELF) || defined(OBJ_COFF)
   {"word", s_aarch64_cons, 4},

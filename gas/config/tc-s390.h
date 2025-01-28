@@ -134,7 +134,7 @@ unsigned char s390_sframe_get_abi_arch (void);
 /* Whether SFrame FDE of type SFRAME_FDE_TYPE_FLEX be generated.  */
 #define sframe_support_flex_fde_p() true
 
-/* The target supports Object Attributes.  */
-#define TC_OBJ_ATTR 1
+/* The target supports Object Attributes v1.  */
+#define TC_OBJ_ATTR_v1 1
 
 #endif /* TC_S390 */

@@ -242,6 +242,9 @@ _bfd_aarch64_obj_attrs_version_dec (uint8_t) ATTRIBUTE_HIDDEN;
 extern uint8_t
 _bfd_aarch64_obj_attrs_version_enc (obj_attr_version_t) ATTRIBUTE_HIDDEN;
 
+extern const known_subsection_v2_t aarch64_obj_attr_v2_known_subsections[2]
+  ATTRIBUTE_HIDDEN;
+
 extern bfd *
 _bfd_aarch64_elf_link_setup_gnu_properties (struct bfd_link_info *)
   ATTRIBUTE_HIDDEN;
