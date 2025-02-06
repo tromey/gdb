@@ -6408,17 +6408,14 @@ read_decl_line (struct die_info *die, struct dwarf2_cu *cu)
   struct attribute *decl_line = dwarf2_attr (die, DW_AT_decl_line, cu);
   if (decl_line == nullptr)
     return 0;
-  if (decl_line->form_is_constant ())
+
+  std::optional<ULONGEST> val = decl_line->unsigned_constant ();
+  if (val.has_value ())
     {
-      LONGEST val = decl_line->constant_value (0);
-      if (0 <= val && val <= UINT_MAX)
-	return (unsigned int) val;
-
+      if (*val <= UINT_MAX)
+	return (unsigned int) *val;
       complaint (_("Declared line for using directive is too large"));
-      return 0;
     }
-
-  complaint (_("Declared line for using directive is of incorrect format"));
   return 0;
 }
 
