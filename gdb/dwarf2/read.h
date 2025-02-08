@@ -1205,15 +1205,6 @@ extern bool dw2_expand_symtabs_matching_one
    expand_symtabs_expansion_listener expansion_notify,
    expand_symtabs_lang_matcher lang_matcher);
 
-/* If FILE_MATCHER is non-NULL, set all the
-   dwarf2_per_cu_quick_data::MARK of the current DWARF2_PER_OBJFILE
-   that match FILE_MATCHER.  */
-
-extern void dw_expand_symtabs_matching_file_matcher
-  (dwarf2_per_objfile *per_objfile,
-   auto_bool_vector &marked,
-   expand_symtabs_file_matcher file_matcher);
-
 /* Return pointer to string at .debug_str offset STR_OFFSET.  */
 
 extern const char *read_indirect_string_at_offset
