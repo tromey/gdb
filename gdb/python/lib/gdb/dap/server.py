@@ -61,7 +61,6 @@ class DeferredRequest:
     Later, when the result is available, the deferred request can be
     scheduled.  This causes 'invoke' to be called and then the
     response to be sent to the client.
-
     """
 
     # This is for internal use by the server.  It should not be
@@ -71,6 +70,13 @@ class DeferredRequest:
     def set_request(self, req, result):
         self._req = req
         self._result = result
+
+    @in_dap_thread
+    def defer_events(self):
+        """Return True if events should be deferred during execution.
+
+        This may be overridden by subclasses."""
+        return True
 
     @in_dap_thread
     def invoke(self):
@@ -94,7 +100,10 @@ class DeferredRequest:
 
         """
         with _server.canceller.current_request(self._req):
+            if self.defer_events():
+                _server.set_defer_events()
             _server.invoke_request(self._req, self._result, self.invoke)
+        _server.emit_pending_events()
 
 
 # A subclass of Exception that is used solely for reporting that a
@@ -229,7 +238,7 @@ class Server:
         self.out_stream = out_stream
         self.child_stream = child_stream
         self.delayed_fns_lock = threading.Lock()
-        self.defer_stop_events = False
+        self.defer_events = False
         self.delayed_fns = []
         # This queue accepts JSON objects that are then sent to the
         # DAP client.  Writing is done in a separate thread to avoid
@@ -316,7 +325,7 @@ class Server:
     def _read_inferior_output(self):
         while True:
             line = self.child_stream.readline()
-            self.send_event(
+            self.send_event_maybe_later(
                 "output",
                 {
                     "category": "stdout",
@@ -356,6 +365,17 @@ class Server:
         self.read_queue.put(None)
 
     @in_dap_thread
+    def emit_pending_events(self):
+        """Emit any pending events."""
+        fns = None
+        with self.delayed_fns_lock:
+            fns = self.delayed_fns
+            self.delayed_fns = []
+            self.defer_events = False
+        for fn in fns:
+            fn()
+
+    @in_dap_thread
     def main_loop(self):
         """The main loop of the DAP server."""
         # Before looping, start the thread that writes JSON to the
@@ -371,13 +391,7 @@ class Server:
             req = cmd["seq"]
             with self.canceller.current_request(req):
                 self._handle_command(cmd)
-            fns = None
-            with self.delayed_fns_lock:
-                fns = self.delayed_fns
-                self.delayed_fns = []
-                self.defer_stop_events = False
-            for fn in fns:
-                fn()
+            self.emit_pending_events()
         # Got the terminate request.  This is handled by the
         # JSON-writing thread, so that we can ensure that all
         # responses are flushed to the client before exiting.
@@ -386,13 +400,13 @@ class Server:
         send_gdb("quit")
 
     @in_dap_thread
-    def send_event_later(self, event, body=None):
-        """Send a DAP event back to the client, but only after the
-        current request has completed."""
+    def set_defer_events(self):
+        """Defer any events until the current request has completed."""
         with self.delayed_fns_lock:
-            self.delayed_fns.append(lambda: self.send_event(event, body))
+            self.defer_events = True
 
-    @in_gdb_thread
+    # Note that this does not need to be run in any particular thread,
+    # because it uses locks for thread-safety.
     def send_event_maybe_later(self, event, body=None):
         """Send a DAP event back to the client, but if a request is in-flight
         within the dap thread and that request is configured to delay the event,
@@ -401,10 +415,10 @@ class Server:
         with self.canceller.lock:
             if self.canceller.in_flight_dap_thread:
                 with self.delayed_fns_lock:
-                    if self.defer_stop_events:
-                        self.delayed_fns.append(lambda: self.send_event(event, body))
+                    if self.defer_events:
+                        self.delayed_fns.append(lambda: self._send_event(event, body))
                         return
-        self.send_event(event, body)
+        self._send_event(event, body)
 
     @in_dap_thread
     def call_function_later(self, fn):
@@ -415,7 +429,7 @@ class Server:
     # Note that this does not need to be run in any particular thread,
     # because it just creates an object and writes it to a thread-safe
     # queue.
-    def send_event(self, event, body=None):
+    def _send_event(self, event, body=None):
         """Send an event to the DAP client.
         EVENT is the name of the event, a string.
         BODY is the body of the event, an arbitrary object."""
@@ -439,15 +453,6 @@ def send_event(event, body=None):
     """Send an event to the DAP client.
     EVENT is the name of the event, a string.
     BODY is the body of the event, an arbitrary object."""
-    global _server
-    _server.send_event(event, body)
-
-
-def send_event_maybe_later(event, body=None):
-    """Send a DAP event back to the client, but if a request is in-flight
-    within the dap thread and that request is configured to delay the event,
-    wait until the response has been sent until the event is sent back to
-    the client."""
     global _server
     _server.send_event_maybe_later(event, body)
 
@@ -479,7 +484,7 @@ def request(
     response: bool = True,
     on_dap_thread: bool = False,
     expect_stopped: bool = True,
-    defer_stop_events: bool = False
+    defer_events: bool = True
 ):
     """A decorator for DAP requests.
 
@@ -501,9 +506,9 @@ def request(
     inferior is running.  When EXPECT_STOPPED is False, the request
     will proceed regardless of the inferior's state.
 
-    If DEFER_STOP_EVENTS is True, then make sure any stop events sent
-    during the request processing are not sent to the client until the
-    response has been sent.
+    If DEFER_EVENTS is True, then make sure any events sent during the
+    request processing are not sent to the client until the response
+    has been sent.
     """
 
     # Validate the parameters.
@@ -526,27 +531,34 @@ def request(
 
         # Verify that the function is run on the correct thread.
         if on_dap_thread:
-            cmd = in_dap_thread(func)
+            check_cmd = in_dap_thread(func)
         else:
             func = in_gdb_thread(func)
 
             if response:
-                if defer_stop_events:
-                    global _server
-                    if _server is not None:
-                        with _server.delayed_events_lock:
-                            _server.defer_stop_events = True
 
                 def sync_call(**args):
                     return send_gdb_with_response(lambda: func(**args))
 
-                cmd = sync_call
+                check_cmd = sync_call
             else:
 
                 def non_sync_call(**args):
                     return send_gdb(lambda: func(**args))
 
-                cmd = non_sync_call
+                check_cmd = non_sync_call
+
+        if defer_events:
+
+            def deferring(**args):
+                global _server
+                _server.set_defer_events()
+                return check_cmd(**args)
+
+            cmd = deferring
+
+        else:
+            cmd = check_cmd
 
         # If needed, check that the inferior is not running.  This
         # wrapping is done last, so the check is done first, before
@@ -590,7 +602,7 @@ def client_bool_capability(name, default=False):
 def initialize(**args):
     global _server, _capabilities
     _server.config = args
-    _server.send_event_later("initialized")
+    _server.send_event_maybe_later("initialized")
     global _lines_start_at_1
     _lines_start_at_1 = client_bool_capability("linesStartAt1", True)
     return _capabilities.copy()
