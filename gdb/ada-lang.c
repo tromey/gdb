@@ -1308,7 +1308,7 @@ convert_from_hex_encoded (std::string &out, const char *str, int n)
 /* See ada-lang.h.  */
 
 std::string
-ada_decode (const char *encoded, bool wrap, bool operators, bool wide)
+ada_decode (const char *encoded, bool wrap, bool translate)
 {
   int i;
   int len0;
@@ -1403,7 +1403,7 @@ ada_decode (const char *encoded, bool wrap, bool operators, bool wide)
   while (i < len0)
     {
       /* Is this a symbol function?  */
-      if (operators && at_start_name && encoded[i] == 'O')
+      if (at_start_name && encoded[i] == 'O')
 	{
 	  int k;
 
@@ -1414,7 +1414,10 @@ ada_decode (const char *encoded, bool wrap, bool operators, bool wide)
 			    op_len - 1) == 0)
 		  && !isalnum (encoded[i + op_len]))
 		{
-		  decoded.append (ada_opname_table[k].decoded);
+		  if (translate)
+		    decoded.append (ada_opname_table[k].decoded);
+		  else
+		    decoded.append (ada_opname_table[k].encoded);
 		  at_start_name = 0;
 		  i += op_len;
 		  break;
@@ -1502,28 +1505,59 @@ ada_decode (const char *encoded, bool wrap, bool operators, bool wide)
 	    i++;
 	}
 
-      if (wide && i < len0 + 3 && encoded[i] == 'U' && isxdigit (encoded[i + 1]))
+      /* Handle wide characters while respecting the arguments to the
+	 function: we may want to copy them verbatim, but in this case
+	 we do not want to register that we've copied an upper-case
+	 character.  */
+      if (i < len0 + 3 && encoded[i] == 'U' && isxdigit (encoded[i + 1]))
 	{
-	  if (convert_from_hex_encoded (decoded, &encoded[i + 1], 2))
+	  if (translate)
 	    {
-	      i += 3;
+	      if (convert_from_hex_encoded (decoded, &encoded[i + 1], 2))
+		{
+		  i += 3;
+		  continue;
+		}
+	    }
+	  else
+	    {
+	      decoded.push_back (encoded[i]);
+	      ++i;
 	      continue;
 	    }
 	}
-      else if (wide && i < len0 + 5 && encoded[i] == 'W' && isxdigit (encoded[i + 1]))
+      else if (i < len0 + 5 && encoded[i] == 'W' && isxdigit (encoded[i + 1]))
 	{
-	  if (convert_from_hex_encoded (decoded, &encoded[i + 1], 4))
+	  if (translate)
 	    {
-	      i += 5;
+	      if (convert_from_hex_encoded (decoded, &encoded[i + 1], 4))
+		{
+		  i += 5;
+		  continue;
+		}
+	    }
+	  else
+	    {
+	      decoded.push_back (encoded[i]);
+	      ++i;
 	      continue;
 	    }
 	}
-      else if (wide && i < len0 + 10 && encoded[i] == 'W' && encoded[i + 1] == 'W'
+      else if (i < len0 + 10 && encoded[i] == 'W' && encoded[i + 1] == 'W'
 	       && isxdigit (encoded[i + 2]))
 	{
-	  if (convert_from_hex_encoded (decoded, &encoded[i + 2], 8))
+	  if (translate)
 	    {
-	      i += 10;
+	      if (convert_from_hex_encoded (decoded, &encoded[i + 2], 8))
+		{
+		  i += 10;
+		  continue;
+		}
+	    }
+	  else
+	    {
+	      decoded.push_back (encoded[i]);
+	      ++i;
 	      continue;
 	    }
 	}
@@ -1550,6 +1584,12 @@ ada_decode (const char *encoded, bool wrap, bool operators, bool wide)
 	  at_start_name = 1;
 	  i += 2;
 	}
+      else if (isupper (encoded[i]) || encoded[i] == ' ')
+	{
+	  /* Decoded names should never contain any uppercase
+	     character.  */
+	  goto Suppress;
+	}
       else
 	{
 	  /* It's a character part of the decoded name, so just copy it
@@ -1557,16 +1597,6 @@ ada_decode (const char *encoded, bool wrap, bool operators, bool wide)
 	  decoded.push_back (encoded[i]);
 	  i += 1;
 	}
-    }
-
-  /* Decoded names should never contain any uppercase character.
-     Double-check this, and abort the decoding if we find one.  */
-
-  if (operators)
-    {
-      for (i = 0; i < decoded.length(); ++i)
-	if (isupper (decoded[i]) || decoded[i] == ' ')
-	  goto Suppress;
     }
 
   /* If the compiler added a suffix, append it now.  */
@@ -1594,6 +1624,13 @@ ada_decode_tests ()
   /* This isn't valid, but used to cause a crash.  PR gdb/30639.  The
      result does not really matter very much.  */
   SELF_CHECK (ada_decode ("44") == "44");
+
+  /* Check that the settings used by the DWARF reader have the desired
+     effect.  */
+  SELF_CHECK (ada_decode ("symada__cS", false, false) == "");
+  SELF_CHECK (ada_decode ("pkg__Oxor", false, false) == "pkg.Oxor");
+  SELF_CHECK (ada_decode ("pack__func_W017b", false, false)
+	      == "pack.func_W017b");
 }
 
 #endif
@@ -13311,7 +13348,7 @@ ada_lookup_name_info::ada_lookup_name_info (const lookup_name_info &lookup_name)
       else
 	m_standard_p = false;
 
-      m_decoded_name = ada_decode (m_encoded_name.c_str (), true, false, false);
+      m_decoded_name = ada_decode (m_encoded_name.c_str (), true, false);
 
       /* If the name contains a ".", then the user is entering a fully
 	 qualified entity name, and the match must not be done in wild
