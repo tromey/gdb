@@ -185,6 +185,45 @@ attribute::unsigned_constant () const
 
 /* See attribute.h.  */
 
+std::optional<LONGEST>
+attribute::signed_constant () const
+{
+  if (form_is_strictly_signed ())
+    return u.snd;
+
+#define SIGN_EXTEND(VAL, BITS) \
+      ((((LONGEST) (VAL)) ^ (((LONGEST) 1) << ((BITS) - 1)))	\
+       - (((LONGEST) 1) << ((BITS) - 1)))
+
+  switch (form)
+    {
+    case DW_FORM_data8:
+    case DW_FORM_udata:
+      /* Not sure if DW_FORM_udata should be handled or not.  Anyway
+	 for DW_FORM_data8, there's no need to sign-extend.  */
+      return u.unsnd;
+
+    case DW_FORM_data1:
+      return SIGN_EXTEND (u.unsnd, 8);
+      break;
+    case DW_FORM_data2:
+      return SIGN_EXTEND (u.unsnd, 16);
+      break;
+    case DW_FORM_data4:
+      return SIGN_EXTEND (u.unsnd, 32);
+      break;
+    }
+
+#undef SIGN_EXTEND
+
+  /* For DW_FORM_data16 see attribute::form_is_constant.  */
+  complaint (_("Attribute value is not a constant (%s)"),
+	     dwarf_form_name (form));
+  return {};
+}
+
+/* See attribute.h.  */
+
 bool
 attribute::form_is_unsigned () const
 {
