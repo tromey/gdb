@@ -1,5 +1,5 @@
-# Expect library used by AArch64 ELF test scripts.
-# Copyright (C) 2009-2026 Free Software Foundation, Inc.
+# Expect script for AARCH64 ELF tests related to GNU properties.
+# Copyright (C) 2025 Free Software Foundation, Inc.
 #
 # This file is part of the GNU Binutils.
 #
@@ -23,37 +23,25 @@ if { ![is_elf_format] || ![istarget "aarch64*-*-*"] } {
   return
 }
 
-proc aarch64_choose_ilp32_emul {} {
-  if [istarget *linux*] then {
-    if [istarget aarch64_be-*] {
-      return "aarch64linux32b"
-    }
-    return "aarch64linux32"
-  }
-  if [istarget aarch64_be-*] {
-    return "aarch64elf32b"
-  }
-  return "aarch64elf32"
-}
+load_file $srcdir/$subdir/../lib/aarch64-elf-lib.exp
 
-proc aarch64_choose_lp64_emul {} {
-  if [istarget *linux*] then {
-    if [istarget aarch64_be-*] {
-      return "aarch64linuxb"
-    }
-    return "aarch64linux"
-  }
-  if [istarget *nto*] then {
-    return "aarch64nto"
-  }
-  if [istarget aarch64_be-*] {
-    return "aarch64elfb"
-  }
-  return "aarch64elf"
-}
+set test_list [lsort [glob -nocomplain $srcdir/$subdir/*.d]]
 
-proc run_dump_test_lp64 { testname } {
-  run_dump_test $testname \
-    [list [list as "-mabi=lp64 -I\$srcdir/\$subdir"] \
-	  [list ld [concat "-m " [aarch64_choose_lp64_emul]]]]
+# See definition of run_ld_link_tests in testsuite/lib/ld-lib.exp for more
+# details.
+# set aarch64elflinktests {
+#   {"Build bti-plt-so for PLT tests"
+#    "-shared" ""
+#    "-I$srcdir/$subdir -defsym __property_bti__=1"
+#    {bti-plt-so.s} {} "libbti-plt-so.so"}
+# }
+
+# if [check_shared_lib_support] {
+#   run_ld_link_tests $aarch64elflinktests
+# }
+
+foreach t $test_list {
+  # We need to strip the ".d", but can leave the dirname.
+  run_dump_test [file rootname $t] \
+    [list [list as "-I\$srcdir/\$subdir"]]
 }
