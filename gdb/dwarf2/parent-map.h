@@ -56,7 +56,12 @@ struct dwarf2_per_bfd;
 
     In order to handle this situation, we defer certain entries until
     the end of scanning, at which point we'll know the containing
-    context of all the DIEs that we might have scanned.  */
+    context of all the DIEs that we might have scanned.
+
+    Note that the .debug_names reader also defers parent lookups, but
+    rather than use DIE offset, it uses offsets of its own devising.
+    To this end, it reuses the 'addr_type' below, but it does not use
+    parent_map or the 'form' method.  */
 class parent_map
 {
 public:
@@ -110,6 +115,13 @@ private:
   addrmap_mutable m_map;
 };
 
+/* The .debug_names reader uses a hash map rather than an addrmap to
+   find parents.  This is done because ranges aren't needed here, and
+   an attempt to use addrmap in that reader showed a substantial
+   performance regression.  */
+using debug_names_parent_map
+  = gdb::unordered_map<parent_map::addr_type, cooked_index_entry *>;
+
 /* Keep a collection of parent_map objects, and allow for lookups
    across all of them.  */
 class parent_map_map
@@ -128,6 +140,14 @@ public:
     m_maps.push_back (map.to_fixed (&m_storage));
   }
 
+  /* Add a vector of parent maps to this object.  This should be
+     called only once.  */
+  void add_maps (std::vector<debug_names_parent_map> &&hashes)
+  {
+    gdb_assert (m_hashes.empty ());
+    m_hashes = std::move (hashes);
+  }
+
   /* Look up an entry in this map.  */
   const cooked_index_entry *find (parent_map::addr_type search) const
   {
@@ -138,6 +158,13 @@ public:
 	if (result != nullptr)
 	  return result;
       }
+    for (const auto &iter : m_hashes)
+      {
+	auto found = iter.find (search);
+	if (found != iter.end ())
+	  return found->second;
+      }
+
     return nullptr;
   }
 
@@ -155,6 +182,10 @@ private:
      addrmap is based on a splay-tree, which is not thread-safe, even
      for nominally read-only lookups.  */
   std::vector<addrmap_fixed *> m_maps;
+
+  /* Hash tables that are also consulted during lookup.  This is used
+     by the .debug_names reader.  */
+  std::vector<debug_names_parent_map> m_hashes;
 };
 
 #endif /* GDB_DWARF2_PARENT_MAP_H */

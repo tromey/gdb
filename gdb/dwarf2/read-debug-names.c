@@ -64,12 +64,30 @@ public:
 
 struct mapped_debug_names_reader
 {
-  const gdb_byte *scan_one_entry (const char *name,
+  const gdb_byte *scan_one_entry (uint32_t index,
+				  const char *name,
 				  const gdb_byte *entry,
-				  cooked_index_entry **result,
-				  std::optional<ULONGEST> &parent);
+				  cooked_index_entry **result);
   void scan_entries (uint32_t index, const char *name, const gdb_byte *entry);
   void scan_all_names ();
+
+  /* Form a value used to look up an entry's parent.
+
+     If the augmentation string is "GDB2", the DW_IDX_parent value is
+     an index into the name table.  Since there may be multiple index
+     entries associated to that name, we have a little heuristic to
+     figure out which is the right one -- we calculate a value that
+     incorporates the language.
+
+     Otherwise, the DW_IDX_parent value is an offset into the entry
+     pool, which is not ambiguous.  */
+  parent_map::addr_type form (ULONGEST entry, enum language lang)
+  {
+    static_assert (sizeof (parent_map::addr_type) >= sizeof (ULONGEST));
+    if (augmentation_is_gdb && gdb_augmentation_version == 2)
+      return (parent_map::addr_type) (entry * nr_languages + lang);
+    return (parent_map::addr_type) entry;
+  }
 
   dwarf2_per_objfile *per_objfile = nullptr;
   bfd *abfd = nullptr;
@@ -120,28 +138,10 @@ struct mapped_debug_names_reader
      robin fashion.  */
   std::vector<cooked_index_shard_up> shards;
 
+  std::vector<debug_names_parent_map> parent_maps;
+
   /* Next shard to insert an entry in.  */
   int next_shard = 0;
-
-  /* Maps entry pool offsets to cooked index entries.  */
-  gdb::unordered_map<ULONGEST, cooked_index_entry *>
-    entry_pool_offsets_to_entries;
-
-  /* Cooked index entries for which the parent needs to be resolved.
-
-     The second value of the pair is the DW_IDX_parent value.  Its meaning
-     depends on the augmentation string:
-
-       - GDB2: an index in the name table
-       - GDB3: an offset offset into the entry pool  */
-  std::vector<std::pair<cooked_index_entry *, ULONGEST>> needs_parent;
-
-  /* All the cooked index entries created, in the same order and groups as
-     listed in the name table.
-
-     The size of the outer vector is equal to the number of entries in the name
-     table (NAME_COUNT).  */
-  std::vector<std::vector<cooked_index_entry *>> all_entries;
 };
 
 /* Scan a single entry from the entries table.  Set *RESULT and PARENT
@@ -149,10 +149,10 @@ struct mapped_debug_names_reader
    nullptr on error, or at the end of the table.  */
 
 const gdb_byte *
-mapped_debug_names_reader::scan_one_entry (const char *name,
+mapped_debug_names_reader::scan_one_entry (uint32_t index,
+					   const char *name,
 					   const gdb_byte *entry,
-					   cooked_index_entry **result,
-					   std::optional<ULONGEST> &parent)
+					   cooked_index_entry **result)
 {
   unsigned int bytes_read;
   const auto offset_in_entry_pool = entry - entry_pool;
@@ -175,6 +175,7 @@ mapped_debug_names_reader::scan_one_entry (const char *name,
   sect_offset die_offset {};
   enum language lang = language_unknown;
   dwarf2_per_cu *per_cu = nullptr;
+  std::optional<ULONGEST> parent;
   for (const auto &attr : indexval.attr_vec)
     {
       ULONGEST ull;
@@ -289,15 +290,29 @@ mapped_debug_names_reader::scan_one_entry (const char *name,
   /* Skip if we couldn't find a valid CU/TU index.  */
   if (per_cu != nullptr)
     {
-      *result
-	= shards[next_shard]->add (die_offset, (dwarf_tag) indexval.dwarf_tag,
-				   flags, lang, name, nullptr, per_cu);
+      if (parent.has_value ())
+	*result = shards[next_shard]->add (die_offset,
+					   (dwarf_tag) indexval.dwarf_tag,
+					   flags | IS_PARENT_DEFERRED, lang,
+					   name, form (*parent, lang), per_cu);
+      else
+	*result = shards[next_shard]->add (die_offset,
+					   (dwarf_tag) indexval.dwarf_tag,
+					   flags, lang, name, nullptr, per_cu);
+
+      /* See the 'form' method comment to explain the choice of index
+	 here.  Note that indexes in DWARF start at 1, hence the "+1"
+	 in the old-style branch here.  */
+      parent_map::addr_type my_idx
+	= form (gdb_augmentation_version == 2
+		? index + 1
+		: offset_in_entry_pool,
+		(*result)->lang);
+      parent_maps[next_shard].emplace (my_idx, *result);
 
       ++next_shard;
       if (next_shard == shards.size ())
 	next_shard = 0;
-
-      entry_pool_offsets_to_entries.emplace (offset_in_entry_pool, *result);
     }
 
   return entry;
@@ -310,23 +325,14 @@ mapped_debug_names_reader::scan_entries (uint32_t index,
 					 const char *name,
 					 const gdb_byte *entry)
 {
-  std::vector<cooked_index_entry *> these_entries;
-  
   while (true)
     {
-      std::optional<ULONGEST> parent;
       cooked_index_entry *this_entry;
-      entry = scan_one_entry (name, entry, &this_entry, parent);
+      entry = scan_one_entry (index, name, entry, &this_entry);
 
       if (entry == nullptr)
 	break;
-
-      these_entries.push_back (this_entry);
-      if (parent.has_value ())
-	needs_parent.emplace_back (this_entry, *parent);
     }
-
-  all_entries[index] = std::move (these_entries);
 }
 
 /* Scan the name table and create all the entries.  */
@@ -334,8 +340,6 @@ mapped_debug_names_reader::scan_entries (uint32_t index,
 void
 mapped_debug_names_reader::scan_all_names ()
 {
-  all_entries.resize (name_count);
-
   /* In the first pass, create all the entries.  */
   for (uint32_t i = 0; i < name_count; ++i)
     {
@@ -353,45 +357,6 @@ mapped_debug_names_reader::scan_all_names ()
       const gdb_byte *entry = entry_pool + namei_entry_offs;
 
       scan_entries (i, name, entry);
-    }
-
-  /* Resolve the parent pointers for all entries that have a parent.
-
-     If the augmentation string is "GDB2", the DW_IDX_parent value is an index
-     into the name table.  Since there may be multiple index entries associated
-     to that name, we have a little heuristic to figure out which is the right
-     one.
-
-     Otherwise, the DW_IDX_parent value is an offset into the entry pool, which
-     is not ambiguous.  */
-  for (auto &[entry, parent_val] : needs_parent)
-    {
-      if (augmentation_is_gdb && gdb_augmentation_version == 2)
-	{
-	  /* Name entries are indexed from 1 in DWARF.  */
-	  std::vector<cooked_index_entry *> &entries
-	    = all_entries[parent_val - 1];
-
-	  for (const auto &parent : entries)
-	    if (parent->lang == entry->lang)
-	      {
-		entry->set_parent (parent);
-		break;
-	      }
-	}
-      else
-	{
-	  const auto parent_it
-	    = entry_pool_offsets_to_entries.find (parent_val);
-
-	  if (parent_it == entry_pool_offsets_to_entries.cend ())
-	    {
-	      complaint (_ ("Parent entry not found for .debug_names entry"));
-	      continue;
-	    }
-
-	  entry->set_parent (parent_it->second);
-	}
     }
 }
 
@@ -434,10 +399,9 @@ cooked_index_worker_debug_names::do_reading ()
   cooked_index *table
     = (gdb::checked_static_cast<cooked_index *>
        (per_bfd->index_table.get ()));
-
-  /* Note that this code never uses IS_PARENT_DEFERRED, so it is safe
-     to pass nullptr here.  */
-  table->set_contents (std::move (m_map.shards), &m_warnings, nullptr);
+  m_all_parents_map.add_maps (std::move (m_map.parent_maps));
+  table->set_contents (std::move (m_map.shards), &m_warnings,
+		       &m_all_parents_map);
 
   bfd_thread_cleanup ();
 }
@@ -851,7 +815,10 @@ do_dwarf2_read_debug_names (dwarf2_per_objfile *per_objfile)
 
   /* Create as many index shard as there are worker threads.  */
   for (int i = 0; i < n_workers; ++i)
-    map.shards.emplace_back (std::make_unique<cooked_index_shard> ());
+    {
+      map.shards.emplace_back (std::make_unique<cooked_index_shard> ());
+      map.parent_maps.emplace_back ();
+    }
 
   /* There is a single address map for the whole index (coming from
      .debug_aranges).  We only need to install it into a single shard for it to
