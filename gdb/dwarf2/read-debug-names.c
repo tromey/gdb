@@ -370,14 +370,19 @@ mapped_debug_names_reader::scan_all_names (deferred_warnings *warnings)
 struct cooked_index_worker_debug_names : public cooked_index_worker
 {
   cooked_index_worker_debug_names (dwarf2_per_objfile *per_objfile,
-			    mapped_debug_names_reader &&map)
+				   mapped_debug_names_reader &&map,
+				   addrmap_mutable addrmap)
     : cooked_index_worker (per_objfile),
-      m_map (std::move (map))
+      m_map (std::move (map)),
+      m_addrmap (std::move (addrmap))
   { }
 
   void do_reading () override;
 
   mapped_debug_names_reader m_map;
+
+  /* The addrmap that was read from .debug_aranges.  */
+  addrmap_mutable m_addrmap;
 };
 
 void
@@ -393,6 +398,11 @@ cooked_index_worker_debug_names::do_reading ()
     {
       exceptions.push_back (std::move (exc));
     }
+
+  /* There is a single address map for the whole index (coming from
+     .debug_aranges).  We only need to install it into a single shard for it to
+     get searched by cooked_index.  */
+  m_map.shards[0]->install_addrmap (&m_addrmap);
 
   dwarf2_per_bfd *per_bfd = m_per_objfile->per_bfd;
   per_bfd->quick_file_names_table
@@ -825,13 +835,8 @@ do_dwarf2_read_debug_names (dwarf2_per_objfile *per_objfile)
       map.parent_maps.emplace_back ();
     }
 
-  /* There is a single address map for the whole index (coming from
-     .debug_aranges).  We only need to install it into a single shard for it to
-     get searched by cooked_index.  */
-  map.shards[0]->install_addrmap (&addrmap);
-
   auto cidn = (std::make_unique<cooked_index_worker_debug_names>
-	       (per_objfile, std::move (map)));
+	       (per_objfile, std::move (map), std::move (addrmap)));
   auto idx = std::make_unique<debug_names_index> (per_objfile,
 						  std::move (cidn));
   per_bfd->start_reading (std::move (idx));
