@@ -64,12 +64,14 @@ public:
 
 struct mapped_debug_names_reader
 {
-  const gdb_byte *scan_one_entry (uint32_t index,
+  const gdb_byte *scan_one_entry (deferred_warnings *warnings,
+				  uint32_t index,
 				  const char *name,
 				  const gdb_byte *entry,
 				  cooked_index_entry **result);
-  void scan_entries (uint32_t index, const char *name, const gdb_byte *entry);
-  void scan_all_names ();
+  void scan_entries (deferred_warnings *warnings, uint32_t index,
+		     const char *name, const gdb_byte *entry);
+  void scan_all_names (deferred_warnings *warnings);
 
   /* Form a value used to look up an entry's parent.
 
@@ -149,7 +151,8 @@ struct mapped_debug_names_reader
    nullptr on error, or at the end of the table.  */
 
 const gdb_byte *
-mapped_debug_names_reader::scan_one_entry (uint32_t index,
+mapped_debug_names_reader::scan_one_entry (deferred_warnings *warnings,
+					   uint32_t index,
 					   const char *name,
 					   const gdb_byte *entry,
 					   cooked_index_entry **result)
@@ -221,10 +224,11 @@ mapped_debug_names_reader::scan_one_entry (uint32_t index,
 	default:
 	  /* A warning instead of a complaint, because this one is
 	     more like a bug in gdb.  */
-	  warning (_("Unsupported .debug_names form %s [in module %s].\n"
-		     "This normally should not happen, please file a bug report."),
-		   dwarf_form_name (attr.form),
-		   bfd_get_filename (abfd));
+	  warnings->warn
+	    (_("Unsupported .debug_names form %s [in module %s].\n"
+	       "This normally should not happen, please file a bug report."),
+	     dwarf_form_name (attr.form),
+	     bfd_get_filename (abfd));
 	  return nullptr;
 	}
       switch (attr.dw_idx)
@@ -321,14 +325,15 @@ mapped_debug_names_reader::scan_one_entry (uint32_t index,
 /* Scan all the entries for NAME, at name slot INDEX.  */
 
 void
-mapped_debug_names_reader::scan_entries (uint32_t index,
+mapped_debug_names_reader::scan_entries (deferred_warnings *warnings,
+					 uint32_t index,
 					 const char *name,
 					 const gdb_byte *entry)
 {
   while (true)
     {
       cooked_index_entry *this_entry;
-      entry = scan_one_entry (index, name, entry, &this_entry);
+      entry = scan_one_entry (warnings, index, name, entry, &this_entry);
 
       if (entry == nullptr)
 	break;
@@ -338,7 +343,7 @@ mapped_debug_names_reader::scan_entries (uint32_t index,
 /* Scan the name table and create all the entries.  */
 
 void
-mapped_debug_names_reader::scan_all_names ()
+mapped_debug_names_reader::scan_all_names (deferred_warnings *warnings)
 {
   /* In the first pass, create all the entries.  */
   for (uint32_t i = 0; i < name_count; ++i)
@@ -356,7 +361,7 @@ mapped_debug_names_reader::scan_all_names ()
 				    offset_size, dwarf5_byte_order);
       const gdb_byte *entry = entry_pool + namei_entry_offs;
 
-      scan_entries (i, name, entry);
+      scan_entries (warnings, i, name, entry);
     }
 }
 
@@ -382,7 +387,7 @@ cooked_index_worker_debug_names::do_reading ()
   std::vector<gdb_exception> exceptions;
   try
     {
-      m_map.scan_all_names ();
+      m_map.scan_all_names (&m_warnings);
     }
   catch (const gdb_exception &exc)
     {
