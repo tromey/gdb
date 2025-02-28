@@ -29,6 +29,7 @@
 #include "stringify.h"
 #include "extract-store-integer.h"
 #include "gdbsupport/thread-pool.h"
+#include "gdbsupport/task-group.h"
 
 /* This is just like cooked_index_functions, but overrides a single
    method so the test suite can distinguish the .debug_names case from
@@ -64,14 +65,20 @@ public:
 
 struct mapped_debug_names_reader
 {
-  const gdb_byte *scan_one_entry (deferred_warnings *warnings,
+  const gdb_byte *scan_one_entry (cooked_index_shard *shard,
+				  debug_names_parent_map &pmap,
+				  deferred_warnings *warnings,
 				  uint32_t index,
 				  const char *name,
 				  const gdb_byte *entry,
 				  cooked_index_entry **result);
-  void scan_entries (deferred_warnings *warnings, uint32_t index,
+  void scan_entries (cooked_index_shard *shard, debug_names_parent_map &pmap,
+		     deferred_warnings *warnings, uint32_t index,
 		     const char *name, const gdb_byte *entry);
-  void scan_all_names (deferred_warnings *warnings);
+  void scan_all_names (cooked_index_shard *shard,
+		       debug_names_parent_map &pmap,
+		       deferred_warnings *warnings,
+		       uint32_t from, uint32_t to);
 
   /* Form a value used to look up an entry's parent.
 
@@ -133,17 +140,6 @@ struct mapped_debug_names_reader
   };
 
   gdb::unordered_map<ULONGEST, index_val> abbrev_map;
-
-  /* Even though the scanning of .debug_names and creation of the cooked index
-     entries is done serially, we create multiple shards so that the
-     finalization step can be parallelized.  The shards are filled in a round
-     robin fashion.  */
-  std::vector<cooked_index_shard_up> shards;
-
-  std::vector<debug_names_parent_map> parent_maps;
-
-  /* Next shard to insert an entry in.  */
-  int next_shard = 0;
 };
 
 /* Scan a single entry from the entries table.  Set *RESULT and PARENT
@@ -151,7 +147,9 @@ struct mapped_debug_names_reader
    nullptr on error, or at the end of the table.  */
 
 const gdb_byte *
-mapped_debug_names_reader::scan_one_entry (deferred_warnings *warnings,
+mapped_debug_names_reader::scan_one_entry (cooked_index_shard *shard,
+					   debug_names_parent_map &pmap,
+					   deferred_warnings *warnings,
 					   uint32_t index,
 					   const char *name,
 					   const gdb_byte *entry,
@@ -295,14 +293,12 @@ mapped_debug_names_reader::scan_one_entry (deferred_warnings *warnings,
   if (per_cu != nullptr)
     {
       if (parent.has_value ())
-	*result = shards[next_shard]->add (die_offset,
-					   (dwarf_tag) indexval.dwarf_tag,
-					   flags | IS_PARENT_DEFERRED, lang,
-					   name, form (*parent, lang), per_cu);
+	*result = shard->add (die_offset, (dwarf_tag) indexval.dwarf_tag,
+			      flags | IS_PARENT_DEFERRED, lang,
+			      name, form (*parent, lang), per_cu);
       else
-	*result = shards[next_shard]->add (die_offset,
-					   (dwarf_tag) indexval.dwarf_tag,
-					   flags, lang, name, nullptr, per_cu);
+	*result = shard->add (die_offset, (dwarf_tag) indexval.dwarf_tag,
+			      flags, lang, name, nullptr, per_cu);
 
       /* See the 'form' method comment to explain the choice of index
 	 here.  Note that indexes in DWARF start at 1, hence the "+1"
@@ -312,11 +308,7 @@ mapped_debug_names_reader::scan_one_entry (deferred_warnings *warnings,
 		? index + 1
 		: offset_in_entry_pool,
 		(*result)->lang);
-      parent_maps[next_shard].emplace (my_idx, *result);
-
-      ++next_shard;
-      if (next_shard == shards.size ())
-	next_shard = 0;
+      pmap.emplace (my_idx, *result);
     }
 
   return entry;
@@ -325,7 +317,9 @@ mapped_debug_names_reader::scan_one_entry (deferred_warnings *warnings,
 /* Scan all the entries for NAME, at name slot INDEX.  */
 
 void
-mapped_debug_names_reader::scan_entries (deferred_warnings *warnings,
+mapped_debug_names_reader::scan_entries (cooked_index_shard *shard,
+					 debug_names_parent_map &pmap,
+					 deferred_warnings *warnings,
 					 uint32_t index,
 					 const char *name,
 					 const gdb_byte *entry)
@@ -333,7 +327,8 @@ mapped_debug_names_reader::scan_entries (deferred_warnings *warnings,
   while (true)
     {
       cooked_index_entry *this_entry;
-      entry = scan_one_entry (warnings, index, name, entry, &this_entry);
+      entry = scan_one_entry (shard, pmap, warnings, index, name, entry,
+			      &this_entry);
 
       if (entry == nullptr)
 	break;
@@ -343,10 +338,14 @@ mapped_debug_names_reader::scan_entries (deferred_warnings *warnings,
 /* Scan the name table and create all the entries.  */
 
 void
-mapped_debug_names_reader::scan_all_names (deferred_warnings *warnings)
+mapped_debug_names_reader::scan_all_names (cooked_index_shard *shard,
+					   debug_names_parent_map &pmap,
+					   deferred_warnings *warnings,
+					   uint32_t from,
+					   uint32_t to)
 {
   /* In the first pass, create all the entries.  */
-  for (uint32_t i = 0; i < name_count; ++i)
+  for (uint32_t i = from; i < to; ++i)
     {
       const ULONGEST namei_string_offs
 	= extract_unsigned_integer ((name_table_string_offs_reordered
@@ -361,7 +360,7 @@ mapped_debug_names_reader::scan_all_names (deferred_warnings *warnings)
 				    offset_size, dwarf5_byte_order);
       const gdb_byte *entry = entry_pool + namei_entry_offs;
 
-      scan_entries (warnings, i, name, entry);
+      scan_entries (shard, pmap, warnings, i, name, entry);
     }
 }
 
@@ -379,46 +378,106 @@ struct cooked_index_worker_debug_names : public cooked_index_worker
 
   void do_reading () override;
 
+  /* Called when reading is done.  This sets the contents of the
+     index.  */
+  void done_reading ();
+
   mapped_debug_names_reader m_map;
 
   /* The addrmap that was read from .debug_aranges.  */
   addrmap_mutable m_addrmap;
+
+  /* Any warnings emitted while reading.  Indexed by the worker task
+     number.  */
+  std::vector<deferred_warnings> m_worker_warnings;
+
+  std::vector<debug_names_parent_map> m_parent_maps;
 };
+
+void
+cooked_index_worker_debug_names::done_reading ()
+{
+  cooked_index *table
+    = (gdb::checked_static_cast<cooked_index *>
+       (m_per_objfile->per_bfd->index_table.get ()));
+
+  for (auto &item : m_worker_warnings)
+    m_warnings.append (item);
+
+  std::vector<cooked_index_shard_up> shards;
+  for (auto &item : m_results)
+    shards.push_back (std::move (std::get<0> (item)));
+
+  m_all_parents_map.add_maps (std::move (m_parent_maps));
+  table->set_contents (std::move (shards), &m_warnings, &m_all_parents_map);
+}
 
 void
 cooked_index_worker_debug_names::do_reading ()
 {
   dwarf2_per_bfd *per_bfd = m_per_objfile->per_bfd;
   per_bfd->str.read (m_per_objfile->objfile);
-
-  complaint_interceptor complaint_handler;
-  std::vector<gdb_exception> exceptions;
-  try
-    {
-      m_map.scan_all_names (&m_warnings);
-    }
-  catch (const gdb_exception &exc)
-    {
-      exceptions.push_back (std::move (exc));
-    }
-
-  /* There is a single address map for the whole index (coming from
-     .debug_aranges).  We only need to install it into a single shard for it to
-     get searched by cooked_index.  */
-  m_map.shards[0]->install_addrmap (&m_addrmap);
-
   per_bfd->quick_file_names_table
     = create_quick_file_names_table (per_bfd->all_units.size ());
-  m_results.emplace_back (nullptr,
-			  complaint_handler.release (),
-			  std::move (exceptions),
-			  parent_map ());
-  cooked_index *table
-    = (gdb::checked_static_cast<cooked_index *>
-       (per_bfd->index_table.get ()));
-  m_all_parents_map.add_maps (std::move (m_map.parent_maps));
-  table->set_contents (std::move (m_map.shards), &m_warnings,
-		       &m_all_parents_map);
+
+  /* Work is done in a task group.  */
+  gdb::task_group workers ([this] ()
+  {
+    this->done_reading ();
+  });
+
+  size_t total_size = m_map.name_count;
+
+  const size_t n_worker_threads
+    = std::max (gdb::thread_pool::g_thread_pool->thread_count (), (size_t) 1);
+
+  /* How much effort should be put into each worker.  We don't try too
+     hard to balance the load, but there's no deep reason for this and
+     it can be changed if needed.  */
+  const size_t size_per_thread
+    = std::max (total_size / n_worker_threads, (size_t) 1);
+
+  for (int task_number = 0; task_number < n_worker_threads; ++task_number)
+    {
+      size_t from = task_number * size_per_thread;
+      size_t to = ((task_number == n_worker_threads - 1)
+		   ? total_size
+		   : (task_number + 1) * size_per_thread);
+
+      m_worker_warnings.emplace_back (m_warnings.can_style ());
+      m_parent_maps.emplace_back ();
+      m_results.emplace_back ();
+      auto &this_shard = std::get<0> (m_results.back ());
+      this_shard = std::make_unique<cooked_index_shard> ();
+
+      /* There is a single address map for the whole index (coming
+	 from .debug_aranges).  We only need to install it into a
+	 single shard for it to get searched by cooked_index.  */
+      if (task_number == 0)
+	this_shard->install_addrmap (&m_addrmap);
+
+      workers.add_task ([this, task_number, from, to] ()
+	{
+	  auto &[shard, complaint_storage, exceptions, _]
+	    = m_results[task_number];
+	  debug_names_parent_map &pmap = m_parent_maps[task_number];
+
+	  complaint_interceptor complaint_handler;
+	  deferred_warnings *warnings = &m_worker_warnings[task_number];
+	  try
+	    {
+	      m_map.scan_all_names (shard.get (), pmap, warnings, from, to);
+	    }
+	  catch (const gdb_exception &exc)
+	    {
+	      exceptions.push_back (std::move (exc));
+	    }
+
+	  complaint_storage = complaint_handler.release ();
+	});
+    }
+
+  workers.start ();
 
   bfd_thread_cleanup ();
 }
@@ -825,17 +884,6 @@ do_dwarf2_read_debug_names (dwarf2_per_objfile *per_objfile)
   read_addrmap_from_aranges (per_objfile, &per_bfd->debug_aranges,
 			     &addrmap, &warnings);
   warnings.emit ();
-
-  const auto n_workers
-    = std::max<std::size_t> (gdb::thread_pool::g_thread_pool->thread_count (),
-			     1);
-
-  /* Create as many index shard as there are worker threads.  */
-  for (int i = 0; i < n_workers; ++i)
-    {
-      map.shards.emplace_back (std::make_unique<cooked_index_shard> ());
-      map.parent_maps.emplace_back ();
-    }
 
   auto cidn = (std::make_unique<cooked_index_worker_debug_names>
 	       (per_objfile, std::move (map), std::move (addrmap)));
