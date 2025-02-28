@@ -19,6 +19,7 @@
 #ifndef GDB_UTILS_H
 #define GDB_UTILS_H
 
+#include "run-on-main-thread.h"
 #include <chrono>
 
 struct completion_match_for_lcd;
@@ -445,7 +446,22 @@ struct deferred_warnings final : public warning_hook_handler_type
   deferred_warnings ()
     : m_can_style (gdb_stderr->can_emit_style_escape ())
   {
+    /* Only the main thread can refer to gdb_stderr.  */
+    gdb_assert (is_main_thread ());
   }
+
+  /* A constructor that avoids referencing gdb_stderr, so it can be
+     used from a worker thread.  This could take a 'deferred_warnings'
+     object, but then it would be a copy constructor, which we don't
+     really want.  */
+  explicit deferred_warnings (bool can_style)
+    : m_can_style (can_style)
+  { }
+
+  DISABLE_COPY_AND_ASSIGN (deferred_warnings);
+
+  deferred_warnings (deferred_warnings &&other) = default;
+  deferred_warnings &operator= (deferred_warnings &&other) = default;
 
   /* Add a warning to the list of deferred warnings.  */
   void warn (const char *format, ...) ATTRIBUTE_PRINTF (2, 3)
@@ -474,6 +490,16 @@ struct deferred_warnings final : public warning_hook_handler_type
     for (const auto &w : m_warnings)
       warning ("%s", w.c_str ());
   }
+
+  /* Append all the warnings from OTHER into this object.  */
+  void append (deferred_warnings &other)
+  {
+    std::move (other.m_warnings.begin (), other.m_warnings.end (),
+	       std::back_inserter (m_warnings));
+  }
+
+  /* Return true if styling is enabled for this object.  */
+  bool can_style () const { return m_can_style; }
 
 private:
 
