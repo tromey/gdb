@@ -388,6 +388,9 @@ struct cooked_index_worker_debug_names : public cooked_index_worker
 void
 cooked_index_worker_debug_names::do_reading ()
 {
+  dwarf2_per_bfd *per_bfd = m_per_objfile->per_bfd;
+  per_bfd->str.read (m_per_objfile->objfile);
+
   complaint_interceptor complaint_handler;
   std::vector<gdb_exception> exceptions;
   try
@@ -404,7 +407,6 @@ cooked_index_worker_debug_names::do_reading ()
      get searched by cooked_index.  */
   m_map.shards[0]->install_addrmap (&m_addrmap);
 
-  dwarf2_per_bfd *per_bfd = m_per_objfile->per_bfd;
   per_bfd->quick_file_names_table
     = create_quick_file_names_table (per_bfd->all_units.size ());
   m_results.emplace_back (nullptr,
