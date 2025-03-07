@@ -417,7 +417,7 @@ enum class cooked_state
    
    This is an abstract base class that defines the basic behavior of
    scanners.  Separate concrete implementations exist for scanning
-   .debug_names and .debug_info.  */
+   .debug_names, .gdb_index, and .debug_info.  */
 
 class cooked_index_worker
 {
