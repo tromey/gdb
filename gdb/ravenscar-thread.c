@@ -30,7 +30,7 @@
 #include "top.h"
 #include "regcache.h"
 #include "objfiles.h"
-#include "gdbsupport/unordered_map.h
+#include "gdbsupport/unordered_map.h"
 
 /* This module provides support for "Ravenscar" tasks (Ada) when
    debugging on bare-metal targets.
