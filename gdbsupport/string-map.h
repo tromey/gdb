@@ -59,19 +59,19 @@ struct string_hash
   using is_transparent = void;
   using is_avalanching = void;
 
-  bool operator() (std::string_view rhs)
+  uint64_t operator() (std::string_view rhs)
     const noexcept
   {
     return ankerl::unordered_dense::hash<std::string_view> () (rhs);
   }
 
-  bool operator() (const char *rhs)
+  uint64_t operator() (const char *rhs)
     const noexcept
   {
     return (*this) (std::string_view (rhs));
   }
 
-  bool operator() (const gdb::unique_xmalloc_ptr<char> &rhs)
+  uint64_t operator() (const gdb::unique_xmalloc_ptr<char> &rhs)
     const noexcept
   {
     return (*this) (std::string_view (rhs.get ()));
