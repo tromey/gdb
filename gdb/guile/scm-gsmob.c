@@ -44,29 +44,12 @@
 #include "hashtab.h"
 #include "objfiles.h"
 #include "guile-internal.h"
+#include "gdbsupport/unordered_set.h"
 
 /* We need to call this.  Undo our hack to prevent others from calling it.  */
 #undef scm_make_smob_type
 
-static htab_t registered_gsmobs;
-
-/* Hash function for registered_gsmobs hash table.  */
-
-static hashval_t
-hash_scm_t_bits (const void *item)
-{
-  uintptr_t v = (uintptr_t) item;
-
-  return v;
-}
-
-/* Equality function for registered_gsmobs hash table.  */
-
-static int
-eq_scm_t_bits (const void *item_lhs, const void *item_rhs)
-{
-  return item_lhs == item_rhs;
-}
+static gdb::unordered_set<void *> registered_gsmobs;
 
 /* Record GSMOB_CODE as being a gdb smob.
    GSMOB_CODE is the result of scm_make_smob_type.  */
@@ -74,11 +57,7 @@ eq_scm_t_bits (const void *item_lhs, const void *item_rhs)
 static void
 register_gsmob (scm_t_bits gsmob_code)
 {
-  void **slot;
-
-  slot = htab_find_slot (registered_gsmobs, (void *) gsmob_code, INSERT);
-  gdb_assert (*slot == NULL);
-  *slot = (void *) gsmob_code;
+  registered_gsmobs.insert ((void *) gsmob_code);
 }
 
 /* Return non-zero if SCM is any registered gdb smob object.  */
@@ -86,13 +65,10 @@ register_gsmob (scm_t_bits gsmob_code)
 static int
 gdbscm_is_gsmob (SCM scm)
 {
-  void **slot;
-
   if (SCM_IMP (scm))
     return 0;
-  slot = htab_find_slot (registered_gsmobs, (void *) SCM_TYP16 (scm),
-			 NO_INSERT);
-  return slot != NULL;
+  auto iter = registered_gsmobs.find ((void *) SCM_TYP16 (scm));
+  return iter != registered_gsmobs.end ();
 }
 
 /* Call this to register a smob, instead of scm_make_smob_type.
@@ -272,9 +248,5 @@ Return the kind of the GDB object, e.g., <gdb:breakpoint>, as a symbol." },
 void
 gdbscm_initialize_smobs (void)
 {
-  registered_gsmobs = htab_create_alloc (10,
-					 hash_scm_t_bits, eq_scm_t_bits,
-					 NULL, xcalloc, xfree);
-
   gdbscm_define_functions (gsmob_functions, 1);
 }
