@@ -23,6 +23,7 @@
 #include "dwarf2/abbrev-table-cache.h"
 #include "dwarf2/cooked-index.h"
 #include "dwarf2/types.h"
+#include "gdbsupport/unordered_map.h"
 
 struct cutu_reader;
 struct dwarf2_per_cu;
@@ -100,8 +101,10 @@ private:
   /* The abbrev table cache used by this indexer.  */
   abbrev_table_cache m_abbrev_table_cache;
 
-  /* A hash table of cutu_reader objects.  */
-  htab_up m_reader_hash;
+  /* A map from CU index to cutu_reader objects.  While the index is
+     available from the reader, it is convenient and probably not too
+     expensive to use it here as the key.  */
+  gdb::unordered_map<int, cutu_reader_up> m_reader_hash;
   /* The index shard that is being constructed.  */
   cooked_index_shard_up m_shard;
 

@@ -22,11 +22,7 @@
 /* See cooked-index-storage.h.  */
 
 cooked_index_storage::cooked_index_storage ()
-  : m_reader_hash (htab_create_alloc (10, hash_cutu_reader,
-				      eq_cutu_reader,
-				      htab_delete_entry<cutu_reader>,
-				      xcalloc, xfree)),
-    m_shard (new cooked_index_shard)
+  : m_shard (new cooked_index_shard)
 {
 }
 
@@ -35,9 +31,10 @@ cooked_index_storage::cooked_index_storage ()
 cutu_reader *
 cooked_index_storage::get_reader (dwarf2_per_cu *per_cu)
 {
-  int index = per_cu->index;
-  return (cutu_reader *) htab_find_with_hash (m_reader_hash.get (),
-					      &index, index);
+  auto iter = m_reader_hash.find (per_cu->index);
+  if (iter == m_reader_hash.end ())
+    return nullptr;
+  return iter->second.get ();
 }
 
 /* See cooked-index-storage.h.  */
@@ -47,12 +44,9 @@ cooked_index_storage::preserve (cutu_reader_up reader)
 {
   m_abbrev_table_cache.add (reader->release_abbrev_table ());
 
-  int index = reader->cu ()->per_cu->index;
-  void **slot = htab_find_slot_with_hash (m_reader_hash.get (), &index,
-					  index, INSERT);
-  gdb_assert (*slot == nullptr);
   cutu_reader *result = reader.get ();
-  *slot = reader.release ();
+  int index = reader->cu ()->per_cu->index;
+  m_reader_hash.emplace (index, std::move (reader));
   return result;
 }
 
