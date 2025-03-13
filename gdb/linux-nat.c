@@ -4073,7 +4073,7 @@ static gdb::unordered_map<int, proc_mem_file> proc_mem_file_map;
 static void
 close_proc_mem_file (pid_t pid)
 {
-  proc_mem_file_map.erase (pid);
+  proc_mem_file_map.erase ((int) pid);
 }
 
 /* Open the /proc/PID/mem file for the process (thread group) of PTID.
