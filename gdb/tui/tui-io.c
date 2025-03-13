@@ -42,7 +42,7 @@
 #include "gdbsupport/filestuff.h"
 #include "completer.h"
 #include "gdb_curses.h"
-#include <map>
+#include "gdbsupport/unordered_map.h"
 #include "pager.h"
 #include "gdbsupport/gdb-checked-static-cast.h"
 
@@ -180,7 +180,7 @@ tui_putc (char c)
 
 /* This maps colors to their corresponding color index.  */
 
-static std::map<ui_file_style::color, int> color_map;
+static gdb::unordered_map<ui_file_style::color, int> color_map;
 
 /* This holds a pair of colors and is used to track the mapping
    between a color pair index and the actual colors.  */
@@ -199,7 +199,7 @@ struct color_pair
 /* This maps pairs of colors to their corresponding color pair
    index.  */
 
-static std::map<color_pair, int> color_pair_map;
+static gdb::unordered_map<color_pair, int> color_pair_map;
 
 /* This is indexed by ANSI color offset from the base color, and holds
    the corresponding curses color constant.  */
