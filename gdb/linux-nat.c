@@ -4042,8 +4042,6 @@ public:
     close (m_fd);
   }
 
-  DISABLE_COPY_AND_ASSIGN (proc_mem_file);
-
   int fd ()
   {
     return m_fd;
@@ -4103,9 +4101,7 @@ open_proc_mem_file (ptid_t ptid)
       return;
     }
 
-  proc_mem_file_map.emplace (std::piecewise_construct,
-			     std::forward_as_tuple (ptid.pid ()),
-			     std::forward_as_tuple (ptid, fd));
+  proc_mem_file_map.emplace (ptid.pid (), ptid, fd);
 
   linux_nat_debug_printf ("opened fd %d for lwp %d.%ld",
 			  fd, ptid.pid (), ptid.lwp ());
