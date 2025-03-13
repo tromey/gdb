@@ -68,7 +68,7 @@
 #include "gdbsupport/scope-exit.h"
 #include "gdbsupport/gdb-sigmask.h"
 #include "gdbsupport/common-debug.h"
-#include <unordered_map>
+#include "gdbsupport/unordered_map.h"
 
 /* This comment documents high-level logic of this file.
 
@@ -4066,7 +4066,7 @@ private:
    (also default), we don't create an inferior for the fork child, but
    we still need to remove breakpoints from the fork child's
    memory.  */
-static std::unordered_map<int, proc_mem_file> proc_mem_file_map;
+static gdb::unordered_map<int, proc_mem_file> proc_mem_file_map;
 
 /* Close the /proc/PID/mem file for PID.  */
 
