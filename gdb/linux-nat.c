@@ -4057,7 +4057,7 @@ private:
   ptid_t m_ptid;
 
   /* The file descriptor.  */
-  gdb::scoped_fd m_fd;
+  scoped_fd m_fd;
 };
 
 /* The map between an inferior process id, and the open /proc/PID/mem
