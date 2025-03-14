@@ -4097,7 +4097,7 @@ open_proc_mem_file (ptid_t ptid)
 
   scoped_fd fd = gdb_open_cloexec (filename, O_RDWR | O_LARGEFILE, 0);
 
-  if (fd == -1)
+  if (fd.get () == -1)
     {
       warning (_("opening /proc/PID/mem file for lwp %d.%ld failed: %s (%d)"),
 	       ptid.pid (), ptid.lwp (),
