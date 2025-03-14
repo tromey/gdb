@@ -178,6 +178,22 @@ tui_putc (char c)
   update_cmdwin_start_line ();
 }
 
+/* Specialization of std::hash for colors.  */
+
+namespace std
+{
+template<> struct hash<ui_file_style::color>
+{
+  typedef ui_file_style::color argument_type;
+  typedef std::size_t result_type;
+
+  result_type operator() (const argument_type &color) const noexcept
+  {
+    return color.hash ();
+  }
+};
+}
+
 /* This maps colors to their corresponding color index.  */
 
 static gdb::unordered_map<ui_file_style::color, int> color_map;
