@@ -4038,7 +4038,7 @@ public:
   ~proc_mem_file ()
   {
     linux_nat_debug_printf ("closing fd %d for /proc/%d/task/%ld/mem",
-			    m_fd, m_ptid.pid (), m_ptid.lwp ());
+			    m_fd.get (), m_ptid.pid (), m_ptid.lwp ());
   }
 
   DISABLE_COPY_AND_ASSIGN (proc_mem_file);
