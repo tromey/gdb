@@ -4039,12 +4039,18 @@ public:
   {
     linux_nat_debug_printf ("closing fd %d for /proc/%d/task/%ld/mem",
 			    m_fd, m_ptid.pid (), m_ptid.lwp ());
+    if (m_fd != -1)
     close (m_fd);
   }
 
+  DISABLE_COPY_AND_ASSIGN (proc_mem_file);
+
+  proc_mem_file (proc_mem_file &&) = default;
+  proc_mem_file &operator= (proc_mem_file &&) = default;
+
   int fd ()
   {
-    return m_fd;
+    return m_fd.get ();
   }
 
 private:
@@ -4053,7 +4059,7 @@ private:
   ptid_t m_ptid;
 
   /* The file descriptor.  */
-  int m_fd = -1;
+  gdb::scoped_fd m_fd;
 };
 
 /* The map between an inferior process id, and the open /proc/PID/mem
