@@ -4029,8 +4029,8 @@ linux_nat_target::pid_to_exec_file (int pid)
 class proc_mem_file
 {
 public:
-  proc_mem_file (ptid_t ptid, int fd)
-    : m_ptid (ptid), m_fd (fd)
+  proc_mem_file (ptid_t ptid, scoped_fd fd)
+    : m_ptid (ptid), m_fd (std::move (fd))
   {
     gdb_assert (m_fd != -1);
   }
@@ -4095,7 +4095,7 @@ open_proc_mem_file (ptid_t ptid)
   xsnprintf (filename, sizeof filename,
 	     "/proc/%d/task/%ld/mem", ptid.pid (), ptid.lwp ());
 
-  int fd = gdb_open_cloexec (filename, O_RDWR | O_LARGEFILE, 0).release ();
+  scoped_fd fd = gdb_open_cloexec (filename, O_RDWR | O_LARGEFILE, 0);
 
   if (fd == -1)
     {
@@ -4105,7 +4105,7 @@ open_proc_mem_file (ptid_t ptid)
       return;
     }
 
-  proc_mem_file_map.emplace (ptid.pid (), ptid, fd);
+  proc_mem_file_map.emplace (ptid.pid (), ptid, std::move (fd));
 
   linux_nat_debug_printf ("opened fd %d for lwp %d.%ld",
 			  fd, ptid.pid (), ptid.lwp ());
