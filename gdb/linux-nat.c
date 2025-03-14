@@ -4106,7 +4106,7 @@ open_proc_mem_file (ptid_t ptid)
     }
 
   linux_nat_debug_printf ("opened fd %d for lwp %d.%ld",
-			  fd, ptid.pid (), ptid.lwp ());
+			  fd.get (), ptid.pid (), ptid.lwp ());
   proc_mem_file_map.emplace (ptid.pid (),
 			     proc_mem_file (ptid, std::move (fd)));
 }
