@@ -1687,7 +1687,7 @@ btrace_get_frame_function (const frame_info_ptr &frame)
   auto iter = bfcache.find (frame.get ());
   if (iter == bfcache.end ())
     return nullptr;
-  return iter.second->bfun;
+  return iter->second->bfun;
 }
 
 /* Implement stop_reason method for record_btrace_frame_unwind.  */
@@ -1698,7 +1698,7 @@ record_btrace_frame_unwind_stop_reason (const frame_info_ptr &this_frame,
 {
   auto iter = bfcache.find (this_frame.get ());
   gdb_assert (iter != bfcache.end ());
-  const struct btrace_function *bfun = iter->bfun;
+  const struct btrace_function *bfun = iter->second->bfun;
   gdb_assert (bfun != nullptr);
 
   if (bfun->up == 0)
@@ -1883,7 +1883,7 @@ static void
 record_btrace_frame_dealloc_cache (frame_info *self, void *this_cache)
 {
   FIXME;
-  size_t n_removed = bfcache.erase (frame.get ());
+  size_t n_removed = bfcache.erase (self);
   gdb_assert (n_removed == 1);
 }
 
@@ -3296,9 +3296,6 @@ effect on an active recording."),
 			   &show_record_btrace_pt_cmdlist);
 
   add_target (record_btrace_target_info, record_btrace_target_open);
-
-  bfcache = htab_create_alloc (50, bfcache_hash, bfcache_eq, NULL,
-			       xcalloc, xfree);
 
   record_btrace_conf.bts.size = 64 * 1024;
   record_btrace_conf.pt.size = 16 * 1024;
