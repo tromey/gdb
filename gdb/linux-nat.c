@@ -4105,11 +4105,10 @@ open_proc_mem_file (ptid_t ptid)
       return;
     }
 
-  proc_mem_file_map.emplace (ptid.pid (),
-			     proc_mem_file (ptid, std::move (fd)));
-
   linux_nat_debug_printf ("opened fd %d for lwp %d.%ld",
 			  fd, ptid.pid (), ptid.lwp ());
+  proc_mem_file_map.emplace (ptid.pid (),
+			     proc_mem_file (ptid, std::move (fd)));
 }
 
 /* Helper for linux_proc_xfer_memory_partial and
