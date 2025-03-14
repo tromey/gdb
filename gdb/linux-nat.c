@@ -4032,7 +4032,7 @@ public:
   proc_mem_file (ptid_t ptid, scoped_fd fd)
     : m_ptid (ptid), m_fd (std::move (fd))
   {
-    gdb_assert (m_fd != -1);
+    gdb_assert (m_fd.get () != -1);
   }
 
   ~proc_mem_file ()
