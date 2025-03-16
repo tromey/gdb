@@ -28,6 +28,24 @@
 #include "dwarf2/leb.h"
 #include "dwarf2/section.h"
 #include "bfd.h"
+#include "gdbsupport/unordered_set.h"
+#include "gdbsupport/array-view.h"
+
+static size_t total_abbrev_count;
+static size_t total_abbrev_bytes;
+static size_t actual_abbrev_bytes;
+
+struct view_hasher
+{
+  size_t operator() (const gdb::array_view<const gdb_byte> &ary)
+    const noexcept
+  {
+    return fast_hash (ary.data (), ary.size ());
+  }
+};
+
+static gdb::unordered_set<gdb::array_view<const gdb_byte>, view_hasher>
+   abbrev_uniquer;
 
 /* Helper function that returns true if a DIE with the given tag might
    plausibly be indexed.  */
@@ -94,6 +112,7 @@ abbrev_table::read (struct dwarf2_section_info *section,
       if (abbrev_number == 0)
 	break;
       abbrev_ptr += bytes_read;
+      const gdb_byte *abbrev_bytes_start = abbrev_ptr;
 
       /* Start without any attrs.  */
       obstack_blank (obstack, offsetof (abbrev_info, attrs));
@@ -218,6 +237,14 @@ abbrev_table::read (struct dwarf2_section_info *section,
 	  obstack_grow (obstack, &cur_attr, sizeof (cur_attr));
 	}
 
+      gdb::array_view<const gdb_byte> abbrev_contents
+	= gdb::make_array_view (abbrev_bytes_start,
+				abbrev_ptr - abbrev_bytes_start);
+      ++total_abbrev_count;
+      total_abbrev_bytes += abbrev_contents.size ();
+      if (abbrev_uniquer.insert (abbrev_contents).second)
+	actual_abbrev_bytes += abbrev_contents.size ();
+
       cur_abbrev = (struct abbrev_info *) obstack_finish (obstack);
       cur_abbrev->num_attrs = num_attrs;
 
@@ -263,4 +290,22 @@ abbrev_table::read (struct dwarf2_section_info *section,
     }
 
   return abbrev_table;
+}
+
+void
+dump_abbrev_stats ()
+{
+  gdb_printf ("Total abbrevs : %8s\n", pulongest (total_abbrev_count));
+  gdb_printf ("Unique abbrevs: %8s\n", pulongest (abbrev_uniquer.size ()));
+  gdb_printf ("Total bytes   : %8s\n", pulongest (total_abbrev_bytes));
+  gdb_printf ("Unique bytes  : %8s\n", pulongest (actual_abbrev_bytes));
+  gdb_printf ("Percent bytes : %8.2g\n",
+	      100.0 * actual_abbrev_bytes / total_abbrev_bytes);
+  gdb_printf ("Percent abbrev: %8.2g\n",
+	      100.0 * abbrev_uniquer.size () / total_abbrev_count);
+
+  total_abbrev_count = 0;
+  total_abbrev_bytes = 0;
+  actual_abbrev_bytes = 0;
+  abbrev_uniquer.clear ();
 }

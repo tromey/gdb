@@ -731,6 +731,7 @@ cooked_index::wait (cooked_state desired_state, bool allow_quit)
     {
       /* Only the main thread can modify this.  */
       gdb_assert (is_main_thread ());
+      dump_abbrev_stats ();
       m_state.reset (nullptr);
     }
 }

@@ -145,4 +145,6 @@ private:
   auto_obstack m_abbrev_obstack;
 };
 
+extern void dump_abbrev_stats ();
+
 #endif /* GDB_DWARF2_ABBREV_H */
