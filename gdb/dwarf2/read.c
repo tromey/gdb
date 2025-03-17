@@ -5836,29 +5836,26 @@ find_file_and_directory (struct die_info *die, struct dwarf2_cu *cu)
   return *cu->per_cu->fnd;
 }
 
-/* Handle DW_AT_stmt_list for a compilation unit.
-   DIE is the DW_TAG_compile_unit die for CU.
-   COMP_DIR is the compilation directory.  LOWPC is passed to
-   dwarf_decode_lines.  See dwarf_decode_lines comments about it.  */
+/* Handle DW_AT_stmt_list for a compilation unit. DIE is the
+   DW_TAG_compile_unit die for CU.  FND is used to access the compilation
+   directory.  This function will decode the line table header and create
+   symtab objects for the files referenced in the line table.  The line
+   table itself though is not processed by this function.  If there is no
+   line table, or there's a problem decoding the header, then CU will not
+   be updated.  */
 
 static void
-handle_DW_AT_stmt_list (struct die_info *die, struct dwarf2_cu *cu,
-			const file_and_directory &fnd, unrelocated_addr lowpc,
-			bool have_code) /* ARI: editCase function */
+decode_line_header_for_cu (struct die_info *die, struct dwarf2_cu *cu,
+			   const file_and_directory &fnd)
 {
-  dwarf2_per_objfile *per_objfile = cu->per_objfile;
-  struct attribute *attr;
-  hashval_t line_header_local_hash;
-  void **slot;
-  int decode_mapping;
-
   gdb_assert (!cu->per_cu->is_debug_types ());
 
-  attr = dwarf2_attr (die, DW_AT_stmt_list, cu);
+  struct attribute *attr = dwarf2_attr (die, DW_AT_stmt_list, cu);
   if (attr == NULL || !attr->form_is_unsigned ())
     return;
 
   sect_offset line_offset = (sect_offset) attr->as_unsigned ();
+  dwarf2_per_objfile *per_objfile = cu->per_objfile;
 
   /* The line header hash table is only created if needed (it exists to
      prevent redundant reading of the line table for partial_units).
@@ -5876,8 +5873,9 @@ handle_DW_AT_stmt_list (struct die_info *die, struct dwarf2_cu *cu,
 				   xcalloc, xfree));
     }
 
+  void **slot;
   line_header line_header_local (line_offset, cu->per_cu->is_dwz ());
-  line_header_local_hash = line_header_hash (&line_header_local);
+  hashval_t line_header_local_hash = line_header_hash (&line_header_local);
   if (per_objfile->line_header_hash != NULL)
     {
       slot = htab_find_slot_with_hash (per_objfile->line_header_hash.get (),
@@ -5930,12 +5928,22 @@ handle_DW_AT_stmt_list (struct die_info *die, struct dwarf2_cu *cu,
 	 then this is what we want as well.  */
       gdb_assert (die->tag != DW_TAG_partial_unit);
     }
-  decode_mapping = (die->tag != DW_TAG_partial_unit);
-  /* The have_code check is here because, if LOWPC and HIGHPC are both 0x0,
-     then there won't be any interesting code in the CU, but a check later on
-     (in lnp_state_machine::check_line_address) will fail to properly exclude
-     an entry that was removed via --gc-sections.  */
-  dwarf_decode_lines (cu, lowpc, decode_mapping && have_code);
+
+  /* For non DWZ CUs, make sure a symtab is created for every file, even
+     files which contain only variables (i.e. no code with associated line
+     numbers).
+
+     For DWZ CUs the line table can contain references to files that are
+     not part of the original CU.  In fact, if multiple object files were
+     used to create the DWZ file (as is normal), then the DWZ CU's line
+     table can contain references to files that are in objfiles that are
+     not part of the current inferior.  For DWZ we rely on lazy symtab
+     creation.  In the end we should still end up with a symtab for every
+     file as the original CU (the non-DWZ CU) will still contain a line
+     table, and that line table will mention every file, so when that is
+     processed we'll create symtabs as needed.  */
+  if (!cu->per_cu->is_dwz ())
+    cu->create_subfiles_and_symtabs ();
 }
 
 /* Process DW_TAG_compile_unit or DW_TAG_partial_unit.  */
@@ -5987,16 +5995,24 @@ read_file_scope (struct die_info *die, struct dwarf2_cu *cu)
   scoped_restore restore_sym_cu
     = make_scoped_restore (&per_objfile->sym_cu, cu);
 
-  /* Decode line number information if present.  We do this before
-     processing child DIEs, so that the line header table is available
-     for DW_AT_decl_file.  */
-  handle_DW_AT_stmt_list (die, cu, fnd, unrel_low, unrel_low != unrel_high);
+  /* Decode the line header if present.  We do this before processing child
+     DIEs, so that information is available for DW_AT_decl_file.  We defer
+     parsing the actual line table until after processing the child DIEs,
+     this allows us to fix up some of the inline function blocks as the
+     line table is read.  */
+  decode_line_header_for_cu (die, cu, fnd);
 
   /* Process all dies in compilation unit.  */
   for (die_info *child_die : die->children ())
     process_die (child_die, cu);
 
   per_objfile->sym_cu = nullptr;
+
+  /* If we actually have code, then read the line table now.  */
+  if (unrel_low != unrel_high
+      && die->tag != DW_TAG_partial_unit
+      && cu->line_header != nullptr)
+    dwarf_decode_lines (cu, unrel_low);
 
   /* Decode macro information, if present.  Dwarf 2 macro information
      refers to information in the line number info statement program
@@ -15556,7 +15572,7 @@ new_symbol (struct die_info *die, struct type *type, struct dwarf2_cu *cu,
 	      if (file_cu->line_header == nullptr)
 		{
 		  file_and_directory fnd (nullptr, nullptr);
-		  handle_DW_AT_stmt_list (file_cu->dies, file_cu, fnd, {}, false);
+		  decode_line_header_for_cu (file_cu->dies, file_cu, fnd);
 		}
 
 	      if (file_cu->line_header != nullptr)
