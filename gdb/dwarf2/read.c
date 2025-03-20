@@ -9253,6 +9253,21 @@ dwarf2_record_block_entry_pc (struct die_info *die, struct block *block,
     }
 }
 
+/* Helper function for dwarf2_record_block_ranges.  This function records
+   the address range for a single BLOCK.  LOW and HIGH are the block's
+   range, these addresses are inclusive, so LOW is the first address in
+   the range, and HIGH is the last address inside the range.  UNREL_HIGH
+   is the unrelocated, exclusive version of HIGH, that is, UNREL_HIGH is
+   the first address outside the range of BLOCK.  */
+
+static void
+dwarf2_record_single_block_range (struct dwarf2_cu *cu, struct block *block,
+				  CORE_ADDR low, CORE_ADDR high,
+				  unrelocated_addr unrel_high)
+{
+  cu->get_builder ()->record_block_range (block, low, high);
+}
+
 /* Record the address ranges for BLOCK, offset by BASEADDR, as given
    in DIE.  Also set the entry PC for BLOCK.  */
 
@@ -9321,7 +9336,8 @@ dwarf2_record_block_ranges (struct die_info *die, struct block *block,
 	     in GDB's internal structures, it's just more to search
 	     through, and it will never match any address.  */
 	  if (high >= low)
-	    cu->get_builder ()->record_block_range (block, low, high);
+	    dwarf2_record_single_block_range (cu, block, low, high,
+					      unrel_high);
 	}
 
       attr = dwarf2_attr (die, DW_AT_ranges, cu);
@@ -9351,8 +9367,8 @@ dwarf2_record_block_ranges (struct die_info *die, struct block *block,
 	  {
 	    CORE_ADDR abs_start = per_objfile->relocate (start);
 	    CORE_ADDR abs_end = per_objfile->relocate (end);
-	    cu->get_builder ()->record_block_range (block, abs_start,
-						    abs_end - 1);
+	    dwarf2_record_single_block_range (cu, block, abs_start,
+					      abs_end - 1, end);
 	    blockvec.emplace_back (abs_start, abs_end);
 	  });
 
