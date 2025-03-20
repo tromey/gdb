@@ -6014,6 +6014,10 @@ read_file_scope (struct die_info *die, struct dwarf2_cu *cu)
       && cu->line_header != nullptr)
     dwarf_decode_lines (cu, unrel_low);
 
+  /* We no longer need to track the inline block end addresses.  Release
+     memory associated with this.  */
+  cu->inline_block_ends.clear ();
+
   /* Decode macro information, if present.  Dwarf 2 macro information
      refers to information in the line number info statement program
      header, so we can only read it if we've read the header
@@ -9253,14 +9257,16 @@ dwarf2_record_block_entry_pc (struct die_info *die, struct block *block,
     }
 }
 
-/* Nothing for now.  A later patch changes this.  */
+/* If BLOCK is an inline function, then record UNREL_HIGH as its end
+   address.  */
 
 static void
-dwarf2_record_single_block_range (struct dwarf2_cu *cu, struct block *block,
-				  CORE_ADDR low, CORE_ADDR high,
-				  unrelocated_addr unrel_high)
+dwarf2_maybe_record_inline_function (struct dwarf2_cu *cu, struct block *block,
+				     unrelocated_addr unrel_high)
 {
-  /* Nothing for now, a later patch adds code here.  */
+  /* If this is the end of an inline block, then record its end address.  */
+  if (block->inlined_p () && block->function () != nullptr)
+    cu->inline_block_ends.insert ({unrel_high, block});
 }
 
 /* Record the address ranges for BLOCK, offset by BASEADDR, as given
@@ -9331,8 +9337,7 @@ dwarf2_record_block_ranges (struct die_info *die, struct block *block,
 	     in GDB's internal structures, it's just more to search
 	     through, and it will never match any address.  */
 	  if (high >= low)
-	    dwarf2_record_single_block_range (cu, block, low, high,
-					      unrel_high);
+	    dwarf2_maybe_record_inline_function (cu, block, unrel_high);
 	}
 
       attr = dwarf2_attr (die, DW_AT_ranges, cu);
@@ -9362,8 +9367,7 @@ dwarf2_record_block_ranges (struct die_info *die, struct block *block,
 	  {
 	    CORE_ADDR abs_start = per_objfile->relocate (start);
 	    CORE_ADDR abs_end = per_objfile->relocate (end);
-	    dwarf2_record_single_block_range (cu, block, abs_start,
-					      abs_end - 1, end);
+	    dwarf2_maybe_record_inline_function (cu, block, end);
 	    blockvec.emplace_back (abs_start, abs_end);
 	  });
 
