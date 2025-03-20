@@ -11227,7 +11227,11 @@ static void handle_struct_member_die
    struct dwarf2_cu *cu);
 
 /* A helper for handle_struct_member_die that handles
-   DW_TAG_variant_part.  */
+   DW_TAG_variant_part.  DIE is the variant part DIE.  TYPE is the
+   structure type that is being constructed.  FI is the field being
+   built.  TEMPLATE_ARGS is a pointer to a vector of template
+   arguments that is being constructed for TYPE.  CU is the DIE's
+   CU.  */
 
 static void
 handle_variant_part (struct die_info *die, struct type *type,
@@ -11283,8 +11287,12 @@ handle_variant_part (struct die_info *die, struct type *type,
     handle_struct_member_die (child_die, type, fi, template_args, cu);
 }
 
-/* A helper for handle_struct_member_die that handles
-   DW_TAG_variant.  */
+/* A helper for handle_struct_member_die that handles DW_TAG_variant.
+   DIE is the variant part DIE.  TYPE is the structure type that is
+   being constructed.  FI is the field being built.  TEMPLATE_ARGS is
+   a pointer to a vector of template arguments that is being
+   constructed for TYPE.  CU is the DIE's CU.  */
+
 
 static void
 handle_variant (struct die_info *die, struct type *type,
