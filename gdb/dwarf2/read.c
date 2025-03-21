@@ -14358,16 +14358,7 @@ cutu_reader::read_full_die (int num_extra_attrs, bool allow_reprocess)
 	   abbrev_number, bfd_get_filename (m_abfd));
 
   die_info *die = die_info::allocate (&m_cu->comp_unit_obstack,
-				      abbrev->num_attrs + num_extra_attrs);
-  die->sect_off = sect_off;
-  die->tag = abbrev->tag;
-  die->abbrev = abbrev_number;
-  die->has_children = abbrev->has_children;
-
-  /* Make the result usable.
-     The caller needs to update num_attrs after adding the extra
-     attributes.  */
-  die->num_attrs = abbrev->num_attrs;
+				      sect_off, abbrev, num_extra_attrs);
 
   for (i = 0; i < abbrev->num_attrs; ++i)
     m_info_ptr = this->read_attribute (&die->attrs[i], &abbrev->attrs[i],

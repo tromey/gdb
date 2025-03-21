@@ -24,12 +24,20 @@
 #include "dwarf2/attribute.h"
 #include "gdbsupport/next-iterator.h"
 
+struct abbrev_info;
+
 /* This data structure holds a complete die structure.  */
 struct die_info
 {
-  /* Allocate a new die_info on OBSTACK.  NUM_ATTRS is the number of
-     attributes that are needed.  */
-  static die_info *allocate (struct obstack *obstack, int num_attrs);
+  /* Allocate a new die_info on OBSTACK.  SECT_OFF is the section
+     offset where the DIE appears.  ABBREV is used to initialize
+     attributes of the new object.
+
+     EXTRA_ATTRS is the number of extra attributes to allocate.  Note
+     that these will not initially be accounted for in 'num_attrs' --
+     if these are used the caller must update that field.  */
+  static die_info *allocate (struct obstack *obstack, sect_offset sect_off,
+			     const abbrev_info *abbrev, int extra_attrs);
 
   /* Dump this DIE and any children to MAX_LEVEL.  They are written to
      gdb_stdlog.  Note this is called from the pdie user command in

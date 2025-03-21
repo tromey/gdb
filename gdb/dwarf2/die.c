@@ -17,21 +17,30 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
+#include "dwarf2/abbrev.h"
 #include "dwarf2/die.h"
 #include "dwarf2/stringify.h"
 
 /* See die.h.  */
 
 struct die_info *
-die_info::allocate (struct obstack *obstack, int num_attrs)
+die_info::allocate (struct obstack *obstack, sect_offset sect_off,
+		    const abbrev_info *abbrev, int extra_attrs)
 {
   size_t size = sizeof (struct die_info);
 
+  int num_attrs = abbrev->num_attrs + extra_attrs;
   if (num_attrs > 1)
     size += (num_attrs - 1) * sizeof (struct attribute);
 
   struct die_info *die = (struct die_info *) obstack_alloc (obstack, size);
   memset (die, 0, size);
+
+  die->tag = abbrev->tag;
+  die->num_attrs = abbrev->num_attrs;
+  die->has_children = abbrev->has_children;
+  die->abbrev = abbrev->number;
+
   return die;
 }
 
