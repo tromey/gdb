@@ -173,9 +173,9 @@ cli_style_option version_style ("version", ui_file_style::MAGENTA,
 				ui_file_style::BOLD);
 
 cli_style_option even_background_style ("even", ui_file_style::NONE);
-cli_style_option odd_background_style ("odd", ui_file_style::NONE,
-				       ui_file_style::NORMAL,
-				       ui_file_style::color (51, 51, 51));
+cli_style_option odd_background_style
+     ("odd", ui_file_style::NONE, ui_file_style::NORMAL,
+      ui_file_style::color (0x33, 0x33, 0x33));
 
 /* See cli-style.h.  */
 
