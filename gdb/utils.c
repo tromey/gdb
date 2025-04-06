@@ -1788,7 +1788,10 @@ pager_file::puts (const char *linebuffer)
 	  chars_printed = 0;
 	  wrap_here (0); /* Spit out chars, cancel further wraps.  */
 	  lines_printed++;
+	  ui_file_style save_style = m_applied_style;
+	  m_stream->emit_style_escape (ui_file_style ());
 	  m_stream->puts ("\n");
+	  m_stream->emit_style_escape (save_style);
 	  linebuffer++;
 	}
     }
