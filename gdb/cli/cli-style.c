@@ -173,9 +173,21 @@ cli_style_option version_style ("version", ui_file_style::MAGENTA,
 				ui_file_style::BOLD);
 
 cli_style_option even_background_style ("even", ui_file_style::NONE);
+
+static ui_file_style::color
+get_initial_even_color ()
+{
+  const std::vector<color_space> &colors = colorsupport ();
+  auto iter = std::find (colors.begin (), colors.end (),
+			 color_space::RGB_24BIT);
+  if (iter == colors.end ())
+    return ui_file_style::NONE;
+  return ui_file_style::color (0x33, 0x33, 0x33);
+}
+
 cli_style_option odd_background_style
      ("odd", ui_file_style::NONE, ui_file_style::NORMAL,
-      ui_file_style::color (0x33, 0x33, 0x33));
+      get_initial_even_color ());
 
 /* See cli-style.h.  */
 
