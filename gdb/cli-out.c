@@ -100,6 +100,7 @@ cli_ui_out::do_begin (ui_out_type type, const char *id)
 void
 cli_ui_out::do_end (ui_out_type type)
 {
+  m_style = ui_file_style ();
 }
 
 /* output an int field */
