@@ -78,6 +78,8 @@ cli_ui_out::do_table_header (int width, ui_align alignment,
 		   title_style.style ());
 }
 
+/* See ui-out.h.  */
+
 void
 cli_ui_out::do_start_row ()
 {
