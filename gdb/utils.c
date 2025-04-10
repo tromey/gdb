@@ -1400,7 +1400,11 @@ pager_file::emit_style_escape (const ui_file_style &style)
   if (can_emit_style_escape () && style != m_applied_style)
     {
       m_applied_style = style;
-      if (m_paging)
+      /* If the wrap buffer is empty, we can emit a style change
+	 immediately -- and in fact we want to do this, so that when
+	 the style is cleared at the end of some output, any
+	 "leftover" style does not apply to the prompt.  */
+      if (m_paging || m_wrap_buffer.empty ())
 	m_stream->emit_style_escape (style);
       else
 	m_wrap_buffer.append (style.to_ansi ());
