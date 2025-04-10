@@ -343,8 +343,8 @@ struct ui_file_style
     return this;
   }
 
-  /* Merge STYLE into this style, returning a new merged style.  */
-  ui_file_style operator+ (const ui_file_style &style) const
+  /* Combine STYLE with this style, returning a new merged style.  */
+  ui_file_style merge (const ui_file_style &style) const
   {
     ui_file_style result = *this;
     if (!style.m_foreground.is_none ())

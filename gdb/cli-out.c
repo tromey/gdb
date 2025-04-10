@@ -187,7 +187,7 @@ cli_ui_out::do_field_string (int fldno, int width, ui_align align,
   if (string)
     {
       ui_file *stream = m_streams.back ();
-      stream->emit_style_escape (m_style + style);
+      stream->emit_style_escape (m_style.merge (style));
       stream->puts (string);
       stream->emit_style_escape (ui_file_style ());
     }
@@ -243,7 +243,7 @@ cli_ui_out::do_message (const ui_file_style &style,
   if (!str.empty ())
     {
       ui_file *stream = m_streams.back ();
-      stream->emit_style_escape (m_style + style);
+      stream->emit_style_escape (m_style.merge (style));
       stream->puts (str.c_str ());
       stream->emit_style_escape (ui_file_style ());
     }
