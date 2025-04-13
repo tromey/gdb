@@ -578,6 +578,9 @@
 #ifndef elf_backend_merge_gnu_properties
 #define elf_backend_merge_gnu_properties	NULL
 #endif
+#ifndef elf_backend_setup_object_attributes
+#define elf_backend_setup_object_attributes	_bfd_elf_link_setup_object_attributes
+#endif
 #ifndef elf_backend_setup_gnu_properties
 #define elf_backend_setup_gnu_properties	_bfd_elf_link_setup_gnu_properties
 #endif
@@ -952,6 +955,7 @@ static const struct elf_backend_data elfNN_bed =
   elf_backend_obj_attrs_handle_unknown,
   elf_backend_parse_gnu_properties,
   elf_backend_merge_gnu_properties,
+  elf_backend_setup_object_attributes,
   elf_backend_setup_gnu_properties,
   elf_backend_fixup_gnu_properties,
   elf_backend_compact_eh_encoding,

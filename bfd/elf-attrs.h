@@ -59,6 +59,16 @@ typedef union obj_attr_value_v2 {
   const char *string;
 } obj_attr_value_v2_t;
 
+typedef enum obj_attr_v2_status
+{
+  /* An attribute that is unknown to the linker, and so cannot be merged.  */
+  obj_attr_v2_unknown = 0,
+  /* An attribute that was reported as corrupted.  */
+  obj_attr_v2_corrupted,
+  /* A valid attribute.  */
+  obj_attr_v2_ok,
+} obj_attr_v2_status_t;
+
 typedef uint64_t obj_attr_tag_t;
 
 typedef struct obj_attr_v2 {
@@ -67,6 +77,9 @@ typedef struct obj_attr_v2 {
 
   /* The value assigned to an attribute, can be ULEB128 or NTBS.  */
   union obj_attr_value_v2 val;
+
+  /* The attribute status after merge.  */
+  obj_attr_v2_status_t status;
 
   /* The next attribute in the list or NULL.  */
   struct obj_attr_v2 *next;
@@ -80,6 +93,16 @@ typedef enum obj_attr_subsection_scope_v2
   OA_SUBSEC_PUBLIC,
   OA_SUBSEC_PRIVATE,
 } obj_attr_subsection_scope_v2_t;
+
+typedef enum obj_attr_subsection_v2_status
+{
+  /* A subsection that is unknown to the linker, and so cannot be merged.  */
+  obj_attr_subsection_v2_unknown = 0,
+  /* A subsection that was reported as corrupted.  */
+  obj_attr_subsection_v2_corrupted,
+  /* A valid subsection.  */
+  obj_attr_subsection_v2_ok,
+} obj_attr_subsection_v2_status_t;
 
 typedef struct obj_attr_subsection_v2 {
   /* The name of the subsection.
@@ -95,6 +118,9 @@ typedef struct obj_attr_subsection_v2 {
 
   /* The value encoding of attributes in this subsection.  */
   obj_attr_encoding_v2_t encoding;
+
+  /* The subsection status after merge.  */
+  obj_attr_subsection_v2_status_t status;
 
   /* The size of the list.  */
   unsigned int size;

@@ -18,6 +18,125 @@
    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
 
+/* Design note regarding the merge of Object Attributes v2 during linkage
+
+   Entry point: _bfd_elf_link_setup_object_attributes
+
+   The linker is an "advanced" consumer of OAv2.  After parsing, it deduplicates
+   them, merges them, detects any compatibility issues, and finally translates
+   them to GNU properties.
+
+   ** Overall design
+
+   The OAv2 processing pipeline follows a map-reduce pattern.  Obviously, the
+   actual processing in GNU ld is not multi-threaded, and the operations are not
+   necessarily executed directly one after another.
+
+   * Phase 1, map: successive per-file operations applied on the list of
+     compatible input objects.
+     1. Parsing of the OAv2 section's data (also used by objcopy).
+     2. Translation of relevant GNU properties to OAv2. This is required for the
+        backward-compatibility with input objects only marked using GNU
+        properties.
+     3. Sorting of the subsections and object attributes. Further operations
+        rely on the ordering to perform some optimization in the processing of
+        the data.
+     4. Deduplication of subsections and object attributes, and detection of any
+        conflict between duplicated subsections or tags.
+     5. Translation of relevant OAv2 to GNU properties for a forward
+        -compatibility with the GNU properties merge.
+     6. Marking of unknown subsections to skip them during the merge (in
+        phase 2), and to prune them before the output object's serialization
+        (in phase 3).
+
+   * Phase 2, reduce: OAv2 in input objects are merged together.
+     1. Gathering of "frozen" values (=coming from the command-line arguments)
+        into a virtual read-only list of subsections and attributes.
+     2. Merging of OAv2 from an input file and the frozen input.
+     3. Merging of the results of step 2 together. Since the OAv2 merge is
+        commutative and associative, it can be implemented as a reduce.
+        However, GNU ld implements it as an accumulate because it does not
+        support multithreading.
+     Notes: the two merge phases also perform a marking of unsupported / invalid
+     subsections and attributes.  This marking can be used for debugging, and
+     also more practically to drop unsupported optional subsections from the
+     output.
+
+   * Phase 3, finalization of the output.
+     1. Pruning of the unknown / unsupported / invalid subsections and
+        attributes.
+     2. Serialization of OAv2 data (also used by objcopy).
+     Notes:
+      - There is no translation of the merged OAv2 to GNU properties at this
+        stage, as the GNU properties merge process has already all the needed
+        information (translated in step 5 of stage 1) to produce the GNU
+        properties.
+      - The GNU properties are currently required as the runtime linker does
+        not understand OAv2 yet.
+      - Phase 3 should also include a compatibility check between the final
+        merge result of the current link unit and input shared objects.  I opted
+        for postponing this compatibility check, and GNU properties merge will
+        take care of it as it already does.
+
+   The Object Ottributes merge process must handle both optional and required
+   subsections.  It also treats the first merge of the frozen set specially, as
+   the OAv2 list in the input BFD serves as the accumulator for subsequent
+   merges.
+
+   ** Optional subsections
+
+   Optional subsections are processed as if merging two ordered sets — by
+   iterating linearly through both, checking whether an element of a given
+   ordinality is present in the opposite set, and adding it to the accumulator.
+   The added diffuculty with subsections and attributes lies in the fact that
+   missing elements have default values, and these must be merged with existing
+   ones to produce the final value to be stored.
+
+   ** Required subsections
+
+   Required subsections are processed slightly differently from the optional
+   subsections, as they cannot be pruned since they are mandatory, hence an
+   error will be raised by the linker if it is not recognized.
+
+   For now, the subsection for PAuth ABI is the only one use case, and no merge
+   is applied on the values.  The values simply need to match.
+   This implementation choice might be challenged in the future if required
+   subsections can have the same diversity as optional subsections.  If the case
+   arises, the refactoring to handle this new behavior should consist in adding
+   a new merge policy MERGE-EQUAL, or something similar.  Some "if required"
+   should be added in the optional subsections merge logic to error on any
+   missing elements, or mismatch, and messages should also be rephrased to point
+   out that the error is for a required subsection.
+
+   ** Important note regarding support for testing
+
+   In order to test this generic logic, AArch64's use cases are not offering
+   enough coverage, so a "GNU testing namespace" which corresponds to the name
+   of the subsection was introduced.  It follows the following pattern:
+     gnu_testing_<XXXXXX>_MERGE_<POLICY>
+   with:
+     - <XXXXXX>: an arbitrary name for your testing subsection.
+     - <POLICY>: the name of the merging policy to apply on the values in the
+       subsection.  The currently supported merge policy are:
+         * _MERGE_AND: bitwise AND applied on numerical values.
+         * _MERGE_OR: bitwise OR applied on numerical values.
+         * _MERGE_ADD: concatenates strings together with a '+' in-between.
+       Note: "_MERGE_ADD" does not make really sense, and will very likely never
+       be used for a real merge.  Its only purpose is to test the correct
+       handling of merges with strings.
+   Any subsection name matching neither names supported by the backend, nor
+   following the pattern corresponding GNU testing namespace will be considered
+   unknown and its status set to obj_attr_subsection_v2_unknown.  This will have
+   for consequence the pruning of this subsection.
+
+   Additionally, the first two tags in gnu_testing namespace, GNUTestTag_0 and
+   GNUTestTag_1, are known, and so have a name and can be initialized to the
+   default value ('0' or NULL) depending on the encoding specified on the
+   subsection.  Any tags above 1 will be considered unknown, so will be default
+   -initialized in the same way but its status will be set to obj_attr_v2_unknown.
+   This behavior of the testing tags allows to test the pruning of unknown
+   attributes.  */
+
 #include "sysdep.h"
 #include "bfd.h"
 #include "doubly-linked-list.h"
@@ -582,6 +701,315 @@ const char *
 bfd_oav2_encoding_to_string (obj_attr_encoding_v2_t encoding)
 {
   return (encoding == OA_ENC_ULEB128) ? "ULEB128" : "NTBS";
+}
+
+/* Return True if the given BFD is an ELF object with the target backend
+   machine code, non-dynamic (i.e. not a shared library), non-executable, not a
+   plugin or created by the linker.  False otherwise.  */
+static bool
+oav2_relevant_elf_object (const struct bfd_link_info *info,
+			  const bfd *const abfd)
+{
+  const struct elf_backend_data *output_bed
+    = get_elf_backend_data (info->output_bfd);
+  unsigned int elfclass = output_bed->s->elfclass;
+  int elf_machine_code = output_bed->elf_machine_code;
+  return ((abfd->flags & (DYNAMIC | EXEC_P | BFD_PLUGIN | BFD_LINKER_CREATED)) == 0
+	  && bfd_get_flavour (abfd) == bfd_target_elf_flavour
+	  && elf_machine_code == get_elf_backend_data (abfd)->elf_machine_code
+	  && elfclass == get_elf_backend_data (abfd)->s->elfclass);
+}
+
+/* Structure storing the result of a search in the list of input BFDs.  */
+typedef struct
+{
+  /* A pointer to a BFD.  This BFD can either point to a file having
+     object attributes, or a candidate file which does not have any.  */
+  bfd *pbfd;
+
+  /* A boolean indicating whether the file actually contains object
+     attributes.  */
+  bool has_object_attributes;
+
+  /* A pointer to the section containing the object attributes, if any
+     were found.  */
+  asection *sec;
+} bfd_search_result_t;
+
+/* Search for the first input object file containing object attributes.
+   If no such object is found, the result structure's PBFD points to the
+   last object file that could have contained object attributes.  The
+   result structure's HAS_OBJECT_ATTRIBUTES allows to distinguish the
+   cases when PBFD contains or does not contain object attributes.  If no
+   candidate file is found, PBFD will stay NULL.  */
+static bfd_search_result_t
+bfd_linear_find_first_with_obj_attrs (const struct bfd_link_info *info)
+{
+  (void) info;
+  /* TO IMPLEMENT */
+  bfd_search_result_t res = { .has_object_attributes = false };
+  return res;
+}
+
+/* Create a object attributes section for the given bfd input.  */
+static asection *
+create_object_attributes_section (struct bfd_link_info *info,
+				  bfd *abfd)
+{
+  (void) info;
+  (void) abfd;
+  /* TO IMPLEMENT */
+  return NULL;
+}
+
+/* Translate GNU properties that have object attributes v2 equivalents.  */
+static void
+oav2_translate_gnu_props_to_obj_attrs (const bfd *abfd)
+{
+  (void) abfd;
+  /* TO IMPLEMENT */
+}
+
+/* Translate object attributes v2 that have GNU properties equivalents.  */
+static void
+oav2_translate_obj_attrs_to_gnu_props (bfd *abfd)
+{
+  (void) abfd;
+  /* TO IMPLEMENT */
+}
+
+/* Merge duplicated subsections and object attributes inside a same object
+   file.  After a call to this function, the subsections and object attributes
+   are sorted.
+   Note: this function allows to handle in a best effort exotic objects produced
+   by a non-GNU assembler.  Duplicated subsections could come from the same
+   section, or different ones.  Indeed, the deserializer deserializes the
+   content of a section if its type matches the object attributes type specified
+   by the backend, regardless of the section name.  The behavior for such cases
+   is not specified by the Object Attributes specification, and are a question
+   of implementation.  Non-GNU linkers might have a different behavior with such
+   exotic objects. */
+static bool
+oav2_file_scope_merge_subsections (const bfd *abfd)
+{
+  (void) abfd;
+  /* TO IMPLEMENT */
+  return false;
+}
+
+/* If an Object Attribute subsection inside ABFD cannot be identified neither
+   as a GNU subsection or a backend-specific one, set the status of this
+   subsection to UNKNOWN.  The unknown subsection will be skipped during the
+   merge process, and will be pruned from the output.  */
+static void
+oav2_subsections_mark_unknown (const bfd *abfd)
+{
+  (void) abfd;
+  /* TO IMPLEMENT */
+}
+
+/* Merge object attributes from FROZEN into the object file ABFD.
+   Note: this function is called only once before starting the merge process
+   between the object files.  ABFD corresponds to the future REF_BFD, and is
+   used to store the result of the merge.  ABFD is also an input file, so any
+   mismatch against FROZEN should be raised before the values of ABFD be
+   modified.  */
+static bool
+oav2_subsections_merge_frozen (const struct bfd_link_info *info,
+			       const bfd *abfd,
+			       const obj_attr_subsection_list_t *frozen_cfg)
+{
+  (void) info;
+  (void) abfd;
+  (void) frozen_cfg;
+  /* TO IMPLEMENT */
+  return false;
+}
+
+/* Merge object attributes from object file ABFD and FROZEN_CFG into REF_BFD.  */
+static bool
+oav2_subsections_merge (const struct bfd_link_info *info,
+			const bfd *ref_bfd, bfd *abfd,
+			const obj_attr_subsection_list_t *frozen_cfg)
+{
+  (void) info;
+  (void) ref_bfd;
+  (void) abfd;
+  (void) frozen_cfg;
+  /* TO IMPLEMENT */
+  return false;
+}
+
+/* Wrapper for the high-level logic of merging a single file.
+   It handles both of the following cases:
+   - ABFD (future REF_BFD) merged against FROZEN.
+   - ABFD (input) and FROZEN_CFG merged into REF_BFD.
+   If has_obj_attrs_after_translation is non-NULL, the caller is responsible for
+   the distinction between the cases where attributes are already present, or
+   where attributes were added as a result of a translation of GNU properties.
+   The first step translates existing GNU properties to object attributes. Next,
+   any duplicates entries in the input are merged, and the resulting object
+   attributes are written back into GNU properties so that the GNU properties
+   merge process can correctly diagnose potential issues. Before merging,
+   unknown subsections and attributes are marked so they can be skipped during
+   processing.
+   Return True on success, False on failure.  */
+static bool
+oav2_merge_one (const struct bfd_link_info *info,
+		bfd *ref_bfd, bfd *abfd,
+		const obj_attr_subsection_list_t *frozen_cfg,
+		bool *has_obj_attrs_after_translation)
+{
+  /* ABFD is an input file that may contain GNU properties, object
+     attributes, or both.  Before merging object attributes, we must first
+     translate any GNU properties into their equivalent object attributes
+     (if such equivalents exist) since they may not already be present.  */
+  oav2_translate_gnu_props_to_obj_attrs (abfd);
+  if (has_obj_attrs_after_translation
+      && elf_obj_attr_subsections (abfd).size > 0)
+    *has_obj_attrs_after_translation = true;
+
+  /* Merge duplicates subsections and attributes.  */
+  if (! oav2_file_scope_merge_subsections (abfd))
+    return false;
+
+  /* ABFD is an input file that may contain GNU properties, object
+     attributes, or both.  Before merging GNU properties, we must first
+     translate any object attributes into their equivalent GNU properties
+     (if such equivalents exist) since they may not already be present.  */
+  oav2_translate_obj_attrs_to_gnu_props (abfd);
+
+  /* Note: object attributes are always merged before GNU properties.
+     Ideally, there would be a single internal representation, with an
+     abstraction level flexible enough to capture both GNU properties and
+     object attributes without loss.  In such a design, merge order would
+     be irrelevant, and translation would occur only at the I/O boundaries
+     during deserialization of GNU properties and object attributes.  */
+
+  /* Mark unknown subsections and attributes to skip them during
+     the merge.  */
+  oav2_subsections_mark_unknown (abfd);
+
+  if (ref_bfd == NULL)
+    /* When REF_BFD is null, it means that ABFD is the future REF_BFD, and
+       will be accumulating the merge result.
+       It means that we will lose information from ABFD beyond this stage,
+       so we need to emit warnings / errors (if any) when merging ABFD
+       against FROZEN.  */
+    return oav2_subsections_merge_frozen (info, abfd, frozen_cfg);
+
+  /* Common merge case.  */
+  return oav2_subsections_merge (info, ref_bfd, abfd, frozen_cfg);
+}
+
+/* Merge all the object attributes in INPUT_BFDS (REF_BFD excluded) into
+   REF_BFD.  Return True on success, False otherwise.  */
+static bool
+oav2_merge_all (const struct bfd_link_info *info,
+		bfd *ref_bfd, bfd *input_bfds,
+		obj_attr_subsection_list_t *frozen_cfg)
+{
+  bool success = true;
+  for (bfd *abfd = input_bfds; abfd != NULL; abfd = abfd->link.next)
+    {
+      if (abfd != ref_bfd && oav2_relevant_elf_object (info, abfd))
+	success &= oav2_merge_one (info, ref_bfd, abfd, frozen_cfg, NULL);
+    }
+  return success;
+}
+
+/* Prune any subsection or attribute with a status different from OK.  */
+static bfd *
+oav2_prune_nok_attrs (const struct bfd_link_info *info, bfd *abfd)
+{
+  (void) info;
+  (void) abfd;
+  /* TO IMPLEMENT */
+  return NULL;
+}
+
+/* Set up object attributes coming from configuration, and merge them with the
+   ones from the input object files.  Return a pointer to the input object file
+   containing the merge result on success, NULL otherwise.  */
+bfd *
+_bfd_elf_link_setup_object_attributes (struct bfd_link_info *info)
+{
+  obj_attr_subsection_list_t *frozen_cfg
+    = &elf_obj_attr_subsections (info->output_bfd);
+
+  bfd_search_result_t res
+    = bfd_linear_find_first_with_obj_attrs (info);
+
+  /* If res.pbfd is NULL, it means that it didn't find any ELF object files.  */
+  if (res.pbfd == NULL)
+    return NULL;
+
+  /* Sort the frozen subsections and attributes in case that they were not
+     inserted in the correct order.  */
+  oav2_sort_subsections (frozen_cfg);
+
+  /* Merge object attributes sections.  */
+  info->callbacks->minfo ("\n");
+  info->callbacks->minfo (_("Merging object attributes\n"));
+  info->callbacks->minfo ("\n");
+
+  bool success = oav2_merge_one (info, NULL, res.pbfd, frozen_cfg,
+				 &res.has_object_attributes);
+
+  /* No frozen object attributes and no object file, so nothing to do.  */
+  if (!res.has_object_attributes && frozen_cfg->size == 0)
+    return NULL;
+  /* If frozen object attributes were set by some command-line options, we still
+     need to emit warnings / errors if incompatibilities exist.  */
+
+  /* Set the object attribute version for the output object to the recommended
+     value by the backend.  */
+  elf_obj_attr_version (info->output_bfd)
+    = get_elf_backend_data (info->output_bfd)->default_obj_attr_version;
+
+  if (res.sec == NULL)
+    {
+      /* This input object has no object attribute section matching the name and
+	 type specified by the backend, i.e. elf_backend_obj_attrs_section and
+	 elf_backend_obj_attrs_section_type.
+	 One of the two following cases is possible:
+	 1. No object attribute were found in this file, so the object attribute
+	    version was never set by the deserializer.
+	 2. The deserializer might have found attributes in another section with
+	    the correct type but the wrong name.  The object attribute version
+	    should have been set correctly in this case.
+	 Whatever of those two cases, we set the object attribute version to the
+	 backend's recommended value, and create a new section with the expected
+	 name and type.  */
+      elf_obj_attr_version (res.pbfd)
+	= get_elf_backend_data (res.pbfd)->default_obj_attr_version;
+      res.sec = create_object_attributes_section (info, res.pbfd);
+    }
+
+  /* Merge all the input object files againt res.pbfd and frozen_cfg, and
+     accumulate the merge result in res.pbfd.  */
+  success &= oav2_merge_all (info, res.pbfd, info->input_bfds, frozen_cfg);
+  if (! success)
+    return NULL;
+
+  /* Prune all subsections and attributes with a status different from OK.  */
+  if (! oav2_prune_nok_attrs (info, res.pbfd))
+    return NULL;
+  BFD_ASSERT (elf_obj_attr_subsections (res.pbfd).size > 0);
+
+
+  /* Shallow-copy the object attributes into output_bfd.  */
+  elf_obj_attr_subsections (info->output_bfd)
+    = elf_obj_attr_subsections (res.pbfd);
+
+  /* Note: the object attributes section in the output object is copied from
+     the input object which was used for the merge (res.pbfd).  No need to
+     create it here.  However, so that the section is copied to the output
+     object, the size must be different from 0.  For now, we will set this
+     size to 1.  The real size will be set later.  */
+  res.sec->size = 1;
+
+  return res.pbfd;
 }
 
 /* Allocate/find an object attribute.  */
@@ -1507,6 +1935,7 @@ bfd_elf_obj_attr_v2_init (obj_attr_tag_t tag,
   obj_attr_v2_t *attr = XCNEW (obj_attr_v2_t);
   attr->tag = tag;
   attr->val = val;
+  attr->status = obj_attr_v2_ok;
   return attr;
 }
 
@@ -1538,7 +1967,9 @@ _bfd_elf_obj_attr_v2_copy (const obj_attr_v2_t *other,
   else
     abort ();
 
-  return bfd_elf_obj_attr_v2_init (other->tag, val);
+  obj_attr_v2_t *copy = bfd_elf_obj_attr_v2_init (other->tag, val);
+  copy->status = other->status;
+  return copy;
 }
 
 /* Compare two object attributes based on their TAG value only (partial
@@ -1608,6 +2039,7 @@ bfd_elf_obj_attr_subsection_v2_init (const char *name,
   subsection->scope = scope;
   subsection->optional = optional;
   subsection->encoding = encoding;
+  subsection->status = obj_attr_subsection_v2_ok;
   return subsection;
 }
 
@@ -1637,6 +2069,8 @@ oav2_obj_attr_subsection_v2_copy (const obj_attr_subsection_v2_t *other)
   obj_attr_subsection_v2_t *new_subsec
     = bfd_elf_obj_attr_subsection_v2_init (xstrdup (other->name), other->scope,
 					    other->optional, other->encoding);
+  new_subsec->status = other->status;
+
   for (obj_attr_v2_t *attr = other->first;
        attr != NULL;
        attr = attr->next)

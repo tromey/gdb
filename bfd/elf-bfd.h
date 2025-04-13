@@ -1694,6 +1694,9 @@ struct elf_backend_data
   bool (*merge_gnu_properties) (struct bfd_link_info *, bfd *, bfd *,
 				       elf_property *, elf_property *);
 
+  /* Set up object attributes.  */
+  bfd *(*setup_object_attributes) (struct bfd_link_info *);
+
   /* Set up GNU properties.  */
   bfd *(*setup_gnu_properties) (struct bfd_link_info *);
 
@@ -3180,6 +3183,8 @@ extern int bfd_elf_obj_attrs_arg_type
   (bfd *, obj_attr_vendor_t, obj_attr_tag_t);
 extern void _bfd_elf_parse_attributes
   (bfd *, Elf_Internal_Shdr *) ATTRIBUTE_HIDDEN;
+extern bfd *_bfd_elf_link_setup_object_attributes
+  (struct bfd_link_info *) ATTRIBUTE_HIDDEN;
 extern bool _bfd_elf_merge_object_attributes
   (bfd *, struct bfd_link_info *) ATTRIBUTE_HIDDEN;
 extern bool _bfd_elf_merge_unknown_attribute_low
