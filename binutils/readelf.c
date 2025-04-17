@@ -20193,8 +20193,10 @@ elf_parse_attrs_subsection_v2 (const unsigned char *cursor,
 	 bfd_elf_obj_attr_subsection_v2_scope() in bfd/elf-attrs.c.  */
       size_t public_name_len = strlen (public_name);
       bool public_subsection
-	= strncmp (subsec_name, public_name, public_name_len) == 0
-	  && subsec_name[public_name_len] == '_';
+	= ((strncmp (subsec_name, public_name, public_name_len) == 0
+	    && subsec_name[public_name_len] == '_')
+	   || (strncmp (subsec_name, "gnu_", 4) == 0
+	       && strncmp (subsec_name + 4, "testing_", 8) != 0));
       cursor += subsection_name_len;
       op.read += subsection_name_len;
 

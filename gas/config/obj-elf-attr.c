@@ -1251,4 +1251,38 @@ obj_elf_gnu_attribute (int ignored ATTRIBUTE_UNUSED)
   obj_attr_process_attribute (OBJ_ATTR_GNU);
 }
 
+#if (TC_OBJ_ATTR_v2)
+/* Return True if the VERSION of object attributes supports subsections, False
+   otherwise.  */
+
+static inline bool
+attr_fmt_has_subsections (obj_attr_version_t version)
+{
+  switch (version)
+  {
+  case OBJ_ATTR_V1:
+    return false;
+  case OBJ_ATTR_V2:
+    return true;
+  default:
+    abort ();  /* Unsupported format.  */
+  }
+}
+
+/* Parse a .gnu_subsection directive.  */
+
+void
+obj_elf_gnu_subsection (int ignored ATTRIBUTE_UNUSED)
+{
+  obj_attr_version_t version = elf_obj_attr_version (stdoutput);
+  if (! attr_fmt_has_subsections (version))
+    {
+      as_bad (_(".gnu_subsection is only available with object attributes v2"));
+      ignore_rest_of_line ();
+      return;
+    }
+  obj_attr_process_subsection ();
+}
+#endif /* TC_OBJ_ATTR_v2 */
+
 #endif /* TC_OBJ_ATTR */

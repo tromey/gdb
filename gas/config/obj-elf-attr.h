@@ -50,6 +50,9 @@ extern void obj_attr_process_subsection (void);
 #endif /* (TC_OBJ_ATTR_v2) */
 
 extern void obj_elf_gnu_attribute (int);
+#if (TC_OBJ_ATTR_v2)
+extern void obj_elf_gnu_subsection (int);
+#endif /* TC_OBJ_ATTR_v2 */
 
 #endif /* TC_OBJ_ATTR */
 

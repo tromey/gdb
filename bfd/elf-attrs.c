@@ -605,8 +605,10 @@ bfd_elf_obj_attr_subsection_v2_scope (const bfd *abfd, const char *subsec_name)
   const char *vendor_name = get_elf_backend_data (abfd)->obj_attrs_vendor;
   obj_attr_subsection_scope_v2_t scope = OA_SUBSEC_PRIVATE;
   size_t vendor_name_len = strlen (vendor_name);
-  if (strncmp (subsec_name, vendor_name, vendor_name_len) == 0
-      && subsec_name[vendor_name_len] == '_')
+  if ((strncmp (subsec_name, vendor_name, vendor_name_len) == 0
+       && subsec_name[vendor_name_len] == '_')
+      || (strncmp (subsec_name, "gnu_", 4) == 0
+	  && !gnu_testing_namespace (subsec_name)))
     scope = OA_SUBSEC_PUBLIC;
   return scope;
 }

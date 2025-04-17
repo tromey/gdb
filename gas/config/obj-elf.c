@@ -117,6 +117,9 @@ static const pseudo_typeS elf_pseudo_table[] =
   /* A GNU extension for object attributes.  */
 #ifdef TC_OBJ_ATTR
   {"gnu_attribute", obj_elf_gnu_attribute, 0},
+#if TC_OBJ_ATTR_v2
+  {"gnu_subsection", obj_elf_gnu_subsection, 0},
+#endif /* TC_OBJ_ATTR_v2 */
 #endif /* TC_OBJ_ATTR */
 
   /* These are used for dwarf2.  */
