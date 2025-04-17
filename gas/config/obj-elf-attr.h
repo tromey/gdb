@@ -44,9 +44,6 @@ extern bool oav1_attr_seen (obj_attr_vendor_t, obj_attr_tag_t);
 
 /* Object attributes parsers.  */
 
-#if (TC_OBJ_ATTR_v1)
-extern obj_attr_tag_t obj_attr_v1_process_attribute (obj_attr_vendor_t);
-#endif /* (TC_OBJ_ATTR_v1) */
 extern obj_attr_tag_t obj_attr_process_attribute (obj_attr_vendor_t);
 #if (TC_OBJ_ATTR_v2)
 extern void obj_attr_process_subsection (void);
