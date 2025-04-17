@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include "hidden.h"
 #include <stdint.h>
 #include "hidden.h"
 
@@ -211,3 +212,14 @@ typedef struct {
      error.  */
   enum obj_attr_v2_merge_result_reason reason;
 } obj_attr_v2_merge_result_t;
+
+/* Re-usable merge policies.  */
+/* For now, only AND-merge is used by AArch64 backend.  Additional policies
+   (Integer-OR, String-ADD) are part of the GNU testing namespace.  If they
+   appear to be usefull for a backend at some point, they should be exposed
+   to the backend here below.  */
+extern obj_attr_v2_merge_result_t
+_bfd_obj_attr_v2_merge_AND (const struct bfd_link_info *, const bfd *,
+			    const obj_attr_subsection_v2_t *,
+			    const obj_attr_v2_t *, const obj_attr_v2_t *,
+			    const obj_attr_v2_t *) ATTRIBUTE_HIDDEN;

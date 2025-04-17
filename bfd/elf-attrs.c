@@ -1143,12 +1143,12 @@ gnu_testing_merge_subsection (const char *subsec_name)
 }
 
 /* Merge policy Integer-AND: apply bitwise AND between REF and RHS.  */
-static obj_attr_v2_merge_result_t
-obj_attr_v2_merge_AND (const struct bfd_link_info *info ATTRIBUTE_UNUSED,
-		       const bfd *abfd ATTRIBUTE_UNUSED,
-		       const obj_attr_subsection_v2_t *subsec,
-		       const obj_attr_v2_t *ref, const obj_attr_v2_t *rhs,
-		       const obj_attr_v2_t *frozen ATTRIBUTE_UNUSED)
+obj_attr_v2_merge_result_t
+_bfd_obj_attr_v2_merge_AND (const struct bfd_link_info *info ATTRIBUTE_UNUSED,
+			    const bfd *abfd ATTRIBUTE_UNUSED,
+			    const obj_attr_subsection_v2_t *subsec,
+			    const obj_attr_v2_t *ref, const obj_attr_v2_t *rhs,
+			    const obj_attr_v2_t *frozen ATTRIBUTE_UNUSED)
 {
   BFD_ASSERT (subsec->encoding == OA_ENC_ULEB128);
 
@@ -1290,7 +1290,7 @@ oav2_attr_merge (const struct bfd_link_info *info,
       if (lhs->tag <= 1)
 	{
 	  if (policy == SUBSECTION_TESTING_MERGE_AND_POLICY)
-	    res = obj_attr_v2_merge_AND (info, abfd, subsec, lhs, rhs, frozen);
+	    res = _bfd_obj_attr_v2_merge_AND (info, abfd, subsec, lhs, rhs, frozen);
 	  else if (policy == SUBSECTION_TESTING_MERGE_OR_POLICY)
 	    res = obj_attr_v2_merge_OR (info, abfd, subsec, lhs, rhs, frozen);
 	  else if (policy == SUBSECTION_TESTING_MERGE_ADD_POLICY)
