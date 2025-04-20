@@ -1514,8 +1514,7 @@ remote_register_is_expedited (int regnum)
 }
 
 /* Per-program-space data key.  */
-static const registry<program_space>::key<char, gdb::xfree_deleter<char>>
-  remote_pspace_data;
+static const registry<program_space>::key<std::string> remote_pspace_data;
 
 /* The variable registered as the control variable used by the
    remote exec-file commands.  While the remote exec-file setting is
@@ -1846,13 +1845,12 @@ remote_target::get_remote_state ()
 static const char *
 get_remote_exec_file (void)
 {
-  char *remote_exec_file;
-
-  remote_exec_file = remote_pspace_data.get (current_program_space);
-  if (remote_exec_file == NULL)
+  std::string *remote_exec_file
+    = remote_pspace_data.get (current_program_space);
+  if (remote_exec_file == nullptr)
     return "";
 
-  return remote_exec_file;
+  return remote_exec_file->c_str ();
 }
 
 /* Set the remote exec file for PSPACE.  */
@@ -1861,10 +1859,11 @@ static void
 set_pspace_remote_exec_file (struct program_space *pspace,
 			     const char *remote_exec_file)
 {
-  char *old_file = remote_pspace_data.get (pspace);
-
-  xfree (old_file);
-  remote_pspace_data.set (pspace, xstrdup (remote_exec_file));
+  std::string *value = remote_pspace_data.get (pspace);
+  if (value == nullptr)
+    remote_pspace_data.emplace (pspace, remote_exec_file);
+  else
+    *value = remote_exec_file;
 }
 
 /* The "set/show remote exec-file" set command hook.  */
