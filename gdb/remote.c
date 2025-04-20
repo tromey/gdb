@@ -620,7 +620,7 @@ public: /* data */
      It will be -1 if no traceframe is selected.  */
   int remote_traceframe_number = -1;
 
-  char *last_pass_packet = nullptr;
+  std::string last_pass_packet;
 
   /* The last QProgramSignals packet sent to the target.  We bypass
      sending a new program signals list down to the target if the new
@@ -1705,7 +1705,6 @@ remote_state::remote_state ()
 
 remote_state::~remote_state ()
 {
-  xfree (this->last_pass_packet);
   xfree (this->finished_object);
   xfree (this->finished_annex);
 }
@@ -3088,7 +3087,6 @@ remote_target::pass_signals (gdb::array_view<const unsigned char> pass_signals)
 {
   if (m_features.packet_support (PACKET_QPassSignals) != PACKET_DISABLE)
     {
-      char *pass_packet, *p;
       int count = 0;
       struct remote_state *rs = get_remote_state ();
 
@@ -3098,34 +3096,28 @@ remote_target::pass_signals (gdb::array_view<const unsigned char> pass_signals)
 	  if (pass_signals[i])
 	    count++;
 	}
-      pass_packet = (char *) xmalloc (count * 3 + strlen ("QPassSignals:") + 1);
-      strcpy (pass_packet, "QPassSignals:");
-      p = pass_packet + strlen (pass_packet);
+      std::string pass_packet = "QPassSignals:";
       for (size_t i = 0; i < pass_signals.size (); i++)
 	{
 	  if (pass_signals[i])
 	    {
 	      if (i >= 16)
-		*p++ = tohex (i >> 4);
-	      *p++ = tohex (i & 15);
+		pass_packet.push_back (tohex (i >> 4));
+	      pass_packet.push_back (tohex (i & 15));
 	      if (count)
-		*p++ = ';';
+		pass_packet.push_back (';');
 	      else
 		break;
 	      count--;
 	    }
 	}
-      *p = 0;
-      if (!rs->last_pass_packet || strcmp (rs->last_pass_packet, pass_packet))
+      if (rs->last_pass_packet != pass_packet)
 	{
-	  putpkt (pass_packet);
+	  putpkt (pass_packet.c_str ());
 	  getpkt (&rs->buf);
 	  m_features.packet_ok (rs->buf, PACKET_QPassSignals);
-	  xfree (rs->last_pass_packet);
 	  rs->last_pass_packet = pass_packet;
 	}
-      else
-	xfree (pass_packet);
     }
 }
 
