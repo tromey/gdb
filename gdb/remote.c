@@ -507,7 +507,6 @@ class remote_state
 public:
 
   remote_state ();
-  ~remote_state ();
 
   /* Get the remote arch state for GDBARCH.  */
   struct remote_arch_state *get_remote_arch_state (struct gdbarch *gdbarch);
@@ -639,8 +638,8 @@ public: /* data */
   /* The execution direction of the last resume we got.  */
   exec_direction_kind last_resume_exec_dir = EXEC_FORWARD;
 
-  char *finished_object = nullptr;
-  char *finished_annex = nullptr;
+  gdb::unique_xmalloc_ptr<char> finished_object;
+  gdb::unique_xmalloc_ptr<char> finished_annex;
   ULONGEST finished_offset = 0;
 
   /* Should we try the 'ThreadInfo' query packet?
@@ -1701,12 +1700,6 @@ private:
 remote_state::remote_state ()
   : buf (400)
 {
-}
-
-remote_state::~remote_state ()
-{
-  xfree (this->finished_object);
-  xfree (this->finished_annex);
 }
 
 /* Utility: generate error from an incoming stub packet.  */
@@ -11682,20 +11675,17 @@ remote_target::remote_read_qxfer (const char *object_name,
 
   /* Check whether we've cached an end-of-object packet that matches
      this request.  */
-  if (rs->finished_object)
+  if (rs->finished_object != nullptr)
     {
-      if (strcmp (object_name, rs->finished_object) == 0
-	  && strcmp (annex ? annex : "", rs->finished_annex) == 0
+      if (strcmp (object_name, rs->finished_object.get ()) == 0
+	  && strcmp (annex ? annex : "", rs->finished_annex.get ()) == 0
 	  && offset == rs->finished_offset)
 	return TARGET_XFER_EOF;
 
-
       /* Otherwise, we're now reading something different.  Discard
 	 the cache.  */
-      xfree (rs->finished_object);
-      xfree (rs->finished_annex);
-      rs->finished_object = NULL;
-      rs->finished_annex = NULL;
+      rs->finished_object.reset ();
+      rs->finished_annex.reset ();
     }
 
   /* Request only enough to fit in a single packet.  The actual data
@@ -11736,8 +11726,8 @@ remote_target::remote_read_qxfer (const char *object_name,
      object, record this fact to bypass a subsequent partial read.  */
   if (rs->buf[0] == 'l' && offset + i > 0)
     {
-      rs->finished_object = xstrdup (object_name);
-      rs->finished_annex = xstrdup (annex ? annex : "");
+      rs->finished_object = make_unique_xstrdup (object_name);
+      rs->finished_annex = make_unique_xstrdup (annex ? annex : "");
       rs->finished_offset = offset + i;
     }
 
