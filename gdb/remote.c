@@ -626,7 +626,7 @@ public: /* data */
      sending a new program signals list down to the target if the new
      packet is exactly the same as the last we sent.  IOW, we only let
      the target know about program signals list changes.  */
-  char *last_program_signals_packet = nullptr;
+  std::string last_program_signals_packet;
 
   /* Similarly, the last QThreadEvents state we sent to the
      target.  */
@@ -1706,7 +1706,6 @@ remote_state::remote_state ()
 remote_state::~remote_state ()
 {
   xfree (this->last_pass_packet);
-  xfree (this->last_program_signals_packet);
   xfree (this->finished_object);
   xfree (this->finished_annex);
 }
@@ -3208,7 +3207,6 @@ remote_target::program_signals (gdb::array_view<const unsigned char> signals)
 {
   if (m_features.packet_support (PACKET_QProgramSignals) != PACKET_DISABLE)
     {
-      char *packet, *p;
       int count = 0;
       struct remote_state *rs = get_remote_state ();
 
@@ -3218,35 +3216,28 @@ remote_target::program_signals (gdb::array_view<const unsigned char> signals)
 	  if (signals[i])
 	    count++;
 	}
-      packet = (char *) xmalloc (count * 3 + strlen ("QProgramSignals:") + 1);
-      strcpy (packet, "QProgramSignals:");
-      p = packet + strlen (packet);
+      std::string packet = "QProgramSignals:";
       for (size_t i = 0; i < signals.size (); i++)
 	{
 	  if (signal_pass_state (i))
 	    {
 	      if (i >= 16)
-		*p++ = tohex (i >> 4);
-	      *p++ = tohex (i & 15);
+		packet.push_back (tohex (i >> 4));
+	      packet.push_back (tohex (i & 15));
 	      if (count)
-		*p++ = ';';
+		packet.push_back (';');
 	      else
 		break;
 	      count--;
 	    }
 	}
-      *p = 0;
-      if (!rs->last_program_signals_packet
-	  || strcmp (rs->last_program_signals_packet, packet) != 0)
+      if (rs->last_program_signals_packet != packet)
 	{
-	  putpkt (packet);
+	  putpkt (packet.c_str ());
 	  getpkt (&rs->buf);
 	  m_features.packet_ok (rs->buf, PACKET_QProgramSignals);
-	  xfree (rs->last_program_signals_packet);
 	  rs->last_program_signals_packet = packet;
 	}
-      else
-	xfree (packet);
     }
 }
 
