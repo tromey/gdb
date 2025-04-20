@@ -5857,7 +5857,7 @@ static const struct protocol_feature remote_protocol_features[] = {
   { "binary-upload", PACKET_DISABLE, remote_supported_packet, PACKET_x },
 };
 
-static char *remote_support_xml;
+static std::string remote_support_xml;
 
 /* Register string appended to "xmlRegisters=" in qSupported query.  */
 
@@ -5865,29 +5865,36 @@ void
 register_remote_support_xml (const char *xml)
 {
 #if defined(HAVE_LIBEXPAT)
-  if (remote_support_xml == NULL)
-    remote_support_xml = concat ("xmlRegisters=", xml, (char *) NULL);
+  static const std::string_view prefix = "xmlRegisters=";
+
+  if (remote_support_xml.empty ())
+    {
+      remote_support_xml = prefix;
+      remote_support_xml += xml;
+    }
   else
     {
-      char *copy = xstrdup (remote_support_xml + 13);
-      char *saveptr;
-      char *p = strtok_r (copy, ",", &saveptr);
-
-      do
+      size_t prev = prefix.size ();
+      while (true)
 	{
-	  if (strcmp (p, xml) == 0)
+	  size_t comma = remote_support_xml.find (prev, ',');
+	  // FIXME this seems wrong
+	  std::string_view view (remote_support_xml.c_str () + prev,
+				 comma == std::string::npos
+				 ? remote_support_xml.size ()
+				 : comma);
+	  if (view == xml)
 	    {
-	      /* already there */
-	      xfree (copy);
+	      /* Already there.  */
 	      return;
 	    }
+	  if (comma == std::string::npos)
+	    break;
+	  prev = comma + 1;
 	}
-      while ((p = strtok_r (NULL, ",", &saveptr)) != NULL);
-      xfree (copy);
 
-      remote_support_xml = reconcat (remote_support_xml,
-				     remote_support_xml, ",", xml,
-				     (char *) NULL);
+      remote_support_xml += ",";
+      remote_support_xml += xml;
     }
 #endif
 }
@@ -5968,10 +5975,10 @@ remote_target::remote_query_supported ()
 
       /* Keep this one last to work around a gdbserver <= 7.10 bug in
 	 the qSupported:xmlRegisters=i386 handling.  */
-      if (remote_support_xml != NULL
+      if (!remote_support_xml.empty ()
 	  && (m_features.packet_support (PACKET_qXfer_features)
 	      != PACKET_DISABLE))
-	remote_query_supported_append (&q, remote_support_xml);
+	remote_query_supported_append (&q, remote_support_xml.c_str ());
 
       if (m_features.packet_set_cmd_state (PACKET_accept_error_message)
 	  != AUTO_BOOLEAN_FALSE)
