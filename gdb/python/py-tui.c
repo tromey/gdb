@@ -409,7 +409,7 @@ gdbpy_tui_window_maker::operator() (const char *win_name)
 
 /* Implement "gdb.register_window_type".  */
 
-PyObject *
+gdbpy_ref<>
 gdbpy_register_tui_window (PyObject *self, PyObject *args, PyObject *kw)
 {
   static const char *keywords[] = { "name", "constructor", nullptr };
@@ -421,17 +421,9 @@ gdbpy_register_tui_window (PyObject *self, PyObject *args, PyObject *kw)
 					&name, &cons_obj))
     return nullptr;
 
-  try
-    {
-      gdbpy_tui_window_maker constr (gdbpy_ref<>::new_reference (cons_obj));
-      tui_register_window (name, constr);
-    }
-  catch (const gdb_exception &except)
-    {
-      return gdbpy_handle_gdb_exception (nullptr, except);
-    }
-
-  Py_RETURN_NONE;
+  gdbpy_tui_window_maker constr (gdbpy_ref<>::new_reference (cons_obj));
+  tui_register_window (name, constr);
+  return py_new_none ();
 }
 
 
@@ -459,18 +451,16 @@ gdbpy_register_tui_window (PyObject *self, PyObject *args, PyObject *kw)
 
 /* Python function which checks the validity of a TUI window
    object.  */
-static PyObject *
+static gdbpy_ref<>
 gdbpy_tui_is_valid (PyObject *self, PyObject *args)
 {
   gdbpy_tui_window *win = (gdbpy_tui_window *) self;
 
-  if (win->is_valid ())
-    Py_RETURN_TRUE;
-  Py_RETURN_FALSE;
+  return py_new_bool (win->is_valid ());
 }
 
 /* Python function that erases the TUI window.  */
-static PyObject *
+static gdbpy_ref<>
 gdbpy_tui_erase (PyObject *self, PyObject *args)
 {
   gdbpy_tui_window *win = (gdbpy_tui_window *) self;
@@ -479,11 +469,11 @@ gdbpy_tui_erase (PyObject *self, PyObject *args)
 
   win->window->erase ();
 
-  Py_RETURN_NONE;
+  return py_new_none ();
 }
 
 /* Python function that writes some text to a TUI window.  */
-static PyObject *
+static gdbpy_ref<>
 gdbpy_tui_write (PyObject *self, PyObject *args, PyObject *kw)
 {
   static const char *keywords[] = { "string", "full_window", nullptr };
@@ -500,38 +490,34 @@ gdbpy_tui_write (PyObject *self, PyObject *args, PyObject *kw)
 
   win->window->output (text, full_window);
 
-  Py_RETURN_NONE;
+  return py_new_none ();
 }
 
 /* Return the width of the TUI window.  */
-static PyObject *
+static gdbpy_ref<>
 gdbpy_tui_width (PyObject *self, void *closure)
 {
   gdbpy_tui_window *win = (gdbpy_tui_window *) self;
   REQUIRE_WINDOW (win);
-  gdbpy_ref<> result
-    = gdb_py_object_from_longest (win->window->viewport_width ());
-  return result.release ();
+  return gdb_py_object_from_longest (win->window->viewport_width ());
 }
 
 /* Return the height of the TUI window.  */
-static PyObject *
+static gdbpy_ref<>
 gdbpy_tui_height (PyObject *self, void *closure)
 {
   gdbpy_tui_window *win = (gdbpy_tui_window *) self;
   REQUIRE_WINDOW (win);
-  gdbpy_ref<> result
-    = gdb_py_object_from_longest (win->window->viewport_height ());
-  return result.release ();
+  return gdb_py_object_from_longest (win->window->viewport_height ());
 }
 
 /* Return the title of the TUI window.  */
-static PyObject *
+static gdbpy_ref<>
 gdbpy_tui_title (PyObject *self, void *closure)
 {
   gdbpy_tui_window *win = (gdbpy_tui_window *) self;
   REQUIRE_WINDOW (win);
-  return host_string_to_python_string (win->window->title ().c_str ()).release ();
+  return host_string_to_python_string (win->window->title ().c_str ());
 }
 
 /* Set the title of the TUI window.  */
@@ -568,12 +554,13 @@ static gdb_PyGetSetDef tui_object_getset[] =
 
 static PyMethodDef tui_object_methods[] =
 {
-  { "is_valid", gdbpy_tui_is_valid, METH_NOARGS,
+  { "is_valid", py_c_fn<gdbpy_tui_is_valid>, METH_NOARGS,
     "is_valid () -> Boolean\n\
 Return true if this TUI window is valid, false if not." },
-  { "erase", gdbpy_tui_erase, METH_NOARGS,
+  { "erase", py_c_fn<gdbpy_tui_erase>, METH_NOARGS,
     "Erase the TUI window." },
-  { "write", (PyCFunction) gdbpy_tui_write, METH_VARARGS | METH_KEYWORDS,
+  { "write", (PyCFunction) py_va_kw<gdbpy_tui_write>,
+    METH_VARARGS | METH_KEYWORDS,
     "Append a string to the TUI window." },
   { NULL } /* Sentinel.  */
 };

@@ -1340,4 +1340,58 @@ protected:
   gdb::unordered_map<val_type *, obj_type *> m_objects;
 };
 
+static inline gdbpy_ref<>
+py_new_none ()
+{
+  return gdbpy_ref<>::new_reference (Py_None);
+}
+
+static inline gdbpy_ref<>
+py_new_true ()
+{
+  return gdbpy_ref<>::new_reference (Py_True);
+}
+
+static inline gdbpy_ref<>
+py_new_false ()
+{
+  return gdbpy_ref<>::new_reference (Py_False);
+}
+
+static inline gdbpy_ref<>
+py_new_bool (bool value)
+{
+  return value ? py_new_true () : py_new_false ();
+}
+
+template<gdbpy_ref<> FN (PyObject *, PyObject *, PyObject *)>
+PyObject *
+py_va_kw (PyObject *self, PyObject *args, PyObject *kw)
+{
+  try
+    {
+      gdbpy_ref<> result = FN (self, args, kw);
+      return result.release ();
+    }
+  catch (const gdb_exception &exc)
+    {
+      return gdbpy_handle_gdb_exception (nullptr, exc);
+    }
+}
+
+template<gdbpy_ref<> FN (PyObject *, PyObject *)>
+PyObject *
+py_c_fn (PyObject *self, PyObject *args)
+{
+  try
+    {
+      gdbpy_ref<> result = FN (self, args);
+      return result.release ();
+    }
+  catch (const gdb_exception &exc)
+    {
+      return gdbpy_handle_gdb_exception (nullptr, exc);
+    }
+}
+
 #endif /* GDB_PYTHON_PYTHON_INTERNAL_H */
