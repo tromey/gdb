@@ -131,13 +131,62 @@ vendor_obj_attrs_v1_size (bfd *abfd, int vendor)
 }
 
 static bfd_vma
-bfd_elf_obj_attrs_v1_size (bfd *abfd)
+oav1_section_size (bfd *abfd)
 {
   bfd_vma size = 0;
   size = vendor_obj_attrs_v1_size (abfd, OBJ_ATTR_PROC);
   size += vendor_obj_attrs_v1_size (abfd, OBJ_ATTR_GNU);
   if (size > 0)
-    size += sizeof(uint8_t); /* <format-version: ‘A’>  */
+    size += sizeof (uint8_t); /* <format-version: uint8>  */
+  return size;
+}
+
+/* Return the size of a single attribute.  */
+static bfd_vma
+oav2_attr_size (const obj_attr_v2_t *attr, obj_attr_encoding_v2_t type)
+{
+  bfd_vma size = uleb128_size (attr->tag);
+  switch (type)
+    {
+    case OA_ENC_ULEB128:
+      size += uleb128_size (attr->val.uint);
+      break;
+    case OA_ENC_NTBS:
+      size += strlen (attr->val.string) + 1; /* +1 for '\0'.  */
+      break;
+    default:
+      abort ();
+    }
+  return size;
+}
+
+/* Return the size of a subsection.  */
+static bfd_vma
+oav2_subsection_size (const obj_attr_subsection_v2_t *subsec)
+{
+  bfd_vma size = sizeof (uint32_t); /* <subsection-length: uint32>  */
+  size += strlen (subsec->name) + 1; /* <subsection-name: NTBS>  so +1 for '\0'.  */
+  size += 2 * sizeof (uint8_t); /* <optional: uint8> <encoding: uint8>  */
+  /* <attribute>*  */
+  for (const obj_attr_v2_t *attr = subsec->first;
+       attr != NULL;
+       attr = attr->next)
+    size += oav2_attr_size (attr, subsec->encoding);
+  return size;
+}
+
+/* Return the size of a object attributes section.  */
+static bfd_vma
+oav2_section_size (bfd *abfd)
+{
+  const obj_attr_subsection_v2_t *subsec
+    = elf_obj_attr_subsections (abfd).first;
+  if (subsec == NULL)
+    return 0;
+
+  bfd_vma size = sizeof (uint8_t); /* <format-version: uint8>  */
+  for (; subsec != NULL; subsec = subsec->next)
+    size += oav2_subsection_size (subsec);
   return size;
 }
 
@@ -145,7 +194,18 @@ bfd_elf_obj_attrs_v1_size (bfd *abfd)
 bfd_vma
 bfd_elf_obj_attr_size (bfd *abfd)
 {
-  return bfd_elf_obj_attrs_v1_size (abfd);
+  obj_attr_version_t version = elf_obj_attr_version (abfd);
+  switch (version)
+    {
+    case OBJ_ATTR_V1:
+      return oav1_section_size (abfd);
+    case OBJ_ATTR_V2:
+      return oav2_section_size (abfd);
+    case OBJ_ATTR_VERSION_NONE:
+      return 0;
+    default:
+      abort ();
+    }
 }
 
 /* Write VAL in uleb128 format to P, returning a pointer to the
@@ -228,7 +288,7 @@ write_vendor_obj_attrs_v1 (bfd *abfd, bfd_byte *contents, bfd_vma size,
 }
 
 static void
-write_obj_attr_section_v1 (bfd *abfd, bfd_byte *buffer, bfd_vma size)
+oav1_write_section (bfd *abfd, bfd_byte *buffer, bfd_vma size)
 {
   /* This function should only be called for object attributes version 1.  */
   BFD_ASSERT (elf_obj_attr_version (abfd) == OBJ_ATTR_V1);
@@ -251,11 +311,129 @@ write_obj_attr_section_v1 (bfd *abfd, bfd_byte *buffer, bfd_vma size)
   BFD_ASSERT (p <= buffer + size);
 }
 
+static bfd_byte *
+oav2_write_attr (bfd_byte *p,
+		 const obj_attr_v2_t *attr,
+		 obj_attr_encoding_v2_t type)
+{
+  p = write_uleb128 (p, attr->tag);
+  switch (type)
+    {
+    case OA_ENC_ULEB128:
+      p = write_uleb128 (p, attr->val.uint);
+      break;
+    case OA_ENC_NTBS:
+      /* +1 for '\0'.  */
+      p = (bfd_byte *) stpcpy ((char *) p, attr->val.string) + 1;
+      break;
+    default:
+      abort ();
+    }
+  return p;
+}
+
+static bfd_byte *
+oav2_write_subsection (bfd *abfd,
+		       const obj_attr_subsection_v2_t *subsec,
+		       bfd_byte *p)
+{
+  /* <subsection-length: uint32>  */
+  bfd_vma subsec_size = oav2_subsection_size (subsec);
+  bfd_put_32 (abfd, subsec_size, p);
+  p += sizeof (uint32_t);
+
+  /* <vendor-name: NTBS>  */
+  size_t vendor_name_size = strlen (subsec->name) + 1; /* +1 for '\0'.  */
+  memcpy (p, subsec->name, vendor_name_size);
+  p += vendor_name_size;
+
+  /* -- <vendor-data: bytes> --  */
+  /* <optional: uint8>  */
+  bfd_put_8 (abfd, subsec->optional, p);
+  ++p;
+  /* <encoding: uint8>  */
+  bfd_put_8 (abfd, obj_attr_encoding_v2_to_u8 (subsec->encoding), p);
+  ++p;
+  /* <attribute>*  */
+  for (const obj_attr_v2_t *attr = subsec->first;
+       attr != NULL;
+       attr = attr->next)
+    p = oav2_write_attr (p, attr, subsec->encoding);
+  return p;
+}
+
+static bfd_vma
+oav2_write_section (bfd *abfd, bfd_byte *buffer, bfd_vma size)
+{
+  /* This function should only be called for object attributes version 2.  */
+  BFD_ASSERT (elf_obj_attr_version (abfd) == OBJ_ATTR_V2);
+
+  bfd_vma section_size = oav2_section_size (abfd);
+  if (section_size == 0)
+    return 0;
+
+  bfd_byte *p = buffer;
+
+  const struct elf_backend_data *be = get_elf_backend_data (abfd);
+  /* <format-version: uint8>  */
+  *(p++) = be->obj_attrs_version_enc (elf_obj_attr_version (abfd));
+
+  /* [ <subsection-length: uint32> <vendor-name: NTBS> <vendor-data: bytes> ]*  */
+  for (const obj_attr_subsection_v2_t *subsec
+	 = elf_obj_attr_subsections (abfd).first;
+       subsec != NULL;
+       subsec = subsec->next)
+    p = oav2_write_subsection (abfd, subsec, p);
+
+  /* We didn't overrun the buffer.  */
+  BFD_ASSERT (p <= buffer + size);
+  /* We wrote as many data as it was computed by
+     vendor_section_obj_attr_using_subsections_size().  */
+  BFD_ASSERT (section_size == (bfd_vma) (p - buffer));
+
+  return section_size;
+}
+
+static void
+oav2_sort_subsections (obj_attr_subsection_list_t *plist)
+{
+  for (obj_attr_subsection_v2_t *subsec = plist->first;
+       subsec != NULL;
+       subsec = subsec->next)
+    LINKED_LIST_MERGE_SORT (obj_attr_v2_t) (subsec, _bfd_elf_obj_attr_v2_cmp);
+
+  LINKED_LIST_MERGE_SORT (obj_attr_subsection_v2_t)
+    (plist, _bfd_elf_obj_attr_subsection_v2_cmp);
+}
+
 /* Write the contents of the object attributes section to CONTENTS.  */
 void
 bfd_elf_set_obj_attr_contents (bfd *abfd, bfd_byte *buffer, bfd_vma size)
 {
-  write_obj_attr_section_v1 (abfd, buffer, size);
+  if (! abfd->is_linker_output
+      && elf_obj_attr_version (abfd) == OBJ_ATTR_V2)
+    /* Before dumping the data, sort subsections in alphabetical order, and
+       attributes according to their tag in numerical order.  This is useful
+       for diagnostic tools so that they dump the same output even if the
+       subsections or their attributes were not declared in the same order in
+       different files.
+       This sorting is only performed in the case of the assembler.  In the
+       case of the linker, the subsections and attributes are already sorted
+       by the merge process.  */
+    oav2_sort_subsections (&elf_obj_attr_subsections (abfd));
+
+  obj_attr_version_t version = elf_obj_attr_version (abfd);
+  switch (version)
+    {
+    case OBJ_ATTR_V1:
+      oav1_write_section (abfd, buffer, size);
+      break;
+    case OBJ_ATTR_V2:
+      oav2_write_section (abfd, buffer, size);
+      break;
+    default:
+      abort ();
+    }
 }
 
 /* The first two tags in gnu-testing namespace are known (from the perspective
