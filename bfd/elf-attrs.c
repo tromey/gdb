@@ -864,7 +864,7 @@ bfd_elf_obj_attrs_arg_type (bfd *abfd,
 }
 
 static void
-bfd_elf_parse_attr_section_v1 (bfd *abfd, bfd_byte *p, bfd_byte *p_end)
+oav1_parse_section (bfd *abfd, bfd_byte *p, bfd_byte *p_end)
 {
   const char *std_sec = get_elf_backend_data (abfd)->obj_attrs_vendor;
 
@@ -983,7 +983,254 @@ bfd_elf_parse_attr_section_v1 (bfd *abfd, bfd_byte *p, bfd_byte *p_end)
     }
 }
 
-/* Parse an object attributes section.  */
+#define READ_ULEB128(abfd, var, cursor, end, total_read)		\
+  do									\
+    {									\
+      bfd_byte *begin = (cursor);					\
+      (var) = _bfd_safe_read_leb128 (abfd, &(cursor), false, end);	\
+      (total_read) += (cursor) - begin;					\
+    }									\
+  while (0)
+
+static int
+read_ntbs (bfd *abfd,
+	   const bfd_byte *cursor,
+	   const bfd_byte *end,
+	   char **s)
+{
+  *s = NULL;
+  const size_t MAX_STR_LEN = end - cursor; /* Including \0.  */
+  const size_t s_len = strnlen ((const char *) cursor, MAX_STR_LEN);
+  if (s_len == MAX_STR_LEN)
+    {
+      bfd_set_error (bfd_error_malformed_archive);
+      _bfd_error_handler (_("%pB: error: NTBS value seems corrupted "
+			    "(missing '\\0')"),
+			  abfd);
+      return -1;
+    }
+  *s = xmemdup (cursor, s_len + 1, s_len + 1);
+  return s_len + 1;
+}
+
+/* Parse an object attribute (v2 only).  */
+static ssize_t
+oav2_parse_attr (bfd *abfd,
+		 bfd_byte *cursor,
+		 const bfd_byte *end,
+		 obj_attr_encoding_v2_t attr_type,
+		 obj_attr_v2_t **attr)
+{
+  *attr = NULL;
+  ssize_t total_read = 0;
+
+  obj_attr_tag_t attr_tag;
+  READ_ULEB128 (abfd, attr_tag, cursor, end, total_read);
+
+  union obj_attr_value_v2 attr_val;
+  switch (attr_type)
+    {
+    case OA_ENC_NTBS:
+      {
+	int read = read_ntbs (abfd, cursor, end, (char **) &attr_val.string);
+	if (read <= 0)
+	  return -1;
+	total_read += read;
+      }
+      break;
+    case OA_ENC_ULEB128:
+      READ_ULEB128 (abfd, attr_val.uint, cursor, end, total_read);
+      break;
+    default:
+      abort ();
+    }
+
+  *attr = bfd_elf_obj_attr_v2_init (attr_tag, attr_val);
+  return total_read;
+}
+
+/* Parse a subsection (object attributes v2 only).  */
+static ssize_t
+oav2_parse_subsection (bfd *abfd,
+		       bfd_byte *cursor,
+		       const uint64_t max_read,
+		       obj_attr_subsection_v2_t **subsec)
+{
+  *subsec = NULL;
+  ssize_t total_read = 0;
+
+  char *subsection_name = NULL;
+  const uint32_t F_SUBSECTION_LEN = sizeof(uint32_t);
+  const uint32_t F_SUBSECTION_COMPREHENSION = sizeof(uint8_t);
+  const uint32_t F_SUBSECTION_ENCODING = sizeof(uint8_t);
+  /* The minimum subsection length is 7: 4 bytes for the length itself, and 1
+     byte for an empty NUL-terminated string, 1 byte for the comprehension,
+     1 byte for the encoding, and no vendor-data.  */
+  const uint32_t F_MIN_SUBSECTION_DATA_LEN
+    = F_SUBSECTION_LEN + 1 /* for '\0' */
+      + F_SUBSECTION_COMPREHENSION + F_SUBSECTION_ENCODING;
+
+  /* Similar to the issues reported in PR 17531, we need to check all the sizes
+     and offsets as we parse the section.  */
+  if (max_read < F_MIN_SUBSECTION_DATA_LEN)
+    {
+      _bfd_error_handler (_("%pB: error: attributes subsection ends "
+			    "prematurely"),
+			  abfd);
+      goto error;
+    }
+
+  const uint32_t subsection_len = bfd_get_32 (abfd, cursor);
+  const bfd_byte *const end = cursor + subsection_len;
+  total_read += F_SUBSECTION_LEN;
+  cursor += F_SUBSECTION_LEN;
+  if (subsection_len > max_read)
+    {
+      _bfd_error_handler (_("%pB: error: bad subsection length (%u > max=%lu)"),
+			  abfd, subsection_len, max_read);
+      goto error;
+    }
+  else if (subsection_len < F_MIN_SUBSECTION_DATA_LEN)
+    {
+      _bfd_error_handler (_("%pB: error: subsection length of %u is too small"),
+			  abfd, subsection_len);
+      goto error;
+    }
+
+  const size_t max_subsection_name_len
+    = subsection_len - F_SUBSECTION_LEN
+      - F_SUBSECTION_COMPREHENSION - F_SUBSECTION_ENCODING;
+  const bfd_byte *subsection_name_end
+    = memchr (cursor, '\0', max_subsection_name_len);
+  if (subsection_name_end == NULL)
+    {
+      _bfd_error_handler (_("%pB: error: subsection name seems corrupted "
+			    "(missing '\\0')"),
+			  abfd);
+      goto error;
+    }
+  else
+    /* Move the end pointer after '\0'.  */
+    ++subsection_name_end;
+
+  /* Note: if the length of the subsection name is 0 (i.e. the string is '\0'),
+     it is still considered a valid name, even if it is not particularly
+     useful.  */
+
+  /* Note: at this stage,
+     1. the length of the subsection name is validated, as the presence of '\0'
+	at the end of the string, so no risk of buffer overrun.
+     2. the data for comprehension and encoding can also safely be read.  */
+  {
+    /* Note: read_ntbs() assigns a dynamically allocated string to
+       subsection_name.  Either the string has to be freed in case of errors,
+       or its ownership must be transferred.  */
+    int read = read_ntbs (abfd, cursor, subsection_name_end, &subsection_name);
+    total_read += read;
+    cursor += read;
+  }
+
+  uint8_t comprehension_raw = bfd_get_8 (abfd, cursor);
+  ++cursor;
+  ++total_read;
+
+  /* Comprehension is supposed to be a boolean, so any value greater than 1 is
+     considered invalid.  */
+  if (comprehension_raw > 1)
+    {
+      _bfd_error_handler (_("%pB: error: '%s' seems corrupted, got %u but only "
+			    "0 ('%s') or 1 ('%s') are valid values"),
+			  abfd, "comprehension", comprehension_raw,
+			  "required", "optional");
+      goto error;
+    }
+
+  uint8_t value_encoding_raw = bfd_get_8 (abfd, cursor);
+  ++cursor;
+  ++total_read;
+
+  /* Encoding cannot be greater than OA_ENC_MAX, otherwise it means that either
+     there is a new encoding that was introduced in the spec, and this
+     implementation in binutils is older, and not aware of it so does not
+     support it; or the stored value for encoding is garbage.  */
+  enum obj_attr_encoding_v2 value_encoding
+    = obj_attr_encoding_v2_from_u8 (value_encoding_raw);
+  if (value_encoding > OA_ENC_MAX)
+    {
+      _bfd_error_handler (_("%pB: error: attribute type seems corrupted, got"
+			    " %u but only 0 (ULEB128) or 1 (NTBS) are "
+			    "valid types"),
+			  abfd, value_encoding);
+      goto error;
+    }
+
+  obj_attr_subsection_scope_v2_t scope
+    = bfd_elf_obj_attr_subsection_v2_scope (abfd, subsection_name);
+
+  /* Note: ownership of 'subsection_name' is transfered to the callee when
+     initializing the subsection.  That is why we skip free() at the end.  */
+  *subsec = bfd_elf_obj_attr_subsection_v2_init
+    (subsection_name, scope, comprehension_raw, value_encoding);
+
+  /* A subsection can be empty, so 'cursor' can be equal to 'end' here.  */
+  bool err = false;
+  while (!err && cursor < end)
+    {
+      obj_attr_v2_t *attr;
+      ssize_t read = oav2_parse_attr (abfd, cursor, end, value_encoding, &attr);
+      if (attr != NULL)
+	LINKED_LIST_APPEND (obj_attr_v2_t) (*subsec, attr);
+      total_read += read;
+      err |= (read < 0);
+      cursor += read;
+    }
+
+  if (err)
+    {
+      _bfd_elf_obj_attr_subsection_v2_free (*subsec);
+      *subsec = NULL;
+      return -1;
+    }
+
+  BFD_ASSERT (cursor == end);
+  return total_read;
+
+ error:
+  bfd_set_error (bfd_error_malformed_archive);
+  if (subsection_name)
+    free (subsection_name);
+  return -1;
+}
+
+/* Parse the list of subsections (object attributes v2 only).  */
+static void
+oav2_parse_section (bfd *abfd,
+		    const Elf_Internal_Shdr *hdr,
+		    bfd_byte *cursor)
+{
+  obj_attr_subsection_list_t *subsecs = &elf_obj_attr_subsections (abfd);
+  ssize_t read = 0;
+  for (uint64_t remaining = hdr->sh_size - 1; /* Already read 'A'.  */
+       remaining > 0;
+       remaining -= read, cursor += read)
+    {
+      obj_attr_subsection_v2_t *subsec = NULL;
+      read = oav2_parse_subsection (abfd, cursor, remaining, &subsec);
+      if (read < 0)
+	{
+	  _bfd_error_handler
+	    (_("%pB: error: could not parse subsection at offset %" PRIx64),
+	     abfd, hdr->sh_size - remaining);
+	  bfd_set_error (bfd_error_wrong_format);
+	  break;
+	}
+      else
+	LINKED_LIST_APPEND (obj_attr_subsection_v2_t) (subsecs, subsec);
+    }
+}
+
+/* Parse an object attributes section.
+   Note: The parsing setup is common between object attributes v1 and v2.  */
 void
 _bfd_elf_parse_attributes (bfd *abfd, Elf_Internal_Shdr * hdr)
 {
@@ -996,8 +1243,9 @@ _bfd_elf_parse_attributes (bfd *abfd, Elf_Internal_Shdr * hdr)
   ufile_ptr filesize = bfd_get_file_size (abfd);
   if (filesize != 0 && hdr->sh_size > filesize)
     {
-      _bfd_error_handler (_("%pB: error: attribute section '%pA' too big: %#llx"),
-			  abfd, hdr->bfd_section, (long long) hdr->sh_size);
+      _bfd_error_handler
+	(_("%pB: error: attribute section '%pA' too big: %" PRId64),
+	 abfd, hdr->bfd_section, hdr->sh_size);
       bfd_set_error (bfd_error_invalid_operation);
       return;
     }
@@ -1025,7 +1273,17 @@ _bfd_elf_parse_attributes (bfd *abfd, Elf_Internal_Shdr * hdr)
   ++cursor;
 
   elf_obj_attr_version (abfd) = version;
-  bfd_elf_parse_attr_section_v1 (abfd, cursor, data + hdr->sh_size);
+  switch (version)
+    {
+    case OBJ_ATTR_V1:
+      oav1_parse_section (abfd, cursor, data + hdr->sh_size);
+      break;
+    case OBJ_ATTR_V2:
+      oav2_parse_section (abfd, hdr, cursor);
+      break;
+    default:
+      abort ();
+    }
 
  free_data:
   free (data);
