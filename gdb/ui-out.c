@@ -559,6 +559,15 @@ ui_out::field_fmt (const char *fldname, const ui_file_style &style,
 }
 
 void
+ui_out::field_current (const char *fldname, bool value)
+{
+  if (value)
+    field_string (fldname, get_current_mark ());
+  else
+    field_skip (fldname);
+}
+
+void
 ui_out::call_do_message (ui_file_style &current_style,
 			 const ui_file_style &style, const char *format,
 			 ...)

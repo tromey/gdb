@@ -126,10 +126,8 @@ print_connection (struct ui_out *uiout, const char *requested_connections)
 
       ui_out_emit_tuple tuple_emitter (uiout, NULL);
 
-      if (current_inferior ()->process_target () == t)
-	uiout->field_string ("current", "*");
-      else
-	uiout->field_skip ("current");
+      uiout->field_current ("current",
+			    current_inferior ()->process_target () == t);
 
       uiout->field_signed ("number", t->connection_number);
 
