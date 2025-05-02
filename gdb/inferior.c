@@ -598,11 +598,7 @@ print_inferior (struct ui_out *uiout, const char *requested_inferiors)
 
       ui_out_emit_tuple tuple_emitter (uiout, NULL);
 
-      if (inf == current_inf)
-	uiout->field_string ("current", "*");
-      else
-	uiout->field_skip ("current");
-
+      uiout->field_current ("current", inf == current_inf);
       uiout->field_signed ("number", inf->num);
 
       /* Because target_pid_to_str uses the current inferior,

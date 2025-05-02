@@ -1163,10 +1163,7 @@ print_ada_task_info (struct ui_out *uiout,
 
       /* Print a star if this task is the current task (or the task
 	 currently selected).  */
-      if (task_info->ptid == inferior_ptid)
-	uiout->field_string ("current", "*");
-      else
-	uiout->field_skip ("current");
+      uiout->field_current ("current", task_info->ptid == inferior_ptid);
 
       /* Print the task number.  */
       uiout->field_signed ("id", taskno);

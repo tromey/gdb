@@ -1165,11 +1165,7 @@ do_print_thread (ui_out *uiout, const char *requested_threads,
 
   if (!uiout->is_mi_like_p ())
     {
-      if (tp == current_thread)
-	uiout->field_string ("current", "*");
-      else
-	uiout->field_skip ("current");
-
+      uiout->field_current ("current", tp == current_thread);
       uiout->field_string ("id-in-tg", print_thread_id (tp));
     }
 

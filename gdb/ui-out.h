@@ -206,6 +206,11 @@ class ui_out
 		  const char *format, ...)
     ATTRIBUTE_PRINTF (4, 5);
 
+  /* This is used when a table has a "current" field or the like.  If
+     VALUE is true, a mark of some kind is emitted for the field.  If
+     VALUE is false, the field is skipped instead.  */
+  void field_current (const char *fldname, bool value);
+
   void spaces (int numspaces) { do_spaces (numspaces); }
   void text (const char *string) { do_text (string); }
   void text (const std::string &string) { text (string.c_str ()); }
@@ -373,6 +378,14 @@ protected:
   virtual void do_progress_notify (const std::string &, const char *,
 				   double, double) = 0;
   virtual void do_progress_end () = 0;
+
+  /* Return the appropriate "current" marker string.  */
+  virtual const char *get_current_mark ()
+  {
+    /* The default is "*" because that's what was done
+       historically.  */
+    return "*";
+  }
 
   /* Set as not MI-like by default.  It is overridden in subclasses if
      necessary.  */

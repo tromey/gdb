@@ -304,11 +304,7 @@ print_program_space (struct ui_out *uiout, int requested)
 
       ui_out_emit_tuple tuple_emitter (uiout, NULL);
 
-      if (pspace == current_program_space)
-	uiout->field_string ("current", "*");
-      else
-	uiout->field_skip ("current");
-
+      uiout->field_current ("current", pspace == current_program_space);
       uiout->field_signed ("id", pspace->num);
 
       if (pspace->exec_filename () != nullptr)

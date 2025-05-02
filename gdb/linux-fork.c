@@ -849,10 +849,7 @@ print_checkpoints (struct ui_out *uiout, inferior *req_inf, fork_info *req_fi)
 
 	  ui_out_emit_tuple tuple_emitter (uiout, nullptr);
 
-	  if (is_current && cur_inf == inf)
-	    uiout->field_string ("current", "*");
-	  else
-	    uiout->field_skip ("current");
+	  uiout->field_current ("current", is_current && cur_inf == inf);
 
 	  if (print_inf)
 	    uiout->field_fmt ("id", "%d.%d", inf->num, fi.num);
