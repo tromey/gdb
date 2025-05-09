@@ -81,6 +81,8 @@ protected:
 				   double, double) override;
   virtual void do_progress_end () override;
 
+  const char *get_current_mark () override;
+
   bool suppress_output ()
   { return m_suppress_output; }
 

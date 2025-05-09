@@ -28035,6 +28035,18 @@ emoji display, and so the prefixes are only displayed if emoji styling
 is enabled.  The defaults are the warning sign emoji for warnings, and
 and the cross mark emoji for errors.
 
+@item set style current-mark @var{string}
+@itemx show style current-mark
+These commands control the string that the CLI uses to indicate which
+line in a table indicates the current state of @value{GDBN}.  For
+example, this would be used to indicate the current thread in the
+output of @samp{info threads}.  This functionality is intended for use
+with emoji display, and so the chosen string is only displayed if
+emoji styling is enabled.  The default is an arrow character; with the
+non-emoji fallback being an asterisk.  Note that @value{GDBN} will not
+adjust the column widths of the table, so normally this should only be
+set to a single character.
+
 @item set style tui-current-position @samp{on|off}
 Enable or disable styling of the source and assembly code highlighted
 by the TUI's current position indicator.  The default is @samp{off}.

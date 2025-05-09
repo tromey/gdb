@@ -494,6 +494,29 @@ print_error_prefix (ui_file *file)
     gdb_puts (error_prefix.c_str (), file);
 }
 
+/* Emoji current-mark.  */
+static std::string current_mark = "➤";
+
+/* Implement 'show style current-mark'.  */
+
+static void
+show_current_mark (struct ui_file *file, int from_tty,
+		 struct cmd_list_element *c, const char *value)
+{
+  gdb_printf (file, _("Mark indicating the current row is \"%s\".\n"),
+	      current_mark.c_str ());
+}
+
+/* See cli-style.h.  */
+
+const char *
+get_current_mark ()
+{
+  if (emojis_ok ())
+    return current_mark.c_str ();
+  return "*";
+}
+
 void _initialize_cli_style ();
 void
 _initialize_cli_style ()
@@ -736,5 +759,13 @@ emoji output is enabled."),
 The error prefix text is displayed before any error, when\n\
 emoji output is enabled."),
 			  nullptr, show_error_prefix,
+			  &style_set_list, &style_show_list);
+  add_setshow_string_cmd ("current-mark", no_class,
+			  &current_mark,
+			  _("Set the current mark string."),
+			  _("Show the current mark string."),
+			  _("\
+The current mark is the string used to indicate the current line in a table."),
+			  nullptr, show_current_mark,
 			  &style_set_list, &style_show_list);
 }

@@ -78,6 +78,12 @@ set style error-prefix STRING
   with emoji display, and so the prefixes are only displayed if emoji
   styling is enabled.
 
+set style current-mark STRING
+  Set the string that is used to indicate the "current" row when a
+  table is printed by the CLI.  This functionality is intended for use
+  with emoji display, and so the prefixes are only displayed if emoji
+  styling is enabled.
+
 info linker-namespaces
 info linker-namespaces [[N]]
   Print information about the given linker namespace (identified as N),

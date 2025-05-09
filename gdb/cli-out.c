@@ -421,6 +421,14 @@ cli_ui_out::do_progress_end ()
   m_progress_info.pop_back ();
 }
 
+/* See ui-out.h.  */
+
+const char *
+cli_ui_out::get_current_mark ()
+{
+  return ::get_current_mark ();
+}
+
 /* local functions */
 
 void

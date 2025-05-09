@@ -341,6 +341,10 @@ proc run_style_tests { } {
 	gdb_test "maint translate-address" \
 	    "abcd:requires argument.*" \
 	    "error prefix"
+
+	gdb_test_no_output "set style current-mark @"
+	gdb_test "info inferior" "\r\n@ 1 .*"
+	gdb_test "show style current-mark" "Mark indicating the current row is \"@\"\\."
     }
 }
 
