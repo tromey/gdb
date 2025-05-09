@@ -204,4 +204,7 @@ extern void print_warning_prefix (ui_file *file);
 /* Print the error prefix, if desired.  */
 extern void print_error_prefix (ui_file *file);
 
+/* Return the current current mark string.  */
+extern const char *get_current_mark ();
+
 #endif /* GDB_CLI_CLI_STYLE_H */

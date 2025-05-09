@@ -359,6 +359,10 @@ proc run_style_tests { } {
 	    "File [limited_style blah\\.c file] will be skipped when stepping\\."
 	gdb_test "skip ttt" \
 	    "Function [limited_style ttt function] will be skipped when stepping\\."
+
+	gdb_test_no_output "set style current-mark @"
+	gdb_test "info inferior" "\r\n@ 1 .*"
+	gdb_test "show style current-mark" "Mark indicating the current row is \"@\"\\."
     }
 }
 
