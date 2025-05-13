@@ -2589,7 +2589,7 @@ lookup_global_symbol (const char *name,
       sym = lookup_symbol_in_block (name,
 				    symbol_name_match_type::FULL,
 				    global_block, domain);
-      if (sym != NULL && best_symbol (sym, domain))
+      if (sym != nullptr && sym->is_definition ())
 	return { sym, global_block };
     }
 
@@ -2603,10 +2603,16 @@ lookup_global_symbol (const char *name,
 
   block_symbol bs
     = lookup_global_or_static_symbol (name, GLOBAL_BLOCK, objfile, domain);
-  if (better_symbol (sym, bs.symbol, domain) == sym)
-    return { sym, global_block };
-  else
+  /* Prefer a definition over a declaration.  (At this point, SYM is
+     either nullptr or a declaration.)  */
+  if (bs.symbol != nullptr && bs.symbol->is_definition ())
     return bs;
+  /* Prefer a declaration if that's all we have.  */
+  if (bs.symbol != nullptr && sym == nullptr)
+    return bs;
+  /* Return either an empty result or the declaration we found in the
+     "local" global block.  */
+  return { sym, global_block };
 }
 
 /* See symtab.h.  */
