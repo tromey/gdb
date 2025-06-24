@@ -48,7 +48,7 @@ ui::ui (FILE *instream_, FILE *outstream_, FILE *errstream_)
     errstream (errstream_),
     input_fd (fileno (instream)),
     m_input_interactive_p (ISATTY (instream)),
-    m_gdb_stdout (new pager_file (new stdio_file (outstream))),
+    m_gdb_stdout (new pager_file (std::make_unique<stdio_file> (outstream))),
     m_gdb_stdin (new stdio_file (instream)),
     m_gdb_stderr (new stderr_file (errstream)),
     m_gdb_stdlog (new timestamped_file (m_gdb_stderr)),

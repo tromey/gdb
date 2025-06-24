@@ -1838,7 +1838,7 @@ static void
 test_pager ()
 {
   string_file *strfile = new string_file ();
-  pager_file pager (strfile);
+  pager_file pager { ui_file_up (strfile) };
 
   /* Make sure the pager is disabled.  */
   scoped_restore save_enabled

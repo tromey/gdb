@@ -416,8 +416,11 @@ protected:
   void do_write (const char *buf, long len) override;
 };
 
-/* A base class for ui_file types that wrap another ui_file.  */
+/* A base class for ui_file types that wrap another ui_file.  The
+   precise underlying ui_file type is a template parameter, so that
+   either owning or non-owning wrappers can be made.  */
 
+template<typename T>
 class wrapped_file : public ui_file
 {
 public:
@@ -451,22 +454,19 @@ public:
 
 protected:
 
-  /* Note that this class does not assume ownership of the stream.
-     However, a subclass may choose to, by adding a 'delete' to its
-     destructor.  */
-  explicit wrapped_file (ui_file *stream)
-    : m_stream (stream)
+  explicit wrapped_file (T stream)
+    : m_stream (std::move (stream))
   {
   }
 
   /* The underlying stream.  */
-  ui_file *m_stream;
+  T m_stream;
 };
 
 /* A ui_file that optionally puts a timestamp at the start of each
    line of output.  */
 
-class timestamped_file : public wrapped_file
+class timestamped_file : public wrapped_file<ui_file *>
 {
 public:
   explicit timestamped_file (ui_file *stream)
@@ -490,7 +490,7 @@ private:
 
    Note that this only really handles ASCII output correctly.  */
 
-class tab_expansion_file : public wrapped_file
+class tab_expansion_file : public wrapped_file<ui_file *>
 {
 public:
 

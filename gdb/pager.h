@@ -23,19 +23,14 @@
 
 /* A ui_file that implements output paging and unfiltered output.  */
 
-class pager_file : public wrapped_file
+class pager_file : public wrapped_file<ui_file_up>
 {
 public:
   /* Create a new pager_file.  The new object takes ownership of
      STREAM.  */
-  explicit pager_file (ui_file *stream)
-    : wrapped_file (stream)
+  explicit pager_file (ui_file_up stream)
+    : wrapped_file (std::move (stream))
   {
-  }
-
-  ~pager_file ()
-  {
-    delete m_stream;
   }
 
   DISABLE_COPY_AND_ASSIGN (pager_file);
