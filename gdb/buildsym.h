@@ -339,15 +339,10 @@ private:
 
   struct subfile *m_current_subfile = nullptr;
 
-  /* The mutable address map for the compilation unit whose symbols
-     we're currently reading.  The symtabs' shared blockvector will
-     point to a fixed copy of this.  */
-  struct addrmap_mutable m_pending_addrmap;
-
-  /* True if we recorded any ranges in the addrmap that are different
-     from those in the blockvector already.  We set this to false when
-     we start processing a symfile, and if it's still false at the
-     end, then we just toss the addrmap.  */
+  /* If there are gaps in the address range of any block associated with
+     this buildsym_compunit, then we need to create an address map, this
+     flag is set true to indicate the addrmap must be created.  If this
+     remains false, then no addrmap will be created.  */
   bool m_pending_addrmap_interesting = false;
 
   /* An obstack used for allocating pending blocks.  */
