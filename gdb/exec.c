@@ -400,7 +400,6 @@ exec_file_attach (const char *filename, int from_tty)
       int load_via_target = 0;
       const char *scratch_pathname, *canonical_pathname;
       int scratch_chan;
-      char **matching;
 
       if (is_target_filename (filename))
 	{
@@ -482,8 +481,9 @@ exec_file_attach (const char *filename, int from_tty)
 	  (make_unique_xstrdup (gdb_realpath_keepfile
 				  (scratch_pathname).c_str ()));
 
-      if (!bfd_check_format_matches (current_program_space->exec_bfd (),
-				     bfd_object, &matching))
+      gdb::unique_xmalloc_ptr<char *> matching;
+      if (!gdb_bfd_check_format_matches (current_program_space->exec_bfd (),
+					 bfd_object, matching))
 	{
 	  /* Make sure to close exec_bfd, or else "run" might try to use
 	     it.  */

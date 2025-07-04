@@ -607,7 +607,6 @@ compile_object_load (const compile_file_names &file_names,
   struct type *func_type;
   long missing_symbols;
   struct type *regs_type, *out_value_type = NULL;
-  char **matching;
   struct objfile *objfile;
   int expect_parameters;
   struct type *expect_return_type;
@@ -620,7 +619,8 @@ compile_object_load (const compile_file_names &file_names,
     error (_("\"%s\": could not open as compiled module: %s"),
 	  filename.get (), bfd_errmsg (bfd_get_error ()));
 
-  if (!bfd_check_format_matches (abfd.get (), bfd_object, &matching))
+  gdb::unique_xmalloc_ptr<char *> matching;
+  if (!gdb_bfd_check_format_matches (abfd.get (), bfd_object, matching))
     error (_("\"%s\": not in loadable format: %s"),
 	   filename.get (),
 	   gdb_bfd_errmsg (bfd_get_error (), matching).c_str ());

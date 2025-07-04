@@ -265,9 +265,24 @@ extern long gdb_bfd_get_mtime (bfd *abfd)
 /* A wrapper for bfd_errmsg to produce a more helpful error message
    in the case of bfd_error_file_ambiguously recognized.
    MATCHING, if non-NULL, is the corresponding argument to
-   bfd_check_format_matches, and will be freed.  */
+   gdb_bfd_check_format_matches.  */
 
-extern std::string gdb_bfd_errmsg (bfd_error_type error_tag, char **matching);
+extern std::string gdb_bfd_errmsg
+    (bfd_error_type error_tag,
+     const gdb::unique_xmalloc_ptr<char *> &matching);
+
+/* A wrapper for bfd_check_format_matches that wraps the 'matching'
+   parameter with a unique pointer.  */
+
+static inline bool
+gdb_bfd_check_format_matches (bfd *abfd, bfd_format format,
+			      gdb::unique_xmalloc_ptr<char *> &matching)
+{
+  char **tem;
+  bool result = bfd_check_format_matches (abfd, format, &tem);
+  matching.reset (tem);
+  return result;
+}
 
 /* A wrapper for bfd_init that also handles setting up for
    multi-threading.  */
