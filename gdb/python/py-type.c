@@ -36,13 +36,8 @@ struct type_object : public PyObject
 extern PyTypeObject type_object_type;
 
 /* A Field object.  */
-struct field_object
-{
-  PyObject_HEAD
-
-  /* Dictionary holding our attributes.  */
-  PyObject *dict;
-};
+struct field_object : public gdbpy_dict_wrapper
+{};
 
 extern PyTypeObject field_object_type;
 
@@ -1707,8 +1702,8 @@ PyTypeObject type_object_type =
 
 static gdb_PyGetSetDef field_object_getset[] =
 {
-  { "__dict__", gdb_py_generic_dict, NULL,
-    "The __dict__ for this field.", &field_object_type },
+  { "__dict__", gdb_py_generic_dict_getter, NULL,
+    "The __dict__ for this field.", NULL },
   { NULL }
 };
 
@@ -1730,8 +1725,8 @@ PyTypeObject field_object_type =
   0,				  /*tp_hash */
   0,				  /*tp_call*/
   0,				  /*tp_str*/
-  0,				  /*tp_getattro*/
-  0,				  /*tp_setattro*/
+  gdb_py_generic_getattro,	  /*tp_getattro*/
+  gdb_py_generic_setattro,	  /*tp_setattro*/
   0,				  /*tp_as_buffer*/
   Py_TPFLAGS_DEFAULT,		  /*tp_flags*/
   "GDB field object",		  /* tp_doc */
@@ -1748,7 +1743,7 @@ PyTypeObject field_object_type =
   0,				  /* tp_dict */
   0,				  /* tp_descr_get */
   0,				  /* tp_descr_set */
-  offsetof (field_object, dict),  /* tp_dictoffset */
+  0,				  /* tp_dictoffset */
   0,				  /* tp_init */
   0,				  /* tp_alloc */
   0,				  /* tp_new */
