@@ -237,7 +237,7 @@ with_test_prefix "lib objfile missing, handler returns None" {
     # load the shared library during the memory-mapped file phase,
     # then again for the shared library loading.
     gdb_test "python print(handler_obj.call_count)" "^2" \
-	"check handler was called three times"
+	"check handler was called two times"
 }
 
 with_test_prefix "handler installs lib objfile" {
