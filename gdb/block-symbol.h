@@ -1,6 +1,6 @@
 /* The block_symbol type
 
-   Copyright (C) 2023 Free Software Foundation, Inc.
+   Copyright (C) 2023, 2025 Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -20,13 +20,16 @@
 #ifndef GDB_BLOCK_SYMBOL_H
 #define GDB_BLOCK_SYMBOL_H
 
+#include "gdbsupport/unordered_dense.h"
+
 struct block;
+struct objfile;
 struct symbol;
 
 /* Several lookup functions return both a symbol and the block in which the
    symbol is found.  This structure is used in these cases.  */
 
-struct block_symbol
+struct block_symbol_for_parsers
 {
   /* The symbol that was found, or NULL if no symbol was found.  */
   struct symbol *symbol;
@@ -35,8 +38,58 @@ struct block_symbol
      defined.  */
   const struct block *block;
 
+  /* The objfile.  If SYMBOL is non-NULL, then this must be as well.  */
+  struct objfile *objfile;
+};
+
+struct block_symbol : block_symbol_for_parsers
+{
+  block_symbol (struct symbol *symbol, const struct block *block,
+		struct objfile *objfile = nullptr)
+  {
+    this->symbol = symbol;
+    this->block = block;
+    this->objfile = objfile;
+  }
+
+  // fixme doc
+  block_symbol (const block_symbol_for_parsers &bsp)
+    : block_symbol (bsp.symbol, bsp.block, bsp.objfile)
+  {
+  }
+
+  block_symbol () : block_symbol (nullptr, nullptr, nullptr)
+  {
+  }
+
+  bool operator== (const block_symbol &other) const
+  {
+    /* We don't really need to compare the block, but it also doesn't
+       hurt.  */
+    /* FIXME: until the objfile is reliable, it shouldn't be
+       compared.  */
+    return symbol == other.symbol && block == other.block;
+  }
+
   /* Return the address of the symbol.  */
   CORE_ADDR address () const;
+
+  bool has_value () const
+  {
+    return symbol != nullptr;
+  }
+};
+
+template <>
+struct ankerl::unordered_dense::hash<block_symbol>
+{
+  using is_avalanching = void;
+
+  uint64_t operator() (const block_symbol &sym) const noexcept
+  {
+    static_assert(std::has_unique_object_representations_v<block_symbol>);
+    return ankerl::unordered_dense::detail::wyhash::hash (&sym, sizeof (sym));
+  }
 };
 
 #endif /* GDB_BLOCK_SYMBOL_H */

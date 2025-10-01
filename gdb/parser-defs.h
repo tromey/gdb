@@ -361,7 +361,7 @@ struct ttype
 struct symtoken
   {
     struct stoken stoken;
-    struct block_symbol sym;
+    struct block_symbol_for_parsers sym;
     int is_a_field_of_this;
   };
 
