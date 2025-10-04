@@ -2523,11 +2523,11 @@ extern void fixup_symbol_section (struct symbol *sym,
 				  struct objfile *objfile);
 
 /* If MSYMBOL is an text symbol, look for a function debug symbol with
-   the same address.  Returns NULL if not found.  This is necessary in
-   case a function is an alias to some other function, because debug
-   information is only emitted for the alias target function's
-   definition, not for the alias.  */
-extern symbol *find_function_alias_target (bound_minimal_symbol msymbol);
+   the same address.  Returns an empty value if not found.  This is
+   necessary in case a function is an alias to some other function,
+   because debug information is only emitted for the alias target
+   function's definition, not for the alias.  */
+extern block_symbol find_function_alias_target (bound_minimal_symbol msymbol);
 
 /* Symbol searching */
 

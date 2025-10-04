@@ -4087,20 +4087,20 @@ find_epilogue_using_linetable (CORE_ADDR func_addr)
 
 /* See symtab.h.  */
 
-symbol *
+block_symbol
 find_function_alias_target (bound_minimal_symbol msymbol)
 {
   CORE_ADDR func_addr;
   if (!msymbol_is_function (msymbol.objfile, msymbol.minsym, &func_addr))
     return NULL;
 
-  symbol *sym = find_symbol_for_pc (func_addr).symbol;
-  if (sym != NULL
-      && sym->loc_class () == LOC_BLOCK
-      && sym->value_block ()->entry_pc () == func_addr)
+  block_symbol sym = find_symbol_for_pc (func_addr);
+  if (sym.has_value ()
+      && sym.symbol->loc_class () == LOC_BLOCK
+      && sym.symbol->value_block ()->entry_pc () == func_addr)
     return sym;
 
-  return NULL;
+  return {};
 }
 
 
