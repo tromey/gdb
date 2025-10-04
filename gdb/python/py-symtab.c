@@ -36,7 +36,7 @@ static_assert (gdb::is_python_allocatable_v<symtab_object>);
 
 extern PyTypeObject symtab_object_type;
 static const gdbpy_registry<gdbpy_memoizing_registry_storage<symtab_object,
-  symtab, &symtab_object::symtab>> stpy_registry;
+  symtab *, &symtab_object::symtab>> stpy_registry;
 
 /* Require a valid symbol table.  All access to symtab_object->symtab
    should be gated by this call.  */

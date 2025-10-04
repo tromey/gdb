@@ -1299,36 +1299,45 @@ private:
 };
 
 /* Default invalidator for Python objects.  */
-template <typename P, typename V, V* P::*val_slot>
+template <typename P, typename V, V P::*val_slot>
 struct gdbpy_default_invalidator
 {
   void operator() (P *obj)
   {
-    obj->*val_slot = nullptr;
+    obj->*val_slot = {};
   }
 };
 
+template<typename T> bool registry_slot_valid (T);
+
+template<typename T>
+bool
+registry_slot_valid (T *ptr)
+{
+  return ptr != nullptr;
+}
+
 /* A "storage" implementation suitable for temporary (on-demand) objects.  */
-template <typename P,
-	  typename V,
-	  V* P::*val_slot,
-	  typename Invalidator = gdbpy_default_invalidator<P, V, val_slot>>
+template <typename P, 
+          typename V, 
+          V* P::*val_slot, 
+	  typename Invalidator = gdbpy_default_invalidator<P, V *, val_slot>>
 class gdbpy_tracking_registry_storage
 {
 public:
   using obj_type = P;
-  using val_type = V;
+  using val_type = V *;
 
   void add (obj_type *obj)
   {
-    gdb_assert (obj != nullptr && obj->*val_slot != nullptr);
+    gdb_assert (obj != nullptr && registry_slot_valid (obj->*val_slot));
 
     m_objects.insert (obj);
   }
 
   void remove (obj_type *obj)
   {
-    gdb_assert (obj != nullptr && obj->*val_slot != nullptr);
+    gdb_assert (obj != nullptr && registry_slot_valid (obj->*val_slot));
     gdb_assert (m_objects.contains (obj));
 
     m_objects.erase (obj);
@@ -1354,9 +1363,9 @@ protected:
    drops all their references the Python object is deallocated and removed
    from storage.
    */
-template <typename P,
-	  typename V,
-	  V* P::*val_slot,
+template <typename P, 
+          typename V, 
+	  V P::*val_slot,
 	  typename Invalidator = gdbpy_default_invalidator<P, V, val_slot>>
 class gdbpy_memoizing_registry_storage
 {
@@ -1366,20 +1375,20 @@ public:
 
   void add (obj_type *obj)
   {
-    gdb_assert (obj != nullptr && obj->*val_slot != nullptr);
+    gdb_assert (obj != nullptr && registry_slot_valid (obj->*val_slot));
 
     m_objects[obj->*val_slot] = obj;
   }
 
   void remove (obj_type *obj)
   {
-    gdb_assert (obj != nullptr && obj->*val_slot != nullptr);
+    gdb_assert (obj != nullptr && registry_slot_valid (obj->*val_slot));
     gdb_assert (m_objects.contains (obj->*val_slot));
 
     m_objects.erase (obj->*val_slot);
   }
 
-  obj_type *lookup (val_type *val) const
+  obj_type *lookup (const val_type &val) const
   {
     auto result = m_objects.find (val);
     if (result != m_objects.end ())
@@ -1399,7 +1408,7 @@ public:
   }
 
 protected:
-  gdb::unordered_map<val_type *, obj_type *> m_objects;
+  gdb::unordered_map<val_type, obj_type *> m_objects;
 };
 
 extern gdbpy_ref<> eval_python_command

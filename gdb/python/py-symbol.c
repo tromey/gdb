@@ -99,7 +99,7 @@ struct symbol_object : public PyObject
 static_assert (gdb::is_python_allocatable_v<symbol_object>);
 
 static const gdbpy_registry<gdbpy_memoizing_registry_storage<symbol_object,
-  symbol, &symbol_object::symbol>> sympy_registry;
+  symbol *, &symbol_object::symbol>> sympy_registry;
 
 gdbpy_ref<>
 symbol_object::type ()

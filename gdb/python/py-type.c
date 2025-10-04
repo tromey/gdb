@@ -1173,7 +1173,7 @@ struct typy_invalidator
 };
 
 static const gdbpy_registry<gdbpy_memoizing_registry_storage<type_object,
-  type, &type_object::type, typy_invalidator>> typy_registry;
+  type *, &type_object::type, typy_invalidator>> typy_registry;
 
 static void
 set_type (type_object *obj, struct type *type)
