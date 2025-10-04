@@ -13159,7 +13159,7 @@ ada_add_global_exceptions (compiled_regex *preg,
 		if (ada_is_non_standard_exception_sym (sym)
 		    && name_matches_regex (sym->natural_name ()))
 		  {
-		    block_symbol bsym { sym, b };
+		    block_symbol bsym { sym, b, objfile };
 
 		    struct ada_exc_info info
 		      = {sym->print_name (), bsym.address ()};
