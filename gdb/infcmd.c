@@ -57,6 +57,7 @@
 #include "source.h"
 #include "cli/cli-style.h"
 #include "gdbsupport/selftest.h"
+#include "finish-thread-state.h"
 
 /* Local functions: */
 
