@@ -161,6 +161,7 @@ load_lib cache.exp
 load_lib gdb-utils.exp
 load_lib memory.exp
 load_lib check-test-names.exp
+load_lib quotemeta.exp
 
 # The path to the GDB binary to test.
 global GDB
