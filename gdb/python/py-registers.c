@@ -49,9 +49,8 @@ struct register_descriptor_iterator_object {
 extern PyTypeObject register_descriptor_iterator_object_type;
 
 /* A register descriptor.  */
-struct register_descriptor_object {
-  PyObject_HEAD
-
+struct register_descriptor_object : public PyObject
+{
   /* The register this is a descriptor for.  */
   int regnum;
 
@@ -75,9 +74,8 @@ struct reggroup_iterator_object {
 extern PyTypeObject reggroup_iterator_object_type;
 
 /* A register group object.  */
-struct reggroup_object {
-  PyObject_HEAD
-
+struct reggroup_object : public PyObject
+{
   /* The register group being described.  */
   const struct reggroup *reggroup;
 };

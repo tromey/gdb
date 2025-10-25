@@ -45,10 +45,8 @@ extern PyTypeObject corefile_object_type;
 
 /* A gdb.CorefileMapped object.  */
 
-struct corefile_mapped_file_object
+struct corefile_mapped_file_object : public PyObject
 {
-  PyObject_HEAD
-
   /* The name of a file that was mapped when the core file was created.
      This is a 'str' object.  */
   PyObject *filename;
@@ -70,10 +68,8 @@ extern PyTypeObject corefile_mapped_file_object_type;
 
 /* A gdb.CorefileMappedFileRegion object.  */
 
-struct corefile_mapped_file_region_object
+struct corefile_mapped_file_region_object : public PyObject
 {
-  PyObject_HEAD
-
   /* The start and end addresses for this mapping, these are addresses
      within the inferior's address space.  */
   CORE_ADDR start;

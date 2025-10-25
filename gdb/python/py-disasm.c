@@ -28,10 +28,8 @@
 /* Implement gdb.disassembler.DisassembleInfo type.  An object of this type
    represents a single disassembler request from GDB.  */
 
-struct disasm_info_object
+struct disasm_info_object : public PyObject
 {
-  PyObject_HEAD
-
   /* The architecture in which we are disassembling.  */
   struct gdbarch *gdbarch;
 
@@ -99,10 +97,8 @@ extern PyTypeObject disasm_part_object_type;
    the disassembled instruction (in bytes), and the string representing the
    disassembled instruction.  */
 
-struct disasm_result_object
+struct disasm_result_object : public PyObject
 {
-  PyObject_HEAD
-
   /* The length of the disassembled instruction in bytes.  */
   int length;
 

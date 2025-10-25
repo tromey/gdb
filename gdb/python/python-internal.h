@@ -350,10 +350,8 @@ extern PyTypeObject thread_object_type;
 
 extern bool gdbpy_breakpoint_init_breakpoint_type ();
 
-struct gdbpy_breakpoint_object
+struct gdbpy_breakpoint_object : public PyObject
 {
-  PyObject_HEAD
-
   /* The breakpoint number according to gdb.  */
   int number;
 

@@ -26,14 +26,17 @@
 template<typename T>
 struct gdbpy_ref_policy
 {
+  static_assert(std::is_base_of<PyObject, T>::value,
+		"T must be a subclass of PyObject");
+
   static void incref (T *ptr)
   {
-    Py_INCREF (ptr);
+    Py_INCREF (static_cast<PyObject *> (ptr));
   }
 
   static void decref (T *ptr)
   {
-    Py_DECREF (ptr);
+    Py_DECREF (static_cast<PyObject *> (ptr));
   }
 };
 
