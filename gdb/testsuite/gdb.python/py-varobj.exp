@@ -48,6 +48,9 @@ mi_gdb_test "-var-create tval * tval" \
 mi_gdb_test "-var-list-children --all-values tval" \
     ".*value=.*flicker.*"
 
+mi_gdb_test "-var-evaluate-expression -f hex tval.val" \
+    ".*value=.0x5b.*"
+
 mi_gdb_test "-var-create test_ptr * test_ptr" \
    "\\^done.*"
 

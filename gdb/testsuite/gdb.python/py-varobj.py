@@ -25,6 +25,7 @@ class TestPrinter:
 
     def children(self):
         yield "1", "flicker"
+        yield "val", 91
 
 
 def str_lookup_function(val):
