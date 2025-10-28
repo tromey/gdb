@@ -945,6 +945,8 @@ struct main_type
 
   ENUM_BITFIELD(language) m_lang : LANGUAGE_BITS;
 
+  enum gc_color color : 1;
+
   /* * Number of fields described for this type.  This field appears
      at this location because it packs nicely here.  */
 
