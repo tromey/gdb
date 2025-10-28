@@ -51,6 +51,7 @@
 #include "expop.h"
 #include "inferior.h"
 #include "varobj.h"
+#include "type-gc.h"
 
 /* Definition of a user function.  */
 struct internal_function
@@ -753,6 +754,18 @@ value::allocate_lazy (struct type *type)
   all_values.emplace_back (val);
 
   return val;
+}
+
+/* Mark all types used by the value chain.  */
+
+static void
+mark_value_types ()
+{
+  for (const value_ref_ptr &val : all_values)
+    {
+      mark_type (val->type ());
+      mark_type (val->enclosing_type ());
+    }
 }
 
 /* The maximum size, in bytes, that GDB will try to allocate for a value.
@@ -4593,4 +4606,6 @@ and exceeds this limit will cause an error."),
     {
       all_values.clear ();
     });
+
+  register_type_root (mark_value_types);
 }
