@@ -833,6 +833,8 @@ struct range_bounds
   /* If this is true this STRIDE is in bytes, otherwise STRIDE is in bits.  */
 
   unsigned int flag_is_byte_stride : 1;
+
+  enum gc_color color : 1;
 };
 
 /* Compare two range_bounds objects for equality.  Simply does
