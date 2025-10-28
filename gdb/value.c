@@ -763,8 +763,8 @@ mark_value_types ()
 {
   for (const value_ref_ptr &val : all_values)
     {
-      mark_type (val->type ());
-      mark_type (val->enclosing_type ());
+      val->type ()->mark ();
+      val->enclosing_type ()->mark ();
     }
 }
 
