@@ -50,6 +50,7 @@
 #include "gdbsupport/gdb_obstack.h"
 #include "gmp-utils.h"
 #include "gdbsupport/unordered_map.h"
+#include "type-gc.h"
 
 /* Forward declarations for prototypes.  */
 struct field;
@@ -1535,6 +1536,8 @@ struct type
   enum language language () const
   { return main_type->m_lang; }
 
+  void mark ();
+
   /* * Type that is a pointer to this type.
      NULL if no such pointer-to type is known yet.
      The debugger may add the address of such a type
@@ -1578,6 +1581,8 @@ struct type
      qualifiers can be cleared by the typedef.  See also
      check_typedef.  */
   unsigned m_instance_flags : 9;
+
+  enum gc_color color : 1;
 
   /* * Length of storage for a value of this type.  The value is the
      expression in host bytes of what sizeof(type) would return.  This
