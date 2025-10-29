@@ -756,9 +756,6 @@ struct field
 
   ENUM_BITFIELD(field_loc_kind) m_loc_kind : 3;
 
-  /* FIXME only used by first field in a list  */
-  enum gc_color color : 1;
-
   /* Accessibility of the field.  */
   enum accessibility m_accessibility;
 
