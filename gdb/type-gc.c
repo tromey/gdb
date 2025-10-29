@@ -51,7 +51,6 @@ struct manager
 static manager<main_type> main_type_manager;
 static manager<type> type_manager;
 static manager<dynamic_prop_list> prop_list_manager;
-static manager<field> field_manager;
 
 static std::vector<mark_types_fn *> roots;
 
@@ -90,17 +89,15 @@ mark (dynamic_prop_list *plist)
 }
 
 static void
-mark (unsigned n_fields, struct field *fields)
+mark (gdb::array_view<field> fields)
 {
-  if (fields == nullptr || check_color (fields))
-    return;
-  for (unsigned i = 0; i < n_fields; ++i)
+  for (field &field : fields)
     {
       // physname - string
       // or dwarf_block -> fixme
 
-      if (fields[i].m_type != nullptr)
-	fields[i].m_type->mark ();
+      if (field.m_type != nullptr)
+	field.m_type->mark ();
       // m_name - string
     }
 }
