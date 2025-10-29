@@ -39,7 +39,7 @@ struct manager
   void sweep ()
   {
     auto iter = std::remove_if (storage.begin (), storage.end (),
-				[] (T *item)
+				[] (std::unique_ptr<T> &item)
 				{
 				  item->mark != current_color;
 				});
@@ -49,9 +49,36 @@ struct manager
   std::deque<std::unique_ptr<T>> storage;
 };
 
+struct string_manager
+{
+  const char *intern (const char *str)
+  {
+  }
+
+  gdb::array_view<const gdb_byte> intern (gdb::array_view<const gdb_byte> data)
+  {
+  }
+
+  void sweep ()
+  {
+    auto iter = std::remove_if (storage.begin (), storage.end (),
+				[] (std::unique_ptr<char> &item)
+				{
+				  /* The mark is stored in the first
+				     byte.  */
+				  *item != current_color;
+				});
+    storage.erase (iter, storage.end ());
+  }
+
+  std::deque<std::unique_ptr<char>> storage;
+  gdb::unordered_hash<gdb::array_view<const byte>> by_contents;
+};
+
 static manager<main_type> main_type_manager;
 static manager<type> type_manager;
 static manager<dynamic_prop_list> prop_list_manager;
+static string_manager data_manager;
 
 static std::vector<mark_types_fn *> roots;
 
