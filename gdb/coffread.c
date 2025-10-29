@@ -1837,11 +1837,7 @@ decode_base_type (struct coff_symbol *cs,
 	  /* Anonymous structure type.  */
 	  type = coff_alloc_type (cs->c_symnum);
 	  type->set_code (TYPE_CODE_STRUCT);
-	  type->set_name (NULL);
 	  INIT_CPLUS_SPECIFIC (type);
-	  type->set_length (0);
-	  type->set_fields (nullptr);
-	  type->set_num_fields (0);
 	}
       else
 	{
@@ -1857,11 +1853,7 @@ decode_base_type (struct coff_symbol *cs,
 	{
 	  /* Anonymous union type.  */
 	  type = coff_alloc_type (cs->c_symnum);
-	  type->set_name (NULL);
 	  INIT_CPLUS_SPECIFIC (type);
-	  type->set_length (0);
-	  type->set_fields (nullptr);
-	  type->set_num_fields (0);
 	}
       else
 	{
@@ -1879,10 +1871,6 @@ decode_base_type (struct coff_symbol *cs,
 	  /* Anonymous enum type.  */
 	  type = coff_alloc_type (cs->c_symnum);
 	  type->set_code (TYPE_CODE_ENUM);
-	  type->set_name (NULL);
-	  type->set_length (0);
-	  type->set_fields (nullptr);
-	  type->set_num_fields (0);
 	}
       else
 	{
