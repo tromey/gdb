@@ -20,6 +20,7 @@
 #include <deque>
 #include <vector>
 
+#include "gdbtypes.h"
 #include "type-gc.h"
 
 static gc_color current_color = PURPLE;
