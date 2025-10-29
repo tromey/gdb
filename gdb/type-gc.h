@@ -20,6 +20,10 @@
 #ifndef GDB_TYPE_GC_H
 #define GDB_TYPE_GC_H
 
+struct dynamic_prop_list;
+struct main_type;
+struct type;
+
 // FIXME
 enum gc_color
 {
