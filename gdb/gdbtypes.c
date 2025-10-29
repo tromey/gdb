@@ -1621,8 +1621,7 @@ smash_to_method_type (struct type *type, struct type *self_type,
   type->set_code (TYPE_CODE_METHOD);
   type->set_target_type (to_type);
   set_type_self_type (type, self_type);
-  type->set_fields (args.data ());
-  type->set_num_fields (args.size ());
+  type->copy_fields (args);
 
   if (varargs)
     type->set_has_varargs (true);
@@ -5955,7 +5954,7 @@ type::copy_fields (struct type *src)
 /* See gdbtypes.h.  */
 
 void
-type::copy_fields (std::vector<struct field> &src)
+type::copy_fields (gdb::array_view<struct field> src)
 {
   unsigned int nfields = src.size ();
   alloc_fields (nfields, false);

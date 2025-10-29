@@ -1120,7 +1120,7 @@ struct type
 
   /* Allocate the fields array of this type, and copy the fields from SRC.  */
   void copy_fields (struct type *src);
-  void copy_fields (std::vector<struct field> &src);
+  void copy_fields (gdb::array_view<struct field> src);
 
   type *index_type () const
   {
