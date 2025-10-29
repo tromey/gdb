@@ -25,7 +25,7 @@
 static gc_color current_color = PURPLE;
 
 template<typename T>
-struct slab
+struct manager
 {
   T *allocate ()
   {
@@ -48,23 +48,23 @@ struct slab
   std::deque<std::unique_ptr<T>> storage;
 };
 
-static slab<main_type> main_type_slab;
-static slab<type> type_slab;
-static slab<dynamic_prop_list> prop_list_slab;
-static slab<field> field_slab;
+static manager<main_type> main_type_manager;
+static manager<type> type_manager;
+static manager<dynamic_prop_list> prop_list_manager;
+static manager<field> field_manager;
 
 static std::vector<mark_types_fn *> roots;
 
 main_type *
 new_main_type ()
 {
-  return main_type_slab.allocate ();
+  return main_type_manager.allocate ();
 }
 
 type *
 new_type ()
 {
-  return type_slab.allocate ();
+  return type_manager.allocate ();
 }
 
 template<typename T>
@@ -204,10 +204,10 @@ type_gc ()
   for (auto mark : roots)
     mark ();
 
-  main_type_slab.sweep ();
-  type_slab.sweep ();
-  prop_list_slab.sweep ();
-  field_slab.sweep ();
+  main_type_manager.sweep ();
+  type_manager.sweep ();
+  prop_list_manager.sweep ();
+  field_manager.sweep ();
 }
 
 void
