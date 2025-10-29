@@ -1221,6 +1221,7 @@ COMMON_SFILES = \
 	trad-frame.c \
 	tramp-frame.c \
 	target-float.c \
+	type-gc.c \
 	type-stack.c \
 	typeprint.c \
 	ui.c \
@@ -1721,6 +1722,7 @@ HFILES_NO_SRCDIR = \
 	tui/tui-win.h \
 	tui/tui-winsource.h \
 	typeprint.h \
+	type-gc.h \
 	type-stack.h \
 	ui-file.h \
 	ui.h \
