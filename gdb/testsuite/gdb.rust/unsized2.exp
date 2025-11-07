@@ -21,9 +21,8 @@ require {can_compile rust}
 require {rust_at_least 1.61}
 
 standard_testfile .rs
-if {[prepare_for_testing "failed to prepare" $testfile $srcfile {debug rust}]} {
-    return
-}
+critical prepare_for_testing "failed to prepare" $testfile $srcfile \
+    {debug rust}
 
 set line [gdb_get_line_number "set breakpoint here"]
 critical runto ${srcfile}:$line
