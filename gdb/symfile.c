@@ -101,24 +101,10 @@ static int simple_overlay_update_1 (struct obj_section *);
 
 static void symfile_find_segment_sections (struct objfile *objfile);
 
-/* List of all available sym_fns.  On gdb startup, each object file reader
-   calls add_symtab_fns() to register information on each format it is
-   prepared to read.  */
-
-struct registered_sym_fns
-{
-  registered_sym_fns (bfd_flavour sym_flavour_, const struct sym_fns *sym_fns_)
-  : sym_flavour (sym_flavour_), sym_fns (sym_fns_)
-  {}
-
-  /* BFD flavour that we handle.  */
-  enum bfd_flavour sym_flavour;
-
-  /* The "vtable" of symbol functions.  */
-  const struct sym_fns *sym_fns;
-};
-
-static std::vector<registered_sym_fns> symtab_fns;
+/* Map from a BFD flavour to the corresponding sym_fns instance.  On
+   gdb startup, each object file reader calls add_symtab_fns() to
+   register information on each format it is prepared to read.  */
+static gdb::unordered_map<bfd_flavour, const sym_fns *> symtab_fns;
 
 /* Values for "set print symbol-loading".  */
 
@@ -1758,7 +1744,7 @@ get_section_index (struct objfile *objfile, const char *section_name)
 void
 add_symtab_fns (enum bfd_flavour flavour, const struct sym_fns *sf)
 {
-  symtab_fns.emplace_back (flavour, sf);
+  symtab_fns.emplace (flavour, sf);
 }
 
 /* Initialize OBJFILE to read symbols from its associated BFD.  It
@@ -1771,14 +1757,9 @@ find_sym_fns (bfd *abfd)
 {
   enum bfd_flavour our_flavour = bfd_get_flavour (abfd);
 
-  if (our_flavour == bfd_target_srec_flavour
-      || our_flavour == bfd_target_ihex_flavour
-      || our_flavour == bfd_target_tekhex_flavour)
-    return NULL;	/* No symbols.  */
-
-  for (const registered_sym_fns &rsf : symtab_fns)
-    if (our_flavour == rsf.sym_flavour)
-      return rsf.sym_fns;
+  if (auto iter = symtab_fns.find (our_flavour);
+      iter != symtab_fns.end ())
+    return iter->second;
 
   error (_("Object file %s could not be read.  Symbol format `%s' unknown."),
 	 abfd->filename, bfd_get_target (abfd));
@@ -3774,6 +3755,11 @@ INIT_GDB_FILE (symfile)
   struct cmd_list_element *c;
 
   gdb::observers::free_objfile.attach (symfile_free_objfile, "symfile");
+
+  /* Pre-register some BFD flavours as not having symbols.  */
+  add_symtab_fns (bfd_target_srec_flavour, nullptr);
+  add_symtab_fns (bfd_target_ihex_flavour, nullptr);
+  add_symtab_fns (bfd_target_tekhex_flavour, nullptr);
 
 #define READNOW_READNEVER_HELP \
   "The '-readnow' option will cause GDB to read the entire symbol file\n\
