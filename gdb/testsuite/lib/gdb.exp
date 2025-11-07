@@ -11036,9 +11036,21 @@ namespace eval critical {
 	namespace export $name
     }
 
+    # Some commands already invoke unsupported or untested and so the
+    # wrapper doesn't need to.
+    proc _make_wrapper_nounsup {name bad_result} {
+	proc $name {args} [format {
+	    set result [uplevel [list %s {*}$args]]
+	    if {$result == %s} {
+		return -code return 0
+	    }
+	} $name $bad_result]
+	namespace export $name
+    }
+
     _make_wrapper ensure_gdb_index -1
-    _make_wrapper prepare_for_testing_full -1
-    _make_wrapper prepare_for_testing -1
+    _make_wrapper_nounsup prepare_for_testing_full -1
+    _make_wrapper_nounsup prepare_for_testing -1
     _make_wrapper runto 0
 
     namespace ensemble create -prefixes 0
