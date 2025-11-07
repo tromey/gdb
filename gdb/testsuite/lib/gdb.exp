@@ -11041,7 +11041,7 @@ namespace eval critical {
     _make_wrapper prepare_for_testing -1
     _make_wrapper runto 0
 
-    namespace ensemble create
+    namespace ensemble create -prefixes 0
 }
 
 # Wait up to ::TIMEOUT seconds for file PATH to exist on the target system.
