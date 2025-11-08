@@ -20,9 +20,7 @@ tuiterm_env
 
 standard_testfile tui-layout.c
 
-if {[build_executable "failed to prepare" ${testfile} ${srcfile}] == -1} {
-    return -1
-}
+critical build_executable "failed to prepare" ${testfile} ${srcfile}
 
 # The wider the window is, the less line truncation happens, so matching
 # pre-scroll to post-scroll lines is more accurate.  But 100% accurate line

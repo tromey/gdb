@@ -21,9 +21,7 @@ tuiterm_env
 
 standard_testfile tui-layout.c
 
-if {[build_executable "failed to build" ${testfile} ${srcfile}] == -1} {
-    return
-}
+critical build_executable "failed to build" ${testfile} ${srcfile}
 
 # Grab the contents of the asm box and check for styling.  If
 # EXPECT_STYLED is true then expect styling in the asm box, otherwise,

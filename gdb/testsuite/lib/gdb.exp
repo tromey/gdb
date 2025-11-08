@@ -11048,6 +11048,7 @@ namespace eval critical {
 	namespace export $name
     }
 
+    _make_wrapper_nounsup build_executable -1
     _make_wrapper ensure_gdb_index -1
     _make_wrapper_nounsup prepare_for_testing_full -1
     _make_wrapper_nounsup prepare_for_testing -1

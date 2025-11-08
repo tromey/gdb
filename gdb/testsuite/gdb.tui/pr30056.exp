@@ -24,9 +24,7 @@ tuiterm_env
 
 standard_testfile tui-long-line.c
 
-if { [build_executable "failed to prepare" $testfile $srcfile] == -1 } {
-    return
-}
+critical build_executable "failed to prepare" $testfile $srcfile
 
 save_vars { env(LC_ALL) } {
     setenv LC_ALL C.UTF-8

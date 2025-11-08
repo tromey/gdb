@@ -19,9 +19,7 @@ tuiterm_env
 
 standard_testfile tui-layout.c
 
-if {[build_executable "failed to prepare" ${testfile} ${srcfile}] == -1} {
-    return -1
-}
+critical build_executable "failed to prepare" ${testfile} ${srcfile}
 
 # Make sure TUI is supported before continuing.
 with_test_prefix "initial check" {

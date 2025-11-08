@@ -37,9 +37,7 @@ set fd [open $srcfile w]
 puts $fd $src_txt
 close $fd
 
-if {[build_executable "failed to prepare" ${testfile} ${srcfile}] == -1} {
-    return -1
-}
+critical build_executable "failed to prepare" ${testfile} ${srcfile}
 
 Term::clean_restart 24 80 $testfile
 

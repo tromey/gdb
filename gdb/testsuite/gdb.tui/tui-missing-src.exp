@@ -65,9 +65,7 @@ f2 (int x)
 close $fd
 
 # Step 3: Compile the source files.
-if { [build_executable "failed to prepare" $testfile $srcfiles] == -1 } {
-    return
-}
+critical build_executable "failed to prepare" $testfile $srcfiles
 
 # Step 4: Remove the main.c file.
 file delete $mainfile

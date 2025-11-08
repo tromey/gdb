@@ -19,12 +19,10 @@ require allow_tui_tests
 
 standard_testfile -main.c -foo.c
 
-if { [build_executable_from_specs "failed to prepare" \
-	  $testfile {debug} \
-	  $srcfile {debug} \
-	  $srcfile2 {nodebug}] == -1 } {
-    return -1
-}
+critical build_executable_from_specs "failed to prepare" \
+    $testfile {debug} \
+    $srcfile {debug} \
+    $srcfile2 {nodebug}
 
 tuiterm_env
 

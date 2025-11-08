@@ -26,9 +26,7 @@ lappend opts additional_flags=-static
 lappend opts additional_flags=-nostdlib
 lappend opts ldflags=-nostartfiles
 
-if { [build_executable "failed to prepare" $testfile $srcfile $opts] == -1 } {
-    return -1
-}
+critical build_executable "failed to prepare" $testfile $srcfile $opts
 
 Term::clean_restart 24 80 $testfile
 if {![Term::prepare_for_tui]} {
