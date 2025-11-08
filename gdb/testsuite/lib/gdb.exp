@@ -11052,6 +11052,7 @@ namespace eval critical {
     _make_wrapper_nounsup prepare_for_testing_full -1
     _make_wrapper_nounsup prepare_for_testing -1
     _make_wrapper runto 0
+    _make_wrapper gdb_start_cmd -1
 
     namespace ensemble create -prefixes 0
 }

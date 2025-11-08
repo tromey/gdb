@@ -28,10 +28,7 @@ critical prepare_for_testing "failed to prepare" $testfile $srcfile \
     {debug rust}
 
 # Verify that "start" lands inside the right procedure.
-if {[gdb_start_cmd] < 0} {
-    unsupported "start failed"
-    return
-}
+critical gdb_start_cmd
 
 gdb_test "" \
     "simple::main \\(\\) at .*simple.rs.*" \
