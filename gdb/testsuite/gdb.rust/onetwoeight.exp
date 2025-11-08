@@ -18,12 +18,7 @@
 load_lib rust-support.exp
 require allow_rust_tests
 require {can_compile rust}
-
-set v [split [rust_compiler_version] .]
-if {[lindex $v 0] == 1 && [lindex $v 1] < 43} {
-    untested "128-bit ints require rust 1.43 or greater"
-    return
-}
+require {rust_at_least 1.43}
 
 standard_testfile .rs
 critical prepare_for_testing "failed to prepare" $testfile $srcfile \
