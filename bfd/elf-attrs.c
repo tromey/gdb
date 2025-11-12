@@ -820,16 +820,29 @@ create_object_attributes_section (struct bfd_link_info *info,
 static void
 oav2_translate_gnu_props_to_obj_attrs (const bfd *abfd)
 {
-  (void) abfd;
-  /* TO IMPLEMENT */
+  const struct elf_backend_data *be = get_elf_backend_data (abfd);
+  if (be->translate_gnu_props_to_obj_attrs == NULL)
+    return;
+
+  for (const elf_property_list *p = elf_properties (abfd);
+       p != NULL;
+       p = p->next)
+    be->translate_gnu_props_to_obj_attrs (abfd, p);
 }
 
 /* Translate object attributes v2 that have GNU properties equivalents.  */
 static void
 oav2_translate_obj_attrs_to_gnu_props (bfd *abfd)
 {
-  (void) abfd;
-  /* TO IMPLEMENT */
+  const struct elf_backend_data *be = get_elf_backend_data (abfd);
+  if (be->translate_obj_attrs_to_gnu_props == NULL)
+    return;
+
+  for (const obj_attr_subsection_v2_t *subsec
+	 = elf_obj_attr_subsections (abfd).first;
+       subsec != NULL;
+       subsec = subsec->next)
+    be->translate_obj_attrs_to_gnu_props (abfd, subsec);
 }
 
 /* Compact duplicated tag declarations in a subsection.

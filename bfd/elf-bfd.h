@@ -1673,6 +1673,14 @@ struct elf_backend_data
   /* The size of the array of known subsections.  */
   const size_t obj_attr_v2_known_subsections_size;
 
+  /* Translate GNU properties that have object attributes v2 equivalents.  */
+  void (*translate_gnu_props_to_obj_attrs) (const bfd *,
+    const elf_property_list *);
+
+  /* Translate object attributes v2 that have GNU properties equivalents.  */
+  void (*translate_obj_attrs_to_gnu_props) (bfd *,
+    const obj_attr_subsection_v2_t *);
+
   /* Get default value for an attribute.  */
   bool (*obj_attr_v2_default_value) (const struct bfd_link_info *,
     const obj_attr_info_t *, const obj_attr_subsection_v2_t *, obj_attr_v2_t *);
