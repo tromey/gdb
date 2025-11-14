@@ -832,6 +832,160 @@ oav2_translate_obj_attrs_to_gnu_props (bfd *abfd)
   /* TO IMPLEMENT */
 }
 
+/* Compact duplicated tag declarations in a subsection.
+   Return True on success, False if any issue is found during the compaction,
+   i.e. conflicting values for the same tag.  */
+static bool
+oav2_compact_tags (const bfd *abfd, obj_attr_subsection_v2_t *subsec)
+{
+  bool success = true;
+
+  for (obj_attr_v2_t *a = subsec->first;
+       a != NULL && a->next != NULL;)
+    {
+      if (a->tag != a->next->tag)
+	{
+	  a = a->next;
+	  continue;
+	}
+
+      /* For NTBS encoding, ensure that the string value of the attributes is
+	 not NULL.
+	 Note: a string attribute can only be NULL if it was created during the
+	 merge process.  Since tag compaction occurs before merging begins, this
+	 assertion guarantees that the function is never called in a context
+	 where the assumption does not hold.  */
+      BFD_ASSERT
+	(subsec->encoding == OA_ENC_ULEB128 ||
+	 (a->val.string != NULL && a->next->val.string != NULL));
+
+      /* Values of a tag are the same, we remove the duplicate.  */
+      if ((subsec->encoding == OA_ENC_ULEB128
+	   && a->val.uint == a->next->val.uint)
+	  || (subsec->encoding == OA_ENC_NTBS
+	      && strcmp (a->val.string, a->next->val.string) == 0))
+	{
+	  obj_attr_v2_t *dup_attr = a->next;
+	  LINKED_LIST_REMOVE (obj_attr_v2_t) (subsec, dup_attr);
+	  _bfd_elf_obj_attr_v2_free (dup_attr, subsec->encoding);
+	  continue;
+	}
+
+      /* The values of a tag are different, there are various options:
+	 - the tag values can be merged.  This requires a knowledge of a tag
+	   merge policy, sometimes generic, sometimes only known from the
+	   target backend.  Since no such complex case exists for now, it is
+	   not implemented.
+	 - values for a given tag have to be the same in the same subsection,
+	   or it raises an error.  This will be the default handling for now.  */
+      success = false;
+
+      const char *tag_s = _bfd_obj_attr_v2_tag_to_string
+	(get_elf_backend_data (abfd), subsec->name, a->tag);
+
+      if (subsec->encoding == OA_ENC_ULEB128)
+	_bfd_error_handler
+	  (_("%pB: error: found duplicated attributes '%s' with conflicting "
+	     "values (%#x vs %#x) in subsection %s"),
+	   abfd, tag_s, a->val.uint, a->next->val.uint, subsec->name);
+      else /* (subsec->encoding == OA_ENC_NTBS)  */
+	_bfd_error_handler
+	  (_("%pB: error: found duplicated attributes '%s' with conflicting "
+	     "values ('%s' vs '%s') in subsection %s"),
+	   abfd, tag_s, a->val.string, a->next->val.string, subsec->name);
+
+      free ((char *) tag_s);
+
+      /* We skip the tag, and continue the compaction of tags to find further
+	 issues (if any).  */
+      a = a->next;
+    }
+
+  return success;
+}
+
+/* Merge two subsections together (object attributes v2 only).
+   The result is stored into subsec1.  subsec2 is destroyed.
+   Return true if the merge was successful, false otherwise.
+   Note: subsec1 and subsec2 are expected to be sorted before the call to this
+   function.  */
+static bool
+oav2_subsection_destructive_merge (const bfd *abfd,
+				   obj_attr_subsection_v2_t *subsec1,
+				   obj_attr_subsection_v2_t *subsec2)
+{
+  BFD_ASSERT (subsec1->encoding == subsec2->encoding
+	      && subsec1->optional == subsec2->optional);
+
+  bool success = true;
+
+  success &= oav2_compact_tags (abfd, subsec1);
+  success &= oav2_compact_tags (abfd, subsec2);
+
+  obj_attr_v2_t *a1 = subsec1->first;
+  obj_attr_v2_t *a2 = subsec2->first;
+  while (a1 != NULL && a2 != NULL)
+    {
+      if (a1->tag < a2->tag)
+	{} /* Nothing to do, a1 is already in subsec1.  */
+      else if (a1->tag > a2->tag)
+	{
+	  /* a2 is missing in subsec1, add it.  */
+	  obj_attr_v2_t *previous
+	    = LINKED_LIST_REMOVE (obj_attr_v2_t) (subsec2, a2);
+	  LINKED_LIST_INSERT_BEFORE (obj_attr_v2_t) (subsec1, a2, a1);
+	  a2 = previous;
+	}
+      else
+	{
+	  const char *tag_s = NULL;
+	  if (subsec1->encoding == OA_ENC_ULEB128
+	      && a1->val.uint != a2->val.uint)
+	    {
+	      success = false;
+	      tag_s = _bfd_obj_attr_v2_tag_to_string
+		(get_elf_backend_data (abfd), subsec1->name, a1->tag);
+	      _bfd_error_handler
+		(_("%pB: error: found 2 subsections with the same name '%s' "
+		   "and found conflicting values (%#x vs %#x) for object "
+		   "attribute '%s'"),
+		 abfd, subsec1->name, a1->val.uint, a2->val.uint, tag_s);
+	    }
+	  else if (subsec1->encoding == OA_ENC_NTBS
+		   && strcmp (a1->val.string, a2->val.string) != 0)
+	    {
+	      success = false;
+	      tag_s = _bfd_obj_attr_v2_tag_to_string
+		(get_elf_backend_data (abfd), subsec1->name, a1->tag);
+	      _bfd_error_handler
+		(_("%pB: error: found 2 subsections with the same name '%s' "
+		   "and found conflicting values ('%s' vs '%s') for object "
+		   "attribute '%s"),
+		 abfd, subsec1->name, a1->val.string, a2->val.string, tag_s);
+	    }
+	  free ((char *) tag_s);
+	}
+      a1 = a1->next;
+      a2 = a2->next;
+    }
+
+  for (; a2 != NULL; a2 = a2->next)
+    {
+      /* a2 is missing in subsec1, add it.  */
+      obj_attr_v2_t *previous
+	= LINKED_LIST_REMOVE (obj_attr_v2_t) (subsec2, a2);
+      LINKED_LIST_INSERT_BEFORE (obj_attr_v2_t) (subsec1, a2, a1);
+      a2 = previous;
+    }
+
+  /* If a1 != NULL, we don't care since it is already in subsec1.  */
+
+  /* Destroy subsec2 before exiting.  */
+  _bfd_elf_obj_attr_subsection_v2_free (subsec2);
+
+  return success;
+}
+
 /* Merge duplicated subsections and object attributes inside a same object
    file.  After a call to this function, the subsections and object attributes
    are sorted.
@@ -846,9 +1000,33 @@ oav2_translate_obj_attrs_to_gnu_props (bfd *abfd)
 static bool
 oav2_file_scope_merge_subsections (const bfd *abfd)
 {
-  (void) abfd;
-  /* TO IMPLEMENT */
-  return false;
+  obj_attr_subsection_list_t *subsecs = &elf_obj_attr_subsections (abfd);
+
+  /* Sort all the subsections and object attributes as they might not have been
+     inserted in the right order.  From now on, the subsections and attributes
+     will be assumed to be always sorted.  Any additive mutation will need to
+     preserve the order.  */
+  oav2_sort_subsections (subsecs);
+
+  bool success = true;
+
+  obj_attr_subsection_v2_t *subsec = subsecs->first;
+  while (subsec != NULL && subsec->next != NULL)
+    {
+      obj_attr_subsection_v2_t *dup_subsec
+	= bfd_obj_attr_subsection_v2_find_by_name (subsec->next,
+						   subsec->name,
+						   false);
+      if (dup_subsec != NULL)
+	{
+	  LINKED_LIST_REMOVE (obj_attr_subsection_v2_t) (subsecs, dup_subsec);
+	  success &= oav2_subsection_destructive_merge (abfd, subsec, dup_subsec);
+	}
+      else
+	subsec = subsec->next;
+    }
+
+  return success;
 }
 
 /* If an Object Attribute subsection inside ABFD cannot be identified neither
