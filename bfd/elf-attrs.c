@@ -2033,14 +2033,81 @@ oav2_merge_all (const struct bfd_link_info *info,
   return success;
 }
 
+/* Prune the given attribute, and return the next one in the list.  */
+static obj_attr_v2_t *
+oav2_attr_delete (obj_attr_subsection_v2_t *subsec,
+		  obj_attr_v2_t *attr)
+{
+  obj_attr_v2_t *next = attr->next;
+  LINKED_LIST_REMOVE (obj_attr_v2_t) (subsec, attr);
+  _bfd_elf_obj_attr_v2_free (attr, subsec->encoding);
+  return next;
+}
+
+/* Prune the given subsection, and return the next one in the list.  */
+static obj_attr_subsection_v2_t *
+oav2_subsec_delete (obj_attr_subsection_list_t *plist,
+		    obj_attr_subsection_v2_t *subsec)
+{
+  obj_attr_subsection_v2_t *next = subsec->next;
+  LINKED_LIST_REMOVE (obj_attr_subsection_v2_t) (plist, subsec);
+  _bfd_elf_obj_attr_subsection_v2_free (subsec);
+  return next;
+}
+
+/* Prune any attributes with a status different from obj_attr_v2_ok in the
+   given subsection.  */
+static void
+oav2_attrs_prune_nok (const struct bfd_link_info *info,
+		      obj_attr_subsection_v2_t *subsec)
+{
+  const struct elf_backend_data *bed = get_elf_backend_data (info->output_bfd);
+  for (obj_attr_v2_t *attr = subsec->first;
+       attr != NULL;)
+    {
+      if (attr->status != obj_attr_v2_ok)
+	{
+	  const char *tag_s
+	    = _bfd_obj_attr_v2_tag_to_string (bed, subsec->name, attr->tag);
+	  info->callbacks->minfo
+	    (_("Removed attribute '%s' from '%s'\n"), tag_s, subsec->name);
+	  free ((char *) tag_s);
+	  attr = oav2_attr_delete (subsec, attr);
+	}
+      else
+	attr = attr->next;
+    }
+}
+
+/* Prune any subsection with a status different from obj_attr_subsection_v2_ok
+   in the given list of subsections.  */
+static void
+oav2_subsecs_prune_nok (const struct bfd_link_info *info,
+			obj_attr_subsection_list_t *plist)
+{
+  for (obj_attr_subsection_v2_t *subsec = plist->first;
+       subsec != NULL;)
+    {
+      if (subsec->status == obj_attr_subsection_v2_ok)
+	oav2_attrs_prune_nok (info, subsec);
+
+      if (subsec->size == 0 || subsec->status != obj_attr_subsection_v2_ok)
+	{
+	  info->callbacks->minfo (_("Removed subsection '%s'\n"), subsec->name);
+	  subsec = oav2_subsec_delete (plist, subsec);
+	}
+      else
+	subsec = subsec->next;
+    }
+}
+
 /* Prune any subsection or attribute with a status different from OK.  */
-static bfd *
+static bool
 oav2_prune_nok_attrs (const struct bfd_link_info *info, bfd *abfd)
 {
-  (void) info;
-  (void) abfd;
-  /* TO IMPLEMENT */
-  return NULL;
+  obj_attr_subsection_list_t *plist = &elf_obj_attr_subsections (abfd);
+  oav2_subsecs_prune_nok (info, plist);
+  return (plist->size != 0);
 }
 
 /* Set up object attributes coming from configuration, and merge them with the
