@@ -736,6 +736,41 @@ typedef struct
   asection *sec;
 } bfd_search_result_t;
 
+/* Checks whether a BFD contains object attributes, and if so search for the
+   relevant section storing them.  The name and type of the section have to
+   match with what the backend expects, i.e. elf_backend_obj_attrs_section and
+   elf_backend_obj_attrs_section_type, otherwise the object attributes section
+   won't be recognized as such, and will be skipped.
+   Return True if an object attribute section is found, False otherwise.  */
+static bool
+input_bfd_has_object_attributes (const struct bfd_link_info *info,
+				 bfd *abfd,
+				 bfd_search_result_t *res)
+{
+  /* The file may contain object attributes.  Save this candidate.  */
+  res->pbfd = abfd;
+
+  if (elf_obj_attr_subsections (abfd).size == 0)
+    return false;
+
+  res->has_object_attributes = true;
+
+  uint32_t sec_type = get_elf_backend_data (abfd)->obj_attrs_section_type;
+  const char *sec_name = get_elf_backend_data (abfd)->obj_attrs_section;
+  res->sec = bfd_get_section_by_name (abfd, sec_name);
+  if (res->sec != NULL)
+    {
+      if (elf_section_type (res->sec) != sec_type)
+	{
+	  info->callbacks->minfo
+	    (_("%X%pB: warning: ignoring section '%s' with unexpected type %#x\n"),
+	     abfd, sec_name, elf_section_type (res->sec));
+	  res->sec = NULL;
+	}
+    }
+  return (res->sec != NULL);
+}
+
 /* Search for the first input object file containing object attributes.
    If no such object is found, the result structure's PBFD points to the
    last object file that could have contained object attributes.  The
@@ -745,9 +780,14 @@ typedef struct
 static bfd_search_result_t
 bfd_linear_find_first_with_obj_attrs (const struct bfd_link_info *info)
 {
-  (void) info;
-  /* TO IMPLEMENT */
   bfd_search_result_t res = { .has_object_attributes = false };
+  for (bfd *abfd = info->input_bfds; abfd != NULL; abfd = abfd->link.next)
+    {
+      if (oav2_relevant_elf_object (info, abfd)
+	  && abfd->section_count != 0
+	  && input_bfd_has_object_attributes (info, abfd, &res))
+	break;
+    }
   return res;
 }
 
