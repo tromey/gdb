@@ -796,10 +796,24 @@ static asection *
 create_object_attributes_section (struct bfd_link_info *info,
 				  bfd *abfd)
 {
-  (void) info;
-  (void) abfd;
-  /* TO IMPLEMENT */
-  return NULL;
+  asection *sec;
+  const char *sec_name = get_elf_backend_data (abfd)->obj_attrs_section;
+  sec = bfd_make_section_with_flags (abfd,
+				     sec_name,
+				     (SEC_READONLY
+				      | SEC_HAS_CONTENTS
+				      | SEC_DATA));
+  if (sec == NULL)
+    info->callbacks->fatal (_("%P: failed to create %s section\n"), sec_name);
+
+  if (!bfd_set_section_alignment (sec, 2))
+    info->callbacks->fatal (_("%pA: failed to align section\n"), sec);
+
+  elf_section_type (sec) = get_elf_backend_data (abfd)->obj_attrs_section_type;
+
+  bfd_set_section_size (sec, bfd_elf_obj_attr_size (abfd));
+
+  return sec;
 }
 
 /* Translate GNU properties that have object attributes v2 equivalents.  */
