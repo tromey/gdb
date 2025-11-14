@@ -1036,8 +1036,14 @@ oav2_file_scope_merge_subsections (const bfd *abfd)
 static void
 oav2_subsections_mark_unknown (const bfd *abfd)
 {
-  (void) abfd;
-  /* TO IMPLEMENT */
+  const struct elf_backend_data *bed = get_elf_backend_data (abfd);
+  for (obj_attr_subsection_v2_t *subsec = elf_obj_attr_subsections (abfd).first;
+       subsec != NULL;
+       subsec = subsec->next)
+    {
+      if (bfd_obj_attr_v2_identify_subsection (bed, subsec->name) == NULL)
+	subsec->status = obj_attr_subsection_v2_unknown;
+    }
 }
 
 /* Merge object attributes from FROZEN into the object file ABFD.
