@@ -1046,6 +1046,704 @@ oav2_subsections_mark_unknown (const bfd *abfd)
     }
 }
 
+/* Initialize the given ATTR with its default value coming from the known tag
+   registry.  */
+static void
+oav2_attr_overwrite_with_default (const struct bfd_link_info *info,
+				  const obj_attr_subsection_v2_t *subsec,
+				  obj_attr_v2_t *attr)
+{
+  const struct elf_backend_data *bed = get_elf_backend_data (info->output_bfd);
+
+  const obj_attr_info_t *attr_info
+    = _bfd_obj_attr_v2_find_known_by_tag (bed, subsec->name, attr->tag);
+  if (attr_info == NULL)
+    {
+      attr->status = obj_attr_v2_unknown;
+      if (subsec->encoding == OA_ENC_ULEB128)
+	attr->val.uint = 0;
+      else
+	attr->val.string = NULL;
+      return;
+    }
+
+  if (bed->obj_attr_v2_default_value != NULL
+      && bed->obj_attr_v2_default_value (info, attr_info, subsec, attr))
+    {}
+  else if (subsec->encoding == OA_ENC_NTBS)
+    {
+      if (attr->val.string != NULL)
+	{
+	  free ((void *) attr->val.string);
+	  attr->val.string = NULL;
+	}
+      if (attr_info->default_value.string != NULL)
+	attr->val.string = xstrdup (attr_info->default_value.string);
+    }
+  else
+    attr->val.uint = attr_info->default_value.uint;
+}
+
+/* Create a new attribute with the same key (=tag) as ATTR, and initialized with
+   its default value from the known tag registry.  */
+static obj_attr_v2_t *
+oav2_attr_default (const struct bfd_link_info *info,
+		   const obj_attr_subsection_v2_t *subsec,
+		   const obj_attr_v2_t *attr)
+{
+  obj_attr_v2_t *new_attr = _bfd_elf_obj_attr_v2_copy (attr, subsec->encoding);
+  oav2_attr_overwrite_with_default (info, subsec, new_attr);
+  return new_attr;
+}
+
+/* The currently supported merge policy in the testing GNU namespace.
+   - bitwise AND: apply bitwise AND.
+   - bitwise OR: apply bitwise OR.
+   - String-ADD: concatenates strings together with a '+' in-between.
+   Note: Such policies should only be used for testing.  */
+typedef enum {
+  SUBSECTION_TESTING_MERGE_UNSUPPORTED = 0,
+  SUBSECTION_TESTING_MERGE_AND_POLICY = 1,
+  SUBSECTION_TESTING_MERGE_OR_POLICY = 2,
+  SUBSECTION_TESTING_MERGE_ADD_POLICY = 3,
+} gnu_testing_merge_policy;
+
+/* Determine which merge policy will be applied to SUBSEC.  The GNU policy are
+   detected from the name of the subsection.  It should follow the following
+   pattern: "gnu_testing_XXXXXX_MERGE_<POLICY>".
+   Return one of the known merge policy if recognised, UNSUPPORTED otherwise.  */
+static gnu_testing_merge_policy
+gnu_testing_merge_subsection (const char *subsec_name)
+{
+  if (! gnu_testing_namespace (subsec_name))
+    return SUBSECTION_TESTING_MERGE_UNSUPPORTED;
+
+  size_t subsec_name_len = strlen (subsec_name);
+  if (strcmp ("_MERGE_AND", subsec_name + subsec_name_len - 10) == 0)
+    return SUBSECTION_TESTING_MERGE_AND_POLICY;
+  else if (strcmp ("_MERGE_OR", subsec_name + subsec_name_len - 9) == 0)
+    return SUBSECTION_TESTING_MERGE_OR_POLICY;
+  else if (strcmp ("_MERGE_ADD", subsec_name + subsec_name_len - 10) == 0)
+    return SUBSECTION_TESTING_MERGE_ADD_POLICY;
+  else
+    return SUBSECTION_TESTING_MERGE_UNSUPPORTED;
+}
+
+/* Merge policy Integer-AND: apply bitwise AND between REF and RHS.  */
+static obj_attr_v2_merge_result_t
+obj_attr_v2_merge_AND (const struct bfd_link_info *info ATTRIBUTE_UNUSED,
+		       const bfd *abfd ATTRIBUTE_UNUSED,
+		       const obj_attr_subsection_v2_t *subsec,
+		       const obj_attr_v2_t *ref, const obj_attr_v2_t *rhs,
+		       const obj_attr_v2_t *frozen ATTRIBUTE_UNUSED)
+{
+  BFD_ASSERT (subsec->encoding == OA_ENC_ULEB128);
+
+  obj_attr_v2_merge_result_t res;
+
+  res.val.uint = (ref->val.uint & rhs->val.uint);
+  res.merge = (res.val.uint != ref->val.uint);
+  res.reason = (!res.merge
+		? OAv2_MERGE_SAME_VALUE_AS_REF
+		: OAv2_MERGE_OK);
+
+  return res;
+}
+
+/* Merge policy Integer-OR: apply bitwise OR between REF and RHS.  */
+static obj_attr_v2_merge_result_t
+obj_attr_v2_merge_OR (const struct bfd_link_info *info ATTRIBUTE_UNUSED,
+		      const bfd *abfd ATTRIBUTE_UNUSED,
+		      const obj_attr_subsection_v2_t *subsec,
+		      const obj_attr_v2_t *ref, const obj_attr_v2_t *rhs,
+		      const obj_attr_v2_t *frozen ATTRIBUTE_UNUSED)
+{
+  BFD_ASSERT (subsec->encoding == OA_ENC_ULEB128);
+
+  obj_attr_v2_merge_result_t res;
+
+  res.val.uint = (ref->val.uint | rhs->val.uint);
+  res.merge = (res.val.uint != ref->val.uint);
+  res.reason = (!res.merge
+		? OAv2_MERGE_SAME_VALUE_AS_REF
+		: OAv2_MERGE_OK);
+
+  return res;
+}
+
+/* Merge policy String-ADD: concatenates strings from REF and RHS together
+   adding a '+' character in-between.  */
+static obj_attr_v2_merge_result_t
+obj_attr_v2_merge_ADD (const struct bfd_link_info *info ATTRIBUTE_UNUSED,
+		       const bfd *abfd ATTRIBUTE_UNUSED,
+		       const obj_attr_subsection_v2_t *subsec,
+		       const obj_attr_v2_t *ref, const obj_attr_v2_t *rhs,
+		       const obj_attr_v2_t *frozen ATTRIBUTE_UNUSED)
+{
+  BFD_ASSERT (subsec->encoding == OA_ENC_NTBS);
+
+  obj_attr_v2_merge_result_t res = {
+    .merge = false,
+    .val.string = NULL,
+    .reason = OAv2_MERGE_OK,
+  };
+
+  /* Note: FROZEN is unused for this "concatenating" merge because it is
+     either passed as RHS when coming from oav2_subsections_merge_frozen(),
+     or passed as FROZEN when coming from oav2_subsections_merge() and was
+     already merged.  */
+
+  /* REF and RHS have both a value.  Concatenate RHS to REF.  */
+  if (ref->val.string && rhs->val.string)
+    {
+      res.merge = true;
+      size_t ref_s_size = strlen (ref->val.string);
+      size_t rhs_s_size = strlen (rhs->val.string);
+      char *buffer = xmalloc (ref_s_size + 1 + rhs_s_size + 1);
+      res.val.string = buffer;
+      memcpy (buffer, ref->val.string, ref_s_size);
+      buffer += ref_s_size;
+      *buffer = '+';
+      ++buffer;
+      memcpy (buffer, rhs->val.string, rhs_s_size + 1);
+    }
+  /* REF has a value, but RHS does not.  Nothing to do.  */
+  else if (ref->val.string)
+    res.reason = OAv2_MERGE_SAME_VALUE_AS_REF;
+  /* No previous value in REF.  RHS is the new value.  */
+  else if (rhs->val.string)
+    {
+      /* This case could be optimized to avoid the dynamic allocation by moving
+	 the value from RHS to RES, but then, we need to distinguish the case
+	 when RHS and FROZEN are the same, and in this case, the value should
+	 not be moved but copied.  The little benefit is not worth the added
+	 complexity.  */
+      res.merge = true;
+      res.val.string = xstrdup (rhs->val.string);
+    }
+  return res;
+}
+
+/* Return the merge result between attributes LHS, RHS and FROZEN.
+   Note: FROZEN_IS_RHS indicates that FROZEN is in RHS's position.  This happens
+   when this function is called from oav2_subsections_merge_frozen().  When this
+   boolean is true, arguments are swapped to get the correct diagnostic messages
+   in case of issues.  */
+static obj_attr_v2_merge_result_t
+oav2_attr_merge (const struct bfd_link_info *info,
+		 const bfd *abfd,
+		 const obj_attr_subsection_v2_t *subsec,
+		 const obj_attr_v2_t *lhs, const obj_attr_v2_t *rhs,
+		 const obj_attr_v2_t *frozen, bool frozen_is_rhs)
+{
+  obj_attr_v2_merge_result_t res = {
+    .merge = false,
+    .val.uint = 0,
+    .reason = OAv2_MERGE_OK,
+  };
+
+  gnu_testing_merge_policy policy;
+
+  if (get_elf_backend_data (abfd)->obj_attr_v2_tag_merge != NULL)
+    {
+      /* If FROZEN is RHS (i.e. called from oav2_subsections_merge_frozen()), it
+	 means that the merged value of LHS (the REF) and FROZEN is going to
+	 be merged by the caller into LHS.  However, since diagnostic messages
+	 always point to RHS, we need to swap LHS and RHS, so that ABFD is not
+	 associated wrongly to FROZEN.  */
+      if (frozen_is_rhs)
+	{
+	  const obj_attr_v2_t *tmp = lhs;
+	  lhs = rhs;
+	  rhs = tmp;
+	}
+      res = get_elf_backend_data (abfd)->obj_attr_v2_tag_merge (info, abfd,
+	subsec, lhs, rhs, frozen);
+      if (res.merge || res.reason == OAv2_MERGE_SAME_VALUE_AS_REF)
+	return res;
+    }
+
+  /* Note for the future: the merge of generic object attributes should be
+     added here, between the architecture-specific merge, and the reserved GNU
+     testing namespace.  */
+
+  /* GNU testing merge policies are looked up last.  */
+  if ((res.reason == OAv2_MERGE_UNSUPPORTED || res.reason == OAv2_MERGE_OK)
+      && (policy = gnu_testing_merge_subsection (subsec->name))
+	  != SUBSECTION_TESTING_MERGE_UNSUPPORTED)
+    {
+      /* Only the first two attributes can be merged, others won't and will
+	 be discarded.  */
+      if (lhs->tag <= 1)
+	{
+	  if (policy == SUBSECTION_TESTING_MERGE_AND_POLICY)
+	    res = obj_attr_v2_merge_AND (info, abfd, subsec, lhs, rhs, frozen);
+	  else if (policy == SUBSECTION_TESTING_MERGE_OR_POLICY)
+	    res = obj_attr_v2_merge_OR (info, abfd, subsec, lhs, rhs, frozen);
+	  else if (policy == SUBSECTION_TESTING_MERGE_ADD_POLICY)
+	    res = obj_attr_v2_merge_ADD (info, abfd, subsec, lhs, rhs, frozen);
+
+	  return res;
+	}
+    }
+
+  /* Nothing matched, thus the merge of this tag is unsupported.  */
+  res.reason = OAv2_MERGE_UNSUPPORTED;
+  return res;
+}
+
+/* Append a new default-initialized attribute with the same key as AREF to the
+   given subsection.  */
+static void
+oav2_subsection_append_attr_default (const struct bfd_link_info *info,
+				     obj_attr_subsection_v2_t *s_abfd_missing,
+				     const obj_attr_v2_t *a_ref)
+{
+  obj_attr_v2_t *new_attr = oav2_attr_default (info, s_abfd_missing, a_ref);
+  LINKED_LIST_APPEND (obj_attr_v2_t) (s_abfd_missing, new_attr);
+}
+
+/* Return a new default-initialized subsection with the same parameters as
+   SUBSEC.  */
+static obj_attr_subsection_v2_t *
+oav2_subsection_default_new (const struct bfd_link_info *info,
+			     const obj_attr_subsection_v2_t *subsec)
+{
+  obj_attr_subsection_v2_t *new_subsec = bfd_elf_obj_attr_subsection_v2_init
+    (xstrdup (subsec->name), subsec->scope, subsec->optional, subsec->encoding);
+
+  for (const obj_attr_v2_t *attr = subsec->first;
+       attr != NULL;
+       attr = attr->next)
+    oav2_subsection_append_attr_default (info, new_subsec, attr);
+
+  return new_subsec;
+}
+
+/* Report missing required attribute with key TAG in subsection SREF.  */
+static void
+report_missing_required_obj_attr (const struct bfd_link_info *info,
+				  const bfd *abfd,
+				  const obj_attr_subsection_v2_t *s_ref,
+				  const obj_attr_tag_t tag)
+{
+  const struct elf_backend_data *bed = get_elf_backend_data (abfd);
+  const char *tag_s = _bfd_obj_attr_v2_tag_to_string (bed, s_ref->name, tag);
+  info->callbacks->einfo (
+    _("%X%pB: error: missing required object attribute '%s' in subsection '%s'\n"),
+    abfd, tag_s, s_ref->name);
+  free ((char *) tag_s);
+}
+
+/* Report required attribute A_ABFD mismatching with A_REF.  */
+static void
+report_mismatching_required_obj_attr (const struct bfd_link_info *info,
+				      const bfd *ref_bfd,
+				      const bfd *abfd,
+				      const obj_attr_subsection_v2_t *s_ref,
+				      const obj_attr_v2_t *a_ref,
+				      const obj_attr_v2_t *a_abfd)
+{
+  const struct elf_backend_data *bed = get_elf_backend_data (abfd);
+  const char *tag_s
+    = _bfd_obj_attr_v2_tag_to_string (bed, s_ref->name, a_ref->tag);
+  if (s_ref->encoding == OA_ENC_ULEB128)
+    {
+      info->callbacks->einfo (
+	_("%X%pB: error: mismatching value for required object attribute '%s' "
+	  "in subsection '%s': %#x\n"),
+	abfd, tag_s, s_ref->name, a_abfd->val.uint);
+      info->callbacks->info (
+	_("%pB: info: conflicting value '%#x' lives here\n"),
+	ref_bfd, a_ref->val.uint);
+    }
+  else
+    {
+      info->callbacks->einfo (
+	_("%X%pB: error: mismatching value for required object attribute '%s' "
+	  "in subsection '%s': \"%s\"\n"),
+	abfd, tag_s, s_ref->name, a_abfd->val.string);
+      info->callbacks->info (
+	_("%pB: info: conflicting value \"%s\" lives here\n"),
+	ref_bfd, a_ref->val.string);
+    }
+  free ((char *) tag_s);
+}
+
+/* Attempt a perfect match between subsections S_REF and S_ABFD, and reports
+   errors for any mismatch.  Return S_REF if the subsections match, NULL
+   otherwise.*/
+static obj_attr_subsection_v2_t *
+oav2_subsection_perfect_match (const struct bfd_link_info *info,
+			       const bfd *ref_bfd, const bfd *abfd,
+			       obj_attr_subsection_v2_t *s_ref,
+			       const obj_attr_subsection_v2_t *s_abfd)
+{
+  bool success = true;
+  const obj_attr_v2_t *a_ref = s_ref->first;
+  const obj_attr_v2_t *a_abfd = s_abfd->first;
+  while (a_ref != NULL && a_abfd != NULL)
+    {
+      if (a_ref->tag < a_abfd->tag)
+	{
+	  success = false;
+	  report_missing_required_obj_attr (info, abfd, s_ref, a_ref->tag);
+	  a_ref = a_ref->next;
+	}
+      else if (a_ref->tag > a_abfd->tag)
+	{
+	  success = false;
+	  report_missing_required_obj_attr (info, ref_bfd, s_ref, a_abfd->tag);
+	  a_abfd = a_abfd->next;
+	}
+      else
+	{
+	  if (s_ref->encoding == OA_ENC_ULEB128)
+	    {
+	      if (a_ref->val.uint != a_abfd->val.uint)
+		{
+		  success = false;
+		  report_mismatching_required_obj_attr (info, ref_bfd, abfd,
+		    s_ref, a_ref, a_abfd);
+		}
+	    }
+	  else if (s_ref->encoding == OA_ENC_NTBS)
+	    {
+	      if (strcmp (a_ref->val.string, a_abfd->val.string) != 0)
+		{
+		  success = false;
+		  report_mismatching_required_obj_attr (info, ref_bfd, abfd,
+		    s_ref, a_ref, a_abfd);
+		}
+	    }
+	  a_ref = a_ref->next;
+	  a_abfd = a_abfd->next;
+	}
+    }
+
+  for (; a_abfd != NULL; a_abfd = a_abfd->next)
+    {
+      success = false;
+      report_missing_required_obj_attr (info, ref_bfd, s_ref, a_abfd->tag);
+    }
+
+  for (; a_ref != NULL; a_ref = a_ref->next)
+    {
+      success = false;
+      report_missing_required_obj_attr (info, abfd, s_ref, a_ref->tag);
+    }
+
+  return success ? s_ref : NULL;
+}
+
+/* Search for the attribute with TAG into a list of attributes.  The attributes
+   list is assumed to be sorted.  Return the pointer to the attribute with TAG
+   if found, NULL otherwise.  */
+static obj_attr_v2_t *
+oav2_search_by_tag (obj_attr_v2_t *attr_first, obj_attr_tag_t tag)
+{
+  for (obj_attr_v2_t *attr = attr_first; attr != NULL; attr = attr->next)
+    {
+      if (attr->tag == tag)
+	return attr;
+      else if (attr->tag > tag)
+	break;
+    }
+  return NULL;
+}
+
+/* Merge optional subsection S_ABFD into S_REF.  S_FROZEN is used to report any
+   issue with the selected configuration, and to force the merge value to a
+   specific value if needed.  */
+static
+obj_attr_subsection_v2_t *
+handle_optional_subsection_merge (const struct bfd_link_info *info,
+				  const bfd *ref_bfd, const bfd *abfd,
+				  obj_attr_subsection_v2_t *s_ref,
+				  const obj_attr_subsection_v2_t *s_abfd,
+				  const obj_attr_subsection_v2_t *s_frozen)
+{
+  (void) info;
+  /* REF_BFD and ABFD are the same only when the call originated from
+     oav2_subsections_merge_frozen(), when FROZEN is merged into ABFD
+     (the future REF_BFD).  See detailed explanation in oav2_attr_merge().  */
+  bool frozen_is_abfd = (ref_bfd == abfd);
+  obj_attr_v2_t *a_ref = s_ref->first;
+  const obj_attr_v2_t *a_abfd = s_abfd->first;
+  obj_attr_v2_t *a_frozen_first = (s_frozen != NULL) ? s_frozen->first : NULL;
+  while (a_ref != NULL && a_abfd != NULL)
+    {
+      uint32_t searched_frozen_tag
+	= (a_ref->tag < a_abfd->tag
+	   ? a_ref->tag
+	   : a_abfd->tag);
+      obj_attr_v2_t *a_frozen
+	= oav2_search_by_tag (a_frozen_first, searched_frozen_tag);
+      if (a_frozen != NULL)
+	a_frozen_first = a_frozen;
+
+      if (a_ref->tag < a_abfd->tag)
+	{
+	  obj_attr_v2_t *a_default = oav2_attr_default (info, s_abfd, a_ref);
+	  obj_attr_v2_merge_result_t res
+	    = oav2_attr_merge (info, abfd, s_ref, a_ref, a_default, a_frozen,
+			       frozen_is_abfd);
+	  _bfd_elf_obj_attr_v2_free (a_default, s_ref->encoding);
+	  if (res.merge)
+	    a_ref->val = res.val;
+	  else if (res.reason == OAv2_MERGE_UNSUPPORTED)
+	    a_ref->status = obj_attr_v2_unknown;
+	  a_ref = a_ref->next;
+	}
+      else if (a_ref->tag > a_abfd->tag)
+	{
+	  obj_attr_v2_t *a_default = oav2_attr_default (info, s_ref, a_abfd);
+	  obj_attr_v2_merge_result_t res
+	    = oav2_attr_merge (info, abfd, s_ref, a_default, a_abfd, a_frozen,
+			       frozen_is_abfd);
+	  if (res.merge || res.reason == OAv2_MERGE_SAME_VALUE_AS_REF)
+	    {
+	      a_default->val = res.val;
+	      LINKED_LIST_INSERT_BEFORE (obj_attr_v2_t)
+		(s_ref, a_default, a_ref);
+	    }
+	  else
+	    _bfd_elf_obj_attr_v2_free (a_default, s_ref->encoding);
+	  a_abfd = a_abfd->next;
+	}
+      else
+	{
+	  obj_attr_v2_merge_result_t res
+	    = oav2_attr_merge (info, abfd, s_ref, a_ref, a_abfd, a_frozen,
+			       frozen_is_abfd);
+	  if (res.merge)
+	    a_ref->val = res.val;
+	  else if (res.reason == OAv2_MERGE_UNSUPPORTED)
+	    a_ref->status = obj_attr_v2_unknown;
+	  a_ref = a_ref->next;
+	  a_abfd = a_abfd->next;
+	}
+    }
+
+  for (; a_abfd != NULL; a_abfd = a_abfd->next)
+    {
+      obj_attr_v2_t *a_default = oav2_attr_default (info, s_ref, a_abfd);
+      obj_attr_v2_merge_result_t res
+	= oav2_attr_merge (info, abfd, s_ref, a_default, a_abfd, NULL, false);
+      if (res.merge || res.reason == OAv2_MERGE_SAME_VALUE_AS_REF)
+	{
+	  a_default->val = res.val;
+	  LINKED_LIST_APPEND (obj_attr_v2_t) (s_ref, a_default);
+	}
+      else
+	_bfd_elf_obj_attr_v2_free (a_default, s_ref->encoding);
+    }
+
+  for (; a_ref != NULL; a_ref = a_ref->next)
+    {
+      obj_attr_v2_t *a_frozen = oav2_search_by_tag (a_frozen_first, a_ref->tag);
+      if (a_frozen != NULL)
+	a_frozen_first = a_frozen;
+
+      obj_attr_v2_t *a_default = oav2_attr_default (info, s_abfd, a_ref);
+      obj_attr_v2_merge_result_t res
+	= oav2_attr_merge (info, abfd, s_ref, a_ref, a_default, a_frozen,
+			   frozen_is_abfd);
+      _bfd_elf_obj_attr_v2_free (a_default, s_ref->encoding);
+      if (res.merge)
+	a_ref->val = res.val;
+      else if (res.reason == OAv2_MERGE_UNSUPPORTED)
+	a_ref->status = obj_attr_v2_unknown;
+    }
+
+  return s_ref;
+}
+
+/* Merge case 1: S_ABFD and S_REF exists, so merge S_ABFD into S_REF.  */
+static obj_attr_subsection_v2_t *
+handle_subsection_merge (const struct bfd_link_info *info,
+			 const bfd *ref_bfd, const bfd *abfd,
+			 obj_attr_subsection_v2_t *s_ref,
+			 const obj_attr_subsection_v2_t *s_abfd,
+			 const obj_attr_subsection_v2_t *s_frozen)
+{
+  if (! s_ref->optional)
+    return oav2_subsection_perfect_match (info, ref_bfd, abfd, s_ref, s_abfd);
+  return handle_optional_subsection_merge
+    (info, ref_bfd, abfd, s_ref, s_abfd, s_frozen);
+}
+
+/* Merge case 2: S_ABFD does not exist, but S_REF does.
+   1. Create a new default-initialized S_ABFD.
+   2. Merge S_ABFD into S_REF.  */
+static bool
+handle_subsection_missing (const struct bfd_link_info *info,
+			   const bfd *ref_bfd, const bfd *abfd,
+			   obj_attr_subsection_v2_t *s_ref,
+			   const obj_attr_subsection_v2_t *s_frozen)
+{
+  if (! s_ref->optional)
+    {
+      info->callbacks->einfo
+	(_("%X%pB: error: missing required object attributes subsection %s\n"),
+	 abfd, s_ref->name);
+      return false;
+    }
+
+  /* Compute default values of the missing attributes in ABFD, but present in
+     REF, and merge ABFD's generated subsection with the one of REF.  */
+  obj_attr_subsection_v2_t *s_abfd = oav2_subsection_default_new (info, s_ref);
+  const obj_attr_subsection_v2_t *merged
+    = handle_subsection_merge (info, ref_bfd, abfd, s_ref, s_abfd, s_frozen);
+  _bfd_elf_obj_attr_subsection_v2_free (s_abfd);
+  return merged != NULL;
+}
+
+/* Merge case 3: S_ABFD does not have a S_REF equivalent.
+   1. Create a new default-initialized S_REF subsection.
+   2. Merge S_ABFD into S_REF.
+   3. Insert S_REF into REF before S_REF_NEXT.  */
+static bool
+handle_subsection_additional (const struct bfd_link_info *info,
+			      const bfd *ref_bfd, const bfd *abfd,
+			      obj_attr_subsection_v2_t *s_ref_next,
+			      const obj_attr_subsection_v2_t *s_abfd,
+			      const obj_attr_subsection_v2_t *s_frozen)
+{
+  if (! s_abfd->optional)
+    {
+      info->callbacks->einfo
+	(_("%X%pB: error: missing required object attributes subsection %s\n"),
+	 ref_bfd, s_abfd->name);
+      return false;
+    }
+
+  /* Compute default values of the missing attributes in REF, but present in
+     ABFD, and merge REF's generated subsection with the one of ABFD.  */
+  obj_attr_subsection_v2_t *s_ref = oav2_subsection_default_new (info, s_abfd);
+  obj_attr_subsection_v2_t *s_merged
+    = handle_subsection_merge (info, ref_bfd, abfd, s_ref, s_abfd, s_frozen);
+  if (s_merged != NULL)
+    {
+      LINKED_LIST_INSERT_BEFORE (obj_attr_subsection_v2_t)
+	(&elf_obj_attr_subsections (ref_bfd), s_merged, s_ref_next);
+    }
+  else
+    /* An issue occurred during the merge. s_ref won't be saved so it needs to
+       be freed.  */
+    _bfd_elf_obj_attr_subsection_v2_free (s_ref);
+  return (s_merged != NULL);
+}
+
+/* Check whether a subsection is known, and if so, whether the current
+   properties of the subsection match the expected ones.
+   Return True if the subsection is known, AND all the properties of the
+   subsection match the expected.  False otherwise.  */
+static bool
+oav2_subsection_match_known (const struct bfd_link_info *info,
+			     const bfd *abfd,
+			     const obj_attr_subsection_v2_t *subsec)
+{
+  const known_subsection_v2_t *subsec_info
+    = bfd_obj_attr_v2_identify_subsection (get_elf_backend_data (abfd),
+					   subsec->name);
+
+  if (subsec_info == NULL)
+    return false;
+
+  bool match = true;
+  if (subsec_info->encoding != subsec->encoding)
+    {
+      info->callbacks->einfo
+	(_("%X%pB: error: <%s> property of subsection '%s' was "
+	   "incorrectly set.  Got '%s', expected '%s'\n"),
+	 abfd, "encoding", subsec->name,
+	 bfd_oav2_encoding_to_string (subsec->encoding),
+	 bfd_oav2_encoding_to_string (subsec_info->encoding));
+      match = false;
+    }
+  if (subsec_info->optional != subsec->optional)
+    {
+      info->callbacks->einfo
+	(_("%X%pB: error: <%s> property of subsection '%s' was "
+	   "incorrectly set.  Got '%s', expected '%s'\n"),
+	 abfd, "comprehension", subsec->name,
+	 bfd_oav2_comprehension_to_string (subsec->optional),
+	 bfd_oav2_comprehension_to_string (subsec_info->optional));
+      match = false;
+    }
+  return match;
+}
+
+/* Check whether the properties of the subsections S1 and S2 match.
+   Return True if the properties match, False otherwise.  */
+static bool
+oav2_subsection_generic_params_match (const struct bfd_link_info *info,
+				      const bfd *f1, const bfd *f2,
+				      const obj_attr_subsection_v2_t *s1,
+				      const obj_attr_subsection_v2_t *s2)
+{
+  bool match = (s1->encoding == s2->encoding && s1->optional == s2->optional);
+  if (! match)
+    {
+      if (f1 != NULL)
+	{
+	  info->callbacks->einfo (
+	    _("%X%pB: error: mismatching properties of subsection '%s'\n"),
+	    f2, s1->name);
+	  info->callbacks->info (
+	     _("%pB: info: conflicting properties (%s, %s) live here\n"), f1,
+	     bfd_oav2_comprehension_to_string (s1->optional),
+	     bfd_oav2_encoding_to_string (s1->encoding));
+	  info->callbacks->info (
+	    _("info: (%s, %s) VS (%s, %s)\n"),
+	    bfd_oav2_comprehension_to_string (s2->optional),
+	    bfd_oav2_encoding_to_string (s2->encoding),
+	    bfd_oav2_comprehension_to_string (s1->optional),
+	    bfd_oav2_encoding_to_string (s1->encoding));
+	}
+      else
+	{
+	  info->callbacks->einfo (
+	    _("%X%pB: error: corrupted properties in subsection '%s'\n"),
+	    f2, s1->name);
+	  info->callbacks->info (
+	    _("info: (%s, %s) VS (%s, %s)\n"),
+	    bfd_oav2_comprehension_to_string (s2->optional),
+	    bfd_oav2_encoding_to_string (s2->encoding),
+	    bfd_oav2_comprehension_to_string (s1->optional),
+	    bfd_oav2_encoding_to_string (s1->encoding));
+	}
+    }
+  return match;
+}
+
+/* Check for mismatch between the parameters of subsections S1 and S2.
+   Return True if the parameters mismatch, False otherwise.
+   Note: F1 can be null when comparing FROZEN and the first object file used to
+   store the merge result.  If an error is reported, it means that one of the
+   definition of S1 or S2 is corrupted.  Most likely S2 because it is a user
+   input, or S1 if it is a programmation error of FROZEN.  In the second case,
+   please raise a bug to binutils bug tracker.  */
+static bool
+oav2_subsection_mismatching_params (const struct bfd_link_info *info,
+				    const bfd *f1, const bfd *f2,
+				    const obj_attr_subsection_v2_t *s1,
+				    const obj_attr_subsection_v2_t *s2)
+{
+  if (gnu_testing_namespace (s2->name))
+    return ! oav2_subsection_generic_params_match (info, f1, f2, s1, s2);
+
+  /* Check whether the subsection is known, and if so, match against the
+     expected properties.
+     Note: this piece of code must be guarded against gnu-testing subsections,
+     as oav2_subsection_match_known() looks up at the known subsections.
+     Since the "fictive" entry for gnu-testing known subsection has random
+     values for its encoding and optionality, it won't be able to detect
+     mismatching parameters correctly.  */
+  return ! oav2_subsection_match_known (info, f2, s2);
+}
+
 /* Merge object attributes from FROZEN into the object file ABFD.
    Note: this function is called only once before starting the merge process
    between the object files.  ABFD corresponds to the future REF_BFD, and is
@@ -1057,11 +1755,58 @@ oav2_subsections_merge_frozen (const struct bfd_link_info *info,
 			       const bfd *abfd,
 			       const obj_attr_subsection_list_t *frozen_cfg)
 {
-  (void) info;
-  (void) abfd;
-  (void) frozen_cfg;
-  /* TO IMPLEMENT */
-  return false;
+  const obj_attr_subsection_v2_t *s_frozen = frozen_cfg->first;
+  if (s_frozen == NULL)
+    return true;
+
+  bool success = true;
+
+  /* Note: all the handle_subsection_* functions call oav2_attr_merge() down the
+     stack.  Passing ABFD as REF_BFD allows to detect that this function is
+     the caller.  Then a special behavior in oav2_attr_merge() is triggered for
+     this specific use case, so that we can obtain the right diagnostics.  */
+
+  obj_attr_subsection_v2_t *s_abfd = elf_obj_attr_subsections (abfd).first;
+  while (s_frozen != NULL && s_abfd != NULL)
+    {
+      int cmp = strcmp (s_abfd->name, s_frozen->name);
+      if (cmp < 0) /* ABFD has a subsection that FROZEN doesn't have.  */
+	{
+	  /* No need to try to merge anything here.  */
+	  s_abfd = s_abfd->next;
+	}
+      else if (cmp > 0) /* FROZEN has a subsection that ABFD doesn't have.  */
+	{
+	  success &= handle_subsection_additional (info, abfd, abfd,
+	    s_abfd, s_frozen, s_frozen);
+	  s_frozen = s_frozen->next;
+	}
+      else /* Both ABFD and frozen have the subsection.  */
+	{
+	  bool mismatch = oav2_subsection_mismatching_params (info, NULL, abfd,
+	    s_frozen, s_abfd);
+	  success &= ! mismatch;
+	  if (mismatch)
+	    /* FROZEN cannot be corrupted as it is generated from the command
+	       line arguments.  If it is corrupted, it is a bug.  */
+	    s_abfd->status = obj_attr_subsection_v2_corrupted;
+	  else
+	    success &= (handle_subsection_merge (info, abfd, abfd,
+	      s_abfd, s_frozen, s_frozen) != NULL);
+
+	  s_abfd = s_abfd->next;
+	  s_frozen = s_frozen->next;
+	}
+    }
+
+  /* No need to go through the remaining sections of ABFD, only mismatches
+     against FROZEN are interesting.  */
+
+  for (; s_frozen != NULL; s_frozen = s_frozen->next)
+    success &= handle_subsection_additional (info, abfd, abfd,
+      elf_obj_attr_subsections (abfd).last, s_frozen, s_frozen);
+
+  return success;
 }
 
 /* Merge object attributes from object file ABFD and FROZEN_CFG into REF_BFD.  */
@@ -1070,12 +1815,144 @@ oav2_subsections_merge (const struct bfd_link_info *info,
 			const bfd *ref_bfd, bfd *abfd,
 			const obj_attr_subsection_list_t *frozen_cfg)
 {
-  (void) info;
-  (void) ref_bfd;
-  (void) abfd;
-  (void) frozen_cfg;
-  /* TO IMPLEMENT */
-  return false;
+  bool success = true;
+  obj_attr_subsection_list_t *abfd_subsecs = &elf_obj_attr_subsections (abfd);
+  obj_attr_subsection_list_t *ref_subsecs = &elf_obj_attr_subsections (ref_bfd);
+
+  obj_attr_subsection_v2_t *s_frozen_first = frozen_cfg->first;
+  obj_attr_subsection_v2_t *s_abfd = abfd_subsecs->first;
+  obj_attr_subsection_v2_t *s_ref = ref_subsecs->first;
+
+  while (s_abfd != NULL && s_ref != NULL)
+    {
+      int cmp = strcmp (s_ref->name, s_abfd->name);
+
+      if (cmp < 0) /* REF has a subsection that ABFD doesn't have.  */
+	{
+	  if (s_ref->status != obj_attr_subsection_v2_ok)
+	    {
+	      s_ref = s_ref->next;
+	      continue;
+	    }
+
+	  obj_attr_subsection_v2_t *s_frozen
+	    = bfd_obj_attr_subsection_v2_find_by_name (s_frozen_first,
+						       s_ref->name,
+						       true);
+
+	  /* Mismatching between REF and FROZEN already done in
+	     oav2_subsections_merge_frozen.  */
+	  success &= handle_subsection_missing (info, ref_bfd, abfd, s_ref,
+	    s_frozen);
+
+	  if (s_frozen != NULL)
+	    s_frozen_first = s_frozen->next;
+	  s_ref = s_ref->next;
+	}
+      else if (cmp > 0) /* ABFD has a subsection that REF doesn't have.  */
+	{
+	  if (s_abfd->status != obj_attr_subsection_v2_ok)
+	    {
+	      s_abfd = s_abfd->next;
+	      continue;
+	    }
+
+	  obj_attr_subsection_v2_t *s_frozen
+	    = bfd_obj_attr_subsection_v2_find_by_name (s_frozen_first,
+						       s_abfd->name,
+						       true);
+	  if (s_frozen != NULL)
+	    {
+	      /* Check any mismatch against ABFD and FROZEN.  */
+	      bool mismatch = oav2_subsection_mismatching_params (info, NULL,
+		abfd, s_frozen, s_abfd);
+	      success &= ! mismatch;
+	      if (mismatch)
+		s_abfd->status = obj_attr_subsection_v2_corrupted;
+	      else
+		success &= handle_subsection_additional (info, ref_bfd, abfd,
+		  s_ref, s_abfd, s_frozen);
+	    }
+	  else
+	    success &= handle_subsection_additional (info, ref_bfd, abfd, s_ref,
+	      s_abfd, NULL);
+
+	  if (s_frozen != NULL)
+	    s_frozen_first = s_frozen->next;
+	  s_abfd = s_abfd->next;
+	}
+      else /* Both REF and ABFD have the subsection.  */
+	{
+	  if (s_ref->status != obj_attr_subsection_v2_ok)
+	    {
+	      s_ref = s_ref->next;
+	      s_abfd = s_abfd->next;
+	      continue;
+	    }
+
+	  obj_attr_subsection_v2_t *s_frozen
+	    = bfd_obj_attr_subsection_v2_find_by_name (s_frozen_first,
+						       s_ref->name,
+						       true);
+
+	  bool mismatch = oav2_subsection_mismatching_params
+	    (info, ref_bfd, abfd, s_ref, s_abfd);
+	  success &= ! mismatch;
+	  if (mismatch)
+	    s_abfd->status = obj_attr_subsection_v2_corrupted;
+	  else
+	    success &= (handle_subsection_merge (info, ref_bfd, abfd, s_ref,
+						 s_abfd, s_frozen) != NULL);
+
+	  if (s_frozen != NULL)
+	    s_frozen_first = s_frozen->next;
+	  s_ref = s_ref->next;
+	  s_abfd = s_abfd->next;
+	}
+    }
+
+  for (; s_abfd != NULL; s_abfd = s_abfd->next)
+    {
+      if (s_abfd->status != obj_attr_subsection_v2_ok)
+	continue;
+
+      obj_attr_subsection_v2_t *s_frozen
+	= bfd_obj_attr_subsection_v2_find_by_name (s_frozen_first,
+						   s_abfd->name,
+						   true);
+      if (s_frozen != NULL)
+	{
+	  bool mismatch = oav2_subsection_mismatching_params (info, NULL, abfd,
+							      s_frozen, s_abfd);
+	  success &= ! mismatch;
+	  if (mismatch)
+	    s_abfd->status = obj_attr_subsection_v2_corrupted;
+	  else
+	    success &= handle_subsection_additional (info, ref_bfd, abfd,
+						     ref_subsecs->last, s_abfd,
+						     s_frozen);
+	}
+      else
+	success &= handle_subsection_additional (info, ref_bfd, abfd,
+						 ref_subsecs->last, s_abfd,
+						 NULL);
+    }
+
+  for (; s_ref != NULL; s_ref = s_ref->next)
+    {
+      if (s_ref->status != obj_attr_subsection_v2_ok)
+	continue;
+
+      obj_attr_subsection_v2_t *s_frozen
+	= bfd_obj_attr_subsection_v2_find_by_name (s_frozen_first,
+						   s_ref->name,
+						   true);
+      /* No need to check for matching parameters here as frozen has already
+	 been checked against ref.  */
+      success &= handle_subsection_missing (info, ref_bfd, abfd, s_ref, s_frozen);
+    }
+
+  return success;
 }
 
 /* Wrapper for the high-level logic of merging a single file.

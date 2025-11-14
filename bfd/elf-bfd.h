@@ -1673,6 +1673,15 @@ struct elf_backend_data
   /* The size of the array of known subsections.  */
   const size_t obj_attr_v2_known_subsections_size;
 
+  /* Get default value for an attribute.  */
+  bool (*obj_attr_v2_default_value) (const struct bfd_link_info *,
+    const obj_attr_info_t *, const obj_attr_subsection_v2_t *, obj_attr_v2_t *);
+
+  /* Merge a object attribute v2.  */
+  obj_attr_v2_merge_result_t (*obj_attr_v2_tag_merge)
+    (const struct bfd_link_info *, const bfd *, const obj_attr_subsection_v2_t *,
+     const obj_attr_v2_t *, const obj_attr_v2_t *, const obj_attr_v2_t *);
+
   /* This function determines the order in which any attributes are
      written.  It must be defined for input in the range
      LEAST_KNOWN_OBJ_ATTRIBUTE..NUM_KNOWN_OBJ_ATTRIBUTES-1 (this range

@@ -188,3 +188,26 @@ extern const char *
 _bfd_obj_attr_v2_tag_to_string (const struct elf_backend_data *,
 				const char *,
 				obj_attr_tag_t) ATTRIBUTE_HIDDEN;
+
+enum obj_attr_v2_merge_result_reason
+{
+  /* Default: everything is ok.  */
+  OAv2_MERGE_OK = 0,
+  /* The result value of the merge is the same as REF.  */
+  OAv2_MERGE_SAME_VALUE_AS_REF,
+  /* No implementation of a merge for this attribute exists.  */
+  OAv2_MERGE_UNSUPPORTED,
+  /* The merge failed, an error message should be logged.  */
+  OAv2_MERGE_ERROR,
+};
+typedef struct {
+  /* Should the merge be performed ?  */
+  bool merge;
+  /* The merged value.  */
+  union obj_attr_value_v2 val;
+  /* If the merge should not be performed, give the reason to differentiate
+     error cases from normal cases.  Typically, if REF already is set to the
+     same value as the merged result, no merge is needed, and this is not an
+     error.  */
+  enum obj_attr_v2_merge_result_reason reason;
+} obj_attr_v2_merge_result_t;
