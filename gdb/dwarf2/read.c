@@ -922,7 +922,7 @@ static struct type *set_die_type (struct die_info *, struct type *,
 static void load_full_comp_unit (dwarf2_per_cu *per_cu,
 				 dwarf2_per_objfile *per_objfile,
 				 bool skip_partial,
-				 enum language pretend_language);
+				 std::optional<language> pretend_language);
 
 static void process_full_comp_unit (dwarf2_cu *cu);
 
@@ -1581,7 +1581,7 @@ load_cu (dwarf2_per_cu *per_cu, dwarf2_per_objfile *per_objfile,
       sig_type != nullptr)
     load_full_type_unit (sig_type, per_objfile);
   else
-    load_full_comp_unit (per_cu, per_objfile, skip_partial, language_minimal);
+    load_full_comp_unit (per_cu, per_objfile, skip_partial, std::nullopt);
 
   dwarf2_cu *cu = per_objfile->get_cu (per_cu);
   if (cu == nullptr)
@@ -1851,7 +1851,7 @@ dw2_get_file_names (dwarf2_per_cu *this_cu, dwarf2_per_objfile *per_objfile)
     return this_cu->file_names;
 
   cutu_reader reader (*this_cu, *per_objfile, nullptr,
-		      per_objfile->get_cu (this_cu), true, language_minimal,
+		      per_objfile->get_cu (this_cu), true, std::nullopt,
 		      nullptr);
   if (reader.is_dummy ())
     {
@@ -2910,7 +2910,7 @@ void
 cutu_reader::init_tu_and_read_dwo_dies (dwarf2_per_cu *this_cu,
 					dwarf2_per_objfile *per_objfile,
 					dwarf2_cu *existing_cu,
-					enum language pretend_language)
+					std::optional<language> pretend_language)
 {
   signatured_type *sig_type = this_cu->as_signatured_type ();
 
@@ -2960,7 +2960,7 @@ cutu_reader::cutu_reader (dwarf2_per_cu &this_cu,
 			  const struct abbrev_table *abbrev_table,
 			  dwarf2_cu *existing_cu,
 			  bool skip_partial,
-			  enum language pretend_language,
+			  std::optional<language> pretend_language,
 			  const abbrev_table_cache *abbrev_cache)
 {
   struct objfile *objfile = per_objfile.objfile;
@@ -3177,7 +3177,8 @@ cutu_reader::release_cu ()
 
 cutu_reader::cutu_reader (dwarf2_per_cu &this_cu,
 			  dwarf2_per_objfile &per_objfile,
-			  language pretend_language, dwarf2_cu &parent_cu,
+			  std::optional<language> pretend_language,
+			  dwarf2_cu &parent_cu,
 			  dwo_file &dwo_file)
 {
   struct objfile *objfile = per_objfile.objfile;
@@ -3436,7 +3437,7 @@ cooked_index_worker_debug_info::process_unit
 	= storage->get_abbrev_table_cache ();
       auto new_reader = std::make_unique<cutu_reader> (*this_cu, *per_objfile,
 						       nullptr, nullptr, false,
-						       language_minimal,
+						       std::nullopt,
 						       &abbrev_table_cache);
 
       if (new_reader->is_dummy ())
@@ -3563,7 +3564,7 @@ cooked_index_worker_debug_info::process_type_units
 
       cutu_reader reader (*tu.sig_type, *per_objfile,
 			  abbrev_table.get (), nullptr, false,
-			  language_minimal);
+			  std::nullopt);
       if (!reader.is_dummy ())
 	storage->catch_error ([&] ()
 	  {
@@ -3597,7 +3598,7 @@ cooked_index_worker_debug_info::process_skeletonless_type_unit
 
   /* This does the job that build_type_psymtabs would have done.  */
   cutu_reader reader (**sig_type_it, *per_objfile, nullptr, nullptr, false,
-		      language_minimal);
+		      std::nullopt);
   if (!reader.is_dummy ())
     process_type_unit (&reader, storage);
 }
@@ -4175,7 +4176,8 @@ process_queue (dwarf2_per_objfile *per_objfile)
 
 static void
 load_full_comp_unit (dwarf2_per_cu *this_cu, dwarf2_per_objfile *per_objfile,
-		     bool skip_partial, enum language pretend_language)
+		     bool skip_partial,
+		     std::optional<language> pretend_language)
 {
   gdb_assert (!this_cu->is_debug_types ());
   gdb_assert (per_objfile->get_cu (this_cu) == nullptr);
@@ -6359,7 +6361,7 @@ cutu_reader::create_dwo_unit_hash_tables (dwo_file &dwo_file,
 	  /* The length of the CU is not necessary.  */
 	  dwarf2_per_cu per_cu (&per_bfd, &section, sect_off, length,
 				false /* is_dwz */);
-	  cutu_reader reader (per_cu, per_objfile, language_minimal,
+	  cutu_reader reader (per_cu, per_objfile, std::nullopt,
 			      skeleton_cu, dwo_file);
 
 	  std::optional<ULONGEST> opt_signature
@@ -15003,7 +15005,7 @@ dwarf2_read_addr_index (dwarf2_per_cu *per_cu, dwarf2_per_objfile *per_objfile,
   else
     {
       cutu_reader reader (*per_cu, *per_objfile, nullptr, nullptr, false,
-			  language_minimal);
+			  std::nullopt);
       addr_base = reader.cu ()->addr_base;
       addr_size = reader.cu ()->header.addr_size;
     }
@@ -17604,7 +17606,7 @@ read_signatured_type (signatured_type *sig_type,
   gdb_assert (per_objfile->get_cu (sig_type) == nullptr);
 
   cutu_reader reader (*sig_type, *per_objfile, nullptr, nullptr, false,
-		      language_minimal);
+		      std::nullopt);
 
   if (!reader.is_dummy ())
     {
@@ -18043,20 +18045,23 @@ dwarf2_symbol_mark_computed (const struct attribute *attr, struct symbol *sym,
 void
 dwarf2_per_cu::set_lang (enum language lang, dwarf_source_language dw_lang)
 {
-  if (unit_type () == DW_UT_partial)
-    return;
-
-  /* Set if not set already.  */
+  packed<language, LANGUAGE_BYTES> expected1 = language_unknown;
+  packed<language, LANGUAGE_BYTES> expected2 = language_minimal;
   packed<language, LANGUAGE_BYTES> new_value = lang;
-  packed<language, LANGUAGE_BYTES> old_value = m_lang.exchange (new_value);
-  /* If already set, verify that it's the same value.  */
-  gdb_assert (old_value == language_unknown
-	      || old_value == language_minimal
-	      || old_value == lang);
 
+  /* In practice it is probably fine if different CUs using
+     DW_TAG_imported_unit pass different languages, because there are
+     language differences that make unbridled DIE sharing unlikely.
+     Once a non-minimal/unknown language has been set, we just keep
+     it.  */
+  if (!m_lang.compare_exchange_strong (expected1, new_value))
+    m_lang.compare_exchange_strong (expected2, new_value);
+
+  /* A similar consideration applies to the DWARF language, but here
+     there's only a single unknown value.  */
+  packed<dwarf_source_language, 2> old_dw = (dwarf_source_language) 0;
   packed<dwarf_source_language, 2> new_dw = dw_lang;
-  packed<dwarf_source_language, 2> old_dw = m_dw_lang.exchange (new_dw);
-  gdb_assert (old_dw == 0 || old_dw == dw_lang);
+  m_dw_lang.compare_exchange_strong (old_dw, new_dw);
 }
 
 /* See read.h.  */
@@ -18070,7 +18075,7 @@ dwarf2_per_cu::ensure_lang (dwarf2_per_objfile *per_objfile)
   /* Constructing this object will set the language as a side
      effect.  */
   cutu_reader reader (*this, *per_objfile, nullptr, per_objfile->get_cu (this),
-		      true, language_minimal, nullptr);
+		      true, std::nullopt, nullptr);
 }
 
 /* Return the unit from ALL_UNITS that potentially contains TARGET.
@@ -18151,7 +18156,7 @@ dwarf2_find_containing_unit (const section_and_offset &target,
      something more lightweight that has the same effect.  */
   if (!per_cu->length_is_set ())
     cutu_reader (*per_cu, *per_objfile, nullptr, nullptr, false,
-		 language_minimal);
+		 std::nullopt);
 
   /* Now we can check if the target section offset is within PER_CU's range.  */
   if (target.offset < per_cu->sect_off ()
@@ -18253,16 +18258,17 @@ run_test ()
 
 void
 cutu_reader::prepare_one_comp_unit (struct dwarf2_cu *cu,
-				    enum language pretend_language)
+				    std::optional<language> pretend_language)
 {
   struct attribute *attr;
 
   if (m_top_level_die == nullptr)
     {
+      language lang = pretend_language.value_or (language_minimal);
       cu->set_producer (nullptr);
-      cu->language_defn = language_def (pretend_language);
+      cu->language_defn = language_def (lang);
       cu->per_cu->set_unit_type (DW_UT_compile);
-      cu->per_cu->set_lang (pretend_language, (dwarf_source_language) 0);
+      cu->per_cu->set_lang (lang, (dwarf_source_language) 0);
       return;
     }
 
@@ -18270,7 +18276,7 @@ cutu_reader::prepare_one_comp_unit (struct dwarf2_cu *cu,
 
   /* Set the language we're debugging.  */
   attr = dwarf2_attr (m_top_level_die, DW_AT_language, cu);
-  enum language lang;
+  std::optional<language> lang;
   dwarf_source_language dw_lang = (dwarf_source_language) 0;
   if (cu->producer_is_xlc_opencl ())
     {
@@ -18299,10 +18305,12 @@ cutu_reader::prepare_one_comp_unit (struct dwarf2_cu *cu,
       else
 	lang = language_minimal;
     }
+  else if (m_top_level_die->tag != DW_TAG_partial_unit)
+    lang = pretend_language.value_or (language_minimal);
   else
     lang = pretend_language;
 
-  cu->language_defn = language_def (lang);
+  cu->language_defn = language_def (lang.value_or (language_minimal));
 
   /* Initialize the lto_artificial field.  */
   attr = dwarf2_attr (m_top_level_die, DW_AT_name, cu);
@@ -18329,7 +18337,10 @@ cutu_reader::prepare_one_comp_unit (struct dwarf2_cu *cu,
 	     sect_offset_str (cu->per_cu->sect_off ()));
     }
 
-  cu->per_cu->set_lang (lang, dw_lang);
+  /* If the caller didn't really know what language to use, and there
+     is no local language, then don't bother setting the language.  */
+  if (lang.has_value ())
+    cu->per_cu->set_lang (*lang, dw_lang);
 }
 
 /* See read.h.  */

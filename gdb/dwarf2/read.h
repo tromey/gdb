@@ -1019,12 +1019,12 @@ public:
 	       const struct abbrev_table *abbrev_table,
 	       dwarf2_cu *existing_cu,
 	       bool skip_partial,
-	       enum language pretend_language,
+	       std::optional<language> pretend_language,
 	       const abbrev_table_cache *abbrev_cache = nullptr);
 
   cutu_reader (dwarf2_per_cu &this_cu,
 	       dwarf2_per_objfile &per_objfile,
-	       enum language pretend_language,
+	       std::optional<language> pretend_language,
 	       struct dwarf2_cu &parent_cu,
 	       struct dwo_file &dwo_file);
 
@@ -1090,14 +1090,14 @@ private:
   void init_tu_and_read_dwo_dies (dwarf2_per_cu *this_cu,
 				  dwarf2_per_objfile *per_objfile,
 				  dwarf2_cu *existing_cu,
-				  enum language pretend_language);
+				  std::optional<language> pretend_language);
 
   void read_cutu_die_from_dwo (dwarf2_cu *cu, dwo_unit *dwo_unit,
 			       die_info *stub_comp_unit_die,
 			       const char *stub_comp_dir);
 
   void prepare_one_comp_unit (struct dwarf2_cu *cu,
-			      enum language pretend_language);
+			      std::optional<language> pretend_language);
 
   /* Helpers to build the in-memory DIE tree.  */
 
