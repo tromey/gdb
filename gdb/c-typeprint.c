@@ -1288,6 +1288,83 @@ c_type_print_base_struct_union (struct type *type, struct ui_file *stream,
     }
 }
 
+/* Helper for 'c_type_print_base' that handles enums.
+   For a description of the arguments, see 'c_type_print_base'.  */
+
+static void
+c_type_print_base_enum (struct type *type, struct ui_file *stream,
+			int show, int level,
+			enum language language,
+			const struct type_print_options *flags,
+			struct print_offset_data *podata)
+{
+  c_type_print_modifier (type, stream, 0, 1, language);
+  gdb_printf (stream, "enum ");
+  if (type->is_declared_class ())
+    gdb_printf (stream, "class ");
+  /* Print the tag name if it exists.
+     The aCC compiler emits a spurious
+     "{unnamed struct}"/"{unnamed union}"/"{unnamed enum}"
+     tag for unnamed struct/union/enum's, which we don't
+     want to print.  */
+  if (type->name () != NULL
+      && !startswith (type->name (), "{unnamed"))
+    {
+      print_name_maybe_canonical (type->name (), flags, stream);
+      if (show > 0)
+	gdb_puts (" ", stream);
+    }
+
+  stream->wrap_here (4);
+  if (show < 0)
+    {
+      /* If we just printed a tag name, no need to print anything
+	 else.  */
+      if (type->name () == NULL)
+	gdb_printf (stream, "{...}");
+    }
+  else if (show > 0 || type->name () == NULL)
+    {
+      LONGEST lastval = 0;
+
+      /* We can't handle this case perfectly, as DWARF does not
+	 tell us whether or not the underlying type was specified
+	 in the source (and other debug formats don't provide this
+	 at all).  We choose to print the underlying type, if it
+	 has a name, when in C++ on the theory that it's better to
+	 print too much than too little; but conversely not to
+	 print something egregiously outside the current
+	 language's syntax.  */
+      if (language == language_cplus && type->target_type () != NULL)
+	{
+	  struct type *underlying = check_typedef (type->target_type ());
+
+	  if (underlying->name () != NULL)
+	    gdb_printf (stream, ": %s ", underlying->name ());
+	}
+
+      gdb_printf (stream, "{");
+      int len = type->num_fields ();
+      for (int i = 0; i < len; i++)
+	{
+	  QUIT;
+	  if (i)
+	    gdb_printf (stream, ", ");
+	  stream->wrap_here (4);
+	  fputs_styled (type->field (i).name (),
+			variable_name_style.style (), stream);
+	  if (lastval != type->field (i).loc_enumval ())
+	    {
+	      gdb_printf (stream, " = %s",
+			  plongest (type->field (i).loc_enumval ()));
+	      lastval = type->field (i).loc_enumval ();
+	    }
+	  lastval++;
+	}
+      gdb_printf (stream, "}");
+    }
+}
+
 /* Print the name of the type (or the ultimate pointer target,
    function value or array element), or the description of a structure
    or union.
@@ -1313,9 +1390,6 @@ c_type_print_base_1 (struct type *type, struct ui_file *stream,
 		     const struct type_print_options *flags,
 		     struct print_offset_data *podata)
 {
-  int i;
-  int len;
-
   QUIT;
 
   if (type == NULL)
@@ -1395,71 +1469,8 @@ c_type_print_base_1 (struct type *type, struct ui_file *stream,
       break;
 
     case TYPE_CODE_ENUM:
-      c_type_print_modifier (type, stream, 0, 1, language);
-      gdb_printf (stream, "enum ");
-      if (type->is_declared_class ())
-	gdb_printf (stream, "class ");
-      /* Print the tag name if it exists.
-	 The aCC compiler emits a spurious
-	 "{unnamed struct}"/"{unnamed union}"/"{unnamed enum}"
-	 tag for unnamed struct/union/enum's, which we don't
-	 want to print.  */
-      if (type->name () != NULL
-	  && !startswith (type->name (), "{unnamed"))
-	{
-	  print_name_maybe_canonical (type->name (), flags, stream);
-	  if (show > 0)
-	    gdb_puts (" ", stream);
-	}
-
-      stream->wrap_here (4);
-      if (show < 0)
-	{
-	  /* If we just printed a tag name, no need to print anything
-	     else.  */
-	  if (type->name () == NULL)
-	    gdb_printf (stream, "{...}");
-	}
-      else if (show > 0 || type->name () == NULL)
-	{
-	  LONGEST lastval = 0;
-
-	  /* We can't handle this case perfectly, as DWARF does not
-	     tell us whether or not the underlying type was specified
-	     in the source (and other debug formats don't provide this
-	     at all).  We choose to print the underlying type, if it
-	     has a name, when in C++ on the theory that it's better to
-	     print too much than too little; but conversely not to
-	     print something egregiously outside the current
-	     language's syntax.  */
-	  if (language == language_cplus && type->target_type () != NULL)
-	    {
-	      struct type *underlying = check_typedef (type->target_type ());
-
-	      if (underlying->name () != NULL)
-		gdb_printf (stream, ": %s ", underlying->name ());
-	    }
-
-	  gdb_printf (stream, "{");
-	  len = type->num_fields ();
-	  for (i = 0; i < len; i++)
-	    {
-	      QUIT;
-	      if (i)
-		gdb_printf (stream, ", ");
-	      stream->wrap_here (4);
-	      fputs_styled (type->field (i).name (),
-			    variable_name_style.style (), stream);
-	      if (lastval != type->field (i).loc_enumval ())
-		{
-		  gdb_printf (stream, " = %s",
-			      plongest (type->field (i).loc_enumval ()));
-		  lastval = type->field (i).loc_enumval ();
-		}
-	      lastval++;
-	    }
-	  gdb_printf (stream, "}");
-	}
+      c_type_print_base_enum (type, stream, show, level,
+			      language, flags, podata);
       break;
 
     case TYPE_CODE_FLAGS:
@@ -1488,8 +1499,8 @@ c_type_print_base_1 (struct type *type, struct ui_file *stream,
 			      level + 4, "",
 			      metadata_style.style ().ptr (), nullptr);
 	      }
-	    len = type->num_fields ();
-	    for (i = 0; i < len; i++)
+	    int len = type->num_fields ();
+	    for (int i = 0; i < len; i++)
 	      {
 		QUIT;
 		print_spaces (level + 4, stream);
