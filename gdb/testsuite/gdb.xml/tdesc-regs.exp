@@ -212,7 +212,12 @@ gdb_test "ptype \$mixed_flags" \
 	"    bool C @4;" \
 	"    uint32_t D @5;" \
 	"    uint32_t @6-7;" \
-	"    enum Z_values {yes = 1, no = 0, maybe = 2, so} Z @8-9;" \
+	"    enum Z_values {" \
+	"        yes = 1," \
+	"        no = 0," \
+	"        maybe = 2," \
+	"        so = 3" \
+	"    } Z @8-9;" \
 	"}"]
 # Reggroups should have at least general and the extra foo group
 gdb_test "maintenance print reggroups" \

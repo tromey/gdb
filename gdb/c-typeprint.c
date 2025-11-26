@@ -1325,8 +1325,6 @@ c_type_print_base_enum (struct type *type, struct ui_file *stream,
     }
   else if (show > 0 || type->name () == NULL)
     {
-      LONGEST lastval = 0;
-
       /* We can't handle this case perfectly, as DWARF does not
 	 tell us whether or not the underlying type was specified
 	 in the source (and other debug formats don't provide this
@@ -1343,25 +1341,27 @@ c_type_print_base_enum (struct type *type, struct ui_file *stream,
 	    gdb_printf (stream, ": %s ", underlying->name ());
 	}
 
-      gdb_printf (stream, "{");
+      gdb_printf (stream, "{\n");
       int len = type->num_fields ();
-      for (int i = 0; i < len; i++)
+      if (len == 0)
+	gdb_printf (stream, "%*s%ps", level + 4, "",
+		    styled_string (metadata_style.style (),
+				   "<no enum values>"));
+      else
 	{
-	  QUIT;
-	  if (i)
-	    gdb_printf (stream, ", ");
-	  stream->wrap_here (4);
-	  fputs_styled (type->field (i).name (),
-			variable_name_style.style (), stream);
-	  if (lastval != type->field (i).loc_enumval ())
+	  for (int i = 0; i < len; i++)
 	    {
+	      QUIT;
+	      if (i != 0)
+		gdb_printf (stream, ",\n");
+	      gdb_printf (stream, "%*s%ps", level + 4, "",
+			  styled_string (variable_name_style.style (),
+					 type->field (i).name ()));
 	      gdb_printf (stream, " = %s",
 			  plongest (type->field (i).loc_enumval ()));
-	      lastval = type->field (i).loc_enumval ();
 	    }
-	  lastval++;
 	}
-      gdb_printf (stream, "}");
+      gdb_printf (stream, "\n%*s}", level, "");
     }
 }
 

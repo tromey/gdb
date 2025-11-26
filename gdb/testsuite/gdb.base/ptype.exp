@@ -34,13 +34,27 @@ set gcc_compiled [is_c_compiler_gcc]
 # with stabs compilers which fail to use a nameless stab (such as
 # pre-2.4.5 versions of gcc and most non-gcc compilers).
 
+
+set re1 [multi_line \
+    "type = enum primary1_tag {" \
+    "    red1 = 0," \
+    "    green1 = 1," \
+    "    blue1 = 2" \
+    "}.*$gdb_prompt $"]
+set re2 [multi_line \
+    "type = enum {" \
+    "    red1 = 0," \
+    "    green1 = 1," \
+    "    blue1 = 2" \
+    "}.*$gdb_prompt $"]
+
 gdb_test_multiple "ptype red1" "ptype unnamed enumeration member" {
-    -re "type = enum primary1_tag \{red1, green1, blue1\}.*$gdb_prompt $" {
+    -re $re1 {
 	# The workaround is in effect.  As this is a compiler, not GDB,
 	# bug, we'll make it a PASS but perhaps it should be an XFAIL.
 	pass "ptype unnamed enumeration member (worked around)"
     }
-    -re "type = enum \{red1, green1, blue1\}.*$gdb_prompt $" {
+    -re $re2 {
 	pass "ptype unnamed enumeration member"
     }
 }
@@ -118,15 +132,32 @@ gdb_test "ptype union tu_link" \
 # test ptype command with enums
 #
 
-gdb_test "ptype primary" "type = enum .red, green, blue.*" "ptype unnamed enumeration"
+gdb_test "ptype primary" \
+    [multi_line \
+	"type = enum {" \
+	"    red = 0," \
+	"    green = 1," \
+	"    blue = 2" \
+	"}"] "ptype unnamed enumeration"
 
-gdb_test "ptype enum colors" "type = enum colors \{yellow, purple, pink\}.*" "ptype named enumeration"
+gdb_test "ptype enum colors" \
+    [multi_line \
+	"type = enum colors {" \
+	"    yellow = 0," \
+	"    purple = 1," \
+	"    pink = 2" \
+	"}"] "ptype named enumeration"
 
 
 #
 # test ptype command with enums as typedef
 #
-gdb_test "ptype boolean" "type = enum (boolean |)\{FALSE, TRUE\}.*" "ptype unnamed typedef'd enumeration"
+gdb_test "ptype boolean" \
+    [multi_line \
+	"type = enum (boolean |){" \
+	"    FALSE = 0," \
+	"    TRUE = 1" \
+	"}"] "ptype unnamed typedef'd enumeration"
 
 # And check that whatis shows the name, not "enum {...}".
 # This probably fails for all DWARF 1 cases, so assume so for now. -fnf
@@ -157,19 +188,44 @@ gdb_test "ptype t_union3" "type = union (t_union3 |)\{.*
  *double v_double_member;.*
  *int v_int_member;.*\}" "printing typedef'd union"
 
-gdb_test "ptype enum bvals" "type = enum bvals \{my_false, my_true\}.*" "ptype named typedef'd enumf'd enum"
+gdb_test "ptype enum bvals" \
+    [multi_line \
+	"type = enum bvals {" \
+	"    my_false = 0," \
+	"    my_true = 1" \
+	"}"] "ptype named typedef'd enumf'd enum"
 
 #
 # test ptype command with out-of-order enum values
 #
-gdb_test "ptype enum misordered" "type = enum misordered \{two = 2, one = 1, zero = 0, three = 3\}.*" "ptype misordered enumeration"
+gdb_test "ptype enum misordered" \
+    [multi_line \
+	"type = enum misordered {" \
+	"    two = 2," \
+	"    one = 1," \
+	"    zero = 0," \
+	"    three = 3" \
+	"}"] "ptype misordered enumeration"
 
 #
 # test ptype command with a named enum's value
 #
-gdb_test "ptype three" "type = enum misordered \{two = 2, one = 1, zero = 0, three = 3\}.*" "ptype named enumeration member"
+gdb_test "ptype three" \
+    [multi_line \
+	"type = enum misordered {" \
+	"    two = 2," \
+	"    one = 1," \
+	"    zero = 0," \
+	"    three = 3" \
+	"}"] "ptype named enumeration member"
 
-gdb_test "ptype red" "type = enum \{red, green, blue\}.*" "ptype unnamed enumeration member #2"
+gdb_test "ptype red" \
+    [multi_line \
+	"type = enum {" \
+	"    red = 0," \
+	"    green = 1," \
+	"    blue = 2" \
+	"}"] "ptype unnamed enumeration member #2"
 
 #
 # test ptype command with basic C types
