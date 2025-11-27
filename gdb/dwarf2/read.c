@@ -6261,27 +6261,13 @@ dwarf2_cu::setup_type_unit_groups (struct die_info *die)
 	= XOBNEWVEC (&cust->objfile ()->objfile_obstack,
 		     struct symtab *, line_header->file_names_size ());
 
+      this->create_subfiles_and_symtabs ();
+
       auto &file_names = line_header->file_names ();
       for (i = 0; i < file_names.size (); ++i)
 	{
 	  file_entry &fe = file_names[i];
-	  dwarf2_start_subfile (*this, fe);
-	  buildsym_compunit *b = get_builder ();
-	  subfile *sf = b->get_current_subfile ();
-
-	  if (sf->symtab == nullptr)
-	    {
-	      /* NOTE: start_subfile will recognize when it's been
-		 passed a file it has already seen.  So we can't
-		 assume there's a simple mapping from
-		 cu->line_header->file_names to subfiles, plus
-		 cu->line_header->file_names may contain dups.  */
-	      const char *name = sf->name.c_str ();
-	      const char *name_for_id = sf->name_for_id.c_str ();
-	      sf->symtab = allocate_symtab (cust, name, name_for_id);
-	    }
-
-	  fe.symtab = b->get_current_subfile ()->symtab;
+	  gdb_assert (fe.symtab != nullptr);
 	  tug_unshare->symtabs[i] = fe.symtab;
 	}
     }

@@ -699,18 +699,5 @@ dwarf_decode_lines (struct dwarf2_cu *cu, unrelocated_addr lowpc,
   /* Make sure a symtab is created for every file, even files
      which contain only variables (i.e. no code with associated
      line numbers).  */
-  buildsym_compunit *builder = cu->get_builder ();
-  struct compunit_symtab *cust = builder->get_compunit_symtab ();
-
-  for (file_entry &fe : cu->line_header->file_names ())
-    {
-      dwarf2_start_subfile (*cu, fe);
-      subfile *sf = builder->get_current_subfile ();
-
-      if (sf->symtab == nullptr)
-	sf->symtab = allocate_symtab (cust, sf->name.c_str (),
-				      sf->name_for_id.c_str ());
-
-      fe.symtab = sf->symtab;
-    }
+  cu->create_subfiles_and_symtabs ();
 }

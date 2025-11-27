@@ -23,6 +23,7 @@
 #include "filenames.h"
 #include "producer.h"
 #include "gdbsupport/pathstuff.h"
+#include "dwarf2/line-header.h"
 
 /* Initialize dwarf2_cu to read PER_CU, in the context of PER_OBJFILE.  */
 
@@ -237,4 +238,25 @@ dwarf2_cu::set_producer (const char *producer)
     }
 
   m_checked_producer = true;
+}
+
+/* See dwarf2/cu.h.  */
+
+void
+dwarf2_cu::create_subfiles_and_symtabs ()
+{
+  buildsym_compunit *builder = this->get_builder ();
+  compunit_symtab *cust = builder->get_compunit_symtab ();
+
+  for (file_entry &fe : this->line_header->file_names ())
+    {
+      dwarf2_start_subfile (*this, fe);
+      subfile *sf = builder->get_current_subfile ();
+
+      if (sf->symtab == nullptr)
+	sf->symtab = allocate_symtab (cust, sf->name.c_str (),
+				      sf->name_for_id.c_str ());
+
+      fe.symtab = sf->symtab;
+    }
 }

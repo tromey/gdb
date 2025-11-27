@@ -72,6 +72,9 @@ struct dwarf2_cu
 						 const char *comp_dir,
 						 CORE_ADDR low_pc);
 
+  /* Create a subfile and symtab for every entry in the line_header.  */
+  void create_subfiles_and_symtabs ();
+
   /* Reset the builder.  */
   void reset_builder () { m_builder.reset (); }
 
