@@ -481,12 +481,12 @@ lnp_state_machine::check_line_address (struct dwarf2_cu *cu,
 }
 
 /* Subroutine of dwarf_decode_lines to simplify it.
-   Process the line number information in LH.  */
+   Process the line number information in CU::line_header.  */
 
 static void
-dwarf_decode_lines_1 (struct line_header *lh, struct dwarf2_cu *cu,
-		      unrelocated_addr lowpc)
+dwarf_decode_lines_1 (struct dwarf2_cu *cu, unrelocated_addr lowpc)
 {
+  struct line_header *lh = cu->line_header;
   const gdb_byte *line_ptr, *extended_end;
   const gdb_byte *line_end;
   unsigned int bytes_read, extended_len;
@@ -694,11 +694,11 @@ dwarf_decode_lines_1 (struct line_header *lh, struct dwarf2_cu *cu,
 /* See dwarf2/line-program.h.  */
 
 void
-dwarf_decode_lines (struct line_header *lh, struct dwarf2_cu *cu,
-		    unrelocated_addr lowpc, bool decode_mapping)
+dwarf_decode_lines (struct dwarf2_cu *cu, unrelocated_addr lowpc,
+		    bool decode_mapping)
 {
   if (decode_mapping)
-    dwarf_decode_lines_1 (lh, cu, lowpc);
+    dwarf_decode_lines_1 (cu, lowpc);
 
   /* Make sure a symtab is created for every file, even files
      which contain only variables (i.e. no code with associated
@@ -706,7 +706,8 @@ dwarf_decode_lines (struct line_header *lh, struct dwarf2_cu *cu,
   buildsym_compunit *builder = cu->get_builder ();
   struct compunit_symtab *cust = builder->get_compunit_symtab ();
 
-  for (auto &fe : lh->file_names ())
+  struct line_header *lh = cu->line_header;
+  for (file_entry &fe : lh->file_names ())
     {
       dwarf2_start_subfile (cu, fe, *lh);
       subfile *sf = builder->get_current_subfile ();
