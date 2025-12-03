@@ -68,7 +68,7 @@ gdb_assert {[dict get $locals name] == "Locals"} "local scope"
 gdb_assert {[dict get $regs name] == "Registers"} "register scope"
 
 set num_vars [dict get $locals namedVariables]
-gdb_assert {$num_vars == 1} "correct number of locals"
+gdb_assert {$num_vars == 2} "correct number of locals"
 
 set num [dict get $locals variablesReference]
 set refs [lindex [dap_check_request_and_response "fetch variables" \
@@ -87,8 +87,12 @@ foreach var [dict get $refs body variables] {
     switch -nocase -- $name {
 	"\\u03a0" -
 	"\\u03a6" -
+	"\\u03c0" -
+	"\\u03c6" -
 	"Π" -
-	"π" {
+	"π" -
+	"Φ" -
+	"φ" {
 	    # Ok.
 	}
 	default {

@@ -17,6 +17,7 @@ with Pack; use Pack;
 
 procedure Prog is
    π : Integer := 3;            --  The Indiana Approximation.
+   φ : constant := 7;           --  Not even close.
 begin
    Do_Nothing (π'Address);      --  BREAK
 end Prog;
