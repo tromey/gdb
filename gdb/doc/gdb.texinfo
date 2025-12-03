@@ -40205,6 +40205,10 @@ requests are defined by the adapter.  @value{GDBN} defines a couple
 parameters common to both:
 
 @table @code
+@item adaSourceCharset
+If provided, this is a string that is used to set the Ada source
+character set.  @xref{Ada Source Character Set}.
+
 @item program
 If provided, this is a string that specifies the program to use.  This
 corresponds to the @code{file} command.  @xref{Files}.
