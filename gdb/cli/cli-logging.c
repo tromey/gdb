@@ -20,6 +20,7 @@
 #include "cli/cli-cmds.h"
 #include "ui-out.h"
 #include "interps.h"
+#include "logging-file.h"
 #include "cli/cli-style.h"
 #include "cli/cli-decode.h"
 
@@ -61,6 +62,9 @@ show_logging_overwrite (struct ui_file *file, int from_tty,
     gdb_printf (file, _("off: Logging appends to the log file.\n"));
 }
 
+/* The current log file, or nullptr if none.  */
+static ui_file_up log_file;
+
 /* Value as configured by the user.  */
 static bool logging_redirect;
 static bool debug_redirect;
@@ -95,6 +99,119 @@ show_logging_debug_redirect (struct ui_file *file, int from_tty,
       (file,
        _("off: Debug output will go to both the screen and the log file.\n"));
 }
+
+/* Values as used by the logging_file implementation.  These are
+   separate and only set when logging is enabled, because historically
+   gdb required you to disable and re-enable logging to change these
+   settings.  */
+
+static bool logging_redirect_for_file;
+static bool debug_redirect_for_file;
+
+/* See logging-file.h.  */
+
+template<typename T>
+bool
+logging_file<T>::ordinary_output () const
+{
+  if (log_file == nullptr)
+    return true;
+  if (logging_redirect_for_file)
+    return false;
+  if (debug_redirect_for_file)
+    return !m_for_stdlog;
+  return true;
+}
+
+/* See logging-file.h.  */
+
+template<typename T>
+void
+logging_file<T>::flush ()
+{
+  if (log_file != nullptr)
+    log_file->flush ();
+  /* Always flushing seems fine.  */
+  m_out->flush ();
+}
+
+/* See logging-file.h.  */
+
+template<typename T>
+bool
+logging_file<T>::can_page () const
+{
+  /* If all output is redirected, do not page.  */
+  if (!ordinary_output ())
+    return false;
+  /* In other cases, paging happens if the underlying stream can
+     page.  */
+  return m_out->can_page ();
+}
+
+/* See logging-file.h.  */
+
+template<typename T>
+void
+logging_file<T>::write (const char *buf, long length_buf)
+{
+  if (log_file != nullptr)
+    log_file->write (buf, length_buf);
+  if (ordinary_output ())
+    m_out->write (buf, length_buf);
+}
+
+/* See logging-file.h.  */
+
+template<typename T>
+void
+logging_file<T>::write_async_safe (const char *buf, long length_buf)
+{
+  if (log_file != nullptr)
+    log_file->write_async_safe (buf, length_buf);
+  if (ordinary_output ())
+    m_out->write_async_safe (buf, length_buf);
+}
+
+/* See logging-file.h.  */
+
+template<typename T>
+void
+logging_file<T>::puts (const char *linebuffer)
+{
+  if (log_file != nullptr)
+    log_file->puts (linebuffer);
+  if (ordinary_output ())
+    m_out->puts (linebuffer);
+}
+
+/* See logging-file.h.  */
+
+template<typename T>
+void
+logging_file<T>::emit_style_escape (const ui_file_style &style)
+{
+  if (log_file != nullptr)
+    log_file->emit_style_escape (style);
+  if (ordinary_output ())
+    m_out->emit_style_escape (style);
+}
+
+/* See logging-file.h.  */
+
+template<typename T>
+void
+logging_file<T>::puts_unfiltered (const char *str)
+{
+  if (log_file != nullptr)
+    log_file->puts_unfiltered (str);
+  if (ordinary_output ())
+    m_out->puts_unfiltered (str);
+}
+
+/* The available instantiations of logging_file.  */
+template class logging_file<ui_file *>;
+template class logging_file<ui_file_up>;
 
 /* If we've pushed output files, close them and pop them.  */
 static void
@@ -141,6 +258,8 @@ handle_redirections (int from_tty)
     }
 
   saved_filename = logging_filename;
+  logging_redirect_for_file = logging_redirect;
+  debug_redirect_for_file = debug_redirect;
 
   /* Let the interpreter do anything it needs.  */
   current_interp_set_logging (std::move (log), logging_redirect,
