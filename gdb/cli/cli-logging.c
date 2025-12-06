@@ -213,17 +213,6 @@ logging_file<T>::puts_unfiltered (const char *str)
 template class logging_file<ui_file *>;
 template class logging_file<ui_file_up>;
 
-/* If we've pushed output files, close them and pop them.  */
-static void
-pop_output_files (void)
-{
-  current_interp_set_logging (NULL, false, false);
-
-  /* Stay consistent with handle_redirections.  */
-  if (!current_uiout->is_mi_like_p ())
-    current_uiout->redirect (NULL);
-}
-
 /* This is a helper for the `set logging' command.  */
 static void
 handle_redirections (int from_tty)
@@ -260,19 +249,7 @@ handle_redirections (int from_tty)
   saved_filename = logging_filename;
   logging_redirect_for_file = logging_redirect;
   debug_redirect_for_file = debug_redirect;
-
-  /* Let the interpreter do anything it needs.  */
-  current_interp_set_logging (std::move (log), logging_redirect,
-			      debug_redirect);
-
-  /* Redirect the current ui-out object's output to the log.  Use
-     gdb_stdout, not log, since the interpreter may have created a tee
-     that wraps the log.  Don't do the redirect for MI, it confuses
-     MI's ui-out scheme.  Note that we may get here with MI as current
-     interpreter, but with the current ui_out as a CLI ui_out, with
-     '-interpreter-exec console "set logging on"'.  */
-  if (!current_uiout->is_mi_like_p ())
-    current_uiout->redirect (gdb_stdout);
+  log_file = std::move (log);
 }
 
 static void
@@ -292,7 +269,7 @@ set_logging_off (const char *args, int from_tty)
   if (saved_filename.empty ())
     return;
 
-  pop_output_files ();
+  log_file.reset ();
   if (from_tty)
     gdb_printf ("Done logging to %s.\n",
 		saved_filename.c_str ());

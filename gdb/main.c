@@ -60,6 +60,7 @@
 #include "cli-out.h"
 #include "bt-utils.h"
 #include "terminal.h"
+#include "logging-file.h"
 
 /* The selected interpreter.  */
 std::string interpreter_p;
@@ -962,7 +963,7 @@ captured_main_1 (struct captured_main_args *context)
 	    break;
 	  case 'B':
 	    batch_flag = batch_silent = 1;
-	    gdb_stdout = new null_file ();
+	    current_ui->m_ui_stdout = new null_file ();
 	    break;
 	  case 'D':
 	    if (optarg[0] == '\0')

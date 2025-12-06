@@ -89,16 +89,16 @@ get_unbuffered (ui_file *stream)
 }
 
 buffered_streams::buffered_streams (buffer_group *group, ui_out *uiout)
-  : m_buffered_stdout (group, gdb_stdout),
-    m_buffered_stderr (group, gdb_stderr),
-    m_buffered_stdlog (group, gdb_stdlog),
-    m_buffered_stdtarg (group, gdb_stdtarg),
+  : m_buffered_stdout (group, *redirectable_stdout ()),
+    m_buffered_stderr (group, *redirectable_stderr ()),
+    m_buffered_stdlog (group, *redirectable_stdlog ()),
+    m_buffered_stdtarg (group, *redirectable_stdtarg ()),
     m_uiout (uiout)
 {
-  gdb_stdout = &m_buffered_stdout;
-  gdb_stderr = &m_buffered_stderr;
-  gdb_stdlog = &m_buffered_stdlog;
-  gdb_stdtarg = &m_buffered_stdtarg;
+  *redirectable_stdout () = &m_buffered_stdout;
+  *redirectable_stderr () = &m_buffered_stderr;
+  *redirectable_stdlog () = &m_buffered_stdlog;
+  *redirectable_stdtarg () = &m_buffered_stdtarg;
 
   ui_file *stream = current_uiout->current_stream ();
   if (stream != nullptr)
@@ -127,10 +127,10 @@ buffered_streams::remove_buffers ()
 
   m_buffers_in_place = false;
 
-  gdb_stdout = m_buffered_stdout.stream ();
-  gdb_stderr = m_buffered_stderr.stream ();
-  gdb_stdlog = m_buffered_stdlog.stream ();
-  gdb_stdtarg = m_buffered_stdtarg.stream ();
+  *redirectable_stdout () = m_buffered_stdout.stream ();
+  *redirectable_stderr () = m_buffered_stderr.stream ();
+  *redirectable_stdlog () = m_buffered_stdlog.stream ();
+  *redirectable_stdtarg () = m_buffered_stdtarg.stream ();
 
   if (m_buffered_current_uiout.has_value ())
     current_uiout->redirect (nullptr);
