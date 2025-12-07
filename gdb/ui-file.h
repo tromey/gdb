@@ -333,43 +333,6 @@ public:
   void puts (const char *linebuffer) override;
 };
 
-/* A ui_file implementation that maps onto two ui-file objects.  */
-
-class tee_file : public ui_file
-{
-public:
-  /* Create a file which writes to both ONE and TWO.  Ownership of
-     both files is up to the user.  */
-  tee_file (ui_file *one, ui_file *two);
-  ~tee_file () override;
-
-  void write (const char *buf, long length_buf) override;
-  void write_async_safe (const char *buf, long length_buf) override;
-  void puts (const char *) override;
-
-  bool isatty () override;
-  bool term_out () override;
-  bool can_emit_style_escape () override;
-  void flush () override;
-
-  void emit_style_escape (const ui_file_style &style) override
-  {
-    m_one->emit_style_escape (style);
-    m_two->emit_style_escape (style);
-  }
-
-  void puts_unfiltered (const char *str) override
-  {
-    m_one->puts_unfiltered (str);
-    m_two->puts_unfiltered (str);
-  }
-
-private:
-  /* The two underlying ui_files.  */
-  ui_file *m_one;
-  ui_file *m_two;
-};
-
 /* A ui_file implementation that buffers terminal escape sequences.
    Note that this does not buffer in general -- it only buffers when
    an incomplete but potentially recognizable escape sequence is

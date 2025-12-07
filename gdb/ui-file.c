@@ -342,66 +342,6 @@ stderr_file::stderr_file (FILE *stream)
 
 
 
-tee_file::tee_file (ui_file *one, ui_file *two)
-  : m_one (one),
-    m_two (two)
-{}
-
-tee_file::~tee_file ()
-{
-}
-
-void
-tee_file::flush ()
-{
-  m_one->flush ();
-  m_two->flush ();
-}
-
-void
-tee_file::write (const char *buf, long length_buf)
-{
-  m_one->write (buf, length_buf);
-  m_two->write (buf, length_buf);
-}
-
-void
-tee_file::write_async_safe (const char *buf, long length_buf)
-{
-  m_one->write_async_safe (buf, length_buf);
-  m_two->write_async_safe (buf, length_buf);
-}
-
-void
-tee_file::puts (const char *linebuffer)
-{
-  m_one->puts (linebuffer);
-  m_two->puts (linebuffer);
-}
-
-bool
-tee_file::isatty ()
-{
-  return m_one->isatty ();
-}
-
-/* See ui-file.h.  */
-
-bool
-tee_file::term_out ()
-{
-  return m_one->term_out ();
-}
-
-/* See ui-file.h.  */
-
-bool
-tee_file::can_emit_style_escape ()
-{
-  return (m_one->term_out ()
-	  && term_cli_styling ());
-}
-
 /* See ui-file.h.  */
 
 void
