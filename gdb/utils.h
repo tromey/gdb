@@ -169,6 +169,7 @@ extern struct ui_file **current_ui_gdb_stdout_ptr (void);
 extern struct ui_file **current_ui_gdb_stdin_ptr (void);
 extern struct ui_file **current_ui_gdb_stderr_ptr (void);
 extern struct ui_file **current_ui_gdb_stdlog_ptr (void);
+extern struct ui_file **current_ui_gdb_stdtarg_ptr ();
 
 /* Flush STREAM.  */
 extern void gdb_flush (struct ui_file *stream);
@@ -185,11 +186,11 @@ extern void gdb_flush (struct ui_file *stream);
 /* Log/debug/trace messages that bypasses the pager, if one is in
    use.  */
 #define gdb_stdlog (*current_ui_gdb_stdlog_ptr ())
+/* Target output.  */
+#define gdb_stdtarg (*current_ui_gdb_stdtarg_ptr ())
 
 /* Truly global ui_file streams.  These are all defined in main.c.  */
 
-/* Target output that should bypass the pager, if one is in use.  */
-extern struct ui_file *gdb_stdtarg;
 extern struct ui_file *gdb_stdtargin;
 
 /* Set the screen dimensions to WIDTH and HEIGHT.  */

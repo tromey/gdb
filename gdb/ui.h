@@ -155,6 +155,8 @@ struct ui
   /* Log/debug/trace messages that should bypass normal stdout/stderr
      filtering.  */
   struct ui_file *m_gdb_stdlog;
+  /* Target output.  */
+  struct ui_file *m_gdb_stdtarg;
 
   /* The current ui_out.  */
   struct ui_out *m_current_uiout = nullptr;

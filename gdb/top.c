@@ -115,6 +115,12 @@ current_ui_gdb_stdlog_ptr ()
   return &current_ui->m_gdb_stdlog;
 }
 
+struct ui_file **
+current_ui_gdb_stdtarg_ptr ()
+{
+  return &current_ui->m_gdb_stdtarg;
+}
+
 struct ui_out **
 current_ui_current_uiout_ptr ()
 {
