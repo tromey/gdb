@@ -44,11 +44,6 @@ public:
 
   void puts (const char *str) override;
 
-  void write_async_safe (const char *buf, long length_buf) override
-  {
-    m_stream->write_async_safe (buf, length_buf);
-  }
-
   void emit_style_escape (const ui_file_style &style) override;
 
   void flush () override;
