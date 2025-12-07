@@ -529,7 +529,7 @@ private:
   std::unique_ptr<buffered_streams> m_buffered_streams;
 };
 
-/* If FILE is a buffering_file, return it's underlying stream.  */
+/* If FILE is a buffering_file, return its underlying stream.  */
 
 extern ui_file *get_unbuffered (ui_file *file);
 

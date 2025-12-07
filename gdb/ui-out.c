@@ -907,12 +907,15 @@ buffer_group::flush_here (ui_file *stream)
 ui_file *
 get_unbuffered (ui_file *stream)
 {
-  buffering_file *buf = dynamic_cast<buffering_file *> (stream);
+  while (true)
+    {
+      buffering_file *buf = dynamic_cast<buffering_file *> (stream);
 
-  if (buf == nullptr)
-    return stream;
+      if (buf == nullptr)
+	return stream;
 
-  return get_unbuffered (buf->stream ());
+      stream = buf->stream ();
+    }
 }
 
 buffered_streams::buffered_streams (buffer_group *group, ui_out *uiout)
