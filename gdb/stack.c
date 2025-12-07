@@ -50,6 +50,7 @@
 #include "linespec.h"
 #include "cli/cli-utils.h"
 #include "objfiles.h"
+#include "buffered-streams.h"
 
 #include "symfile.h"
 #include "extension.h"

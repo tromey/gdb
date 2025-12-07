@@ -27,6 +27,7 @@
 #include "cli/cli-style.h"
 #include "ui.h"
 #include "cli/cli-cmds.h"
+#include "buffered-streams.h"
 
 /* These are the CLI output functions */
 

@@ -76,6 +76,7 @@
 #include "disasm.h"
 #include "interps.h"
 #include "finish-thread-state.h"
+#include "buffered-streams.h"
 
 /* Prototypes for local functions */
 
