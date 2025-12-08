@@ -166,7 +166,7 @@ extern bool pagination_enabled;
 extern bool debug_timestamp;
 
 extern struct ui_file **current_ui_gdb_stdout_ptr (void);
-extern struct ui_file **current_ui_gdb_stdin_ptr (void);
+extern struct ui_file *current_ui_gdb_stdin ();
 extern struct ui_file **current_ui_gdb_stderr_ptr (void);
 extern struct ui_file **current_ui_gdb_stdlog_ptr (void);
 extern struct ui_file **current_ui_gdb_stdtarg_ptr ();
@@ -178,8 +178,8 @@ extern void gdb_flush (struct ui_file *stream);
 
 /* Normal results */
 #define gdb_stdout (*current_ui_gdb_stdout_ptr ())
-/* Input stream */
-#define gdb_stdin (*current_ui_gdb_stdin_ptr ())
+/* Input stream.  */
+#define gdb_stdin (current_ui_gdb_stdin ())
 /* Serious error notifications.  This bypasses the pager, if one is in
    use.  */
 #define gdb_stderr (*current_ui_gdb_stderr_ptr ())

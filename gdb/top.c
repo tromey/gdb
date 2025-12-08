@@ -97,10 +97,10 @@ current_ui_gdb_stdout_ptr ()
   return &current_ui->m_gdb_stdout;
 }
 
-struct ui_file **
-current_ui_gdb_stdin_ptr ()
+struct ui_file *
+current_ui_gdb_stdin ()
 {
-  return &current_ui->m_gdb_stdin;
+  return current_ui->m_gdb_stdin;
 }
 
 struct ui_file **
