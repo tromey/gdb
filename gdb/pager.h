@@ -51,6 +51,9 @@ public:
     m_stream->puts_unfiltered (str);
   }
 
+  void vprintf (const char *fmt, va_list args) override
+    ATTRIBUTE_PRINTF (2, 0);
+
 private:
 
   void prompt_for_continue ();
@@ -91,6 +94,9 @@ private:
   /* Column number on the screen where wrap_buffer begins, or 0 if
      wrapping is not in effect.  */
   int m_wrap_column = 0;
+
+  /* The currently applied style.  */
+  ui_file_style m_applied_style;
 
   /* The style applied at the time that wrap_here was called.  */
   ui_file_style m_wrap_style;

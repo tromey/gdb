@@ -70,7 +70,7 @@ void
 ui_file::vprintf (const char *format, va_list args)
 {
   ui_out_flags flags = disallow_ui_out_field;
-  cli_ui_out (this, flags).vmessage (m_applied_style, format, args);
+  cli_ui_out (this, flags).vmessage ({}, format, args);
 }
 
 /* See ui-file.h.  */
@@ -78,11 +78,8 @@ ui_file::vprintf (const char *format, va_list args)
 void
 ui_file::emit_style_escape (const ui_file_style &style)
 {
-  if (can_emit_style_escape () && style != m_applied_style)
-    {
-      m_applied_style = style;
-      this->puts (style.to_ansi ().c_str ());
-    }
+  if (can_emit_style_escape ())
+    this->puts (style.to_ansi ().c_str ());
 }
 
 /* See ui-file.h.  */

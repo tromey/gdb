@@ -282,6 +282,11 @@ class ui_out
      escapes.  */
   virtual bool can_emit_style_escape () const = 0;
 
+  /* Emit a style escape, if possible.  */
+  virtual void emit_style_escape (const ui_file_style &style)
+  {
+  }
+
   /* Return the ui_file currently used for output.  */
   virtual ui_file *current_stream () const = 0;
 
@@ -361,9 +366,17 @@ protected:
     ATTRIBUTE_PRINTF (7, 0) = 0;
   virtual void do_spaces (int numspaces) = 0;
   virtual void do_text (const char *string) = 0;
-  virtual void do_message (const ui_file_style &style,
+
+  /* A helper for vprintf and call_do_message.  Formats a string and
+     then prints it using STYLE.  This should take care to only change
+     the style when necessary (i.e., don't bother if the formatted
+     string is empty, or if the desired style is the same as
+     CURRENT_STYLE).  Updates current_style if the style was
+     changed.  */
+  virtual void do_message (ui_file_style &current_style,
+			   const ui_file_style &style,
 			   const char *format, va_list args)
-    ATTRIBUTE_PRINTF (3,0) = 0;
+    ATTRIBUTE_PRINTF (4, 0) = 0;
   virtual void do_wrap_hint (int indent) = 0;
   virtual void do_flush () = 0;
   virtual void do_redirect (struct ui_file *outstream) = 0;
@@ -380,7 +393,10 @@ protected:
   { return false; }
 
  private:
-  void call_do_message (const ui_file_style &style, const char *format,
+  /* A helper for vmessage that wraps a call to do_message.  This will
+     update CURRENT_STYLE when needed.  */
+  void call_do_message (ui_file_style &current_style,
+			const ui_file_style &style, const char *format,
 			...);
 
   ui_out_flags m_flags;

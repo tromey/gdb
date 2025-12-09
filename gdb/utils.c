@@ -1674,6 +1674,13 @@ pager_file::check_for_overfull_line (const unsigned int lines_allowed)
 }
 
 void
+pager_file::vprintf (const char *format, va_list args)
+{
+  ui_out_flags flags = disallow_ui_out_field;
+  cli_ui_out (this, flags).vmessage (m_applied_style, format, args);
+}
+
+void
 pager_file::puts (const char *linebuffer)
 {
   gdb_assert (linebuffer != nullptr);

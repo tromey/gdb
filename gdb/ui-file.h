@@ -55,7 +55,7 @@ public:
 
   void putc (int c);
 
-  void vprintf (const char *, va_list) ATTRIBUTE_PRINTF (2, 0);
+  virtual void vprintf (const char *, va_list) ATTRIBUTE_PRINTF (2, 0);
 
   /* Methods below are both public, and overridable by ui_file
      subclasses.  */
@@ -138,11 +138,6 @@ public:
   {
     this->puts (str);
   }
-
-protected:
-
-  /* The currently applied style.  */
-  ui_file_style m_applied_style;
 
 private:
 

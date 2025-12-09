@@ -154,6 +154,15 @@ struct buffering_file : public ui_file
     return m_stream->can_emit_style_escape ();
   }
 
+  void emit_style_escape (const ui_file_style &style) override
+  {
+    if (can_emit_style_escape () && style != m_applied_style)
+      {
+	m_applied_style = style;
+	ui_file::emit_style_escape (style);
+      }
+  }
+
   /* Flush the underlying output stream.  */
   void flush () override
   {
@@ -167,6 +176,9 @@ private:
 
   /* The underlying output stream.  */
   ui_file *m_stream;
+
+  /* The currently applied style.  */
+  ui_file_style m_applied_style;
 };
 
 /* Attaches and detaches buffers for each of the gdb_std* streams.  */
