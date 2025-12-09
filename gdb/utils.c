@@ -1921,22 +1921,20 @@ fputs_highlighted (const char *str, const compiled_regex &highlight,
       size_t n_highlight = pmatch.rm_eo - pmatch.rm_so;
 
       /* Output the part before pmatch with current style.  */
-      while (pmatch.rm_so > 0)
+      if (pmatch.rm_so > 0)
 	{
-	  gdb_putc (*str, stream);
-	  pmatch.rm_so--;
-	  str++;
+	  stream->write (str, pmatch.rm_so);
+	  str += pmatch.rm_so;
 	}
 
       /* Output pmatch with the highlight style.  */
-      stream->emit_style_escape (highlight_style.style ());
-      while (n_highlight > 0)
+      if (n_highlight > 0)
 	{
-	  gdb_putc (*str, stream);
-	  n_highlight--;
-	  str++;
+	  stream->emit_style_escape (highlight_style.style ());
+	  stream->write (str, n_highlight);
+	  str += n_highlight;
+	  stream->emit_style_escape (ui_file_style ());
 	}
-      stream->emit_style_escape (ui_file_style ());
     }
 
   /* Output the trailing part of STR not matching HIGHLIGHT.  */
