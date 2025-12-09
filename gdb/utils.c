@@ -1640,7 +1640,8 @@ pager_file::check_for_overfull_line (const unsigned int lines_allowed)
 	 this loop, so we must continue to check it here.  */
       if (pagination_enabled
 	  && !pagination_disabled_for_command
-	  && lines_printed >= lines_allowed)
+	  && lines_printed >= lines_allowed
+	  && m_stream->can_page ())
 	{
 	  prompt_for_continue ();
 	  did_paginate = true;
@@ -1713,7 +1714,8 @@ pager_file::puts (const char *linebuffer)
 	 it here.  */
       if (pagination_enabled
 	  && !pagination_disabled_for_command
-	  && lines_printed >= lines_allowed)
+	  && lines_printed >= lines_allowed
+	  && m_stream->can_page ())
 	prompt_for_continue ();
 
       while (*linebuffer != '\0' && *linebuffer != '\n')

@@ -101,6 +101,14 @@ public:
   virtual int fd () const
   { return -1; }
 
+  /* Return true if this object supports paging, false otherwise.  */
+  virtual bool can_page () const
+  {
+    /* Almost no file supports paging, which is why this is the
+       default.  */
+    return false;
+  }
+
   /* Indicate that if the next sequence of characters overflows the
      line, a newline should be inserted here rather than when it hits
      the end.  If INDENT is non-zero, it is a number of spaces to be
@@ -269,6 +277,11 @@ public:
   /* Return the underlying file descriptor.  */
   int fd () const override
   { return m_fd; }
+
+  bool can_page () const override
+  {
+    return m_file == stdout;
+  }
 
 private:
   /* Sets the internal stream to FILE, and saves the FILE's file
@@ -451,6 +464,11 @@ public:
 
   void write_async_safe (const char *buf, long length_buf) override
   { return m_stream->write_async_safe (buf, length_buf); }
+
+  bool can_page () const override
+  {
+    return m_stream->can_page ();
+  }
 
 protected:
 
