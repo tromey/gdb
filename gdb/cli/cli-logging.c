@@ -26,7 +26,23 @@
 
 static std::string saved_filename;
 
+static void
+maybe_warn_already_logging ()
+{
+  if (!saved_filename.empty ())
+    warning (_("Currently logging to %s.  Turn the logging off and on to "
+	       "make the new setting effective."), saved_filename.c_str ());
+}
+
 static std::string logging_filename = "gdb.txt";
+
+static void
+set_logging_filename (const char *args,
+		      int from_tty, struct cmd_list_element *c)
+{
+  maybe_warn_already_logging ();
+}
+
 static void
 show_logging_filename (struct ui_file *file, int from_tty,
 		       struct cmd_list_element *c, const char *value)
@@ -36,14 +52,6 @@ show_logging_filename (struct ui_file *file, int from_tty,
 }
 
 static bool logging_overwrite;
-
-static void
-maybe_warn_already_logging ()
-{
-  if (!saved_filename.empty ())
-    warning (_("Currently logging to %s.  Turn the logging off and on to "
-	       "make the new setting effective."), saved_filename.c_str ());
-}
 
 static void
 set_logging_overwrite (const char *args,
@@ -344,7 +352,7 @@ If debug redirect is on, debug will go only to the log file."),
 Set the current logfile."), _("\
 Show the current logfile."), _("\
 The logfile is used when directing GDB's output."),
-			    NULL,
+			    set_logging_filename,
 			    show_logging_filename,
 			    &set_logging_cmdlist, &show_logging_cmdlist);
 
