@@ -48,8 +48,10 @@ private:
 
   struct output_unit
   {
-    output_unit (std::string msg, int wrap_hint = -1, bool flush = false)
-      : m_msg (msg), m_wrap_hint (wrap_hint), m_flush (flush)
+    output_unit (ui_file *stream, std::string msg, int wrap_hint = -1,
+		 bool flush = false)
+      : m_stream (stream), m_msg (msg), m_wrap_hint (wrap_hint),
+	m_flush (flush)
     {}
 
     /* Write contents of this output_unit to the underlying stream.  */

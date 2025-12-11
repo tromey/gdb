@@ -51,7 +51,7 @@ buffer_group::write (const char *buf, long length_buf, ui_file *stream)
 	    && m_buffered_output.back ().m_msg.back () != '\n')
 	  m_buffered_output.back ().m_msg.append (msg);
 	else
-	  m_buffered_output.emplace_back (msg).m_stream = stream;
+	  m_buffered_output.emplace_back (stream, msg);
 	prev = cur + 1;
       }
 }
@@ -61,7 +61,7 @@ buffer_group::write (const char *buf, long length_buf, ui_file *stream)
 void
 buffer_group::wrap_here (int indent, ui_file *stream)
 {
-  m_buffered_output.emplace_back ("", indent).m_stream = stream;
+  m_buffered_output.emplace_back (stream, "", indent);
 }
 
 /* See buffered-streams.h.  */
@@ -69,7 +69,7 @@ buffer_group::wrap_here (int indent, ui_file *stream)
 void
 buffer_group::flush_here (ui_file *stream)
 {
-  m_buffered_output.emplace_back ("", -1, true).m_stream = stream;
+  m_buffered_output.emplace_back (stream, "", -1, true);
 }
 
 /* See buffered-streams.h.  */
