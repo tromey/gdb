@@ -225,11 +225,30 @@ struct gdb_mpz
     return *this;
   }
 
-  gdb_mpz operator+ (const gdb_mpz &other) const
+  gdb_mpz operator+ (const gdb_mpz &other) const &
   {
     gdb_mpz result;
     mpz_add (result.m_val, m_val, other.m_val);
     return result;
+  }
+
+  gdb_mpz operator+ (const gdb_mpz &other) &&
+  {
+    mpz_add (m_val, m_val, other.m_val);
+    return *this;
+  }
+
+  gdb_mpz operator+ (unsigned long val) const &
+  {
+    gdb_mpz result;
+    mpz_add_ui (result.m_val, m_val, val);
+    return result;
+  }
+
+  gdb_mpz operator+ (unsigned long val) &&
+  {
+    mpz_add_ui (m_val, m_val, val);
+    return *this;
   }
 
   gdb_mpz &operator-= (unsigned long other)
