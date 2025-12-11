@@ -6267,8 +6267,8 @@ dwarf2_cu::setup_type_unit_groups (struct die_info *die)
       for (i = 0; i < file_names.size (); ++i)
 	{
 	  file_entry &fe = file_names[i];
-	  gdb_assert (fe.symtab != nullptr);
-	  tug_unshare->symtabs[i] = fe.symtab;
+	  gdb_assert (fe.symtab (*this) != nullptr);
+	  tug_unshare->symtabs[i] = fe.symtab (*this);
 	}
     }
   else
@@ -6286,7 +6286,7 @@ dwarf2_cu::setup_type_unit_groups (struct die_info *die)
       for (i = 0; i < file_names.size (); ++i)
 	{
 	  file_entry &fe = file_names[i];
-	  fe.symtab = tug_unshare->symtabs[i];
+	  fe.set_symtab (tug_unshare->symtabs[i]);
 	}
     }
 
@@ -11631,7 +11631,7 @@ process_structure_scope (struct die_info *die, struct dwarf2_cu *cu)
 	    {
 	      /* Any related symtab will do.  */
 	      symtab
-		= cu->line_header->file_names ()[0].symtab;
+		= cu->line_header->file_names ()[0].symtab (*cu);
 	    }
 	  else
 	    {
@@ -16193,7 +16193,7 @@ new_symbol (struct die_info *die, struct type *type, struct dwarf2_cu *cu,
 	      if (fe == NULL)
 		complaint (_("file index out of range"));
 	      else
-		sym->set_symtab (fe->symtab);
+		sym->set_symtab (fe->symtab (*file_cu));
 	    }
 	}
 

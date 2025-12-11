@@ -696,8 +696,19 @@ dwarf_decode_lines (struct dwarf2_cu *cu, unrelocated_addr lowpc,
   if (decode_mapping)
     dwarf_decode_lines_1 (cu, lowpc);
 
-  /* Make sure a symtab is created for every file, even files
-     which contain only variables (i.e. no code with associated
-     line numbers).  */
-  cu->create_subfiles_and_symtabs ();
+  /* For non DWZ CUs, make sure a symtab is created for every file, even
+     files which contain only variables (i.e. no code with associated line
+     numbers).
+
+     For DWZ CUs the line table can contain references to files that are
+     not part of the original CU.  In fact, if multiple object files were
+     used to create the DWZ file (as is normal), then the DWZ CU's line
+     table can contain references to files that are in objfiles that are
+     not part of the current inferior.  For DWZ we rely on lazy symtab
+     creation.  In the end we should still end up with a symtab for every
+     file as the original CU (the non-DWZ CU) will still contain a line
+     table, and that line table will mention every file, so when that is
+     processed we'll create symtabs as needed.  */
+  if (!cu->per_cu->is_dwz ())
+    cu->create_subfiles_and_symtabs ();
 }

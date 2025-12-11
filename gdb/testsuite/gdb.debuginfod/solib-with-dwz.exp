@@ -86,7 +86,7 @@ require {istarget "*-linux*"}
 require {!is_remote host}
 require {dwz_version_at_least 0.13}
 
-standard_testfile -main.c -bar.c -foo.c
+standard_testfile -main.c -bar.c -foo.c -foo.h -common.h
 
 set libbar_filename [standard_output_file "libbar.so"]
 set libfoo_filename [standard_output_file "libfoo.so"]
@@ -291,25 +291,6 @@ proc run_test { cache db debug_dir use_filename } {
 		set saw_source_download [check_cache_for_foo $cache]
 	    }
 
-	    # GDB ends up creating a symtab for solib-with-dwz-foo.c
-	    # associated with libbar.so.  This isn't ideal as *-foo.c wasn't
-	    # used within libbar.so.  The symtab is a result of loading the
-	    # file/line table from the DWZ file while processing the DWARF
-	    # for libbar.so.
-	    #
-	    # While performing the 'list LINENO' or 'list FILE:LINENO'
-	    # command GDB performs a search of all symtabs, as part of this
-	    # process GDB tries to establish the full source filename for
-	    # the *-foo.c symtab associated with libbar.so, this in turn
-	    # causes GDB to try and download the source from debuginfod.
-	    #
-	    # This download will fail as *-foo.c is not used within
-	    # libbar.so, but having GDB try to download the file is not
-	    # ideal, even if it is harmless.
-	    #
-	    # If/when this xfail is addressed, the comment at the start of
-	    # this file will need updating too.
-	    setup_xfail "*-*-*"
 	    gdb_assert { !$saw_source_download } \
 		"$gdb_test_name, no source download"
 
@@ -320,6 +301,59 @@ proc run_test { cache db debug_dir use_filename } {
 	-re "^\[^\r\n\]*\r\n" {
 	    exp_continue
 	}
+    }
+
+    # Use 'maint info symtabs' to list all symtabs and find the
+    # symtabs that are associated with libbar.so (actually with the
+    # separate debug file for libbar.so).
+    #
+    # Then check that *-foo.c and *-foo.h don't appear in this list.
+    #
+    # But check that *-bar.c and *-common.h do appear in the list.
+    set build_id [get_build_id $::libbar_filename]
+    set symtabs [list]
+    set collect_symtabs false
+
+    gdb_test_multiple "maint info symtabs" "" {
+	-re "^maint info symtabs\r\n" {
+	    exp_continue
+	}
+	-re "^\{ objfile (\[^\r\n\]+) \\(\\(struct objfile \\*\\) $::hex\\)\r\n" {
+	    set objfile_name $expect_out(1,string)
+	    if { [string first $build_id $objfile_name] != -1 } {
+		set collect_symtabs true
+	    } else {
+		set collect_symtabs false
+	    }
+	    exp_continue
+	}
+	-re "^\\s+\{ symtab <unknown> \[^\r\n\]+\r\n" {
+	    # Ignore '<unknown>' nameless symtabs.
+	    exp_continue
+	}
+	-re "^\\s+\{ symtab (\[^\r\n\]+) \\(\\(struct symtab \\*\\) $::hex\\)\r\n" {
+	    if { $collect_symtabs } {
+		set symtab_name $expect_out(1,string)
+		lappend symtabs [file tail $symtab_name]
+	    }
+	    exp_continue
+	}
+	-re "^$::gdb_prompt $" {
+	    pass $gdb_test_name
+	}
+	-re "^\[^\r\n\]+\r\n" {
+	    exp_continue
+	}
+    }
+
+    foreach filename [list $::srcfile3 $::srcfile4] {
+	gdb_assert { [lsearch -exact $symtabs $filename] == -1 } \
+	    "$filename is not in the symtab list"
+    }
+
+    foreach filename [list $::srcfile2 $::srcfile5] {
+	gdb_assert { [lsearch -exact $symtabs $filename] != -1 } \
+	    "$filename is in the symtab list"
     }
 }
 
