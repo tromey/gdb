@@ -1616,8 +1616,8 @@ print_return_value_1 (struct ui_out *uiout, struct return_value_info *rv)
     {
       /* Print it.  */
       uiout->text ("Value returned is ");
-      uiout->field_fmt ("gdb-result-var", "$%d",
-			 rv->value_history_index);
+      uiout->field_fmt ("gdb-result-var", variable_name_style.style (),
+			"$%d", rv->value_history_index);
       uiout->text (" = ");
 
       if (finish_print)
