@@ -45,39 +45,7 @@
 #include "inferior.h"
 #include "gdbsupport/selftest.h"
 #include "selftest-arch.h"
-
-/* Maximum number of wchars returned from wchar_iterate.  */
-#define MAX_WCHARS 4
-
-/* A convenience macro to compute the size of a wchar_t buffer containing X
-   characters.  */
-#define WCHAR_BUFLEN(X) ((X) * sizeof (gdb_wchar_t))
-
-/* Character buffer size saved while iterating over wchars.  */
-#define WCHAR_BUFLEN_MAX WCHAR_BUFLEN (MAX_WCHARS)
-
-/* A structure to encapsulate state information from iterated
-   character conversions.  */
-struct converted_character
-{
-  /* The number of characters converted.  */
-  int num_chars;
-
-  /* The result of the conversion.  See charset.h for more.  */
-  enum wchar_iterate_result result;
-
-  /* The (saved) converted character(s).  */
-  gdb_wchar_t chars[WCHAR_BUFLEN_MAX];
-
-  /* The first converted target byte.  */
-  const gdb_byte *buf;
-
-  /* The number of bytes converted.  */
-  size_t buflen;
-
-  /* How many times this character(s) is repeated.  */
-  int repeat_count;
-};
+#include "char-print.h"
 
 /* Command lists for set/show print raw.  */
 struct cmd_list_element *setprintrawlist;
@@ -2142,154 +2110,139 @@ value_print_array_elements (struct value *val, struct ui_file *stream,
 /* Return true if print_wchar can display W without resorting to a
    numeric escape, false otherwise.  */
 
-static int
-wchar_printable (gdb_wchar_t w)
+bool
+wchar_printer::printable (gdb_wchar_t w) const
 {
-  return (gdb_iswprint (w)
-	  || w == LCST ('\a') || w == LCST ('\b')
-	  || w == LCST ('\f') || w == LCST ('\n')
-	  || w == LCST ('\r') || w == LCST ('\t')
-	  || w == LCST ('\v'));
+  if (w == LCST ('\a') || w == LCST ('\b')
+      || w == LCST ('\f') || w == LCST ('\n')
+      || w == LCST ('\r') || w == LCST ('\t')
+      || w == LCST ('\v'))
+    return true;
+  if (!gdb_iswprint (w))
+    return false;
+  /* If we previously emitted a hex escape, then we may need to emit
+     an escape again, if W is a hex digit.  */
+  if (!m_need_escape)
+    return true;
+  return !gdb_iswxdigit (w);
 }
 
-/* A helper function that converts the contents of STRING to wide
-   characters and then appends them to OUTPUT.  */
+/* See char-print.h.  */
 
-static void
-append_string_as_wide (const char *string,
-		       struct obstack *output)
+void
+wchar_printer::print_char (gdb_wchar_t w)
 {
-  for (; *string; ++string)
-    {
-      gdb_wchar_t w = gdb_btowc (*string);
-      obstack_grow (output, &w, sizeof (gdb_wchar_t));
-    }
-}
+  m_need_escape = false;
 
-/* Print a wide character W to OUTPUT.  ORIG is a pointer to the
-   original (target) bytes representing the character, ORIG_LEN is the
-   number of valid bytes.  WIDTH is the number of bytes in a base
-   characters of the type.  OUTPUT is an obstack to which wide
-   characters are emitted.  QUOTER is a (narrow) character indicating
-   the style of quotes surrounding the character to be printed.
-   NEED_ESCAPE is an in/out flag which is used to track numeric
-   escapes across calls.  */
-
-static void
-print_wchar (gdb_wint_t w, const gdb_byte *orig,
-	     int orig_len, int width,
-	     enum bfd_endian byte_order,
-	     struct obstack *output,
-	     int quoter, bool *need_escapep)
-{
-  bool need_escape = *need_escapep;
-
-  *need_escapep = false;
-
-  /* If any additional cases are added to this switch block, then the
-     function wchar_printable will likely need updating too.  */
   switch (w)
     {
       case LCST ('\a'):
-	obstack_grow_wstr (output, LCST ("\\a"));
+	m_file.write (LCST ("\\a"));
 	break;
       case LCST ('\b'):
-	obstack_grow_wstr (output, LCST ("\\b"));
+	m_file.write (LCST ("\\b"));
 	break;
       case LCST ('\f'):
-	obstack_grow_wstr (output, LCST ("\\f"));
+	m_file.write (LCST ("\\f"));
 	break;
       case LCST ('\n'):
-	obstack_grow_wstr (output, LCST ("\\n"));
+	m_file.write (LCST ("\\n"));
 	break;
       case LCST ('\r'):
-	obstack_grow_wstr (output, LCST ("\\r"));
+	m_file.write (LCST ("\\r"));
 	break;
       case LCST ('\t'):
-	obstack_grow_wstr (output, LCST ("\\t"));
+	m_file.write (LCST ("\\t"));
 	break;
       case LCST ('\v'):
-	obstack_grow_wstr (output, LCST ("\\v"));
+	m_file.write (LCST ("\\v"));
 	break;
       default:
-	{
-	  if (gdb_iswprint (w) && !(need_escape && gdb_iswxdigit (w)))
-	    {
-	      gdb_wchar_t wchar = w;
-
-	      if (w == gdb_btowc (quoter) || w == LCST ('\\'))
-		obstack_grow_wstr (output, LCST ("\\"));
-	      obstack_grow (output, &wchar, sizeof (gdb_wchar_t));
-	    }
-	  else
-	    {
-	      int i;
-
-	      for (i = 0; i + width <= orig_len; i += width)
-		{
-		  char octal[30];
-		  ULONGEST value;
-
-		  value = extract_unsigned_integer (&orig[i], width,
-						  byte_order);
-		  /* If the value fits in 3 octal digits, print it that
-		     way.  Otherwise, print it as a hex escape.  */
-		  if (value <= 0777)
-		    {
-		      xsnprintf (octal, sizeof (octal), "\\%.3o",
-				 (int) (value & 0777));
-		      *need_escapep = false;
-		    }
-		  else
-		    {
-		      xsnprintf (octal, sizeof (octal), "\\x%lx", (long) value);
-		      /* A hex escape might require the next character
-			 to be escaped, because, unlike with octal,
-			 hex escapes have no length limit.  */
-		      *need_escapep = true;
-		    }
-		  append_string_as_wide (octal, output);
-		}
-	      /* If we somehow have extra bytes, print them now.  */
-	      while (i < orig_len)
-		{
-		  char octal[5];
-
-		  xsnprintf (octal, sizeof (octal), "\\%.3o", orig[i] & 0xff);
-		  *need_escapep = false;
-		  append_string_as_wide (octal, output);
-		  ++i;
-		}
-	    }
-	  break;
-	}
+	if (w == gdb_btowc (m_quoter) || w == LCST ('\\'))
+	  m_file.write (LCST ("\\"));
+	m_file.write (w);
+	break;
     }
 }
 
-/* Print the character C on STREAM as part of the contents of a
-   literal string whose delimiter is a single quote.  ENCODING names
-   the encoding of C.  */
+/* See char-print.h.  */
 
 void
-generic_emit_char (int c, struct type *type, struct ui_file *stream,
-		   const char *encoding)
+wchar_printer::print_escape (const gdb_byte *orig, int orig_len)
 {
-  /* The quote character.  */
-  constexpr int quoter = '\'';
+  m_need_escape = false;
 
-  enum bfd_endian byte_order
-    = type_byte_order (type);
-  gdb_byte *c_buf;
-  bool need_escape = false;
+  int i;
+  for (i = 0; i + m_width <= orig_len; i += m_width)
+    {
+      ULONGEST value;
 
-  c_buf = (gdb_byte *) alloca (type->length ());
-  pack_long (c_buf, type, c);
+      value = extract_unsigned_integer (&orig[i], m_width,
+					m_byte_order);
+      /* If the value fits in 3 octal digits, print it that
+	 way.  Otherwise, print it as a hex escape.  */
+      if (value <= 0777)
+	{
+	  gdb_printf (&m_file, "\\%.3o", (int) (value & 0777));
+	  m_need_escape = false;
+	}
+      else
+	{
+	  gdb_printf (&m_file, "\\x%lx", (long) value);
+	  /* A hex escape might require the next character
+	     to be escaped, because, unlike with octal,
+	     hex escapes have no length limit.  */
+	  m_need_escape = true;
+	}
+    }
 
-  gdb_putc (quoter, stream);
-  wchar_iterator iter (c_buf, type->length (), encoding, type->length ());
+  /* If we somehow have extra bytes, print them now.  */
+  while (i < orig_len)
+    {
+      gdb_printf (&m_file, "\\%.3o", orig[i] & 0xff);
+      m_need_escape = false;
+      ++i;
+    }
+}
 
-  /* This holds the printable form of the wchar_t data.  */
-  auto_obstack wchar_buf;
+const char *
+wchar_printer::get_default_encoding (type *chtype)
+{
+  const char *encoding;
+  if (chtype->length () == 1)
+    encoding = target_charset (chtype->arch ());
+  else if (streq (chtype->name (), "wchar_t"))
+    encoding = target_wide_charset (chtype->arch ());
+  else if (chtype->length () == 2)
+    {
+      if (type_byte_order (chtype) == BFD_ENDIAN_BIG)
+	encoding = "UTF-16BE";
+      else
+	encoding = "UTF-16LE";
+    }
+  else if (chtype->length () == 4)
+    {
+      if (type_byte_order (chtype) == BFD_ENDIAN_BIG)
+	encoding = "UTF-32BE";
+      else
+	encoding = "UTF-32LE";
+    }
+  else
+    {
+      /* No idea.  */
+      encoding = target_charset (chtype->arch ());
+    }
+  return encoding;
+}
+
+void
+wchar_printer::print (int c, ui_file *stream)
+{
+  gdb_byte *c_buf = (gdb_byte *) alloca (m_width);
+  pack_long (c_buf, m_type, c);
+
+  gdb_putc (m_quoter, stream);
+  wchar_iterator iter (c_buf, m_width, m_encoding, m_width);
 
   while (1)
     {
@@ -2297,7 +2250,7 @@ generic_emit_char (int c, struct type *type, struct ui_file *stream,
       gdb_wchar_t *chars;
       const gdb_byte *buf;
       size_t buflen;
-      int print_escape = 1;
+      bool need_escape = true;
       enum wchar_iterate_result result;
 
       num_chars = iter.iterate (&result, &chars, &buf, &buflen);
@@ -2312,48 +2265,55 @@ generic_emit_char (int c, struct type *type, struct ui_file *stream,
 	     boundaries there.  */
 	  int i;
 
-	  print_escape = 0;
+	  need_escape = false;
 	  for (i = 0; i < num_chars; ++i)
-	    if (!wchar_printable (chars[i]))
+	    if (!printable (chars[i]))
 	      {
-		print_escape = 1;
+		need_escape = true;
 		break;
 	      }
 
-	  if (!print_escape)
+	  if (!need_escape)
 	    {
 	      for (i = 0; i < num_chars; ++i)
-		print_wchar (chars[i], buf, buflen,
-			     type->length (), byte_order,
-			     &wchar_buf, quoter, &need_escape);
+		print_char (chars[i]);
 	    }
 	}
 
       /* This handles the NUM_CHARS == 0 case as well.  */
-      if (print_escape)
-	print_wchar (gdb_WEOF, buf, buflen, type->length (),
-		     byte_order, &wchar_buf, quoter, &need_escape);
+      if (need_escape)
+	print_escape (buf, buflen);
     }
 
   /* The output in the host encoding.  */
   auto_obstack output;
 
   convert_between_encodings (INTERMEDIATE_ENCODING, host_charset (),
-			     (gdb_byte *) obstack_base (&wchar_buf),
-			     obstack_object_size (&wchar_buf),
+			     (gdb_byte *) obstack_base (&m_wchar_buf),
+			     obstack_object_size (&m_wchar_buf),
 			     sizeof (gdb_wchar_t), &output, translit_char);
   obstack_1grow (&output, '\0');
 
   gdb_puts ((const char *) obstack_base (&output), stream);
-  gdb_putc (quoter, stream);
+  gdb_putc (m_quoter, stream);
 }
 
-/* Return the repeat count of the next character/byte in ITER,
-   storing the result in VEC.  */
+/* Print the character C on STREAM as part of the contents of a
+   literal string whose delimiter is a single quote.  ENCODING names
+   the encoding of C.  */
 
-static int
-count_next_character (wchar_iterator *iter,
-		      std::vector<converted_character> *vec)
+void
+generic_emit_char (int c, struct type *type, struct ui_file *stream,
+		   const char *encoding)
+{
+  wchar_printer (type, '\'', encoding).print (c, stream);
+}
+
+/* See char-print.h.  */
+
+int
+wchar_printer::count_next_character (wchar_iterator *iter,
+				     std::vector<converted_character> *vec)
 {
   struct converted_character *current;
 
@@ -2399,7 +2359,7 @@ count_next_character (wchar_iterator *iter,
 	  if (d.num_chars > 0)
 	    {
 	      gdb_assert (d.num_chars < MAX_WCHARS);
-	      memcpy (d.chars, chars, WCHAR_BUFLEN (d.num_chars));
+	      memcpy (d.chars, chars, d.num_chars * sizeof (gdb_wchar_t));
 	    }
 
 	  /* Determine if the current character is the same as this
@@ -2412,7 +2372,7 @@ count_next_character (wchar_iterator *iter,
 		 2) Equality of non-converted character (num_chars == 0)  */
 	      if ((current->num_chars > 0
 		   && memcmp (current->chars, d.chars,
-			      WCHAR_BUFLEN (current->num_chars)) == 0)
+			      current->num_chars * sizeof (gdb_wchar_t)) == 0)
 		  || (current->num_chars == 0
 		      && current->buflen == d.buflen
 		      && memcmp (current->buf, d.buf, current->buflen) == 0))
@@ -2431,25 +2391,18 @@ count_next_character (wchar_iterator *iter,
     }
 }
 
-/* Print the characters in CHARS to the OBSTACK.  QUOTE_CHAR is the quote
-   character to use with string output.  WIDTH is the size of the output
-   character type.  BYTE_ORDER is the target byte order.  OPTIONS
-   is the user's print options.  *FINISHED is set to 0 if we didn't print
-   all the elements in CHARS.  */
+/* See char-print.h.  */
 
-static void
-print_converted_chars_to_obstack (struct obstack *obstack,
-				  const std::vector<converted_character> &chars,
-				  int quote_char, int width,
-				  enum bfd_endian byte_order,
-				  const struct value_print_options *options,
-				  int *finished)
+void
+wchar_printer::print_converted_chars_to_obstack
+     (const std::vector<converted_character> &chars,
+      const struct value_print_options *options,
+      int *finished)
 {
   unsigned int idx, num_elements;
   const converted_character *elem;
   enum {START, SINGLE, REPEAT, INCOMPLETE, FINISH} state, last;
-  gdb_wchar_t wide_quote_char = gdb_btowc (quote_char);
-  bool need_escape = false;
+  gdb_wchar_t wide_quote_char = gdb_btowc (m_quoter);
   const int print_max = options->print_max_chars > 0
       ? options->print_max_chars : options->print_max;
 
@@ -2478,8 +2431,8 @@ print_converted_chars_to_obstack (struct obstack *obstack,
 		/* We were outputting some other type of content, so we
 		   must output and a comma and a quote.  */
 		if (last != START)
-		  obstack_grow_wstr (obstack, LCST (", "));
-		obstack_grow (obstack, &wide_quote_char, sizeof (gdb_wchar_t));
+		  m_file.write (LCST (", "));
+		m_file.write (wide_quote_char);
 	      }
 	    /* Output the character.  */
 	    int repeat_count = elem->repeat_count;
@@ -2490,12 +2443,11 @@ print_converted_chars_to_obstack (struct obstack *obstack,
 	      }
 	    for (j = 0; j < repeat_count; ++j)
 	      {
-		if (elem->result == wchar_iterate_ok)
-		  print_wchar (elem->chars[0], elem->buf, elem->buflen, width,
-			       byte_order, obstack, quote_char, &need_escape);
+		if (elem->result == wchar_iterate_ok
+		    && printable (elem->chars[0]))
+		  print_char (elem->chars[0]);
 		else
-		  print_wchar (gdb_WEOF, elem->buf, elem->buflen, width,
-			       byte_order, obstack, quote_char, &need_escape);
+		  print_escape (elem->buf, elem->buflen);
 		num_elements += 1;
 	      }
 	  }
@@ -2512,27 +2464,26 @@ print_converted_chars_to_obstack (struct obstack *obstack,
 	      {
 		/* We were outputting a single string.  Terminate the
 		   string.  */
-		obstack_grow (obstack, &wide_quote_char, sizeof (gdb_wchar_t));
+		m_file.write (wide_quote_char);
 	      }
 	    if (last != START)
-	      obstack_grow_wstr (obstack, LCST (", "));
+	      m_file.write (LCST (", "));
 
 	    /* Output the character and repeat string.  */
-	    obstack_grow_wstr (obstack, LCST ("'"));
-	    if (elem->result == wchar_iterate_ok)
-	      print_wchar (elem->chars[0], elem->buf, elem->buflen, width,
-			   byte_order, obstack, quote_char, &need_escape);
+	    m_file.write (LCST ("'"));
+	    if (elem->result == wchar_iterate_ok
+		&& printable (elem->chars[0]))
+	      print_char (elem->chars[0]);
 	    else
-	      print_wchar (gdb_WEOF, elem->buf, elem->buflen, width,
-			   byte_order, obstack, quote_char, &need_escape);
-	    obstack_grow_wstr (obstack, LCST ("'"));
+	      print_escape (elem->buf, elem->buflen);
+	    m_file.write (LCST ("'"));
 	    std::string s = string_printf (_(" <repeats %u times>"),
 					   elem->repeat_count);
 	    num_elements += elem->repeat_count;
 	    for (j = 0; s[j]; ++j)
 	      {
 		gdb_wchar_t w = gdb_btowc (s[j]);
-		obstack_grow (obstack, &w, sizeof (gdb_wchar_t));
+		m_file.write (w);
 	      }
 	  }
 	  break;
@@ -2543,16 +2494,15 @@ print_converted_chars_to_obstack (struct obstack *obstack,
 	    {
 	      /* If we were outputting a string of SINGLE characters,
 		 terminate the quote.  */
-	      obstack_grow (obstack, &wide_quote_char, sizeof (gdb_wchar_t));
+	      m_file.write (wide_quote_char);
 	    }
 	  if (last != START)
-	    obstack_grow_wstr (obstack, LCST (", "));
+	    m_file.write (LCST (", "));
 
 	  /* Output the incomplete sequence string.  */
-	  obstack_grow_wstr (obstack, LCST ("<incomplete sequence "));
-	  print_wchar (gdb_WEOF, elem->buf, elem->buflen, width, byte_order,
-		       obstack, 0, &need_escape);
-	  obstack_grow_wstr (obstack, LCST (">"));
+	  m_file.write (LCST ("<incomplete sequence "));
+	  print_escape (elem->buf, elem->buflen);
+	  m_file.write (LCST (">"));
 	  num_elements += 1;
 
 	  /* We do not attempt to output anything after this.  */
@@ -2564,7 +2514,7 @@ print_converted_chars_to_obstack (struct obstack *obstack,
 	     characters, the string must be terminated.  Otherwise,
 	     REPEAT and INCOMPLETE are always left properly terminated.  */
 	  if (last == SINGLE)
-	    obstack_grow (obstack, &wide_quote_char, sizeof (gdb_wchar_t));
+	    m_file.write (wide_quote_char);
 
 	  return;
 	}
@@ -2596,26 +2546,15 @@ print_converted_chars_to_obstack (struct obstack *obstack,
     }
 }
 
-/* Print the character string STRING, printing at most LENGTH
-   characters.  LENGTH is -1 if the string is nul terminated.  TYPE is
-   the type of each character.  OPTIONS holds the printing options;
-   printing stops early if the number hits print_max_chars; repeat
-   counts are printed as appropriate.  Print ellipses at the end if we
-   had to stop before printing LENGTH characters, or if FORCE_ELLIPSES.
-   QUOTE_CHAR is the character to print at each end of the string.  If
-   C_STYLE_TERMINATOR is true, and the last character is 0, then it is
-   omitted.  */
+/* See char-print.h.  */
 
 void
-generic_printstr (struct ui_file *stream, struct type *type,
-		  const gdb_byte *string, unsigned int length,
-		  const char *encoding, int force_ellipses,
-		  int quote_char, int c_style_terminator,
-		  const struct value_print_options *options)
+wchar_printer::print (struct ui_file *stream, const gdb_byte *string,
+		      unsigned int length, int force_ellipses,
+		      int c_style_terminator,
+		      const struct value_print_options *options)
 {
-  enum bfd_endian byte_order = type_byte_order (type);
   unsigned int i;
-  int width = type->length ();
   int finished = 0;
   struct converted_character *last;
 
@@ -2626,8 +2565,8 @@ generic_printstr (struct ui_file *stream, struct type *type,
       for (i = 0; current_char; ++i)
 	{
 	  QUIT;
-	  current_char = extract_unsigned_integer (string + i * width,
-						   width, byte_order);
+	  current_char = extract_unsigned_integer (string + i * m_width,
+						   m_width, m_byte_order);
 	}
       length = i;
     }
@@ -2638,18 +2577,18 @@ generic_printstr (struct ui_file *stream, struct type *type,
   if (c_style_terminator
       && !force_ellipses
       && length > 0
-      && (extract_unsigned_integer (string + (length - 1) * width,
-				    width, byte_order) == 0))
+      && (extract_unsigned_integer (string + (length - 1) * m_width,
+				    m_width, m_byte_order) == 0))
     length--;
 
   if (length == 0)
     {
-      gdb_printf (stream, "%c%c", quote_char, quote_char);
+      gdb_printf (stream, "%c%c", m_quoter, m_quoter);
       return;
     }
 
   /* Arrange to iterate over the characters, in wchar_t form.  */
-  wchar_iterator iter (string, length * width, encoding, width);
+  wchar_iterator iter (string, length * m_width, m_encoding, m_width);
   std::vector<converted_character> converted_chars;
 
   /* Convert characters until the string is over or the maximum
@@ -2682,27 +2621,44 @@ generic_printstr (struct ui_file *stream, struct type *type,
   /* Ensure that CONVERTED_CHARS is terminated.  */
   last->result = wchar_iterate_eof;
 
-  /* WCHAR_BUF is the obstack we use to represent the string in
-     wchar_t form.  */
-  auto_obstack wchar_buf;
-
   /* Print the output string to the obstack.  */
-  print_converted_chars_to_obstack (&wchar_buf, converted_chars, quote_char,
-				    width, byte_order, options, &finished);
+  print_converted_chars_to_obstack (converted_chars, options, &finished);
 
   if (force_ellipses || !finished)
-    obstack_grow_wstr (&wchar_buf, LCST ("..."));
+    m_file.write (LCST ("..."));
 
   /* OUTPUT is where we collect `char's for printing.  */
   auto_obstack output;
 
   convert_between_encodings (INTERMEDIATE_ENCODING, host_charset (),
-			     (gdb_byte *) obstack_base (&wchar_buf),
-			     obstack_object_size (&wchar_buf),
+			     (gdb_byte *) obstack_base (&m_wchar_buf),
+			     obstack_object_size (&m_wchar_buf),
 			     sizeof (gdb_wchar_t), &output, translit_char);
   obstack_1grow (&output, '\0');
 
   gdb_puts ((const char *) obstack_base (&output), stream);
+}
+
+/* Print the character string STRING, printing at most LENGTH
+   characters.  LENGTH is -1 if the string is nul terminated.  TYPE is
+   the type of each character.  OPTIONS holds the printing options;
+   printing stops early if the number hits print_max_chars; repeat
+   counts are printed as appropriate.  Print ellipses at the end if we
+   had to stop before printing LENGTH characters, or if FORCE_ELLIPSES.
+   QUOTE_CHAR is the character to print at each end of the string.  If
+   C_STYLE_TERMINATOR is true, and the last character is 0, then it is
+   omitted.  */
+
+void
+generic_printstr (struct ui_file *stream, struct type *type,
+		  const gdb_byte *string, unsigned int length,
+		  const char *encoding, int force_ellipses,
+		  int quote_char, int c_style_terminator,
+		  const struct value_print_options *options)
+{
+  wchar_printer printer (type, quote_char, encoding);
+  printer.print (stream, string, length, force_ellipses,
+		 c_style_terminator, options);
 }
 
 /* Print a string from the inferior, starting at ADDR and printing up to LEN
