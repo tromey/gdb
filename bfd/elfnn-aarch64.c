@@ -4494,6 +4494,8 @@ _bfd_aarch64_add_call_stub_entries (bool *stub_changed, bfd *output_bfd,
 		    = bfd_elf_string_from_elf_section (input_bfd,
 						       symtab_hdr->sh_link,
 						       sym->st_name);
+		  if (sym_name == NULL || sym_name[0] == 0)
+		    sym_name = bfd_section_name (sym_sec);
 		}
 	      else
 		{
@@ -4629,8 +4631,9 @@ _bfd_aarch64_add_call_stub_entries (bool *stub_changed, bfd *output_bfd,
 	      stub_entry->h = hash;
 	      stub_entry->st_type = st_type;
 
-	      if (sym_name == NULL)
-		sym_name = "unnamed";
+	      if (sym_name == NULL || sym_name[0] == 0)
+		sym_name = bfd_section_name (section);
+
 	      len = sizeof (STUB_ENTRY_NAME) + strlen (sym_name);
 	      stub_entry->output_name = bfd_alloc (htab->stub_bfd, len);
 	      if (stub_entry->output_name == NULL)
