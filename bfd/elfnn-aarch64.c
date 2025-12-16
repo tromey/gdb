@@ -4772,30 +4772,12 @@ elfNN_aarch64_size_stubs (bfd *output_bfd,
       stub_group_size = 127 * 1024 * 1024;
     }
 
-  group_sections (htab, stub_group_size, stubs_always_before_branch);
-
-  (*htab->layout_sections_again) ();
-
-  if (htab->fix_erratum_835769)
-    {
-      bfd *input_bfd;
-
-      for (input_bfd = info->input_bfds;
-	   input_bfd != NULL; input_bfd = input_bfd->link.next)
-	{
-	  if (!is_aarch64_elf (input_bfd)
-	      || (input_bfd->flags & BFD_LINKER_CREATED) != 0)
-	    continue;
-
-	  if (!_bfd_aarch64_erratum_835769_scan (input_bfd, info,
-						 &num_erratum_835769_fixes))
-	    return false;
-	}
-
-      _bfd_aarch64_resize_stubs (htab);
-      (*htab->layout_sections_again) ();
-    }
-
+  /* The 843419 erratum fix inserts stub sections in place, not in
+     the section groups.  Running this after we have created the stub
+     groups can perturb the calculations and cause the stub groups
+     that have been created to be out of range.  Avoid this by running
+     this pass first and then creating the groups once we know how much
+     code this mitigation will insert.  */
   if (htab->fix_erratum_843419 != ERRAT_NONE)
     {
       bfd *input_bfd;
@@ -4815,6 +4797,30 @@ elfNN_aarch64_size_stubs (bfd *output_bfd,
 	       section = section->next)
 	    if (!_bfd_aarch64_erratum_843419_scan (input_bfd, section, info))
 	      return false;
+	}
+
+      _bfd_aarch64_resize_stubs (htab);
+      (*htab->layout_sections_again) ();
+    }
+
+  group_sections (htab, stub_group_size, stubs_always_before_branch);
+
+  (*htab->layout_sections_again) ();
+
+  if (htab->fix_erratum_835769)
+    {
+      bfd *input_bfd;
+
+      for (input_bfd = info->input_bfds;
+	   input_bfd != NULL; input_bfd = input_bfd->link.next)
+	{
+	  if (!is_aarch64_elf (input_bfd)
+	      || (input_bfd->flags & BFD_LINKER_CREATED) != 0)
+	    continue;
+
+	  if (!_bfd_aarch64_erratum_835769_scan (input_bfd, info,
+						 &num_erratum_835769_fixes))
+	    return false;
 	}
 
       _bfd_aarch64_resize_stubs (htab);
