@@ -2518,7 +2518,9 @@ extern type *make_pointer_type (type *type);
 
 extern struct type *lookup_pointer_type (struct type *);
 
-extern struct type *make_function_type (struct type *, struct type **);
+/* Lookup a function type that returns type RETURN_TYPE.  */
+
+extern struct type *make_function_type (type *return_type);
 
 /* Create a new function type with return type RETURN_TYPE and unspecified
    number and types of parameters.
