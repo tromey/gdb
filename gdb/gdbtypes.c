@@ -476,22 +476,6 @@ lookup_rvalue_reference_type (struct type *type)
   return lookup_reference_type (type, TYPE_CODE_RVALUE_REF);
 }
 
-/* See gdbtypes.h.  */
-
-type *
-make_function_type (type *return_type)
-{
-  type *ntype = type_allocator (return_type).new_type ();
-
-  ntype->set_target_type (return_type);
-  ntype->set_length (1);
-  ntype->set_code (TYPE_CODE_FUNC);
-
-  INIT_FUNC_SPECIFIC (ntype);
-
-  return ntype;
-}
-
 /* Given a return type and argument types, create new function type.
    If the final type in PARAM_TYPES is NULL, create a varargs function.
    New type is allocated using ALLOC.  */
@@ -499,7 +483,13 @@ make_function_type (type *return_type)
 static type *
 create_function_type (type *return_type, int nparams, type **param_types)
 {
-  type *fn = make_function_type (return_type);
+  type *fn = type_allocator (return_type).new_type ();
+
+  fn->set_target_type (return_type);
+  fn->set_length (1);
+  fn->set_code (TYPE_CODE_FUNC);
+
+  INIT_FUNC_SPECIFIC (fn);
 
   if (nparams > 0)
     {
