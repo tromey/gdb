@@ -407,15 +407,10 @@ lookup_pointer_type (struct type *type)
   return make_pointer_type (type);
 }
 
-/* Lookup a C++ `reference' to a type TYPE.  TYPEPTR, if nonzero,
-   points to a pointer to memory where the reference type should be
-   stored.  If *TYPEPTR is zero, update it to point to the reference
-   type we return.  We allocate new memory if needed. REFCODE denotes
-   the kind of reference type to lookup (lvalue or rvalue reference).  */
+/* See gdbtypes.h.  */
 
-struct type *
-make_reference_type (struct type *type, struct type **typeptr,
-		      enum type_code refcode)
+type *
+make_reference_type (type *type, type_code refcode)
 {
   struct type *ntype;	/* New type */
   struct type **reftype;
@@ -427,31 +422,9 @@ make_reference_type (struct type *type, struct type **typeptr,
 	   : TYPE_RVALUE_REFERENCE_TYPE (type));
 
   if (ntype)
-    {
-      if (typeptr == 0)
-	return ntype;		/* Don't care about alloc,
-				   and have new type.  */
-      else if (*typeptr == 0)
-	{
-	  *typeptr = ntype;	/* Tracking alloc, and have new type.  */
-	  return ntype;
-	}
-    }
+    return ntype;
 
-  if (typeptr == 0 || *typeptr == 0)	/* We'll need to allocate one.  */
-    {
-      ntype = type_allocator (type).new_type ();
-      if (typeptr)
-	*typeptr = ntype;
-    }
-  else			/* We have storage, but need to reset it.  */
-    {
-      ntype = *typeptr;
-      chain = TYPE_CHAIN (ntype);
-      smash_type (ntype);
-      TYPE_CHAIN (ntype) = chain;
-    }
-
+  ntype = type_allocator (type).new_type ();
   ntype->set_target_type (type);
   reftype = (refcode == TYPE_CODE_REF ? &TYPE_REFERENCE_TYPE (type)
 	     : &TYPE_RVALUE_REFERENCE_TYPE (type));
@@ -484,7 +457,7 @@ make_reference_type (struct type *type, struct type **typeptr,
 struct type *
 lookup_reference_type (struct type *type, enum type_code refcode)
 {
-  return make_reference_type (type, (struct type **) 0, refcode);
+  return make_reference_type (type, refcode);
 }
 
 /* Lookup the lvalue reference type for the type TYPE.  */

@@ -2432,9 +2432,10 @@ extern struct type *lookup_reference_type (struct type *, enum type_code);
 extern struct type *lookup_lvalue_reference_type (struct type *);
 extern struct type *lookup_rvalue_reference_type (struct type *);
 
+/* Lookup a C++ `reference' to a type TYPE.  REFCODE denotes the kind of
+   reference type to lookup (lvalue or rvalue reference).  */
 
-extern struct type *make_reference_type (struct type *, struct type **,
-					 enum type_code);
+extern type *make_reference_type (type *type, type_code refcode);
 
 extern struct type *make_cv_type (int, int, struct type *, struct type **);
 
