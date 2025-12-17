@@ -2462,7 +2462,11 @@ extern const char *address_space_type_instance_flags_to_name
 extern struct type *make_type_with_address_space
   (struct type *type, type_instance_flags space_identifier);
 
-extern struct type *lookup_memberptr_type (struct type *, struct type *);
+/* Implement direct support for MEMBER_TYPE in GNU C++.
+   TO_TYPE is the type of the member.  DOMAIN is the type of the aggregate that
+   the member belongs to.  */
+
+extern type *lookup_memberptr_type (type *to_type, type *domain);
 
 extern struct type *lookup_methodptr_type (struct type *);
 
@@ -2470,9 +2474,6 @@ extern void smash_to_method_type (struct type *type, struct type *self_type,
 				  struct type *to_type,
 				  gdb::array_view<struct field> args,
 				  int varargs);
-
-extern void smash_to_memberptr_type (struct type *, struct type *,
-				     struct type *);
 
 extern void smash_to_methodptr_type (struct type *, struct type *);
 

@@ -751,18 +751,21 @@ replace_type (struct type *ntype, struct type *type)
   gdb_assert (ntype->instance_flags () == type->instance_flags ());
 }
 
-/* Implement direct support for MEMBER_TYPE in GNU C++.
-   May need to construct such a type if this is the first use.
-   The TYPE is the type of the member.  The DOMAIN is the type
-   of the aggregate that the member belongs to.  */
+/* See gdbtypes.h.  */
 
-struct type *
-lookup_memberptr_type (struct type *type, struct type *domain)
+type *
+lookup_memberptr_type (type *to_type, type *domain)
 {
-  struct type *mtype;
+  type *mtype = type_allocator (to_type).new_type ();
 
-  mtype = type_allocator (type).new_type ();
-  smash_to_memberptr_type (mtype, domain, type);
+  mtype->set_code (TYPE_CODE_MEMBERPTR);
+  mtype->set_target_type (to_type);
+  set_type_self_type (mtype, domain);
+
+  /* Assume that a data member pointer is the same size as a normal
+     pointer.  */
+  mtype->set_length (gdbarch_ptr_bit (to_type->arch ()) / TARGET_CHAR_BIT);
+
   return mtype;
 }
 
@@ -1441,30 +1444,6 @@ set_type_self_type (struct type *type, struct type *self_type)
     default:
       gdb_assert_not_reached ("bad type");
     }
-}
-
-/* Smash TYPE to be a type of pointers to members of SELF_TYPE with type
-   TO_TYPE.  A member pointer is a weird thing -- it amounts to a
-   typed offset into a struct, e.g. "an int at offset 8".  A MEMBER
-   TYPE doesn't include the offset (that's the value of the MEMBER
-   itself), but does include the structure type into which it points
-   (for some reason).
-
-   When "smashing" the type, we preserve the objfile that the old type
-   pointed to, since we aren't changing where the type is actually
-   allocated.  */
-
-void
-smash_to_memberptr_type (struct type *type, struct type *self_type,
-			 struct type *to_type)
-{
-  smash_type (type);
-  type->set_code (TYPE_CODE_MEMBERPTR);
-  type->set_target_type (to_type);
-  set_type_self_type (type, self_type);
-  /* Assume that a data member pointer is the same size as a normal
-     pointer.  */
-  type->set_length (gdbarch_ptr_bit (to_type->arch ()) / TARGET_CHAR_BIT);
 }
 
 /* Smash TYPE to be a type of pointer to methods type TO_TYPE.
