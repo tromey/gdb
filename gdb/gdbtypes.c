@@ -652,25 +652,11 @@ make_type_with_address_space (struct type *type,
   return make_qualified_type (type, new_flags, NULL);
 }
 
-/* Make a "c-v" variant of a type -- a type that is identical to the
-   one supplied except that it may have const or volatile attributes
-   CNST is a flag for setting the const attribute
-   VOLTL is a flag for setting the volatile attribute
-   TYPE is the base type whose variant we are creating.
+/* See gdbtypes.h.  */
 
-   If TYPEPTR and *TYPEPTR are non-zero, then *TYPEPTR points to
-   storage to hold the new qualified type; *TYPEPTR and TYPE must be
-   in the same objfile.  Otherwise, allocate fresh memory for the new
-   type wherever TYPE lives.  If TYPEPTR is non-zero, set it to the
-   new type we construct.  */
-
-struct type *
-make_cv_type (int cnst, int voltl,
-	      struct type *type,
-	      struct type **typeptr)
+type *
+make_cv_type (int cnst, int voltl, type *type)
 {
-  struct type *ntype;	/* New type */
-
   type_instance_flags new_flags = (type->instance_flags ()
 				   & ~(TYPE_INSTANCE_FLAG_CONST
 				       | TYPE_INSTANCE_FLAG_VOLATILE));
@@ -681,30 +667,7 @@ make_cv_type (int cnst, int voltl,
   if (voltl)
     new_flags |= TYPE_INSTANCE_FLAG_VOLATILE;
 
-  if (typeptr && *typeptr != NULL)
-    {
-      /* TYPE and *TYPEPTR must be in the same objfile.  We can't have
-	 a C-V variant chain that threads across objfiles: if one
-	 objfile gets freed, then the other has a broken C-V chain.
-
-	 This code used to try to copy over the main type from TYPE to
-	 *TYPEPTR if they were in different objfiles, but that's
-	 wrong, too: TYPE may have a field list or member function
-	 lists, which refer to types of their own, etc. etc.  The
-	 whole shebang would need to be copied over recursively; you
-	 can't have inter-objfile pointers.  The only thing to do is
-	 to leave stub types as stub types, and look them up afresh by
-	 name each time you encounter them.  */
-      gdb_assert ((*typeptr)->objfile_owner () == type->objfile_owner ());
-    }
-
-  ntype = make_qualified_type (type, new_flags,
-			       typeptr ? *typeptr : NULL);
-
-  if (typeptr != NULL)
-    *typeptr = ntype;
-
-  return ntype;
+  return make_qualified_type (type, new_flags, nullptr);
 }
 
 /* Make a 'restrict'-qualified version of TYPE.  */

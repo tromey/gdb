@@ -12987,7 +12987,7 @@ add_array_cv_type (struct die_info *die, struct dwarf2_cu *cu,
   el_type = inner_array->target_type ();
   cnst |= TYPE_CONST (el_type);
   voltl |= TYPE_VOLATILE (el_type);
-  inner_array->set_target_type (make_cv_type (cnst, voltl, el_type, NULL));
+  inner_array->set_target_type (make_cv_type (cnst, voltl, el_type));
 
   return set_die_type (die, base_type, cu);
 }
@@ -13009,7 +13009,7 @@ read_tag_const_type (struct die_info *die, struct dwarf2_cu *cu)
   if (base_type->code () == TYPE_CODE_ARRAY)
     return add_array_cv_type (die, cu, base_type, 1, 0);
 
-  cv_type = make_cv_type (1, TYPE_VOLATILE (base_type), base_type, 0);
+  cv_type = make_cv_type (1, TYPE_VOLATILE (base_type), base_type);
   return set_die_type (die, cv_type, cu);
 }
 
@@ -13031,7 +13031,7 @@ read_tag_volatile_type (struct die_info *die, struct dwarf2_cu *cu)
   if (base_type->code () == TYPE_CODE_ARRAY)
     return add_array_cv_type (die, cu, base_type, 0, 1);
 
-  cv_type = make_cv_type (TYPE_CONST (base_type), 1, base_type, 0);
+  cv_type = make_cv_type (TYPE_CONST (base_type), 1, base_type);
   return set_die_type (die, cv_type, cu);
 }
 
@@ -13355,7 +13355,7 @@ read_subroutine_type (struct die_info *die, struct dwarf2_cu *cu)
 
 		  if (is_this)
 		    arg_type = make_cv_type (1, TYPE_VOLATILE (arg_type),
-					     arg_type, 0);
+					     arg_type);
 		}
 
 	      ftype->field (iparams).set_type (arg_type);

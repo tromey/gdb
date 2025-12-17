@@ -543,7 +543,7 @@ c_type_print_args (struct type *type, struct ui_file *stream,
 	     And the const/volatile qualifiers are not present in the mangled
 	     names as produced by GCC.  */
 
-	  param_type = make_cv_type (0, 0, param_type, NULL);
+	  param_type = make_cv_type (0, 0, param_type);
 	}
 
       c_print_type (param_type, "", stream, -1, 0, language, flags);

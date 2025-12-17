@@ -1003,7 +1003,7 @@ build_std_type_info_type (struct gdbarch *arch)
   struct type *char_type
     = builtin_type (arch)->builtin_char;
   struct type *char_ptr_type
-    = make_pointer_type (make_cv_type (1, 0, char_type, NULL));
+    = make_pointer_type (make_cv_type (1, 0, char_type));
 
   t = type_allocator (arch).new_type (TYPE_CODE_STRUCT, 0, nullptr);
 
@@ -1088,7 +1088,7 @@ gnuv3_get_typeid (struct value *value)
     type = check_typedef (type->target_type ());
 
   /* Ignore top-level cv-qualifiers.  */
-  type = make_cv_type (0, 0, type, NULL);
+  type = make_cv_type (0, 0, type);
   gdbarch = type->arch ();
 
   type_name = type_to_string (type);
