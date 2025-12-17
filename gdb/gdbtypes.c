@@ -560,9 +560,11 @@ make_function_type (struct type *type, struct type **typeptr)
   return ntype;
 }
 
-/* See gdbtypes.h.  */
+/* Given a return type and argument types, create new function type.
+   If the final type in PARAM_TYPES is NULL, create a varargs function.
+   New type is allocated using ALLOC.  */
 
-struct type *
+static struct type *
 create_function_type (type_allocator &alloc,
 		     struct type *return_type,
 		     int nparams,
