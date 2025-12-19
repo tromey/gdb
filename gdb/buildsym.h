@@ -449,7 +449,4 @@ using buildsym_compunit_up = std::unique_ptr<buildsym_compunit>;
 extern void add_symbol_to_list (struct symbol *symbol,
 				struct pending **listhead);
 
-extern struct symbol *find_symbol_in_list (struct pending *list,
-					   char *name, int length);
-
 #endif /* GDB_BUILDSYM_H */

@@ -135,31 +135,6 @@ add_symbol_to_list (struct symbol *symbol, struct pending **listhead)
   (*listhead)->symbol[(*listhead)->nsyms++] = symbol;
 }
 
-/* Find a symbol named NAME on a LIST.  NAME need not be
-   '\0'-terminated; LENGTH is the length of the name.  */
-
-struct symbol *
-find_symbol_in_list (struct pending *list, char *name, int length)
-{
-  int j;
-  const char *pp;
-
-  while (list != NULL)
-    {
-      for (j = list->nsyms; --j >= 0;)
-	{
-	  pp = list->symbol[j]->linkage_name ();
-	  if (*pp == *name && strncmp (pp, name, length) == 0
-	      && pp[length] == '\0')
-	    {
-	      return (list->symbol[j]);
-	    }
-	}
-      list = list->next;
-    }
-  return (NULL);
-}
-
 /* Record BLOCK on the list of all blocks in the file.  Put it after
    OPBLOCK, or at the beginning if opblock is NULL.  This puts the
    block in the list after all its subblocks.  */
