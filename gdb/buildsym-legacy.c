@@ -96,7 +96,7 @@ get_current_subfile ()
 
 /* See buildsym.h.  */
 
-struct pending **
+std::vector<symbol *> &
 get_local_symbols ()
 {
   gdb_assert (buildsym_compunit != nullptr);
@@ -105,7 +105,7 @@ get_local_symbols ()
 
 /* See buildsym.h.  */
 
-struct pending **
+std::vector<symbol *> &
 get_file_symbols ()
 {
   gdb_assert (buildsym_compunit != nullptr);
@@ -114,7 +114,7 @@ get_file_symbols ()
 
 /* See buildsym.h.  */
 
-struct pending **
+std::vector<symbol *> &
 get_global_symbols ()
 {
   gdb_assert (buildsym_compunit != nullptr);

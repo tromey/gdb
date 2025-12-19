@@ -68,27 +68,14 @@ struct subfile
 
 using subfile_up = std::unique_ptr<subfile>;
 
-/* Record the symbols defined for each context in a list.  We don't
-   create a struct block for the context until we know how long to
-   make it.  */
-
-#define PENDINGSIZE 100
-
-struct pending
-  {
-    struct pending *next;
-    int nsyms;
-    struct symbol *symbol[PENDINGSIZE];
-  };
-
 /* Stack representing unclosed lexical contexts (that will become
    blocks, eventually).  */
 
 struct context_stack
 {
-  context_stack (pending *locals, using_direct *local_using_directives,
+  context_stack (std::vector<symbol *> locals, using_direct *local_using_directives,
 		 pending_block *old_blocks, CORE_ADDR start_addr, int depth)
-    : locals (locals),
+    : locals (std::move (locals)),
       local_using_directives (local_using_directives),
       old_blocks (old_blocks),
       start_addr (start_addr),
@@ -96,7 +83,7 @@ struct context_stack
   {}
 
   /* Outer locals at the time we entered.  */
-  pending *locals;
+  std::vector<symbol *> locals;
 
   /* Pending using directives at the time we entered.  */
   using_direct *local_using_directives;
@@ -290,19 +277,19 @@ struct buildsym_compunit
     return m_current_subfile;
   }
 
-  struct pending **get_local_symbols ()
+  std::vector<symbol *> &get_local_symbols ()
   {
-    return &m_local_symbols;
+    return m_local_symbols;
   }
 
-  struct pending **get_file_symbols ()
+  std::vector<symbol *> &get_file_symbols ()
   {
-    return &m_file_symbols;
+    return m_file_symbols;
   }
 
-  struct pending **get_global_symbols ()
+  std::vector<symbol *> &get_global_symbols ()
   {
-    return &m_global_symbols;
+    return m_global_symbols;
   }
 
   void record_debugformat (const char *format)
@@ -336,7 +323,7 @@ private:
   void record_pending_block (struct block *block, struct pending_block *opblock);
 
   struct block *finish_block_internal (struct symbol *symbol,
-				       struct pending **listhead,
+				       std::vector<struct symbol *> &symbol_list,
 				       struct pending_block *old_blocks,
 				       const struct dynamic_prop *static_link,
 				       CORE_ADDR start, CORE_ADDR end,
@@ -432,18 +419,18 @@ private:
   struct pending_block *m_pending_blocks = nullptr;
 
   /* Pending static symbols and types at the top level.  */
-  struct pending *m_file_symbols = nullptr;
+  std::vector<symbol *> m_file_symbols;
 
   /* Pending global functions and variables.  */
-  struct pending *m_global_symbols = nullptr;
+  std::vector<symbol *> m_global_symbols;
 
   /* Pending symbols that are local to the lexical context.  */
-  struct pending *m_local_symbols = nullptr;
+  std::vector<symbol *> m_local_symbols;
 };
 
 using buildsym_compunit_up = std::unique_ptr<buildsym_compunit>;
 
-extern void add_symbol_to_list (struct symbol *symbol,
-				struct pending **listhead);
+extern void add_symbol_to_list (symbol *symbol,
+				std::vector<struct symbol *> &list);
 
 #endif /* GDB_BUILDSYM_H */

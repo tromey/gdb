@@ -136,15 +136,15 @@ extern struct subfile *get_current_subfile ();
 
 /* Return the local symbol list.  */
 
-extern struct pending **get_local_symbols ();
+extern std::vector<symbol *> &get_local_symbols ();
 
 /* Return the file symbol list.  */
 
-extern struct pending **get_file_symbols ();
+extern std::vector<symbol *> &get_file_symbols ();
 
 /* Return the global symbol list.  */
 
-extern struct pending **get_global_symbols ();
+extern std::vector<symbol *> &get_global_symbols ();
 
 /* Return the current buildsym_compunit.  */
 

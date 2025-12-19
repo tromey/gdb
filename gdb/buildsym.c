@@ -83,20 +83,6 @@ buildsym_compunit::~buildsym_compunit ()
       nextsub = subfile->next;
       delete subfile;
     }
-
-  struct pending *next, *next1;
-
-  for (next = m_file_symbols; next != NULL; next = next1)
-    {
-      next1 = next->next;
-      xfree ((void *) next);
-    }
-
-  for (next = m_global_symbols; next != NULL; next = next1)
-    {
-      next1 = next->next;
-      xfree ((void *) next);
-    }
 }
 
 struct macro_table *
@@ -114,25 +100,13 @@ buildsym_compunit::get_macro_table ()
 /* Add a symbol to one of the lists of symbols.  */
 
 void
-add_symbol_to_list (struct symbol *symbol, struct pending **listhead)
+add_symbol_to_list (symbol *symbol, std::vector<struct symbol *> &list)
 {
-  struct pending *link;
-
   /* If this is an alias for another symbol, don't add it.  */
   if (symbol->linkage_name () && symbol->linkage_name ()[0] == '#')
     return;
 
-  /* We keep PENDINGSIZE symbols in each link of the list.  If we
-     don't have a link with room in it, add a new link.  */
-  if (*listhead == NULL || (*listhead)->nsyms == PENDINGSIZE)
-    {
-      link = XNEW (struct pending);
-      link->next = *listhead;
-      *listhead = link;
-      link->nsyms = 0;
-    }
-
-  (*listhead)->symbol[(*listhead)->nsyms++] = symbol;
+  list.push_back (symbol);
 }
 
 /* Record BLOCK on the list of all blocks in the file.  Put it after
@@ -166,14 +140,13 @@ buildsym_compunit::record_pending_block (struct block *block,
 struct block *
 buildsym_compunit::finish_block_internal
     (struct symbol *symbol,
-     struct pending **listhead,
+     std::vector<struct symbol *> &symbol_list,
      struct pending_block *old_blocks,
      const struct dynamic_prop *static_link,
      CORE_ADDR start, CORE_ADDR end,
      bool is_global, bool expandable)
 {
   struct gdbarch *gdbarch = m_objfile->arch ();
-  struct pending *next, *next1;
   struct block *block;
   struct pending_block *pblock;
   struct pending_block *opblock;
@@ -186,7 +159,7 @@ buildsym_compunit::finish_block_internal
   if (symbol)
     {
       block->set_multidict
-	(mdict_create_linear (&m_objfile->objfile_obstack, *listhead));
+	(mdict_create_linear (&m_objfile->objfile_obstack, symbol_list));
     }
   else
     {
@@ -194,12 +167,12 @@ buildsym_compunit::finish_block_internal
 	{
 	  block->set_multidict
 	    (mdict_create_hashed_expandable (m_language));
-	  mdict_add_pending (block->multidict (), *listhead);
+	  mdict_add_pending (block->multidict (), symbol_list);
 	}
       else
 	{
 	  block->set_multidict
-	    (mdict_create_hashed (&m_objfile->objfile_obstack, *listhead));
+	    (mdict_create_hashed (&m_objfile->objfile_obstack, symbol_list));
 	}
     }
 
@@ -257,14 +230,8 @@ buildsym_compunit::finish_block_internal
   if (static_link != NULL)
     objfile_register_static_link (m_objfile, block, static_link);
 
-  /* Now free the links of the list, and empty the list.  */
-
-  for (next = *listhead; next; next = next1)
-    {
-      next1 = next->next;
-      xfree (next);
-    }
-  *listhead = NULL;
+  /* Now empty the list.  */
+  symbol_list.clear ();
 
   /* Check to be sure that the blocks have an end address that is
      greater than starting address.  */
@@ -355,7 +322,7 @@ buildsym_compunit::finish_block (struct symbol *symbol,
 				 const struct dynamic_prop *static_link,
 				 CORE_ADDR start, CORE_ADDR end)
 {
-  return finish_block_internal (symbol, &m_local_symbols,
+  return finish_block_internal (symbol, m_local_symbols,
 				old_blocks, static_link, start, end, false,
 				false);
 }
@@ -776,8 +743,8 @@ buildsym_compunit::end_compunit_symtab_get_static_block (CORE_ADDR end_addr,
 
   if (!required
       && m_pending_blocks == NULL
-      && m_file_symbols == NULL
-      && m_global_symbols == NULL
+      && m_file_symbols.empty ()
+      && m_global_symbols.empty ()
       && !m_have_line_numbers
       && m_pending_macros == NULL
       && m_global_using_directives == NULL)
@@ -788,7 +755,7 @@ buildsym_compunit::end_compunit_symtab_get_static_block (CORE_ADDR end_addr,
   else
     {
       /* Define the STATIC_BLOCK.  */
-      return finish_block_internal (NULL, get_file_symbols (), NULL, NULL,
+      return finish_block_internal (NULL, m_file_symbols, NULL, NULL,
 				    m_last_source_start_addr,
 				    end_addr, false, expandable);
     }
@@ -827,7 +794,7 @@ buildsym_compunit::end_compunit_symtab_from_static_block
   end_addr = static_block->end ();
 
   /* Create the GLOBAL_BLOCK and build the blockvector.  */
-  finish_block_internal (NULL, get_global_symbols (), NULL, NULL,
+  finish_block_internal (NULL, m_global_symbols, NULL, NULL,
 			 m_last_source_start_addr, end_addr,
 			 true, expandable);
   blockvector_up blockvector = make_blockvector ();
@@ -999,20 +966,11 @@ buildsym_compunit::end_expandable_symtab (CORE_ADDR end_addr)
    don't have one.  */
 
 static void
-set_missing_symtab (struct pending *pending_list,
-		    struct compunit_symtab *cu)
+set_missing_symtab (const std::vector<symbol *> &symbols, compunit_symtab *cu)
 {
-  struct pending *pending;
-  int i;
-
-  for (pending = pending_list; pending != NULL; pending = pending->next)
-    {
-      for (i = 0; i < pending->nsyms; ++i)
-	{
-	  if (pending->symbol[i]->symtab () == NULL)
-	    pending->symbol[i]->set_symtab (cu->primary_filetab ());
-	}
-    }
+  for (symbol *sym : symbols)
+    if (sym->symtab () == nullptr)
+      sym->set_symtab (cu->primary_filetab ());
 }
 
 /* Same as end_compunit_symtab, but for the case where we're adding more symbols
@@ -1034,7 +992,7 @@ buildsym_compunit::augment_type_symtab ()
   if (m_have_line_numbers)
     complaint (_("Line numbers recorded in a type symtab"));
 
-  if (m_file_symbols != NULL)
+  if (!m_file_symbols.empty ())
     {
       struct block *block = blockvector->static_block ();
 
@@ -1045,7 +1003,7 @@ buildsym_compunit::augment_type_symtab ()
       mdict_add_pending (block->multidict (), m_file_symbols);
     }
 
-  if (m_global_symbols != NULL)
+  if (!m_global_symbols.empty ())
     {
       struct block *block = blockvector->global_block ();
 
@@ -1065,10 +1023,10 @@ context_stack &
 buildsym_compunit::push_context (int desc, CORE_ADDR valu)
 {
   context_stack &ctx
-    = m_context_stack.emplace_back (m_local_symbols, m_local_using_directives,
+    = m_context_stack.emplace_back (std::move (m_local_symbols),
+				    m_local_using_directives,
 				    m_pending_blocks, valu, desc);
 
-  m_local_symbols = nullptr;
   m_local_using_directives = nullptr;
 
   return ctx;
