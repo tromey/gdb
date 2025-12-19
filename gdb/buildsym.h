@@ -85,37 +85,29 @@ struct pending
    blocks, eventually).  */
 
 struct context_stack
-  {
-    /* Outer locals at the time we entered */
+{
+  /* Outer locals at the time we entered.  */
+  pending *locals;
 
-    struct pending *locals;
+  /* Pending using directives at the time we entered.  */
+  using_direct *local_using_directives;
 
-    /* Pending using directives at the time we entered.  */
+  /* Pointer into blocklist as of entry.  */
+  pending_block *old_blocks;
 
-    struct using_direct *local_using_directives;
+  /* Name of function, if any, defining context.  */
+  symbol *name;
 
-    /* Pointer into blocklist as of entry */
+  /* Expression that computes the frame base of the lexically enclosing
+     function, if any.  NULL otherwise.  */
+  dynamic_prop *static_link;
 
-    struct pending_block *old_blocks;
+  /* PC where this context starts.  */
+  CORE_ADDR start_addr;
 
-    /* Name of function, if any, defining context */
-
-    struct symbol *name;
-
-    /* Expression that computes the frame base of the lexically enclosing
-       function, if any.  NULL otherwise.  */
-
-    struct dynamic_prop *static_link;
-
-    /* PC where this context starts */
-
-    CORE_ADDR start_addr;
-
-    /* For error-checking matching push/pop */
-
-    int depth;
-
-  };
+  /* For error-checking matching push/pop.  */
+  int depth;
+};
 
 /* Flags associated with a linetable entry.  */
 
