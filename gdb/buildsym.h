@@ -111,10 +111,6 @@ struct context_stack
 
     CORE_ADDR start_addr;
 
-    /* Temp slot for exception handling.  */
-
-    CORE_ADDR end_addr;
-
     /* For error-checking matching push/pop */
 
     int depth;
