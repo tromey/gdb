@@ -8505,7 +8505,6 @@ read_func_scope (struct die_info *die, struct dwarf2_cu *cu)
   dwarf2_per_objfile *per_objfile = cu->per_objfile;
   struct objfile *objfile = per_objfile->objfile;
   struct gdbarch *gdbarch = objfile->arch ();
-  struct context_stack *newobj;
   CORE_ADDR lowpc;
   CORE_ADDR highpc;
   struct attribute *attr, *call_line, *call_file;
@@ -8596,27 +8595,27 @@ read_func_scope (struct die_info *die, struct dwarf2_cu *cu)
     }
 
   gdb_assert (cu->get_builder () != nullptr);
-  newobj = cu->get_builder ()->push_context (0, lowpc);
-  newobj->name = new_symbol (die, read_type_die (die, cu), cu, templ_func);
+  context_stack &ctx = cu->get_builder ()->push_context (0, lowpc);
+  ctx.name = new_symbol (die, read_type_die (die, cu), cu, templ_func);
 
   if (dwarf2_func_is_main_p (die, cu))
-    set_objfile_main_name (objfile, newobj->name->linkage_name (),
+    set_objfile_main_name (objfile, ctx.name->linkage_name (),
 			   cu->lang ());
 
   /* If there is a location expression for DW_AT_frame_base, record
      it.  */
   attr = dwarf2_attr (die, DW_AT_frame_base, cu);
   if (attr != nullptr)
-    dwarf2_symbol_mark_computed (attr, newobj->name, cu, 1);
+    dwarf2_symbol_mark_computed (attr, ctx.name, cu, 1);
 
   /* If there is a location for the static link, record it.  */
-  newobj->static_link = NULL;
+  ctx.static_link = NULL;
   attr = dwarf2_attr (die, DW_AT_static_link, cu);
   if (attr != nullptr)
     {
-      newobj->static_link
+      ctx.static_link
 	= XOBNEW (&objfile->objfile_obstack, struct dynamic_prop);
-      attr_to_dynamic_prop (attr, die, cu, newobj->static_link,
+      attr_to_dynamic_prop (attr, die, cu, ctx.static_link,
 			    cu->addr_type ());
     }
 

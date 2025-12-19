@@ -170,14 +170,14 @@ end_compunit_symtab (CORE_ADDR end_addr)
   return result;
 }
 
-struct context_stack *
+context_stack &
 push_context (int desc, CORE_ADDR valu)
 {
   gdb_assert (buildsym_compunit != nullptr);
   return buildsym_compunit->push_context (desc, valu);
 }
 
-struct context_stack
+context_stack
 pop_context ()
 {
   gdb_assert (buildsym_compunit != nullptr);

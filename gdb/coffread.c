@@ -745,7 +745,7 @@ coff_symtab_read (minimal_symbol_reader &reader,
 		  struct objfile *objfile)
 {
   struct gdbarch *gdbarch = objfile->arch ();
-  struct context_stack *newobj = nullptr;
+  context_stack *ctx = nullptr;
   struct coff_symbol coff_symbol;
   struct coff_symbol *cs = &coff_symbol;
   static struct internal_syment main_sym;
@@ -1029,11 +1029,10 @@ coff_symtab_read (minimal_symbol_reader &reader,
 		 context_stack_depth is zero, and complain if not.  */
 
 	      depth = 0;
-	      newobj = push_context (depth, fcn_start_addr);
+	      ctx = &push_context (depth, fcn_start_addr);
 	      fcn_cs_saved.c_name = getsymname (&fcn_sym_saved);
-	      newobj->name =
-		process_coff_symbol (&fcn_cs_saved,
-				     &fcn_aux_saved, objfile);
+	      ctx->name
+		= process_coff_symbol (&fcn_cs_saved, &fcn_aux_saved, objfile);
 	    }
 	  else if (strcmp (cs->c_name, ".ef") == 0)
 	    {
@@ -1055,7 +1054,7 @@ coff_symtab_read (minimal_symbol_reader &reader,
 
 	      struct context_stack cstk = pop_context ();
 	      /* Stack must be empty now.  */
-	      if (!outermost_context_p () || newobj == NULL)
+	      if (!outermost_context_p () || ctx == nullptr)
 		{
 		  complaint (_("Unmatched .ef symbol(s) ignored "
 			       "starting at symnum %d"),

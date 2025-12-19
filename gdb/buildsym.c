@@ -1061,32 +1061,32 @@ buildsym_compunit::augment_type_symtab ()
    (checkable when you pop it), and the starting PC address of this
    context.  */
 
-struct context_stack *
+context_stack &
 buildsym_compunit::push_context (int desc, CORE_ADDR valu)
 {
-  struct context_stack *newobj = &m_context_stack.emplace_back ();
+  context_stack &ctx = m_context_stack.emplace_back ();
 
-  newobj->depth = desc;
-  newobj->locals = m_local_symbols;
-  newobj->old_blocks = m_pending_blocks;
-  newobj->start_addr = valu;
-  newobj->local_using_directives = m_local_using_directives;
-  newobj->name = NULL;
+  ctx.depth = desc;
+  ctx.locals = m_local_symbols;
+  ctx.old_blocks = m_pending_blocks;
+  ctx.start_addr = valu;
+  ctx.local_using_directives = m_local_using_directives;
+  ctx.name = NULL;
 
   m_local_symbols = NULL;
   m_local_using_directives = NULL;
 
-  return newobj;
+  return ctx;
 }
 
 /* Pop a context block.  Returns the address of the context block just
    popped.  */
 
-struct context_stack
+context_stack
 buildsym_compunit::pop_context ()
 {
   gdb_assert (!m_context_stack.empty ());
-  struct context_stack result = m_context_stack.back ();
+  context_stack result = m_context_stack.back ();
   m_context_stack.pop_back ();
   return result;
 }

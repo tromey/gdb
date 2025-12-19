@@ -306,9 +306,9 @@ struct buildsym_compunit
     m_producer = producer;
   }
 
-  struct context_stack *push_context (int desc, CORE_ADDR valu);
+  context_stack &push_context (int desc, CORE_ADDR valu);
 
-  struct context_stack pop_context ();
+  context_stack pop_context ();
 
   struct block *end_compunit_symtab_get_static_block
     (CORE_ADDR end_addr, bool expandable, bool required);
