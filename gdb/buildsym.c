@@ -1064,17 +1064,12 @@ buildsym_compunit::augment_type_symtab ()
 context_stack &
 buildsym_compunit::push_context (int desc, CORE_ADDR valu)
 {
-  context_stack &ctx = m_context_stack.emplace_back ();
+  context_stack &ctx
+    = m_context_stack.emplace_back (m_local_symbols, m_local_using_directives,
+				    m_pending_blocks, valu, desc);
 
-  ctx.depth = desc;
-  ctx.locals = m_local_symbols;
-  ctx.old_blocks = m_pending_blocks;
-  ctx.start_addr = valu;
-  ctx.local_using_directives = m_local_using_directives;
-  ctx.name = NULL;
-
-  m_local_symbols = NULL;
-  m_local_using_directives = NULL;
+  m_local_symbols = nullptr;
+  m_local_using_directives = nullptr;
 
   return ctx;
 }

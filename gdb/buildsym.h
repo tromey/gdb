@@ -86,6 +86,15 @@ struct pending
 
 struct context_stack
 {
+  context_stack (pending *locals, using_direct *local_using_directives,
+		 pending_block *old_blocks, CORE_ADDR start_addr, int depth)
+    : locals (locals),
+      local_using_directives (local_using_directives),
+      old_blocks (old_blocks),
+      start_addr (start_addr),
+      depth (depth)
+  {}
+
   /* Outer locals at the time we entered.  */
   pending *locals;
 
@@ -96,11 +105,11 @@ struct context_stack
   pending_block *old_blocks;
 
   /* Name of function, if any, defining context.  */
-  symbol *name;
+  symbol *name = nullptr;
 
   /* Expression that computes the frame base of the lexically enclosing
      function, if any.  NULL otherwise.  */
-  dynamic_prop *static_link;
+  dynamic_prop *static_link = nullptr;
 
   /* PC where this context starts.  */
   CORE_ADDR start_addr;
