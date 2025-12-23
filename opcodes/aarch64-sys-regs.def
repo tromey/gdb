@@ -676,6 +676,8 @@
   SYSREG ("hafgrtr_el2",	CPENC (3,4,3,1,6),	0,		AARCH64_FEATURE (V8_5A)) /* AMUv1 && FGT */
   SYSREG ("hcr_el2",		CPENC (3,4,1,1,0),	0,		AARCH64_NO_FEATURES)
   SYSREG ("hcrx_el2",		CPENC (3,4,1,2,2),	0,		AARCH64_FEATURE (V8_6A)) /* HCX */
+  SYSREG ("hcrmask_el2",	CPENC (3,4,1,5,6),	0,		AARCH64_FEATURE (V9_6A)) /* SRMASK2 */
+  SYSREG ("hcrxmask_el2",	CPENC (3,4,1,5,7),	0,		AARCH64_FEATURE (V9_6A)) /* SRMASK2 */
   SYSREG ("hdbssbr_el2",	CPENC (3,4,2,3,2),	0,		AARCH64_FEATURE (V9_4A)) /* HDBSS */
   SYSREG ("hdbssprod_el2",	CPENC (3,4,2,3,3),	0,		AARCH64_FEATURE (V9_4A)) /* HDBSS */
   SYSREG ("hdfgrtr_el2",	CPENC (3,4,3,1,4),	0,		AARCH64_FEATURE (V8_5A)) /* FGT */
@@ -938,6 +940,10 @@
   SYSREG ("mvfr0_el1",		CPENC (3,0,0,3,0),	F_REG_READ,	AARCH64_NO_FEATURES)
   SYSREG ("mvfr1_el1",		CPENC (3,0,0,3,1),	F_REG_READ,	AARCH64_NO_FEATURES)
   SYSREG ("mvfr2_el1",		CPENC (3,0,0,3,2),	F_REG_READ,	AARCH64_NO_FEATURES)
+  SYSREG ("nvhcr_el2",		CPENC (3,4,1,5,0),	0,		AARCH64_FEATURE (V9_3A)) /* NV3 */
+  SYSREG ("nvhcrx_el2",		CPENC (3,4,1,5,1),	0,		AARCH64_FEATURE (V9_6A)) /* NV3 && SRMASK2 */
+  SYSREG ("nvhcrmask_el2",	CPENC (3,4,1,5,4),	0,		AARCH64_FEATURE (V9_6A)) /* NV3 && SRMASK2 */
+  SYSREG ("nvhcrxmask_el2",	CPENC (3,4,1,5,5),	0,		AARCH64_FEATURE (V9_6A)) /* NV3 && SRMASK2 */
   SYSREG ("nzcv",		CPENC (3,3,4,2,0),	0,		AARCH64_NO_FEATURES)
   SYSREG ("osdlr_el1",		CPENC (2,0,1,3,4),	0,		AARCH64_NO_FEATURES)
   SYSREG ("osdtrrx_el1",	CPENC (2,0,0,0,2),	0,		AARCH64_NO_FEATURES)
