@@ -244,7 +244,7 @@ lnp_state_machine::handle_set_file (file_name_index file)
   else
     {
       m_line_has_non_zero_discriminator = m_discriminator != 0;
-      dwarf2_start_subfile (m_cu, *fe, *m_cu->line_header);
+      dwarf2_start_subfile (*m_cu, *fe);
     }
 }
 
@@ -507,7 +507,7 @@ dwarf_decode_lines_1 (struct dwarf2_cu *cu, unrelocated_addr lowpc)
       const file_entry *fe = state_machine.current_file ();
 
       if (fe != NULL)
-	dwarf2_start_subfile (cu, *fe, *lh);
+	dwarf2_start_subfile (*cu, *fe);
 
       /* Decode the table.  */
       while (line_ptr < line_end && !end_sequence)
@@ -702,10 +702,9 @@ dwarf_decode_lines (struct dwarf2_cu *cu, unrelocated_addr lowpc,
   buildsym_compunit *builder = cu->get_builder ();
   struct compunit_symtab *cust = builder->get_compunit_symtab ();
 
-  struct line_header *lh = cu->line_header;
-  for (file_entry &fe : lh->file_names ())
+  for (file_entry &fe : cu->line_header->file_names ())
     {
-      dwarf2_start_subfile (cu, fe, *lh);
+      dwarf2_start_subfile (*cu, fe);
       subfile *sf = builder->get_current_subfile ();
 
       if (sf->symtab == nullptr)

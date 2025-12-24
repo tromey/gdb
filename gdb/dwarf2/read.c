@@ -6265,7 +6265,7 @@ dwarf2_cu::setup_type_unit_groups (struct die_info *die)
       for (i = 0; i < file_names.size (); ++i)
 	{
 	  file_entry &fe = file_names[i];
-	  dwarf2_start_subfile (this, fe, *line_header);
+	  dwarf2_start_subfile (*this, fe);
 	  buildsym_compunit *b = get_builder ();
 	  subfile *sf = b->get_current_subfile ();
 
@@ -15983,12 +15983,11 @@ dwarf_decode_line_header (sect_offset sect_off, struct dwarf2_cu *cu,
 /* See dwarf2/read.h.  */
 
 void
-dwarf2_start_subfile (dwarf2_cu *cu, const file_entry &fe,
-		      const line_header &lh)
+dwarf2_start_subfile (dwarf2_cu &cu, const file_entry &fe)
 {
   std::string filename_holder;
   const char *filename = fe.name;
-  const char *dirname = lh.include_dir_at (fe.d_index);
+  const char *dirname = cu.line_header->include_dir_at (fe.d_index);
 
   /* In order not to lose the line information directory,
      we concatenate it to the filename when it makes sense.
@@ -16003,8 +16002,8 @@ dwarf2_start_subfile (dwarf2_cu *cu, const file_entry &fe,
       filename = filename_holder.c_str ();
     }
 
-  std::string filename_for_id = lh.file_file_name (fe);
-  cu->get_builder ()->start_subfile (filename, filename_for_id.c_str ());
+  std::string filename_for_id = cu.line_header->file_file_name (fe);
+  cu.get_builder ()->start_subfile (filename, filename_for_id.c_str ());
 }
 
 static void

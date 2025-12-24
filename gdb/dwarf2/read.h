@@ -1410,9 +1410,8 @@ extern const dwarf2_section_info &get_section_for_ref
 extern struct dwarf2_section_info *get_debug_line_section
   (struct dwarf2_cu *cu);
 
-/* Start a subfile for DWARF.  FILENAME is the name of the file and
-   DIRNAME the name of the source directory which contains FILENAME
-   or NULL if not known.
+/* Start a subfile for FE within CU.
+
    This routine tries to keep line numbers from identical absolute and
    relative file names in a common subfile.
 
@@ -1432,8 +1431,7 @@ extern struct dwarf2_section_info *get_debug_line_section
    start_subfile will ensure that this happens provided that we pass the
    concatenation of files.files[1].dir and files.files[1].name as the
    subfile's name.  */
-extern void dwarf2_start_subfile (dwarf2_cu *cu, const file_entry &fe,
-				  const line_header &lh);
+extern void dwarf2_start_subfile (dwarf2_cu &cu, const file_entry &fe);
 
 /* A helper function that decides if a given symbol is an Ada Pragma
    Import or Pragma Export.  */
