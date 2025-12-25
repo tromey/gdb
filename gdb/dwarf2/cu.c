@@ -250,7 +250,7 @@ dwarf2_cu::create_subfiles_and_symtabs ()
 
   for (file_entry &fe : this->line_header->file_names ())
     {
-      dwarf2_start_subfile (*this, fe);
+      this->start_subfile (fe);
       subfile *sf = builder->get_current_subfile ();
 
       if (sf->symtab == nullptr)
@@ -260,3 +260,30 @@ dwarf2_cu::create_subfiles_and_symtabs ()
       fe.symtab = sf->symtab;
     }
 }
+
+/* See dwarf2/cu.h.  */
+
+void
+dwarf2_cu::start_subfile (const file_entry &fe)
+{
+  std::string filename_holder;
+  const char *filename = fe.name;
+  const char *dirname = this->line_header->include_dir_at (fe.d_index);
+
+  /* In order not to lose the line information directory,
+     we concatenate it to the filename when it makes sense.
+     Note that the Dwarf3 standard says (speaking of filenames in line
+     information): ``The directory index is ignored for file names
+     that represent full path names''.  Thus ignoring dirname in the
+     `else' branch below isn't an issue.  */
+
+  if (!IS_ABSOLUTE_PATH (filename) && dirname != NULL)
+    {
+      filename_holder = path_join (dirname, filename);
+      filename = filename_holder.c_str ();
+    }
+
+  std::string filename_for_id = this->line_header->file_file_name (fe);
+  this->get_builder ()->start_subfile (filename, filename_for_id.c_str ());
+}
+

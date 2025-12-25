@@ -244,7 +244,7 @@ lnp_state_machine::handle_set_file (file_name_index file)
   else
     {
       m_line_has_non_zero_discriminator = m_discriminator != 0;
-      dwarf2_start_subfile (*m_cu, *fe);
+      m_cu->start_subfile (*fe);
     }
 }
 
@@ -507,7 +507,7 @@ dwarf_decode_lines_1 (struct dwarf2_cu *cu, unrelocated_addr lowpc)
       const file_entry *fe = state_machine.current_file ();
 
       if (fe != NULL)
-	dwarf2_start_subfile (*cu, *fe);
+	cu->start_subfile (*fe);
 
       /* Decode the table.  */
       while (line_ptr < line_end && !end_sequence)

@@ -1410,29 +1410,6 @@ extern const dwarf2_section_info &get_section_for_ref
 extern struct dwarf2_section_info *get_debug_line_section
   (struct dwarf2_cu *cu);
 
-/* Start a subfile for FE within CU.
-
-   This routine tries to keep line numbers from identical absolute and
-   relative file names in a common subfile.
-
-   Using the `list' example from the GDB testsuite, which resides in
-   /srcdir and compiling it with Irix6.2 cc in /compdir using a filename
-   of /srcdir/list0.c yields the following debugging information for list0.c:
-
-   DW_AT_name:          /srcdir/list0.c
-   DW_AT_comp_dir:      /compdir
-   files.files[0].name: list0.h
-   files.files[0].dir:  /srcdir
-   files.files[1].name: list0.c
-   files.files[1].dir:  /srcdir
-
-   The line number information for list0.c has to end up in a single
-   subfile, so that `break /srcdir/list0.c:1' works as expected.
-   start_subfile will ensure that this happens provided that we pass the
-   concatenation of files.files[1].dir and files.files[1].name as the
-   subfile's name.  */
-extern void dwarf2_start_subfile (dwarf2_cu &cu, const file_entry &fe);
-
 /* A helper function that decides if a given symbol is an Ada Pragma
    Import or Pragma Export.  */
 
