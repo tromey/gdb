@@ -787,14 +787,8 @@ c_type_print_varspec_suffix (struct type *type,
     }
 }
 
-/* A helper for c_type_print_base that displays template
-   parameters and their bindings, if needed.
-
-   TABLE is the local bindings table to use.  If NULL, no printing is
-   done.  Note that, at this point, TABLE won't have any useful
-   information in it -- but it is also used as a flag to
-   print_name_maybe_canonical to activate searching the global typedef
-   table.
+/* A helper for c_type_print_base_struct_union that displays template
+   parameters.
 
    TYPE is the type whose template arguments are being displayed.
 
