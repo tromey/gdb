@@ -486,18 +486,18 @@ do_set_command (const char *arg, int from_tty, struct cmd_list_element *c)
 	case var_string_noescape:
 	case var_filename:
 	case var_optional_filename:
-	  interps_notify_param_changed
+	  gdb::observers::parameter_changed.notify
 	    (name.c_str (), c->var->get<std::string> ().c_str ());
 	  break;
 	case var_enum:
-	  interps_notify_param_changed
+	  gdb::observers::parameter_changed.notify
 	    (name.c_str (), c->var->get<const char *> ());
 	  break;
 	case var_color:
 	  {
 	    const ui_file_style::color &color
 	      = c->var->get<ui_file_style::color> ();
-	    interps_notify_param_changed
+	    gdb::observers::parameter_changed.notify
 	      (name.c_str (), color.to_string ().c_str ());
 	  }
 	  break;
@@ -505,7 +505,7 @@ do_set_command (const char *arg, int from_tty, struct cmd_list_element *c)
 	  {
 	    const char *opt = c->var->get<bool> () ? "on" : "off";
 
-	    interps_notify_param_changed (name.c_str (), opt);
+	    gdb::observers::parameter_changed.notify (name.c_str (), opt);
 	  }
 	  break;
 	case var_auto_boolean:
@@ -513,7 +513,7 @@ do_set_command (const char *arg, int from_tty, struct cmd_list_element *c)
 	    const char *s
 	      = auto_boolean_enums[c->var->get<enum auto_boolean> ()];
 
-	    interps_notify_param_changed (name.c_str (), s);
+	    gdb::observers::parameter_changed.notify (name.c_str (), s);
 	  }
 	  break;
 	case var_uinteger:
@@ -521,7 +521,7 @@ do_set_command (const char *arg, int from_tty, struct cmd_list_element *c)
 	    char s[64];
 
 	    xsnprintf (s, sizeof s, "%u", c->var->get<unsigned int> ());
-	    interps_notify_param_changed (name.c_str (), s);
+	    gdb::observers::parameter_changed.notify (name.c_str (), s);
 	  }
 	  break;
 	case var_integer:
@@ -530,7 +530,7 @@ do_set_command (const char *arg, int from_tty, struct cmd_list_element *c)
 	    char s[64];
 
 	    xsnprintf (s, sizeof s, "%d", c->var->get<int> ());
-	    interps_notify_param_changed (name.c_str (), s);
+	    gdb::observers::parameter_changed.notify (name.c_str (), s);
 	  }
 	  break;
 	}

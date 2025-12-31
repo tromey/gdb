@@ -266,6 +266,13 @@ extern observable<bool /* enabled */> tui_enabled;
    shared libraries have been loaded, registers and threads read in, etc.  */
 extern observable<inferior */* inf */> core_file_changed;
 
+/* The parameter ("set" command) with the given name has changed.  The
+   new value is given in string form.  NAME is the full name of the
+   parameter, with prefix elements as well.  This is only called for
+   ordinary parameters -- not maintenance/obscure parameters.  */
+extern observable<const char */* name */, const char */* value */>
+     parameter_changed;
+
 } /* namespace observers */
 
 } /* namespace gdb */

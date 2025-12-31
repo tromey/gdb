@@ -39,6 +39,7 @@
 #include "main.h"
 #include "gdbsupport/buildargv.h"
 #include "gdbsupport/scope-exit.h"
+#include "observable.h"
 
 /* The magic initialization routine for this module.  */
 
@@ -589,4 +590,7 @@ A command can have arguments, separated by spaces.\n\
 These spaces must be escaped using \\ or the command\n\
 and its arguments must be enclosed in double quotes."), &cmdlist);
   set_cmd_completer (c, interpreter_completer);
+
+  gdb::observers::parameter_changed.attach (interps_notify_param_changed,
+					    "interpreters");
 }
