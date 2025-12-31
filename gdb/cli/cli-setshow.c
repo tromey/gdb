@@ -460,61 +460,25 @@ do_set_command (const char *arg, int from_tty, struct cmd_list_element *c)
 
   if (notify_command_param_changed_p (option_changed, c))
     {
-      char *name, *cp;
-      struct cmd_list_element **cmds;
-      struct cmd_list_element *p;
-      int i;
-      int length = 0;
-
       /* Compute the whole multi-word command options.  If user types command
 	 'set foo bar baz on', c->name is 'baz', and GDB can't pass "bar" to
 	 command option change notification, because it is confusing.  We can
 	 trace back through field 'prefix' to compute the whole options,
 	 and pass "foo bar baz" to notification.  */
 
-      for (i = 0, p = c; p != NULL; i++)
+      std::string name;
+      cmd_list_element *p;
+      for (p = c; p->prefix != nullptr; p = p->prefix)
 	{
-	  length += strlen (p->name);
-	  length++;
-
-	  p = p->prefix;
-	}
-      cp = name = (char *) xmalloc (length);
-      cmds = XNEWVEC (struct cmd_list_element *, i);
-
-      /* Track back through filed 'prefix' and cache them in CMDS.  */
-      for (i = 0, p = c; p != NULL; i++)
-	{
-	  cmds[i] = p;
-	  p = p->prefix;
+	  if (p != c)
+	    name.insert (0, " ");
+	  name.insert (0, p->name);
 	}
 
       /* Don't trigger any observer notification if subcommands is not
 	 setlist.  */
-      i--;
-      if (cmds[i]->subcommands != &setlist)
-	{
-	  xfree (cmds);
-	  xfree (name);
-
-	  return;
-	}
-      /* Traverse them in the reversed order, and copy their names into
-	 NAME.  */
-      for (i--; i >= 0; i--)
-	{
-	  memcpy (cp, cmds[i]->name, strlen (cmds[i]->name));
-	  cp += strlen (cmds[i]->name);
-
-	  if (i != 0)
-	    {
-	      cp[0] = ' ';
-	      cp++;
-	    }
-	}
-      cp[0] = 0;
-
-      xfree (cmds);
+      if (p->subcommands != &setlist)
+	return;
 
       switch (c->var->type ())
 	{
@@ -523,25 +487,25 @@ do_set_command (const char *arg, int from_tty, struct cmd_list_element *c)
 	case var_filename:
 	case var_optional_filename:
 	  interps_notify_param_changed
-	    (name, c->var->get<std::string> ().c_str ());
+	    (name.c_str (), c->var->get<std::string> ().c_str ());
 	  break;
 	case var_enum:
 	  interps_notify_param_changed
-	    (name, c->var->get<const char *> ());
+	    (name.c_str (), c->var->get<const char *> ());
 	  break;
 	case var_color:
 	  {
 	    const ui_file_style::color &color
 	      = c->var->get<ui_file_style::color> ();
 	    interps_notify_param_changed
-	      (name, color.to_string ().c_str ());
+	      (name.c_str (), color.to_string ().c_str ());
 	  }
 	  break;
 	case var_boolean:
 	  {
 	    const char *opt = c->var->get<bool> () ? "on" : "off";
 
-	    interps_notify_param_changed (name, opt);
+	    interps_notify_param_changed (name.c_str (), opt);
 	  }
 	  break;
 	case var_auto_boolean:
@@ -549,7 +513,7 @@ do_set_command (const char *arg, int from_tty, struct cmd_list_element *c)
 	    const char *s
 	      = auto_boolean_enums[c->var->get<enum auto_boolean> ()];
 
-	    interps_notify_param_changed (name, s);
+	    interps_notify_param_changed (name.c_str (), s);
 	  }
 	  break;
 	case var_uinteger:
@@ -557,7 +521,7 @@ do_set_command (const char *arg, int from_tty, struct cmd_list_element *c)
 	    char s[64];
 
 	    xsnprintf (s, sizeof s, "%u", c->var->get<unsigned int> ());
-	    interps_notify_param_changed (name, s);
+	    interps_notify_param_changed (name.c_str (), s);
 	  }
 	  break;
 	case var_integer:
@@ -566,11 +530,10 @@ do_set_command (const char *arg, int from_tty, struct cmd_list_element *c)
 	    char s[64];
 
 	    xsnprintf (s, sizeof s, "%d", c->var->get<int> ());
-	    interps_notify_param_changed (name, s);
+	    interps_notify_param_changed (name.c_str (), s);
 	  }
 	  break;
 	}
-      xfree (name);
     }
 }
 
