@@ -136,7 +136,7 @@ tui_copy_source_line (const char **ptr, int *length)
 }
 
 void
-tui_source_window_base::style_changed ()
+tui_source_window_base::re_render ()
 {
   if (tui_active && is_visible ())
     refill ();
@@ -419,7 +419,7 @@ tui_source_window_base::tui_source_window_base ()
   m_start_line_or_addr.u.addr = 0;
 
   gdb::observers::styling_changed.attach
-    (std::bind (&tui_source_window::style_changed, this),
+    (std::bind (&tui_source_window::re_render, this),
      m_observable, "tui-winsource");
 }
 

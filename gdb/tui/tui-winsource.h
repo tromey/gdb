@@ -191,8 +191,9 @@ public:
 
 protected:
 
-  /* Called when a user style setting is changed.  */
-  void style_changed ();
+  /* Re-render the window from scratch.  This is called in response to
+     a style change or similar event.  */
+  void re_render ();
 
 private:
 

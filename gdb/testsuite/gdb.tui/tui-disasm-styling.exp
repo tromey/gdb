@@ -66,3 +66,26 @@ check_asm_output true "asm output is styled once again"
 
 Term::command "set style sources off"
 check_asm_output true "asm output is styled when source styling is off"
+
+Term::command "set print max-symbolic-offset 1"
+set asm_output [Term::get_region 1 1 78 13 "\n"]
+# Look for a line that has a hex offset and some assembly, but that
+# does not have <main...>.  We can't really check for the assembly
+# directly so we just look for any letter.
+gdb_assert {[regexp -- "$hex\[^<\]* \[a-z\]" $asm_output]} \
+    "reacted to change to max-symbolic-offset"
+
+# These next tests are a bit simpler to write without styling.
+Term::command "set style enabled off"
+Term::command "set filename-display absolute"
+Term::command "set print symbol-filename on"
+set asm_output [Term::get_region 1 1 78 13 "\n"]
+# We can't assume the final part of the filename will be visible, so
+# just look for any directory separator.
+gdb_assert {[regexp -- "<main at \[/\\\\]" $asm_output]} \
+    "reacted to change to symbol-filename"
+
+Term::command "set filename-display basename"
+set asm_output [Term::get_region 1 1 78 13 "\n"]
+gdb_assert {[regexp -- "<main at tui-layout\\.c" $asm_output]} \
+    "reacted to change to filename-display"

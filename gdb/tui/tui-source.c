@@ -38,7 +38,7 @@
 tui_source_window::tui_source_window ()
 {
   line_number_style.changed.attach
-    (std::bind (&tui_source_window::style_changed, this),
+    (std::bind (&tui_source_window::re_render, this),
      m_src_observable, "tui-source");
 }
 

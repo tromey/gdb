@@ -31,7 +31,8 @@
 
 struct tui_disasm_window : public tui_source_window_base
 {
-  tui_disasm_window () = default;
+  tui_disasm_window ();
+  ~tui_disasm_window ();
 
   DISABLE_COPY_AND_ASSIGN (tui_disasm_window);
 
@@ -60,9 +61,16 @@ protected:
 		     const struct symtab_and_line &sal) override;
 
 private:
+  /* Observer for the parameter changed event.  This updates the
+     contents in response to certain parameter changes.  */
+  void param_changed (const char *name, const char *value);
+
   /* Answer whether a particular line number or address is displayed
      in the current source window.  */
   bool addr_is_displayed (CORE_ADDR addr) const;
+
+  /* A token used to register and unregister an observer.  */
+  gdb::observers::token m_dis_observable;
 };
 
 /* Return the instance of the disassembly windows.  */

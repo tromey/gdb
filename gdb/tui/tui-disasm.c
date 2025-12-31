@@ -38,6 +38,7 @@
 #include "tui/tui-location.h"
 #include "gdbsupport/selftest.h"
 #include "inferior.h"
+#include "observable.h"
 
 struct tui_asm_line
 {
@@ -524,6 +525,28 @@ tui_disasm_window::display_start_addr (struct gdbarch **gdbarch_p,
 {
   *gdbarch_p = m_gdbarch;
   *addr_p = m_start_line_or_addr.u.addr;
+}
+
+void
+tui_disasm_window::param_changed (const char *name, const char *value)
+{
+  if (strcmp (name, "print max-symbolic-offset") == 0
+      || strcmp (name, "print symbol-filename") == 0
+      || strcmp (name, "filename-display") == 0)
+    re_render ();
+}
+
+tui_disasm_window::tui_disasm_window ()
+{
+  using namespace std::placeholders;
+  gdb::observers::parameter_changed.attach
+    (std::bind (&tui_disasm_window::param_changed, this, _1, _2),
+     m_dis_observable, "tui-disasm");
+}
+
+tui_disasm_window::~tui_disasm_window ()
+{
+  gdb::observers::parameter_changed.detach (m_dis_observable);
 }
 
 #if GDB_SELF_TEST
