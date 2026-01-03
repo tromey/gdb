@@ -888,6 +888,7 @@ static const struct elf_size_info elf64_sparc_size_info =
 #define TARGET_BIG_NAME	"elf64-sparc"
 #define ELF_ARCH	bfd_arch_sparc
 #define ELF_TARGET_ID	SPARC_ELF_DATA
+#define ELF_OSABI	ELFOSABI_GNU
 #define ELF_MAXPAGESIZE 0x100000
 #define ELF_COMMONPAGESIZE 0x2000
 
@@ -1011,10 +1012,8 @@ static const struct elf_size_info elf64_sparc_size_info =
 
 #undef  ELF_TARGET_OS
 #define ELF_TARGET_OS				is_solaris
-
-/* Restore default: we cannot use ELFOSABI_SOLARIS, otherwise ELFOSABI_NONE
-   objects won't be recognized.  */
 #undef	ELF_OSABI
+#define	ELF_OSABI				ELFOSABI_SOLARIS
 #undef	ELF_OSABI_EXACT
 
 #undef  elf64_bed

@@ -221,6 +221,7 @@ elf32_sparc_reloc_type_class (const struct bfd_link_info *info,
 #define ELF_TARGET_ID	SPARC_ELF_DATA
 #define ELF_MACHINE_CODE EM_SPARC
 #define ELF_MACHINE_ALT1 EM_SPARC32PLUS
+#define ELF_OSABI	ELFOSABI_GNU
 #define ELF_MAXPAGESIZE 0x10000
 #define ELF_COMMONPAGESIZE 0x2000
 
@@ -282,6 +283,9 @@ elf32_sparc_reloc_type_class (const struct bfd_link_info *info,
 
 #undef  ELF_TARGET_OS
 #define ELF_TARGET_OS				is_solaris
+#undef	ELF_OSABI
+#define	ELF_OSABI				ELFOSABI_SOLARIS
+#undef	ELF_OSABI_EXACT
 
 #undef  elf32_bed
 #define elf32_bed				elf32_sparc_sol2_bed
@@ -327,6 +331,8 @@ elf32_sparc_vxworks_final_write_processing (bfd *abfd)
 
 #undef	ELF_TARGET_OS
 #define	ELF_TARGET_OS	is_vxworks
+#undef	ELF_OSABI
+#undef	ELF_OSABI_EXACT
 
 #undef  elf_backend_want_got_plt
 #define elf_backend_want_got_plt		1

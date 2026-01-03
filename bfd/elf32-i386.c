@@ -4564,6 +4564,7 @@ elf_i386_add_glibc_version_dependency
 #define ELF_TARGET_ID			I386_ELF_DATA
 #define ELF_MACHINE_CODE		EM_386
 #define ELF_MAXPAGESIZE			0x1000
+#define	ELF_OSABI			ELFOSABI_GNU
 
 #define elf_backend_can_gc_sections	1
 #define elf_backend_can_refcount	1
@@ -4664,9 +4665,8 @@ elf_i386_fbsd_init_file_header (bfd *abfd, struct bfd_link_info *info)
 #undef	ELF_TARGET_OS
 #define	ELF_TARGET_OS			is_solaris
 
-/* Restore default: we cannot use ELFOSABI_SOLARIS, otherwise ELFOSABI_NONE
-   objects won't be recognized.  */
 #undef ELF_OSABI
+#define ELF_OSABI			ELFOSABI_SOLARIS
 #undef ELF_OSABI_EXACT
 
 #undef	elf32_bed
@@ -4711,6 +4711,7 @@ elf32_iamcu_elf_object_p (bfd *abfd)
 
 #undef	ELF_TARGET_OS
 #undef	ELF_OSABI
+#define	ELF_OSABI			ELFOSABI_GNU
 #undef	ELF_OSABI_EXACT
 
 #undef  elf32_bed

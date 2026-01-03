@@ -6340,6 +6340,7 @@ elf_x86_64_special_sections[]=
 #define ELF_ARCH			    bfd_arch_i386
 #define ELF_TARGET_ID			    X86_64_ELF_DATA
 #define ELF_MACHINE_CODE		    EM_X86_64
+#define	ELF_OSABI			    ELFOSABI_GNU
 #define ELF_MAXPAGESIZE			    0x1000
 #define ELF_COMMONPAGESIZE		    ELF_MAXPAGESIZE
 
@@ -6447,9 +6448,8 @@ elf_x86_64_special_sections[]=
 #undef	ELF_TARGET_OS
 #define	ELF_TARGET_OS			    is_solaris
 
-/* Restore default: we cannot use ELFOSABI_SOLARIS, otherwise ELFOSABI_NONE
-   objects won't be recognized.  */
 #undef ELF_OSABI
+#define ELF_OSABI			    ELFOSABI_SOLARIS
 #undef ELF_OSABI_EXACT
 
 #undef  elf64_bed
@@ -6493,6 +6493,7 @@ elf_x86_64_special_sections[]=
 
 #undef	ELF_TARGET_OS
 #undef	ELF_OSABI
+#define	ELF_OSABI			    ELFOSABI_GNU
 #undef	ELF_OSABI_EXACT
 
 #define bfd_elf32_bfd_copy_private_section_data \
