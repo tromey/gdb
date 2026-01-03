@@ -1275,14 +1275,12 @@ obj_elf_section (int push)
 	    }
 
 	  const struct elf_backend_data *bed = get_elf_backend_data (stdoutput);
+	  bool maybe_gnu = (bed->elf_osabi == ELFOSABI_NONE
+			    || bed->elf_osabi == ELFOSABI_GNU
+			    || bed->elf_osabi == ELFOSABI_FREEBSD);
 	  attr = obj_elf_parse_section_letters (beg, strlen (beg), push,
 						&is_clone, &inherit,
-						bed->elf_osabi == ELFOSABI_NONE
-						|| (bed->elf_osabi
-						    == ELFOSABI_GNU)
-						|| (bed->elf_osabi
-						    == ELFOSABI_FREEBSD)
-						? &gnu_attr : NULL,
+						maybe_gnu ? &gnu_attr : NULL,
 						&has_entsize);
 
 	  if (inherit > 0)
