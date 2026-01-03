@@ -128,7 +128,7 @@ elf32_wasm32_info_to_howto_rela (bfd *abfd,
 }
 
 #define ELF_ARCH		bfd_arch_wasm32
-#define ELF_TARGET_ID		EM_WEBASSEMBLY
+#define ELF_TARGET_ID		WEBASSEMBLY_ELF_DATA
 #define ELF_MACHINE_CODE	EM_WEBASSEMBLY
 /* FIXME we don't have paged executables, see:
    https://github.com/pipcet/binutils-gdb/issues/4  */
