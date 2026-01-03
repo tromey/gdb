@@ -1008,35 +1008,35 @@ typedef uint32_t obj_attr_tag_t;
 struct elf_backend_data
 {
   /* The architecture for this backend.  */
-  enum bfd_architecture arch;
+  ENUM_BITFIELD (bfd_architecture) arch : 8;
+
+  /* EI_OSABI.  */
+  unsigned elf_osabi : 8;
+
+  /* The ELF machine code (EM_xxxx) for this backend.  */
+  unsigned elf_machine_code : 16;
 
   /* An identifier used to distinguish different target specific
      extensions to elf_obj_tdata and elf_link_hash_table structures.  */
-  enum elf_target_id target_id;
+  ENUM_BITFIELD (elf_target_id) target_id : 8;
 
   /* Target OS.  */
-  enum elf_target_os target_os;
-
-  /* The ELF machine code (EM_xxxx) for this backend.  */
-  int elf_machine_code;
-
-  /* EI_OSABI.  */
-  int elf_osabi;
+  ENUM_BITFIELD (elf_target_os) target_os : 2;
 
   /* The maximum page size for this backend.  */
-  bfd_vma maxpagesize;
+  unsigned maxpagesize;
 
   /* The minimum page size for this backend.  An input object will not be
      considered page aligned unless its sections are correctly aligned for
      pages at least this large.  May be smaller than maxpagesize.  */
-  bfd_vma minpagesize;
+  unsigned minpagesize;
 
   /* The common page size for this backend.  */
-  bfd_vma commonpagesize;
+  unsigned commonpagesize;
 
   /* The p_align value for this backend.  If it is set, p_align of
       PT_LOAD alignment will be to p_align by default.  */
-  bfd_vma p_align;
+  unsigned p_align;
 
   /* The BFD flags applied to sections created for dynamic linking.  */
   flagword dynamic_sec_flags;

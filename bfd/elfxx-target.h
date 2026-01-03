@@ -806,16 +806,16 @@ extern const struct elf_size_info _bfd_elfNN_size_info ATTRIBUTE_HIDDEN;
 
 static const struct elf_backend_data elfNN_bed =
 {
-  ELF_ARCH,			/* arch */
-  ELF_TARGET_ID,		/* target_id */
-  ELF_TARGET_OS,		/* target_os */
-  ELF_MACHINE_CODE,		/* elf_machine_code */
-  ELF_OSABI,			/* elf_osabi  */
-  ELF_MAXPAGESIZE,		/* maxpagesize */
-  ELF_MINPAGESIZE,		/* minpagesize */
-  ELF_COMMONPAGESIZE,		/* commonpagesize */
-  ELF_P_ALIGN,			/* p_align */
-  ELF_DYNAMIC_SEC_FLAGS,	/* dynamic_sec_flags */
+  ELF_ARCH,
+  ELF_OSABI,
+  ELF_MACHINE_CODE,
+  ELF_TARGET_ID,
+  ELF_TARGET_OS,
+  ELF_MAXPAGESIZE,
+  ELF_MINPAGESIZE,
+  ELF_COMMONPAGESIZE,
+  ELF_P_ALIGN,
+  ELF_DYNAMIC_SEC_FLAGS,
   elf_backend_arch_data,
   elf_info_to_howto,
   elf_info_to_howto_rel,
