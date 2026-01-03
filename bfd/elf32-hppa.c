@@ -4539,6 +4539,7 @@ elf32_hppa_elf_get_symbol_type (Elf_Internal_Sym *elf_sym, int type)
 #define ELF_MACHINE_CODE	EM_PARISC
 #define ELF_MAXPAGESIZE		0x1000
 #define ELF_OSABI		ELFOSABI_HPUX
+#define ELF_OSABI_EXACT		1
 #define elf32_bed		elf32_hppa_hpux_bed
 
 #include "elf32-target.h"

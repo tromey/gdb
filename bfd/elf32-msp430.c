@@ -2953,6 +2953,7 @@ elf32_msp430_eh_frame_address_size (bfd *abfd,
 #define ELF_MACHINE_ALT1	EM_MSP430_OLD
 #define ELF_MAXPAGESIZE		4
 #define	ELF_OSABI		ELFOSABI_STANDALONE
+#define ELF_OSABI_EXACT		1
 
 #define TARGET_LITTLE_SYM	msp430_elf32_vec
 #define TARGET_LITTLE_NAME	"elf32-msp430"
@@ -2980,7 +2981,7 @@ elf32_msp430_eh_frame_address_size (bfd *abfd,
 #define elf32_bed		elf32_msp430_ti_bed
 
 #undef	ELF_OSABI
-#define	ELF_OSABI		ELFOSABI_NONE
+#undef	ELF_OSABI_EXACT
 
 static const struct bfd_elf_special_section msp430_ti_elf_special_sections[] =
 {

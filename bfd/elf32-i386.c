@@ -4617,6 +4617,8 @@ elf_i386_add_glibc_version_dependency
 #define	TARGET_LITTLE_NAME		"elf32-i386-freebsd"
 #undef	ELF_OSABI
 #define	ELF_OSABI			ELFOSABI_FREEBSD
+#undef	ELF_OSABI_EXACT
+#define	ELF_OSABI_EXACT			1
 
 /* The kernel recognizes executables as valid only if they carry a
    "FreeBSD" label in the ELF header.  So we put this label on all
@@ -4665,6 +4667,7 @@ elf_i386_fbsd_init_file_header (bfd *abfd, struct bfd_link_info *info)
 /* Restore default: we cannot use ELFOSABI_SOLARIS, otherwise ELFOSABI_NONE
    objects won't be recognized.  */
 #undef ELF_OSABI
+#undef ELF_OSABI_EXACT
 
 #undef	elf32_bed
 #define	elf32_bed			elf32_i386_sol2_bed
@@ -4708,6 +4711,7 @@ elf32_iamcu_elf_object_p (bfd *abfd)
 
 #undef	ELF_TARGET_OS
 #undef	ELF_OSABI
+#undef	ELF_OSABI_EXACT
 
 #undef  elf32_bed
 #define elf32_bed			elf32_iamcu_bed
@@ -4735,7 +4739,6 @@ elf32_iamcu_elf_object_p (bfd *abfd)
 #define TARGET_LITTLE_SYM		i386_elf32_vxworks_vec
 #undef	TARGET_LITTLE_NAME
 #define TARGET_LITTLE_NAME		"elf32-i386-vxworks"
-#undef	ELF_OSABI
 #undef	ELF_MAXPAGESIZE
 #define ELF_MAXPAGESIZE			0x1000
 #undef	elf_backend_plt_alignment
@@ -4743,6 +4746,8 @@ elf32_iamcu_elf_object_p (bfd *abfd)
 
 #undef	ELF_TARGET_OS
 #define ELF_TARGET_OS		is_vxworks
+#undef	ELF_OSABI
+#undef	ELF_OSABI_EXACT
 
 #undef elf_backend_relocs_compatible
 #undef elf_backend_add_symbol_hook

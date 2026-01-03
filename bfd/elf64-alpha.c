@@ -5499,6 +5499,8 @@ static const struct elf_size_info alpha_elf_size_info =
 #define TARGET_LITTLE_NAME	"elf64-alpha-freebsd"
 #undef	ELF_OSABI
 #define	ELF_OSABI		ELFOSABI_FREEBSD
+#undef	ELF_OSABI_EXACT
+#define	ELF_OSABI_EXACT		1
 
 /* The kernel recognizes executables as valid only if they carry a
    "FreeBSD" label in the ELF header.  So we put this label on all

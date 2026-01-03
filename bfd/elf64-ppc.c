@@ -18451,6 +18451,8 @@ ppc64_elf_free_cached_info (bfd *abfd)
 
 #undef  ELF_OSABI
 #define	ELF_OSABI       ELFOSABI_FREEBSD
+#undef	ELF_OSABI_EXACT
+#define	ELF_OSABI_EXACT 1
 
 #undef  elf64_bed
 #define elf64_bed	elf64_powerpc_fbsd_bed

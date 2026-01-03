@@ -20277,6 +20277,8 @@ elf32_arm_backend_symbol_processing (bfd *abfd, asymbol *sym)
 #define elf_match_priority		128
 #undef ELF_OSABI
 #define ELF_OSABI		ELFOSABI_ARM_FDPIC
+#undef ELF_OSABI_EXACT
+#define ELF_OSABI_EXACT		1
 
 /* Like elf32_arm_link_hash_table_create -- but overrides
    appropriately for FDPIC.  */
@@ -20335,6 +20337,7 @@ elf32_arm_fdpic_omit_section_dynsym (bfd *output_bfd ATTRIBUTE_UNUSED,
 
 #undef elf_match_priority
 #undef ELF_OSABI
+#undef ELF_OSABI_EXACT
 #undef elf_backend_omit_section_dynsym
 
 /* VxWorks Targets.  */

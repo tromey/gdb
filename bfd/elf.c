@@ -13486,7 +13486,7 @@ _bfd_elf_final_write_processing (bfd *abfd)
   Elf_Internal_Ehdr *i_ehdrp = elf_elfheader (abfd);
   elf_backend_data *bed = get_elf_backend_data (abfd);
 
-  if (i_ehdrp->e_ident[EI_OSABI] == ELFOSABI_NONE)
+  if (bed->osabi_exact && i_ehdrp->e_ident[EI_OSABI] == ELFOSABI_NONE)
     i_ehdrp->e_ident[EI_OSABI] = bed->elf_osabi;
 
   if (i_ehdrp->e_ident[EI_OSABI] == ELFOSABI_SOLARIS

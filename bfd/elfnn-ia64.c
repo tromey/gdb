@@ -5108,6 +5108,8 @@ ignore_errors (const char *fmt ATTRIBUTE_UNUSED, ...)
 #undef ELF_COMMONPAGESIZE
 #undef ELF_OSABI
 #define ELF_OSABI			ELFOSABI_HPUX
+#undef ELF_OSABI_EXACT
+#define ELF_OSABI_EXACT			1
 
 #undef  elfNN_bed
 #define elfNN_bed elfNN_ia64_hpux_bed

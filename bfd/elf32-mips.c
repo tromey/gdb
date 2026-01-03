@@ -4165,6 +4165,8 @@ static const struct ecoff_debug_swap mips_elf32_ecoff_debug_swap = {
 
 #undef	ELF_OSABI
 #define	ELF_OSABI			ELFOSABI_FREEBSD
+#undef	ELF_OSABI_EXACT
+#define	ELF_OSABI_EXACT			1
 
 #undef	elf32_bed
 #define elf32_bed				elf32_fbsd_tradbed
@@ -4194,6 +4196,7 @@ mips_vxworks_final_write_processing (bfd *abfd)
 #define TARGET_BIG_SYM			mips_elf32_vxworks_be_vec
 #define TARGET_BIG_NAME			"elf32-bigmips-vxworks"
 #undef	ELF_OSABI
+#undef	ELF_OSABI_EXACT
 
 #undef elf32_bed
 #define elf32_bed			elf32_mips_vxworks_bed

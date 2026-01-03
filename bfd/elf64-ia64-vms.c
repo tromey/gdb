@@ -5568,6 +5568,8 @@ static const struct elf_size_info elf64_ia64_vms_size_info = {
 
 #undef  ELF_OSABI
 #define ELF_OSABI			ELFOSABI_OPENVMS
+#undef	ELF_OSABI_EXACT
+#define	ELF_OSABI_EXACT			1
 
 #undef  ELF_MAXPAGESIZE
 #define ELF_MAXPAGESIZE			0x10000	/* 64KB */

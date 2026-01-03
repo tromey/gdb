@@ -368,6 +368,10 @@
 #define ELF_OSABI ELFOSABI_NONE
 #endif
 
+#ifndef ELF_OSABI_EXACT
+#define ELF_OSABI_EXACT 0
+#endif
+
 #ifndef ELF_MAXPAGESIZE
 # error ELF_MAXPAGESIZE is not defined
 #define ELF_MAXPAGESIZE 1
@@ -799,7 +803,9 @@
  
 #ifndef elf_match_priority
 #define elf_match_priority \
-  (ELF_ARCH == bfd_arch_unknown ? 2 : ELF_OSABI == ELFOSABI_NONE ? 1 : 0)
+  (ELF_ARCH == bfd_arch_unknown ? 2 \
+   : ELF_OSABI == ELFOSABI_NONE || !ELF_OSABI_EXACT ? 1 \
+   : 0)
 #endif
 
 extern const struct elf_size_info _bfd_elfNN_size_info ATTRIBUTE_HIDDEN;
@@ -811,6 +817,7 @@ static const struct elf_backend_data elfNN_bed =
   ELF_MACHINE_CODE,
   ELF_TARGET_ID,
   ELF_TARGET_OS,
+  ELF_OSABI_EXACT,
   ELF_MAXPAGESIZE,
   ELF_MINPAGESIZE,
   ELF_COMMONPAGESIZE,

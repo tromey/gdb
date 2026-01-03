@@ -4166,6 +4166,7 @@ static const struct elf_size_info hppa64_elf_size_info =
    64M.  But everything still uses 4k.  */
 #define ELF_MAXPAGESIZE			0x1000
 #define ELF_OSABI			ELFOSABI_HPUX
+#define ELF_OSABI_EXACT			1
 
 #define bfd_elf64_bfd_reloc_type_lookup elf_hppa_reloc_type_lookup
 #define bfd_elf64_bfd_reloc_name_lookup elf_hppa_reloc_name_lookup

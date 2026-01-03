@@ -994,6 +994,8 @@ static const struct elf_size_info elf64_sparc_size_info =
 #define TARGET_BIG_NAME "elf64-sparc-freebsd"
 #undef	ELF_OSABI
 #define	ELF_OSABI ELFOSABI_FREEBSD
+#undef	ELF_OSABI_EXACT
+#define	ELF_OSABI_EXACT 1
 
 #undef  elf64_bed
 #define elf64_bed				elf64_sparc_fbsd_bed
@@ -1013,6 +1015,7 @@ static const struct elf_size_info elf64_sparc_size_info =
 /* Restore default: we cannot use ELFOSABI_SOLARIS, otherwise ELFOSABI_NONE
    objects won't be recognized.  */
 #undef	ELF_OSABI
+#undef	ELF_OSABI_EXACT
 
 #undef  elf64_bed
 #define elf64_bed				elf64_sparc_sol2_bed

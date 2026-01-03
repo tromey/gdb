@@ -152,9 +152,7 @@ elf_core_file_p (bfd *abfd)
       && ebd->elf_machine_code != EM_NONE)
     goto wrong;
 
-  if (ebd->elf_machine_code != EM_NONE
-      && i_ehdrp->e_ident[EI_OSABI] != ebd->elf_osabi
-      && ebd->elf_osabi != ELFOSABI_NONE)
+  if (ebd->osabi_exact && i_ehdrp->e_ident[EI_OSABI] != ebd->elf_osabi)
     goto wrong;
 
   /* If there is no program header, or the type is not a core file, then

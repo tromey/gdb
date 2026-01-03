@@ -6426,6 +6426,8 @@ elf_x86_64_special_sections[]=
 
 #undef	ELF_OSABI
 #define	ELF_OSABI			    ELFOSABI_FREEBSD
+#undef	ELF_OSABI_EXACT
+#define	ELF_OSABI_EXACT			    1
 
 #undef	elf64_bed
 #define elf64_bed elf64_x86_64_fbsd_bed
@@ -6448,6 +6450,7 @@ elf_x86_64_special_sections[]=
 /* Restore default: we cannot use ELFOSABI_SOLARIS, otherwise ELFOSABI_NONE
    objects won't be recognized.  */
 #undef ELF_OSABI
+#undef ELF_OSABI_EXACT
 
 #undef  elf64_bed
 #define elf64_bed			    elf64_x86_64_sol2_bed
@@ -6468,6 +6471,7 @@ elf_x86_64_special_sections[]=
 
 /* Restore defaults.  */
 #undef	ELF_OSABI
+#undef	ELF_OSABI_EXACT
 #undef	elf_backend_static_tls_alignment
 #undef	elf_backend_want_plt_sym
 #define elf_backend_want_plt_sym	0
@@ -6489,6 +6493,7 @@ elf_x86_64_special_sections[]=
 
 #undef	ELF_TARGET_OS
 #undef	ELF_OSABI
+#undef	ELF_OSABI_EXACT
 
 #define bfd_elf32_bfd_copy_private_section_data \
   elf_x86_64_copy_private_section_data

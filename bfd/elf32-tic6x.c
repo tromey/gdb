@@ -4285,6 +4285,8 @@ elf32_tic6x_write_section (bfd *output_bfd,
 #define	TARGET_BIG_NAME			"elf32-tic6x-linux-be"
 #undef ELF_OSABI
 #define	ELF_OSABI			ELFOSABI_C6000_LINUX
+#undef ELF_OSABI_EXACT
+#define ELF_OSABI_EXACT			1
 
 #include "elf32-target.h"
 
@@ -4301,5 +4303,7 @@ elf32_tic6x_write_section (bfd *output_bfd,
 #define	TARGET_BIG_NAME			"elf32-tic6x-elf-be"
 #undef ELF_OSABI
 #define	ELF_OSABI			ELFOSABI_C6000_ELFABI
+#undef ELF_OSABI_EXACT
+#define ELF_OSABI_EXACT			1
 
 #include "elf32-target.h"

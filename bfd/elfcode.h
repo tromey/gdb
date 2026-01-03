@@ -628,9 +628,7 @@ elf_object_p (bfd *abfd)
 	goto got_no_match;
     }
 
-  if (ebd->elf_machine_code != EM_NONE
-      && i_ehdrp->e_ident[EI_OSABI] != ebd->elf_osabi
-      && ebd->elf_osabi != ELFOSABI_NONE)
+  if (ebd->osabi_exact && i_ehdrp->e_ident[EI_OSABI] != ebd->elf_osabi)
     goto got_wrong_format_error;
 
   if (i_ehdrp->e_shoff >= sizeof (x_ehdr))

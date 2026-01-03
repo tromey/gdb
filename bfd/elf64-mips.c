@@ -4868,6 +4868,8 @@ static const struct elf_size_info mips_elf64_size_info =
 
 #undef	ELF_OSABI
 #define	ELF_OSABI			ELFOSABI_FREEBSD
+#undef	ELF_OSABI_EXACT
+#define	ELF_OSABI_EXACT			1
 
 #undef	elf64_bed
 #define elf64_bed				elf64_fbsd_tradbed

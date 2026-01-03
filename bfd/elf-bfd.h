@@ -1023,6 +1023,10 @@ struct elf_backend_data
   /* Target OS.  */
   ENUM_BITFIELD (elf_target_os) target_os : 2;
 
+  /* True if object files must have exactly matching osabi.  False if
+     other osabi values are allowed.  */
+  unsigned osabi_exact : 1;
+
   /* The maximum page size for this backend.  */
   unsigned maxpagesize;
 
