@@ -175,7 +175,7 @@ elf32_sparc_reloc_type_class (const struct bfd_link_info *info,
 			      const Elf_Internal_Rela *rela)
 {
   bfd *abfd = info->output_bfd;
-  const struct elf_backend_data *bed = get_elf_backend_data (abfd);
+  elf_backend_data *bed = get_elf_backend_data (abfd);
   struct _bfd_sparc_elf_link_hash_table *htab
     = _bfd_sparc_elf_hash_table (info);
   BFD_ASSERT (htab != NULL);

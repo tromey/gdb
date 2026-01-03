@@ -3808,7 +3808,7 @@ elf_s390_reloc_type_class (const struct bfd_link_info *info ATTRIBUTE_UNUSED,
 			   const Elf_Internal_Rela *rela)
 {
   bfd *abfd = info->output_bfd;
-  const struct elf_backend_data *bed = get_elf_backend_data (abfd);
+  elf_backend_data *bed = get_elf_backend_data (abfd);
   struct elf_s390_link_hash_table *htab = elf_s390_hash_table (info);
   unsigned long r_symndx = ELF64_R_SYM (rela->r_info);
   Elf_Internal_Sym sym;

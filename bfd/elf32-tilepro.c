@@ -1200,7 +1200,7 @@ tilepro_elf_create_got_section (bfd *abfd, struct bfd_link_info *info)
   flagword flags;
   asection *s, *s_got;
   struct elf_link_hash_entry *h;
-  const struct elf_backend_data *bed = get_elf_backend_data (abfd);
+  elf_backend_data *bed = get_elf_backend_data (abfd);
   struct elf_link_hash_table *htab = elf_hash_table (info);
 
   /* This function may be called more than once.  */

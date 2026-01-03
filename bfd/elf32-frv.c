@@ -4171,7 +4171,7 @@ _frv_create_got_section (bfd *abfd, struct bfd_link_info *info)
   asection *s;
   struct elf_link_hash_entry *h;
   struct bfd_link_hash_entry *bh;
-  const struct elf_backend_data *bed = get_elf_backend_data (abfd);
+  elf_backend_data *bed = get_elf_backend_data (abfd);
   int ptralign;
   int offset;
 
@@ -4324,7 +4324,7 @@ elf32_frvfdpic_create_dynamic_sections (bfd *abfd, struct bfd_link_info *info)
      elflink.c:_bfd_elf_create_dynamic_sections().  */
   flagword flags;
   asection *s;
-  const struct elf_backend_data *bed = get_elf_backend_data (abfd);
+  elf_backend_data *bed = get_elf_backend_data (abfd);
 
   flags = (SEC_ALLOC | SEC_LOAD | SEC_HAS_CONTENTS | SEC_IN_MEMORY
 	   | SEC_LINKER_CREATED);

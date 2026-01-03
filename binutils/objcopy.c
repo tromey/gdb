@@ -2816,7 +2816,7 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
       && bfd_get_flavour (ibfd) != bfd_target_elf_flavour
       && bfd_get_flavour (obfd) == bfd_target_elf_flavour)
     {
-      const struct elf_backend_data *bed = get_elf_backend_data (obfd);
+      elf_backend_data *bed = get_elf_backend_data (obfd);
       iarch = bed->arch;
       imach = 0;
     }

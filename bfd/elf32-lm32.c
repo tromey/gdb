@@ -2201,7 +2201,7 @@ lm32_elf_create_dynamic_sections (bfd *abfd, struct bfd_link_info *info)
   struct elf_lm32_link_hash_table *htab;
   flagword flags, pltflags;
   asection *s;
-  const struct elf_backend_data *bed = get_elf_backend_data (abfd);
+  elf_backend_data *bed = get_elf_backend_data (abfd);
   int ptralign = 2; /* 32bit */
 
   htab = lm32_elf_hash_table (info);

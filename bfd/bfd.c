@@ -2795,7 +2795,7 @@ is32bit (bfd *abfd)
 {
   if (bfd_get_flavour (abfd) == bfd_target_elf_flavour)
     {
-      const struct elf_backend_data *bed = get_elf_backend_data (abfd);
+      elf_backend_data *bed = get_elf_backend_data (abfd);
       return bed->s->elfclass == ELFCLASS32;
     }
 
@@ -2947,9 +2947,7 @@ bfd_emul_get_commonpagesize (const char *emul)
   if (target != NULL
       && target->flavour == bfd_target_elf_flavour)
     {
-      const struct elf_backend_data *bed;
-
-      bed = xvec_get_elf_backend_data (target);
+      elf_backend_data *bed = xvec_get_elf_backend_data (target);
       return bed->commonpagesize;
     }
   return 0;
@@ -3088,7 +3086,7 @@ bfd_group_signature (asection *group, asymbol **isympp)
   ghdr = &elf_section_data (group)->this_hdr;
   if (ghdr->sh_link == elf_onesymtab (abfd))
     {
-      const struct elf_backend_data *bed = get_elf_backend_data (abfd);
+      elf_backend_data *bed = get_elf_backend_data (abfd);
       Elf_Internal_Shdr *symhdr = &elf_symtab_hdr (abfd);
 
       if (ghdr->sh_info > 0

@@ -582,7 +582,7 @@ _bfd_cr16_elf_create_got_section (bfd * abfd, struct bfd_link_info * info)
   flagword   flags;
   asection * s;
   struct elf_link_hash_entry * h;
-  const struct elf_backend_data * bed = get_elf_backend_data (abfd);
+  elf_backend_data * bed = get_elf_backend_data (abfd);
   struct elf_link_hash_table *htab = elf_hash_table (info);
   int ptralign;
 
@@ -2179,7 +2179,7 @@ _bfd_cr16_elf_create_dynamic_sections (bfd *abfd, struct bfd_link_info *info)
 {
   flagword   flags;
   asection * s;
-  const struct elf_backend_data * bed = get_elf_backend_data (abfd);
+  elf_backend_data * bed = get_elf_backend_data (abfd);
   struct elf_link_hash_table *htab = elf_hash_table (info);
   int ptralign = 0;
 

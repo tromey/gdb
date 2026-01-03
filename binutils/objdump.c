@@ -3746,7 +3746,7 @@ disassemble_bytes (struct disassemble_info *inf,
 static void
 disassemble_section (bfd *abfd, asection *section, void *inf)
 {
-  const struct elf_backend_data *bed;
+  elf_backend_data *bed;
   bfd_vma sign_adjust = 0;
   struct disassemble_info *pinfo = (struct disassemble_info *) inf;
   struct objdump_disasm_info *paux;
@@ -5689,7 +5689,7 @@ might_need_separate_debug_info (bool is_mainfile)
 static void
 dump_bfd (bfd *abfd, bool is_mainfile)
 {
-  const struct elf_backend_data * bed;
+  elf_backend_data *bed;
 
   if (bfd_big_endian (abfd))
     byte_get = byte_get_big_endian;

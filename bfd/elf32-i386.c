@@ -2091,7 +2091,7 @@ static bfd_vma
 elf_i386_tpoff (struct bfd_link_info *info, bfd_vma address)
 {
   struct elf_link_hash_table *htab = elf_hash_table (info);
-  const struct elf_backend_data *bed = get_elf_backend_data (info->output_bfd);
+  elf_backend_data *bed = get_elf_backend_data (info->output_bfd);
   bfd_vma static_tls_size;
 
   /* If tls_sec is NULL, we should have signalled an error already.  */
@@ -4095,7 +4095,7 @@ elf_i386_reloc_type_class (const struct bfd_link_info *info,
 			   const Elf_Internal_Rela *rela)
 {
   bfd *abfd = info->output_bfd;
-  const struct elf_backend_data *bed = get_elf_backend_data (abfd);
+  elf_backend_data *bed = get_elf_backend_data (abfd);
   struct elf_link_hash_table *htab = elf_hash_table (info);
 
   if (htab->dynsym != NULL

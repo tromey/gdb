@@ -6287,7 +6287,7 @@ _bfd_elf_find_function (bfd *abfd,
 	 make a better choice of file name for local symbols by ignoring
 	 file symbols appearing after a given local symbol.  */
       enum { nothing_seen, symbol_seen, file_after_symbol_seen } state;
-      const struct elf_backend_data *bed = get_elf_backend_data (abfd);
+      elf_backend_data *bed = get_elf_backend_data (abfd);
 
       file = NULL;
       state = nothing_seen;

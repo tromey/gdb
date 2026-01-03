@@ -1721,7 +1721,7 @@ elf32_tic6x_finish_dynamic_symbol (bfd * output_bfd,
       Elf_Internal_Rela rela;
       bfd_byte *loc;
       asection *plt, *gotplt, *relplt;
-      const struct elf_backend_data *bed;
+      elf_backend_data *bed;
 
       bed = get_elf_backend_data (output_bfd);
 
@@ -2101,7 +2101,7 @@ elf32_tic6x_rel_relocation_p (bfd *abfd, asection *sec,
 			      const Elf_Internal_Rela *rel)
 {
   Elf_Internal_Shdr *rel_hdr;
-  const struct elf_backend_data *bed;
+  elf_backend_data *bed;
 
   /* To determine which flavor of relocation this is, we depend on the
      fact that the INPUT_SECTION's REL_HDR is read before RELA_HDR.  */

@@ -3141,7 +3141,7 @@ elfNN_kvx_allocate_local_symbols (bfd *abfd, unsigned number)
 static bool
 kvx_elf_create_got_section (bfd *abfd, struct bfd_link_info *info)
 {
-  const struct elf_backend_data *bed = get_elf_backend_data (abfd);
+  elf_backend_data *bed = get_elf_backend_data (abfd);
   flagword flags;
   asection *s;
   struct elf_link_hash_entry *h;
@@ -4375,8 +4375,7 @@ elfNN_kvx_early_size_sections (bfd *output_bfd, struct bfd_link_info *info)
       if (tlsbase)
 	{
 	  struct bfd_link_hash_entry *h = NULL;
-	  const struct elf_backend_data *bed =
-	    get_elf_backend_data (output_bfd);
+	  elf_backend_data *bed = get_elf_backend_data (output_bfd);
 
 	  if (!(_bfd_generic_link_add_one_symbol
 		(info, output_bfd, "_TLS_MODULE_BASE_", BSF_LOCAL,

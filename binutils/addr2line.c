@@ -314,7 +314,7 @@ translate_addresses (bfd *abfd, asection *section)
         pc = bfd_scan_vma (adr, NULL, 16);
       if (bfd_get_flavour (abfd) == bfd_target_elf_flavour)
 	{
-	  const struct elf_backend_data *bed = get_elf_backend_data (abfd);
+	  elf_backend_data *bed = get_elf_backend_data (abfd);
 	  bfd_vma sign = (bfd_vma) 1 << (bed->s->arch_size - 1);
 
 	  pc &= (sign << 1) - 1;

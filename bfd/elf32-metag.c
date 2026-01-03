@@ -1977,7 +1977,7 @@ elf_metag_create_dynamic_sections (bfd *abfd, struct bfd_link_info *info)
   struct elf_metag_link_hash_table *htab;
   struct elf_link_hash_entry *eh;
   struct bfd_link_hash_entry *bh;
-  const struct elf_backend_data *bed = get_elf_backend_data (abfd);
+  elf_backend_data *bed = get_elf_backend_data (abfd);
 
   /* Don't try to create the .plt and .got twice.  */
   htab = metag_link_hash_table (info);

@@ -5353,7 +5353,7 @@ spu_elf_modify_headers (bfd *abfd, struct bfd_link_info *info)
 {
   if (info != NULL)
     {
-      const struct elf_backend_data *bed;
+      elf_backend_data *bed;
       struct elf_obj_tdata *tdata;
       Elf_Internal_Phdr *phdr, *last;
       struct spu_link_hash_table *htab;

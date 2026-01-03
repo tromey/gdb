@@ -2343,7 +2343,7 @@ sh_elf_create_dynamic_sections (bfd *abfd, struct bfd_link_info *info)
   struct elf_sh_link_hash_table *htab;
   flagword flags, pltflags;
   asection *s;
-  const struct elf_backend_data *bed = get_elf_backend_data (abfd);
+  elf_backend_data *bed = get_elf_backend_data (abfd);
   int ptralign = 0;
 
   switch (bed->s->arch_size)

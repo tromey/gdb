@@ -935,7 +935,7 @@ elf32_m68hc11_relocate_section (bfd *output_bfd ATTRIBUTE_UNUSED,
   Elf_Internal_Rela *rel, *relend;
   const char *name = NULL;
   struct m68hc11_page_info *pinfo;
-  const struct elf_backend_data * const ebd = get_elf_backend_data (input_bfd);
+  elf_backend_data * const ebd = get_elf_backend_data (input_bfd);
   struct m68hc11_elf_link_hash_table *htab;
   unsigned long e_flags;
 

@@ -1809,6 +1809,10 @@ struct elf_backend_data
   unsigned use_mmap : 1;
 };
 
+#ifndef __cplusplus
+typedef const struct elf_backend_data elf_backend_data;
+#endif
+
 /* Information about reloc sections associated with a bfd_elf_section_data
    structure.  */
 struct bfd_elf_section_reloc_data

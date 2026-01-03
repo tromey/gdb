@@ -3693,7 +3693,7 @@ rx_final_link (bfd * abfd, struct bfd_link_info * info)
 static bool
 elf32_rx_modify_headers (bfd *abfd, struct bfd_link_info *info)
 {
-  const struct elf_backend_data * bed;
+  elf_backend_data *bed;
   struct elf_obj_tdata * tdata;
   Elf_Internal_Phdr * phdr;
   unsigned int count;

@@ -2407,7 +2407,7 @@ s3_bfd_score_elf_relocate_section (bfd *output_bfd,
       if (bfd_link_pic (info))
 	{
 	  asection * p;
-	  const struct elf_backend_data *bed = get_elf_backend_data (output_bfd);
+	  elf_backend_data *bed = get_elf_backend_data (output_bfd);
 
 	  for (p = output_bfd->sections; p ; p = p->next)
 	    if ((p->flags & SEC_EXCLUDE) == 0

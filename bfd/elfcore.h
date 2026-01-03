@@ -90,7 +90,6 @@ elf_core_file_p (bfd *abfd)
   Elf_Internal_Ehdr *i_ehdrp;	/* Elf file header, internal form.  */
   Elf_Internal_Phdr *i_phdrp;	/* Elf program header, internal form.  */
   unsigned int phindex;
-  const struct elf_backend_data *ebd;
   bfd_size_type amt;
   ufile_ptr filesize;
 
@@ -140,7 +139,7 @@ elf_core_file_p (bfd *abfd)
   elf_debug_file (i_ehdrp);
 #endif
 
-  ebd = get_elf_backend_data (abfd);
+  elf_backend_data *ebd = get_elf_backend_data (abfd);
 
   /* Check that the ELF e_machine field matches what this particular
      BFD format expects.  */

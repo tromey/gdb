@@ -479,7 +479,7 @@ static char *
 elf_x86_64_write_core_note (bfd *abfd, char *buf, int *bufsiz,
 			    int note_type, ...)
 {
-  const struct elf_backend_data *bed = get_elf_backend_data (abfd);
+  elf_backend_data *bed = get_elf_backend_data (abfd);
   va_list ap;
   const char *fname, *psargs;
   long pid;
@@ -3148,7 +3148,7 @@ static bfd_vma
 elf_x86_64_tpoff (struct bfd_link_info *info, bfd_vma address)
 {
   struct elf_link_hash_table *htab = elf_hash_table (info);
-  const struct elf_backend_data *bed = get_elf_backend_data (info->output_bfd);
+  elf_backend_data *bed = get_elf_backend_data (info->output_bfd);
   bfd_vma static_tls_size;
 
   /* If tls_segment is NULL, we should have signalled an error already.  */
@@ -5171,7 +5171,7 @@ elf_x86_64_finish_dynamic_symbol (bfd *output_bfd,
       Elf_Internal_Rela rela;
       bfd_byte *loc;
       asection *plt, *gotplt, *relplt, *resolved_plt;
-      const struct elf_backend_data *bed;
+      elf_backend_data *bed;
       bfd_vma plt_got_pcrel_offset;
 
       /* When building a static executable, use .iplt, .igot.plt and
@@ -5607,7 +5607,7 @@ elf_x86_64_reloc_type_class (const struct bfd_link_info *info,
 			     const Elf_Internal_Rela *rela)
 {
   bfd *abfd = info->output_bfd;
-  const struct elf_backend_data *bed = get_elf_backend_data (abfd);
+  elf_backend_data *bed = get_elf_backend_data (abfd);
   struct elf_x86_link_hash_table *htab
     = elf_x86_hash_table (info, X86_64_ELF_DATA);
 
@@ -6217,7 +6217,7 @@ static bfd *
 elf_x86_64_link_setup_gnu_properties (struct bfd_link_info *info)
 {
   struct elf_x86_init_table init_table;
-  const struct elf_backend_data *bed;
+  elf_backend_data *bed;
   struct elf_x86_link_hash_table *htab;
 
   if ((int) R_X86_64_standard >= (int) R_X86_64_converted_reloc_bit

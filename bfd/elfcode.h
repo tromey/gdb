@@ -410,11 +410,8 @@ elf_swap_phdr_out (bfd *abfd,
 		   const Elf_Internal_Phdr *src,
 		   Elf_External_Phdr *dst)
 {
-  const struct elf_backend_data *bed;
-  bfd_vma p_paddr;
-
-  bed = get_elf_backend_data (abfd);
-  p_paddr = bed->want_p_paddr_set_to_zero ? 0 : src->p_paddr;
+  elf_backend_data *bed = get_elf_backend_data (abfd);
+  bfd_vma p_paddr = bed->want_p_paddr_set_to_zero ? 0 : src->p_paddr;
 
   /* note that all elements of dst are *arrays of unsigned char* already...  */
   H_PUT_32 (abfd, src->p_type, dst->p_type);
@@ -527,7 +524,7 @@ elf_object_p (bfd *abfd)
   Elf_Internal_Shdr i_shdr;
   Elf_Internal_Shdr *i_shdrp;	/* Section header table, internal form */
   unsigned int shindex;
-  const struct elf_backend_data *ebd;
+  elf_backend_data *ebd;
   asection *s;
   const bfd_target *target;
 
@@ -934,7 +931,7 @@ elf_object_p (bfd *abfd)
 void
 elf_write_relocs (bfd *abfd, asection *sec, void *data)
 {
-  const struct elf_backend_data * const bed = get_elf_backend_data (abfd);
+  elf_backend_data *bed = get_elf_backend_data (abfd);
   bool *failedp = (bool *) data;
   Elf_Internal_Shdr *rela_hdr;
   bfd_vma addr_offset;
@@ -1252,7 +1249,7 @@ elf_slurp_symbol_table (bfd *abfd, asymbol **symptrs, bool dynamic)
   Elf_Internal_Sym *isymbuf = NULL;
   Elf_External_Versym *xver;
   Elf_External_Versym *xverbuf = NULL;
-  const struct elf_backend_data *ebd;
+  elf_backend_data *ebd;
   size_t amt;
 
   /* Read each raw ELF symbol, converting from external ELF form to
@@ -1548,7 +1545,7 @@ elf_slurp_reloc_table_from_section (bfd *abfd,
 				    asymbol **symbols,
 				    bool dynamic)
 {
-  const struct elf_backend_data * const ebd = get_elf_backend_data (abfd);
+  elf_backend_data *ebd = get_elf_backend_data (abfd);
   void *allocated = NULL;
   bfd_byte *native_relocs;
   arelent *relent;
@@ -1646,7 +1643,7 @@ elf_slurp_reloc_table (bfd *abfd,
 		       asymbol **symbols,
 		       bool dynamic)
 {
-  const struct elf_backend_data * const bed = get_elf_backend_data (abfd);
+  elf_backend_data *bed = get_elf_backend_data (abfd);
   struct bfd_elf_section_data * const d = elf_section_data (asect);
   Elf_Internal_Shdr *rel_hdr;
   Elf_Internal_Shdr *rel_hdr2;
