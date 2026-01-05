@@ -930,6 +930,7 @@ aarch64_insert_operand (const aarch64_operand *self,
     case AARCH64_OPND_UNDEFINED:
     case AARCH64_OPND_CCMP_IMM:
     case AARCH64_OPND_SIMM5:
+    case AARCH64_OPND_NOT_BALANCED_10:
     case AARCH64_OPND_NOT_BALANCED_17:
     case AARCH64_OPND_NZCV:
     case AARCH64_OPND_ADDR_PCREL9:

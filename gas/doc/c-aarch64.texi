@@ -381,6 +381,8 @@ automatically cause those extensions to be disabled.
  @tab Enable the Translation Hardening Extension.
 @item @code{tme} @tab
  @tab Enable the Transactional Memory Extension.
+@item @code{tev} @tab
+ @tab TIndex Exception-like Vector Extension.
 @item @code{wfxt} @tab
  @tab Enable @code{wfet} and @code{wfit} instructions.
 @item @code{xs} @tab

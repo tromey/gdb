@@ -6437,6 +6437,7 @@ process_omitted_operand (enum aarch64_opnd type, const aarch64_opcode *opcode,
       operand->hint_option = aarch64_hint_options + default_value;
       break;
 
+    case AARCH64_OPND_NOT_BALANCED_10:
     case AARCH64_OPND_NOT_BALANCED_17:
       operand->imm.value = default_value;
       break;
@@ -8188,6 +8189,7 @@ parse_operands (char *str, const aarch64_opcode *opcode)
 	  info->barrier = aarch64_barrier_dsb_nxs_options + val;
 	  break;
 
+	case AARCH64_OPND_NOT_BALANCED_10:
 	case AARCH64_OPND_NOT_BALANCED_17:
 	  {
 	    char *p = str;
@@ -8196,11 +8198,16 @@ parse_operands (char *str, const aarch64_opcode *opcode)
 
 	    if ((strncasecmp (p, "nb", 2) == 0) && (str == p + 2))
 	      info->imm.value = 1;
+	    /* Optional argument is absent in the first operand position, fail
+	       without updating backtrack_pos so that the default operand value
+	       is applied.  */
+	    else if (i == 0 && p == str)
+	      goto failure;
 	    else
 	      {
-		set_default_error ();
 		/* Turn off backtrack as this optional operand is present.  */
 		backtrack_pos = 0;
+		set_default_error ();
 		goto failure;
 	      }
 	    break;
@@ -10852,6 +10859,7 @@ static const struct aarch64_option_cpu_value_table aarch64_features[] = {
   {"predres",		AARCH64_FEATURE (PREDRES), AARCH64_NO_FEATURES},
   {"predres2",		AARCH64_FEATURE (PREDRES2), AARCH64_FEATURE (PREDRES)},
   {"poe2",		AARCH64_FEATURE (POE2), AARCH64_NO_FEATURES},
+  {"tev",		AARCH64_FEATURE (TEV), AARCH64_NO_FEATURES},
   {"aes",		AARCH64_FEATURE (AES), AARCH64_FEATURE (SIMD)},
   {"sm4",		AARCH64_FEATURE (SM4), AARCH64_FEATURE (SIMD)},
   {"sha3",		AARCH64_FEATURE (SHA3), AARCH64_FEATURE (SHA2)},
