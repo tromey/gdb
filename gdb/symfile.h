@@ -117,12 +117,6 @@ struct sym_probe_fns
 
 struct sym_fns
 {
-  /* Initializes anything that is global to the entire symbol table.
-     It is called during symbol_file_add, when we begin debugging an
-     entirely new program.  */
-
-  void (*sym_new_init) (struct objfile *);
-
   /* Reads any initial information from a symbol file, and initializes
      the struct sym_fns SF in preparation for sym_read().  It is
      called every time we read a symbol file for any reason.  */

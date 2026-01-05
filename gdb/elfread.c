@@ -1279,15 +1279,6 @@ elf_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
   objfile->object_format_has_copy_relocs = true;
 }
 
-/* Initialize anything that needs initializing when a completely new symbol
-   file is specified (not just adding some symbols from another file, e.g. a
-   shared library).  */
-
-static void
-elf_new_init (struct objfile *ignore)
-{
-}
-
 /* Perform any local cleanups required when we are done with a particular
    objfile.  I.E, we are in the process of discarding all symbol information
    for an objfile, freeing up all memory held for it, and unlinking the
@@ -1338,7 +1329,6 @@ static const struct sym_probe_fns elf_probe_fns =
 
 static const struct sym_fns elf_sym_fns =
 {
-  elf_new_init,			/* init anything gbl to entire symtab */
   elf_symfile_init,		/* read initial info, setup for sym_read() */
   elf_symfile_read,		/* read a symbol file into symtab */
   elf_symfile_finish,		/* finished with file, cleanup */

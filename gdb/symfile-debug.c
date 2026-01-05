@@ -709,18 +709,6 @@ static const struct sym_probe_fns debug_sym_probe_fns =
 /* Debugging version of struct sym_fns.  */
 
 static void
-debug_sym_new_init (struct objfile *objfile)
-{
-  const struct debug_sym_fns_data *debug_data
-    = symfile_debug_objfile_data_key.get (objfile);
-
-  gdb_printf (gdb_stdlog, "sf->sym_new_init (%s)\n",
-	      objfile_debug_name (objfile));
-
-  debug_data->real_sf->sym_new_init (objfile);
-}
-
-static void
 debug_sym_init (struct objfile *objfile)
 {
   const struct debug_sym_fns_data *debug_data
@@ -833,7 +821,6 @@ install_symfile_debug_logging (struct objfile *objfile)
       (to)->debug_sf.name = func;		\
   } while (0)
 
-  COPY_SF_PTR (real_sf, debug_data, sym_new_init, debug_sym_new_init);
   COPY_SF_PTR (real_sf, debug_data, sym_init, debug_sym_init);
   COPY_SF_PTR (real_sf, debug_data, sym_read, debug_sym_read);
   COPY_SF_PTR (real_sf, debug_data, sym_finish, debug_sym_finish);

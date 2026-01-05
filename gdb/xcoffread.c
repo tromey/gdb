@@ -100,8 +100,6 @@ static void scan_xcoff_symtab (struct objfile *);
 
 static void xcoff_symfile_init (struct objfile *);
 
-static void xcoff_new_init (struct objfile *);
-
 static void xcoff_symfile_finish (struct objfile *);
 
 /* Search all BFD sections for the section whose target_index is
@@ -169,11 +167,6 @@ find_linenos (struct bfd *abfd, struct bfd_section *asect, void *vpinfo)
 
   if (maxoff > info->max_lineno_offset)
     info->max_lineno_offset = maxoff;
-}
-
-static void
-xcoff_new_init (struct objfile *objfile)
-{
 }
 
 /* Do initialization in preparation for reading symbols from OBJFILE.
@@ -499,7 +492,6 @@ static const struct sym_fns xcoff_sym_fns =
      xcoffread.c reads all the symbols and does in fact randomly access them
      (in C_BSTAT and line number processing).  */
 
-  xcoff_new_init,		/* init anything gbl to entire symtab */
   xcoff_symfile_init,		/* read initial info, setup for sym_read() */
   xcoff_initial_scan,		/* read a symbol file into symtab */
   xcoff_symfile_finish,		/* finished with file, cleanup */
