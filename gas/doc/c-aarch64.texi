@@ -275,6 +275,8 @@ automatically cause those extensions to be disabled.
  @tab Enable additional prediction restriction instructions.
 @item @code{profile} @tab
  @tab Enable statistical profiling extensions.
+@item @code{poe2} @tab
+ @tab Enable Permission overlays extension 2.
 @item @code{ras} @tab
  @tab Enable the Reliability, Availability and Serviceability extension.
 @item @code{rasv2} @tab @code{ras}

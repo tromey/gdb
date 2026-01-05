@@ -5162,6 +5162,11 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
       snprintf (buf, size, "%s", style_sub_mnem (styler, "dsync"));
       break;
 
+    case AARCH64_OPND_NOT_BALANCED_17:
+      if (opnd->imm.value)
+	snprintf (buf, size, "%s", style_sub_mnem (styler, "nb"));
+      break;
+
     case AARCH64_OPND_BTI_TARGET:
       snprintf (buf, size, "%s",
 		style_sub_mnem (styler, opnd->hint_option->name));

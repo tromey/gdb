@@ -104,6 +104,7 @@ const struct aarch64_operand aarch64_operands[] =
   {AARCH64_OPND_CLASS_IMMEDIATE, "UNDEFINED", OPD_F_HAS_INSERTER | OPD_F_HAS_EXTRACTOR, {FLD_imm16_0}, "a 16-bit unsigned immediate"},
   {AARCH64_OPND_CLASS_IMMEDIATE, "CCMP_IMM", OPD_F_HAS_INSERTER | OPD_F_HAS_EXTRACTOR, {FLD_imm5}, "a 5-bit unsigned immediate"},
   {AARCH64_OPND_CLASS_IMMEDIATE, "SIMM5", OPD_F_SEXT | OPD_F_HAS_INSERTER | OPD_F_HAS_EXTRACTOR, {FLD_imm5}, "a 5-bit signed immediate"},
+  {AARCH64_OPND_CLASS_IMMEDIATE, "NOT_BALANCED_17", OPD_F_HAS_INSERTER | OPD_F_HAS_EXTRACTOR, {FLD_imm17_1}, "an optional not balanced indicator (NB)"},
   {AARCH64_OPND_CLASS_IMMEDIATE, "NZCV", OPD_F_HAS_INSERTER | OPD_F_HAS_EXTRACTOR, {FLD_nzcv}, "a flag bit specifier giving an alternative value for each flag"},
   {AARCH64_OPND_CLASS_IMMEDIATE, "LIMM", OPD_F_HAS_INSERTER | OPD_F_HAS_EXTRACTOR, {FLD_N,FLD_immr,FLD_imms}, "Logical immediate"},
   {AARCH64_OPND_CLASS_IMMEDIATE, "AIMM", OPD_F_HAS_INSERTER | OPD_F_HAS_EXTRACTOR, {FLD_shift,FLD_imm12}, "a 12-bit unsigned immediate with optional left shift of 12 bits"},

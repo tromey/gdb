@@ -1235,6 +1235,12 @@
   QLF2(X, NIL),			\
 }
 
+/* e.g. TCHANGEF <Xd>, #<imm>{, <nb>}.  */
+#define QL_X1NIL2		\
+{				\
+  QLF3(X,NIL,NIL),		\
+}
+
 /* e.g. LDXP <Xt1>, <Xt2>, [<Xn|SP>{,#0}].  */
 #define QL_R2NIL		\
 {				\
@@ -3092,6 +3098,8 @@ static const aarch64_feature_set aarch64_feature_f16mm_sve2p2 =
   AARCH64_FEATURES (2, F16MM, SVE2p2);
 static const aarch64_feature_set aarch64_feature_sve_b16mm =
   AARCH64_FEATURE (SVE_B16MM);
+static const aarch64_feature_set aarch64_feature_POE2 =
+  AARCH64_FEATURE (POE2);
 
 #define CORE		&aarch64_feature_v8
 #define FP		&aarch64_feature_fp
@@ -3226,6 +3234,7 @@ static const aarch64_feature_set aarch64_feature_sve_b16mm =
 #define F16MM	&aarch64_feature_f16mm
 #define F16MM_SVE2p2	&aarch64_feature_f16mm_sve2p2
 #define SVE_B16MM	&aarch64_feature_sve_b16mm
+#define POE2		&aarch64_feature_POE2
 
 #define CORE_INSN(NAME,OPCODE,MASK,CLASS,OP,OPS,QUALS,FLAGS) \
   { NAME, OPCODE, MASK, CLASS, OP, CORE, OPS, QUALS, FLAGS | F_INVALID_IMM_SYMS_1, 0, 0, NULL }
@@ -3580,6 +3589,8 @@ static const aarch64_feature_set aarch64_feature_sve_b16mm =
   { NAME, OPCODE, MASK, CLASS, 0, F16MM, OPS, QUALS, FLAGS | F_STRICT, 0, 0, NULL }
 #define SVE_B16MM_INSN(NAME,OPCODE,MASK,CLASS,OPS,QUALS,FLAGS) \
   { NAME, OPCODE, MASK, CLASS, 0, SVE_B16MM, OPS, QUALS, FLAGS | F_STRICT, 0, 0, NULL }
+#define POE2_INSN(NAME,OPCODE,MASK,CLASS,OPS,QUALS, FLAGS) \
+  { NAME, OPCODE, MASK, CLASS, 0, POE2, OPS, QUALS, FLAGS | F_INVALID_IMM_SYMS_1, 0, 0, NULL }
 
 #define MOPS_CPY_OP1_OP2_PME_INSN(NAME, OPCODE, MASK, FLAGS, CONSTRAINTS) \
   MOPS_INSN (NAME, OPCODE, MASK, 0, \
@@ -7886,6 +7897,12 @@ const struct aarch64_opcode aarch64_opcode_table[] =
   /* SVE B16MM instructions.  */
   SVE_B16MM_INSN("bfmmla", 0x64e0e000, 0xffe0fc00, sve_misc, OP3 (SVE_Zd, SVE_Zn, SVE_Zm_16), OP_SVE_HHH, 0),
 
+  /* POE2 instructions.  */
+  POE2_INSN("tchangef", 0xd5800000, 0xfffdfc00, aarch64_misc, OP3 (Rd, Rn, NOT_BALANCED_17), QL_X2NIL, F_OPD2_OPT | F_DEFAULT (0x0)),
+  POE2_INSN("tchangef", 0xd5900000, 0xfffdf000, aarch64_misc, OP3 (Rd, UIMM7, NOT_BALANCED_17), QL_X1NIL2, F_OPD2_OPT | F_DEFAULT (0x0)),
+  POE2_INSN("tchangeb", 0xd5840000, 0xfffdfc00, aarch64_misc, OP3 (Rd, Rn, NOT_BALANCED_17), QL_X2NIL, F_OPD2_OPT | F_DEFAULT (0x0)),
+  POE2_INSN("tchangeb", 0xd5940000, 0xfffdf000, aarch64_misc, OP3 (Rd, UIMM7, NOT_BALANCED_17), QL_X1NIL2, F_OPD2_OPT | F_DEFAULT (0x0)),
+
   {0, 0, 0, 0, 0, 0, {}, {}, 0, 0, 0, NULL},
 };
 
@@ -8038,6 +8055,8 @@ const struct aarch64_opcode aarch64_opcode_table[] =
       "a 5-bit unsigned immediate")					\
     Y(IMMEDIATE, imm, "SIMM5", OPD_F_SEXT, F(FLD_imm5),			\
       "a 5-bit signed immediate")					\
+    Y(IMMEDIATE, imm, "NOT_BALANCED_17", 0, F(FLD_imm17_1),		\
+      "an optional not balanced indicator (NB)")			\
     Y(IMMEDIATE, imm, "NZCV", 0, F(FLD_nzcv),				\
       "a flag bit specifier giving an alternative value for each flag")	\
     Y(IMMEDIATE, limm, "LIMM", 0, F(FLD_N,FLD_immr,FLD_imms),		\

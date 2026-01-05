@@ -26871,28 +26871,68 @@ aarch64_opcode_lookup_1 (uint32_t word)
                             {
                               if (((word >> 22) & 0x1) == 0)
                                 {
-                                  if (((word >> 25) & 0x1) == 0)
+                                  if (((word >> 23) & 0x1) == 0)
                                     {
-                                      /* 33222222222211111111110000000000
-                                         10987654321098765432109876543210
-                                         x1010101x00xxxxxxxxxxxxxxxxxxxxx.  */
-                                      return A64_OPID_d500403f_xaflag;
-                                    }
-                                  else
-                                    {
-                                      if (((word >> 10) & 0x1) == 0)
+                                      if (((word >> 25) & 0x1) == 0)
                                         {
                                           /* 33222222222211111111110000000000
                                              10987654321098765432109876543210
-                                             x1010111x00xxxxxxxxxx0xxxxxxxxxx.  */
-                                          return A64_OPID_d71f0800_braa_Rn_Rd_SP;
+                                             x1010101000xxxxxxxxxxxxxxxxxxxxx.  */
+                                          return A64_OPID_d500403f_xaflag;
                                         }
                                       else
                                         {
-                                          /* 33222222222211111111110000000000
-                                             10987654321098765432109876543210
-                                             x1010111x00xxxxxxxxxx1xxxxxxxxxx.  */
-                                          return A64_OPID_d71f0c00_brab_Rn_Rd_SP;
+                                          if (((word >> 10) & 0x1) == 0)
+                                            {
+                                              /* 33222222222211111111110000000000
+                                                 10987654321098765432109876543210
+                                                 x1010111000xxxxxxxxxx0xxxxxxxxxx.  */
+                                              return A64_OPID_d71f0800_braa_Rn_Rd_SP;
+                                            }
+                                          else
+                                            {
+                                              /* 33222222222211111111110000000000
+                                                 10987654321098765432109876543210
+                                                 x1010111000xxxxxxxxxx1xxxxxxxxxx.  */
+                                              return A64_OPID_d71f0c00_brab_Rn_Rd_SP;
+                                            }
+                                        }
+                                    }
+                                  else
+                                    {
+                                      if (((word >> 18) & 0x1) == 0)
+                                        {
+                                          if (((word >> 20) & 0x1) == 0)
+                                            {
+                                              /* 33222222222211111111110000000000
+                                                 10987654321098765432109876543210
+                                                 x10101x11000x0xxxxxxxxxxxxxxxxxx.  */
+                                              return A64_OPID_d5800000_tchangef_Rd_Rn_NOT_BALANCED_17;
+                                            }
+                                          else
+                                            {
+                                              /* 33222222222211111111110000000000
+                                                 10987654321098765432109876543210
+                                                 x10101x11001x0xxxxxxxxxxxxxxxxxx.  */
+                                              return A64_OPID_d5900000_tchangef_Rd_UIMM7_NOT_BALANCED_17;
+                                            }
+                                        }
+                                      else
+                                        {
+                                          if (((word >> 20) & 0x1) == 0)
+                                            {
+                                              /* 33222222222211111111110000000000
+                                                 10987654321098765432109876543210
+                                                 x10101x11000x1xxxxxxxxxxxxxxxxxx.  */
+                                              return A64_OPID_d5840000_tchangeb_Rd_Rn_NOT_BALANCED_17;
+                                            }
+                                          else
+                                            {
+                                              /* 33222222222211111111110000000000
+                                                 10987654321098765432109876543210
+                                                 x10101x11001x1xxxxxxxxxxxxxxxxxx.  */
+                                              return A64_OPID_d5940000_tchangeb_Rd_UIMM7_NOT_BALANCED_17;
+                                            }
                                         }
                                     }
                                 }
@@ -37847,6 +37887,7 @@ aarch64_extract_operand (const aarch64_operand *self,
     case AARCH64_OPND_UNDEFINED:
     case AARCH64_OPND_CCMP_IMM:
     case AARCH64_OPND_SIMM5:
+    case AARCH64_OPND_NOT_BALANCED_17:
     case AARCH64_OPND_NZCV:
     case AARCH64_OPND_ADDR_ADRP:
     case AARCH64_OPND_ADDR_PCREL9:

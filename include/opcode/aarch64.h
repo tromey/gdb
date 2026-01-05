@@ -279,6 +279,8 @@ enum aarch64_feature_bit {
   AARCH64_FEATURE_F16MM,
   /* SVE B16MM instructions.  */
   AARCH64_FEATURE_SVE_B16MM,
+  /* POE2 instructions.  */
+  AARCH64_FEATURE_POE2,
 
   /* Virtual features.  These are used to gate instructions that are enabled
      by either of two (or more) sets of command line flags.  */
@@ -691,6 +693,7 @@ enum aarch64_opnd
   AARCH64_OPND_UNDEFINED,/* imm16 operand in undefined instruction. */
   AARCH64_OPND_CCMP_IMM,/* Immediate in conditional compare instructions.  */
   AARCH64_OPND_SIMM5,	/* 5-bit signed immediate in the imm5 field.  */
+  AARCH64_OPND_NOT_BALANCED_17, /* an optional not balanced indicator (NB).  */
   AARCH64_OPND_NZCV,	/* Flag bit specifier giving an alternative value for
 			   each condition flag.  */
 
