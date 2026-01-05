@@ -1157,6 +1157,9 @@ public:
   using obj_type = typename Storage::obj_type;
   using val_type = typename Storage::val_type;
 
+  static_assert(std::is_base_of<PyObject, obj_type>::value,
+		"obj_type must be a subclass of PyObject");
+
   /* Register Python object OBJ as being "owned" by OWNER.  When OWNER is
      about to be freed, OBJ will be invalidated.  */
   template <typename O>
@@ -1180,7 +1183,7 @@ public:
   obj_type *lookup (O *owner, val_type *val) const
   {
     obj_type *obj = get_storage (owner)->lookup (val);
-    Py_XINCREF (obj);
+    Py_XINCREF (static_cast<PyObject *> (obj));
     return obj;
   }
 

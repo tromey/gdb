@@ -28,9 +28,8 @@
 #include "typeprint.h"
 #include "ada-lang.h"
 
-struct type_object
+struct type_object : public PyObject
 {
-  PyObject_HEAD
   struct type *type;
 };
 
