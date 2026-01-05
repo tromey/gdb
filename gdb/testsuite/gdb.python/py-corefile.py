@@ -41,9 +41,14 @@ class Mapping:
 
 
 def info_proc_mappings():
+    ptr_size = gdb.lookup_type("void").pointer().sizeof
+
     print("Mapped address spaces:")
     print("")
-    format_str = "%-18s %-18s %-18s %-18s %s "
+    if ptr_size == 4:
+        format_str = "%-10s %-10s %-10s %-10s %s "
+    else:
+        format_str = "%-18s %-18s %-18s %-18s %s "
     print(format_str % ("Start Addr", "End Addr", "Size", "Offset", "File"))
 
     core = gdb.selected_inferior().corefile
@@ -57,16 +62,23 @@ def info_proc_mappings():
     result.sort(key=lambda x: x.start)
     for r in result:
         sz = r.end - r.start
-        print(
-            format_str
-            % (
+        if ptr_size == 4:
+            t = (
+                "0x%08x" % r.start,
+                "0x%08x" % r.end,
+                "0x%-8x" % sz,
+                "0x%-8x" % r.offset,
+                "%s" % r.filename,
+            )
+        else:
+            t = (
                 "0x%016x" % r.start,
                 "0x%016x" % r.end,
                 "0x%-16x" % sz,
                 "0x%-16x" % r.offset,
                 "%s" % r.filename,
             )
-        )
+        print(format_str % t)
 
 
 class InfoProcPyMappings(gdb.Command):
