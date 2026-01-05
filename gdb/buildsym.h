@@ -170,9 +170,6 @@ struct buildsym_compunit
 			      const struct dynamic_prop *static_link,
 			      CORE_ADDR start, CORE_ADDR end);
 
-  void record_block_range (struct block *block,
-			   CORE_ADDR start, CORE_ADDR end_inclusive);
-
   /* Start recording information about source code that comes from a source
      file.  This sets the current subfile, creating it if necessary.
 
@@ -338,12 +335,6 @@ private:
   std::vector<struct context_stack> m_context_stack;
 
   struct subfile *m_current_subfile = nullptr;
-
-  /* If there are gaps in the address range of any block associated with
-     this buildsym_compunit, then we need to create an address map, this
-     flag is set true to indicate the addrmap must be created.  If this
-     remains false, then no addrmap will be created.  */
-  bool m_pending_addrmap_interesting = false;
 
   /* An obstack used for allocating pending blocks.  */
   auto_obstack m_pending_block_obstack;

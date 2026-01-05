@@ -9253,19 +9253,14 @@ dwarf2_record_block_entry_pc (struct die_info *die, struct block *block,
     }
 }
 
-/* Helper function for dwarf2_record_block_ranges.  This function records
-   the address range for a single BLOCK.  LOW and HIGH are the block's
-   range, these addresses are inclusive, so LOW is the first address in
-   the range, and HIGH is the last address inside the range.  UNREL_HIGH
-   is the unrelocated, exclusive version of HIGH, that is, UNREL_HIGH is
-   the first address outside the range of BLOCK.  */
+/* Nothing for now.  A later patch changes this.  */
 
 static void
 dwarf2_record_single_block_range (struct dwarf2_cu *cu, struct block *block,
 				  CORE_ADDR low, CORE_ADDR high,
 				  unrelocated_addr unrel_high)
 {
-  cu->get_builder ()->record_block_range (block, low, high);
+  /* Nothing for now, a later patch adds code here.  */
 }
 
 /* Record the address ranges for BLOCK, offset by BASEADDR, as given
