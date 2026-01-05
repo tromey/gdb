@@ -36899,7 +36899,7 @@ aarch64_find_alias_opcode (const aarch64_opcode *opcode)
       value = A64_OPID_d503323f_dsb_BARRIER_DSB_NXS;
       break;
     case A64_OPID_d5080000_sys_UIMM3_OP1_CRn_CRm_UIMM3_OP2_Rt:
-      value = A64_OPID_d508001f_gsb_GSB;
+      value = A64_OPID_d5080000_plbi_SYSREG_PLBI_Rt_SYS;
       break;
     case A64_OPID_d5480000_sysp_UIMM3_OP1_CRn_CRm_UIMM3_OP2_Rt_PAIRREG_OR_XZR:
       value = A64_OPID_d5480000_tlbip_SYSREG_TLBIP_Rt_SYS_PAIRREG_OR_XZR;
@@ -37548,6 +37548,9 @@ aarch64_find_next_alias_opcode (const aarch64_opcode *opcode)
     case A64_OPID_d5033c9f_dfb:
       value = A64_OPID_d503309f_dsb_BARRIER;
       break;
+    case A64_OPID_d5080000_plbi_SYSREG_PLBI_Rt_SYS:
+      value = A64_OPID_d508001f_gsb_GSB;
+      break;
     case A64_OPID_d508001f_gsb_GSB:
       value = A64_OPID_d5080000_gicr_Rd_GICR;
       break;
@@ -37999,6 +38002,7 @@ aarch64_extract_operand (const aarch64_operand *self,
     case AARCH64_OPND_SYSREG_IC:
     case AARCH64_OPND_SYSREG_TLBI:
     case AARCH64_OPND_SYSREG_TLBIP:
+    case AARCH64_OPND_SYSREG_PLBI:
     case AARCH64_OPND_SYSREG_SR:
     case AARCH64_OPND_GIC:
     case AARCH64_OPND_GICR:

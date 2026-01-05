@@ -7907,6 +7907,7 @@ const struct aarch64_opcode aarch64_opcode_table[] =
   POE2_INSN("tchangef", 0xd5900000, 0xfffdf000, aarch64_misc, OP3 (Rd, UIMM7, NOT_BALANCED_17), QL_X1NIL2, F_OPD2_OPT | F_DEFAULT (0x0)),
   POE2_INSN("tchangeb", 0xd5840000, 0xfffdfc00, aarch64_misc, OP3 (Rd, Rn, NOT_BALANCED_17), QL_X2NIL, F_OPD2_OPT | F_DEFAULT (0x0)),
   POE2_INSN("tchangeb", 0xd5940000, 0xfffdf000, aarch64_misc, OP3 (Rd, UIMM7, NOT_BALANCED_17), QL_X1NIL2, F_OPD2_OPT | F_DEFAULT (0x0)),
+  POE2_INSN("plbi", 0xd5080000, 0xfff80000, ic_system, OP2 (SYSREG_PLBI, Rt_SYS), QL_SRC_X, F_ALIAS | F_OPD1_OPT | F_DEFAULT (0x1F)),
 
   /* TEV instructions.  */
   TEV_INSN("tenter", 0xd4e00000, 0xfffdf01f, aarch64_misc, OP2 (UIMM7, NOT_BALANCED_17), QL_PRFM_PCREL, F_OPD1_OPT | F_DEFAULT (0x0)),
@@ -8138,6 +8139,8 @@ const struct aarch64_opcode aarch64_opcode_table[] =
       "a TBL invalidation operation specifier")				\
     Y(SYSTEM, sysins_op, "SYSREG_TLBIP", 0, F(),				\
       "a 128-bit TBL invalidation operation specifier")			\
+    Y(SYSTEM, sysins_op, "SYSREG_PLBI", 0, F(),				\
+      "a PLB invalidation operation specifier")				\
     Y(SYSTEM, sysins_op, "SYSREG_SR", 0, F(),				\
       "a Speculation Restriction option name (RCTX)")			\
     Y(SYSTEM, barrier, "BARRIER", 0, F(),				\
