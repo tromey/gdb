@@ -94,10 +94,6 @@ struct context_stack
   /* Name of function, if any, defining context.  */
   symbol *name = nullptr;
 
-  /* Expression that computes the frame base of the lexically enclosing
-     function, if any.  NULL otherwise.  */
-  dynamic_prop *static_link = nullptr;
-
   /* PC where this context starts.  */
   CORE_ADDR start_addr;
 

@@ -8586,14 +8586,12 @@ read_func_scope (struct die_info *die, struct dwarf2_cu *cu)
     dwarf2_symbol_mark_computed (attr, ctx.name, cu, 1);
 
   /* If there is a location for the static link, record it.  */
-  ctx.static_link = NULL;
+  dynamic_prop *static_link = nullptr;
   attr = dwarf2_attr (die, DW_AT_static_link, cu);
   if (attr != nullptr)
     {
-      ctx.static_link
-	= XOBNEW (&objfile->objfile_obstack, struct dynamic_prop);
-      attr_to_dynamic_prop (attr, die, cu, ctx.static_link,
-			    cu->addr_type ());
+      static_link = XOBNEW (&objfile->objfile_obstack, struct dynamic_prop);
+      attr_to_dynamic_prop (attr, die, cu, static_link, cu->addr_type ());
     }
 
   cu->list_in_scope = &cu->get_builder ()->get_local_symbols ();
@@ -8636,9 +8634,10 @@ read_func_scope (struct die_info *die, struct dwarf2_cu *cu)
     }
 
   struct context_stack cstk = cu->get_builder ()->pop_context ();
+
   /* Make a block for the local symbols within.  */
   block = cu->get_builder ()->finish_block (cstk.name, cstk.old_blocks,
-				     cstk.static_link, lowpc, highpc);
+					    static_link, lowpc, highpc);
 
   /* For C++, set the block's scope.  */
   if ((cu->lang () == language_cplus
