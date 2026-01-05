@@ -254,9 +254,6 @@ alphanbsd_init_abi (struct gdbarch_info info,
   /* Hook into the DWARF CFI frame unwinder.  */
   alpha_dwarf2_init_abi (info, gdbarch);
 
-  /* Hook into the MDEBUG frame unwinder.  */
-  alpha_mdebug_init_abi (info, gdbarch);
-
   nbsd_init_abi (info, gdbarch);
 
   /* NetBSD/alpha does not provide single step support via ptrace(2); we

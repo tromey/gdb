@@ -109,7 +109,6 @@ extern std::vector<CORE_ADDR> alpha_software_single_step
   (struct regcache *regcache);
 extern CORE_ADDR alpha_after_prologue (CORE_ADDR pc);
 
-extern void alpha_mdebug_init_abi (struct gdbarch_info, struct gdbarch *);
 extern void alpha_dwarf2_init_abi (struct gdbarch_info, struct gdbarch *);
 
 extern void alpha_supply_int_regs (struct regcache *, int, const void *,

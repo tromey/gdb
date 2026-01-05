@@ -36,6 +36,8 @@
 
 * Support for stabs debug information has been removed.
 
+* Support for mdebug debug information has been removed.
+
 * Support for the binary file format dbx has been removed.
 
 * When connected to an extended-remote target GDB can now
