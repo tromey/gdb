@@ -107,8 +107,9 @@ repos:
       stages: [pre-commit]
     - id: pre-commit-setup
       name: pre-commit-setup
-      language: script
+      language: python
       entry: gdb/contrib/pre-commit-setup.py
+      additional_dependencies: ["pyyaml"]
       always_run: true
       require_serial: true
   - repo: https://github.com/nmoroze/tclint
