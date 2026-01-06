@@ -286,4 +286,3 @@ dwarf2_cu::start_subfile (const file_entry &fe)
   std::string filename_for_id = this->line_header->file_file_name (fe);
   this->get_builder ()->start_subfile (filename, filename_for_id.c_str ());
 }
-
