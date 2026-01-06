@@ -230,7 +230,7 @@ EXCLUDE_LIST = (
     "gdb/nat/glibc_thread_db.h",
     "gdb/CONTRIBUTE",
     "gdbsupport/Makefile.in",
-    "gdbsupport/unordered_dense.h",
+    "gdbsupport/unordered_dense/*",
     "gnulib/doc/gendocs_template",
     "gnulib/doc/gendocs_template_min",
     "gnulib/import/**",
