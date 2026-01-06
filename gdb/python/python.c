@@ -2590,14 +2590,8 @@ do_start_initialization ()
 {
   /* Define all internal modules.  These are all imported (and thus
      created) during initialization.  */
-  struct _inittab mods[] =
-  {
-    { "_gdb", init__gdb_module },
-    { "_gdbevents", gdbpy_events_mod_func },
-    { nullptr, nullptr }
-  };
-
-  if (PyImport_ExtendInittab (mods) < 0)
+  if (PyImport_AppendInittab ("_gdb", init__gdb_module) < 0
+      || PyImport_AppendInittab ("_gdbevents", gdbpy_events_mod_func) < 0)
     return false;
 
   if (!py_initialize ())
