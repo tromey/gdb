@@ -2511,7 +2511,9 @@ extern struct_elt lookup_struct_elt (struct type *, const char *, int);
 
 extern struct type *lookup_struct_elt_type (struct type *, const char *, int);
 
-extern struct type *make_pointer_type (struct type *, struct type **);
+/* Lookup a pointer to a type TYPE.  */
+
+extern type *make_pointer_type (type *type);
 
 extern struct type *lookup_pointer_type (struct type *);
 

@@ -360,13 +360,10 @@ smash_type (struct type *type)
   /* For now, leave the pointer/reference types alone.  */
 }
 
-/* Lookup a pointer to a type TYPE.  TYPEPTR, if nonzero, points
-   to a pointer to memory where the pointer type should be stored.
-   If *TYPEPTR is zero, update it to point to the pointer type we return.
-   We allocate new memory if needed.  */
+/* See gdbtypes.h.  */
 
-struct type *
-make_pointer_type (struct type *type, struct type **typeptr)
+type *
+make_pointer_type (type *type)
 {
   struct type *ntype;	/* New type */
   struct type *chain;
@@ -374,31 +371,9 @@ make_pointer_type (struct type *type, struct type **typeptr)
   ntype = TYPE_POINTER_TYPE (type);
 
   if (ntype)
-    {
-      if (typeptr == 0)
-	return ntype;		/* Don't care about alloc,
-				   and have new type.  */
-      else if (*typeptr == 0)
-	{
-	  *typeptr = ntype;	/* Tracking alloc, and have new type.  */
-	  return ntype;
-	}
-    }
+    return ntype;
 
-  if (typeptr == 0 || *typeptr == 0)	/* We'll need to allocate one.  */
-    {
-      ntype = type_allocator (type).new_type ();
-      if (typeptr)
-	*typeptr = ntype;
-    }
-  else			/* We have storage, but need to reset it.  */
-    {
-      ntype = *typeptr;
-      chain = TYPE_CHAIN (ntype);
-      smash_type (ntype);
-      TYPE_CHAIN (ntype) = chain;
-    }
-
+  ntype = type_allocator (type).new_type ();
   ntype->set_target_type (type);
   TYPE_POINTER_TYPE (type) = ntype;
 
@@ -429,7 +404,7 @@ make_pointer_type (struct type *type, struct type **typeptr)
 struct type *
 lookup_pointer_type (struct type *type)
 {
-  return make_pointer_type (type, (struct type **) 0);
+  return make_pointer_type (type);
 }
 
 /* Lookup a C++ `reference' to a type TYPE.  TYPEPTR, if nonzero,
