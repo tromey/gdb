@@ -1319,4 +1319,7 @@ protected:
   gdb::unordered_map<val_type *, obj_type *> m_objects;
 };
 
+extern int eval_python_command (const char *command, int start_symbol,
+				const char *filename = nullptr);
+
 #endif /* GDB_PYTHON_PYTHON_INTERNAL_H */

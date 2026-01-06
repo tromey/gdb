@@ -299,9 +299,9 @@ gdbpy_check_quit_flag (const struct extension_language_defn *extlang)
    NULL means that this is evaluating a string, not the contents of a
    file.  */
 
-static int
+int
 eval_python_command (const char *command, int start_symbol,
-		     const char *filename = nullptr)
+		     const char *filename)
 {
   PyObject *m, *d;
 
@@ -340,13 +340,12 @@ eval_python_command (const char *command, int start_symbol,
 	}
     }
 
-  /* Use this API because it is in Python 3.2.  */
-  gdbpy_ref<> code (Py_CompileStringExFlags (command,
-					     filename == nullptr
-					     ? "<string>"
-					     : filename,
-					     start_symbol,
-					     nullptr, -1));
+  /* Use this API because it is available with the Python limited API.  */
+  gdbpy_ref<> code (Py_CompileString (command,
+				      filename == nullptr
+				      ? "<string>"
+				      : filename,
+				      start_symbol));
 
   int result = -1;
   if (code != nullptr)
