@@ -9101,8 +9101,6 @@ rust_containing_type (struct die_info *die, struct dwarf2_cu *cu)
   if (type_die == NULL)
     return NULL;
 
-  if (dwarf2_attr (type_die, DW_AT_containing_type, type_cu) == NULL)
-    return NULL;
   return die_containing_type (type_die, type_cu);
 }
 
@@ -10695,8 +10693,7 @@ dwarf2_add_member_fn (struct field_info *fip, struct die_info *die,
 	       dwarf2_full_name (fieldname, die, cu));
 
   /* Get fcontext from DW_AT_containing_type if present.  */
-  if (dwarf2_attr (die, DW_AT_containing_type, cu) != NULL)
-    fnp->fcontext = die_containing_type (die, cu);
+  fnp->fcontext = die_containing_type (die, cu);
 
   /* dwarf2 doesn't have stubbed physical names, so the setting of is_const and
      is_volatile is irrelevant, as it is needed by gdb_mangle_name only.  */
@@ -11495,21 +11492,21 @@ process_structure_scope (struct die_info *die, struct dwarf2_cu *cu)
 	     class from the DW_AT_containing_type attribute.  This use of
 	     DW_AT_containing_type is a GNU extension.  */
 
-	  if (dwarf2_attr (die, DW_AT_containing_type, cu) != NULL)
+	  if (struct type *containing_type = die_containing_type (die, cu);
+	      containing_type != nullptr)
 	    {
-	      struct type *t = die_containing_type (die, cu);
-
-	      set_type_vptr_basetype (type, t);
-	      if (type == t)
+	      set_type_vptr_basetype (type, containing_type);
+	      if (type == containing_type)
 		{
 		  int i;
 
 		  /* Our own class provides vtbl ptr.  */
-		  for (i = t->num_fields () - 1;
-		       i >= TYPE_N_BASECLASSES (t);
+		  for (i = containing_type->num_fields () - 1;
+		       i >= TYPE_N_BASECLASSES (containing_type);
 		       --i)
 		    {
-		      const char *fieldname = t->field (i).name ();
+		      const char *fieldname
+			= containing_type->field (i).name ();
 
 		      if (is_vtable_name (fieldname, cu))
 			{
@@ -11519,15 +11516,14 @@ process_structure_scope (struct die_info *die, struct dwarf2_cu *cu)
 		    }
 
 		  /* Complain if virtual function table field not found.  */
-		  if (i < TYPE_N_BASECLASSES (t))
+		  if (i < TYPE_N_BASECLASSES (containing_type))
 		    complaint (_("virtual function table pointer "
 				 "not found when defining class '%s'"),
 			       type->name () ? type->name () : "");
 		}
 	      else
-		{
-		  set_type_vptr_fieldno (type, TYPE_VPTR_FIELDNO (t));
-		}
+		set_type_vptr_fieldno (type,
+				       TYPE_VPTR_FIELDNO (containing_type));
 	    }
 	  else if (cu->producer_is_xlc ())
 	    {
@@ -12908,6 +12904,13 @@ read_tag_ptr_to_member_type (struct die_info *die, struct dwarf2_cu *cu)
 
   to_type = die_type (die, cu);
   domain = die_containing_type (die, cu);
+
+  if (domain == nullptr)
+    error (_(DWARF_ERROR_PREFIX
+	     "Missing DW_AT_containing_type attribute on "
+	     "DW_TAG_ptr_to_member_type DIE at %s [in module %s]"),
+	   sect_offset_str (die->sect_off),
+	   objfile_name (cu->per_objfile->objfile));
 
   /* The calls above may have already set the type for this DIE.  */
   type = get_die_type (die, cu);
@@ -16816,15 +16819,10 @@ set_descriptive_type (struct type *type, struct die_info *die,
 static struct type *
 die_containing_type (struct die_info *die, struct dwarf2_cu *cu)
 {
-  struct attribute *type_attr;
-  struct objfile *objfile = cu->per_objfile->objfile;
+  attribute *type_attr = dwarf2_attr (die, DW_AT_containing_type, cu);
 
-  type_attr = dwarf2_attr (die, DW_AT_containing_type, cu);
-  if (!type_attr)
-    error (_(DWARF_ERROR_PREFIX
-	     "Problem turning containing type into gdb type "
-	     "[in module %s]"),
-	   objfile_name (objfile));
+  if (type_attr == nullptr)
+    return nullptr;
 
   return lookup_die_type (die, type_attr, cu);
 }
