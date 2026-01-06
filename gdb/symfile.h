@@ -130,13 +130,6 @@ struct sym_fns
 
   void (*sym_read) (struct objfile *, symfile_add_flags);
 
-  /* Called when we are finished with an objfile.  Should do all
-     cleanup that is specific to the object file format for the
-     particular objfile.  */
-
-  void (*sym_finish) (struct objfile *);
-
-
   /* This function produces a file-dependent section_offsets
      structure, allocated in the objfile's storage.
 

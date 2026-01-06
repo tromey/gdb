@@ -717,16 +717,6 @@ coff_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
     }
 }
 
-/* Perform any local cleanups required when we are done with a
-   particular objfile.  I.E, we are in the process of discarding all
-   symbol information for an objfile, freeing up all memory held for
-   it, and unlinking the objfile struct from the global list of known
-   objfiles.  */
-
-static void
-coff_symfile_finish (struct objfile *objfile)
-{
-}
 
 
 /* Given pointers to a symbol table in coff style exec file,
@@ -2105,8 +2095,6 @@ static const struct sym_fns coff_sym_fns =
 				   for sym_read() */
   coff_symfile_read,		/* sym_read: read a symbol file into
 				   symtab */
-  coff_symfile_finish,		/* sym_finish: finished with file,
-				   cleanup */
   default_symfile_offsets,	/* sym_offsets: xlate external to
 				   internal form */
   default_symfile_segments,	/* sym_segments: Get segment

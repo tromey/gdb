@@ -1279,16 +1279,6 @@ elf_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
   objfile->object_format_has_copy_relocs = true;
 }
 
-/* Perform any local cleanups required when we are done with a particular
-   objfile.  I.E, we are in the process of discarding all symbol information
-   for an objfile, freeing up all memory held for it, and unlinking the
-   objfile struct from the global list of known objfiles.  */
-
-static void
-elf_symfile_finish (struct objfile *objfile)
-{
-}
-
 /* ELF specific initialization routine for reading symbols.  */
 
 static void
@@ -1331,7 +1321,6 @@ static const struct sym_fns elf_sym_fns =
 {
   elf_symfile_init,		/* read initial info, setup for sym_read() */
   elf_symfile_read,		/* read a symbol file into symtab */
-  elf_symfile_finish,		/* finished with file, cleanup */
   default_symfile_offsets,	/* Translate ext. to int. relocation */
   elf_symfile_segments,		/* Get segment information from a file.  */
   NULL,

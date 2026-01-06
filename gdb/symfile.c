@@ -2552,11 +2552,6 @@ reread_symbols (int from_tty)
 
 	     Try to keep the freeing order compatible with free_objfile.  */
 
-	  if (objfile.sf != NULL)
-	    {
-	      (*objfile.sf->sym_finish) (&objfile);
-	    }
-
 	  objfile.registry_fields.clear_registry ();
 
 	  /* Clean up any state BFD has sitting around.  */

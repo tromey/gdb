@@ -100,8 +100,6 @@ static void scan_xcoff_symtab (struct objfile *);
 
 static void xcoff_symfile_init (struct objfile *);
 
-static void xcoff_symfile_finish (struct objfile *);
-
 /* Search all BFD sections for the section whose target_index is
    equal to N_SCNUM.  Set *BFD_SECT to that section.  The section's
    associated index in the objfile's section_offset table is also
@@ -180,16 +178,6 @@ xcoff_symfile_init (struct objfile *objfile)
 {
   /* Allocate struct to keep track of the symfile.  */
   xcoff_objfile_data_key.emplace (objfile);
-}
-
-/* Perform any local cleanups required when we are done with a particular
-   objfile.  I.E, we are in the process of discarding all symbol information
-   for an objfile, freeing up all memory held for it, and unlinking the
-   objfile struct from the global list of known objfiles.  */
-
-static void
-xcoff_symfile_finish (struct objfile *objfile)
-{
 }
 
 /* Swap raw symbol at *RAW and put the name in *NAME, the symbol in
@@ -494,7 +482,6 @@ static const struct sym_fns xcoff_sym_fns =
 
   xcoff_symfile_init,		/* read initial info, setup for sym_read() */
   xcoff_initial_scan,		/* read a symbol file into symtab */
-  xcoff_symfile_finish,		/* finished with file, cleanup */
   xcoff_symfile_offsets,	/* xlate offsets ext->int form */
   default_symfile_segments,	/* Get segment information from a file.  */
   aix_process_linenos,
