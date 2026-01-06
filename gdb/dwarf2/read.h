@@ -284,6 +284,10 @@ public:
   bool is_debug_types () const
   { return m_is_debug_types; }
 
+  /* If this dwarf2_per_cu is a signatured_type, return "this" cast to
+     signatured_type.  Otherwise, return nullptr.  */
+  signatured_type *as_signatured_type ();
+
   dwarf2_per_bfd *per_bfd () const
   { return m_per_bfd; }
 
@@ -458,6 +462,17 @@ struct signatured_type : public dwarf2_per_cu
 };
 
 using signatured_type_up = std::unique_ptr<signatured_type>;
+
+/* See dwarf2_per_cu declaration.  */
+
+inline signatured_type *
+dwarf2_per_cu::as_signatured_type ()
+{
+  if (m_is_debug_types)
+    return static_cast<signatured_type *> (this);
+
+  return nullptr;
+}
 
 /* Hash a signatured_type object based on its signature.  */
 

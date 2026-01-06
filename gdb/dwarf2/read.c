@@ -938,7 +938,7 @@ static struct type *get_DW_AT_signature_type (struct die_info *,
 					      const struct attribute *,
 					      struct dwarf2_cu *);
 
-static void load_full_type_unit (dwarf2_per_cu *per_cu,
+static void load_full_type_unit (signatured_type *sig_type,
 				 dwarf2_per_objfile *per_objfile);
 
 static void read_signatured_type (signatured_type *sig_type,
@@ -1040,8 +1040,9 @@ dwarf2_queue_item::~dwarf2_queue_item ()
 void
 dwarf2_per_cu_deleter::operator() (dwarf2_per_cu *data)
 {
-  if (data->is_debug_types ())
-    delete static_cast<signatured_type *> (data);
+  if (signatured_type *sig_type = data->as_signatured_type ();
+      sig_type != nullptr)
+    delete sig_type;
   else
     delete data;
 }
@@ -1623,8 +1624,9 @@ static dwarf2_cu *
 load_cu (dwarf2_per_cu *per_cu, dwarf2_per_objfile *per_objfile,
 	 bool skip_partial)
 {
-  if (per_cu->is_debug_types ())
-    load_full_type_unit (per_cu, per_objfile);
+  if (signatured_type *sig_type = per_cu->as_signatured_type ();
+      sig_type != nullptr)
+    load_full_type_unit (sig_type, per_objfile);
   else
     load_full_comp_unit (per_cu, per_objfile, skip_partial, language_minimal);
 
@@ -2950,13 +2952,11 @@ cutu_reader::init_tu_and_read_dwo_dies (dwarf2_per_cu *this_cu,
 					dwarf2_cu *existing_cu,
 					enum language pretend_language)
 {
-  struct signatured_type *sig_type;
+  signatured_type *sig_type = this_cu->as_signatured_type ();
 
-  /* Verify we can do the following downcast, and that we have the
-     data we need.  */
-  gdb_assert (this_cu->is_debug_types () && this_cu->reading_dwo_directly);
-  sig_type = (struct signatured_type *) this_cu;
-  gdb_assert (sig_type->dwo_unit != NULL);
+  gdb_assert (sig_type != nullptr);
+  gdb_assert (sig_type->reading_dwo_directly);
+  gdb_assert (sig_type->dwo_unit != nullptr);
 
   dwarf2_cu *cu;
 
@@ -3007,7 +3007,6 @@ cutu_reader::cutu_reader (dwarf2_per_cu &this_cu,
   struct dwarf2_section_info *section = this_cu.section ();
   bfd *abfd = section->get_bfd_owner ();
   const gdb_byte *begin_info_ptr;
-  struct signatured_type *sig_type = NULL;
   struct dwarf2_section_info *abbrev_section;
   /* Non-zero if CU currently points to a DWO file and we need to
      reread it.  When this happens we need to reread the skeleton die
@@ -3076,15 +3075,13 @@ cutu_reader::cutu_reader (dwarf2_per_cu &this_cu,
     }
   else
     {
-      if (this_cu.is_debug_types ())
+      if (signatured_type *sig_type = this_cu.as_signatured_type ();
+	  sig_type != nullptr)
 	{
 	  m_info_ptr = read_and_check_unit_head (&cu->header, section,
 						 abbrev_section, m_info_ptr,
 						 ruh_kind::TYPE);
 
-	  /* Since per_cu is the first member of struct signatured_type,
-	     we can go from a pointer to one to a pointer to the other.  */
-	  sig_type = (struct signatured_type *) &this_cu;
 	  gdb_assert (sig_type->signature == cu->header.signature);
 	  gdb_assert (sig_type->type_offset_in_tu
 		      == cu->header.type_offset_in_tu);
@@ -3578,9 +3575,9 @@ cooked_index_worker_debug_info::process_type_units
   sorted_by_abbrev.reserve (per_objfile->per_bfd->num_type_units);
 
   for (const auto &cu : per_objfile->per_bfd->all_units)
-    if (cu->is_debug_types ())
+    if (signatured_type *sig_type = cu->as_signatured_type ();
+	sig_type != nullptr)
       {
-	auto sig_type = static_cast<signatured_type *> (cu.get ());
 	sect_offset abbrev_offset
 	  = read_abbrev_offset (per_objfile, sig_type->section (),
 				sig_type->sect_off ());
@@ -4164,11 +4161,9 @@ process_queue (dwarf2_per_objfile *per_objfile)
 	      char buf[100];
 	      std::optional<chr::time_point<chr::steady_clock>> start_time;
 
-	      if (per_cu->is_debug_types ())
+	      if (signatured_type *sig_type = per_cu->as_signatured_type ();
+		  sig_type != nullptr)
 		{
-		  struct signatured_type *sig_type =
-		    (struct signatured_type *) per_cu;
-
 		  sprintf (buf, "TU %s at offset %s",
 			   hex_string (sig_type->signature),
 			   sect_offset_str (per_cu->sect_off ()));
@@ -4961,10 +4956,9 @@ process_full_type_unit (dwarf2_cu *cu)
 {
   dwarf2_per_objfile *per_objfile = cu->per_objfile;
   struct compunit_symtab *cust;
-  struct signatured_type *sig_type;
+  signatured_type *sig_type = cu->per_cu->as_signatured_type ();
 
-  gdb_assert (cu->per_cu->is_debug_types ());
-  sig_type = (struct signatured_type *) cu->per_cu;
+  gdb_assert (sig_type != nullptr);
 
   /* Clear the list here in case something was left over.  */
   cu->method_list.clear ();
@@ -6198,10 +6192,9 @@ dwarf2_cu::setup_type_unit_groups (struct die_info *die)
   int first_time;
   struct attribute *attr;
   unsigned int i;
-  struct signatured_type *sig_type;
+  signatured_type *sig_type = per_cu->as_signatured_type ();
 
-  gdb_assert (per_cu->is_debug_types ());
-  sig_type = (struct signatured_type *) per_cu;
+  gdb_assert (sig_type != nullptr);
 
   attr = dwarf2_attr (die, DW_AT_stmt_list, this);
 
@@ -8171,9 +8164,9 @@ dwo_unit *
 cutu_reader::lookup_dwo_type_unit (dwarf2_cu *cu, const char *dwo_name,
 				   const char *comp_dir)
 {
-  gdb_assert (cu->per_cu->is_debug_types ());
+  signatured_type *sig_type = cu->per_cu->as_signatured_type ();
 
-  signatured_type *sig_type = (signatured_type *) cu->per_cu;
+  gdb_assert (sig_type != nullptr);
 
   return lookup_dwo_cutu (cu, dwo_name, comp_dir, sig_type->signature, 1);
 }
@@ -11908,12 +11901,9 @@ process_enumeration_scope (struct die_info *die, struct dwarf2_cu *cu)
      actually available.  Note that we do not want to do this for all
      enums which are just declarations, because C++0x allows forward
      enum declarations.  */
-  if (cu->per_cu->is_debug_types ()
-      && die_is_declaration (die, cu))
+  if (signatured_type *sig_type = cu->per_cu->as_signatured_type ();
+      sig_type != nullptr && die_is_declaration (die, cu))
     {
-      struct signatured_type *sig_type;
-
-      sig_type = (struct signatured_type *) cu->per_cu;
       gdb_assert (to_underlying (sig_type->type_offset_in_section) != 0);
       if (sig_type->type_offset_in_section != die->sect_off)
 	return;
@@ -18133,23 +18123,14 @@ get_DW_AT_signature_type (struct die_info *die, const struct attribute *attr,
     }
 }
 
-/* Load the DIEs associated with type unit PER_CU into memory.  */
+/* Load the DIEs associated with type unit SIG_TYPE into memory.  */
 
 static void
-load_full_type_unit (dwarf2_per_cu *per_cu, dwarf2_per_objfile *per_objfile)
+load_full_type_unit (signatured_type *sig_type, dwarf2_per_objfile *per_objfile)
 {
-  struct signatured_type *sig_type;
-
-  /* We have the per_cu, but we need the signatured_type.
-     Fortunately this is an easy translation.  */
-  gdb_assert (per_cu->is_debug_types ());
-  sig_type = (struct signatured_type *) per_cu;
-
-  gdb_assert (per_objfile->get_cu (per_cu) == nullptr);
-
+  gdb_assert (per_objfile->get_cu (sig_type) == nullptr);
   read_signatured_type (sig_type, per_objfile);
-
-  gdb_assert (per_objfile->get_cu (per_cu) != nullptr);
+  gdb_assert (per_objfile->get_cu (sig_type) != nullptr);
 }
 
 /* Read in a signatured type and build its CU and DIEs.
