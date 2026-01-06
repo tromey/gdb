@@ -157,6 +157,16 @@ def may_have_copyright_notice(filename: str):
     return False
 
 
+def run_autoreconf():
+    """Run autoreconf -v in all relevant directories."""
+    dirs = ["gdb", "gdbsupport", "gdbserver", "gnulib", "sim"]
+    for d in dirs:
+        print(f"\033[32mRunning autoreconf in {d}...\033[0m")
+        result = subprocess.run(["autoreconf", "-v"], cwd=d)
+        if result.returncode != 0:
+            sys.exit(f"Error: autoreconf failed in {d}")
+
+
 def get_parser() -> argparse.ArgumentParser:
     """Get a command line parser."""
     parser = argparse.ArgumentParser(
@@ -175,6 +185,8 @@ def main(argv: list[str]) -> int | None:
 
     update_list = get_update_list()
     update_files(update_list)
+
+    run_autoreconf()
 
     # Remind the user that some files need to be updated by HAND...
 
