@@ -56,6 +56,7 @@
 #include <optional>
 #include "source.h"
 #include "cli/cli-style.h"
+#include "gdbsupport/selftest.h"
 
 /* Local functions: */
 
@@ -131,6 +132,8 @@ args_complete_p (const std::string &args)
   while (*input != '\0')
     {
       input = skip_spaces (input);
+      if (*input == '\0')
+	break;
 
       if (squote)
 	{
@@ -148,7 +151,8 @@ args_complete_p (const std::string &args)
 	     and we don't skip the entire '\\' then we'll only skip the
 	     first '\', in which case we might see the second '\' as a '\"'
 	     sequence, which would be wrong.  */
-	  if (*input == '\\' && strchr ("\"\\", *(input + 1)) != nullptr)
+	  if (*input == '\\' && *(input + 1) != '\0'
+	      && strchr ("\"\\", *(input + 1)) != nullptr)
 	    ++input;
 	  /* Otherwise, just look for the closing double quote.  */
 	  else if (*input == '"')
@@ -162,7 +166,8 @@ args_complete_p (const std::string &args)
 	     a quoted argument.  The '\\' we need to skip so we don't just
 	     skip the first '\' and then incorrectly consider the second
 	     '\' are part of a '\"' or '\'' sequence.  */
-	  if (*input == '\\' && strchr ("\"\\'", *(input + 1)) != nullptr)
+	  if (*input == '\\' && *(input + 1) != '\0'
+	      && strchr ("\"\\'", *(input + 1)) != nullptr)
 	    ++input;
 	  /* Otherwise, check for the start of a single or double quoted
 	     argument.  Single quotes have no special meaning on Windows
@@ -180,8 +185,31 @@ args_complete_p (const std::string &args)
       ++input;
     }
 
+  /* Check that the whole string was read, and that we haven't read past
+     '\0'.  */
+  gdb_assert (input == args.data () + args.size ());
   return (!dquote && !squote);
 }
+
+#if GDB_SELF_TEST
+namespace selftests {
+
+static void
+infcmd_args_complete_p_tests ()
+{
+  /* The " " and "\"\\" cases are regression tests for PR33754.  */
+  std::vector<std::string> complete_strings = { " " };
+  std::vector<std::string> incomplete_strings = { "\"\\" };
+
+  for (auto &s : complete_strings)
+    SELF_CHECK (args_complete_p (s));
+
+  for (auto &s : incomplete_strings)
+    SELF_CHECK (!args_complete_p (s));
+}
+
+} /* namespace selftests */
+#endif /* GDB_SELF_TEST */
 
 /* Build a complete inferior argument string (all arguments to pass to the
    inferior) and return it.  ARGS is the initial part of the inferior
@@ -3634,4 +3662,9 @@ Show whether `finish' prints the return value."), nullptr,
 			   nullptr,
 			   show_print_finish,
 			   &setprintlist, &showprintlist);
+
+#if GDB_SELF_TEST
+  selftests::register_test ("infcmd-args-complete-p",
+			    selftests::infcmd_args_complete_p_tests);
+#endif
 }
