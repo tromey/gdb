@@ -31,7 +31,6 @@
 #include "gdbtypes.h"
 #include "symfile.h"
 #include "objfiles.h"
-#include "buildsym-legacy.h"
 #include "complaints.h"
 #include "dwarf2/sect-names.h"
 #include "dwarf2/public.h"
@@ -261,8 +260,6 @@ scan_xcoff_symtab (struct objfile *objfile)
   struct internal_syment symbol;
   union internal_auxent main_aux[5];
   unsigned int ssymnum;
-
-  set_last_source_file (NULL);
 
   abfd = objfile->obfd.get ();
 
