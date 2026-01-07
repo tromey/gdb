@@ -21,30 +21,18 @@
 #include "bfd.h"
 #include "event-top.h"
 
-#include <sys/types.h>
-#include <fcntl.h>
-#ifdef HAVE_SYS_FILE_H
-#include <sys/file.h>
-#endif
-#include <sys/stat.h>
-#include <algorithm>
-
 #include "coff/internal.h"
 #include "libcoff.h"
 #include "coff/xcoff.h"
-#include "libxcoff.h"
 #include "coff/rs6000.h"
 #include "xcoffread.h"
 
 #include "symtab.h"
 #include "gdbtypes.h"
-/* FIXME: ezannoni/2004-02-13 Verify if the include below is really needed.  */
 #include "symfile.h"
 #include "objfiles.h"
 #include "buildsym-legacy.h"
-#include "expression.h"
 #include "complaints.h"
-#include "psymtab.h"
 #include "dwarf2/sect-names.h"
 #include "dwarf2/public.h"
 
