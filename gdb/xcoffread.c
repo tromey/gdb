@@ -49,49 +49,6 @@
 #include "dwarf2/public.h"
 
 
-/* We put a pointer to this structure in the read_symtab_private field
-   of the psymtab.  */
-
-struct xcoff_symloc
-  {
-
-    /* First symbol number for this file.  */
-
-    int first_symnum;
-
-    /* Number of symbols in the section of the symbol table devoted to
-       this file's symbols (actually, the section bracketed may contain
-       more than just this file's symbols).  If numsyms is 0, the only
-       reason for this thing's existence is the dependency list.  Nothing
-       else will happen when it is read in.  */
-
-    int numsyms;
-
-    /* Position of the start of the line number information for this
-       psymtab.  */
-    unsigned int lineno_off;
-  };
-
-
-/* Simplified internal version of coff symbol table information.  */
-
-struct xcoff_symbol
-  {
-    char *c_name;
-    int c_symnum;		/* Symbol number of this entry.  */
-    int c_naux;			/* 0 if syment only, 1 if syment + auxent.  */
-    CORE_ADDR c_value;
-    unsigned char c_sclass;
-    int c_secnum;
-    unsigned int c_type;
-  };
-
-static bfd *symfile_bfd;
-
-/* Initial symbol-table-debug-string vector length.  */
-
-#define	INITIAL_STABVECTOR_LENGTH	40
-
 struct xcoff_symfile_info
   {
     file_ptr min_lineno_offset {};	/* Where in file lowest line#s are.  */
@@ -191,44 +148,9 @@ xcoff_secnum_to_sections (int n_scnum, struct objfile *objfile,
     }
 }
 
-/* include file support: C_BINCL/C_EINCL pairs will be kept in the
-   following `IncludeChain'.  At the end of each symtab (end_compunit_symtab),
-   we will determine if we should create additional symtab's to
-   represent if (the include files.  */
-
-
-typedef struct _inclTable
-{
-  char *name;			/* include filename */
-
-  /* Offsets to the line table.  end points to the last entry which is
-     part of this include file.  */
-  int begin, end;
-
-  struct subfile *subfile;
-  unsigned funStartLine;	/* Start line # of its function.  */
-}
-InclTable;
-
-#define	INITIAL_INCLUDE_TABLE_LENGTH	20
-static InclTable *inclTable;	/* global include table */
-static int inclIndx;		/* last entry to table */
-static int inclLength;		/* table length */
-static int inclDepth;		/* nested include depth */
-
-/* subfile structure for the main compilation unit.  */
-static subfile *main_subfile;
-
-/* Global variable to pass the psymtab down to all the routines involved
-   in psymtab to symtab processing.  */
-static legacy_psymtab *this_symtab_psymtab;
-
 static void
 aix_process_linenos (struct objfile *objfile)
 {
-  /* There is no linenos to read if there are only dwarf info.  */
-  if (this_symtab_psymtab == NULL)
-    return;
 }
 
 
@@ -288,14 +210,6 @@ xcoff_symfile_init (struct objfile *objfile)
 static void
 xcoff_symfile_finish (struct objfile *objfile)
 {
-  /* Start with a fresh include table for the next objfile.  */
-  if (inclTable)
-    {
-      xfree (inclTable);
-      inclTable = NULL;
-      delete main_subfile;
-    }
-  inclIndx = inclLength = inclDepth = 0;
 }
 
 /* Swap raw symbol at *RAW and put the name in *NAME, the symbol in
@@ -483,7 +397,7 @@ xcoff_initial_scan (struct objfile *objfile, symfile_add_flags symfile_flags)
   unsigned int size;
 
   info = XCOFF_DATA (objfile);
-  symfile_bfd = abfd = objfile->obfd.get ();
+  abfd = objfile->obfd.get ();
   name = objfile_name (objfile);
 
   num_symbols = bfd_get_symcount (abfd);	/* # of symbols */
