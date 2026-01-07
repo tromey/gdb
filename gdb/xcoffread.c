@@ -88,22 +88,9 @@ struct xcoff_symbol
 
 static bfd *symfile_bfd;
 
-/* Core address of start and end of text of current source file.
-   This is calculated from the first function seen after a C_FILE
-   symbol.  */
-
-
-static CORE_ADDR cur_src_end_addr;
-
 /* Initial symbol-table-debug-string vector length.  */
 
 #define	INITIAL_STABVECTOR_LENGTH	40
-
-/* Size of a COFF symbol.  I think it is always 18, so I'm not sure
-   there is any reason not to just use a #define, but might as well
-   ask BFD for the size and store it here, I guess.  */
-
-static unsigned local_symesz;
 
 struct xcoff_symfile_info
   {
@@ -163,19 +150,9 @@ static const struct dwarf2_debug_sections dwarf2_xcoff_names = {
   23
 };
 
-static void
-bf_notfound_complaint (void)
-{
-  complaint (_("line numbers off, `.bf' symbol not found"));
-}
-
 static void xcoff_initial_scan (struct objfile *, symfile_add_flags);
 
-static void
-enter_line_range (struct subfile *, unsigned, unsigned,
-		  CORE_ADDR, CORE_ADDR, unsigned *);
-
-static void init_stringtab (bfd *, file_ptr, struct objfile *);
+static void scan_xcoff_symtab (struct objfile *);
 
 static void xcoff_symfile_init (struct objfile *);
 
@@ -183,138 +160,35 @@ static void xcoff_new_init (struct objfile *);
 
 static void xcoff_symfile_finish (struct objfile *);
 
-static void read_symbol (struct internal_syment *, int);
+/* Search all BFD sections for the section whose target_index is
+   equal to N_SCNUM.  Set *BFD_SECT to that section.  The section's
+   associated index in the objfile's section_offset table is also
+   stored in *SECNUM.
 
-static int read_symbol_lineno (int);
-
-static CORE_ADDR read_symbol_nvalue (int);
-
-static void process_linenos (CORE_ADDR, CORE_ADDR);
-
-struct xcoff_find_targ_sec_arg
-  {
-    int targ_index;
-    int *resultp;
-    asection **bfd_sect;
-    struct objfile *objfile;
-  };
-
-/* Linenos are processed on a file-by-file basis.
-
-   Two reasons:
-
-   1) xlc (IBM's native c compiler) postpones static function code
-   emission to the end of a compilation unit.  This way it can
-   determine if those functions (statics) are needed or not, and
-   can do some garbage collection (I think).  This makes line
-   numbers and corresponding addresses unordered, and we end up
-   with a line table like:
-
-
-   lineno       addr
-   foo()          10    0x100
-   20   0x200
-   30   0x300
-
-   foo3()         70    0x400
-   80   0x500
-   90   0x600
-
-   static foo2()
-   40   0x700
-   50   0x800
-   60   0x900
-
-   and that breaks gdb's binary search on line numbers, if the
-   above table is not sorted on line numbers.  And that sort
-   should be on function based, since gcc can emit line numbers
-   like:
-
-   10   0x100   - for the init/test part of a for stmt.
-   20   0x200
-   30   0x300
-   10   0x400   - for the increment part of a for stmt.
-
-   arrange_linetable() will do this sorting.
-
-   2)   aix symbol table might look like:
-
-   c_file               // beginning of a new file
-   .bi          // beginning of include file
-   .ei          // end of include file
-   .bi
-   .ei
-
-   basically, .bi/.ei pairs do not necessarily encapsulate
-   their scope.  They need to be recorded, and processed later
-   on when we come the end of the compilation unit.
-   Include table (inclTable) and process_linenos() handle
-   that.  */
-
-
-/* Given a line table with function entries are marked, arrange its
-   functions in ascending order and strip off function entry markers
-   and return it in a newly created table.  */
-
-/* FIXME: I think all this stuff can be replaced by just passing
-   sort_linevec = 1 to end_compunit_symtab.  */
+   If no match is found, *BFD_SECT is set to NULL, and *SECNUM
+   is set to the text section's number.  */
 
 static void
-arrange_linetable (std::vector<linetable_entry> &old_linetable)
+xcoff_secnum_to_sections (int n_scnum, struct objfile *objfile,
+			  asection **bfd_sect, int *secnum)
 {
-  std::vector<linetable_entry> fentries;
+  *bfd_sect = NULL;
+  *secnum = SECT_OFF_TEXT (objfile);
 
-  for (int ii = 0; ii < old_linetable.size (); ++ii)
+  for (asection *sec : gdb_bfd_sections (objfile->obfd.get ()))
     {
-      if (!old_linetable[ii].is_stmt)
-	continue;
-
-      if (old_linetable[ii].line == 0)
+      if (sec->target_index == n_scnum)
 	{
-	  /* Function entry found.  */
-	  linetable_entry &e = fentries.emplace_back ();
-	  e.line = ii;
-	  e.is_stmt = true;
-	  e.set_unrelocated_pc (old_linetable[ii].unrelocated_pc ());
+	  /* This is the section.  Figure out what SECT_OFF_* code it is.  */
+	  if (bfd_section_flags (sec) & SEC_CODE)
+	    *secnum = SECT_OFF_TEXT (objfile);
+	  else if (bfd_section_flags (sec) & SEC_LOAD)
+	    *secnum = SECT_OFF_DATA (objfile);
+	  else
+	    *secnum = gdb_bfd_section_index (objfile->obfd.get (), sec);
+	  *bfd_sect = sec;
 	}
     }
-
-  if (fentries.empty ())
-    return;
-
-  std::sort (fentries.begin (), fentries.end ());
-
-  /* Allocate a new line table.  */
-  std::vector<linetable_entry> new_linetable;
-  new_linetable.reserve (old_linetable.size ());
-
-  /* If line table does not start with a function beginning, copy up until
-     a function begin.  */
-  for (int i = 0; i < old_linetable.size () && old_linetable[i].line != 0; ++i)
-    new_linetable.push_back (old_linetable[i]);
-
-  /* Now copy function lines one by one.  */
-  for (const linetable_entry &entry : fentries)
-    {
-      /* If the function was compiled with XLC, we may have to add an
-	 extra line to cover the function prologue.  */
-      int jj = entry.line;
-      if (jj + 1 < old_linetable.size ()
-	  && (old_linetable[jj].unrelocated_pc ()
-	      != old_linetable[jj + 1].unrelocated_pc ()))
-	{
-	  new_linetable.push_back (old_linetable[jj]);
-	  new_linetable.back ().line = old_linetable[jj + 1].line;
-	}
-
-      for (jj = entry.line + 1;
-	   jj < old_linetable.size () && old_linetable[jj].line != 0;
-	   ++jj)
-	new_linetable.push_back (old_linetable[jj]);
-    }
-
-  new_linetable.shrink_to_fit ();
-  old_linetable = std::move (new_linetable);
 }
 
 /* include file support: C_BINCL/C_EINCL pairs will be kept in the
@@ -349,359 +223,14 @@ static subfile *main_subfile;
    in psymtab to symtab processing.  */
 static legacy_psymtab *this_symtab_psymtab;
 
-/* Objfile related to this_symtab_psymtab; set at the same time.  */
-static struct objfile *this_symtab_objfile;
-
-/* given the start and end addresses of a compilation unit (or a csect,
-   at times) process its lines and create appropriate line vectors.  */
-
-static void
-process_linenos (CORE_ADDR start, CORE_ADDR end)
-{
-  int offset;
-  file_ptr max_offset
-    = XCOFF_DATA (this_symtab_objfile)->max_lineno_offset;
-
-  /* In the main source file, any time we see a function entry, we
-     reset this variable to function's absolute starting line number.
-     All the following line numbers in the function are relative to
-     this, and we record absolute line numbers in record_line().  */
-
-  unsigned int main_source_baseline = 0;
-
-  unsigned *firstLine;
-
-  offset =
-    ((struct xcoff_symloc *) this_symtab_psymtab->read_symtab_private)->lineno_off;
-  if (offset == 0)
-    goto return_after_cleanup;
-
-  if (inclIndx == 0)
-    /* All source lines were in the main source file.  None in include
-       files.  */
-
-    enter_line_range (main_subfile, offset, 0, start, end,
-		      &main_source_baseline);
-
-  else
-    {
-      /* There was source with line numbers in include files.  */
-
-      int linesz =
-	coff_data (this_symtab_objfile->obfd)->local_linesz;
-      main_source_baseline = 0;
-
-      for (int ii = 0; ii < inclIndx; ++ii)
-	{
-	  /* If there is main file source before include file, enter it.  */
-	  if (offset < inclTable[ii].begin)
-	    {
-	      enter_line_range
-		(main_subfile, offset, inclTable[ii].begin - linesz,
-		 start, 0, &main_source_baseline);
-	    }
-
-	  if (strcmp (inclTable[ii].name, get_last_source_file ()) == 0)
-	    {
-	      /* The entry in the include table refers to the main source
-		 file.  Add the lines to the main subfile.  */
-
-	      main_source_baseline = inclTable[ii].funStartLine;
-	      enter_line_range
-		(main_subfile, inclTable[ii].begin, inclTable[ii].end,
-		 start, 0, &main_source_baseline);
-	      inclTable[ii].subfile = main_subfile;
-	    }
-	  else
-	    {
-	      /* Have a new subfile for the include file.  */
-	      inclTable[ii].subfile = new subfile;
-
-	      firstLine = &(inclTable[ii].funStartLine);
-
-	      /* Enter include file's lines now.  */
-	      enter_line_range (inclTable[ii].subfile, inclTable[ii].begin,
-				inclTable[ii].end, start, 0, firstLine);
-	    }
-
-	  if (offset <= inclTable[ii].end)
-	    offset = inclTable[ii].end + linesz;
-	}
-
-      /* All the include files' line have been processed at this point.  Now,
-	 enter remaining lines of the main file, if any left.  */
-      if (offset < max_offset + 1 - linesz)
-	{
-	  enter_line_range (main_subfile, offset, 0, start, end,
-			    &main_source_baseline);
-	}
-    }
-
-  /* Process main file's line numbers.  */
-  if (!main_subfile->line_vector_entries.empty ())
-    {
-      /* Line numbers are not necessarily ordered.  xlc compilation will
-	 put static function to the end.  */
-      arrange_linetable (main_subfile->line_vector_entries);
-    }
-
-  /* Now, process included files' line numbers.  */
-
-  for (int ii = 0; ii < inclIndx; ++ii)
-    {
-      if (inclTable[ii].subfile != main_subfile
-	  && !inclTable[ii].subfile->line_vector_entries.empty ())
-	{
-	  /* Line numbers are not necessarily ordered.  xlc compilation will
-	     put static function to the end.  */
-	  arrange_linetable (inclTable[ii].subfile->line_vector_entries);
-
-	  push_subfile ();
-
-	  /* For the same include file, we might want to have more than one
-	     subfile.  This happens if we have something like:
-
-	     ......
-	     #include "foo.h"
-	     ......
-	     #include "foo.h"
-	     ......
-
-	     while foo.h including code in it.  (stupid but possible)
-	     Since start_subfile() looks at the name and uses an
-	     existing one if finds, we need to provide a fake name and
-	     fool it.  */
-
-#if 0
-	  start_subfile (inclTable[ii].name);
-#else
-	  {
-	    /* Pick a fake name that will produce the same results as this
-	       one when passed to deduce_language_from_filename.  Kludge on
-	       top of kludge.  */
-	    const char *fakename = strrchr (inclTable[ii].name, '.');
-
-	    if (fakename == NULL)
-	      fakename = " ?";
-	    start_subfile (fakename);
-	  }
-	  struct subfile *current_subfile = get_current_subfile ();
-	  current_subfile->name = inclTable[ii].name;
-	  current_subfile->name_for_id = inclTable[ii].name;
-#endif
-
-	  start_subfile (pop_subfile ());
-	}
-    }
-
-return_after_cleanup:
-
-  /* We don't want to keep alloc/free'ing the global include file table.  */
-  inclIndx = 0;
-}
-
 static void
 aix_process_linenos (struct objfile *objfile)
 {
   /* There is no linenos to read if there are only dwarf info.  */
   if (this_symtab_psymtab == NULL)
     return;
-
-  /* Process line numbers and enter them into line vector.  */
-  process_linenos (get_last_source_start_addr (), cur_src_end_addr);
 }
 
-
-/* Enter a given range of lines into the line vector.
-   can be called in the following two ways:
-   enter_line_range (subfile, beginoffset, endoffset,
-		     startaddr, 0, firstLine)  or
-   enter_line_range (subfile, beginoffset, 0,
-		     startaddr, endaddr, firstLine)
-
-   endoffset points to the last line table entry that we should pay
-   attention to.  */
-
-static void
-enter_line_range (struct subfile *subfile, unsigned beginoffset,
-		  unsigned endoffset,	/* offsets to line table */
-		  CORE_ADDR startaddr,	/* offsets to line table */
-		  CORE_ADDR endaddr, unsigned *firstLine)
-{
-  struct objfile *objfile = this_symtab_objfile;
-  struct gdbarch *gdbarch = objfile->arch ();
-  unsigned int curoffset;
-  CORE_ADDR addr;
-  void *ext_lnno;
-  struct internal_lineno int_lnno;
-  unsigned int limit_offset;
-  bfd *abfd;
-  int linesz;
-
-  if (endoffset == 0 && startaddr == 0 && endaddr == 0)
-    return;
-  curoffset = beginoffset;
-  limit_offset = XCOFF_DATA (objfile)->max_lineno_offset;
-
-  if (endoffset != 0)
-    {
-      if (endoffset >= limit_offset)
-	{
-	  complaint (_("Bad line table offset in C_EINCL directive"));
-	  return;
-	}
-      limit_offset = endoffset;
-    }
-  else
-    limit_offset -= 1;
-
-  abfd = objfile->obfd.get ();
-  linesz = coff_data (abfd)->local_linesz;
-  ext_lnno = alloca (linesz);
-
-  while (curoffset <= limit_offset)
-    {
-      if (bfd_seek (abfd, curoffset, SEEK_SET) != 0
-	  || bfd_read (ext_lnno, linesz, abfd) != linesz)
-	return;
-      bfd_coff_swap_lineno_in (abfd, ext_lnno, &int_lnno);
-
-      /* Find the address this line represents.  */
-      addr = (int_lnno.l_lnno
-	      ? int_lnno.l_addr.l_paddr
-	      : read_symbol_nvalue (int_lnno.l_addr.l_symndx));
-      addr += objfile->text_section_offset ();
-
-      if (addr < startaddr || (endaddr && addr >= endaddr))
-	return;
-
-      CORE_ADDR record_addr = (gdbarch_addr_bits_remove (gdbarch, addr)
-			       - objfile->text_section_offset ());
-      if (int_lnno.l_lnno == 0)
-	{
-	  *firstLine = read_symbol_lineno (int_lnno.l_addr.l_symndx);
-	  record_line (subfile, 0, unrelocated_addr (record_addr));
-	  --(*firstLine);
-	}
-      else
-	record_line (subfile, *firstLine + int_lnno.l_lnno,
-		     unrelocated_addr (record_addr));
-      curoffset += linesz;
-    }
-}
-
-
-/* Save the vital information for use when closing off the current file.
-   NAME is the file name the symbols came from, START_ADDR is the first
-   text address for the file, and SIZE is the number of bytes of text.  */
-
-#define complete_symtab(name, start_addr) {	\
-  set_last_source_file (name);			\
-  set_last_source_start_addr (start_addr);	\
-}
-
-
-#define	SYMNAME_ALLOC(NAME, ALLOCED)	\
-  ((ALLOCED) ? (NAME) : obstack_strdup (&objfile->objfile_obstack, \
-					(NAME)))
-
-/* Set *SYMBOL to symbol number symno in symtbl.  */
-static void
-read_symbol (struct internal_syment *symbol, int symno)
-{
-  struct xcoff_symfile_info *xcoff = XCOFF_DATA (this_symtab_objfile);
-  int nsyms = xcoff->symtbl_num_syms;
-  char *stbl = xcoff->symtbl;
-
-  if (symno < 0 || symno >= nsyms)
-    {
-      complaint (_("Invalid symbol offset"));
-      symbol->n_value = 0;
-      symbol->n_scnum = -1;
-      return;
-    }
-  bfd_coff_swap_sym_in (this_symtab_objfile->obfd.get (),
-			stbl + (symno * local_symesz),
-			symbol);
-}
-
-/* Get value corresponding to symbol number symno in symtbl.  */
-
-static CORE_ADDR
-read_symbol_nvalue (int symno)
-{
-  struct internal_syment symbol[1];
-
-  read_symbol (symbol, symno);
-  return symbol->n_value;
-}
-
-
-/* Find the address of the function corresponding to symno, where
-   symno is the symbol pointed to by the linetable.  */
-
-static int
-read_symbol_lineno (int symno)
-{
-  struct objfile *objfile = this_symtab_objfile;
-  int xcoff64 = bfd_xcoff_is_xcoff64 (objfile->obfd);
-
-  struct xcoff_symfile_info *info = XCOFF_DATA (objfile);
-  int nsyms = info->symtbl_num_syms;
-  char *stbl = info->symtbl;
-  char *strtbl = info->strtbl;
-
-  struct internal_syment symbol[1];
-  union internal_auxent main_aux[1];
-
-  if (symno < 0)
-    {
-      bf_notfound_complaint ();
-      return 0;
-    }
-
-  /* Note that just searching for a short distance (e.g. 50 symbols)
-     is not enough, at least in the following case.
-
-     .extern foo
-     [many .stabx entries]
-     [a few functions, referring to foo]
-     .globl foo
-     .bf
-
-     What happens here is that the assembler moves the .stabx entries
-     to right before the ".bf" for foo, but the symbol for "foo" is before
-     all the stabx entries.  See PR gdb/2222.  */
-
-  /* Maintaining a table of .bf entries might be preferable to this search.
-     If I understand things correctly it would need to be done only for
-     the duration of a single psymtab to symtab conversion.  */
-  while (symno < nsyms)
-    {
-      bfd_coff_swap_sym_in (symfile_bfd,
-			    stbl + (symno * local_symesz), symbol);
-      if (symbol->n_sclass == C_FCN)
-	{
-	  char *name = xcoff64 ? strtbl + symbol->n_offset : symbol->n_name;
-
-	  if (strcmp (name, ".bf") == 0)
-	    goto gotit;
-	}
-      symno += symbol->n_numaux + 1;
-    }
-
-  bf_notfound_complaint ();
-  return 0;
-
-gotit:
-  /* Take aux entry and return its lineno.  */
-  symno++;
-  bfd_coff_swap_aux_in (objfile->obfd.get (), stbl + symno * local_symesz,
-			symbol->n_type, symbol->n_sclass,
-			0, symbol->n_numaux, main_aux);
-
-  return main_aux->x_sym.x_misc.x_lnsz.x_lnno;
-}
 
 /* Support for line number handling.  */
 
@@ -769,53 +298,158 @@ xcoff_symfile_finish (struct objfile *objfile)
   inclIndx = inclLength = inclDepth = 0;
 }
 
+/* Swap raw symbol at *RAW and put the name in *NAME, the symbol in
+   *SYMBOL, the first auxent in *AUX.  Advance *RAW and *SYMNUMP over
+   the symbol and its auxents.  */
 
 static void
-init_stringtab (bfd *abfd, file_ptr offset, struct objfile *objfile)
+swap_sym (struct internal_syment *symbol, union internal_auxent *aux,
+	  const char **name, char **raw, unsigned int *symnump,
+	  struct objfile *objfile)
 {
-  long length;
-  int val;
-  unsigned char lengthbuf[4];
-  char *strtbl;
-  struct xcoff_symfile_info *xcoff = XCOFF_DATA (objfile);
+  bfd_coff_swap_sym_in (objfile->obfd.get (), *raw, symbol);
+  if (symbol->n_zeroes)
+    {
+      /* If it's exactly E_SYMNMLEN characters long it isn't
+	 '\0'-terminated.  */
+      if (symbol->n_name[E_SYMNMLEN - 1] != '\0')
+	{
+	  /* FIXME: wastes memory for symbols which we don't end up putting
+	     into the minimal symbols.  */
+	  *name = obstack_strndup (&objfile->objfile_obstack,
+				    symbol->n_name, E_SYMNMLEN);
+	}
+      else
+	/* Point to the unswapped name as that persists as long as the
+	   objfile does.  */
+	*name = ((struct external_syment *) *raw)->e.e_name;
+    }
+  else if (symbol->n_sclass & 0x80)
+    {
+      *name = XCOFF_DATA (objfile)->debugsec + symbol->n_offset;
+    }
+  else
+    {
+      *name = XCOFF_DATA (objfile)->strtbl + symbol->n_offset;
+    }
+  ++*symnump;
+  *raw += coff_data (objfile->obfd)->local_symesz;
+  if (symbol->n_numaux > 0)
+    {
+      bfd_coff_swap_aux_in (objfile->obfd.get (), *raw, symbol->n_type,
+			    symbol->n_sclass, 0, symbol->n_numaux, aux);
 
-  xcoff->strtbl = NULL;
+      *symnump += symbol->n_numaux;
+      *raw += coff_data (objfile->obfd)->local_symesz * symbol->n_numaux;
+    }
+}
 
-  if (bfd_seek (abfd, offset, SEEK_SET) < 0)
-    error (_("cannot seek to string table in %s: %s"),
-	   bfd_get_filename (abfd), bfd_errmsg (bfd_get_error ()));
+static void
+scan_xcoff_symtab (struct objfile *objfile)
+{
+  CORE_ADDR toc_offset = 0;	/* toc offset value in data section.  */
 
-  val = bfd_read ((char *) lengthbuf, sizeof lengthbuf, abfd);
-  length = bfd_h_get_32 (abfd, lengthbuf);
+  const char *namestring;
+  bfd *abfd;
+  asection *bfd_sect = nullptr;
+  int ignored;
+  unsigned int nsyms;
 
-  /* If no string table is needed, then the file may end immediately
-     after the symbols.  Just return with `strtbl' set to NULL.  */
+  char *sraw_symbol;
+  struct internal_syment symbol;
+  union internal_auxent main_aux[5];
+  unsigned int ssymnum;
 
-  if (val != sizeof lengthbuf || length < sizeof lengthbuf)
-    return;
+  set_last_source_file (NULL);
 
-  /* Allocate string table from objfile_obstack.  We will need this table
-     as long as we have its symbol table around.  */
+  abfd = objfile->obfd.get ();
 
-  strtbl = (char *) obstack_alloc (&objfile->objfile_obstack, length);
-  xcoff->strtbl = strtbl;
+  sraw_symbol = XCOFF_DATA (objfile)->symtbl;
+  nsyms = XCOFF_DATA (objfile)->symtbl_num_syms;
+  ssymnum = 0;
+  while (ssymnum < nsyms)
+    {
+      int sclass;
 
-  /* Copy length buffer, the first byte is usually zero and is
-     used for stabs with a name length of zero.  */
-  memcpy (strtbl, lengthbuf, sizeof lengthbuf);
-  if (length == sizeof lengthbuf)
-    return;
+      QUIT;
 
-  val = bfd_read (strtbl + sizeof lengthbuf, length - sizeof lengthbuf, abfd);
+      bfd_coff_swap_sym_in (abfd, sraw_symbol, &symbol);
+      sclass = symbol.n_sclass;
 
-  if (val != length - sizeof lengthbuf)
-    error (_("cannot read string table from %s: %s"),
-	   bfd_get_filename (abfd), bfd_errmsg (bfd_get_error ()));
-  if (strtbl[length - 1] != '\0')
-    error (_("bad symbol file: string table "
-	     "does not end with null character"));
+      switch (sclass)
+	{
+	case C_HIDEXT:
+	  {
+	    /* The CSECT auxent--always the last auxent.  */
+	    union internal_auxent csect_aux;
 
-  return;
+	    swap_sym (&symbol, &main_aux[0], &namestring, &sraw_symbol,
+		      &ssymnum, objfile);
+	    if (symbol.n_numaux > 1)
+	      {
+		bfd_coff_swap_aux_in
+		  (objfile->obfd.get (),
+		   sraw_symbol - coff_data (abfd)->local_symesz,
+		   symbol.n_type,
+		   symbol.n_sclass,
+		   symbol.n_numaux - 1,
+		   symbol.n_numaux,
+		   &csect_aux);
+	      }
+	    else
+	      csect_aux = main_aux[0];
+
+	    switch (csect_aux.x_csect.x_smtyp & 0x7)
+	      {
+	      case XTY_SD:
+		switch (csect_aux.x_csect.x_smclas)
+		  {
+		  case XMC_TC0:
+		    if (toc_offset)
+		      warning (_("More than one XMC_TC0 symbol found."));
+		    toc_offset = symbol.n_value;
+
+		    /* Make TOC offset relative to start address of
+		       section.  */
+		    xcoff_secnum_to_sections (symbol.n_scnum, objfile,
+							 &bfd_sect, &ignored);
+		    if (bfd_sect)
+		      toc_offset -= bfd_section_vma (bfd_sect);
+		    break;
+
+		  default:
+		    break;
+		  }
+		break;
+	      }
+	  }
+	  break;
+	default:
+	  {
+	    complaint (_("Storage class %d not recognized during scan"),
+		       sclass);
+	  }
+	  [[fallthrough]];
+
+	case C_RSYM:
+	  {
+	    /* We probably could save a few instructions by assuming that
+	       C_LSYM, C_PSYM, etc., never have auxents.  */
+	    int naux1 = symbol.n_numaux + 1;
+
+	    ssymnum += naux1;
+	    sraw_symbol += bfd_coff_symesz (abfd) * naux1;
+	  }
+	  break;
+	}
+    }
+
+  /* Record the toc offset value of this symbol table into objfile
+     structure.  If no XMC_TC0 is found, toc_offset should be zero.
+     Another place to obtain this information would be file auxiliary
+     header.  */
+
+  XCOFF_DATA (objfile)->toc_offset = toc_offset;
 }
 
 /* Return the toc offset value for a given objfile.  */
@@ -841,39 +475,77 @@ static void
 xcoff_initial_scan (struct objfile *objfile, symfile_add_flags symfile_flags)
 {
   bfd *abfd;
+  int val;
   int num_symbols;		/* # of symbols */
   file_ptr symtab_offset;	/* symbol table and */
-  file_ptr stringtab_offset;	/* string table file offsets */
   struct xcoff_symfile_info *info;
+  const char *name;
+  unsigned int size;
 
   info = XCOFF_DATA (objfile);
   symfile_bfd = abfd = objfile->obfd.get ();
+  name = objfile_name (objfile);
 
   num_symbols = bfd_get_symcount (abfd);	/* # of symbols */
   symtab_offset = obj_sym_filepos (abfd);	/* symbol table file offset */
-  stringtab_offset = symtab_offset +
-    num_symbols * coff_data (abfd)->local_symesz;
 
   info->min_lineno_offset = 0;
   info->max_lineno_offset = 0;
-  info->debugsec = nullptr;
-  bfd_map_over_sections (abfd, find_linenos, info);
+  for (asection *sec : gdb_bfd_sections (abfd))
+    find_linenos (abfd, sec, info);
 
   if (num_symbols > 0)
     {
-      /* Read the string table.  */
-      init_stringtab (abfd, stringtab_offset, objfile);
+      /* Read the .debug section, if present and if we're not ignoring
+	 it.  */
+      if (!(objfile->flags & OBJF_READNEVER))
+	{
+	  struct bfd_section *secp;
+	  bfd_size_type length;
+	  bfd_byte *debugsec = NULL;
+
+	  secp = bfd_get_section_by_name (abfd, ".debug");
+	  if (secp)
+	    {
+	      length = bfd_get_section_alloc_size (abfd, secp);
+	      if (length)
+		{
+		  debugsec
+		    = (bfd_byte *) obstack_alloc (&objfile->objfile_obstack,
+						  length);
+
+		  if (!bfd_get_full_section_contents (abfd, secp, &debugsec))
+		    {
+		      error (_("Error reading .debug section of `%s': %s"),
+			     name, bfd_errmsg (bfd_get_error ()));
+		    }
+		}
+	    }
+	  info->debugsec = (char *) debugsec;
+	}
     }
+
+  /* Read the symbols.  We keep them in core because we will want to
+     access them randomly in read_symbol*.  */
+  val = bfd_seek (abfd, symtab_offset, SEEK_SET);
+  if (val < 0)
+    error (_("Error reading symbols from %s: %s"),
+	   name, bfd_errmsg (bfd_get_error ()));
+  size = coff_data (abfd)->local_symesz * num_symbols;
+  info->symtbl = (char *) obstack_alloc (&objfile->objfile_obstack, size);
+  info->symtbl_num_syms = num_symbols;
+
+  val = bfd_read (info->symtbl, size, abfd);
+  if (val != size)
+    error (_("reading symbol table: %s"), bfd_errmsg (bfd_get_error ()));
+
+  /* We need to do this to get the TOC information only.  STABS
+     format is no longer supported.  */
+  scan_xcoff_symtab (objfile);
 
   /* DWARF2 sections.  */
 
-  if (!(objfile->flags & OBJF_READNEVER))
-    {
-      /* If we can't read dwarf from an inferior, it will only have
-	 stabs debuginfo, which we don't support anymore.  */
-      if (!dwarf2_initialize_objfile (objfile, &dwarf2_xcoff_names))
-	  warning (_("No usable debug information found."));
-    }
+  dwarf2_initialize_objfile (objfile, &dwarf2_xcoff_names);
 }
 
 static void
