@@ -131,12 +131,6 @@ xcoff_secnum_to_sections (int n_scnum, struct objfile *objfile,
     }
 }
 
-static void
-aix_process_linenos (struct objfile *objfile)
-{
-}
-
-
 /* Support for line number handling.  */
 
 /* This function is called for every section; it finds the outer limits
@@ -484,7 +478,6 @@ static const struct sym_fns xcoff_sym_fns =
   xcoff_initial_scan,		/* read a symbol file into symtab */
   xcoff_symfile_offsets,	/* xlate offsets ext->int form */
   default_symfile_segments,	/* Get segment information from a file.  */
-  aix_process_linenos,
   default_symfile_relocate,	/* Relocate a debug section.  */
   NULL,				/* sym_probe_fns */
 };

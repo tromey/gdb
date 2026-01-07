@@ -755,18 +755,6 @@ debug_sym_segments (bfd *abfd)
   gdb_assert_not_reached ("debug_sym_segments called");
 }
 
-static void
-debug_sym_read_linetable (struct objfile *objfile)
-{
-  const struct debug_sym_fns_data *debug_data
-    = symfile_debug_objfile_data_key.get (objfile);
-
-  gdb_printf (gdb_stdlog, "sf->sym_read_linetable (%s)\n",
-	      objfile_debug_name (objfile));
-
-  debug_data->real_sf->sym_read_linetable (objfile);
-}
-
 static bfd_byte *
 debug_sym_relocate (struct objfile *objfile, asection *sectp, bfd_byte *buf)
 {
@@ -813,8 +801,6 @@ install_symfile_debug_logging (struct objfile *objfile)
   COPY_SF_PTR (real_sf, debug_data, sym_read, debug_sym_read);
   COPY_SF_PTR (real_sf, debug_data, sym_offsets, debug_sym_offsets);
   COPY_SF_PTR (real_sf, debug_data, sym_segments, debug_sym_segments);
-  COPY_SF_PTR (real_sf, debug_data, sym_read_linetable,
-	       debug_sym_read_linetable);
   COPY_SF_PTR (real_sf, debug_data, sym_relocate, debug_sym_relocate);
   if (real_sf->sym_probe_fns)
     debug_data->debug_sf.sym_probe_fns = &debug_sym_probe_fns;

@@ -144,12 +144,6 @@ struct sym_fns
 
   symfile_segment_data_up (*sym_segments) (bfd *abfd);
 
-  /* This function should read the linetable from the objfile when
-     the line table cannot be read while processing the debugging
-     information.  */
-
-  void (*sym_read_linetable) (struct objfile *);
-
   /* Relocate the contents of a debug section SECTP.  The
      contents are stored in BUF if it is non-NULL, or returned in a
      malloc'd buffer otherwise.  */

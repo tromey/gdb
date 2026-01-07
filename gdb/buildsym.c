@@ -799,11 +799,6 @@ buildsym_compunit::end_compunit_symtab_from_static_block
 			 true, expandable);
   blockvector_up blockvector = make_blockvector ();
 
-  /* Read the line table if it has to be read separately.
-     This is only used by xcoffread.c.  */
-  if (m_objfile->sf->sym_read_linetable != NULL)
-    m_objfile->sf->sym_read_linetable (m_objfile);
-
   /* Handle the case where the debug info specifies a different path
      for the main source file.  It can cause us to lose track of its
      line number information.  */

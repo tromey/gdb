@@ -1323,7 +1323,6 @@ static const struct sym_fns elf_sym_fns =
   elf_symfile_read,		/* read a symbol file into symtab */
   default_symfile_offsets,	/* Translate ext. to int. relocation */
   elf_symfile_segments,		/* Get segment information from a file.  */
-  NULL,
   default_symfile_relocate,	/* Relocate a debug section.  */
   &elf_probe_fns,		/* sym_probe_fns */
 };
