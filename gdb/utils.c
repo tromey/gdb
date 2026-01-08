@@ -1589,7 +1589,6 @@ void
 puts_tabular (const char *string, int width)
 {
   int spaces = 0;
-  char *spacebuf;
 
   gdb_assert (chars_per_line > 0);
   if (chars_per_line == UINT_MAX)
@@ -1608,12 +1607,7 @@ puts_tabular (const char *string, int width)
   if (chars_printed > 0)
     spaces = width - (chars_printed - 1) % width - 1;
 
-  spacebuf = (char *) alloca (spaces + 1);
-  spacebuf[spaces] = '\0';
-  while (spaces--)
-    spacebuf[spaces] = ' ';
-
-  gdb_puts (spacebuf);
+  gdb_puts (n_spaces (spaces));
   gdb_puts (string);
 }
 
