@@ -38,9 +38,6 @@
 
 struct xcoff_symfile_info
   {
-    /* Pointer to the string table.  */
-    char *strtbl = nullptr;
-
     /* Pointer to debug section.  */
     char *debugsec = nullptr;
 
@@ -141,40 +138,15 @@ xcoff_symfile_init (struct objfile *objfile)
   xcoff_objfile_data_key.emplace (objfile);
 }
 
-/* Swap raw symbol at *RAW and put the name in *NAME, the symbol in
-   *SYMBOL, the first auxent in *AUX.  Advance *RAW and *SYMNUMP over
-   the symbol and its auxents.  */
+/* Swap raw symbol at *RAW.  Put the symbol in *SYMBOL and the first auxent in
+   *AUX.  Advance *RAW and *SYMNUMP over the symbol and its auxents.  */
 
 static void
 swap_sym (struct internal_syment *symbol, union internal_auxent *aux,
-	  const char **name, char **raw, unsigned int *symnump,
-	  struct objfile *objfile)
+	  char **raw, unsigned int *symnump, struct objfile *objfile)
 {
   bfd_coff_swap_sym_in (objfile->obfd.get (), *raw, symbol);
-  if (symbol->n_zeroes)
-    {
-      /* If it's exactly E_SYMNMLEN characters long it isn't
-	 '\0'-terminated.  */
-      if (symbol->n_name[E_SYMNMLEN - 1] != '\0')
-	{
-	  /* FIXME: wastes memory for symbols which we don't end up putting
-	     into the minimal symbols.  */
-	  *name = obstack_strndup (&objfile->objfile_obstack,
-				    symbol->n_name, E_SYMNMLEN);
-	}
-      else
-	/* Point to the unswapped name as that persists as long as the
-	   objfile does.  */
-	*name = ((struct external_syment *) *raw)->e.e_name;
-    }
-  else if (symbol->n_sclass & 0x80)
-    {
-      *name = XCOFF_DATA (objfile)->debugsec + symbol->n_offset;
-    }
-  else
-    {
-      *name = XCOFF_DATA (objfile)->strtbl + symbol->n_offset;
-    }
+
   ++*symnump;
   *raw += coff_data (objfile->obfd)->local_symesz;
   if (symbol->n_numaux > 0)
@@ -192,7 +164,6 @@ scan_xcoff_symtab (struct objfile *objfile)
 {
   CORE_ADDR toc_offset = 0;	/* toc offset value in data section.  */
 
-  const char *namestring;
   bfd *abfd;
   asection *bfd_sect = nullptr;
   int ignored;
@@ -224,8 +195,7 @@ scan_xcoff_symtab (struct objfile *objfile)
 	    /* The CSECT auxent--always the last auxent.  */
 	    union internal_auxent csect_aux;
 
-	    swap_sym (&symbol, &main_aux[0], &namestring, &sraw_symbol,
-		      &ssymnum, objfile);
+	    swap_sym (&symbol, &main_aux[0], &sraw_symbol, &ssymnum, objfile);
 	    if (symbol.n_numaux > 1)
 	      {
 		bfd_coff_swap_aux_in
