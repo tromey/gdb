@@ -165,14 +165,14 @@ scan_xcoff_symtab (struct objfile *objfile)
 
   unsigned int num_symbols = bfd_get_symcount (abfd);
   size_t size = coff_data (abfd)->local_symesz * num_symbols;
-  char *symtbl = (char *) obstack_alloc (&objfile->objfile_obstack, size);
+  gdb::char_vector symtbl (size);
 
   /* Read in symbol table.  */
-  if (int ret = bfd_read (symtbl, size, abfd);
+  if (int ret = bfd_read (symtbl.data (), size, abfd);
       ret != size)
     error (_("reading symbol table: %s"), bfd_errmsg (bfd_get_error ()));
 
-  char *sraw_symbol = symtbl;
+  char *sraw_symbol = symtbl.data ();
   ssymnum = 0;
   while (ssymnum < num_symbols)
     {
