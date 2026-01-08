@@ -81,34 +81,18 @@ static void scan_xcoff_symtab (struct objfile *);
 static void xcoff_symfile_init (struct objfile *);
 
 /* Search all BFD sections for the section whose target_index is
-   equal to N_SCNUM.  Set *BFD_SECT to that section.  The section's
-   associated index in the objfile's section_offset table is also
-   stored in *SECNUM.
+   equal to N_SCNUM.
 
-   If no match is found, *BFD_SECT is set to NULL, and *SECNUM
-   is set to the text section's number.  */
+   If no match is found, return nullptr.  */
 
-static void
-xcoff_secnum_to_sections (int n_scnum, struct objfile *objfile,
-			  asection **bfd_sect, int *secnum)
+static asection *
+xcoff_secnum_to_section (int n_scnum, objfile *objfile)
 {
-  *bfd_sect = NULL;
-  *secnum = SECT_OFF_TEXT (objfile);
-
   for (asection *sec : gdb_bfd_sections (objfile->obfd.get ()))
-    {
-      if (sec->target_index == n_scnum)
-	{
-	  /* This is the section.  Figure out what SECT_OFF_* code it is.  */
-	  if (bfd_section_flags (sec) & SEC_CODE)
-	    *secnum = SECT_OFF_TEXT (objfile);
-	  else if (bfd_section_flags (sec) & SEC_LOAD)
-	    *secnum = SECT_OFF_DATA (objfile);
-	  else
-	    *secnum = gdb_bfd_section_index (objfile->obfd.get (), sec);
-	  *bfd_sect = sec;
-	}
-    }
+    if (sec->target_index == n_scnum)
+      return sec;
+
+  return nullptr;
 }
 
 /* Do initialization in preparation for reading symbols from OBJFILE.
@@ -150,8 +134,6 @@ scan_xcoff_symtab (struct objfile *objfile)
 {
   CORE_ADDR toc_offset = 0;	/* toc offset value in data section.  */
 
-  asection *bfd_sect = nullptr;
-  int ignored;
   bfd *abfd = objfile->obfd.get ();
   file_ptr symtab_offset = obj_sym_filepos (abfd);
   struct internal_syment symbol;
@@ -217,13 +199,10 @@ scan_xcoff_symtab (struct objfile *objfile)
 
 		    /* Make TOC offset relative to start address of
 		       section.  */
-		    xcoff_secnum_to_sections (symbol.n_scnum, objfile,
-							 &bfd_sect, &ignored);
+		    asection *bfd_sect
+		      = xcoff_secnum_to_section (symbol.n_scnum, objfile);
 		    if (bfd_sect)
 		      toc_offset -= bfd_section_vma (bfd_sect);
-		    break;
-
-		  default:
 		    break;
 		  }
 		break;
