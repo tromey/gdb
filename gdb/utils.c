@@ -1581,37 +1581,6 @@ pager_file::wrap_here (int indent)
     }
 }
 
-/* Print input string to gdb_stdout arranging strings in columns of n
-   chars.  String is left justified in the column.  Never prints
-   trailing spaces.  String should never be longer than width.  */
-
-void
-puts_tabular (const char *string, int width)
-{
-  int spaces = 0;
-
-  gdb_assert (chars_per_line > 0);
-  if (chars_per_line == UINT_MAX)
-    {
-      gdb_puts (string);
-      gdb_puts ("\n");
-      return;
-    }
-
-  if (((chars_printed - 1) / width + 2) * width >= chars_per_line)
-    gdb_puts ("\n");
-
-  if (width >= chars_per_line)
-    width = chars_per_line - 1;
-
-  if (chars_printed > 0)
-    spaces = width - (chars_printed - 1) % width - 1;
-
-  gdb_puts (n_spaces (spaces));
-  gdb_puts (string);
-}
-
-
 /* Ensure that whatever gets printed next, using the filtered output
    commands, starts at the beginning of the line.  I.e. if there is
    any pending output for the current line, flush it and start a new
