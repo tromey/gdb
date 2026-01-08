@@ -187,24 +187,18 @@ scan_xcoff_symtab (struct objfile *objfile)
 	    else
 	      csect_aux = main_aux[0];
 
-	    switch (csect_aux.x_csect.x_smtyp & 0x7)
+	    if ((csect_aux.x_csect.x_smtyp & 0x7) == XTY_SD
+		&& csect_aux.x_csect.x_smclas == XMC_TC0)
 	      {
-	      case XTY_SD:
-		switch (csect_aux.x_csect.x_smclas)
-		  {
-		  case XMC_TC0:
-		    if (toc_offset)
-		      warning (_("More than one XMC_TC0 symbol found."));
-		    toc_offset = symbol.n_value;
+		if (toc_offset)
+		  warning (_("More than one XMC_TC0 symbol found."));
+		toc_offset = symbol.n_value;
 
-		    /* Make TOC offset relative to start address of
-		       section.  */
-		    asection *bfd_sect
-		      = xcoff_secnum_to_section (symbol.n_scnum, objfile);
-		    if (bfd_sect)
-		      toc_offset -= bfd_section_vma (bfd_sect);
-		    break;
-		  }
+		/* Make TOC offset relative to start address of section.  */
+		asection *bfd_sect
+		  = xcoff_secnum_to_section (symbol.n_scnum, objfile);
+		if (bfd_sect)
+		  toc_offset -= bfd_section_vma (bfd_sect);
 		break;
 	      }
 	  }
