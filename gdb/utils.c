@@ -1588,7 +1588,7 @@ pager_file::wrap_here (int indent)
    currently doesn't tabulate very well.  */
 
 void
-puts_tabular (char *string, int width, int right)
+puts_tabular (const char *string, int width, int right)
 {
   int spaces = 0;
   int stringlen;
