@@ -38,9 +38,6 @@
 
 struct xcoff_symfile_info
   {
-    /* Pointer to debug section.  */
-    char *debugsec = nullptr;
-
     /* Pointer to the a.out symbol table.  */
     char *symtbl = nullptr;
 
@@ -299,37 +296,6 @@ xcoff_initial_scan (struct objfile *objfile, symfile_add_flags symfile_flags)
 
   num_symbols = bfd_get_symcount (abfd);	/* # of symbols */
   symtab_offset = obj_sym_filepos (abfd);	/* symbol table file offset */
-
-  if (num_symbols > 0)
-    {
-      /* Read the .debug section, if present and if we're not ignoring
-	 it.  */
-      if (!(objfile->flags & OBJF_READNEVER))
-	{
-	  struct bfd_section *secp;
-	  bfd_size_type length;
-	  bfd_byte *debugsec = NULL;
-
-	  secp = bfd_get_section_by_name (abfd, ".debug");
-	  if (secp)
-	    {
-	      length = bfd_get_section_alloc_size (abfd, secp);
-	      if (length)
-		{
-		  debugsec
-		    = (bfd_byte *) obstack_alloc (&objfile->objfile_obstack,
-						  length);
-
-		  if (!bfd_get_full_section_contents (abfd, secp, &debugsec))
-		    {
-		      error (_("Error reading .debug section of `%s': %s"),
-			     name, bfd_errmsg (bfd_get_error ()));
-		    }
-		}
-	    }
-	  info->debugsec = (char *) debugsec;
-	}
-    }
 
   /* Read the symbols.  We keep them in core because we will want to
      access them randomly in read_symbol*.  */
