@@ -35,12 +35,11 @@
 #include "dwarf2/sect-names.h"
 #include "dwarf2/public.h"
 
-
 struct xcoff_symfile_info
-  {
-    /* Offset in data section to TOC anchor.  */
-    CORE_ADDR toc_offset = 0;
-  };
+{
+  /* Offset in data section to TOC anchor.  */
+  CORE_ADDR toc_offset = 0;
+};
 
 /* Key for XCOFF-associated data.  */
 
@@ -48,7 +47,7 @@ static const registry<objfile>::key<xcoff_symfile_info> xcoff_objfile_data_key;
 
 /* XCOFF names for dwarf sections.  There is no compressed sections.  */
 
-static const struct dwarf2_debug_sections dwarf2_xcoff_names = {
+static const dwarf2_debug_sections dwarf2_xcoff_names = {
   { ".dwinfo", NULL },
   { ".dwabrev", NULL },
   { ".dwline", NULL },
@@ -74,12 +73,6 @@ static const struct dwarf2_debug_sections dwarf2_xcoff_names = {
   23
 };
 
-static void xcoff_initial_scan (struct objfile *, symfile_add_flags);
-
-static void scan_xcoff_symtab (struct objfile *);
-
-static void xcoff_symfile_init (struct objfile *);
-
 /* Search all BFD sections for the section whose target_index is
    equal to N_SCNUM.
 
@@ -102,7 +95,7 @@ xcoff_secnum_to_section (int n_scnum, objfile *objfile)
    uses BFD's determination to vector to us.  */
 
 static void
-xcoff_symfile_init (struct objfile *objfile)
+xcoff_symfile_init (objfile *objfile)
 {
   /* Allocate struct to keep track of the symfile.  */
   xcoff_objfile_data_key.emplace (objfile);
@@ -129,16 +122,14 @@ swap_sym (struct internal_syment *symbol, union internal_auxent *aux,
     }
 }
 
-static void
-scan_xcoff_symtab (struct objfile *objfile)
-{
-  CORE_ADDR toc_offset = 0;	/* toc offset value in data section.  */
+/* Locate the TOC offset in the XCOFF symbol table and assign
+   xcoff_symfile_info::toc_offset.  */
 
+static void
+xcoff_find_toc_offset (objfile *objfile)
+{
   bfd *abfd = objfile->obfd.get ();
   file_ptr symtab_offset = obj_sym_filepos (abfd);
-  struct internal_syment symbol;
-  union internal_auxent main_aux[5];
-  unsigned int ssymnum;
 
   /* Seek to symbol table location.  */
   if (bfd_seek (abfd, symtab_offset, SEEK_SET) < 0)
@@ -155,22 +146,21 @@ scan_xcoff_symtab (struct objfile *objfile)
     error (_("reading symbol table: %s"), bfd_errmsg (bfd_get_error ()));
 
   char *sraw_symbol = symtbl.data ();
-  ssymnum = 0;
-  while (ssymnum < num_symbols)
+  CORE_ADDR toc_offset = 0;
+  for (unsigned int ssymnum = 0; ssymnum < num_symbols; )
     {
-      int sclass;
-
       QUIT;
 
+      internal_syment symbol;
       bfd_coff_swap_sym_in (abfd, sraw_symbol, &symbol);
-      sclass = symbol.n_sclass;
 
-      switch (sclass)
+      switch (symbol.n_sclass)
 	{
 	case C_HIDEXT:
 	  {
 	    /* The CSECT auxent--always the last auxent.  */
-	    union internal_auxent csect_aux;
+	    internal_auxent csect_aux;
+	    internal_auxent main_aux[5];
 
 	    swap_sym (&symbol, &main_aux[0], &sraw_symbol, &ssymnum, objfile);
 	    if (symbol.n_numaux > 1)
@@ -190,24 +180,24 @@ scan_xcoff_symtab (struct objfile *objfile)
 	    if ((csect_aux.x_csect.x_smtyp & 0x7) == XTY_SD
 		&& csect_aux.x_csect.x_smclas == XMC_TC0)
 	      {
-		if (toc_offset)
+		if (toc_offset != 0)
 		  warning (_("More than one XMC_TC0 symbol found."));
+
 		toc_offset = symbol.n_value;
 
 		/* Make TOC offset relative to start address of section.  */
 		asection *bfd_sect
 		  = xcoff_secnum_to_section (symbol.n_scnum, objfile);
-		if (bfd_sect)
+		if (bfd_sect != nullptr)
 		  toc_offset -= bfd_section_vma (bfd_sect);
 		break;
 	      }
 	  }
 	  break;
+
 	default:
-	  {
-	    complaint (_("Storage class %d not recognized during scan"),
-		       sclass);
-	  }
+	  complaint (_("Storage class %d not recognized during scan"),
+		     symbol.n_sclass);
 	  [[fallthrough]];
 
 	case C_RSYM:
@@ -234,39 +224,29 @@ scan_xcoff_symtab (struct objfile *objfile)
 /* Return the toc offset value for a given objfile.  */
 
 CORE_ADDR
-xcoff_get_toc_offset (struct objfile *objfile)
+xcoff_get_toc_offset (objfile *objfile)
 {
-  if (objfile)
+  if (objfile != nullptr)
     return xcoff_objfile_data_key.get (objfile)->toc_offset;
+
   return 0;
 }
 
-/* Scan and build partial symbols for a symbol file.
-   We have been initialized by a call to dbx_symfile_init, which
-   put all the relevant info into a "struct dbx_symfile_info",
-   hung off the objfile structure.
-
-   SECTION_OFFSETS contains offsets relative to which the symbols in the
-   various sections are (depending where the sections were actually
-   loaded).  */
+/* Read the XCOFF symbol table.  The only thing we are interested in is the TOC
+   offset value.  */
 
 static void
-xcoff_initial_scan (struct objfile *objfile, symfile_add_flags symfile_flags)
+xcoff_symfile_read (objfile *objfile, symfile_add_flags symfile_flags)
 {
-  /* We need to do this to get the TOC information only.  STABS
-     format is no longer supported.  */
-  scan_xcoff_symtab (objfile);
+  xcoff_find_toc_offset (objfile);
 
   /* DWARF2 sections.  */
   dwarf2_initialize_objfile (objfile, &dwarf2_xcoff_names);
 }
-
-static void
-xcoff_symfile_offsets (struct objfile *objfile,
-		       const section_addr_info &addrs)
-{
-  const char *first_section_name;
 
+static void
+xcoff_symfile_offsets (objfile *objfile, const section_addr_info &addrs)
+{
   default_symfile_offsets (objfile, addrs);
 
   /* Oneof the weird side-effects of default_symfile_offsets is that
@@ -279,7 +259,7 @@ xcoff_symfile_offsets (struct objfile *objfile,
   if (objfile->section_offsets.empty ())
     return; /* Is that even possible?  Better safe than sorry.  */
 
-  first_section_name
+  const char *first_section_name
     = bfd_section_name (objfile->sections_start[0].the_bfd_section);
 
   if (objfile->sect_index_text == 0
@@ -301,20 +281,10 @@ xcoff_symfile_offsets (struct objfile *objfile,
 
 /* Register our ability to parse symbols for xcoff BFD files.  */
 
-static const struct sym_fns xcoff_sym_fns =
+static const sym_fns xcoff_sym_fns =
 {
-
-  /* It is possible that coff and xcoff should be merged as
-     they do have fundamental similarities (for example, the extra storage
-     classes used for stabs could presumably be recognized in any COFF file).
-     However, in addition to obvious things like all the csect hair, there are
-     some subtler differences between xcoffread.c and coffread.c, notably
-     the fact that coffread.c has no need to read in all the symbols, but
-     xcoffread.c reads all the symbols and does in fact randomly access them
-     (in C_BSTAT and line number processing).  */
-
   xcoff_symfile_init,		/* read initial info, setup for sym_read() */
-  xcoff_initial_scan,		/* read a symbol file into symtab */
+  xcoff_symfile_read,		/* read a symbol file into symtab */
   xcoff_symfile_offsets,	/* xlate offsets ext->int form */
   default_symfile_segments,	/* Get segment information from a file.  */
   default_symfile_relocate,	/* Relocate a debug section.  */
@@ -327,24 +297,22 @@ static int
 xcoff_get_core_n_import_files (bfd *abfd)
 {
   asection *sect = bfd_get_section_by_name (abfd, ".ldinfo");
-  gdb_byte buf[4];
-  file_ptr offset = 0;
-  int n_entries = 0;
-
   if (sect == NULL)
     return -1;  /* Not a core file.  */
 
-  for (offset = 0; offset < bfd_section_size (sect);)
+  int n_entries = 0;
+  for (file_ptr offset = 0; offset < bfd_section_size (sect);)
     {
-      int next;
-
       n_entries++;
 
+      gdb_byte buf[4];
       if (!bfd_get_section_contents (abfd, sect, buf, offset, 4))
 	return -1;
-      next = bfd_get_32 (abfd, buf);
+
+      int next = bfd_get_32 (abfd, buf);
       if (next == 0)
 	break;  /* This is the last entry.  */
+
       offset += next;
     }
 
@@ -360,8 +328,6 @@ int
 xcoff_get_n_import_files (bfd *abfd)
 {
   asection *sect = bfd_get_section_by_name (abfd, ".loader");
-  gdb_byte buf[4];
-  int l_nimpid;
 
   /* If the ".loader" section does not exist, the objfile is probably
      not an executable.  Might be a core file...  */
@@ -371,10 +337,11 @@ xcoff_get_n_import_files (bfd *abfd)
   /* The number of entries in the Import Files Table is stored in
      field l_nimpid.  This field is always at offset 16, and is
      always 4 bytes long.  Read those 4 bytes.  */
-
+  gdb_byte buf[4];
   if (!bfd_get_section_contents (abfd, sect, buf, 16, 4))
     return -1;
-  l_nimpid = bfd_get_32 (abfd, buf);
+
+  int l_nimpid = bfd_get_32 (abfd, buf);
 
   /* By convention, the first entry is the default LIBPATH value
      to be used by the system loader, so it does not count towards
