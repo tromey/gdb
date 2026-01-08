@@ -52,11 +52,6 @@ struct xcoff_symfile_info
 
 static const registry<objfile>::key<xcoff_symfile_info> xcoff_objfile_data_key;
 
-/* Convenience macro to access the per-objfile XCOFF data.  */
-
-#define XCOFF_DATA(objfile)						\
-  xcoff_objfile_data_key.get (objfile)
-
 /* XCOFF names for dwarf sections.  There is no compressed sections.  */
 
 static const struct dwarf2_debug_sections dwarf2_xcoff_names = {
@@ -173,8 +168,8 @@ scan_xcoff_symtab (struct objfile *objfile)
 
   abfd = objfile->obfd.get ();
 
-  sraw_symbol = XCOFF_DATA (objfile)->symtbl;
-  nsyms = XCOFF_DATA (objfile)->symtbl_num_syms;
+  sraw_symbol = xcoff_objfile_data_key.get (objfile)->symtbl;
+  nsyms = xcoff_objfile_data_key.get (objfile)->symtbl_num_syms;
   ssymnum = 0;
   while (ssymnum < nsyms)
     {
@@ -257,7 +252,7 @@ scan_xcoff_symtab (struct objfile *objfile)
      Another place to obtain this information would be file auxiliary
      header.  */
 
-  XCOFF_DATA (objfile)->toc_offset = toc_offset;
+  xcoff_objfile_data_key.get (objfile)->toc_offset = toc_offset;
 }
 
 /* Return the toc offset value for a given objfile.  */
@@ -266,7 +261,7 @@ CORE_ADDR
 xcoff_get_toc_offset (struct objfile *objfile)
 {
   if (objfile)
-    return XCOFF_DATA (objfile)->toc_offset;
+    return xcoff_objfile_data_key.get (objfile)->toc_offset;
   return 0;
 }
 
@@ -290,7 +285,7 @@ xcoff_initial_scan (struct objfile *objfile, symfile_add_flags symfile_flags)
   const char *name;
   unsigned int size;
 
-  info = XCOFF_DATA (objfile);
+  info = xcoff_objfile_data_key.get (objfile);
   abfd = objfile->obfd.get ();
   name = objfile_name (objfile);
 
