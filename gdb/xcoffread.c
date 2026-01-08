@@ -38,9 +38,6 @@
 
 struct xcoff_symfile_info
   {
-    file_ptr min_lineno_offset {};	/* Where in file lowest line#s are.  */
-    file_ptr max_lineno_offset {};	/* 1+last byte of line#s in file.  */
-
     /* Pointer to the string table.  */
     char *strtbl = nullptr;
 
@@ -129,36 +126,6 @@ xcoff_secnum_to_sections (int n_scnum, struct objfile *objfile,
 	  *bfd_sect = sec;
 	}
     }
-}
-
-/* Support for line number handling.  */
-
-/* This function is called for every section; it finds the outer limits
- * of the line table (minimum and maximum file offset) so that the
- * mainline code can read the whole thing for efficiency.
- */
-static void
-find_linenos (struct bfd *abfd, struct bfd_section *asect, void *vpinfo)
-{
-  struct xcoff_symfile_info *info;
-  int size, count;
-  file_ptr offset, maxoff;
-
-  count = asect->lineno_count;
-
-  if (strcmp (asect->name, ".text") != 0 || count == 0)
-    return;
-
-  size = count * coff_data (abfd)->local_linesz;
-  info = (struct xcoff_symfile_info *) vpinfo;
-  offset = asect->line_filepos;
-  maxoff = offset + size;
-
-  if (offset < info->min_lineno_offset || info->min_lineno_offset == 0)
-    info->min_lineno_offset = offset;
-
-  if (maxoff > info->max_lineno_offset)
-    info->max_lineno_offset = maxoff;
 }
 
 /* Do initialization in preparation for reading symbols from OBJFILE.
@@ -362,11 +329,6 @@ xcoff_initial_scan (struct objfile *objfile, symfile_add_flags symfile_flags)
 
   num_symbols = bfd_get_symcount (abfd);	/* # of symbols */
   symtab_offset = obj_sym_filepos (abfd);	/* symbol table file offset */
-
-  info->min_lineno_offset = 0;
-  info->max_lineno_offset = 0;
-  for (asection *sec : gdb_bfd_sections (abfd))
-    find_linenos (abfd, sec, info);
 
   if (num_symbols > 0)
     {
