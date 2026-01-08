@@ -761,7 +761,8 @@ coff_symtab_read (minimal_symbol_reader &reader,
   /* Position to read the symbol table.  */
   val = bfd_seek (objfile->obfd.get (), symtab_offset, 0);
   if (val < 0)
-    perror_with_name (objfile_name (objfile));
+    error (_("Error reading symbols from %s: %s"),
+	   objfile_name (objfile), bfd_errmsg (bfd_get_error ()));
 
   coffread_objfile = objfile;
   nlist_bfd_global = objfile->obfd.get ();
