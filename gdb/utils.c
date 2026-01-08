@@ -1582,16 +1582,13 @@ pager_file::wrap_here (int indent)
 }
 
 /* Print input string to gdb_stdout arranging strings in columns of n
-   chars.  String can be right or left justified in the column.  Never
-   prints trailing spaces.  String should never be longer than width.
-   FIXME: this could be useful for the EXAMINE command, which
-   currently doesn't tabulate very well.  */
+   chars.  String is left justified in the column.  Never prints
+   trailing spaces.  String should never be longer than width.  */
 
 void
-puts_tabular (const char *string, int width, int right)
+puts_tabular (const char *string, int width)
 {
   int spaces = 0;
-  int stringlen;
   char *spacebuf;
 
   gdb_assert (chars_per_line > 0);
@@ -1608,12 +1605,8 @@ puts_tabular (const char *string, int width, int right)
   if (width >= chars_per_line)
     width = chars_per_line - 1;
 
-  stringlen = strlen (string);
-
   if (chars_printed > 0)
     spaces = width - (chars_printed - 1) % width - 1;
-  if (right)
-    spaces += width - stringlen;
 
   spacebuf = (char *) alloca (spaces + 1);
   spacebuf[spaces] = '\0';

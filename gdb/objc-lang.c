@@ -674,7 +674,7 @@ info_selectors_command (const char *regexp, int from_tty)
 	    *p++ = *name++;
 	  *p++ = '\0';
 	  /* Print in columns.  */
-	  puts_tabular(asel, maxlen + 1, 0);
+	  puts_tabular (asel, maxlen + 1);
 	}
       begin_line();
     }
@@ -808,7 +808,7 @@ info_classes_command (const char *regexp, int from_tty)
 	    *p++ = *name++;
 	  *p++ = '\0';
 	  /* Print in columns.  */
-	  puts_tabular(aclass, maxlen + 1, 0);
+	  puts_tabular (aclass, maxlen + 1);
 	}
       begin_line();
     }
