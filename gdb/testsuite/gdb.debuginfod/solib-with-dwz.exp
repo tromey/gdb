@@ -81,6 +81,7 @@
 
 load_lib debuginfod-support.exp
 
+require allow_debuginfod_tests
 require allow_shlib_tests
 require {istarget "*-linux*"}
 require {!is_remote host}
