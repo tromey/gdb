@@ -38,12 +38,6 @@
 
 struct xcoff_symfile_info
   {
-    /* Pointer to the a.out symbol table.  */
-    char *symtbl = nullptr;
-
-    /* Number of symbols in symtbl.  */
-    int symtbl_num_syms = 0;
-
     /* Offset in data section to TOC anchor.  */
     CORE_ADDR toc_offset = 0;
   };
@@ -156,22 +150,31 @@ scan_xcoff_symtab (struct objfile *objfile)
 {
   CORE_ADDR toc_offset = 0;	/* toc offset value in data section.  */
 
-  bfd *abfd;
   asection *bfd_sect = nullptr;
   int ignored;
-  unsigned int nsyms;
-
-  char *sraw_symbol;
+  bfd *abfd = objfile->obfd.get ();
+  file_ptr symtab_offset = obj_sym_filepos (abfd);
   struct internal_syment symbol;
   union internal_auxent main_aux[5];
   unsigned int ssymnum;
 
-  abfd = objfile->obfd.get ();
+  /* Seek to symbol table location.  */
+  if (bfd_seek (abfd, symtab_offset, SEEK_SET) < 0)
+    error (_("Error reading symbols from %s: %s"),
+	   objfile_name (objfile), bfd_errmsg (bfd_get_error ()));
 
-  sraw_symbol = xcoff_objfile_data_key.get (objfile)->symtbl;
-  nsyms = xcoff_objfile_data_key.get (objfile)->symtbl_num_syms;
+  unsigned int num_symbols = bfd_get_symcount (abfd);
+  size_t size = coff_data (abfd)->local_symesz * num_symbols;
+  char *symtbl = (char *) obstack_alloc (&objfile->objfile_obstack, size);
+
+  /* Read in symbol table.  */
+  if (int ret = bfd_read (symtbl, size, abfd);
+      ret != size)
+    error (_("reading symbol table: %s"), bfd_errmsg (bfd_get_error ()));
+
+  char *sraw_symbol = symtbl;
   ssymnum = 0;
-  while (ssymnum < nsyms)
+  while (ssymnum < num_symbols)
     {
       int sclass;
 
@@ -277,41 +280,11 @@ xcoff_get_toc_offset (struct objfile *objfile)
 static void
 xcoff_initial_scan (struct objfile *objfile, symfile_add_flags symfile_flags)
 {
-  bfd *abfd;
-  int val;
-  int num_symbols;		/* # of symbols */
-  file_ptr symtab_offset;	/* symbol table and */
-  struct xcoff_symfile_info *info;
-  const char *name;
-  unsigned int size;
-
-  info = xcoff_objfile_data_key.get (objfile);
-  abfd = objfile->obfd.get ();
-  name = objfile_name (objfile);
-
-  num_symbols = bfd_get_symcount (abfd);	/* # of symbols */
-  symtab_offset = obj_sym_filepos (abfd);	/* symbol table file offset */
-
-  /* Read the symbols.  We keep them in core because we will want to
-     access them randomly in read_symbol*.  */
-  val = bfd_seek (abfd, symtab_offset, SEEK_SET);
-  if (val < 0)
-    error (_("Error reading symbols from %s: %s"),
-	   name, bfd_errmsg (bfd_get_error ()));
-  size = coff_data (abfd)->local_symesz * num_symbols;
-  info->symtbl = (char *) obstack_alloc (&objfile->objfile_obstack, size);
-  info->symtbl_num_syms = num_symbols;
-
-  val = bfd_read (info->symtbl, size, abfd);
-  if (val != size)
-    error (_("reading symbol table: %s"), bfd_errmsg (bfd_get_error ()));
-
   /* We need to do this to get the TOC information only.  STABS
      format is no longer supported.  */
   scan_xcoff_symtab (objfile);
 
   /* DWARF2 sections.  */
-
   dwarf2_initialize_objfile (objfile, &dwarf2_xcoff_names);
 }
 
