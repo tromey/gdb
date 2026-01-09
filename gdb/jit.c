@@ -42,6 +42,7 @@
 #include "gdb_bfd.h"
 #include "completer.h"
 #include <forward_list>
+#include "expanded-symbol.h"
 
 static std::string jit_reader_dir;
 
@@ -664,6 +665,7 @@ jit_object_close_impl (struct gdb_symbol_callbacks *cb,
   objfile->section_offsets.push_back (0);
   objfile->sect_index_text = 0;
   objfile->per_bfd->gdbarch = priv_data->gdbarch;
+  objfile->qf.emplace_front (new expanded_symbols_functions);
 
   for (gdb_symtab &symtab : obj->symtabs)
     finalize_symtab (&symtab, objfile);
