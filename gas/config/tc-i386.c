@@ -5174,6 +5174,36 @@ optimize_encoding (void)
       i.seg[0] = NULL;
     }
 
+  if (((i.tm.opcode_space == SPACE_0F
+        && (i.tm.base_opcode | 1) == 0xbf
+        && (i.types[0].bitfield.byte
+	    ? i.types[1].bitfield.word
+	    : i.types[1].bitfield.dword))
+       || (i.tm.opcode_space == SPACE_BASE
+	   && i.tm.base_opcode == 0x63
+	   && i.types[1].bitfield.qword))
+      && i.reg_operands == 2
+      && i.op[0].regs->reg_type.bitfield.instance == Accum
+      && i.op[1].regs->reg_type.bitfield.instance == Accum
+      && (cpu_arch_tune != PROCESSOR_K6 || optimize_for_space))
+    {
+      /* Optimize: -O:
+	   movsb     %al, %ax    -> cbw
+	   movsw     %ax, %eax   -> cwde
+	   movsl     %eax, %rax  -> cdqe
+       */
+      i.tm.opcode_space = SPACE_BASE;
+      i.tm.base_opcode = 0x98;
+      i.tm.opcode_modifier.modrm = 0;
+      /* Leave the destination register in place for process_suffix() to take
+	 care of operand sizing.  This will end up as short_form encoding,
+	 with the register number being 0 (i.e. not altering the opcode).  */
+      i.reg_operands = 1;
+      i.op[0].regs = i.op[1].regs;
+      i.tm.operand_types[1].bitfield.class = ClassNone;
+      return;
+    }
+
   if (optimize_for_space
       && (i.tm.mnem_off == MN_test
           || (i.tm.base_opcode == 0xf6

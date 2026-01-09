@@ -220,12 +220,12 @@ movbe, 0x60, Movbe&APX_F, D|Modrm|CheckOperandSize|No_bSuf|No_sSuf|EVexMap4, { R
 bswap, 0xfc8, i486, No_bSuf|No_wSuf|No_sSuf, { Reg32|Reg64 }
 
 // Move with sign extend.
-movsb, 0xfbe, i386, Modrm|No_bSuf|No_sSuf, { Reg8|Unspecified|BaseIndex, Reg16|Reg32|Reg64 }
-movsw, 0xfbf, i386, Modrm|No_bSuf|No_wSuf|No_sSuf, { Reg16|Unspecified|BaseIndex, Reg32|Reg64 }
-movsl, 0x63, x64, Modrm|No_bSuf|No_wSuf|No_lSuf|No_sSuf, { Reg32|Unspecified|BaseIndex, Reg64 }
-movsx, 0xfbe, i386, W|Modrm|No_lSuf|No_sSuf|No_qSuf, { Reg8|Reg16|Unspecified|BaseIndex, Reg16|Reg32|Reg64 }
-movsx, 0x63, x64, Modrm|No_bSuf|No_wSuf|No_sSuf|No_qSuf, { Reg32|Unspecified|BaseIndex, Reg32|Reg64 }
-movsxd, 0x63, x64, Modrm|NoSuf, { Reg32|Unspecified|BaseIndex, Reg32|Reg64 }
+movsb, 0xfbe, i386, Modrm|No_bSuf|No_sSuf|Optimize, { Reg8|Unspecified|BaseIndex, Reg16|Reg32|Reg64 }
+movsw, 0xfbf, i386, Modrm|No_bSuf|No_wSuf|No_sSuf|Optimize, { Reg16|Unspecified|BaseIndex, Reg32|Reg64 }
+movsl, 0x63, x64, Modrm|No_bSuf|No_wSuf|No_lSuf|No_sSuf|Optimize, { Reg32|Unspecified|BaseIndex, Reg64 }
+movsx, 0xfbe, i386, W|Modrm|No_lSuf|No_sSuf|No_qSuf|Optimize, { Reg8|Reg16|Unspecified|BaseIndex, Reg16|Reg32|Reg64 }
+movsx, 0x63, x64, Modrm|No_bSuf|No_wSuf|No_sSuf|No_qSuf|Optimize, { Reg32|Unspecified|BaseIndex, Reg32|Reg64 }
+movsxd, 0x63, x64, Modrm|NoSuf|Optimize, { Reg32|Unspecified|BaseIndex, Reg32|Reg64 }
 movsxd, 0x63, x64, Amd64|Modrm|NoSuf, { Reg32|Unspecified|BaseIndex, Reg16 }
 movsxd, 0x63, x64, Intel64|Modrm|NoSuf, { Reg16|Unspecified|BaseIndex, Reg16 }
 

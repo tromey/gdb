@@ -22,6 +22,17 @@ _start:
 	lock xchg %ecx, (%edx)
 	lock xchg (%ecx), %edx
 
+	movsb	%al, %ax
+	movsbw	%al, %ax
+
+	movsw	%ax, %eax
+	movswl	%ax, %eax
+
+	.intel_syntax noprefix
+	movsx	ax, al
+	movsx	eax, ax
+	.att_syntax prefix
+
 	shl	$1, %dl
 	shl	%dl
 
