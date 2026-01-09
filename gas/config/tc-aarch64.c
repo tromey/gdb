@@ -10259,6 +10259,24 @@ cons_fix_new_aarch64 (fragS * frag, int where, int size, expressionS * exp)
   fix_new_exp (frag, where, size, exp, pcrel, type);
 }
 
+/* Implement tc_fix_adjustable().
+   On aarch64 a jump or call to a function symbol must not be relaxed to
+   some other type of symbol: the linker uses this information to determine
+   when it is safe to insert far-branch veneers.  */
+
+bool
+aarch64_fix_adjustable (fixS *fixp)
+{
+  if (fixp->fx_addsy == NULL)
+    return true;
+
+  /* Preserve relocations against function symbols.  */
+  if (symbol_get_bfdsym (fixp->fx_addsy)->flags & BSF_FUNCTION)
+    return false;
+
+  return true;
+}
+
 /* Implement md_after_parse_args.  This is the earliest time we need to decide
    ABI.  If no -mabi specified, the ABI will be decided by target triplet.  */
 
