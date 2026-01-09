@@ -198,39 +198,23 @@ static void read_one_sym (struct coff_symbol *,
 static void coff_symtab_read (minimal_symbol_reader &,
 			      file_ptr, unsigned int, struct objfile *);
 
-struct coff_find_targ_sec_arg
-  {
-    int targ_index;
-    asection **resultp;
-  };
+/* Return the BFD section that CS points to.  */
 
-static void
-find_targ_sec (bfd *abfd, asection *sect, void *obj)
+static asection *
+cs_to_bfd_section (struct coff_symbol *cs, bfd *abfd)
 {
-  struct coff_find_targ_sec_arg *args = (struct coff_find_targ_sec_arg *) obj;
+  for (asection *sect : gdb_bfd_sections (abfd))
+    if (sect->target_index == cs->c_secnum)
+      return sect;
 
-  if (sect->target_index == args->targ_index)
-    *args->resultp = sect;
-}
-
-/* Return the bfd_section that CS points to.  */
-static struct bfd_section*
-cs_to_bfd_section (struct coff_symbol *cs, struct objfile *objfile)
-{
-  asection *sect = NULL;
-  struct coff_find_targ_sec_arg args;
-
-  args.targ_index = cs->c_secnum;
-  args.resultp = &sect;
-  bfd_map_over_sections (objfile->obfd.get (), find_targ_sec, &args);
-  return sect;
+  return nullptr;
 }
 
 /* Return the section number (SECT_OFF_*) that CS points to.  */
 static int
 cs_to_section (struct coff_symbol *cs, struct objfile *objfile)
 {
-  asection *sect = cs_to_bfd_section (cs, objfile);
+  asection *sect = cs_to_bfd_section (cs, objfile->obfd.get ());
 
   if (sect == NULL)
     return SECT_OFF_TEXT (objfile);
@@ -242,16 +226,12 @@ cs_to_section (struct coff_symbol *cs, struct objfile *objfile)
 static CORE_ADDR
 cs_section_address (struct coff_symbol *cs, bfd *abfd)
 {
-  asection *sect = NULL;
-  struct coff_find_targ_sec_arg args;
-  CORE_ADDR addr = 0;
+  asection *sect = cs_to_bfd_section (cs, abfd);
 
-  args.targ_index = cs->c_secnum;
-  args.resultp = &sect;
-  bfd_map_over_sections (abfd, find_targ_sec, &args);
-  if (sect != NULL)
-    addr = bfd_section_vma (sect);
-  return addr;
+  if (sect == nullptr)
+    return 0;
+
+  return bfd_section_vma (sect);
 }
 
 /* Look up a coff type-number index.  Return the address of the slot
@@ -888,7 +868,8 @@ coff_symtab_read (minimal_symbol_reader &reader,
 	      }
 	    else
 	      {
-		asection *bfd_section = cs_to_bfd_section (cs, objfile);
+		asection *bfd_section
+		  = cs_to_bfd_section (cs, objfile->obfd.get ());
 
 		sec = cs_to_section (cs, objfile);
 		tmpaddr = cs->c_value;
