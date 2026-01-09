@@ -2667,8 +2667,8 @@ INIT_GDB_FILE (cli_cmds)
   add_cmd ("essential", class_essential, _("\
 GDB essential commands.\n\
 Welcome to GDB!  This help text aims to provide a quickstart explanation\n\
-that will allow you to start using GDB.  Feel free to use \"help <cmd>\"\n\
-to get further explanations for any command <cmd>, and check the online\n\
+that will allow you to start using GDB.  Feel free to use \"help CMD\"\n\
+to get further explanations for any command CMD, and check the online\n\
 documentation for in-depth explanations.\n\
 Here are some common GDB behaviors that you can expect, which are\n\
 not tied to any specific command but rather GDB functionality itself:\n\
