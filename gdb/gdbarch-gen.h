@@ -380,9 +380,6 @@ typedef int (gdbarch_get_longjmp_target_ftype) (const frame_info_ptr &frame, COR
 extern int gdbarch_get_longjmp_target (struct gdbarch *gdbarch, const frame_info_ptr &frame, CORE_ADDR *pc);
 extern void set_gdbarch_get_longjmp_target (struct gdbarch *gdbarch, gdbarch_get_longjmp_target_ftype *get_longjmp_target);
 
-extern int gdbarch_believe_pcc_promotion (struct gdbarch *gdbarch);
-extern void set_gdbarch_believe_pcc_promotion (struct gdbarch *gdbarch, int believe_pcc_promotion);
-
 typedef int (gdbarch_convert_register_p_ftype) (struct gdbarch *gdbarch, int regnum, struct type *type);
 extern int gdbarch_convert_register_p (struct gdbarch *gdbarch, int regnum, struct type *type);
 extern void set_gdbarch_convert_register_p (struct gdbarch *gdbarch, gdbarch_convert_register_p_ftype *convert_register_p);

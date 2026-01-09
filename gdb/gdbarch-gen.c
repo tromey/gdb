@@ -100,7 +100,6 @@ struct gdbarch
   gdbarch_cannot_fetch_register_ftype *cannot_fetch_register = cannot_register_not;
   gdbarch_cannot_store_register_ftype *cannot_store_register = cannot_register_not;
   gdbarch_get_longjmp_target_ftype *get_longjmp_target = nullptr;
-  int believe_pcc_promotion = 0;
   gdbarch_convert_register_p_ftype *convert_register_p = generic_convert_register_p;
   gdbarch_register_to_value_ftype *register_to_value = nullptr;
   gdbarch_value_to_register_ftype *value_to_register = nullptr;
@@ -357,7 +356,6 @@ verify_gdbarch (struct gdbarch *gdbarch)
   /* Skip verify of cannot_fetch_register, invalid_p == 0.  */
   /* Skip verify of cannot_store_register, invalid_p == 0.  */
   /* Skip verify of get_longjmp_target, has predicate.  */
-  /* Skip verify of believe_pcc_promotion, invalid_p == 0.  */
   /* Skip verify of convert_register_p, invalid_p == 0.  */
   /* Skip verify of register_to_value, invalid_p == 0.  */
   /* Skip verify of value_to_register, invalid_p == 0.  */
@@ -744,9 +742,6 @@ gdbarch_dump (struct gdbarch *gdbarch, struct ui_file *file)
   gdb_printf (file,
 	      "gdbarch_dump: get_longjmp_target = <%s>\n",
 	      host_address_to_string (gdbarch->get_longjmp_target));
-  gdb_printf (file,
-	      "gdbarch_dump: believe_pcc_promotion = %s\n",
-	      plongest (gdbarch->believe_pcc_promotion));
   gdb_printf (file,
 	      "gdbarch_dump: convert_register_p = <%s>\n",
 	      host_address_to_string (gdbarch->convert_register_p));
@@ -2371,23 +2366,6 @@ set_gdbarch_get_longjmp_target (struct gdbarch *gdbarch,
 				gdbarch_get_longjmp_target_ftype get_longjmp_target)
 {
   gdbarch->get_longjmp_target = get_longjmp_target;
-}
-
-int
-gdbarch_believe_pcc_promotion (struct gdbarch *gdbarch)
-{
-  gdb_assert (gdbarch != NULL);
-  /* Skip verify of believe_pcc_promotion, invalid_p == 0.  */
-  if (gdbarch_debug >= 2)
-    gdb_printf (gdb_stdlog, "gdbarch_believe_pcc_promotion called\n");
-  return gdbarch->believe_pcc_promotion;
-}
-
-void
-set_gdbarch_believe_pcc_promotion (struct gdbarch *gdbarch,
-				   int believe_pcc_promotion)
-{
-  gdbarch->believe_pcc_promotion = believe_pcc_promotion;
 }
 
 int

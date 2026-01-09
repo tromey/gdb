@@ -727,12 +727,6 @@ FRAME corresponds to the longjmp frame.
     predicate=True,
 )
 
-Value(
-    type="int",
-    name="believe_pcc_promotion",
-    invalid=False,
-)
-
 Method(
     type="int",
     name="convert_register_p",
