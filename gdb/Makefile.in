@@ -1071,7 +1071,6 @@ COMMON_SFILES = \
 	bt-utils.c \
 	btrace.c \
 	build-id.c \
-	buildsym-legacy.c \
 	buildsym.c \
 	c-lang.c \
 	c-typeprint.c \
@@ -1348,7 +1347,6 @@ HFILES_NO_SRCDIR = \
 	bt-utils.h \
 	build-id.h \
 	buildsym.h \
-	buildsym-legacy.h \
 	c-exp.h \
 	cgen-remap.h \
 	charset.h \
