@@ -3180,13 +3180,17 @@ list_overlays_command (const char *args, int from_tty)
 	      name = bfd_section_name (osect.the_bfd_section);
 
 	      gdb_printf ("Section %s, loaded at ", name);
-	      gdb_puts (paddress (gdbarch, lma));
+	      fputs_styled (paddress (gdbarch, lma), address_style.style (),
+			    gdb_stdout);
 	      gdb_puts (" - ");
-	      gdb_puts (paddress (gdbarch, lma + size));
+	      fputs_styled (paddress (gdbarch, lma + size),
+			    address_style.style (), gdb_stdout);
 	      gdb_printf (", mapped at ");
-	      gdb_puts (paddress (gdbarch, vma));
+	      fputs_styled (paddress (gdbarch, vma), address_style.style (),
+			    gdb_stdout);
 	      gdb_puts (" - ");
-	      gdb_puts (paddress (gdbarch, vma + size));
+	      fputs_styled (paddress (gdbarch, vma + size),
+			    address_style.style (), gdb_stdout);
 	      gdb_puts ("\n");
 
 	      nmapped++;

@@ -1285,7 +1285,8 @@ jump_command (const char *arg, int from_tty)
   if (from_tty)
     {
       gdb_printf (_("Continuing at "));
-      gdb_puts (paddress (gdbarch, addr));
+      fputs_styled (paddress (gdbarch, addr), address_style.style (),
+		    gdb_stdout);
       gdb_printf (".\n");
     }
 

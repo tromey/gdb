@@ -214,7 +214,7 @@ dump_msymbols (struct objfile *objfile, struct ui_file *outfile)
 	 not try to respect copy relocations.  */
       CORE_ADDR addr = (CORE_ADDR (msymbol->unrelocated_address ())
 			+ objfile->section_offsets[msymbol->section_index ()]);
-      gdb_puts (paddress (gdbarch, addr), outfile);
+      fputs_styled (paddress (gdbarch, addr), address_style.style (), outfile);
       gdb_printf (outfile, " %s", msymbol->linkage_name ());
       if (section)
 	{
@@ -277,7 +277,8 @@ dump_symtab_1 (struct symtab *symtab, struct ui_file *outfile)
       for (int i = 0; i < len; i++)
 	{
 	  gdb_printf (outfile, _(" line %d at "), l->item[i].line);
-	  gdb_puts (paddress (gdbarch, l->item[i].pc (objfile)), outfile);
+	  fputs_styled (paddress (gdbarch, l->item[i].pc (objfile)),
+			address_style.style (), outfile);
 	  if (l->item[i].is_stmt)
 	    gdb_printf (outfile, _("\t(stmt)"));
 	  gdb_printf (outfile, "\n");
@@ -304,9 +305,11 @@ dump_symtab_1 (struct symtab *symtab, struct ui_file *outfile)
 	     wants it.  */
 	  gdb_printf (outfile, _(", %d symbols in "),
 		      mdict_size (b->multidict ()));
-	  gdb_puts (paddress (gdbarch, b->start ()), outfile);
+	  fputs_styled (paddress (gdbarch, b->start ()),
+			address_style.style (), outfile);
 	  gdb_printf (outfile, "..");
-	  gdb_puts (paddress (gdbarch, b->end ()), outfile);
+	  fputs_styled (paddress (gdbarch, b->end ()),
+			address_style.style (), outfile);
 	  if (b->function ())
 	    {
 	      gdb_printf (outfile, _(", function %ps"),
@@ -522,8 +525,8 @@ print_symbol (struct gdbarch *gdbarch, struct symbol *symbol,
   if (symbol->domain () == LABEL_DOMAIN)
     {
       gdb_printf (outfile, _("label %s at "), symbol->print_name ());
-      gdb_puts (paddress (gdbarch, symbol->value_address ()),
-		outfile);
+      fputs_styled (paddress (gdbarch, symbol->value_address ()),
+		    address_style.style (), outfile);
       if (section)
 	gdb_printf (outfile, _(" section %s\n"),
 		    bfd_section_name (section->the_bfd_section));
@@ -592,7 +595,8 @@ print_symbol (struct gdbarch *gdbarch, struct symbol *symbol,
 
 	case LOC_STATIC:
 	  gdb_printf (outfile, _("static at "));
-	  gdb_puts (paddress (gdbarch, symbol->value_address ()), outfile);
+	  fputs_styled (paddress (gdbarch, symbol->value_address ()),
+			address_style.style (), outfile);
 	  if (section)
 	    gdb_printf (outfile, _(" section %s"),
 			bfd_section_name (section->the_bfd_section));
@@ -632,7 +636,8 @@ print_symbol (struct gdbarch *gdbarch, struct symbol *symbol,
 
 	case LOC_LABEL:
 	  gdb_printf (outfile, _("label at "));
-	  gdb_puts (paddress (gdbarch, symbol->value_address ()), outfile);
+	  fputs_styled (paddress (gdbarch, symbol->value_address ()),
+			address_style.style (), outfile);
 	  if (section)
 	    gdb_printf (outfile, _(" section %s"),
 			bfd_section_name (section->the_bfd_section));

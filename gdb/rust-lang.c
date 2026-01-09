@@ -680,7 +680,8 @@ rust_language::value_print_inner
 
 	    if (opts.addressprint)
 	      {
-		gdb_puts (paddress (arch, addr), stream);
+		fputs_styled (paddress (arch, addr), address_style.style (),
+			      stream);
 		gdb_puts (" ", stream);
 	      }
 
