@@ -47,11 +47,7 @@ struct coff_symfile_info
     file_ptr min_lineno_offset = 0;	/* Where in file lowest line#s are.  */
     file_ptr max_lineno_offset = 0;	/* 1+last byte of line#s in file.  */
 
-    CORE_ADDR textaddr = 0;		/* Addr of .text section.  */
-    unsigned int textsize = 0;	/* Size of .text section.  */
     std::vector<asection *> *stabsects;	/* .stab sections.  */
-    asection *stabstrsect = nullptr;	/* Section pointer for .stab section.  */
-    char *stabstrdata = nullptr;
   };
 
 /* Key for COFF-associated data.  */
@@ -222,20 +218,8 @@ coff_locate_sections (bfd *abfd, asection *sectp, void *csip)
 
   csi = (struct coff_symfile_info *) csip;
   name = bfd_section_name (sectp);
-  if (strcmp (name, ".text") == 0)
-    {
-      csi->textaddr = bfd_section_vma (sectp);
-      csi->textsize += bfd_section_size (sectp);
-    }
-  else if (startswith (name, ".text"))
-    {
-      csi->textsize += bfd_section_size (sectp);
-    }
-  else if (strcmp (name, ".stabstr") == 0)
-    {
-      csi->stabstrsect = sectp;
-    }
-  else if (startswith (name, ".stab"))
+
+  if (startswith (name, ".stab"))
     {
       const char *s;
 
