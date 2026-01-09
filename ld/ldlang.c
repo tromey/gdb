@@ -2078,7 +2078,7 @@ lang_insert_orphan (asection *s,
 
       as = *place->section;
 
-      if (!as)
+      if (!as || bfd_link_relocatable (&link_info))
 	{
 	  /* Put the section at the end of the list.  */
 
