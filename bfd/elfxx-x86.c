@@ -1011,7 +1011,7 @@ elf_x86_relative_reloc_record_add
    struct elf_x86_relative_reloc_data *relative_reloc,
    Elf_Internal_Rela *rel, asection *sec,
    asection *sym_sec, struct elf_link_hash_entry *h,
-   Elf_Internal_Sym *sym, bfd_vma offset, bool *keep_symbuf_p)
+   Elf_Internal_Sym *sym, bfd_vma offset)
 {
   bfd_size_type newidx;
 
@@ -1055,8 +1055,6 @@ elf_x86_relative_reloc_record_add
     {
       relative_reloc->data[newidx].sym = sym;
       relative_reloc->data[newidx].u.sym_sec = sym_sec;
-      /* We must keep the symbol buffer since SYM will be used later.  */
-      *keep_symbuf_p = true;
     }
   relative_reloc->data[newidx].offset = offset;
   relative_reloc->data[newidx].address = 0;
@@ -1079,7 +1077,7 @@ _bfd_x86_elf_link_relax_section (bfd *abfd ATTRIBUTE_UNUSED,
   Elf_Internal_Shdr *symtab_hdr;
   Elf_Internal_Rela *internal_relocs;
   Elf_Internal_Rela *irel, *irelend;
-  Elf_Internal_Sym *isymbuf = NULL;
+  Elf_Internal_Sym *isymbuf;
   struct elf_link_hash_entry **sym_hashes;
   elf_backend_data *bed;
   struct elf_x86_link_hash_table *htab;
@@ -1087,7 +1085,6 @@ _bfd_x86_elf_link_relax_section (bfd *abfd ATTRIBUTE_UNUSED,
   bool is_x86_64;
   bool unaligned_section;
   bool return_status = false;
-  bool keep_symbuf = false;
 
   /* Assume we're not going to change any sizes, and we'll only need
      one pass.  */
@@ -1131,6 +1128,23 @@ _bfd_x86_elf_link_relax_section (bfd *abfd ATTRIBUTE_UNUSED,
   if (internal_relocs == NULL)
     return false;
 
+  isymbuf = (Elf_Internal_Sym *) symtab_hdr->contents;
+  if (isymbuf == NULL && symtab_hdr->sh_info > 1)
+    {
+      /* symtab_hdr->sh_info == the number of local symbols + 1.  Load
+	 the symbol table if there are local symbols.  */
+      isymbuf = bfd_elf_get_elf_syms (abfd, symtab_hdr,
+				      symtab_hdr->sh_info,
+				      0, NULL, NULL, NULL);
+      if (isymbuf == NULL)
+	return false;
+
+      /* Cache the symbol table to avoid loading the same symbol table
+	 repeatedly which can take a long time if the input has many
+	 code sections.  */
+      symtab_hdr->contents = (unsigned char *) isymbuf;
+    }
+
   irelend = internal_relocs + input_section->reloc_count;
   for (irel = internal_relocs; irel < irelend; irel++)
     {
@@ -1163,20 +1177,6 @@ _bfd_x86_elf_link_relax_section (bfd *abfd ATTRIBUTE_UNUSED,
 
       if (r_symndx < symtab_hdr->sh_info)
 	{
-	  /* Read this BFD's local symbols.  */
-	  if (isymbuf == NULL)
-	    {
-	      isymbuf = (Elf_Internal_Sym *) symtab_hdr->contents;
-	      if (isymbuf == NULL)
-		{
-		  isymbuf = bfd_elf_get_elf_syms (abfd, symtab_hdr,
-						  symtab_hdr->sh_info,
-						  0, NULL, NULL, NULL);
-		  if (isymbuf == NULL)
-		    goto error_return;
-		}
-	    }
-
 	  isym = isymbuf + r_symndx;
 	  switch (isym->st_shndx)
 	    {
@@ -1278,8 +1278,7 @@ _bfd_x86_elf_link_relax_section (bfd *abfd ATTRIBUTE_UNUSED,
 	  if (!elf_x86_relative_reloc_record_add (info,
 						  &htab->relative_reloc,
 						  irel, htab->elf.sgot,
-						  sec, h, isym, offset,
-						  &keep_symbuf))
+						  sec, h, isym, offset))
 	    goto error_return;
 
 	  continue;
@@ -1348,8 +1347,7 @@ _bfd_x86_elf_link_relax_section (bfd *abfd ATTRIBUTE_UNUSED,
 		 ((unaligned_section || unaligned_offset)
 		  ? &htab->unaligned_relative_reloc
 		  : &htab->relative_reloc),
-		 irel, input_section, sec, h, isym, offset,
-		 &keep_symbuf))
+		 irel, input_section, sec, h, isym, offset))
 	    goto error_return;
 	}
     }
@@ -1359,14 +1357,6 @@ _bfd_x86_elf_link_relax_section (bfd *abfd ATTRIBUTE_UNUSED,
   return_status = true;
 
 error_return:
-  if ((unsigned char *) isymbuf != symtab_hdr->contents)
-    {
-      /* Cache the symbol buffer if it must be kept.  */
-      if (keep_symbuf)
-	symtab_hdr->contents = (unsigned char *) isymbuf;
-      else
-	free (isymbuf);
-    }
   if (elf_section_data (input_section)->relocs != internal_relocs)
     free (internal_relocs);
   return return_status;
