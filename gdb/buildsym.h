@@ -205,8 +205,6 @@ struct buildsym_compunit
     return start_subfile (name, name);
   }
 
-  void patch_subfile_names (struct subfile *subfile, const char *name);
-
   void push_subfile ();
 
   const char *pop_subfile ();
