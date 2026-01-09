@@ -85,7 +85,6 @@ struct gdbarch
   int pc_regnum = -1;
   int ps_regnum = -1;
   int fp0_regnum = -1;
-  gdbarch_ecoff_reg_to_regnum_ftype *ecoff_reg_to_regnum = no_op_reg_to_regnum;
   gdbarch_sdb_reg_to_regnum_ftype *sdb_reg_to_regnum = no_op_reg_to_regnum;
   gdbarch_dwarf2_reg_to_regnum_ftype *dwarf2_reg_to_regnum = no_op_reg_to_regnum;
   gdbarch_register_name_ftype *register_name = nullptr;
@@ -346,7 +345,6 @@ verify_gdbarch (struct gdbarch *gdbarch)
   /* Skip verify of pc_regnum, invalid_p == 0.  */
   /* Skip verify of ps_regnum, invalid_p == 0.  */
   /* Skip verify of fp0_regnum, invalid_p == 0.  */
-  /* Skip verify of ecoff_reg_to_regnum, invalid_p == 0.  */
   /* Skip verify of sdb_reg_to_regnum, invalid_p == 0.  */
   /* Skip verify of dwarf2_reg_to_regnum, invalid_p == 0.  */
   if (gdbarch->register_name == 0)
@@ -705,9 +703,6 @@ gdbarch_dump (struct gdbarch *gdbarch, struct ui_file *file)
   gdb_printf (file,
 	      "gdbarch_dump: fp0_regnum = %s\n",
 	      plongest (gdbarch->fp0_regnum));
-  gdb_printf (file,
-	      "gdbarch_dump: ecoff_reg_to_regnum = <%s>\n",
-	      host_address_to_string (gdbarch->ecoff_reg_to_regnum));
   gdb_printf (file,
 	      "gdbarch_dump: sdb_reg_to_regnum = <%s>\n",
 	      host_address_to_string (gdbarch->sdb_reg_to_regnum));
@@ -2149,23 +2144,6 @@ set_gdbarch_fp0_regnum (struct gdbarch *gdbarch,
 			int fp0_regnum)
 {
   gdbarch->fp0_regnum = fp0_regnum;
-}
-
-int
-gdbarch_ecoff_reg_to_regnum (struct gdbarch *gdbarch, int ecoff_regnr)
-{
-  gdb_assert (gdbarch != NULL);
-  gdb_assert (gdbarch->ecoff_reg_to_regnum != NULL);
-  if (gdbarch_debug >= 2)
-    gdb_printf (gdb_stdlog, "gdbarch_ecoff_reg_to_regnum called\n");
-  return gdbarch->ecoff_reg_to_regnum (gdbarch, ecoff_regnr);
-}
-
-void
-set_gdbarch_ecoff_reg_to_regnum (struct gdbarch *gdbarch,
-				 gdbarch_ecoff_reg_to_regnum_ftype ecoff_reg_to_regnum)
-{
-  gdbarch->ecoff_reg_to_regnum = ecoff_reg_to_regnum;
 }
 
 int

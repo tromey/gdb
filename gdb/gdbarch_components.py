@@ -546,17 +546,6 @@ Value(
 
 Method(
     comment="""
-Provide a default mapping from a ecoff register number to a gdb REGNUM.
-""",
-    type="int",
-    name="ecoff_reg_to_regnum",
-    params=[("int", "ecoff_regnr")],
-    predefault="no_op_reg_to_regnum",
-    invalid=False,
-)
-
-Method(
-    comment="""
 Convert from an sdb register number to an internal gdb register number.
 """,
     type="int",

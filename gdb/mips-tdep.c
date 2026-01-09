@@ -7895,11 +7895,14 @@ mips_skip_trampoline_code (const frame_info_ptr &frame, CORE_ADDR pc)
   return pc != requested_pc ? pc : 0;
 }
 
-/* Convert a dwarf, dwarf2, or ecoff register number to a GDB [1 *
-   gdbarch_num_regs .. 2 * gdbarch_num_regs) REGNUM.  */
+/* Convert a DWARF register number to a GDB
+
+     [1 * gdbarch_num_regs .. 2 * gdbarch_num_regs)
+
+   REGNUM.  */
 
 static int
-mips_dwarf_dwarf2_ecoff_reg_to_regnum (struct gdbarch *gdbarch, int num)
+mips_dwarf_reg_to_regnum (struct gdbarch *gdbarch, int num)
 {
   int regnum;
   if (num >= 0 && num < 32)
@@ -8667,10 +8670,7 @@ mips_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
   set_gdbarch_dummy_id (gdbarch, mips_dummy_id);
 
   /* Map debug register numbers onto internal register numbers.  */
-  set_gdbarch_ecoff_reg_to_regnum (gdbarch,
-				   mips_dwarf_dwarf2_ecoff_reg_to_regnum);
-  set_gdbarch_dwarf2_reg_to_regnum (gdbarch,
-				    mips_dwarf_dwarf2_ecoff_reg_to_regnum);
+  set_gdbarch_dwarf2_reg_to_regnum (gdbarch, mips_dwarf_reg_to_regnum);
   set_gdbarch_register_sim_regno (gdbarch, mips_register_sim_regno);
 
   /* MIPS version of CALL_DUMMY.  */
