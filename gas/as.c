@@ -1505,7 +1505,7 @@ main (int argc, char ** argv)
       gnustack = subseg_new (".note.GNU-stack", 0);
       bfd_set_section_flags (gnustack,
 			     SEC_READONLY | (flag_execstack ? SEC_CODE : 0));
-
+      elf_section_type (gnustack) = SHT_NOTE;
     }
 #endif
 
