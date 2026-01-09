@@ -161,8 +161,6 @@ static long stringtab_length = 0;
 static int symnum;
 static bool within_function;
 
-extern void stabsread_clear_cache (void);
-
 static struct type *coff_read_struct_type (int, int, int,
 					   struct objfile *);
 
@@ -251,9 +249,6 @@ coff_locate_sections (bfd *abfd, asection *sectp, void *csip)
     }
 }
 
-/* Return the section_offsets* that CS points to.  */
-static int cs_to_section (struct coff_symbol *, struct objfile *);
-
 struct coff_find_targ_sec_arg
   {
     int targ_index;
@@ -294,8 +289,6 @@ cs_to_section (struct coff_symbol *cs, struct objfile *objfile)
 }
 
 /* Return the address of the section of a COFF symbol.  */
-
-static CORE_ADDR cs_section_address (struct coff_symbol *, bfd *);
 
 static CORE_ADDR
 cs_section_address (struct coff_symbol *cs, bfd *abfd)
