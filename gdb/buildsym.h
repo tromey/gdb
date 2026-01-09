@@ -219,16 +219,6 @@ struct buildsym_compunit
     return m_compunit_symtab;
   }
 
-  void set_last_source_start_addr (CORE_ADDR addr)
-  {
-    m_last_source_start_addr = addr;
-  }
-
-  CORE_ADDR get_last_source_start_addr ()
-  {
-    return m_last_source_start_addr;
-  }
-
   struct using_direct **get_local_using_directives ()
   {
     return &m_local_using_directives;
@@ -357,9 +347,9 @@ private:
      empty symtab from being tossed.  */
   bool m_have_line_numbers = false;
 
-  /* Core address of start of text of current source file.  This too
-     comes from the N_SO symbol.  For Dwarf it typically comes from the
-     DW_AT_low_pc attribute of a DW_TAG_compile_unit DIE.  */
+  /* Core address of start of text of current source file.  For DWARF it
+     typically comes from the DW_AT_low_pc attribute of a
+     DW_TAG_compile_unit DIE.  */
   CORE_ADDR m_last_source_start_addr;
 
   /* Stack of subfile names.  */
