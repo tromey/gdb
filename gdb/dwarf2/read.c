@@ -1900,7 +1900,12 @@ dw2_get_file_names (dwarf2_per_cu *this_cu, dwarf2_per_objfile *per_objfile)
   cutu_reader reader (*this_cu, *per_objfile, nullptr,
 		      per_objfile->get_cu (this_cu), true, language_minimal,
 		      nullptr);
-  if (!reader.is_dummy ())
+  if (reader.is_dummy ())
+    {
+      /* Make sure we don't re-read the dummy CU.  */
+      this_cu->files_read = true;
+    }
+  else
     dw2_get_file_names_reader (reader.cu (), reader.top_level_die ());
 
   return this_cu->file_names;
