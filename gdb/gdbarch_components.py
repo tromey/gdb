@@ -546,17 +546,6 @@ Value(
 
 Method(
     comment="""
-Convert stab register number (from `r' declaration) to a gdb REGNUM.
-""",
-    type="int",
-    name="stab_reg_to_regnum",
-    params=[("int", "stab_regnr")],
-    predefault="no_op_reg_to_regnum",
-    invalid=False,
-)
-
-Method(
-    comment="""
 Provide a default mapping from a ecoff register number to a gdb REGNUM.
 """,
     type="int",

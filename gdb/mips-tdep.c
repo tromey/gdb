@@ -7895,28 +7895,6 @@ mips_skip_trampoline_code (const frame_info_ptr &frame, CORE_ADDR pc)
   return pc != requested_pc ? pc : 0;
 }
 
-/* Convert a dbx stab register number (from `r' declaration) to a GDB
-   [1 * gdbarch_num_regs .. 2 * gdbarch_num_regs) REGNUM.  */
-
-static int
-mips_stab_reg_to_regnum (struct gdbarch *gdbarch, int num)
-{
-  int regnum;
-  if (num >= 0 && num < 32)
-    regnum = num;
-  else if (num >= 38 && num < 70)
-    regnum = num + mips_regnum (gdbarch)->fp0 - 38;
-  else if (num == 70)
-    regnum = mips_regnum (gdbarch)->hi;
-  else if (num == 71)
-    regnum = mips_regnum (gdbarch)->lo;
-  else if (mips_regnum (gdbarch)->dspacc != -1 && num >= 72 && num < 78)
-    regnum = num + mips_regnum (gdbarch)->dspacc - 72;
-  else
-    return -1;
-  return gdbarch_num_regs (gdbarch) + regnum;
-}
-
 /* Convert a dwarf, dwarf2, or ecoff register number to a GDB [1 *
    gdbarch_num_regs .. 2 * gdbarch_num_regs) REGNUM.  */
 
@@ -8689,7 +8667,6 @@ mips_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
   set_gdbarch_dummy_id (gdbarch, mips_dummy_id);
 
   /* Map debug register numbers onto internal register numbers.  */
-  set_gdbarch_stab_reg_to_regnum (gdbarch, mips_stab_reg_to_regnum);
   set_gdbarch_ecoff_reg_to_regnum (gdbarch,
 				   mips_dwarf_dwarf2_ecoff_reg_to_regnum);
   set_gdbarch_dwarf2_reg_to_regnum (gdbarch,
