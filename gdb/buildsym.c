@@ -17,9 +17,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "buildsym.h"
-#include "bfd.h"
 #include "gdbsupport/gdb_obstack.h"
-#include "gdbsupport/pathstuff.h"
 #include "symtab.h"
 #include "symfile.h"
 #include "objfiles.h"
@@ -28,7 +26,6 @@
 #include "expression.h"
 #include "filenames.h"
 #include "macrotab.h"
-#include "demangle.h"
 #include "block.h"
 #include "cp-support.h"
 #include "dictionary.h"
@@ -50,7 +47,6 @@ buildsym_compunit::buildsym_compunit (struct objfile *objfile_,
 				      enum language language_,
 				      CORE_ADDR last_addr)
   : m_objfile (objfile_),
-    m_last_source_file (name == nullptr ? nullptr : xstrdup (name)),
     m_comp_dir (comp_dir_ == nullptr ? "" : comp_dir_),
     m_owned_compunit_symtab (std::make_unique<compunit_symtab> (m_objfile, name)),
     m_compunit_symtab (m_owned_compunit_symtab.get ()),
@@ -506,7 +502,6 @@ buildsym_compunit::patch_subfile_names (struct subfile *subfile,
       m_comp_dir = std::move (subfile->name);
       subfile->name = name;
       subfile->name_for_id = name;
-      set_last_source_file (name);
 
       /* Default the source language to whatever can be deduced from
 	 the filename.  If nothing can be deduced (such as for a C/C++

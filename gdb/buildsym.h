@@ -152,7 +152,6 @@ struct buildsym_compunit
 		     const char *comp_dir_, enum language language_,
 		     CORE_ADDR last_addr, struct compunit_symtab *cust)
     : m_objfile (objfile_),
-      m_last_source_file (name == nullptr ? nullptr : make_unique_xstrdup (name)),
       m_comp_dir (comp_dir_ == nullptr ? "" : comp_dir_),
       m_compunit_symtab (cust),
       m_language (language_),
@@ -163,19 +162,6 @@ struct buildsym_compunit
   ~buildsym_compunit ();
 
   DISABLE_COPY_AND_ASSIGN (buildsym_compunit);
-
-  void set_last_source_file (const char *name)
-  {
-    if (name == nullptr)
-      m_last_source_file = nullptr;
-    else
-      m_last_source_file = make_unique_xstrdup (name);
-  }
-
-  const char *get_last_source_file ()
-  {
-    return m_last_source_file.get ();
-  }
 
   struct macro_table *get_macro_table ();
 
@@ -342,11 +328,6 @@ private:
 
   /* The subfile of the main source file.  */
   struct subfile *m_main_subfile = nullptr;
-
-  /* Name of source file whose symbol data we are now processing.  This
-     comes from a symbol of type N_SO for stabs.  For DWARF it comes
-     from the DW_AT_name attribute of a DW_TAG_compile_unit DIE.  */
-  gdb::unique_xmalloc_ptr<char> m_last_source_file;
 
   /* E.g., DW_AT_comp_dir if DWARF.  Space for this is malloc'd.  */
   std::string m_comp_dir;
