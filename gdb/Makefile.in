@@ -1104,6 +1104,7 @@ COMMON_SFILES = \
 	event-top.c \
 	exceptions.c \
 	exec.c \
+	expanded-symbol.c \
 	expprint.c \
 	extension.c \
 	f-lang.c \
