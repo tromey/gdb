@@ -46,8 +46,6 @@ struct coff_symfile_info
   {
     file_ptr min_lineno_offset = 0;	/* Where in file lowest line#s are.  */
     file_ptr max_lineno_offset = 0;	/* 1+last byte of line#s in file.  */
-
-    std::vector<asection *> *stabsects;	/* .stab sections.  */
   };
 
 /* Key for COFF-associated data.  */
@@ -199,39 +197,6 @@ static void read_one_sym (struct coff_symbol *,
 
 static void coff_symtab_read (minimal_symbol_reader &,
 			      file_ptr, unsigned int, struct objfile *);
-
-/* We are called once per section from coff_symfile_read.  We
-   need to examine each section we are passed, check to see
-   if it is something we are interested in processing, and
-   if so, stash away some access information for the section.
-
-   FIXME: The section names should not be hardwired strings (what
-   should they be?  I don't think most object file formats have enough
-   section flags to specify what kind of debug section it is
-   -kingdon).  */
-
-static void
-coff_locate_sections (bfd *abfd, asection *sectp, void *csip)
-{
-  struct coff_symfile_info *csi;
-  const char *name;
-
-  csi = (struct coff_symfile_info *) csip;
-  name = bfd_section_name (sectp);
-
-  if (startswith (name, ".stab"))
-    {
-      const char *s;
-
-      /* We can have multiple .stab sections if linked with
-	 --split-by-reloc.  */
-      for (s = name + sizeof ".stab" - 1; *s != '\0'; s++)
-	if (!c_isdigit (*s))
-	  break;
-      if (*s == '\0')
-	csi->stabsects->push_back (sectp);
-    }
-}
 
 struct coff_find_targ_sec_arg
   {
@@ -594,10 +559,6 @@ coff_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
   info = coff_objfile_data_key.get (objfile);
   symfile_bfd = abfd;		/* Kludge for swap routines.  */
 
-  std::vector<asection *> stabsects;
-  scoped_restore restore_stabsects
-    = make_scoped_restore (&info->stabsects, &stabsects);
-
 /* WARNING WILL ROBINSON!  ACCESSING BFD-PRIVATE DATA HERE!  FIXME!  */
   num_symbols = bfd_get_symcount (abfd);	/* How many syms */
   symtab_offset = cdata->sym_filepos;	/* Symbol table file offset */
@@ -674,10 +635,19 @@ coff_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
   coff_read_minsyms (symtab_offset, num_symbols, objfile);
 
   if (!(objfile->flags & OBJF_READNEVER))
-    bfd_map_over_sections (abfd, coff_locate_sections, (void *) info);
+    {
+      bool found_stab_section = false;
 
-  if (!info->stabsects->empty())
-    warning (_("stabs debug information is not supported."));
+      for (asection *sect : gdb_bfd_sections (abfd))
+	if (startswith (bfd_section_name (sect), ".stab"))
+	  {
+	    found_stab_section = true;
+	    break;
+	  }
+
+      if (found_stab_section)
+	warning (_ ("stabs debug information is not supported."));
+    }
 
   if (dwarf2_initialize_objfile (objfile))
     {
