@@ -8408,10 +8408,6 @@ rs6000_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
   set_gdbarch_program_breakpoint_here_p (gdbarch,
 					 rs6000_program_breakpoint_here_p);
 
-  /* The value of symbols of type N_SO and N_FUN maybe null when
-     it shouldn't be.  */
-  set_gdbarch_sofun_address_maybe_missing (gdbarch, 1);
-
   /* Handles single stepping of atomic sequences.  */
   set_gdbarch_get_next_pcs (gdbarch, ppc_deal_with_atomic_sequence);
 

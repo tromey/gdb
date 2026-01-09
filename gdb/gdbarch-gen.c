@@ -196,7 +196,6 @@ struct gdbarch
   gdbarch_relocate_instruction_ftype *relocate_instruction = nullptr;
   gdbarch_overlay_update_ftype *overlay_update = nullptr;
   gdbarch_core_read_description_ftype *core_read_description = nullptr;
-  int sofun_address_maybe_missing = 0;
   gdbarch_process_record_ftype *process_record = nullptr;
   gdbarch_process_record_signal_ftype *process_record_signal = nullptr;
   gdbarch_gdb_signal_from_target_ftype *gdb_signal_from_target = nullptr;
@@ -461,7 +460,6 @@ verify_gdbarch (struct gdbarch *gdbarch)
   /* Skip verify of relocate_instruction, invalid_p == 0.  */
   /* Skip verify of overlay_update, has predicate.  */
   /* Skip verify of core_read_description, has predicate.  */
-  /* Skip verify of sofun_address_maybe_missing, invalid_p == 0.  */
   /* Skip verify of process_record, has predicate.  */
   /* Skip verify of process_record_signal, has predicate.  */
   /* Skip verify of gdb_signal_from_target, has predicate.  */
@@ -1120,9 +1118,6 @@ gdbarch_dump (struct gdbarch *gdbarch, struct ui_file *file)
   gdb_printf (file,
 	      "gdbarch_dump: core_read_description = <%s>\n",
 	      host_address_to_string (gdbarch->core_read_description));
-  gdb_printf (file,
-	      "gdbarch_dump: sofun_address_maybe_missing = %s\n",
-	      plongest (gdbarch->sofun_address_maybe_missing));
   gdb_printf (file,
 	      "gdbarch_dump: gdbarch_process_record_p() = %d\n",
 	      gdbarch_process_record_p (gdbarch));
@@ -4201,23 +4196,6 @@ set_gdbarch_core_read_description (struct gdbarch *gdbarch,
 				   gdbarch_core_read_description_ftype core_read_description)
 {
   gdbarch->core_read_description = core_read_description;
-}
-
-int
-gdbarch_sofun_address_maybe_missing (struct gdbarch *gdbarch)
-{
-  gdb_assert (gdbarch != NULL);
-  /* Skip verify of sofun_address_maybe_missing, invalid_p == 0.  */
-  if (gdbarch_debug >= 2)
-    gdb_printf (gdb_stdlog, "gdbarch_sofun_address_maybe_missing called\n");
-  return gdbarch->sofun_address_maybe_missing;
-}
-
-void
-set_gdbarch_sofun_address_maybe_missing (struct gdbarch *gdbarch,
-					 int sofun_address_maybe_missing)
-{
-  gdbarch->sofun_address_maybe_missing = sofun_address_maybe_missing;
 }
 
 bool

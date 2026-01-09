@@ -1210,11 +1210,6 @@ typedef const struct target_desc * (gdbarch_core_read_description_ftype) (struct
 extern const struct target_desc * gdbarch_core_read_description (struct gdbarch *gdbarch, struct target_ops *target, bfd *abfd);
 extern void set_gdbarch_core_read_description (struct gdbarch *gdbarch, gdbarch_core_read_description_ftype *core_read_description);
 
-/* Set if the address in N_SO or N_FUN stabs may be zero. */
-
-extern int gdbarch_sofun_address_maybe_missing (struct gdbarch *gdbarch);
-extern void set_gdbarch_sofun_address_maybe_missing (struct gdbarch *gdbarch, int sofun_address_maybe_missing);
-
 /* Parse the instruction at ADDR storing in the record execution log
    the registers REGCACHE and memory ranges that will be affected when
    the instruction executes, along with their current values.

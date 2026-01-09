@@ -1987,16 +1987,6 @@ Method(
     predicate=True,
 )
 
-Value(
-    comment="""
-Set if the address in N_SO or N_FUN stabs may be zero.
-""",
-    type="int",
-    name="sofun_address_maybe_missing",
-    predefault="0",
-    invalid=False,
-)
-
 Method(
     comment="""
 Parse the instruction at ADDR storing in the record execution log
