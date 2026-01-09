@@ -28,9 +28,13 @@ _start:
 	movsw	%ax, %eax
 	movswl	%ax, %eax
 
+	movzb	%al, %ax
+	movzbw	%cl, %cx
+
 	.intel_syntax noprefix
 	movsx	ax, al
 	movsx	eax, ax
+	movzx	dx, dl
 	.att_syntax prefix
 
 	shl	$1, %dl

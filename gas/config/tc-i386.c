@@ -5205,6 +5205,69 @@ optimize_encoding (void)
     }
 
   if (optimize_for_space
+      && i.tm.opcode_space == SPACE_0F
+      && (i.tm.base_opcode | 1) == 0xb7
+      && i.reg_operands == 2
+      && !i.op[0].regs->reg_flags
+      && !i.op[1].regs->reg_flags
+      && (i.types[0].bitfield.byte
+	  ? i.types[1].bitfield.word
+	    && i.op[0].regs->reg_num < 4
+	    && i.op[1].regs->reg_num == i.op[0].regs->reg_num
+	    && (!i.suffix || i.suffix == WORD_MNEM_SUFFIX)
+	  : i.types[1].bitfield.dword
+	    && flag_code == CODE_16BIT
+	    && i.op[0].regs->reg_type.bitfield.baseindex
+	    && i.op[0].regs->reg_num != EBP_REG_NUM))
+    {
+      /* Optimize: -Os:
+	   movzb     %r8, %r16    -> mov $0, %r8h
+
+	   %r8 being one of %al, %cl, %dl, or %bl, with %r16 being the
+	   matching 16-bit reg.
+       */
+
+      i.tm.opcode_space = SPACE_BASE;
+      i.tm.opcode_modifier.w = 0;
+      i.reg_operands = 1;
+      if (i.types[0].bitfield.byte)
+	{
+	  i.tm.base_opcode = 0xb0;
+	  i.tm.opcode_modifier.modrm = 0;
+	  copy_operand (1, 0);
+	  i.op[1].regs += 4;
+
+	  im_expressions[0].X_op = O_constant;
+	  im_expressions[0].X_add_number = 0;
+	  i.op[0].imms = &im_expressions[0];
+ 	  operand_type_set (&i.types[0], 0);
+	  i.types[0].bitfield.imm8 = 1;
+	  i.tm.operand_types[0] = i.types[0];
+	  i.tm.operand_types[0].bitfield.class = ClassNone;
+	  i.imm_operands = 1;
+
+	  i.suffix = 0;
+	  return;
+	}
+
+      /* In 16-bit mode, optimize: -Os:
+	   movzw     %r16, %r32   -> lea (%r16), %r32
+
+	   %r16 being one of %bx, %si, or %di.
+       */
+      i.tm.base_opcode = 0x8d;
+
+      i.base_reg = i.op[0].regs;
+      operand_type_set (&i.types[0], 0);
+      i.types[0].bitfield.baseindex = 1;
+      i.tm.operand_types[0] = i.types[0];
+      i.op[0].disps = NULL;
+      i.flags[0] = Operand_Mem;
+      i.mem_operands = 1;
+      return;
+    }
+
+  if (optimize_for_space
       && (i.tm.mnem_off == MN_test
           || (i.tm.base_opcode == 0xf6
               && i.tm.opcode_space == SPACE_MAP4))
