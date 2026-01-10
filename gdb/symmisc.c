@@ -276,7 +276,9 @@ dump_symtab_1 (struct symtab *symtab, struct ui_file *outfile)
       int len = l->nitems;
       for (int i = 0; i < len; i++)
 	{
-	  gdb_printf (outfile, _(" line %d at "), l->item[i].line);
+	  gdb_printf (outfile, _(" line %ps at "),
+		      styled_string (line_number_style.style (),
+				     pulongest (l->item[i].line)));
 	  fputs_styled (paddress (gdbarch, l->item[i].pc (objfile)),
 			address_style.style (), outfile);
 	  if (l->item[i].is_stmt)
@@ -317,8 +319,9 @@ dump_symtab_1 (struct symtab *symtab, struct ui_file *outfile)
 					 b->function ()->linkage_name ()));
 	      if (b->function ()->demangled_name () != NULL)
 		{
-		  gdb_printf (outfile, ", %s",
-			      b->function ()->demangled_name ());
+		  gdb_printf (outfile, ", %ps",
+			      styled_string (function_name_style.style (),
+					     b->function ()->demangled_name ()));
 		}
 	    }
 	  gdb_printf (outfile, "\n");

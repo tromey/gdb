@@ -1253,10 +1253,11 @@ jump_command (const char *arg, int from_tty)
 					  find_pc_mapped_section (sal.pc));
   if (fn != nullptr && sfn != fn)
     {
-      if (!query (_("Line %ps is not in `%s'.  Jump anyway? "),
+      if (!query (_("Line %ps is not in `%ps'.  Jump anyway? "),
 		  styled_string (line_number_style.style (),
 				 pulongest (sal.line)),
-		  fn->print_name ()))
+		  styled_string (function_name_style.style (),
+				 fn->print_name ())))
 	{
 	  error (_("Not confirmed."));
 	  /* NOTREACHED */
