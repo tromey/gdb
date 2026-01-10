@@ -1077,6 +1077,7 @@ COMMON_SFILES = \
 	c-typeprint.c \
 	c-valprint.c \
 	c-varobj.c \
+	char-print.c \
 	charset.c \
 	cli-out.c \
 	complaints.c \
