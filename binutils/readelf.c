@@ -16000,7 +16000,8 @@ is_32bit_abs_reloc (Filedata * filedata, unsigned int reloc_type)
     case EM_TI_PRU:
       return reloc_type == 11; /* R_PRU_BFD_RELOC_32.  */
     case EM_RISCV:
-      return reloc_type == 1; /* R_RISCV_32.  */
+      return (reloc_type == 1 /* R_RISCV_32.  */
+	      || reloc_type == 56); /* R_RISCV_SET32.  */
     case EM_RL78:
       return reloc_type == 1; /* R_RL78_DIR32.  */
     case EM_RX:
