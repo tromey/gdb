@@ -81,7 +81,7 @@ proc start_scalars_test { type } {
     gdb_test_multiple "ptype/r foo" "ptype foo; ${testfile}" {
 	-re "type = .*$gdb_prompt $" {
 	    set foo_t "$expect_out(1,string)"
-	    pass "$test (${foo_t})"
+	    pass "ptype foo; ${testfile} (${foo_t})"
 	}
     }
 }
