@@ -105,4 +105,9 @@ _start:
 	mfpmc7 20
 	mfupmc8 21
 	mfpmc8 22
+	tlbiep 2, 4, 3, 1, 1
+	tlbiep 2, 3
+	tlbieio 7, 6, 2
+	tlbsyncio 9
+	ptesyncio 5
 

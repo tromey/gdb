@@ -4628,6 +4628,12 @@ const unsigned int num_powerpc_operands = ARRAY_SIZE (powerpc_operands);
    field.  */
 #define XWC_MASK (XRC (0x3f, 0x3ff, 1) | (7 << 23) | RA_MASK | RB_MASK)
 
+/* The mask of TLB invalidate Entry with 20th bit specified.  */
+#define XTLBIE_MASK (X_MASK | (1<<20))
+
+/* The mask of TLB invalidate Entry for I/O device.  */
+#define XTLBIEIO_MASK (XTLBIE_MASK | (3<<16))
+
 /* An X form wait instruction with everything filled in except the WC
    and PL fields.  */
 #define XWCPL_MASK (XRC (0x3f, 0x3ff, 1) | (7 << 23) | (3 << 18) | RB_MASK)
@@ -7238,6 +7244,7 @@ const struct powerpc_opcode powerpc_opcodes[] = {
 {"iseleq",	XISEL(31,15,2),	X_MASK,	     PPCISEL,	EXT,		{RT, RA0, RB}},
 {"isel",	XISEL(31,15,0), XISEL_MASK, PPCISEL|TITAN, 0,		{RT, RA0, RB, BC}},
 
+{"tlbieio",	X(31,18), 	XTLBIEIO_MASK, FUTURE,	0,		{RB, RS, RIC}},
 {"tlbilxlpid",	XTO(31,18,0),	XTO_MASK, E500MC|PPCA2,	0,		{0}},
 {"tlbilxpid",	XTO(31,18,1),	XTO_MASK, E500MC|PPCA2,	0,		{0}},
 {"tlbilxva",	XTO(31,18,3),	XTO_MASK, E500MC|PPCA2,	0,		{RA0, RB}},
@@ -7296,6 +7303,8 @@ const struct powerpc_opcode powerpc_opcodes[] = {
 {"lxvrhx",	X(31,45),	XX1_MASK,    POWER10,	0,		{XT6, RA0, RB}},
 
 {"mviwsplt",	X(31,46),	X_MASK,	     E6500,	0,		{VD, RA, RB}},
+
+{"tlbiep",	X(31,50),	XTLBIE_MASK, FUTURE,	TITAN,		{RB, RS, RIC, PRS, X_R}},
 
 {"lvewx",	X(31,71),	X_MASK,	     PPCVEC,	0,		{VD, RA0, RB}},
 
@@ -8627,6 +8636,8 @@ const struct powerpc_opcode powerpc_opcodes[] = {
 
 {"lxvrll",	X(31,557),	XX1_MASK,    PPCVSXF,	0,		{XT6, RA0, RB}},
 
+{"tlbsyncio",	X(31,564),	XRARB_MASK,  FUTURE,	0,		{RS}},
+
 {"tlbsync",	X(31,566),	0xffffffff,  PPC,	0,		{0}},
 
 {"lfsux",	X(31,567),	X_MASK,	     COM,	PPCEFS,		{FRT, RAS, RB}},
@@ -8651,6 +8662,8 @@ const struct powerpc_opcode powerpc_opcodes[] = {
 {"lxvprl",	X(31,589),	XX1_MASK,    PPCVSXF,	0,		{XTP, RA0, RB}},
 
 {"mfsr",	X(31,595), XRB_MASK|(1<<20), COM,	NON32,		{RT, SR}},
+
+{"ptesyncio",	X(31,596),	XRARB_MASK,  FUTURE,	0,		{RS}},
 
 {"lswi",	X(31,597),	X_MASK,	     PPCCOM,	E500|E500MC,	{RT, RAX, NBI}},
 {"lsi",		X(31,597),	X_MASK,	     PWRCOM,	0,		{RT, RA0, NB}},

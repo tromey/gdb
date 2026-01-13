@@ -131,4 +131,9 @@ Disassembly of section \.text:
 .*:	(a6 c2 89 7e|7e 89 c2 a6) 	mfupmc7 r20
 .*:	(a6 c2 aa 7e|7e aa c2 a6) 	mfupmc8 r21
 .*:	(a6 c2 ca 7e|7e ca c2 a6) 	mfupmc8 r22
+.*:	(64 10 8f 7c|7c 8f 10 64) 	tlbiep  r2,r4,3,1,1
+.*:	(64 10 60 7c|7c 60 10 64) 	tlbiep  r2,r3
+.*:	(24 38 c8 7c|7c c8 38 24) 	tlbieio r7,r6,2
+.*:	(68 04 20 7d|7d 20 04 68) 	tlbsyncio r9
+.*:	(a8 04 a0 7c|7c a0 04 a8) 	ptesyncio r5
 #pass
