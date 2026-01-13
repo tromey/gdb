@@ -210,7 +210,7 @@ get_offset_size_in_bytes (offsetT value)
     size = 2;
   else if (value <= INT32_MAX && value >= INT32_MIN)
     size = 4;
-  else if ((sizeof (offsetT) > 4) && (value <= INT64_MAX && value >= INT64_MIN))
+  else if (sizeof (offsetT) > 4)
     size = 8;
 
   return size;
