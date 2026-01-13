@@ -197,15 +197,6 @@ sframe_fre_set_fp_track (struct sframe_row_entry *fre, offsetT fp_offset)
   fre->merge_candidate = false;
 }
 
-/* All stack offset values within an FRE are uniformly encoded in the same
-   number of bytes.  The size of the stack offset values will, however, vary
-   across FREs.  */
-
-#define VALUE_8BIT  0x7f
-#define VALUE_16BIT 0x7fff
-#define VALUE_32BIT 0x7fffffff
-#define VALUE_64BIT 0x7fffffffffffffff
-
 /* Given a signed offset, return the size in bytes needed to represent it.  */
 
 static unsigned int
@@ -213,14 +204,13 @@ get_offset_size_in_bytes (offsetT value)
 {
   unsigned int size = 0;
 
-  if (value <= VALUE_8BIT && value >= (offsetT) -VALUE_8BIT)
+  if (value <= INT8_MAX && value >= INT8_MIN)
     size = 1;
-  else if (value <= VALUE_16BIT && value >= (offsetT) -VALUE_16BIT)
+  else if (value <= INT16_MAX && value >= INT16_MIN)
     size = 2;
-  else if (value <= VALUE_32BIT && value >= (offsetT) -VALUE_32BIT)
+  else if (value <= INT32_MAX && value >= INT32_MIN)
     size = 4;
-  else if ((sizeof (offsetT) > 4) && (value <= (offsetT) VALUE_64BIT
-				      && value >= (offsetT) -VALUE_64BIT))
+  else if ((sizeof (offsetT) > 4) && (value <= INT64_MAX && value >= INT64_MIN))
     size = 8;
 
   return size;
