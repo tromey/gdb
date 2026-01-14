@@ -10605,12 +10605,18 @@ _bfd_mips_elf_relocate_section (bfd *output_bfd, struct bfd_link_info *info,
 			name = bfd_elf_sym_name (input_bfd, symtab_hdr,
 						 local_syms + r_symndx,
 						 sec);
-		      _bfd_error_handler
-			/* xgettext:c-format */
-			(_("%pB: can't find matching LO16 reloc against `%s'"
-			   " for %s at %#" PRIx64 " in section `%pA'"),
-			 input_bfd, name,
-			 howto->name, (uint64_t) rel->r_offset, input_section);
+		      /* xgettext:c-format */
+		      msg = bfd_asprintf (_("can't find matching LO16 reloc"
+					    " against `%s' for %s at %#" PRIx64
+					    " in section `%s'"),
+					  name, howto->name,
+					  (uint64_t) rel->r_offset,
+					  input_section->name);
+		      if (msg == NULL)
+			return false;
+		      info->callbacks->warning
+			(info, msg, name, input_bfd, input_section,
+			 rel->r_offset);
 		    }
 		}
 	      else
