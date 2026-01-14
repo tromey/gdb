@@ -8370,9 +8370,10 @@ mips_elf_add_lo16_rel_addend (bfd *abfd,
   /* The combined value is the sum of the HI16 addend, left-shifted by
      sixteen bits, and the LO16 addend, sign extended.  (Usually, the
      code does a `lui' of the HI16 value, and then an `addiu' of the
-     LO16 value.)
+     LO16 value.)  */
+  *addend <<= 16;
 
-     Scan ahead to find a matching LO16 relocation.
+  /* Scan ahead to find a matching LO16 relocation.
 
      According to the MIPS ELF ABI, the R_MIPS_LO16 relocation must
      be immediately following.  However, for the IRIX6 ABI, the next
@@ -8400,7 +8401,6 @@ mips_elf_add_lo16_rel_addend (bfd *abfd,
     l = (l - (lo16_relocation->r_offset - rel->r_offset)) & 0xffff;
   l = _bfd_mips_elf_sign_extend (l, 16);
 
-  *addend <<= 16;
   *addend += l;
   return true;
 }
