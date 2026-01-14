@@ -1419,7 +1419,8 @@ write_relocs (bfd *abfd ATTRIBUTE_UNUSED, asection *sec,
   }
 #endif
 
-  FINALIZE_SECTION_RELOCS (sec, relocs, n);
+  if (!FINALIZE_SECTION_RELOCS (sec, relocs, n))
+    as_bad (_("%s: unable to finalize relocations"), sec->name);
 
 #ifdef DEBUG3
   {

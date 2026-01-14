@@ -101,7 +101,7 @@ extern void obj_mach_o_frob_file_after_relocs (void);
 
 #define FINALIZE_SECTION_RELOCS(sec, relocs, n) \
   obj_mach_o_reorder_section_relocs (sec, relocs, n)
-extern void obj_mach_o_reorder_section_relocs (asection *, arelent **,
+extern bool obj_mach_o_reorder_section_relocs (asection *, arelent **,
 					       unsigned int);
 
 /* Emit relocs for local subtracts, to cater for subsections-via-symbols.  */

@@ -296,7 +296,7 @@ extern void coff_pop_insert (void);
 /* We need to store the number of relocations in the section aux entry.  */
 #define FINALIZE_SECTION_RELOCS(sec, relocs, n) \
   obj_coff_finalize_section_relocs (sec, relocs, n)
-extern void obj_coff_finalize_section_relocs (asection *, arelent **,
+extern bool obj_coff_finalize_section_relocs (asection *, arelent **,
 					      unsigned int);
 
 extern int  S_SET_DATA_TYPE              (symbolS *, int);

@@ -2613,7 +2613,7 @@ long bfd_get_reloc_upper_bound (bfd *abfd, asection *sect);
 long bfd_canonicalize_reloc
    (bfd *abfd, asection *sec, arelent **loc, asymbol **syms);
 
-void bfd_finalize_section_relocs
+bool bfd_finalize_section_relocs
    (bfd *abfd, asection *sec, arelent **rel, unsigned int count);
 
 #define bfd_finalize_section_relocs(abfd, asect, location, count) \
@@ -7664,7 +7664,7 @@ typedef struct bfd_target
   long (*_get_reloc_upper_bound) (bfd *, sec_ptr);
   long (*_bfd_canonicalize_reloc) (bfd *, sec_ptr, arelent **,
 				   struct bfd_symbol **);
-  void (*_bfd_finalize_section_relocs) (bfd *, sec_ptr, arelent **,
+  bool (*_bfd_finalize_section_relocs) (bfd *, sec_ptr, arelent **,
 					unsigned int);
   /* See documentation on reloc types.  */
   reloc_howto_type *

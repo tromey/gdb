@@ -10640,7 +10640,13 @@ copy_section (bfd *ibfd, sec_ptr isection, void *p)
     }
 
   if (relsize == 0)
-    bfd_finalize_section_relocs (obfd, osection, NULL, 0);
+    {
+      if (!bfd_finalize_section_relocs (obfd, osection, NULL, 0))
+	{
+	  err = _("unable to finalize relocations");
+	  goto loser;
+	}
+    }
   else
     {
       relpp = (arelent **) xmalloc (relsize);
@@ -10651,8 +10657,14 @@ copy_section (bfd *ibfd, sec_ptr isection, void *p)
 	  goto loser;
 	}
 
-      bfd_finalize_section_relocs (obfd, osection,
-				   relcount == 0 ? NULL : relpp, relcount);
+      if (!bfd_finalize_section_relocs (obfd, osection,
+					relcount == 0 ? NULL : relpp,
+					relcount))
+	{
+	  free (relpp);
+	  err = _("unable to finalize relocations");
+	  goto loser;
+	}
       if (relcount == 0)
 	free (relpp);
     }

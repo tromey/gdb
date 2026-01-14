@@ -438,7 +438,7 @@ BFD_JUMP_TABLE macros.
 .  long	(*_get_reloc_upper_bound) (bfd *, sec_ptr);
 .  long	(*_bfd_canonicalize_reloc) (bfd *, sec_ptr, arelent **,
 .				    struct bfd_symbol **);
-.  void	(*_bfd_finalize_section_relocs) (bfd *, sec_ptr, arelent **,
+.  bool (*_bfd_finalize_section_relocs) (bfd *, sec_ptr, arelent **,
 .					 unsigned int);
 .  {* See documentation on reloc types.  *}
 .  reloc_howto_type *

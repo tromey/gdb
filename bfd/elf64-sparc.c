@@ -314,7 +314,7 @@ elf64_sparc_canonicalize_dynamic_reloc (bfd *abfd, arelent **storage,
 
 /* Install a new set of internal relocs.  */
 
-static void
+static bool
 elf64_sparc_finalize_section_relocs (bfd *abfd ATTRIBUTE_UNUSED,
 				     asection *asect,
 				     arelent **location,
@@ -326,6 +326,7 @@ elf64_sparc_finalize_section_relocs (bfd *abfd ATTRIBUTE_UNUSED,
     asect->flags |= SEC_RELOC;
   else
     asect->flags &= ~SEC_RELOC;
+  return true;
 }
 
 /* Write out the relocs.  */

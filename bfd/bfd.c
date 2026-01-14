@@ -2202,7 +2202,7 @@ FUNCTION
 	bfd_finalize_section_relocs
 
 SYNOPSIS
-	void bfd_finalize_section_relocs
+	bool bfd_finalize_section_relocs
 	  (bfd *abfd, asection *sec, arelent **rel, unsigned int count);
 
 DESCRIPTION
