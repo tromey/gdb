@@ -4555,7 +4555,7 @@ copy_relocations_in_section (bfd *ibfd, sec_ptr isection, bfd *obfd)
     }
 
   if (relsize == 0)
-    bfd_set_reloc (obfd, osection, NULL, 0);
+    bfd_finalize_section_relocs (obfd, osection, NULL, 0);
   else
     {
       if (isection->orelocation != NULL)
@@ -4596,7 +4596,8 @@ copy_relocations_in_section (bfd *ibfd, sec_ptr isection, bfd *obfd)
 	  *w_relpp = 0;
 	}
 
-      bfd_set_reloc (obfd, osection, relcount == 0 ? NULL : relpp, relcount);
+      bfd_finalize_section_relocs (obfd, osection,
+				   relcount == 0 ? NULL : relpp, relcount);
     }
   return true;
 }

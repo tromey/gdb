@@ -315,10 +315,10 @@ elf64_sparc_canonicalize_dynamic_reloc (bfd *abfd, arelent **storage,
 /* Install a new set of internal relocs.  */
 
 static void
-elf64_sparc_set_reloc (bfd *abfd ATTRIBUTE_UNUSED,
-		       asection *asect,
-		       arelent **location,
-		       unsigned int count)
+elf64_sparc_finalize_section_relocs (bfd *abfd ATTRIBUTE_UNUSED,
+				     asection *asect,
+				     arelent **location,
+				     unsigned int count)
 {
   asect->orelocation = location;
   canon_reloc_count (asect) = count;
@@ -908,8 +908,8 @@ static const struct elf_size_info elf64_sparc_size_info =
   elf64_sparc_canonicalize_reloc
 #define bfd_elf64_canonicalize_dynamic_reloc \
   elf64_sparc_canonicalize_dynamic_reloc
-#define bfd_elf64_set_reloc \
-  elf64_sparc_set_reloc
+#define bfd_elf64_finalize_section_relocs \
+  elf64_sparc_finalize_section_relocs
 #define elf_backend_add_symbol_hook \
   elf64_sparc_add_symbol_hook
 #define elf_backend_get_symbol_type \

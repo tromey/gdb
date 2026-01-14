@@ -5652,7 +5652,7 @@ alpha_vms_canonicalize_reloc (bfd *abfd, asection *section, arelent **relptr,
 
 /* Install a new set of internal relocs.  */
 
-#define alpha_vms_set_reloc _bfd_generic_set_reloc
+#define alpha_vms_finalize_section_relocs _bfd_generic_finalize_section_relocs
 
 
 /* This is just copied from ecoff-alpha, needs to be fixed probably.  */

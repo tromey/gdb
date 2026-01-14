@@ -200,10 +200,10 @@ _bfd_norelocs_canonicalize_reloc (bfd *abfd ATTRIBUTE_UNUSED,
 }
 
 void
-_bfd_norelocs_set_reloc (bfd *abfd ATTRIBUTE_UNUSED,
-			 asection *sec ATTRIBUTE_UNUSED,
-			 arelent **relptr ATTRIBUTE_UNUSED,
-			 unsigned int count ATTRIBUTE_UNUSED)
+_bfd_norelocs_finalize_section_relocs (bfd *abfd ATTRIBUTE_UNUSED,
+				       asection *sec ATTRIBUTE_UNUSED,
+				       arelent **relptr ATTRIBUTE_UNUSED,
+				       unsigned int count ATTRIBUTE_UNUSED)
 {
   /* Do nothing.  */
 }

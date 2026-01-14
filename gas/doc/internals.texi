@@ -1697,9 +1697,9 @@ completed, but before the relocations have been generated.
 If you define this macro, GAS will call it after the relocs have been
 generated.
 
-@item SET_SECTION_RELOCS (@var{sec}, @var{relocs}, @var{n})
-@cindex SET_SECTION_RELOCS
-If you define this, it will be called to set relocations for the section
+@item FINALIZE_SECTION_RELOCS (@var{sec}, @var{relocs}, @var{n})
+@cindex FINALIZE_SECTION_RELOCS
+If you define this, it will be called to finalize relocations for the section
 @var{sec}.  The list of relocations is in @var{relocs}, and the number of
 relocations is in @var{n}.
 @end table

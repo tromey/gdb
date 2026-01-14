@@ -1891,7 +1891,7 @@ obj_mach_o_reorder_section_relocs (asection *sec, arelent **rels, unsigned int n
       rels[i] = rels[n - i - 1];
       rels[n - i - 1] = r;
     }
-  bfd_set_reloc (stdoutput, sec, rels, n);
+  bfd_finalize_section_relocs (stdoutput, sec, rels, n);
 }
 
 /* Relocation rules are different in frame sections.  */

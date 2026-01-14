@@ -294,9 +294,10 @@ extern void coff_pop_insert (void);
 #define INIT_STAB_SECTION(stab, str) obj_coff_init_stab_section (stab, str)
 
 /* We need to store the number of relocations in the section aux entry.  */
-#define SET_SECTION_RELOCS(sec, relocs, n) \
-  obj_coff_set_section_relocs (sec, relocs, n)
-extern void obj_coff_set_section_relocs (asection *, arelent **, unsigned int);
+#define FINALIZE_SECTION_RELOCS(sec, relocs, n) \
+  obj_coff_finalize_section_relocs (sec, relocs, n)
+extern void obj_coff_finalize_section_relocs (asection *, arelent **,
+					      unsigned int);
 
 extern int  S_SET_DATA_TYPE              (symbolS *, int);
 extern int  S_SET_STORAGE_CLASS          (symbolS *, int);

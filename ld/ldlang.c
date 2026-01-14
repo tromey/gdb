@@ -10640,7 +10640,7 @@ copy_section (bfd *ibfd, sec_ptr isection, void *p)
     }
 
   if (relsize == 0)
-    bfd_set_reloc (obfd, osection, NULL, 0);
+    bfd_finalize_section_relocs (obfd, osection, NULL, 0);
   else
     {
       relpp = (arelent **) xmalloc (relsize);
@@ -10651,8 +10651,8 @@ copy_section (bfd *ibfd, sec_ptr isection, void *p)
 	  goto loser;
 	}
 
-      bfd_set_reloc (obfd, osection,
-		     relcount == 0 ? NULL : relpp, relcount);
+      bfd_finalize_section_relocs (obfd, osection,
+				   relcount == 0 ? NULL : relpp, relcount);
       if (relcount == 0)
 	free (relpp);
     }

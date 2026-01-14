@@ -28,9 +28,9 @@
 #include "compress-debug.h"
 #include "codeview.h"
 
-#ifndef SET_SECTION_RELOCS
-#define SET_SECTION_RELOCS(sec, relocs, n)	\
-  bfd_set_reloc (stdoutput, sec, n ? relocs : NULL, n)
+#ifndef FINALIZE_SECTION_RELOCS
+#define FINALIZE_SECTION_RELOCS(sec, relocs, n)	\
+  bfd_finalize_section_relocs (stdoutput, sec, n ? relocs : NULL, n)
 #endif
 
 #ifndef TC_FORCE_RELOCATION
@@ -1419,7 +1419,7 @@ write_relocs (bfd *abfd ATTRIBUTE_UNUSED, asection *sec,
   }
 #endif
 
-  SET_SECTION_RELOCS (sec, relocs, n);
+  FINALIZE_SECTION_RELOCS (sec, relocs, n);
 
 #ifdef DEBUG3
   {
