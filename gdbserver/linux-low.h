@@ -637,7 +637,7 @@ protected:
 
   virtual CORE_ADDR low_get_pc (regcache *regcache);
 
-  virtual void low_set_pc (regcache *regcache, CORE_ADDR newpc);
+  [[noreturn]] virtual void low_set_pc (regcache *regcache, CORE_ADDR newpc);
 
   /* Find the next possible PCs after the current instruction executes.
      Targets that override this method should also override

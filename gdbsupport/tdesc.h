@@ -437,7 +437,7 @@ public:
   void visit_post (const target_desc *e) override;
   void visit_pre (const tdesc_feature *e) override;
   void visit_post (const tdesc_feature *e) override;
-  void visit (const tdesc_type_builtin *type) override;
+  [[noreturn]] void visit (const tdesc_type_builtin *type) override;
   void visit (const tdesc_type_vector *type) override;
   void visit (const tdesc_type_with_fields *type) override;
   void visit (const tdesc_reg *reg) override;
