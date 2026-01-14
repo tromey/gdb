@@ -1699,9 +1699,9 @@ generated.
 
 @item SET_SECTION_RELOCS (@var{sec}, @var{relocs}, @var{n})
 @cindex SET_SECTION_RELOCS
-If you define this, it will be called after the relocations have been set for
-the section @var{sec}.  The list of relocations is in @var{relocs}, and the
-number of relocations is in @var{n}.
+If you define this, it will be called to set relocations for the section
+@var{sec}.  The list of relocations is in @var{relocs}, and the number of
+relocations is in @var{n}.
 @end table
 
 @node Emulations
