@@ -204,14 +204,14 @@ get_offset_size_in_bytes (offsetT value)
 {
   unsigned int size = 0;
 
-  if (value <= INT8_MAX && value >= INT8_MIN)
+  if (value == (int8_t)value)
     size = 1;
-  else if (value <= INT16_MAX && value >= INT16_MIN)
+  else if (value == (int16_t)value)
     size = 2;
-  else if (value <= INT32_MAX && value >= INT32_MIN)
+  else if (value == (int32_t)value)
     size = 4;
-  else if (sizeof (offsetT) > 4)
-    size = 8;
+  else
+    return 8;
 
   return size;
 }
