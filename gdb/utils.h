@@ -327,7 +327,7 @@ extern void warn_cant_dump_core (const char *reason);
 /* Dump core trying to increase the core soft limit to hard limit
    first.  */
 
-extern void dump_core (void);
+[[noreturn]] extern void dump_core ();
 
 /* Copy NBITS bits from SOURCE to DEST starting at the given bit
    offsets.  Use the bit order as specified by BITS_BIG_ENDIAN.
