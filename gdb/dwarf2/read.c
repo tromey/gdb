@@ -7472,10 +7472,9 @@ dwarf2_locate_common_dwp_sections (struct objfile *objfile, bfd *abfd,
    have version 2 or 5 until we parse the cu_index/tu_index sections.  */
 
 static void
-dwarf2_locate_v2_dwp_sections (struct objfile *objfile, bfd *abfd,
-			       asection *sectp, void *dwp_file_ptr)
+dwarf2_locate_v2_dwp_sections (objfile *objfile, asection *sectp,
+			       dwp_file *dwp_file)
 {
-  struct dwp_file *dwp_file = (struct dwp_file *) dwp_file_ptr;
   const struct dwop_section_names *names = &dwop_section_names;
 
   /* Look for specific sections that we need.  */
@@ -7515,10 +7514,9 @@ dwarf2_locate_v2_dwp_sections (struct objfile *objfile, bfd *abfd,
    have version 2 or 5 until we parse the cu_index/tu_index sections.  */
 
 static void
-dwarf2_locate_v5_dwp_sections (struct objfile *objfile, bfd *abfd,
-			       asection *sectp, void *dwp_file_ptr)
+dwarf2_locate_v5_dwp_sections (objfile *objfile, asection *sectp,
+			       dwp_file *dwp_file)
 {
-  struct dwp_file *dwp_file = (struct dwp_file *) dwp_file_ptr;
   const struct dwop_section_names *names = &dwop_section_names;
 
   /* Look for specific sections that we need.  */
@@ -7665,11 +7663,9 @@ open_and_init_dwp_file (dwarf2_per_objfile *per_objfile)
   for (asection *sec : gdb_bfd_sections (dwp_file->dbfd))
     {
       if (dwp_file->version == 2)
-	dwarf2_locate_v2_dwp_sections (objfile, dwp_file->dbfd.get (), sec,
-				       dwp_file.get ());
+	dwarf2_locate_v2_dwp_sections (objfile, sec, dwp_file.get ());
       else
-	dwarf2_locate_v5_dwp_sections (objfile, dwp_file->dbfd.get (), sec,
-				       dwp_file.get ());
+	dwarf2_locate_v5_dwp_sections (objfile, sec, dwp_file.get ());
     }
 
   dwarf_read_debug_printf ("DWP file found: %s", dwp_file->name);
