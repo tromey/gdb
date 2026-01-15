@@ -495,34 +495,34 @@ struct virtual_v1_dwo_sections
 
 struct virtual_v2_or_v5_dwo_sections
 {
-  bfd_size_type abbrev_offset;
-  bfd_size_type abbrev_size;
+  bfd_size_type abbrev_offset = 0;
+  bfd_size_type abbrev_size = 0;
 
-  bfd_size_type line_offset;
-  bfd_size_type line_size;
+  bfd_size_type line_offset = 0;
+  bfd_size_type line_size = 0;
 
-  bfd_size_type loc_offset;
-  bfd_size_type loc_size;
+  bfd_size_type loc_offset = 0;
+  bfd_size_type loc_size = 0;
 
-  bfd_size_type loclists_offset;
-  bfd_size_type loclists_size;
+  bfd_size_type loclists_offset = 0;
+  bfd_size_type loclists_size = 0;
 
-  bfd_size_type macinfo_offset;
-  bfd_size_type macinfo_size;
+  bfd_size_type macinfo_offset = 0;
+  bfd_size_type macinfo_size = 0;
 
-  bfd_size_type macro_offset;
-  bfd_size_type macro_size;
+  bfd_size_type macro_offset = 0;
+  bfd_size_type macro_size = 0;
 
-  bfd_size_type rnglists_offset;
-  bfd_size_type rnglists_size;
+  bfd_size_type rnglists_offset = 0;
+  bfd_size_type rnglists_size = 0;
 
-  bfd_size_type str_offsets_offset;
-  bfd_size_type str_offsets_size;
+  bfd_size_type str_offsets_offset = 0;
+  bfd_size_type str_offsets_size = 0;
 
   /* Each DWP hash table entry records one CU or one TU.
      That is recorded here, and copied to dwo_unit.section.  */
-  bfd_size_type info_or_types_offset;
-  bfd_size_type info_or_types_size;
+  bfd_size_type info_or_types_offset = 0;
+  bfd_size_type info_or_types_size = 0;
 };
 
 /* Contents of DWP hash tables.  */
@@ -7145,7 +7145,7 @@ create_dwo_unit_in_dwp_v2 (dwarf2_per_bfd *per_bfd,
     is_debug_types ? dwp_file->tus : dwp_file->cus;
   bfd *dbfd = dwp_file->dbfd.get ();
   const char *kind = is_debug_types ? "TU" : "CU";
-  struct virtual_v2_or_v5_dwo_sections sections;
+  virtual_v2_or_v5_dwo_sections sections;
   int i;
 
   gdb_assert (dwp_file->version == 2);
@@ -7155,8 +7155,6 @@ create_dwo_unit_in_dwp_v2 (dwarf2_per_bfd *per_bfd,
 			   dwp_file->name);
 
   /* Fetch the section offsets of this DWO unit.  */
-
-  memset (&sections, 0, sizeof (sections));
 
   for (i = 0; i < dwp_htab->nr_columns; ++i)
     {
@@ -7308,7 +7306,7 @@ create_dwo_unit_in_dwp_v5 (dwarf2_per_bfd *per_bfd,
     = is_debug_types ? dwp_file->tus : dwp_file->cus;
   bfd *dbfd = dwp_file->dbfd.get ();
   const char *kind = is_debug_types ? "TU" : "CU";
-  struct virtual_v2_or_v5_dwo_sections sections {};
+  virtual_v2_or_v5_dwo_sections sections;
 
   gdb_assert (dwp_file->version == 5);
 
@@ -7317,8 +7315,6 @@ create_dwo_unit_in_dwp_v5 (dwarf2_per_bfd *per_bfd,
 			   dwp_file->name);
 
   /* Fetch the section offsets of this DWO unit.  */
-
-  /*  memset (&sections, 0, sizeof (sections)); */
 
   for (int i = 0; i < dwp_htab->nr_columns; ++i)
     {
