@@ -6,6 +6,8 @@
 * Support for .gdb_index sections with version less than 7 has been
   removed.
 
+* Support for DWP (DWARF Package File) version 1 has been removed.
+
 * Support for Guile 2.0 has been removed.  Guile 2.2 is now the minimal
   supported Guile version.
 
