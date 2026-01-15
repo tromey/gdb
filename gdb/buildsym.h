@@ -152,7 +152,7 @@ struct buildsym_compunit
 		     const char *comp_dir_, enum language language_,
 		     CORE_ADDR last_addr, struct compunit_symtab *cust)
     : m_objfile (objfile_),
-      m_last_source_file (name == nullptr ? nullptr : xstrdup (name)),
+      m_last_source_file (name == nullptr ? nullptr : make_unique_xstrdup (name)),
       m_comp_dir (comp_dir_ == nullptr ? "" : comp_dir_),
       m_compunit_symtab (cust),
       m_language (language_),
@@ -166,8 +166,10 @@ struct buildsym_compunit
 
   void set_last_source_file (const char *name)
   {
-    char *new_name = name == NULL ? NULL : xstrdup (name);
-    m_last_source_file.reset (new_name);
+    if (name == nullptr)
+      m_last_source_file = nullptr;
+    else
+      m_last_source_file = make_unique_xstrdup (name);
   }
 
   const char *get_last_source_file ()

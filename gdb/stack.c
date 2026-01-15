@@ -511,7 +511,7 @@ read_frame_local (struct symbol *sym, const frame_info_ptr &frame,
     }
   catch (const gdb_exception_error &except)
     {
-      argp->error.reset (xstrdup (except.what ()));
+      argp->error = make_unique_xstrdup (except.what ());
     }
 }
 
@@ -682,7 +682,10 @@ read_frame_arg (const frame_print_options &fp_opts,
 
   argp->sym = sym;
   argp->val = val;
-  argp->error.reset (val_error ? xstrdup (val_error) : NULL);
+  if (val_error == nullptr)
+    argp->error = nullptr;
+  else
+    argp->error = make_unique_xstrdup (val_error);
   if (!val && !val_error)
     argp->entry_kind = print_entry_values_only;
   else if ((fp_opts.print_entry_values == print_entry_values_compact
@@ -697,7 +700,10 @@ read_frame_arg (const frame_print_options &fp_opts,
 
   entryargp->sym = sym;
   entryargp->val = entryval;
-  entryargp->error.reset (entryval_error ? xstrdup (entryval_error) : NULL);
+  if (entryval_error == nullptr)
+    entryargp->error = nullptr;
+  else
+    entryargp->error = make_unique_xstrdup (entryval_error);
   if (!entryval && !entryval_error)
     entryargp->entry_kind = print_entry_values_no;
   else
@@ -1294,7 +1300,7 @@ find_frame_funname (const frame_info_ptr &frame, enum language *funlang,
       /* If we didn't hit the C++ case above, set *funname
 	 here.  */
       if (funname == NULL)
-	funname.reset (xstrdup (print_name));
+	funname = make_unique_xstrdup (print_name);
     }
   else
     {
@@ -1306,7 +1312,7 @@ find_frame_funname (const frame_info_ptr &frame, enum language *funlang,
       bound_minimal_symbol msymbol = lookup_minimal_symbol_by_pc (pc);
       if (msymbol.minsym != NULL)
 	{
-	  funname.reset (xstrdup (msymbol.minsym->print_name ()));
+	  funname = make_unique_xstrdup (msymbol.minsym->print_name ());
 	  *funlang = msymbol.minsym->language ();
 	}
     }
