@@ -49,7 +49,6 @@
 #include "dwarf2/tag.h"
 #include "dwarf2/public.h"
 #include "bfd.h"
-#include "elf-bfd.h"
 #include "event-top.h"
 #include "exceptions.h"
 #include "gdbsupport/parallel-for.h"
@@ -447,19 +446,14 @@ dwo_file_eq::operator() (const dwo_file_up &a,
 
 struct dwp_sections
 {
-  /* These are used by all DWP versions (1, 2 and 5).  */
   struct dwarf2_section_info str;
   struct dwarf2_section_info cu_index;
   struct dwarf2_section_info tu_index;
 
-  /* These are only used by DWP version 2 and version 5 files.
-     In DWP version 1 the .debug_info.dwo, .debug_types.dwo, and other
-     sections are referenced by section number, and are not recorded here.
-     In DWP version 2 or 5 there is at most one copy of all these sections,
-     each section being (effectively) comprised of the concatenation of all of
-     the individual sections that exist in the version 1 format.
-     To keep the code simple we treat each of these concatenated pieces as a
-     section itself (a virtual section?).  */
+  /* There is at most one copy of all these sections, each section being
+     (effectively) comprised of the concatenation of all of the individual
+     sections.  To keep the code simple we treat each of these concatenated
+     pieces as a section itself (a virtual section?).  */
   struct dwarf2_section_info abbrev;
   struct dwarf2_section_info info;
   struct dwarf2_section_info line;
@@ -472,28 +466,12 @@ struct dwp_sections
   struct dwarf2_section_info types;
 };
 
-/* These sections are what may appear in a virtual DWO file in DWP version 1.
-   A virtual DWO file is a DWO file as it appears in a DWP file.  */
+/* These sections are what may appear in a virtual DWO file (a DWO file inside
+   a DWP file).  The sections of the DWO files are concatenated together and
+   stored in one DWP section of that name.  Thus each DWP ELF section contains
+   several "virtual" DWO sections.  */
 
-struct virtual_v1_dwo_sections
-{
-  struct dwarf2_section_info abbrev;
-  struct dwarf2_section_info line;
-  struct dwarf2_section_info loc;
-  struct dwarf2_section_info macinfo;
-  struct dwarf2_section_info macro;
-  struct dwarf2_section_info str_offsets;
-  /* Each DWP hash table entry records one CU or one TU.
-     That is recorded here, and copied to dwo_unit.section.  */
-  struct dwarf2_section_info info_or_types;
-};
-
-/* Similar to virtual_v1_dwo_sections, but for DWP version 2 or 5.
-   In version 2, the sections of the DWO files are concatenated together
-   and stored in one section of that name.  Thus each ELF section contains
-   several "virtual" sections.  */
-
-struct virtual_v2_or_v5_dwo_sections
+struct virtual_dwo_sections
 {
   bfd_size_type abbrev_offset = 0;
   bfd_size_type abbrev_size = 0;
@@ -534,10 +512,6 @@ struct dwp_hash_table
   const gdb_byte *hash_table, *unit_table;
   union
   {
-    struct
-    {
-      const gdb_byte *indices;
-    } v1;
     struct
     {
       /* This is indexed by column number and gives the id of the section
@@ -606,11 +580,6 @@ struct dwp_file
 
   /* Mutex to synchronize access to LOADED_CUS and LOADED_TUS.  */
   gdb::mutex loaded_cutus_lock;
-
-  /* Table to map ELF section numbers to their sections.
-     This is only needed for the DWP V1 file format.  */
-  unsigned int num_sections = 0;
-  asection **elf_sections = nullptr;
 };
 
 /* FIXME: We might want to set this from BFD via bfd_arch_bits_per_byte,
@@ -6479,59 +6448,13 @@ cutu_reader::create_dwo_unit_hash_tables (dwo_file &dwo_file,
    [ref: http://gcc.gnu.org/wiki/DebugFissionDWP]
    [ref: http://dwarfstd.org/doc/DWARF5.pdf, sect 7.3.5 "DWARF Package Files"]
 
-   DWP Versions 1 & 2 are older, pre-standard format versions.  The first
+   DWP Version 2 is an older, pre-standard format version.  The first
    officially standard DWP format was published with DWARF v5 and is called
-   Version 5.  There are no versions 3 or 4.
+   Version 5.  There are no versions 3 or 4.  DWP version 1 is not supported.
 
-   DWP Version 1:
-
-   Both index sections have the same format, and serve to map a 64-bit
-   signature to a set of section numbers.  Each section begins with a header,
-   followed by a hash table of 64-bit signatures, a parallel table of 32-bit
-   indexes, and a pool of 32-bit section numbers.  The index sections will be
-   aligned at 8-byte boundaries in the file.
-
-   The index section header consists of:
-
-    V, 32 bit version number
-    -, 32 bits unused
-    N, 32 bit number of compilation units or type units in the index
-    M, 32 bit number of slots in the hash table
-
-   Numbers are recorded using the byte order of the application binary.
-
-   The hash table begins at offset 16 in the section, and consists of an array
-   of M 64-bit slots.  Each slot contains a 64-bit signature (using the byte
-   order of the application binary).  Unused slots in the hash table are 0.
-   (We rely on the extreme unlikeliness of a signature being exactly 0.)
-
-   The parallel table begins immediately after the hash table
-   (at offset 16 + 8 * M from the beginning of the section), and consists of an
-   array of 32-bit indexes (using the byte order of the application binary),
-   corresponding 1-1 with slots in the hash table.  Each entry in the parallel
-   table contains a 32-bit index into the pool of section numbers.  For unused
-   hash table slots, the corresponding entry in the parallel table will be 0.
-
-   The pool of section numbers begins immediately following the hash table
-   (at offset 16 + 12 * M from the beginning of the section).  The pool of
-   section numbers consists of an array of 32-bit words (using the byte order
-   of the application binary).  Each item in the array is indexed starting
-   from 0.  The hash table entry provides the index of the first section
-   number in the set.  Additional section numbers in the set follow, and the
-   set is terminated by a 0 entry (section number 0 is not used in ELF).
-
-   In each set of section numbers, the .debug_info.dwo or .debug_types.dwo
-   section must be the first entry in the set, and the .debug_abbrev.dwo must
-   be the second entry. Other members of the set may follow in any order.
-
-   ---
-
-   DWP Versions 2 and 5:
-
-   DWP Versions 2 and 5 combine all the .debug_info, etc. sections into one,
-   and the entries in the index tables are now offsets into these sections.
-   CU offsets begin at 0.  TU offsets begin at the size of the .debug_info
-   section.
+   A DWP file combines all the DWO sections of the same name into one.  The
+   index tables contain offsets into the DWP sections.  CU offsets begin at 0.
+   TU offsets begin at the size of the .debug_info section.
 
    Index Section Contents:
     Header
@@ -6549,10 +6472,18 @@ cutu_reader::create_dwo_unit_hash_tables (dwo_file &dwo_file,
 
    Numbers are recorded using the byte order of the application binary.
 
-   The hash table has the same format as version 1.
-   The parallel table of indices has the same format as version 1,
-   except that the entries are origin-1 indices into the table of sections
-   offsets and the table of section sizes.
+   The hash table begins at offset 16 in the section, and consists of an array
+   of M 64-bit slots.  Each slot contains a 64-bit signature (using the byte
+   order of the application binary).  Unused slots in the hash table are 0.
+   (We rely on the extreme unlikeliness of a signature being exactly 0.)
+
+   The parallel table begins immediately after the hash table
+   (at offset 16 + 8 * M from the beginning of the section), and consists of an
+   array of 32-bit indexes (using the byte order of the application binary),
+   corresponding 1-1 with slots in the hash table.  Each entry in the parallel
+   table contains an origin-1 index into the table of section offsets and the
+   table of section sizes.  For unused hash table slots, the corresponding
+   entry in the parallel table will be 0.
 
    The table of offsets begins immediately following the parallel table
    (at offset 16 + 12 * M from the beginning of the section).  The table is
@@ -6601,7 +6532,7 @@ cutu_reader::create_dwo_unit_hash_tables (dwo_file &dwo_file,
 
    ---
 
-   Hash table lookup is handled the same in version 1 and 2:
+   Hash table lookup is handled the same in version 2 and 5:
 
    We assume that N and M will not exceed 2^32 - 1.
    The size of the hash table, M, must be 2^k such that 2^k > 3*N/2.
@@ -6647,22 +6578,20 @@ create_dwp_hash_table (dwarf2_per_bfd *per_bfd, struct dwp_file *dwp_file,
      tell if you're dealing with Version 5 before you've read the version).   */
   version = read_4_bytes (dbfd, index_ptr);
   index_ptr += 4;
-  if (version == 2 || version == 5)
-    nr_columns = read_4_bytes (dbfd, index_ptr);
-  else
-    nr_columns = 0;
+  if (version != 2 && version != 5)
+    {
+      error (_(DWARF_ERROR_PREFIX
+	       "unsupported DWP file version (%s) [in module %s]"),
+	     pulongest (version), dwp_file->name);
+    }
+
+  nr_columns = read_4_bytes (dbfd, index_ptr);
   index_ptr += 4;
   nr_units = read_4_bytes (dbfd, index_ptr);
   index_ptr += 4;
   nr_slots = read_4_bytes (dbfd, index_ptr);
   index_ptr += 4;
 
-  if (version != 1 && version != 2 && version != 5)
-    {
-      error (_(DWARF_ERROR_PREFIX
-	       "unsupported DWP file version (%s) [in module %s]"),
-	     pulongest (version), dwp_file->name);
-    }
   if (nr_slots != (nr_slots & -nr_slots))
     {
       error (_(DWARF_ERROR_PREFIX
@@ -6680,14 +6609,10 @@ create_dwp_hash_table (dwarf2_per_bfd *per_bfd, struct dwp_file *dwp_file,
   htab->unit_table = htab->hash_table + sizeof (uint64_t) * nr_slots;
 
   /* Exit early if the table is empty.  */
-  if (nr_slots == 0 || nr_units == 0
-      || (version == 2 && nr_columns == 0)
-      || (version == 5 && nr_columns == 0))
+  if (nr_slots == 0 || nr_units == 0 || nr_columns == 0)
     {
       /* All must be zero.  */
-      if (nr_slots != 0 || nr_units != 0
-	  || (version == 2 && nr_columns != 0)
-	  || (version == 5 && nr_columns != 0))
+      if (nr_slots != 0 || nr_units != 0 || nr_columns != 0)
 	{
 	  complaint (_("Empty DWP but nr_slots,nr_units,nr_columns not"
 		       " all zero [in modules %s]"),
@@ -6696,14 +6621,7 @@ create_dwp_hash_table (dwarf2_per_bfd *per_bfd, struct dwp_file *dwp_file,
       return htab;
     }
 
-  if (version == 1)
-    {
-      htab->section_pool.v1.indices =
-	htab->unit_table + sizeof (uint32_t) * nr_slots;
-      /* It's harder to decide whether the section is too small in v1.
-	 V1 is deprecated anyway so we punt.  */
-    }
-  else if (version == 2)
+  if (version == 2)
     {
       const gdb_byte *ids_ptr = htab->unit_table + sizeof (uint32_t) * nr_slots;
       int *ids = htab->section_pool.v2.section_ids;
@@ -6858,240 +6776,14 @@ create_dwp_hash_table (dwarf2_per_bfd *per_bfd, struct dwp_file *dwp_file,
   return htab;
 }
 
-/* Update SECTIONS with the data from SECTP.
-
-   This function is like the other "locate" section routines, but in
-   this context the sections to read comes from the DWP V1 hash table,
-   not the full ELF section table.
-
-   The result is non-zero for success, or zero if an error was found.  */
-
-static int
-locate_v1_virtual_dwo_sections (asection *sectp,
-				struct virtual_v1_dwo_sections *sections)
-{
-  const struct dwop_section_names *names = &dwop_section_names;
-
-  if (names->abbrev_dwo.matches (sectp->name))
-    {
-      /* There can be only one.  */
-      if (sections->abbrev.s.section != NULL)
-	return 0;
-      sections->abbrev.s.section = sectp;
-      sections->abbrev.size = bfd_section_size (sectp);
-    }
-  else if (names->info_dwo.matches (sectp->name)
-	   || names->types_dwo.matches (sectp->name))
-    {
-      /* There can be only one.  */
-      if (sections->info_or_types.s.section != NULL)
-	return 0;
-      sections->info_or_types.s.section = sectp;
-      sections->info_or_types.size = bfd_section_size (sectp);
-    }
-  else if (names->line_dwo.matches (sectp->name))
-    {
-      /* There can be only one.  */
-      if (sections->line.s.section != NULL)
-	return 0;
-      sections->line.s.section = sectp;
-      sections->line.size = bfd_section_size (sectp);
-    }
-  else if (names->loc_dwo.matches (sectp->name))
-    {
-      /* There can be only one.  */
-      if (sections->loc.s.section != NULL)
-	return 0;
-      sections->loc.s.section = sectp;
-      sections->loc.size = bfd_section_size (sectp);
-    }
-  else if (names->macinfo_dwo.matches (sectp->name))
-    {
-      /* There can be only one.  */
-      if (sections->macinfo.s.section != NULL)
-	return 0;
-      sections->macinfo.s.section = sectp;
-      sections->macinfo.size = bfd_section_size (sectp);
-    }
-  else if (names->macro_dwo.matches (sectp->name))
-    {
-      /* There can be only one.  */
-      if (sections->macro.s.section != NULL)
-	return 0;
-      sections->macro.s.section = sectp;
-      sections->macro.size = bfd_section_size (sectp);
-    }
-  else if (names->str_offsets_dwo.matches (sectp->name))
-    {
-      /* There can be only one.  */
-      if (sections->str_offsets.s.section != NULL)
-	return 0;
-      sections->str_offsets.s.section = sectp;
-      sections->str_offsets.size = bfd_section_size (sectp);
-    }
-  else
-    {
-      /* No other kind of section is valid.  */
-      return 0;
-    }
-
-  return 1;
-}
-
-/* Create a dwo_unit object for the DWO unit with signature SIGNATURE.
-   UNIT_INDEX is the index of the DWO unit in the DWP hash table.
-   COMP_DIR is the DW_AT_comp_dir attribute of the referencing CU.
-   This is for DWP version 1 files.  */
-
-static dwo_unit_up
-create_dwo_unit_in_dwp_v1 (dwarf2_per_bfd *per_bfd,
-			   struct dwp_file *dwp_file,
-			   uint32_t unit_index,
-			   const char *comp_dir,
-			   ULONGEST signature, int is_debug_types)
-{
-  const struct dwp_hash_table *dwp_htab =
-    is_debug_types ? dwp_file->tus : dwp_file->cus;
-  bfd *dbfd = dwp_file->dbfd.get ();
-  const char *kind = is_debug_types ? "TU" : "CU";
-  struct virtual_v1_dwo_sections sections;
-  int i;
-
-  gdb_assert (dwp_file->version == 1);
-
-  dwarf_read_debug_printf ("Reading %s %s/%s in DWP V1 file: %s",
-			   kind, pulongest (unit_index), hex_string (signature),
-			   dwp_file->name);
-
-  /* Fetch the sections of this DWO unit.
-     Put a limit on the number of sections we look for so that bad data
-     doesn't cause us to loop forever.  */
-
-#define MAX_NR_V1_DWO_SECTIONS \
-  (1 /* .debug_info or .debug_types */ \
-   + 1 /* .debug_abbrev */ \
-   + 1 /* .debug_line */ \
-   + 1 /* .debug_loc */ \
-   + 1 /* .debug_str_offsets */ \
-   + 1 /* .debug_macro or .debug_macinfo */ \
-   + 1 /* trailing zero */)
-
-  memset (&sections, 0, sizeof (sections));
-
-  for (i = 0; i < MAX_NR_V1_DWO_SECTIONS; ++i)
-    {
-      asection *sectp;
-      uint32_t section_nr =
-	read_4_bytes (dbfd,
-		      dwp_htab->section_pool.v1.indices
-		      + (unit_index + i) * sizeof (uint32_t));
-
-      if (section_nr == 0)
-	break;
-      if (section_nr >= dwp_file->num_sections)
-	{
-	  error (_(DWARF_ERROR_PREFIX
-		   "bad DWP hash table, section number too large"
-		   " [in module %s]"),
-		 dwp_file->name);
-	}
-
-      sectp = dwp_file->elf_sections[section_nr];
-      if (! locate_v1_virtual_dwo_sections (sectp, &sections))
-	{
-	  error (_(DWARF_ERROR_PREFIX
-		   "bad DWP hash table, invalid section found [in module %s]"),
-		 dwp_file->name);
-	}
-    }
-
-  if (i < 2
-      || sections.info_or_types.empty ()
-      || sections.abbrev.empty ())
-    {
-      error (_(DWARF_ERROR_PREFIX
-	       "bad DWP hash table, missing DWO sections [in module %s]"),
-	     dwp_file->name);
-    }
-  if (i == MAX_NR_V1_DWO_SECTIONS)
-    {
-      error (_(DWARF_ERROR_PREFIX
-	       "bad DWP hash table, too many DWO sections [in module %s]"),
-	     dwp_file->name);
-    }
-
-  /* It's easier for the rest of the code if we fake a struct dwo_file and
-     have dwo_unit "live" in that.  At least for now.
-
-     The DWP file can be made up of a random collection of CUs and TUs.
-     However, for each CU + set of TUs that came from the same original DWO
-     file, we can combine them back into a virtual DWO file to save space
-     (fewer struct dwo_file objects to allocate).  Remember that for really
-     large apps there can be on the order of 8K CUs and 200K TUs, or more.  */
-
-  std::string virtual_dwo_name =
-    string_printf ("virtual-dwo/%d-%d-%d-%d",
-		   sections.abbrev.get_id (),
-		   sections.line.get_id (),
-		   sections.loc.get_id (),
-		   sections.str_offsets.get_id ());
-
-  /* Can we use an existing virtual DWO file?  */
-  dwo_file *dwo_file
-    = lookup_dwo_file (per_bfd, virtual_dwo_name.c_str (), comp_dir);
-
-  /* Create one if necessary.  */
-  if (dwo_file == nullptr)
-    {
-      dwarf_read_debug_printf ("Creating virtual DWO: %s",
-			       virtual_dwo_name.c_str ());
-
-      dwo_file_up new_dwo_file = std::make_unique<struct dwo_file> ();
-      new_dwo_file->dwo_name = std::move (virtual_dwo_name);
-      new_dwo_file->comp_dir = comp_dir;
-      new_dwo_file->sections.abbrev = sections.abbrev;
-      new_dwo_file->sections.line = sections.line;
-      new_dwo_file->sections.loc = sections.loc;
-      new_dwo_file->sections.macinfo = sections.macinfo;
-      new_dwo_file->sections.macro = sections.macro;
-      new_dwo_file->sections.str_offsets = sections.str_offsets;
-
-      /* The "str" section is global to the entire DWP file.  */
-      new_dwo_file->sections.str = dwp_file->sections.str;
-
-      /* The info or types section is assigned below to dwo_unit,
-	 there's no need to record it in dwo_file.
-	 Also, we can't simply record type sections in dwo_file because
-	 we record a pointer into the vector in dwo_unit.  As we collect more
-	 types we'll grow the vector and eventually have to reallocate space
-	 for it, invalidating all copies of pointers into the previous
-	 contents.  */
-      dwo_file = add_dwo_file (per_bfd, std::move (new_dwo_file));
-    }
-  else
-    dwarf_read_debug_printf ("Using existing virtual DWO: %s",
-			     virtual_dwo_name.c_str ());
-
-  auto dwo_unit = std::make_unique<struct dwo_unit> ();
-  dwo_unit->dwo_file = dwo_file;
-  dwo_unit->signature = signature;
-  dwo_unit->section_holder = std::make_unique<dwarf2_section_info> ();
-  dwo_unit->section = dwo_unit->section_holder.get ();
-  *dwo_unit->section = sections.info_or_types;
-  /* dwo_unit->{offset,length,type_offset_in_tu} are set later.  */
-
-  return dwo_unit;
-}
-
 /* Subroutine of create_dwo_unit_in_dwp_v2 and create_dwo_unit_in_dwp_v5 to
    simplify them.  Given a pointer to the containing section SECTION, and
    OFFSET,SIZE of the piece within that section used by a TU/CU, return a
    virtual section of just that piece.  */
 
 static struct dwarf2_section_info
-create_dwp_v2_or_v5_section (dwarf2_per_bfd *per_bfd,
-			     struct dwarf2_section_info *section,
-			     bfd_size_type offset, bfd_size_type size)
+create_dwp_section (dwarf2_per_bfd *per_bfd, dwarf2_section_info *section,
+		    bfd_size_type offset, bfd_size_type size)
 {
   struct dwarf2_section_info result;
   asection *sectp;
@@ -7145,7 +6837,7 @@ create_dwo_unit_in_dwp_v2 (dwarf2_per_bfd *per_bfd,
     is_debug_types ? dwp_file->tus : dwp_file->cus;
   bfd *dbfd = dwp_file->dbfd.get ();
   const char *kind = is_debug_types ? "TU" : "CU";
-  virtual_v2_or_v5_dwo_sections sections;
+  virtual_dwo_sections sections;
   int i;
 
   gdb_assert (dwp_file->version == 2);
@@ -7234,28 +6926,25 @@ create_dwo_unit_in_dwp_v2 (dwarf2_per_bfd *per_bfd,
       new_dwo_file->dwo_name = std::move (virtual_dwo_name);
       new_dwo_file->comp_dir = comp_dir;
       new_dwo_file->sections.abbrev
-	= create_dwp_v2_or_v5_section (per_bfd, &dwp_file->sections.abbrev,
-				       sections.abbrev_offset,
-				       sections.abbrev_size);
+	= create_dwp_section (per_bfd, &dwp_file->sections.abbrev,
+			      sections.abbrev_offset, sections.abbrev_size);
       new_dwo_file->sections.line
-	= create_dwp_v2_or_v5_section (per_bfd, &dwp_file->sections.line,
-				       sections.line_offset,
-				       sections.line_size);
-      new_dwo_file->sections.loc
-	= create_dwp_v2_or_v5_section (per_bfd, &dwp_file->sections.loc,
-				       sections.loc_offset, sections.loc_size);
+	= create_dwp_section (per_bfd, &dwp_file->sections.line,
+			      sections.line_offset, sections.line_size);
+      new_dwo_file->sections.loc = create_dwp_section (per_bfd,
+						       &dwp_file->sections.loc,
+						       sections.loc_offset,
+						       sections.loc_size);
       new_dwo_file->sections.macinfo
-	= create_dwp_v2_or_v5_section (per_bfd, &dwp_file->sections.macinfo,
-				       sections.macinfo_offset,
-				       sections.macinfo_size);
+	= create_dwp_section (per_bfd, &dwp_file->sections.macinfo,
+			      sections.macinfo_offset, sections.macinfo_size);
       new_dwo_file->sections.macro
-	= create_dwp_v2_or_v5_section (per_bfd, &dwp_file->sections.macro,
-				       sections.macro_offset,
-				       sections.macro_size);
+	= create_dwp_section (per_bfd, &dwp_file->sections.macro,
+			      sections.macro_offset, sections.macro_size);
       new_dwo_file->sections.str_offsets
-	= create_dwp_v2_or_v5_section (per_bfd, &dwp_file->sections.str_offsets,
-				       sections.str_offsets_offset,
-				       sections.str_offsets_size);
+	= create_dwp_section (per_bfd, &dwp_file->sections.str_offsets,
+			      sections.str_offsets_offset,
+			      sections.str_offsets_size);
 
       /* The "str" section is global to the entire DWP file.  */
       new_dwo_file->sections.str = dwp_file->sections.str;
@@ -7278,13 +6967,12 @@ create_dwo_unit_in_dwp_v2 (dwarf2_per_bfd *per_bfd,
   dwo_unit->signature = signature;
   dwo_unit->section_holder = std::make_unique<dwarf2_section_info> ();
   dwo_unit->section = dwo_unit->section_holder.get ();
-  *dwo_unit->section = create_dwp_v2_or_v5_section
-			 (per_bfd,
-			  is_debug_types
-			  ? &dwp_file->sections.types
-			  : &dwp_file->sections.info,
-			  sections.info_or_types_offset,
-			  sections.info_or_types_size);
+  *dwo_unit->section = create_dwp_section (per_bfd,
+					   (is_debug_types
+					    ? &dwp_file->sections.types
+					    : &dwp_file->sections.info),
+					   sections.info_or_types_offset,
+					   sections.info_or_types_size);
   /* dwo_unit->{offset,length,type_offset_in_tu} are set later.  */
 
   return dwo_unit;
@@ -7306,7 +6994,7 @@ create_dwo_unit_in_dwp_v5 (dwarf2_per_bfd *per_bfd,
     = is_debug_types ? dwp_file->tus : dwp_file->cus;
   bfd *dbfd = dwp_file->dbfd.get ();
   const char *kind = is_debug_types ? "TU" : "CU";
-  virtual_v2_or_v5_dwo_sections sections;
+  virtual_dwo_sections sections;
 
   gdb_assert (dwp_file->version == 5);
 
@@ -7399,29 +7087,26 @@ create_dwo_unit_in_dwp_v5 (dwarf2_per_bfd *per_bfd,
       new_dwo_file->dwo_name = std::move (virtual_dwo_name);
       new_dwo_file->comp_dir = comp_dir;
       new_dwo_file->sections.abbrev
-	= create_dwp_v2_or_v5_section (per_bfd, &dwp_file->sections.abbrev,
-				       sections.abbrev_offset,
-				       sections.abbrev_size);
+	= create_dwp_section (per_bfd, &dwp_file->sections.abbrev,
+			      sections.abbrev_offset, sections.abbrev_size);
       new_dwo_file->sections.line
-	= create_dwp_v2_or_v5_section (per_bfd, &dwp_file->sections.line,
-				       sections.line_offset,
-				       sections.line_size);
+	= create_dwp_section (per_bfd, &dwp_file->sections.line,
+			      sections.line_offset, sections.line_size);
       new_dwo_file->sections.macro
-	= create_dwp_v2_or_v5_section (per_bfd, &dwp_file->sections.macro,
-				       sections.macro_offset,
-				       sections.macro_size);
+	= create_dwp_section (per_bfd, &dwp_file->sections.macro,
+			      sections.macro_offset, sections.macro_size);
       new_dwo_file->sections.loclists
-	= create_dwp_v2_or_v5_section (per_bfd, &dwp_file->sections.loclists,
-				       sections.loclists_offset,
-				       sections.loclists_size);
+	= create_dwp_section (per_bfd, &dwp_file->sections.loclists,
+			      sections.loclists_offset,
+			      sections.loclists_size);
       new_dwo_file->sections.rnglists
-	= create_dwp_v2_or_v5_section (per_bfd, &dwp_file->sections.rnglists,
-				       sections.rnglists_offset,
-				       sections.rnglists_size);
+	= create_dwp_section (per_bfd, &dwp_file->sections.rnglists,
+			      sections.rnglists_offset,
+			      sections.rnglists_size);
       new_dwo_file->sections.str_offsets
-	= create_dwp_v2_or_v5_section (per_bfd, &dwp_file->sections.str_offsets,
-				       sections.str_offsets_offset,
-				       sections.str_offsets_size);
+	= create_dwp_section (per_bfd, &dwp_file->sections.str_offsets,
+			      sections.str_offsets_offset,
+			      sections.str_offsets_size);
 
       /* The "str" section is global to the entire DWP file.  */
       new_dwo_file->sections.str = dwp_file->sections.str;
@@ -7444,10 +7129,9 @@ create_dwo_unit_in_dwp_v5 (dwarf2_per_bfd *per_bfd,
   dwo_unit->signature = signature;
   dwo_unit->section
     = XOBNEW (&per_bfd->obstack, struct dwarf2_section_info);
-  *dwo_unit->section
-    = create_dwp_v2_or_v5_section (per_bfd, &dwp_file->sections.info,
-				   sections.info_or_types_offset,
-				   sections.info_or_types_size);
+  *dwo_unit->section = create_dwp_section (per_bfd, &dwp_file->sections.info,
+					   sections.info_or_types_offset,
+					   sections.info_or_types_size);
   /* dwo_unit->{offset,length,type_offset_in_tu} are set later.  */
 
   return dwo_unit;
@@ -7491,18 +7175,19 @@ lookup_dwo_unit_in_dwp (dwarf2_per_bfd *per_bfd,
 			  dwp_htab->unit_table + hash * sizeof (uint32_t));
 	  dwo_unit_up dwo_unit;
 
-	  if (dwp_file->version == 1)
-	    dwo_unit
-	      = create_dwo_unit_in_dwp_v1 (per_bfd, dwp_file, unit_index,
-					   comp_dir, signature, is_debug_types);
-	  else if (dwp_file->version == 2)
+	  if (dwp_file->version == 2)
 	    dwo_unit
 	      = create_dwo_unit_in_dwp_v2 (per_bfd, dwp_file, unit_index,
 					   comp_dir, signature, is_debug_types);
-	  else /* version == 5  */
-	    dwo_unit
-	      = create_dwo_unit_in_dwp_v5 (per_bfd, dwp_file, unit_index,
-					   comp_dir, signature, is_debug_types);
+	  else
+	    {
+	      /* The version is checked in create_dwp_hash_table.  */
+	      gdb_assert (dwp_file->version == 5);
+	      dwo_unit
+		= create_dwo_unit_in_dwp_v5 (per_bfd, dwp_file, unit_index,
+					     comp_dir, signature,
+					     is_debug_types);
+	    }
 
 	  /* If another thread raced with this one, opening the exact same
 	     DWO unit, then we'll keep that other thread's copy.  */
@@ -7752,20 +7437,13 @@ cutu_reader::open_and_init_dwo_file (dwarf2_cu *cu, const char *dwo_name,
 }
 
 /* This function is mapped across the sections and remembers the offset and
-   size of each of the DWP debugging sections common to version 1 and 2 that
-   we are interested in.  */
+   size of each of the DWP debugging sections that we are interested in.  */
 
 static void
 dwarf2_locate_common_dwp_sections (struct objfile *objfile, bfd *abfd,
 				   asection *sectp, dwp_file *dwp_file)
 {
   const struct dwop_section_names *names = &dwop_section_names;
-  unsigned int elf_section_nr = elf_section_data (sectp)->this_idx;
-
-  /* Record the ELF section number for later lookup: this is what the
-     .debug_cu_index,.debug_tu_index tables use in DWP V1.  */
-  gdb_assert (elf_section_nr < dwp_file->num_sections);
-  dwp_file->elf_sections[elf_section_nr] = sectp;
 
   /* Look for specific sections that we need.  */
   struct dwarf2_section_info *dw_sect = nullptr;
@@ -7791,7 +7469,7 @@ dwarf2_locate_common_dwp_sections (struct objfile *objfile, bfd *abfd,
 /* This function is mapped across the sections and remembers the offset and
    size of each of the DWP version 2 debugging sections that we are interested
    in.  This is split into a separate function because we don't know if we
-   have version 1 or 2 or 5 until we parse the cu_index/tu_index sections.  */
+   have version 2 or 5 until we parse the cu_index/tu_index sections.  */
 
 static void
 dwarf2_locate_v2_dwp_sections (struct objfile *objfile, bfd *abfd,
@@ -7799,12 +7477,6 @@ dwarf2_locate_v2_dwp_sections (struct objfile *objfile, bfd *abfd,
 {
   struct dwp_file *dwp_file = (struct dwp_file *) dwp_file_ptr;
   const struct dwop_section_names *names = &dwop_section_names;
-  unsigned int elf_section_nr = elf_section_data (sectp)->this_idx;
-
-  /* Record the ELF section number for later lookup: this is what the
-     .debug_cu_index,.debug_tu_index tables use in DWP V1.  */
-  gdb_assert (elf_section_nr < dwp_file->num_sections);
-  dwp_file->elf_sections[elf_section_nr] = sectp;
 
   /* Look for specific sections that we need.  */
   struct dwarf2_section_info *dw_sect = nullptr;
@@ -7840,7 +7512,7 @@ dwarf2_locate_v2_dwp_sections (struct objfile *objfile, bfd *abfd,
 /* This function is mapped across the sections and remembers the offset and
    size of each of the DWP version 5 debugging sections that we are interested
    in.  This is split into a separate function because we don't know if we
-   have version 1 or 2 or 5 until we parse the cu_index/tu_index sections.  */
+   have version 2 or 5 until we parse the cu_index/tu_index sections.  */
 
 static void
 dwarf2_locate_v5_dwp_sections (struct objfile *objfile, bfd *abfd,
@@ -7848,12 +7520,6 @@ dwarf2_locate_v5_dwp_sections (struct objfile *objfile, bfd *abfd,
 {
   struct dwp_file *dwp_file = (struct dwp_file *) dwp_file_ptr;
   const struct dwop_section_names *names = &dwop_section_names;
-  unsigned int elf_section_nr = elf_section_data (sectp)->this_idx;
-
-  /* Record the ELF section number for later lookup: this is what the
-     .debug_cu_index,.debug_tu_index tables use in DWP V1.  */
-  gdb_assert (elf_section_nr < dwp_file->num_sections);
-  dwp_file->elf_sections[elf_section_nr] = sectp;
 
   /* Look for specific sections that we need.  */
   struct dwarf2_section_info *dw_sect = nullptr;
@@ -7965,10 +7631,6 @@ open_and_init_dwp_file (dwarf2_per_objfile *per_objfile)
 
   const char *name = bfd_get_filename (dbfd.get ());
   auto dwp_file = std::make_unique<struct dwp_file> (name, std::move (dbfd));
-
-  dwp_file->num_sections = elf_numsections (dwp_file->dbfd);
-  dwp_file->elf_sections
-    = OBSTACK_CALLOC (&per_bfd->obstack, dwp_file->num_sections, asection *);
 
   for (asection *sec : gdb_bfd_sections (dwp_file->dbfd))
     dwarf2_locate_common_dwp_sections (objfile, dwp_file->dbfd.get (), sec,
