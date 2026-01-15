@@ -629,6 +629,8 @@ bfd_elf_link_record_dynamic_symbol (struct bfd_link_info *info,
 	}
 
       h->dynindx = elf_hash_table (info)->dynsymcount;
+      if (h->forced_local)
+	elf_hash_table (info)->has_local_dynsyms = true;
       ++elf_hash_table (info)->dynsymcount;
 
       dynstr = elf_hash_table (info)->dynstr;
