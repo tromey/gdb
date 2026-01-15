@@ -7285,74 +7285,49 @@ dwarf2_locate_common_dwp_sections (struct objfile *objfile, bfd *abfd,
 }
 
 /* This function is mapped across the sections and remembers the offset and
-   size of each of the DWP version 2 debugging sections that we are interested
-   in.  This is split into a separate function because we don't know if we
-   have version 2 or 5 until we parse the cu_index/tu_index sections.  */
+   size of each of the DWP debugging sections that we are interested in.  */
 
 static void
-dwarf2_locate_v2_dwp_sections (objfile *objfile, asection *sectp,
-			       dwp_file *dwp_file)
+dwarf2_locate_dwp_sections (objfile *objfile, asection *sectp,
+			    dwp_file *dwp_file, int version)
 {
   const struct dwop_section_names *names = &dwop_section_names;
 
   /* Look for specific sections that we need.  */
   struct dwarf2_section_info *dw_sect = nullptr;
+
+  /* Sections common to v2 and v5.  */
   if (names->abbrev_dwo.matches (sectp->name))
     dw_sect = &dwp_file->sections.abbrev;
   else if (names->info_dwo.matches (sectp->name))
     dw_sect = &dwp_file->sections.info;
   else if (names->line_dwo.matches (sectp->name))
     dw_sect = &dwp_file->sections.line;
-  else if (names->loc_dwo.matches (sectp->name))
-    dw_sect = &dwp_file->sections.loc;
-  else if (names->macinfo_dwo.matches (sectp->name))
-    dw_sect = &dwp_file->sections.macinfo;
   else if (names->macro_dwo.matches (sectp->name))
     dw_sect = &dwp_file->sections.macro;
   else if (names->str_offsets_dwo.matches (sectp->name))
     dw_sect = &dwp_file->sections.str_offsets;
-  else if (names->types_dwo.matches (sectp->name))
-    dw_sect = &dwp_file->sections.types;
 
-  if (dw_sect != nullptr)
+  if (version == 2)
     {
-      /* Make sure we don't overwrite a section info that has been filled in
-	 already.  */
-      gdb_assert (!dw_sect->read_in);
-
-      dw_sect->s.section = sectp;
-      dw_sect->size = bfd_section_size (sectp);
-      dw_sect->read (objfile);
+      /* Sections specific to v2.  */
+      if (names->loc_dwo.matches (sectp->name))
+	dw_sect = &dwp_file->sections.loc;
+      else if (names->macinfo_dwo.matches (sectp->name))
+	dw_sect = &dwp_file->sections.macinfo;
+      else if (names->types_dwo.matches (sectp->name))
+	dw_sect = &dwp_file->sections.types;
     }
-}
+  else
+    {
+      gdb_assert (version == 5);
 
-/* This function is mapped across the sections and remembers the offset and
-   size of each of the DWP version 5 debugging sections that we are interested
-   in.  This is split into a separate function because we don't know if we
-   have version 2 or 5 until we parse the cu_index/tu_index sections.  */
-
-static void
-dwarf2_locate_v5_dwp_sections (objfile *objfile, asection *sectp,
-			       dwp_file *dwp_file)
-{
-  const struct dwop_section_names *names = &dwop_section_names;
-
-  /* Look for specific sections that we need.  */
-  struct dwarf2_section_info *dw_sect = nullptr;
-  if (names->abbrev_dwo.matches (sectp->name))
-    dw_sect = &dwp_file->sections.abbrev;
-  else if (names->info_dwo.matches (sectp->name))
-    dw_sect = &dwp_file->sections.info;
-  else if (names->line_dwo.matches (sectp->name))
-    dw_sect = &dwp_file->sections.line;
-  else if (names->loclists_dwo.matches (sectp->name))
-    dw_sect = &dwp_file->sections.loclists;
-  else if (names->macro_dwo.matches (sectp->name))
-    dw_sect = &dwp_file->sections.macro;
-  else if (names->rnglists_dwo.matches (sectp->name))
-    dw_sect = &dwp_file->sections.rnglists;
-  else if (names->str_offsets_dwo.matches (sectp->name))
-    dw_sect = &dwp_file->sections.str_offsets;
+      /* Sections specific to v5.  */
+      if (names->loclists_dwo.matches (sectp->name))
+	dw_sect = &dwp_file->sections.loclists;
+      else if (names->rnglists_dwo.matches (sectp->name))
+	dw_sect = &dwp_file->sections.rnglists;
+    }
 
   if (dw_sect != nullptr)
     {
@@ -7479,12 +7454,8 @@ open_and_init_dwp_file (dwarf2_per_objfile *per_objfile)
     dwp_file->version = 2;
 
   for (asection *sec : gdb_bfd_sections (dwp_file->dbfd))
-    {
-      if (dwp_file->version == 2)
-	dwarf2_locate_v2_dwp_sections (objfile, sec, dwp_file.get ());
-      else
-	dwarf2_locate_v5_dwp_sections (objfile, sec, dwp_file.get ());
-    }
+    dwarf2_locate_dwp_sections (objfile, sec, dwp_file.get (),
+				dwp_file->version);
 
   dwarf_read_debug_printf ("DWP file found: %s", dwp_file->name);
   dwarf_read_debug_printf ("    %s CUs, %s TUs",
