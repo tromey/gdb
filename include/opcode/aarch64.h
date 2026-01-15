@@ -283,6 +283,8 @@ enum aarch64_feature_bit {
   AARCH64_FEATURE_POE2,
   /* TEV instructions.  */
   AARCH64_FEATURE_TEV,
+  /* MPAMv2.  */
+  AARCH64_FEATURE_MPAMv2,
 
   /* Virtual features.  These are used to gate instructions that are enabled
      by either of two (or more) sets of command line flags.  */
