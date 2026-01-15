@@ -13253,8 +13253,8 @@ _bfd_mips_elf_orphan_shr16_reloc (bfd *abfd, asection *sec,
 {
   asymbol *symbol = *hi->rel.sym_ptr_ptr;
   const char *name = hi->rel.howto->name;
+  char *error_message = NULL;
   bfd_reloc_status_type r;
-  char *error_message;
 
   r = _bfd_mips_elf_shr16_reloc (abfd, &hi->rel, symbol, hi->data,
 				 sec, hi->output_bfd, &error_message);
