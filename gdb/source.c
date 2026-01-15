@@ -256,7 +256,8 @@ set_default_source_symtab_and_line (void)
 {
   if (!have_full_symbols (current_program_space)
       && !have_partial_symbols (current_program_space))
-    error (_("No symbol table is loaded.  Use the \"file\" command."));
+    error (_("No symbol table is loaded.  Use the \"%ps\" command."),
+	   styled_string (command_style.style (), "file"));
 
   /* Pull in a current source symtab if necessary.  */
   current_source_location *loc = get_source_location (current_program_space);
@@ -1344,8 +1345,10 @@ print_source_lines_base (struct symtab *s, int line, int stopline,
     {
       const std::vector<off_t> *offsets = nullptr;
       g_source_cache.get_line_charpos (s, &offsets);
-      error (_("Line number %d out of range; %s has %d lines."),
-	     line, symtab_to_filename_for_display (s),
+      error (_("Line number %ps out of range; %ps has %d lines."),
+	     styled_string (line_number_style.style (), plongest (line)),
+	     styled_string (file_name_style.style (),
+			    symtab_to_filename_for_display (s)),
 	     offsets == nullptr ? 0 : (int) offsets->size ());
     }
 
