@@ -503,6 +503,17 @@ struct virtual_dwo_sections
   bfd_size_type info_or_types_size = 0;
 };
 
+/* This is the number of possible sections for DWP v5 (v2 has fewer possible
+   sections).  */
+static constexpr int MAX_NR_DWO_SECTIONS
+  = (1   /* .debug_info */
+     + 1 /* .debug_abbrev */
+     + 1 /* .debug_line */
+     + 1 /* .debug_loclists */
+     + 1 /* .debug_str_offsets */
+     + 1 /* .debug_macro */
+     + 1 /* .debug_rnglists */);
+
 /* Contents of DWP hash tables.  */
 
 struct dwp_hash_table
@@ -510,40 +521,13 @@ struct dwp_hash_table
   uint32_t version, nr_columns;
   uint32_t nr_units, nr_slots;
   const gdb_byte *hash_table, *unit_table;
-  union
-  {
-    struct
-    {
-      /* This is indexed by column number and gives the id of the section
-	 in that column.  */
-#define MAX_NR_V2_DWO_SECTIONS \
-  (1 /* .debug_info or .debug_types */ \
-   + 1 /* .debug_abbrev */ \
-   + 1 /* .debug_line */ \
-   + 1 /* .debug_loc */ \
-   + 1 /* .debug_str_offsets */ \
-   + 1 /* .debug_macro or .debug_macinfo */)
-      int section_ids[MAX_NR_V2_DWO_SECTIONS];
-      const gdb_byte *offsets;
-      const gdb_byte *sizes;
-    } v2;
-    struct
-    {
-      /* This is indexed by column number and gives the id of the section
-	 in that column.  */
-#define MAX_NR_V5_DWO_SECTIONS \
-  (1 /* .debug_info */ \
-   + 1 /* .debug_abbrev */ \
-   + 1 /* .debug_line */ \
-   + 1 /* .debug_loclists */ \
-   + 1 /* .debug_str_offsets */ \
-   + 1 /* .debug_macro */ \
-   + 1 /* .debug_rnglists */)
-      int section_ids[MAX_NR_V5_DWO_SECTIONS];
-      const gdb_byte *offsets;
-      const gdb_byte *sizes;
-    } v5;
-  } section_pool;
+
+  /* This is indexed by column number and gives the id of the section
+     in that column.  */
+  int section_ids[MAX_NR_DWO_SECTIONS];
+
+  const gdb_byte *offsets;
+  const gdb_byte *sizes;
 };
 
 /* Data for one DWP file.  */
@@ -6460,8 +6444,8 @@ cutu_reader::create_dwo_unit_hash_tables (dwo_file &dwo_file,
     Header
     Hash Table of Signatures   dwp_hash_table.hash_table
     Parallel Table of Indices  dwp_hash_table.unit_table
-    Table of Section Offsets   dwp_hash_table.{v2|v5}.{section_ids,offsets}
-    Table of Section Sizes     dwp_hash_table.{v2|v5}.sizes
+    Table of Section Offsets   dwp_hash_table.{section_ids,offsets}
+    Table of Section Sizes     dwp_hash_table.sizes
 
    The index section header consists of:
 
@@ -6621,157 +6605,85 @@ create_dwp_hash_table (dwarf2_per_bfd *per_bfd, struct dwp_file *dwp_file,
       return htab;
     }
 
+  const gdb_byte *ids_ptr = htab->unit_table + sizeof (uint32_t) * nr_slots;
+  int *ids = htab->section_ids;
+  size_t sizeof_ids = sizeof (htab->section_ids);
+  /* Reverse map for error checking.  */
+  int ids_seen[std::max<int> (DW_SECT_MAX, DW_SECT_MAX_V5) + 1];
+  int max_id = (version == 2
+		? static_cast<int> (DW_SECT_MAX)
+		: static_cast<int> (DW_SECT_MAX_V5));
+
+  if (nr_columns < 2)
+    error (_(DWARF_ERROR_PREFIX
+	     "bad DWP hash table, too few columns in section table"
+	     " [in module %s]"),
+	   dwp_file->name);
+
+  if (nr_columns > MAX_NR_DWO_SECTIONS)
+    error (_(DWARF_ERROR_PREFIX
+	     "bad DWP hash table, too many columns in section table"
+	     " [in module %s]"),
+	   dwp_file->name);
+
+  memset (ids, 255, sizeof_ids);
+  memset (ids_seen, 255, sizeof (ids_seen));
+
+  for (int i = 0; i < nr_columns; ++i)
+    {
+      int id = read_4_bytes (dbfd, ids_ptr + i * sizeof (uint32_t));
+
+      if (id < DW_SECT_MIN || id > max_id)
+	error (_(DWARF_ERROR_PREFIX
+		 "bad DWP hash table, bad section id %d in section table"
+		 " [in module %s]"),
+	       id, dwp_file->name);
+
+      if (ids_seen[id] != -1)
+	error (_(DWARF_ERROR_PREFIX "bad DWP hash table, duplicate section"
+				    " id %d in section table [in module %s]"),
+	       id, dwp_file->name);
+
+      ids_seen[id] = i;
+      ids[i] = id;
+    }
+
   if (version == 2)
     {
-      const gdb_byte *ids_ptr = htab->unit_table + sizeof (uint32_t) * nr_slots;
-      int *ids = htab->section_pool.v2.section_ids;
-      size_t sizeof_ids = sizeof (htab->section_pool.v2.section_ids);
-      /* Reverse map for error checking.  */
-      int ids_seen[DW_SECT_MAX + 1];
-      int i;
-
-      if (nr_columns < 2)
-	{
-	  error (_(DWARF_ERROR_PREFIX
-		   "bad DWP hash table, too few columns in section table"
-		   " [in module %s]"),
-		 dwp_file->name);
-	}
-      if (nr_columns > MAX_NR_V2_DWO_SECTIONS)
-	{
-	  error (_(DWARF_ERROR_PREFIX
-		   "bad DWP hash table, too many columns in section table"
-		   " [in module %s]"),
-		 dwp_file->name);
-	}
-      memset (ids, 255, sizeof_ids);
-      memset (ids_seen, 255, sizeof (ids_seen));
-      for (i = 0; i < nr_columns; ++i)
-	{
-	  int id = read_4_bytes (dbfd, ids_ptr + i * sizeof (uint32_t));
-
-	  if (id < DW_SECT_MIN || id > DW_SECT_MAX)
-	    {
-	      error (_(DWARF_ERROR_PREFIX
-		       "bad DWP hash table, bad section id %d in section table"
-		       " [in module %s]"),
-		     id, dwp_file->name);
-	    }
-	  if (ids_seen[id] != -1)
-	    {
-	      error (_(DWARF_ERROR_PREFIX
-		       "bad DWP hash table, duplicate section"
-		       " id %d in section table [in module %s]"),
-		     id, dwp_file->name);
-	    }
-	  ids_seen[id] = i;
-	  ids[i] = id;
-	}
       /* Must have exactly one info or types section.  */
-      if (((ids_seen[DW_SECT_INFO] != -1)
-	   + (ids_seen[DW_SECT_TYPES] != -1))
+      if (((ids_seen[DW_SECT_INFO] != -1) + (ids_seen[DW_SECT_TYPES] != -1))
 	  != 1)
-	{
-	  error (_(DWARF_ERROR_PREFIX
-		   "bad DWP hash table, missing/duplicate"
-		   " DWO info/types section [in module %s]"),
-		 dwp_file->name);
-	}
-      /* Must have an abbrev section.  */
-      if (ids_seen[DW_SECT_ABBREV] == -1)
-	{
-	  error (_(DWARF_ERROR_PREFIX
-		   "bad DWP hash table, missing DWO abbrev section"
-		   " [in module %s]"),
-		 dwp_file->name);
-	}
-      htab->section_pool.v2.offsets = ids_ptr + sizeof (uint32_t) * nr_columns;
-      htab->section_pool.v2.sizes =
-	htab->section_pool.v2.offsets + (sizeof (uint32_t)
-					 * nr_units * nr_columns);
-      if ((htab->section_pool.v2.sizes + (sizeof (uint32_t)
-					  * nr_units * nr_columns))
-	  > index_end)
-	{
-	  error (_(DWARF_ERROR_PREFIX
-		   "DWP index section is corrupt (too small) [in module %s]"),
-		 dwp_file->name);
-	}
+	error (_(DWARF_ERROR_PREFIX "bad DWP hash table, missing/duplicate"
+				    " DWO info/types section [in module %s]"),
+	       dwp_file->name);
     }
-  else /* version == 5  */
+  else
     {
-      const gdb_byte *ids_ptr = htab->unit_table + sizeof (uint32_t) * nr_slots;
-      int *ids = htab->section_pool.v5.section_ids;
-      size_t sizeof_ids = sizeof (htab->section_pool.v5.section_ids);
-      /* Reverse map for error checking.  */
-      int ids_seen[DW_SECT_MAX_V5 + 1];
-
-      if (nr_columns < 2)
-	{
-	  error (_(DWARF_ERROR_PREFIX
-		   "bad DWP hash table, too few columns in section table"
-		   " [in module %s]"),
-		 dwp_file->name);
-	}
-      if (nr_columns > MAX_NR_V5_DWO_SECTIONS)
-	{
-	  error (_(DWARF_ERROR_PREFIX
-		   "bad DWP hash table, too many columns in section table"
-		   " [in module %s]"),
-		 dwp_file->name);
-	}
-      memset (ids, 255, sizeof_ids);
-      memset (ids_seen, 255, sizeof (ids_seen));
-      for (int i = 0; i < nr_columns; ++i)
-	{
-	  int id = read_4_bytes (dbfd, ids_ptr + i * sizeof (uint32_t));
-
-	  if (id < DW_SECT_MIN || id > DW_SECT_MAX_V5)
-	    {
-	      error (_(DWARF_ERROR_PREFIX
-		       "bad DWP hash table, bad section id %d in section table"
-		       " [in module %s]"),
-		     id, dwp_file->name);
-	    }
-	  if (ids_seen[id] != -1)
-	    {
-	      error (_(DWARF_ERROR_PREFIX
-		       "bad DWP hash table, duplicate section"
-		       " id %d in section table [in module %s]"),
-		     id, dwp_file->name);
-	    }
-	  ids_seen[id] = i;
-	  ids[i] = id;
-	}
       /* Must have seen an info section.  */
       if (ids_seen[DW_SECT_INFO_V5] == -1)
-	{
-	  error (_(DWARF_ERROR_PREFIX
-		   "bad DWP hash table, missing/duplicate"
-		   " DWO info/types section [in module %s]"),
-		 dwp_file->name);
-	}
-      /* Must have an abbrev section.  */
-      if (ids_seen[DW_SECT_ABBREV_V5] == -1)
-	{
-	  error (_(DWARF_ERROR_PREFIX
-		   "bad DWP hash table, missing DWO abbrev section"
-		   " [in module %s]"),
-		 dwp_file->name);
-	}
-      htab->section_pool.v5.offsets = ids_ptr + sizeof (uint32_t) * nr_columns;
-      htab->section_pool.v5.sizes
-	= htab->section_pool.v5.offsets + (sizeof (uint32_t)
-					 * nr_units * nr_columns);
-      if ((htab->section_pool.v5.sizes + (sizeof (uint32_t)
-					  * nr_units * nr_columns))
-	  > index_end)
-	{
-	  error (_(DWARF_ERROR_PREFIX
-		   "DWP index section is corrupt (too small) [in module %s]"),
-		 dwp_file->name);
-	}
+	error (_(DWARF_ERROR_PREFIX "bad DWP hash table, missing/duplicate"
+				    " DWO info/types section [in module %s]"),
+	       dwp_file->name);
     }
+
+  /* Must have an abbrev section.  */
+  int abbrev_id = (version == 2
+		   ? static_cast<int> (DW_SECT_ABBREV)
+		   : static_cast<int> (DW_SECT_ABBREV_V5));
+
+  if (ids_seen[abbrev_id] == -1)
+    error (_(DWARF_ERROR_PREFIX
+	     "bad DWP hash table, missing DWO abbrev section [in module %s]"),
+	   dwp_file->name);
+
+  htab->offsets = ids_ptr + sizeof (uint32_t) * nr_columns;
+  htab->sizes
+    = htab->offsets + sizeof (uint32_t) * nr_units * nr_columns;
+  if (htab->sizes + sizeof (uint32_t) * nr_units * nr_columns
+      > index_end)
+    error (_(DWARF_ERROR_PREFIX
+	     "DWP index section is corrupt (too small) [in module %s]"),
+	   dwp_file->name);
 
   return htab;
 }
@@ -6851,17 +6763,17 @@ create_dwo_unit_in_dwp_v2 (dwarf2_per_bfd *per_bfd,
   for (i = 0; i < dwp_htab->nr_columns; ++i)
     {
       uint32_t offset = read_4_bytes (dbfd,
-				      dwp_htab->section_pool.v2.offsets
+				      dwp_htab->offsets
 				      + (((unit_index - 1) * dwp_htab->nr_columns
 					  + i)
 					 * sizeof (uint32_t)));
       uint32_t size = read_4_bytes (dbfd,
-				    dwp_htab->section_pool.v2.sizes
+				    dwp_htab->sizes
 				    + (((unit_index - 1) * dwp_htab->nr_columns
 					+ i)
 				       * sizeof (uint32_t)));
 
-      switch (dwp_htab->section_pool.v2.section_ids[i])
+      switch (dwp_htab->section_ids[i])
 	{
 	case DW_SECT_INFO:
 	case DW_SECT_TYPES:
@@ -7007,18 +6919,18 @@ create_dwo_unit_in_dwp_v5 (dwarf2_per_bfd *per_bfd,
   for (int i = 0; i < dwp_htab->nr_columns; ++i)
     {
       uint32_t offset = read_4_bytes (dbfd,
-				      dwp_htab->section_pool.v5.offsets
+				      dwp_htab->offsets
 				      + (((unit_index - 1)
 					  * dwp_htab->nr_columns
 					  + i)
 					 * sizeof (uint32_t)));
       uint32_t size = read_4_bytes (dbfd,
-				    dwp_htab->section_pool.v5.sizes
+				    dwp_htab->sizes
 				    + (((unit_index - 1) * dwp_htab->nr_columns
 					+ i)
 				       * sizeof (uint32_t)));
 
-      switch (dwp_htab->section_pool.v5.section_ids[i])
+      switch (dwp_htab->section_ids[i])
 	{
 	  case DW_SECT_ABBREV_V5:
 	    sections.abbrev_offset = offset;
