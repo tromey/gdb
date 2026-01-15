@@ -3063,14 +3063,14 @@ cutu_reader::cutu_reader (dwarf2_per_cu &this_cu,
 	  this_cu.set_length (cu->header.get_length_with_initial ());
 	}
 
-	/* Record some information found in the header.  This will be needed
-	   when evaluating DWARF expressions in the context of this unit, for
-	   instance.  */
-	this_cu.set_addr_size (cu->header.addr_size);
-	this_cu.set_offset_size (cu->header.offset_size);
-	this_cu.set_ref_addr_size (cu->header.version == 2
-				   ? cu->header.addr_size
-				   : cu->header.offset_size);
+      /* Record some information found in the header.  This will be needed
+	 when evaluating DWARF expressions in the context of this unit, for
+	 instance.  */
+      this_cu.set_addr_size (cu->header.addr_size);
+      this_cu.set_offset_size (cu->header.offset_size);
+      this_cu.set_ref_addr_size (cu->header.version == 2
+				 ? cu->header.addr_size
+				 : cu->header.offset_size);
     }
 
   /* Skip dummy compilation units.  */
@@ -7197,7 +7197,7 @@ cutu_reader::locate_dwo_sections (objfile *objfile, dwo_file &dwo_file)
       if (dw_sect != nullptr)
 	{
 	  /* Make sure we don't overwrite a section info that has been filled in
-	 already.  */
+	     already.  */
 	  gdb_assert (!dw_sect->read_in);
 
 	  dw_sect->s.section = sec;
