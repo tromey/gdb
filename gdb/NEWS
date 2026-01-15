@@ -52,6 +52,7 @@
   version number has not increased as a consequence of this change.
   This fixes an issue where GDB could fail to find a type when relying
   on the index.  Any existing indexes should be regenerated.
+
 * Support for Floating Point Mode Register (FPMR) in AArch64.
 
 * New targets
