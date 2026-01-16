@@ -91,8 +91,7 @@ static int init_stringtab (file_ptr, gdb::unique_xmalloc_ptr<char> *);
 
 static void read_one_sym (struct coff_symbol *);
 
-static void coff_symtab_read (minimal_symbol_reader &,
-			      file_ptr, unsigned int, struct objfile *);
+static void coff_symtab_read (minimal_symbol_reader &, file_ptr, unsigned int);
 
 /* Return the BFD section that CS points to.  */
 
@@ -108,12 +107,12 @@ cs_to_bfd_section (struct coff_symbol *cs)
 
 /* Return the section number (SECT_OFF_*) that CS points to.  */
 static int
-cs_to_section (struct coff_symbol *cs, struct objfile *objfile)
+cs_to_section (struct coff_symbol *cs)
 {
   asection *sect = cs_to_bfd_section (cs);
 
   if (sect == NULL)
-    return SECT_OFF_TEXT (objfile);
+    return SECT_OFF_TEXT (coffread_objfile);
   return gdb_bfd_section_index (symfile_bfd, sect);
 }
 
@@ -166,8 +165,7 @@ is_import_fixup_symbol (struct coff_symbol *cs,
 static struct minimal_symbol *
 record_minimal_symbol (minimal_symbol_reader &reader,
 		       struct coff_symbol *cs, unrelocated_addr address,
-		       enum minimal_symbol_type type, int section,
-		       struct objfile *objfile)
+		       enum minimal_symbol_type type, int section)
 {
   /* We don't want TDESC entry points in the minimal symbol table.  */
   if (cs->c_name[0] == '@')
@@ -206,29 +204,28 @@ coff_symfile_init (struct objfile *objfile)
    symbols.  It may also read other forms of symbol as well.  */
 
 static void
-coff_read_minsyms (file_ptr symtab_offset, unsigned int nsyms,
-		   struct objfile *objfile)
+coff_read_minsyms (file_ptr symtab_offset, unsigned int nsyms)
 
 {
   /* If minimal symbols were already read, and if we know we aren't
      going to read any other kind of symbol here, then we can just
      return.  */
-  if (objfile->per_bfd->minsyms_read && pe_file && nsyms == 0)
+  if (coffread_objfile->per_bfd->minsyms_read && pe_file && nsyms == 0)
     return;
 
-  minimal_symbol_reader reader (objfile);
+  minimal_symbol_reader reader (coffread_objfile);
 
   if (pe_file && nsyms == 0)
     {
       /* We've got no debugging symbols, but it's a portable
 	 executable, so try to read the export table.  */
-      read_pe_exported_syms (reader, objfile);
+      read_pe_exported_syms (reader, coffread_objfile);
     }
   else
     {
       /* Now that the executable file is positioned at symbol table,
 	 process it and define symbols accordingly.  */
-      coff_symtab_read (reader, symtab_offset, nsyms, objfile);
+      coff_symtab_read (reader, symtab_offset, nsyms);
     }
 
   /* Install any minimal symbols that have been collected as the
@@ -238,7 +235,7 @@ coff_read_minsyms (file_ptr symtab_offset, unsigned int nsyms,
 
   if (pe_file)
     {
-      for (minimal_symbol *msym : objfile->msymbols ())
+      for (minimal_symbol *msym : coffread_objfile->msymbols ())
 	{
 	  const char *name = msym->linkage_name ();
 
@@ -263,7 +260,7 @@ coff_read_minsyms (file_ptr symtab_offset, unsigned int nsyms,
 
 		  bound_minimal_symbol found
 		    = lookup_minimal_symbol (current_program_space, name1,
-					     objfile);
+					     coffread_objfile);
 
 		  /* If found, there are symbols named "_imp_foo" and "foo"
 		     respectively in OBJFILE.  Set the type of symbol "foo"
@@ -282,6 +279,7 @@ coff_read_minsyms (file_ptr symtab_offset, unsigned int nsyms,
 static void
 coff_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
 {
+  coffread_objfile = objfile;
   symfile_bfd = objfile->obfd.get ();
   coff_data_type *cdata = coff_data (symfile_bfd);
   const char *filename = bfd_get_filename (symfile_bfd);
@@ -328,9 +326,9 @@ coff_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
   if (val < 0)
     error (_("\"%s\": can't get string table"), filename);
 
-  coff_read_minsyms (symtab_offset, num_symbols, objfile);
+  coff_read_minsyms (symtab_offset, num_symbols);
 
-  if (!(objfile->flags & OBJF_READNEVER))
+  if (!(coffread_objfile->flags & OBJF_READNEVER))
     {
       bool found_stab_section = false;
 
@@ -345,18 +343,18 @@ coff_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
 	warning (_ ("stabs debug information is not supported."));
     }
 
-  if (dwarf2_initialize_objfile (objfile))
+  if (dwarf2_initialize_objfile (coffread_objfile))
     {
       /* Nothing.  */
     }
 
   /* Try to add separate debug file if no symbols table found.   */
-  else if (!objfile->has_partial_symbols ()
-	   && objfile->separate_debug_objfile == NULL
-	   && objfile->separate_debug_objfile_backlink == NULL)
+  else if (!coffread_objfile->has_partial_symbols ()
+	   && coffread_objfile->separate_debug_objfile == NULL
+	   && coffread_objfile->separate_debug_objfile_backlink == NULL)
     {
-      if (objfile->find_and_add_separate_symbol_file (symfile_flags))
-	gdb_assert (objfile->separate_debug_objfile != nullptr);
+      if (coffread_objfile->find_and_add_separate_symbol_file (symfile_flags))
+	gdb_assert (coffread_objfile->separate_debug_objfile != nullptr);
     }
 }
 
@@ -367,10 +365,9 @@ coff_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
 
 static void
 coff_symtab_read (minimal_symbol_reader &reader,
-		  file_ptr symtab_offset, unsigned int nsyms,
-		  struct objfile *objfile)
+		  file_ptr symtab_offset, unsigned int nsyms)
 {
-  struct gdbarch *gdbarch = objfile->arch ();
+  struct gdbarch *gdbarch = coffread_objfile->arch ();
   struct coff_symbol coff_symbol;
   struct coff_symbol *cs = &coff_symbol;
   int val;
@@ -383,9 +380,7 @@ coff_symtab_read (minimal_symbol_reader &reader,
   val = bfd_seek (symfile_bfd, symtab_offset, 0);
   if (val < 0)
     error (_("Error reading symbols from %s: %s"),
-	   objfile_name (objfile), bfd_errmsg (bfd_get_error ()));
-
-  coffread_objfile = objfile;
+	   objfile_name (coffread_objfile), bfd_errmsg (bfd_get_error ()));
 
   while (symnum < nsyms)
     {
@@ -398,14 +393,14 @@ coff_symtab_read (minimal_symbol_reader &reader,
 	{
 	  /* Record all functions -- external and static -- in
 	     minsyms.  */
-	  int section = cs_to_section (cs, objfile);
+	  int section = cs_to_section (cs);
 
 	  tmpaddr = cs->c_value;
 	  /* Don't record unresolved symbols.  */
 	  if (!(cs->c_secnum <= 0 && cs->c_value == 0))
 	    record_minimal_symbol (reader, cs,
 				   unrelocated_addr (tmpaddr),
-				   mst_text, section, objfile);
+				   mst_text, section);
 
 	  continue;
 	}
@@ -468,14 +463,14 @@ coff_symtab_read (minimal_symbol_reader &reader,
 		/* Use the correct minimal symbol type (and don't
 		   relocate) for absolute values.  */
 		ms_type = mst_abs;
-		sec = cs_to_section (cs, objfile);
+		sec = cs_to_section (cs);
 		tmpaddr = cs->c_value;
 	      }
 	    else
 	      {
 		asection *bfd_section = cs_to_bfd_section (cs);
 
-		sec = cs_to_section (cs, objfile);
+		sec = cs_to_section (cs);
 		tmpaddr = cs->c_value;
 
 		if (bfd_section->flags & SEC_CODE)
@@ -505,7 +500,7 @@ coff_symtab_read (minimal_symbol_reader &reader,
 
 	    msym = record_minimal_symbol (reader, cs,
 					  unrelocated_addr (tmpaddr),
-					  ms_type, sec, objfile);
+					  ms_type, sec);
 	    if (msym)
 	      gdbarch_coff_make_msymbol_special (gdbarch,
 						 cs->c_sclass, msym);
@@ -513,8 +508,6 @@ coff_symtab_read (minimal_symbol_reader &reader,
 	  break;
 	}
     }
-
-  coffread_objfile = NULL;
 }
 
 /* Routines for reading headers and symbols from executable.  */
