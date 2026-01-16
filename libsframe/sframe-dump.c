@@ -119,10 +119,11 @@ is_sframe_abi_arch_s390x (const sframe_decoder_ctx *sfd_ctx)
 static void
 dump_sframe_header_flags (const sframe_decoder_ctx *sfd_ctx)
 {
-  uint8_t flags;
   const char *prefix = "Flags: ";
 
-  flags = sframe_decoder_get_flags (sfd_ctx);
+  uint8_t ver = sframe_decoder_get_version (sfd_ctx);
+  uint8_t flags = sframe_decoder_get_flags (sfd_ctx);
+
   if (!flags)
     {
       printf ("%11sNONE\n", prefix);
@@ -137,7 +138,9 @@ dump_sframe_header_flags (const sframe_decoder_ctx *sfd_ctx)
     }
 
   PRINT_FLAG (SFRAME_F_FDE_SORTED);
-  PRINT_FLAG (SFRAME_F_FRAME_POINTER);
+  /* SFRAME_F_FRAME_POINTER has been removed from SFrame V3 and beyond.  */
+  if (ver == SFRAME_VERSION_2)
+    PRINT_FLAG (SFRAME_F_FRAME_POINTER);
   PRINT_FLAG (SFRAME_F_FDE_FUNC_START_PCREL);
 #undef PRINT_FLAG
 
