@@ -2910,7 +2910,7 @@ s390_sframe_ra_tracking_p (void)
 bool
 s390_support_flex_fde_p (void)
 {
-  return false;
+  return true;
 }
 
 /* Specify the fixed offset to recover RA from CFA.

@@ -452,9 +452,10 @@ typedef struct sframe_fre_info
 	offset2 (intrepreted as FP = CFA + offset2)
       fi
     fi
-    Note that in s390x, if a FP/RA offset2/offset3 value has the least-
-    significant bit set it represents a DWARF register number shifted to the
-    left by 1 to restore the FP/RA value from.
+    Note that in s390x, if a FP/RA is to be restored from a register, flex FDEs
+    are used in SFrame V3.  In SFrame V2, default FDEs were used: the
+    least-significant bit of the offset was set to indicate that the encoded
+    value is a DWARF register number shifted to the left by 1.
 */
 
 /* Used when SFRAME_FRE_TYPE_ADDR1 is specified as FRE type.  */
