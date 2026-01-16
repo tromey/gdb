@@ -11011,6 +11011,7 @@ static const struct aarch64_option_cpu_value_table aarch64_features[] = {
   {"f16mm",		AARCH64_FEATURE (F16MM), AARCH64_FEATURES (2, SIMD, F16)},
   {"sve-b16mm",		AARCH64_FEATURE (SVE_B16MM), AARCH64_FEATURE (SVE)},
   {"mpamv2",		AARCH64_FEATURE (MPAMv2), AARCH64_NO_FEATURES},
+  {"mtetc",		AARCH64_FEATURE (MTETC), AARCH64_FEATURE (MEMTAG)},
   {NULL,		AARCH64_NO_FEATURES, AARCH64_NO_FEATURES},
 };
 

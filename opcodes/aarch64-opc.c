@@ -5312,6 +5312,8 @@ const aarch64_sys_ins_reg aarch64_sys_regs_dc[] =
     { "zva",	    CPENS (3, C7, C4, 1),  F_HASXT, AARCH64_NO_FEATURES },
     { "gva",	    CPENS (3, C7, C4, 3),  F_HASXT, AARCH64_FEATURE (MEMTAG) },
     { "gzva",	    CPENS (3, C7, C4, 4),  F_HASXT, AARCH64_FEATURE (MEMTAG) },
+    { "zgbva",	    CPENS (3, C7, C4, 5),  F_HASXT, AARCH64_FEATURE (MTETC) },
+    { "gbva",	    CPENS (3, C7, C4, 7),  F_HASXT, AARCH64_FEATURE (MTETC) },
     { "ivac",       CPENS (0, C7, C6, 1),  F_HASXT, AARCH64_NO_FEATURES },
     { "igvac",      CPENS (0, C7, C6, 3),  F_HASXT, AARCH64_FEATURE (MEMTAG) },
     { "igsw",       CPENS (0, C7, C6, 4),  F_HASXT, AARCH64_FEATURE (MEMTAG) },
