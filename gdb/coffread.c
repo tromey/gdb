@@ -71,7 +71,7 @@ static int pe_file;
 
 struct coff_symbol
   {
-    char *c_name;
+    const char *c_name;
     int c_naux;			/* 0 if syment only, 1 if syment +
 				   auxent, etc.  */
     CORE_ADDR c_value;
@@ -86,7 +86,7 @@ static long stringtab_length = 0;
 /* Used when reading coff symbols.  */
 static int symnum;
 
-static char *getsymname (struct internal_syment *);
+static const char *getsymname (struct internal_syment *);
 
 static int init_stringtab (bfd *, file_ptr, gdb::unique_xmalloc_ptr<char> *);
 
@@ -636,11 +636,11 @@ init_stringtab (bfd *abfd, file_ptr offset, gdb::unique_xmalloc_ptr<char> *stora
   return 0;
 }
 
-static char *
+static const char *
 getsymname (struct internal_syment *symbol_entry)
 {
   static char buffer[SYMNMLEN + 1];
-  char *result;
+  const char *result;
 
   if (symbol_entry->_n._n_n._n_zeroes == 0)
     {
