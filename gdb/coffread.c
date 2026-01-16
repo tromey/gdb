@@ -184,22 +184,6 @@ record_minimal_symbol (minimal_symbol_reader &reader,
   return reader.record_full (cs->c_name, true, address, type, section);
 }
 
-/* coff_symfile_init ()
-   is the coff-specific initialization routine for reading symbols.
-   It is passed a struct objfile which contains, among other things,
-   the BFD for the file whose symbols are being read, and a slot for
-   a pointer to "private data" which we fill with cookies and other
-   treats for coff_symfile_read ().
-
-   We will only be called if this is a COFF or COFF-like file.  BFD
-   handles figuring out the format of the file, and code in symtab.c
-   uses BFD's determination to vector to us.  */
-
-static void
-coff_symfile_init (struct objfile *objfile)
-{
-}
-
 /* A helper function for coff_symfile_read that reads minimal
    symbols.  It may also read other forms of symbol as well.  */
 
@@ -643,7 +627,7 @@ getsymname (struct internal_syment *symbol_entry)
 
 static const struct sym_fns coff_sym_fns =
 {
-  coff_symfile_init,		/* sym_init: read initial info, setup
+  [] (objfile *) { },		/* sym_init: read initial info, setup
 				   for sym_read() */
   coff_symfile_read,		/* sym_read: read a symbol file into
 				   symtab */
