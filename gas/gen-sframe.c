@@ -1536,7 +1536,8 @@ sframe_xlate_do_register (struct sframe_xlate_ctx *xlate_ctx,
 
   if (cfi_insn->u.rr.reg1 == SFRAME_CFA_RA_REG
       /* SFrame does not track SP explicitly.  */
-      || cfi_insn->u.rr.reg1 == SFRAME_CFA_SP_REG
+      || (cfi_insn->u.rr.reg1 == SFRAME_CFA_SP_REG
+	  && sframe_get_abi_arch () != SFRAME_ABI_S390X_ENDIAN_BIG)
       || cfi_insn->u.rr.reg1 == SFRAME_CFA_FP_REG)
     {
       as_warn (_("no SFrame FDE emitted; %s register %u in .cfi_register"),
