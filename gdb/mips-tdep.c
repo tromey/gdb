@@ -7988,18 +7988,22 @@ mips_find_abi_from_sections (bfd *abfd)
   return MIPS_ABI_UNKNOWN;
 }
 
-static void
-mips_find_long_section (bfd *abfd, asection *sect, void *obj)
+static int
+mips_find_long_bit_from_sections (bfd *abfd)
 {
-  int *lbp = (int *) obj;
-  const char *name = bfd_section_name (sect);
+  for (asection *sect : gdb_bfd_sections (abfd))
+    {
+      const char *name = bfd_section_name (sect);
 
-  if (startswith (name, ".gcc_compiled_long32"))
-    *lbp = 32;
-  else if (startswith (name, ".gcc_compiled_long64"))
-    *lbp = 64;
-  else if (startswith (name, ".gcc_compiled_long"))
-    warning (_("unrecognized .gcc_compiled_longXX"));
+      if (startswith (name, ".gcc_compiled_long32"))
+	return 32;
+      else if (startswith (name, ".gcc_compiled_long64"))
+	return 64;
+      else if (startswith (name, ".gcc_compiled_long"))
+	warning (_("unrecognized section %s."), name);
+    }
+
+  return 0;
 }
 
 static enum mips_abi
@@ -8614,10 +8618,9 @@ mips_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
 
   if (info.abfd != NULL)
     {
-      int long_bit = 0;
+      int long_bit = mips_find_long_bit_from_sections (info.abfd);
 
-      bfd_map_over_sections (info.abfd, mips_find_long_section, &long_bit);
-      if (long_bit)
+      if (long_bit != 0)
 	{
 	  set_gdbarch_long_bit (gdbarch, long_bit);
 	  switch (mips_abi)
