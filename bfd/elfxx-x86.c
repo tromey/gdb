@@ -1917,6 +1917,7 @@ _bfd_x86_elf_create_sframe_plt (bfd *output_bfd,
 				      0, /* func start addr.  */
 				      plt0_entry_size,
 				      func_info,
+				      0, /* func_info2.  */
 				      0,
 				      0 /* Num FREs.  */);
       sframe_frame_row_entry plt0_fre;
@@ -1946,6 +1947,7 @@ _bfd_x86_elf_create_sframe_plt (bfd *output_bfd,
 				      plt0_entry_size, /* func start addr.  */
 				      dpltsec->size - plt0_entry_size,
 				      func_info,
+				      0, /* func_info2.  */
 				      plt_entry_size,
 				      0 /* Num FREs.  */);
 
