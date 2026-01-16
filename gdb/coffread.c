@@ -28,44 +28,6 @@
 #include "dwarf2/public.h"
 #include "coff-pe-read.h"
 
-/* The objfile we are currently reading.  */
-
-static struct objfile *coffread_objfile;
-
-/* The BFD for this file -- only good while we're actively reading
-   symbols into a psymtab or a symtab.  */
-
-static bfd *symfile_bfd;
-
-/* Pointers to scratch storage, used for reading raw symbols and
-   auxents.  */
-
-static char *temp_sym;
-static char *temp_aux;
-
-/* Local variables that hold the shift and mask values for the
-   COFF file that we are currently reading.  These come back to us
-   from BFD, and are referenced by their macro names, as well as
-   internally to the ISFCN macro from include/coff/internal.h .  */
-
-static unsigned local_n_btshft;
-static unsigned local_n_tmask;
-
-#define	N_BTSHFT	local_n_btshft
-#define	N_TMASK		local_n_tmask
-
-/* Local variables that hold the sizes in the file of various COFF
-   structures.  (We only need to know this to read them from the file
-   -- BFD will then translate the data in them, into `internal_xxx'
-   structs in the right byte order, alignment, etc.)  */
-
-static unsigned local_symesz;
-static unsigned local_auxesz;
-
-/* This is set if this is a PE format file.  */
-
-static bool pe_file;
-
 /* Simplified internal version of coff symbol table information.  */
 
 struct coff_symbol
@@ -79,24 +41,79 @@ struct coff_symbol
   unsigned int c_type;
 };
 
-static char *stringtab = NULL;
-static long stringtab_length = 0;
+/* A class that reads symbols from a COFF file.  */
+struct coff_reader
+{
+  explicit coff_reader (objfile *objfile)
+    : coffread_objfile (objfile),
+      symfile_bfd (objfile->obfd.get ())
+  {
+  }
 
-/* Used when reading coff symbols.  */
-static int symnum;
+  /* Do the work of reading.  */
+  void symfile_read (symfile_add_flags symfile_flags);
 
-static const char *getsymname (struct internal_syment *);
+private:
 
-static int init_stringtab (file_ptr, gdb::unique_xmalloc_ptr<char> *);
+  /* The objfile we are currently reading.  */
+  objfile *coffread_objfile;
 
-static void read_one_sym (struct coff_symbol *);
+  /* The BFD for this file.  */
+  bfd *symfile_bfd;
 
-static void coff_symtab_read (minimal_symbol_reader &, file_ptr, unsigned int);
+  /* Pointers to scratch storage, used for reading raw symbols and
+     auxents.  */
+  char *temp_sym;
+  char *temp_aux;
+
+  /* Local variables that hold the shift and mask values for the
+     COFF file that we are currently reading.  These come back to us
+     from BFD, and are referenced by their macro names, as well as
+     internally to the ISFCN macro from include/coff/internal.h .  */
+  unsigned local_n_btshft;
+  unsigned local_n_tmask;
+
+#define	N_BTSHFT	local_n_btshft
+#define	N_TMASK		local_n_tmask
+
+  /* Local variables that hold the sizes in the file of various COFF
+     structures.  (We only need to know this to read them from the file
+     -- BFD will then translate the data in them, into `internal_xxx'
+     structs in the right byte order, alignment, etc.)  */
+  unsigned local_symesz;
+  unsigned local_auxesz;
+
+  /* This is set if this is a PE format file.  */
+  bool pe_file;
+
+  char *stringtab = NULL;
+  long stringtab_length = 0;
+
+  /* Used when reading coff symbols.  */
+  int symnum;
+
+  asection *cs_to_bfd_section (coff_symbol *cs);
+  int cs_to_section (coff_symbol *cs);
+  CORE_ADDR cs_section_address (coff_symbol *cs);
+  int is_import_fixup_symbol (coff_symbol *cs, minimal_symbol_type type);
+  minimal_symbol *record_minimal_symbol (minimal_symbol_reader &reader,
+					 coff_symbol *cs,
+					 unrelocated_addr address,
+					 minimal_symbol_type type,
+					 int section);
+  void read_minsyms (file_ptr symtab_offset, unsigned int nsyms);
+  void symtab_read (minimal_symbol_reader &reader, file_ptr symtab_offset,
+		    unsigned int nsyms);
+  void read_one_sym (coff_symbol *cs);
+  int init_stringtab (file_ptr offset,
+		      gdb::unique_xmalloc_ptr<char> *storage);
+  const char *getsymname (struct internal_syment *symbol_entry);
+};
 
 /* Return the BFD section that CS points to.  */
 
-static asection *
-cs_to_bfd_section (struct coff_symbol *cs)
+asection *
+coff_reader::cs_to_bfd_section (struct coff_symbol *cs)
 {
   for (asection *sect : gdb_bfd_sections (symfile_bfd))
     if (sect->target_index == cs->c_secnum)
@@ -106,8 +123,8 @@ cs_to_bfd_section (struct coff_symbol *cs)
 }
 
 /* Return the section number (SECT_OFF_*) that CS points to.  */
-static int
-cs_to_section (struct coff_symbol *cs)
+int
+coff_reader::cs_to_section (struct coff_symbol *cs)
 {
   asection *sect = cs_to_bfd_section (cs);
 
@@ -118,8 +135,8 @@ cs_to_section (struct coff_symbol *cs)
 
 /* Return the address of the section of a COFF symbol.  */
 
-static CORE_ADDR
-cs_section_address (struct coff_symbol *cs)
+CORE_ADDR
+coff_reader::cs_section_address (struct coff_symbol *cs)
 {
   asection *sect = cs_to_bfd_section (cs);
 
@@ -133,9 +150,9 @@ cs_section_address (struct coff_symbol *cs)
    functions referencing variables imported from another DLL.
    Return nonzero if the given symbol corresponds to one of them.  */
 
-static int
-is_import_fixup_symbol (struct coff_symbol *cs,
-			enum minimal_symbol_type type)
+int
+coff_reader::is_import_fixup_symbol (struct coff_symbol *cs,
+				     enum minimal_symbol_type type)
 {
   /* The following is a bit of a heuristic using the characteristics
      of these fixup symbols, but should work well in practice...  */
@@ -162,10 +179,12 @@ is_import_fixup_symbol (struct coff_symbol *cs,
   return 1;
 }
 
-static struct minimal_symbol *
-record_minimal_symbol (minimal_symbol_reader &reader,
-		       struct coff_symbol *cs, unrelocated_addr address,
-		       enum minimal_symbol_type type, int section)
+struct minimal_symbol *
+coff_reader::record_minimal_symbol (minimal_symbol_reader &reader,
+				    struct coff_symbol *cs,
+				    unrelocated_addr address,
+				    enum minimal_symbol_type type,
+				    int section)
 {
   /* We don't want TDESC entry points in the minimal symbol table.  */
   if (cs->c_name[0] == '@')
@@ -187,9 +206,8 @@ record_minimal_symbol (minimal_symbol_reader &reader,
 /* A helper function for coff_symfile_read that reads minimal
    symbols.  It may also read other forms of symbol as well.  */
 
-static void
-coff_read_minsyms (file_ptr symtab_offset, unsigned int nsyms)
-
+void
+coff_reader::read_minsyms (file_ptr symtab_offset, unsigned int nsyms)
 {
   /* If minimal symbols were already read, and if we know we aren't
      going to read any other kind of symbol here, then we can just
@@ -209,7 +227,7 @@ coff_read_minsyms (file_ptr symtab_offset, unsigned int nsyms)
     {
       /* Now that the executable file is positioned at symbol table,
 	 process it and define symbols accordingly.  */
-      coff_symtab_read (reader, symtab_offset, nsyms);
+      symtab_read (reader, symtab_offset, nsyms);
     }
 
   /* Install any minimal symbols that have been collected as the
@@ -260,11 +278,9 @@ coff_read_minsyms (file_ptr symtab_offset, unsigned int nsyms)
 
 /* Read a symbol file, after initialization by coff_symfile_init.  */
 
-static void
-coff_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
+void
+coff_reader::symfile_read (symfile_add_flags symfile_flags)
 {
-  coffread_objfile = objfile;
-  symfile_bfd = objfile->obfd.get ();
   coff_data_type *cdata = coff_data (symfile_bfd);
   const char *filename = bfd_get_filename (symfile_bfd);
   int val;
@@ -310,7 +326,7 @@ coff_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
   if (val < 0)
     error (_("\"%s\": can't get string table"), filename);
 
-  coff_read_minsyms (symtab_offset, num_symbols);
+  read_minsyms (symtab_offset, num_symbols);
 
   if (!(coffread_objfile->flags & OBJF_READNEVER))
     {
@@ -342,14 +358,21 @@ coff_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
     }
 }
 
+static void
+coff_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
+{
+  coff_reader reader (objfile);
+  reader.symfile_read (symfile_flags);
+}
+
 /* Given pointers to a symbol table in coff style exec file,
    analyze them and create struct symtab's describing the symbols.
    NSYMS is the number of symbols in the symbol table.
    We read them one at a time using read_one_sym ().  */
 
-static void
-coff_symtab_read (minimal_symbol_reader &reader,
-		  file_ptr symtab_offset, unsigned int nsyms)
+void
+coff_reader::symtab_read (minimal_symbol_reader &reader,
+			  file_ptr symtab_offset, unsigned int nsyms)
 {
   struct gdbarch *gdbarch = coffread_objfile->arch ();
   struct coff_symbol coff_symbol;
@@ -498,8 +521,8 @@ coff_symtab_read (minimal_symbol_reader &reader,
 
 /* Read the next symbol into CS.  */
 
-static void
-read_one_sym (struct coff_symbol *cs)
+void
+coff_reader::read_one_sym (struct coff_symbol *cs)
 {
   int i;
   bfd_size_type bytes;
@@ -560,8 +583,9 @@ read_one_sym (struct coff_symbol *cs)
 
 /* Support for string table handling.  */
 
-static int
-init_stringtab (file_ptr offset, gdb::unique_xmalloc_ptr<char> *storage)
+int
+coff_reader::init_stringtab (file_ptr offset,
+			     gdb::unique_xmalloc_ptr<char> *storage)
 {
   long length;
   int val;
@@ -601,8 +625,8 @@ init_stringtab (file_ptr offset, gdb::unique_xmalloc_ptr<char> *storage)
   return 0;
 }
 
-static const char *
-getsymname (struct internal_syment *symbol_entry)
+const char *
+coff_reader::getsymname (struct internal_syment *symbol_entry)
 {
   static char buffer[SYMNMLEN + 1];
   const char *result;
