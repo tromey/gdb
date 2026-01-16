@@ -64,7 +64,7 @@ static unsigned local_auxesz;
 
 /* This is set if this is a PE format file.  */
 
-static int pe_file;
+static bool pe_file;
 
 /* Simplified internal version of coff symbol table information.  */
 
@@ -323,9 +323,8 @@ coff_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
      from the section address, rather than as absolute addresses.
      FIXME: We should use BFD to read the symbol table, and thus avoid
      this problem.  */
-  pe_file =
-    startswith (bfd_get_target (objfile->obfd.get ()), "pe")
-    || startswith (bfd_get_target (objfile->obfd.get ()), "epoc-pe");
+  pe_file = (startswith (bfd_get_target (objfile->obfd.get ()), "pe")
+	     || startswith (bfd_get_target (objfile->obfd.get ()), "epoc-pe"));
 
   /* End of warning.  */
 
