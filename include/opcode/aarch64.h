@@ -762,6 +762,7 @@ enum aarch64_opnd
   AARCH64_OPND_BARRIER_GCSB,	/* Barrier operand for GCSB.  */
   AARCH64_OPND_BTI_TARGET,	/* BTI {<target>}.  */
   AARCH64_OPND_STSHH_POLICY,	/* STSHH {<policy>}.  */
+  AARCH64_OPND_SHUH_PHINT,	/* SHUH Priority Hint.  */
   AARCH64_OPND_BRBOP,		/* BRB operation IALL or INJ in bit 5.  */
   AARCH64_OPND_Rt_IN_SYS_ALIASES,	/* Defaulted and omitted Rt used in SYS aliases such as brb.  */
   AARCH64_OPND_LSE128_Rt,	/* LSE128 <Xt1>.  */
@@ -1894,6 +1895,8 @@ struct aarch64_inst
 #define HINT_OPD_JC	0x26
 #define HINT_OPD_KEEP	0x30
 #define HINT_OPD_STRM	0x31
+#define HINT_OPD_NPHINT	0x32
+#define HINT_OPD_PHINT	0x33
 #define HINT_OPD_NULL	0x00
 
 
