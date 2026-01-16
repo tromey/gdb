@@ -69,15 +69,15 @@ static int pe_file;
 /* Simplified internal version of coff symbol table information.  */
 
 struct coff_symbol
-  {
-    const char *c_name;
-    int c_naux;			/* 0 if syment only, 1 if syment +
-				   auxent, etc.  */
-    CORE_ADDR c_value;
-    int c_sclass;
-    int c_secnum;
-    unsigned int c_type;
-  };
+{
+  const char *c_name;
+  /* 0 if syment only, 1 if syment + auxent, etc.  */
+  int c_naux;
+  CORE_ADDR c_value;
+  int c_sclass;
+  int c_secnum;
+  unsigned int c_type;
+};
 
 static char *stringtab = NULL;
 static long stringtab_length = 0;
@@ -298,7 +298,7 @@ coff_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
 
   symfile_bfd = abfd;		/* Kludge for swap routines.  */
 
-/* WARNING WILL ROBINSON!  ACCESSING BFD-PRIVATE DATA HERE!  FIXME!  */
+  /* WARNING WILL ROBINSON!  ACCESSING BFD-PRIVATE DATA HERE!  FIXME!  */
   num_symbols = bfd_get_symcount (abfd);	/* How many syms */
   symtab_offset = cdata->sym_filepos;	/* Symbol table file offset */
   stringtab_offset = symtab_offset +	/* String table file offset */
