@@ -32,10 +32,10 @@
 
 static struct objfile *coffread_objfile;
 
-/* The addresses of the symbol table stream and number of symbols
-   of the object file we are reading (as copied into core).  */
+/* The BFD for this file -- only good while we're actively reading
+   symbols into a psymtab or a symtab.  */
 
-static bfd *nlist_bfd_global;
+static bfd *symfile_bfd;
 
 /* Pointers to scratch storage, used for reading raw symbols and
    auxents.  */
@@ -278,11 +278,6 @@ coff_read_minsyms (file_ptr symtab_offset, unsigned int nsyms,
     }
 }
 
-/* The BFD for this file -- only good while we're actively reading
-   symbols into a psymtab or a symtab.  */
-
-static bfd *symfile_bfd;
-
 /* Read a symbol file, after initialization by coff_symfile_init.  */
 
 static void
@@ -394,7 +389,6 @@ coff_symtab_read (minimal_symbol_reader &reader,
 	   objfile_name (objfile), bfd_errmsg (bfd_get_error ()));
 
   coffread_objfile = objfile;
-  nlist_bfd_global = objfile->obfd.get ();
 
   while (symnum < nsyms)
     {
@@ -538,7 +532,7 @@ read_one_sym (struct coff_symbol *cs)
   bfd_size_type bytes;
   internal_syment sym;
 
-  bytes = bfd_read (temp_sym, local_symesz, nlist_bfd_global);
+  bytes = bfd_read (temp_sym, local_symesz, symfile_bfd);
   if (bytes != local_symesz)
     error (_("%s: error reading symbols"), objfile_name (coffread_objfile));
   bfd_coff_swap_sym_in (symfile_bfd, temp_sym, &sym);
@@ -548,7 +542,7 @@ read_one_sym (struct coff_symbol *cs)
       /* We don't need aux entries, read past them.  */
       for (i = 0; i < cs->c_naux; i++)
 	{
-	  bytes = bfd_read (temp_aux, local_auxesz, nlist_bfd_global);
+	  bytes = bfd_read (temp_aux, local_auxesz, symfile_bfd);
 	  if (bytes != local_auxesz)
 	    error (_("%s: error reading symbols"),
 		   objfile_name (coffread_objfile));
