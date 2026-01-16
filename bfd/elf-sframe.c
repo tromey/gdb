@@ -25,7 +25,7 @@
 #include "sframe-api.h"
 #include "sframe-internal.h"
 
-typedef sframe_func_desc_entry_v3 sframe_func_desc_entry;
+typedef sframe_func_desc_idx_v3 sframe_func_desc_entry;
 
 /* Return TRUE if the function has been marked for deletion during the linking
    process.  */
@@ -487,16 +487,12 @@ _bfd_elf_merge_section_sframe (bfd *abfd,
       int64_t func_start_addr;
       bfd_vma address;
       uint32_t func_size = 0;
-      unsigned char func_info = 0;
-      unsigned char func_info2 = 0;
       unsigned int r_offset = 0;
       bool pltn_reloc_by_hand = false;
       unsigned int pltn_r_offset = 0;
-      uint8_t rep_block_size = 0;
 
       if (!sframe_decoder_get_funcdesc_v3 (sfd_ctx, i, &num_fres, &func_size,
-					   &func_start_addr, &func_info,
-					   &func_info2, &rep_block_size))
+					   &func_start_addr, NULL, NULL, NULL))
 	{
 	  /* If function belongs to a deleted section, skip editing the
 	     function descriptor entry.  */
@@ -560,11 +556,9 @@ _bfd_elf_merge_section_sframe (bfd *abfd,
 	      func_start_addr = address;
 	    }
 
-	  /* Update the encoder context with updated content.  */
-	  int err = sframe_encoder_add_funcdesc_v3 (sfe_ctx, func_start_addr,
-						    func_size, func_info,
-						    func_info2, rep_block_size,
-						    num_fres);
+	  /* Update the encoder context with FDE index entry.  */
+	  int err = sframe_encoder_add_funcdesc (sfe_ctx, func_start_addr,
+						 func_size);
 	  cur_fidx++;
 	  BFD_ASSERT (!err);
 	}
