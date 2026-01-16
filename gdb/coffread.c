@@ -46,8 +46,7 @@ static char *temp_aux;
 /* Local variables that hold the shift and mask values for the
    COFF file that we are currently reading.  These come back to us
    from BFD, and are referenced by their macro names, as well as
-   internally to the BTYPE, ISPTR, ISFCN, ISARY, ISTAG, and DECREF
-   macros from include/coff/internal.h .  */
+   internally to the ISFCN macro from include/coff/internal.h .  */
 
 static unsigned local_n_btshft;
 static unsigned local_n_tmask;
