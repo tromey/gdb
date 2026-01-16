@@ -475,7 +475,7 @@ _bfd_elf_merge_section_sframe (bfd *abfd,
   /* Iterate over the function descriptor entries and the FREs of the
      function from the decoder context.  Add each of them to the encoder
      context, if suitable.  */
-  uint32_t i = 0, j = 0, cur_fidx = 0;
+  uint32_t i = 0, cur_fidx = 0;
 
   uint32_t num_fidx = sframe_decoder_get_num_fidx (sfd_ctx);
   uint32_t num_enc_fidx = sframe_encoder_get_num_fidx (sfe_ctx);
@@ -569,18 +569,18 @@ _bfd_elf_merge_section_sframe (bfd *abfd,
 	  BFD_ASSERT (!err);
 	}
 
-      for (j = 0; j < num_fres; j++)
-	{
-	  sframe_frame_row_entry fre;
-	  if (!sframe_decoder_get_fre (sfd_ctx, i, j, &fre))
-	    {
-	      int err = sframe_encoder_add_fre (sfe_ctx,
-						cur_fidx-1+num_enc_fidx,
-						&fre);
-	      BFD_ASSERT (!err);
-	    }
-	}
+      uint32_t fde_num_fres = 0;
+      char *fres_buf = NULL;
+      size_t fres_buf_size = 0;
+
+      int err = sframe_decoder_get_fres_buf (sfd_ctx, i, &fres_buf,
+					     &fres_buf_size, &fde_num_fres);
+      BFD_ASSERT (!err && fde_num_fres == num_fres);
+      err = sframe_encoder_add_fres_buf (sfe_ctx, cur_fidx - 1 + num_enc_fidx,
+					 num_fres, fres_buf, fres_buf_size);
+      BFD_ASSERT (!err);
     }
+
   sfd_info->sfd_state = SFRAME_SEC_MERGED;
   /* Free the SFrame decoder context.  */
   sframe_decoder_free (&sfd_ctx);
