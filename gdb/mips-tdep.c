@@ -7959,32 +7959,33 @@ mips_virtual_frame_pointer (struct gdbarch *gdbarch,
   *offset = 0;
 }
 
-static void
-mips_find_abi_section (bfd *abfd, asection *sect, void *obj)
+static enum mips_abi
+mips_find_abi_from_sections (bfd *abfd)
 {
-  enum mips_abi *abip = (enum mips_abi *) obj;
-  const char *name = bfd_section_name (sect);
+  for (asection *sect : gdb_bfd_sections (abfd))
+    {
+      const char *name = bfd_section_name (sect);
 
-  if (*abip != MIPS_ABI_UNKNOWN)
-    return;
+      if (!startswith (name, ".mdebug."))
+	continue;
 
-  if (!startswith (name, ".mdebug."))
-    return;
+      if (strcmp (name, ".mdebug.abi32") == 0)
+	return MIPS_ABI_O32;
+      else if (strcmp (name, ".mdebug.abiN32") == 0)
+	return MIPS_ABI_N32;
+      else if (strcmp (name, ".mdebug.abi64") == 0)
+	return MIPS_ABI_N64;
+      else if (strcmp (name, ".mdebug.abiO64") == 0)
+	return MIPS_ABI_O64;
+      else if (strcmp (name, ".mdebug.eabi32") == 0)
+	return MIPS_ABI_EABI32;
+      else if (strcmp (name, ".mdebug.eabi64") == 0)
+	return MIPS_ABI_EABI64;
+      else
+	warning (_("unsupported ABI %s."), name + 8);
+    }
 
-  if (strcmp (name, ".mdebug.abi32") == 0)
-    *abip = MIPS_ABI_O32;
-  else if (strcmp (name, ".mdebug.abiN32") == 0)
-    *abip = MIPS_ABI_N32;
-  else if (strcmp (name, ".mdebug.abi64") == 0)
-    *abip = MIPS_ABI_N64;
-  else if (strcmp (name, ".mdebug.abiO64") == 0)
-    *abip = MIPS_ABI_O64;
-  else if (strcmp (name, ".mdebug.eabi32") == 0)
-    *abip = MIPS_ABI_EABI32;
-  else if (strcmp (name, ".mdebug.eabi64") == 0)
-    *abip = MIPS_ABI_EABI64;
-  else
-    warning (_("unsupported ABI %s."), name + 8);
+  return MIPS_ABI_UNKNOWN;
 }
 
 static void
@@ -8109,7 +8110,7 @@ mips_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
 
   /* GCC creates a pseudo-section whose name describes the ABI.  */
   if (found_abi == MIPS_ABI_UNKNOWN && info.abfd != NULL)
-    bfd_map_over_sections (info.abfd, mips_find_abi_section, &found_abi);
+    found_abi = mips_find_abi_from_sections (info.abfd);
 
   /* If we have no useful BFD information, use the ABI from the last
      MIPS architecture (if there is one).  */
