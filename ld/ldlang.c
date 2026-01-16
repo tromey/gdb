@@ -1131,30 +1131,6 @@ lang_for_each_statement_worker (void (*func) (lang_statement_union_type *),
 }
 
 void
-lang_for_each_statement (void (*func) (lang_statement_union_type *))
-{
-  lang_for_each_statement_worker (func, statement_list.head);
-}
-
-/*----------------------------------------------------------------------*/
-
-void
-lang_list_init (lang_statement_list_type *list)
-{
-  list->head = NULL;
-  list->tail = &list->head;
-}
-
-static void
-lang_statement_append (lang_statement_list_type *list,
-		       void *element,
-		       void *field)
-{
-  *(list->tail) = element;
-  list->tail = field;
-}
-
-void
 push_stat_ptr (lang_statement_list_type *new_ptr)
 {
   if (stat_save_ptr >= stat_save + sizeof (stat_save) / sizeof (stat_save[0]))
