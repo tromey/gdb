@@ -1913,7 +1913,7 @@ _bfd_x86_elf_create_sframe_plt (bfd *output_bfd,
     {
       /* Add SFrame FDE for plt0, the function start address is updated later
 	 at _bfd_elf_merge_section_sframe time.  */
-      sframe_encoder_add_funcdesc_v2 (*ectx,
+      sframe_encoder_add_funcdesc_v3 (*ectx,
 				      0, /* func start addr.  */
 				      plt0_entry_size,
 				      func_info,
@@ -1942,7 +1942,7 @@ _bfd_x86_elf_create_sframe_plt (bfd *output_bfd,
 	 function start address = plt0_entry_size.  As usual, this will be
 	 updated later at _bfd_elf_merge_section_sframe, by when the
 	 sections are relocated.  */
-      sframe_encoder_add_funcdesc_v2 (*ectx,
+      sframe_encoder_add_funcdesc_v3 (*ectx,
 				      plt0_entry_size, /* func start addr.  */
 				      dpltsec->size - plt0_entry_size,
 				      func_info,
@@ -2996,7 +2996,7 @@ _bfd_x86_elf_finish_dynamic_sections (bfd *output_bfd,
 	    + PLT_SFRAME_FDE_START_OFFSET;
 	  bfd_put_signed_32 (dynobj, test_value,
 #endif
-	  bfd_put_signed_32 (dynobj, plt_start - sframe_start,
+	  bfd_put_signed_64 (dynobj, plt_start - sframe_start,
 			     htab->plt_sframe->contents
 			     + PLT_SFRAME_FDE_START_OFFSET);
 	}
@@ -3030,7 +3030,7 @@ _bfd_x86_elf_finish_dynamic_sections (bfd *output_bfd,
 	    + PLT_SFRAME_FDE_START_OFFSET;
 	  bfd_put_signed_32 (dynobj, test_value,
 #endif
-	  bfd_put_signed_32 (dynobj, plt_start - sframe_start,
+	  bfd_put_signed_64 (dynobj, plt_start - sframe_start,
 			     htab->plt_second_sframe->contents
 			     + PLT_SFRAME_FDE_START_OFFSET);
 	}
@@ -3057,7 +3057,7 @@ _bfd_x86_elf_finish_dynamic_sections (bfd *output_bfd,
 	    = (htab->plt_got_sframe->output_section->vma
 	       + htab->plt_got_sframe->output_offset
 	       + PLT_SFRAME_FDE_START_OFFSET);
-	  bfd_put_signed_32 (dynobj, plt_start - sframe_start,
+	  bfd_put_signed_64 (dynobj, plt_start - sframe_start,
 			     htab->plt_got_sframe->contents
 			     + PLT_SFRAME_FDE_START_OFFSET);
 	}
