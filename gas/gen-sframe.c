@@ -1243,8 +1243,8 @@ sframe_xlate_do_offset (struct sframe_xlate_ctx *xlate_ctx,
   /* Ignore SP reg, as it can be recovered from the CFA tracking info.  */
   if (cfi_insn->u.ri.reg == SFRAME_CFA_FP_REG)
     {
-      gas_assert (cur_fre->fp_reg == SFRAME_FRE_REG_INVALID);
       sframe_fre_set_fp_track (cur_fre, cfi_insn->u.ri.offset);
+      cur_fre->fp_reg = SFRAME_FRE_REG_INVALID;
       cur_fre->merge_candidate = false;
     }
   else if (sframe_ra_tracking_p ()
@@ -1864,14 +1864,14 @@ sframe_xlate_do_same_value (const struct sframe_xlate_ctx *xlate_ctx,
 
   if (sframe_ra_tracking_p () && cfi_insn->u.r == SFRAME_CFA_RA_REG)
     {
-      cur_fre->ra_loc = SFRAME_FRE_ELEM_LOC_REG;
+      cur_fre->ra_loc = SFRAME_FRE_ELEM_LOC_NONE;
       cur_fre->ra_offset = 0;
       cur_fre->ra_undefined_p = false;
       cur_fre->merge_candidate = false;
     }
   else if (cfi_insn->u.r == SFRAME_CFA_FP_REG)
     {
-      cur_fre->fp_loc = SFRAME_FRE_ELEM_LOC_REG;
+      cur_fre->fp_loc = SFRAME_FRE_ELEM_LOC_NONE;
       cur_fre->fp_offset = 0;
       cur_fre->merge_candidate = false;
     }
