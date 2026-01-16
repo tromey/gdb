@@ -30,8 +30,10 @@ static void
 maybe_warn_already_logging ()
 {
   if (!saved_filename.empty ())
-    warning (_("Currently logging to %s.  Turn the logging off and on to "
-	       "make the new setting effective."), saved_filename.c_str ());
+    warning (_("Currently logging to %ps.  Turn the logging off and on to "
+	       "make the new setting effective."),
+	     styled_string (file_name_style.style (),
+			    saved_filename.c_str ()));
 }
 
 static std::string logging_filename = "gdb.txt";
@@ -227,8 +229,9 @@ handle_redirections (int from_tty)
 {
   if (!saved_filename.empty ())
     {
-      gdb_printf ("Already logging to %s.\n",
-		  saved_filename.c_str ());
+      gdb_printf ("Already logging to %ps.\n",
+		  styled_string (file_name_style.style (),
+				 saved_filename.c_str ()));
       return;
     }
 
@@ -240,18 +243,22 @@ handle_redirections (int from_tty)
   if (from_tty)
     {
       if (!logging_redirect)
-	gdb_printf ("Copying output to %s.\n",
-		    logging_filename.c_str ());
+	gdb_printf ("Copying output to %ps.\n",
+		    styled_string (file_name_style.style (),
+				   logging_filename.c_str ()));
       else
-	gdb_printf ("Redirecting output to %s.\n",
-		    logging_filename.c_str ());
+	gdb_printf ("Redirecting output to %ps.\n",
+		    styled_string (file_name_style.style (),
+				   logging_filename.c_str ()));
 
       if (!debug_redirect)
-	gdb_printf ("Copying debug output to %s.\n",
-		    logging_filename.c_str ());
+	gdb_printf ("Copying debug output to %ps.\n",
+		    styled_string (file_name_style.style (),
+				   logging_filename.c_str ()));
       else
-	gdb_printf ("Redirecting debug output to %s.\n",
-		    logging_filename.c_str ());
+	gdb_printf ("Redirecting debug output to %ps.\n",
+		    styled_string (file_name_style.style (),
+				   logging_filename.c_str ()));
     }
 
   saved_filename = logging_filename;
@@ -279,8 +286,10 @@ set_logging_off (const char *args, int from_tty)
 
   log_file.reset ();
   if (from_tty)
-    gdb_printf ("Done logging to %s.\n",
-		saved_filename.c_str ());
+    gdb_printf ("Done logging to %ps.\n",
+		styled_string (file_name_style.style (),
+			       saved_filename.c_str ()));
+
   saved_filename.clear ();
 }
 
