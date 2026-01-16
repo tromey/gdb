@@ -87,7 +87,7 @@ static int symnum;
 
 static const char *getsymname (struct internal_syment *);
 
-static int init_stringtab (bfd *, file_ptr, gdb::unique_xmalloc_ptr<char> *);
+static int init_stringtab (file_ptr, gdb::unique_xmalloc_ptr<char> *);
 
 static void read_one_sym (struct coff_symbol *);
 
@@ -97,9 +97,9 @@ static void coff_symtab_read (minimal_symbol_reader &,
 /* Return the BFD section that CS points to.  */
 
 static asection *
-cs_to_bfd_section (struct coff_symbol *cs, bfd *abfd)
+cs_to_bfd_section (struct coff_symbol *cs)
 {
-  for (asection *sect : gdb_bfd_sections (abfd))
+  for (asection *sect : gdb_bfd_sections (symfile_bfd))
     if (sect->target_index == cs->c_secnum)
       return sect;
 
@@ -110,19 +110,19 @@ cs_to_bfd_section (struct coff_symbol *cs, bfd *abfd)
 static int
 cs_to_section (struct coff_symbol *cs, struct objfile *objfile)
 {
-  asection *sect = cs_to_bfd_section (cs, objfile->obfd.get ());
+  asection *sect = cs_to_bfd_section (cs);
 
   if (sect == NULL)
     return SECT_OFF_TEXT (objfile);
-  return gdb_bfd_section_index (objfile->obfd.get (), sect);
+  return gdb_bfd_section_index (symfile_bfd, sect);
 }
 
 /* Return the address of the section of a COFF symbol.  */
 
 static CORE_ADDR
-cs_section_address (struct coff_symbol *cs, bfd *abfd)
+cs_section_address (struct coff_symbol *cs)
 {
-  asection *sect = cs_to_bfd_section (cs, abfd);
+  asection *sect = cs_to_bfd_section (cs);
 
   if (sect == nullptr)
     return 0;
@@ -256,8 +256,7 @@ coff_read_minsyms (file_ptr symtab_offset, unsigned int nsyms,
 		name1 = name + 6;
 	      if (name1 != NULL)
 		{
-		  int lead
-		    = bfd_get_symbol_leading_char (objfile->obfd.get ());
+		  int lead = bfd_get_symbol_leading_char (symfile_bfd);
 
 		  if (lead != '\0' && *name1 == lead)
 		    name1 += 1;
@@ -283,18 +282,16 @@ coff_read_minsyms (file_ptr symtab_offset, unsigned int nsyms,
 static void
 coff_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
 {
-  bfd *abfd = objfile->obfd.get ();
-  coff_data_type *cdata = coff_data (abfd);
-  const char *filename = bfd_get_filename (abfd);
+  symfile_bfd = objfile->obfd.get ();
+  coff_data_type *cdata = coff_data (symfile_bfd);
+  const char *filename = bfd_get_filename (symfile_bfd);
   int val;
   unsigned int num_symbols;
   file_ptr symtab_offset;
   file_ptr stringtab_offset;
 
-  symfile_bfd = abfd;		/* Kludge for swap routines.  */
-
   /* WARNING WILL ROBINSON!  ACCESSING BFD-PRIVATE DATA HERE!  FIXME!  */
-  num_symbols = bfd_get_symcount (abfd);	/* How many syms */
+  num_symbols = bfd_get_symcount (symfile_bfd); /* How many syms */
   symtab_offset = cdata->sym_filepos;	/* Symbol table file offset */
   stringtab_offset = symtab_offset +	/* String table file offset */
     num_symbols * cdata->local_symesz;
@@ -318,8 +315,8 @@ coff_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
      from the section address, rather than as absolute addresses.
      FIXME: We should use BFD to read the symbol table, and thus avoid
      this problem.  */
-  pe_file = (startswith (bfd_get_target (objfile->obfd.get ()), "pe")
-	     || startswith (bfd_get_target (objfile->obfd.get ()), "epoc-pe"));
+  pe_file = (startswith (bfd_get_target (symfile_bfd), "pe")
+	     || startswith (bfd_get_target (symfile_bfd), "epoc-pe"));
 
   /* End of warning.  */
 
@@ -327,7 +324,7 @@ coff_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
 
   scoped_restore restore_stringtab = make_scoped_restore (&stringtab);
   gdb::unique_xmalloc_ptr<char> stringtab_storage;
-  val = init_stringtab (abfd, stringtab_offset, &stringtab_storage);
+  val = init_stringtab (stringtab_offset, &stringtab_storage);
   if (val < 0)
     error (_("\"%s\": can't get string table"), filename);
 
@@ -337,7 +334,7 @@ coff_symfile_read (struct objfile *objfile, symfile_add_flags symfile_flags)
     {
       bool found_stab_section = false;
 
-      for (asection *sect : gdb_bfd_sections (abfd))
+      for (asection *sect : gdb_bfd_sections (symfile_bfd))
 	if (startswith (bfd_section_name (sect), ".stab"))
 	  {
 	    found_stab_section = true;
@@ -383,7 +380,7 @@ coff_symtab_read (minimal_symbol_reader &reader,
   symnum = 0;
 
   /* Position to read the symbol table.  */
-  val = bfd_seek (objfile->obfd.get (), symtab_offset, 0);
+  val = bfd_seek (symfile_bfd, symtab_offset, 0);
   if (val < 0)
     error (_("Error reading symbols from %s: %s"),
 	   objfile_name (objfile), bfd_errmsg (bfd_get_error ()));
@@ -476,8 +473,7 @@ coff_symtab_read (minimal_symbol_reader &reader,
 	      }
 	    else
 	      {
-		asection *bfd_section
-		  = cs_to_bfd_section (cs, objfile->obfd.get ());
+		asection *bfd_section = cs_to_bfd_section (cs);
 
 		sec = cs_to_section (cs, objfile);
 		tmpaddr = cs->c_value;
@@ -579,7 +575,7 @@ read_one_sym (struct coff_symbol *cs)
 	case C_FCN:
 	case C_EFCN:
 	  if (cs->c_secnum != 0)
-	    cs->c_value += cs_section_address (cs, symfile_bfd);
+	    cs->c_value += cs_section_address (cs);
 	  break;
 	}
     }
@@ -588,7 +584,7 @@ read_one_sym (struct coff_symbol *cs)
 /* Support for string table handling.  */
 
 static int
-init_stringtab (bfd *abfd, file_ptr offset, gdb::unique_xmalloc_ptr<char> *storage)
+init_stringtab (file_ptr offset, gdb::unique_xmalloc_ptr<char> *storage)
 {
   long length;
   int val;
@@ -599,10 +595,10 @@ init_stringtab (bfd *abfd, file_ptr offset, gdb::unique_xmalloc_ptr<char> *stora
   if (offset == 0)
     return 0;
 
-  if (bfd_seek (abfd, offset, 0) < 0)
+  if (bfd_seek (symfile_bfd, offset, 0) < 0)
     return -1;
 
-  val = bfd_read (lengthbuf, sizeof lengthbuf, abfd);
+  val = bfd_read (lengthbuf, sizeof lengthbuf, symfile_bfd);
   /* If no string table is needed, then the file may end immediately
      after the symbols.  Just return with `stringtab' set to null.  */
   if (val != sizeof lengthbuf)
@@ -621,7 +617,7 @@ init_stringtab (bfd *abfd, file_ptr offset, gdb::unique_xmalloc_ptr<char> *stora
     return 0;
 
   val = bfd_read (stringtab + sizeof lengthbuf,
-		  length - sizeof lengthbuf, abfd);
+		  length - sizeof lengthbuf, symfile_bfd);
   if (val != length - sizeof lengthbuf || stringtab[length - 1] != '\0')
     return -1;
 
