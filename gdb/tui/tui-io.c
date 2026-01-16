@@ -940,7 +940,7 @@ tui_initialize_io (void)
   /* Let tui_stderr own ERR_OUT.  */
   tui_stderr = new logging_file<ui_file_up> (ui_file_up (err_out));
   tui_stdlog = (new timestamped_file
-		(new logging_file<ui_file *> (err_out, true)));
+		(std::make_unique<logging_file<ui_file *>> (err_out, true)));
   tui_out = new cli_ui_out (tui_stdout, 0);
 
   /* Using redirectable_stdout here is a hack.  This should probably

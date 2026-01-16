@@ -442,11 +442,11 @@ protected:
 /* A ui_file that optionally puts a timestamp at the start of each
    line of output.  */
 
-class timestamped_file : public wrapped_file<ui_file *>
+class timestamped_file : public wrapped_file<ui_file_up>
 {
 public:
-  explicit timestamped_file (ui_file *stream)
-    : wrapped_file (stream)
+  explicit timestamped_file (ui_file_up stream)
+    : wrapped_file (std::move (stream))
   {
   }
 

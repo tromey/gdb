@@ -56,7 +56,7 @@ ui::ui (FILE *instream_, FILE *outstream_, FILE *errstream_)
     m_ui_stderr (new logging_file<ui_file_up>
 		 (std::make_unique<stderr_file> (errstream))),
     m_ui_stdlog (new timestamped_file
-		 (new logging_file<ui_file_up>
+		 (std::make_unique<logging_file<ui_file_up>>
 		  (std::make_unique<stderr_file> (errstream), true))),
     m_ui_stdtarg (m_ui_stderr)
 {
