@@ -866,6 +866,42 @@ sframe_get_fre_offset (const sframe_frame_row_entry *fre, int idx, int *errp)
     }
 }
 
+/* Get IDX'th offset as unsigned data from FRE.  Set errp as applicable.  */
+
+uint32_t
+sframe_get_fre_udata (const sframe_frame_row_entry *fre, int idx, int *errp)
+{
+  uint8_t offset_cnt, offset_size;
+
+  if (fre == NULL || !sframe_fre_sanity_check_p (fre))
+    return sframe_set_errno (errp, SFRAME_ERR_FRE_INVAL);
+
+  offset_cnt = sframe_fre_get_offset_count (fre->fre_info);
+  offset_size = sframe_fre_get_offset_size (fre->fre_info);
+
+  if (offset_cnt < idx + 1)
+    return sframe_set_errno (errp, SFRAME_ERR_FREOFFSET_NOPRESENT);
+
+  if (errp)
+    *errp = 0; /* Offset Valid.  */
+
+  if (offset_size == SFRAME_FRE_OFFSET_1B)
+    {
+      uint8_t *offsets = (uint8_t *)fre->fre_offsets;
+      return offsets[idx];
+    }
+  else if (offset_size == SFRAME_FRE_OFFSET_2B)
+    {
+      uint16_t *offsets = (uint16_t *)fre->fre_offsets;
+      return offsets[idx];
+    }
+  else
+    {
+      uint32_t *offsets = (uint32_t *)fre->fre_offsets;
+      return offsets[idx];
+    }
+}
+
 /* Free the decoder context.  */
 
 void
@@ -949,13 +985,18 @@ sframe_fre_get_base_reg_id (const sframe_frame_row_entry *fre, int *errp)
 
 int32_t
 sframe_fre_get_cfa_offset (const sframe_decoder_ctx *dctx,
-			   const sframe_frame_row_entry *fre, int *errp)
+			   const sframe_frame_row_entry *fre,
+			   uint32_t fde_type,
+			   int *errp)
 {
   int err;
-  int32_t offset = sframe_get_fre_offset (fre, SFRAME_FRE_CFA_OFFSET_IDX, &err);
+  bool flex_p = (fde_type == SFRAME_FDE_TYPE_FLEX);
+  uint32_t idx = flex_p ? 1 : 0;
+  int32_t offset = sframe_get_fre_offset (fre, idx, &err);
 
   /* For s390x undo adjustment of CFA offset (to enable 8-bit offsets).  */
-  if (!err && sframe_decoder_get_abi_arch (dctx) == SFRAME_ABI_S390X_ENDIAN_BIG)
+  if (!err
+      && sframe_decoder_get_abi_arch (dctx) == SFRAME_ABI_S390X_ENDIAN_BIG)
     offset = SFRAME_V2_S390X_CFA_OFFSET_DECODE (offset);
 
   if (errp)
@@ -963,61 +1004,95 @@ sframe_fre_get_cfa_offset (const sframe_decoder_ctx *dctx,
   return offset;
 }
 
-/* Get the FP offset from the FRE.  If the offset is invalid, sets errp.
-
-   For s390x the offset may be an encoded register number, indicated by
-   LSB set to one, which is only valid in the topmost frame.  */
+/* Get the FP offset from the FRE.  If the offset is invalid, sets errp.  */
 
 int32_t
 sframe_fre_get_fp_offset (const sframe_decoder_ctx *dctx,
-			  const sframe_frame_row_entry *fre, int *errp)
+			  const sframe_frame_row_entry *fre,
+			  uint32_t fde_type,
+			  int *errp)
 {
-  uint32_t fp_offset_idx = 0;
-  int8_t fp_offset = sframe_decoder_get_fixed_fp_offset (dctx);
-  /* If the FP offset is not being tracked, return the fixed FP offset
-     from the SFrame header.  */
-  if (fp_offset != SFRAME_CFA_FIXED_FP_INVALID
+  int fp_err = 0;
+  int8_t fixed_fp_offset = sframe_decoder_get_fixed_fp_offset (dctx);
+  bool flex_p = (fde_type == SFRAME_FDE_TYPE_FLEX);
+
+  /* Initialize fp_offset_idx for default FDEs.  In some ABIs, the stack offset
+     to recover RA (using the CFA) from is fixed (like AMD64).  In such cases,
+     the stack offset to recover FP will appear at the second index.  */
+  uint32_t fp_offset_idx = ((sframe_decoder_get_fixed_ra_offset (dctx)
+			     != SFRAME_CFA_FIXED_RA_INVALID)
+			    ? SFRAME_FRE_RA_OFFSET_IDX
+			    : SFRAME_FRE_FP_OFFSET_IDX);
+  if (flex_p)
+    {
+      uint32_t flex_ra_reg_data
+	= sframe_get_fre_udata (fre, SFRAME_FRE_RA_OFFSET_IDX * 2, errp);
+      /* In presence of RA padding SFRAME_FRE_RA_OFFSET_INVALID (instead of RA
+	 offsets), adjust the expected index of the FP offset.  */
+      if (errp && *errp == 0
+	  && flex_ra_reg_data == SFRAME_FRE_RA_OFFSET_INVALID)
+	fp_offset_idx = SFRAME_FRE_FP_OFFSET_IDX * 2;
+      else
+	fp_offset_idx = SFRAME_FRE_FP_OFFSET_IDX * 2 + 1;
+    }
+
+  /* NB: This errp must be retained if returning fp_offset.  */
+  int32_t fp_offset = sframe_get_fre_offset (fre, fp_offset_idx, &fp_err);
+
+  /* If the FP offset is not being tracked, return the fixed FP offset from the
+     SFrame header:
+       - For default FDEs (!flex_p)
+       - For flex FDEs, if there were no FP offsets found.  */
+  if ((!flex_p || (flex_p && fp_err))
+      && fixed_fp_offset != SFRAME_CFA_FIXED_FP_INVALID
       && !sframe_get_fre_ra_undefined_p (fre->fre_info))
     {
       if (errp)
 	*errp = 0;
-      return fp_offset;
+      return fixed_fp_offset;
     }
 
-  /* In some ABIs, the stack offset to recover RA (using the CFA) from is
-     fixed (like AMD64).  In such cases, the stack offset to recover FP will
-     appear at the second index.  */
-  fp_offset_idx = ((sframe_decoder_get_fixed_ra_offset (dctx)
-		    != SFRAME_CFA_FIXED_RA_INVALID)
-		   ? SFRAME_FRE_RA_OFFSET_IDX
-		   : SFRAME_FRE_FP_OFFSET_IDX);
-  return sframe_get_fre_offset (fre, fp_offset_idx, errp);
+  if (errp)
+    *errp = fp_err;
+  return fp_offset;
 }
 
-/* Get the RA offset from the FRE.  If the offset is invalid, sets errp.
-
-   For s390x an RA offset value of SFRAME_FRE_RA_OFFSET_INVALID indicates
-   that the RA is not saved, which is only valid in the topmost frame.
-   For s390x the offset may be an encoded register number, indicated by
-   LSB set to one, which is only valid in the topmost frame.  */
+/* Get the RA offset from the FRE.  If the offset is invalid, sets errp.  */
 
 int32_t
 sframe_fre_get_ra_offset (const sframe_decoder_ctx *dctx,
-			  const sframe_frame_row_entry *fre, int *errp)
+			  const sframe_frame_row_entry *fre,
+			  uint32_t fde_type,
+			  int *errp)
 {
-  int8_t ra_offset = sframe_decoder_get_fixed_ra_offset (dctx);
-  /* If the RA offset was not being tracked, return the fixed RA offset
-     from the SFrame header.  */
-  if (ra_offset != SFRAME_CFA_FIXED_RA_INVALID
+  int ra_err = 0;
+  int8_t fixed_ra_offset = sframe_decoder_get_fixed_ra_offset (dctx);
+  bool flex_p = (fde_type == SFRAME_FDE_TYPE_FLEX);
+
+  uint32_t ra_offset_idx = (flex_p
+			    ? SFRAME_FRE_RA_OFFSET_IDX * 2 + 1
+			    : SFRAME_FRE_RA_OFFSET_IDX);
+  /* NB: This errp must be retained if returning ra_offset.  */
+  int32_t ra_offset = sframe_get_fre_offset (fre, ra_offset_idx, &ra_err);
+
+  /* For ABIs where RA offset is not being tracked, return the fixed RA offset
+     specified in the the SFrame header, when:
+       - for default FDEs (!flex_p)
+       - for flex FDEs, if RA offset is solely padding or not present.  */
+  if ((!flex_p || (flex_p && ra_err))
+      && fixed_ra_offset != SFRAME_CFA_FIXED_RA_INVALID
       && !sframe_get_fre_ra_undefined_p (fre->fre_info))
     {
       if (errp)
 	*errp = 0;
-      return ra_offset;
+      return fixed_ra_offset;
     }
 
-  /* Otherwise, get the RA offset from the FRE.  */
-  return sframe_get_fre_offset (fre, SFRAME_FRE_RA_OFFSET_IDX, errp);
+  /* Otherwise, return the RA offset from the FRE.  The corresponding errp was
+     set earlier.  */
+  if (errp)
+    *errp = ra_err;
+  return ra_offset;
 }
 
 /* Get whether the RA is mangled.  */

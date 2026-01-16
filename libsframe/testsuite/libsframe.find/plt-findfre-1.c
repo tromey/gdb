@@ -65,6 +65,7 @@ void test_plt_findfre (const char suffix, int64_t plt_vaddr,
   size_t sf_size;
   int err = 0;
   uint32_t fde_cnt = 0;
+  uint32_t dfde = SFRAME_FDE_TYPE_DEFAULT;
 
   ectx = sframe_encode (SFRAME_VERSION, SFRAME_F_FDE_FUNC_START_PCREL,
 			SFRAME_ABI_AMD64_ENDIAN_LITTLE,
@@ -86,32 +87,32 @@ void test_plt_findfre (const char suffix, int64_t plt_vaddr,
 
   /* Find the first FRE in PLT1.  */
   err = sframe_find_fre (dctx, (plt_vaddr + 0x0 - sframe_vaddr), &frep);
-  TEST ((err == 0 && sframe_fre_get_cfa_offset (dctx, &frep, &err) == 0x1),
+  TEST ((err == 0 && sframe_fre_get_cfa_offset (dctx, &frep, dfde, &err) == 0x1),
        "plt-findfre-1%c: Find first FRE in PLT1", suffix);
 
   /* Find the second FRE.  */
   err = sframe_find_fre (dctx, (plt_vaddr + 0x6 - sframe_vaddr), &frep);
-  TEST ((err == 0 && sframe_fre_get_cfa_offset (dctx, &frep, &err) == 0x2),
+  TEST ((err == 0 && sframe_fre_get_cfa_offset (dctx, &frep, dfde, &err) == 0x2),
 	"plt-findfre-1%c: Find second FRE in PLT1", suffix);
 
   /* Find the last FRE.  */
   err = sframe_find_fre (dctx, (plt_vaddr + 0xc - sframe_vaddr), &frep);
-  TEST ((err == 0 && sframe_fre_get_cfa_offset (dctx, &frep, &err) == 0x3),
+  TEST ((err == 0 && sframe_fre_get_cfa_offset (dctx, &frep, dfde, &err) == 0x3),
 	"plt-findfre-1%c: Find last FRE in PLT1", suffix);
 
   /* Find the first FRE in PLT4.  */
   err = sframe_find_fre (dctx, (plt_vaddr + 16*3 + 0x0 - sframe_vaddr), &frep);
-  TEST ((err == 0 && sframe_fre_get_cfa_offset (dctx, &frep, &err) == 0x1),
+  TEST ((err == 0 && sframe_fre_get_cfa_offset (dctx, &frep, dfde, &err) == 0x1),
 	"plt-findfre-1%c: Find first FRE in PLT4", suffix);
 
   /* Find the second FRE in PLT4.  */
   err = sframe_find_fre (dctx, (plt_vaddr + 16*3 + 0x6 - sframe_vaddr), &frep);
-  TEST ((err == 0 && sframe_fre_get_cfa_offset (dctx, &frep, &err) == 0x2),
+  TEST ((err == 0 && sframe_fre_get_cfa_offset (dctx, &frep, dfde, &err) == 0x2),
 	"plt-findfre-1%c: Find second FRE in PLT4", suffix);
 
   /* Find the last FRE in PLT4.  */
   err = sframe_find_fre (dctx, (plt_vaddr + 16*3 + 0xc - sframe_vaddr), &frep);
-  TEST ((err == 0 && sframe_fre_get_cfa_offset (dctx, &frep, &err) == 0x3),
+  TEST ((err == 0 && sframe_fre_get_cfa_offset (dctx, &frep, dfde, &err) == 0x3),
 	"plt-findfre-1%c: Find last FRE in PLT4", suffix);
 
   /* Find no FRE for out of range PLT6.  */
