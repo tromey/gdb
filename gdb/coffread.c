@@ -95,7 +95,7 @@ private:
   asection *cs_to_bfd_section (coff_symbol *cs);
   int cs_to_section (coff_symbol *cs);
   CORE_ADDR cs_section_address (coff_symbol *cs);
-  int is_import_fixup_symbol (coff_symbol *cs, minimal_symbol_type type);
+  bool is_import_fixup_symbol (coff_symbol *cs, minimal_symbol_type type);
   minimal_symbol *record_minimal_symbol (minimal_symbol_reader &reader,
 					 coff_symbol *cs,
 					 unrelocated_addr address,
@@ -148,9 +148,9 @@ coff_reader::cs_section_address (struct coff_symbol *cs)
 
 /* The linker sometimes generates some non-function symbols inside
    functions referencing variables imported from another DLL.
-   Return nonzero if the given symbol corresponds to one of them.  */
+   Return true if the given symbol corresponds to one of them.  */
 
-int
+bool
 coff_reader::is_import_fixup_symbol (struct coff_symbol *cs,
 				     enum minimal_symbol_type type)
 {
@@ -160,23 +160,23 @@ coff_reader::is_import_fixup_symbol (struct coff_symbol *cs,
 
   /* Must be a non-static text symbol.  */
   if (type != mst_text)
-    return 0;
+    return false;
 
   /* Must be a non-function symbol.  */
   if (ISFCN (cs->c_type))
-    return 0;
+    return false;
 
   /* The name must start with "__fu<digits>__".  */
   if (!startswith (cs->c_name, "__fu"))
-    return 0;
+    return false;
   if (! c_isdigit (cs->c_name[4]))
-    return 0;
+    return false;
   for (i = 5; cs->c_name[i] != '\0' && c_isdigit (cs->c_name[i]); i++)
     /* Nothing, just incrementing index past all digits.  */;
   if (cs->c_name[i] != '_' || cs->c_name[i + 1] != '_')
-    return 0;
+    return false;
 
-  return 1;
+  return true;
 }
 
 struct minimal_symbol *
