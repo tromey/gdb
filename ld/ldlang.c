@@ -62,6 +62,7 @@
 /* Local variables.  */
 static struct obstack stat_obstack;
 static struct obstack map_obstack;
+static struct obstack matching_obstack;
 static struct obstack pt_obstack;
 
 #define obstack_chunk_alloc xmalloc
@@ -452,12 +453,14 @@ add_matching_section (lang_wild_statement_type *ptr,
 		      asection *section,
 		      lang_input_statement_type *file)
 {
-  lang_input_matcher_type *new_section;
-  /* Add a section reference to the list.  */
-  new_section = new_stat (lang_input_matcher, &ptr->matching_sections);
-  new_section->section = section;
-  new_section->pattern = sec;
-  new_section->input_stmt = file;
+  lang_statement_union_type *n
+    = obstack_alloc (&matching_obstack, sizeof (lang_input_matcher_type));
+  n->header.type = lang_input_matcher_enum;
+  n->header.next = NULL;
+  n->input_matcher.section = section;
+  n->input_matcher.pattern = sec;
+  n->input_matcher.input_stmt = file;
+  lang_statement_append (&ptr->matching_sections, n, &n->header.next);
 }
 
 /* Process section S (from input file FILE) in relation to wildcard
@@ -1388,6 +1391,7 @@ lang_init (bool object_only)
     {
       obstack_begin (&stat_obstack, 1000);
       obstack_init (&pt_obstack);
+      obstack_init (&matching_obstack);
     }
 
   stat_ptr = &statement_list;
@@ -8313,6 +8317,8 @@ static void
 reset_resolved_wilds (void)
 {
   lang_for_each_statement (reset_one_wild);
+  obstack_free (&matching_obstack, NULL);
+  obstack_init (&matching_obstack);
 }
 
 /* For each output section statement, splice any entries on the
