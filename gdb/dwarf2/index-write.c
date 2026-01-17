@@ -720,17 +720,17 @@ public:
 	    if (parent != nullptr && (parent->flags & IS_SYNTHESIZED) != 0)
 	      parent = nullptr;
 
-	    int &idx = m_indexkey_to_idx[index_key (entry->tag,
-						    kind,
-						    entry->flags,
-						    entry->lang,
-						    parent != nullptr)];
-	    if (idx == 0)
+	    int &abbrev = m_indexkey_to_abbrev[index_key (entry->tag,
+							  kind,
+							  entry->flags,
+							  entry->lang,
+							  parent != nullptr)];
+	    if (abbrev == 0)
 	      {
-		idx = next_abbrev++;
+		abbrev = next_abbrev++;
 
 		/* Abbrev number and tag.  */
-		m_abbrev_table.append_unsigned_leb128 (idx);
+		m_abbrev_table.append_unsigned_leb128 (abbrev);
 		m_abbrev_table.append_unsigned_leb128 (entry->tag);
 
 		/* Unit index.  */
@@ -790,7 +790,7 @@ public:
 	    gdb_assert (offset_inserted);
 
 	    /* Write the entry to the pool, starting with the abbrev number.  */
-	    m_entry_pool.append_unsigned_leb128 (idx);
+	    m_entry_pool.append_unsigned_leb128 (abbrev);
 
 	    /* Unit index.  */
 	    const auto it = m_cu_index_htab.find (entry->per_cu);
@@ -1107,8 +1107,8 @@ private:
   debug_str_lookup m_debugstrlookup;
 
   /* Map each used .debug_names abbreviation tag parameter to its
-     index value.  */
-  gdb::unordered_map<index_key, int, index_key_hasher> m_indexkey_to_idx;
+     abbrev value.  */
+  gdb::unordered_map<index_key, int, index_key_hasher> m_indexkey_to_abbrev;
 
   /* .debug_names abbreviation table.  */
   data_buf m_abbrev_table;
