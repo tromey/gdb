@@ -419,53 +419,6 @@ i386_pseudo_register_name (struct gdbarch *gdbarch, int regnum)
   internal_error (_("invalid regnum"));
 }
 
-/* Convert a dbx register number REG to the appropriate register
-   number used by GDB.  */
-
-static int
-i386_dbx_reg_to_regnum (struct gdbarch *gdbarch, int reg)
-{
-  i386_gdbarch_tdep *tdep = gdbarch_tdep<i386_gdbarch_tdep> (gdbarch);
-
-  /* This implements what GCC calls the "default" register map
-     (dbx_register_map[]).  */
-
-  if (reg >= 0 && reg <= 7)
-    {
-      /* General-purpose registers.  The debug info calls %ebp
-	 register 4, and %esp register 5.  */
-      if (reg == 4)
-	return 5;
-      else if (reg == 5)
-	return 4;
-      else return reg;
-    }
-  else if (reg >= 12 && reg <= 19)
-    {
-      /* Floating-point registers.  */
-      return reg - 12 + I387_ST0_REGNUM (tdep);
-    }
-  else if (reg >= 21 && reg <= 28)
-    {
-      /* SSE registers.  */
-      int ymm0_regnum = tdep->ymm0_regnum;
-
-      if (ymm0_regnum >= 0
-	  && i386_xmm_regnum_p (gdbarch, reg))
-	return reg - 21 + ymm0_regnum;
-      else
-	return reg - 21 + I387_XMM0_REGNUM (tdep);
-    }
-  else if (reg >= 29 && reg <= 36)
-    {
-      /* MMX registers.  */
-      return reg - 29 + I387_MM0_REGNUM (tdep);
-    }
-
-  /* This will hopefully provoke a warning.  */
-  return gdbarch_num_cooked_regs (gdbarch);
-}
-
 /* Convert SVR4 DWARF register number REG to the appropriate register number
    used by GDB.  */
 
@@ -489,10 +442,20 @@ i386_svr4_dwarf_reg_to_regnum (struct gdbarch *gdbarch, int reg)
       /* Floating-point registers.  */
       return reg - 11 + I387_ST0_REGNUM (tdep);
     }
-  else if (reg >= 21 && reg <= 36)
+  else if (reg >= 21 && reg <= 28)
     {
-      /* The SSE and MMX registers have the same numbers as with dbx.  */
-      return i386_dbx_reg_to_regnum (gdbarch, reg);
+      /* SSE registers.  */
+      int ymm0_regnum = tdep->ymm0_regnum;
+
+      if (ymm0_regnum >= 0 && i386_xmm_regnum_p (gdbarch, reg))
+	return reg - 21 + ymm0_regnum;
+      else
+	return reg - 21 + I387_XMM0_REGNUM (tdep);
+    }
+  else if (reg >= 29 && reg <= 36)
+    {
+      /* MMX registers.  */
+      return reg - 29 + I387_MM0_REGNUM (tdep);
     }
 
   switch (reg)
