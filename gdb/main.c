@@ -79,9 +79,6 @@ static int gdb_datadir_provided = 0;
    the possibly relocated path to python's lib directory.  */
 std::string python_libdir;
 
-/* Target IO streams.  */
-struct ui_file *gdb_stdtargin;
-
 /* True if --batch or --batch-silent was seen.  */
 int batch_flag = 0;
 
@@ -693,8 +690,6 @@ captured_main_1 (struct captured_main_args *context)
   main_ui = new ui (stdin, stdout, stderr);
   gdb_internal_backtrace_init_str ();
   current_ui = main_ui;
-
-  gdb_stdtargin = gdb_stdin;
 
   /* Put a CLI based uiout in place early.  If the early initialization
      files trigger any I/O then it isn't hard to reach parts of GDB that

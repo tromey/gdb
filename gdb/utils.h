@@ -189,10 +189,6 @@ extern void gdb_flush (struct ui_file *stream);
 /* Target output.  */
 #define gdb_stdtarg (*current_ui_gdb_stdtarg_ptr ())
 
-/* Truly global ui_file streams.  These are all defined in main.c.  */
-
-extern struct ui_file *gdb_stdtargin;
-
 /* Set the screen dimensions to WIDTH and HEIGHT.  */
 
 extern void set_screen_width_and_height (int width, int height);
