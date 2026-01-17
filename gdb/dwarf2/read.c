@@ -6969,8 +6969,12 @@ lookup_dwo_unit_in_dwp (dwarf2_per_bfd *per_bfd,
 			struct dwp_file *dwp_file, const char *comp_dir,
 			ULONGEST signature, int is_debug_types)
 {
-  const struct dwp_hash_table *dwp_htab =
-    is_debug_types ? dwp_file->tus : dwp_file->cus;
+  const dwp_hash_table *dwp_htab
+    = is_debug_types ? dwp_file->tus : dwp_file->cus;
+
+  if (dwp_htab == nullptr)
+    return nullptr;
+
   bfd *dbfd = dwp_file->dbfd.get ();
   uint32_t mask = dwp_htab->nr_slots - 1;
   uint32_t hash = signature & mask;
@@ -7524,25 +7528,19 @@ cutu_reader::lookup_dwo_cutu (dwarf2_cu *cu, const char *dwo_name,
 
   dwp_file *dwp_file = per_objfile->per_bfd->dwp_file.get ();
 
-  if (dwp_file != NULL)
+  if (dwp_file != nullptr)
     {
-      const struct dwp_hash_table *dwp_htab =
-	is_debug_types ? dwp_file->tus : dwp_file->cus;
+      dwo_unit *dwo_cutu
+	= lookup_dwo_unit_in_dwp (per_bfd, dwp_file, comp_dir, signature,
+				  is_debug_types);
 
-      if (dwp_htab != NULL)
+      if (dwo_cutu != nullptr)
 	{
-	  struct dwo_unit *dwo_cutu =
-	    lookup_dwo_unit_in_dwp (per_bfd, dwp_file, comp_dir, signature,
-				    is_debug_types);
+	  dwarf_read_debug_printf ("Virtual DWO %s %s found: @%s",
+				   kind, hex_string (signature),
+				   host_address_to_string (dwo_cutu));
 
-	  if (dwo_cutu != NULL)
-	    {
-	      dwarf_read_debug_printf ("Virtual DWO %s %s found: @%s",
-				       kind, hex_string (signature),
-				       host_address_to_string (dwo_cutu));
-
-	      return dwo_cutu;
-	    }
+	  return dwo_cutu;
 	}
     }
   else
