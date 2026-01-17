@@ -1,6 +1,7 @@
 # name: MVE vmlas instructions
 # as: -march=armv8.1-m.main+mve.fp
 # objdump: -dr --prefix-addresses --show-raw-insn -marmv8.1-m.main
+# target: [is_elf_format]
 
 .*: +file format .*arm.*
 

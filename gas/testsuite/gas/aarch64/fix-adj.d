@@ -1,5 +1,5 @@
 #objdump: -r
-#notarget: *-*-*coff
+#target: [is_elf_format]
 # Relocations to functions should point to the symbol, not the section.
 
 .*: +file format .*
