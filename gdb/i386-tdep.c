@@ -8861,36 +8861,6 @@ i386_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
   set_gdbarch_ps_regnum (gdbarch, I386_EFLAGS_REGNUM); /* %eflags */
   set_gdbarch_fp0_regnum (gdbarch, I386_ST0_REGNUM); /* %st(0) */
 
-  /* NOTE: kettenis/20040418: GCC does have two possible register
-     numbering schemes on the i386: dbx and SVR4.  These schemes
-     differ in how they number %ebp, %esp, %eflags, and the
-     floating-point registers, and are implemented by the arrays
-     dbx_register_map[] and svr4_dbx_register_map in
-     gcc/config/i386.c.  GCC also defines a third numbering scheme in
-     gcc/config/i386.c, which it designates as the "default" register
-     map used in 64bit mode.  This last register numbering scheme is
-     implemented in dbx64_register_map, and is used for AMD64; see
-     amd64-tdep.c.
-
-     Currently, each GCC i386 target always uses the same register
-     numbering scheme across all its supported debugging formats
-     i.e. SDB (COFF), stabs and DWARF 2.  This is because
-     gcc/sdbout.c, gcc/dbxout.c and gcc/dwarf2out.c all use the
-     DBX_REGISTER_NUMBER macro which is defined by each target's
-     respective config header in a manner independent of the requested
-     output debugging format.
-
-     This does not match the arrangement below, which presumes that
-     the SDB and stabs numbering schemes differ from the DWARF and
-     DWARF 2 ones.  The reason for this arrangement is that it is
-     likely to get the numbering scheme for the target's
-     default/native debug format right.  For targets where GCC is the
-     native compiler (FreeBSD, NetBSD, OpenBSD, GNU/Linux) or for
-     targets where the native toolchain uses a different numbering
-     scheme for a particular debug format (stabs-in-ELF on Solaris)
-     the defaults below will have to be overridden, like
-     i386_elf_init_abi() does.  */
-
   /* Use the dbx register numbering scheme for COFF.  */
   set_gdbarch_sdb_reg_to_regnum (gdbarch, i386_dbx_reg_to_regnum);
 

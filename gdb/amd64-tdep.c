@@ -3595,9 +3595,6 @@ amd64_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch,
      as the "DWARF Register Number Mapping" in the System V psABI.  */
   set_gdbarch_dwarf2_reg_to_regnum (gdbarch, amd64_dwarf_reg_to_regnum);
 
-  /* We don't override SDB_REG_RO_REGNUM, since COFF doesn't seem to
-     be in use on any of the supported AMD64 targets.  */
-
   /* Call dummy code.  */
   set_gdbarch_push_dummy_call (gdbarch, amd64_push_dummy_call);
   set_gdbarch_frame_align (gdbarch, amd64_frame_align);
