@@ -3771,9 +3771,6 @@ copy_archive (bfd *ibfd, bfd *obfd, const char *output_target,
 	  goto cleanup_and_exit;
 	}
 
-      /* Copy slim LTO IR file as unknown object.  */
-      if (this_element->lto_type == lto_slim_ir_object)
-	ok_object = false;
       if (ok_object)
 	{
 	  ok = copy_object (this_element, output_element, input_arch);
@@ -4067,9 +4064,6 @@ copy_file (const char *input_filename, const char *output_filename, int ofd,
  	  return;
  	}
 
-      /* Copy slim LTO IR file as unknown file.  */
-      if (ibfd->lto_type == lto_slim_ir_object)
-	ok_object = false;
       if (ok_object
 	  ? !copy_object (ibfd, obfd, input_arch)
 	  : !copy_unknown_file (ibfd, obfd,
