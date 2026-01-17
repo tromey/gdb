@@ -546,17 +546,6 @@ Value(
 
 Method(
     comment="""
-Convert from an sdb register number to an internal gdb register number.
-""",
-    type="int",
-    name="sdb_reg_to_regnum",
-    params=[("int", "sdb_regnr")],
-    predefault="no_op_reg_to_regnum",
-    invalid=False,
-)
-
-Method(
-    comment="""
 Provide a default mapping from a DWARF2 register number to a gdb REGNUM.
 Return -1 for bad REGNUM.  Note: Several targets get this wrong.
 """,
