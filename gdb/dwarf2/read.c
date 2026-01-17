@@ -7562,30 +7562,19 @@ cutu_reader::lookup_dwo_cutu (dwarf2_cu *cu, const char *dwo_name,
 	    dwo_file = add_dwo_file (per_bfd, std::move (new_dwo_file));
 	}
 
-      if (dwo_file != NULL)
+      if (dwo_file != nullptr)
 	{
-	  struct dwo_unit *dwo_cutu = NULL;
+	  dwo_unit_set &dwo_units
+	    = is_debug_types ? dwo_file->tus : dwo_file->cus;
 
-	  if (is_debug_types && !dwo_file->tus.empty ())
+	  if (auto dwo_unit_it = dwo_units.find (signature);
+	      dwo_unit_it != dwo_units.end ())
 	    {
-	      if (auto it = dwo_file->tus.find (signature);
-		  it != dwo_file->tus.end ())
-		dwo_cutu = it->get ();
-	    }
-	  else if (!is_debug_types && !dwo_file->cus.empty ())
-	    {
-	      if (auto it = dwo_file->cus.find (signature);
-		  it != dwo_file->cus.end ())
-		dwo_cutu = it->get ();
-	    }
-
-	  if (dwo_cutu != NULL)
-	    {
-	      dwarf_read_debug_printf ("DWO %s %s(%s) found: @%s",
-				       kind, dwo_name, hex_string (signature),
-				       host_address_to_string (dwo_cutu));
-
-	      return dwo_cutu;
+	      dwarf_read_debug_printf
+		("DWO %s %s(%s) found: @%s", kind, dwo_name,
+		 hex_string (signature),
+		 host_address_to_string (dwo_unit_it->get ()));
+	      return dwo_unit_it->get ();
 	    }
 	}
     }
