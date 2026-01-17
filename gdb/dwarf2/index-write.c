@@ -728,33 +728,49 @@ public:
 	    if (idx == 0)
 	      {
 		idx = next_abbrev++;
+
+		/* Abbrev number and tag.  */
 		m_abbrev_table.append_unsigned_leb128 (idx);
 		m_abbrev_table.append_unsigned_leb128 (entry->tag);
+
+		/* Unit index.  */
 		m_abbrev_table.append_unsigned_leb128
 		  (kind == unit_kind::cu
 		   ? DW_IDX_compile_unit
 		   : DW_IDX_type_unit);
 		m_abbrev_table.append_unsigned_leb128 (DW_FORM_udata);
+
+		/* DIE offset.  */
 		m_abbrev_table.append_unsigned_leb128 (DW_IDX_die_offset);
 		m_abbrev_table.append_unsigned_leb128 (DW_FORM_ref_addr);
+
+		/* Language.  */
 		m_abbrev_table.append_unsigned_leb128 (DW_IDX_GNU_language);
 		m_abbrev_table.append_unsigned_leb128 (DW_FORM_udata);
+
+		/* Internal linkage flag.  */
 		if (!tag_is_type (entry->tag)
 		    && (entry->flags & IS_STATIC) != 0)
 		  {
 		    m_abbrev_table.append_unsigned_leb128 (DW_IDX_GNU_internal);
 		    m_abbrev_table.append_unsigned_leb128 (DW_FORM_flag_present);
 		  }
+
+		/* Main subprogram flag.  */
 		if ((entry->flags & IS_MAIN) != 0)
 		  {
 		    m_abbrev_table.append_unsigned_leb128 (DW_IDX_GNU_main);
 		    m_abbrev_table.append_unsigned_leb128 (DW_FORM_flag_present);
 		  }
+
+		/* Linkage name flag.  */
 		if ((entry->flags & IS_LINKAGE) != 0)
 		  {
 		    m_abbrev_table.append_unsigned_leb128 (DW_IDX_GNU_linkage_name);
 		    m_abbrev_table.append_unsigned_leb128 (DW_FORM_flag_present);
 		  }
+
+		/* Parent offset.  */
 		if (parent != nullptr)
 		  {
 		    m_abbrev_table.append_unsigned_leb128 (DW_IDX_parent);
@@ -773,19 +789,23 @@ public:
 		 .second);
 	    gdb_assert (offset_inserted);
 
-	    /* Write the entry to the pool.  */
+	    /* Write the entry to the pool, starting with the abbrev number.  */
 	    m_entry_pool.append_unsigned_leb128 (idx);
 
+	    /* Unit index.  */
 	    const auto it = m_cu_index_htab.find (entry->per_cu);
 	    gdb_assert (it != m_cu_index_htab.cend ());
 	    m_entry_pool.append_unsigned_leb128 (it->second);
 
+	    /* DIE offset.  */
 	    m_entry_pool.append_uint (dwarf5_offset_size (),
 				      m_dwarf5_byte_order,
 				      to_underlying (entry->die_offset));
 
+	    /* Language.  */
 	    m_entry_pool.append_unsigned_leb128 (entry->per_cu->dw_lang ());
 
+	    /* Parent offset.  */
 	    if (parent != nullptr)
 	      {
 		m_offsets_to_patch.emplace_back (m_entry_pool.size (), parent);
