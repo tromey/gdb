@@ -165,13 +165,6 @@ struct buildsym_compunit
 
   struct macro_table *get_macro_table ();
 
-  struct macro_table *release_macros ()
-  {
-    struct macro_table *result = m_pending_macros;
-    m_pending_macros = nullptr;
-    return result;
-  }
-
   /* This function is called to discard any pending blocks.  */
 
   void free_pending_blocks ()

@@ -808,7 +808,8 @@ buildsym_compunit::end_compunit_symtab_from_static_block
 
   blockvector->global_block ()->set_compunit (cu);
 
-  cu->set_macro_table (release_macros ());
+  cu->set_macro_table (m_pending_macros);
+  m_pending_macros = nullptr;
 
   /* Default any symbols without a specified symtab to the primary symtab.  */
   {
