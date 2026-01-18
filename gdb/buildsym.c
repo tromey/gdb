@@ -478,27 +478,6 @@ buildsym_compunit::start_subfile (const char *name, const char *name_for_id)
   m_subfiles = subfile.release ();
 }
 
-/* Handle the N_BINCL and N_EINCL symbol types that act like N_SOL for
-   switching source files (different subfiles, as we call them) within
-   one object file, but using a stack rather than in an arbitrary
-   order.  */
-
-void
-buildsym_compunit::push_subfile ()
-{
-  gdb_assert (m_current_subfile != NULL);
-  gdb_assert (!m_current_subfile->name.empty ());
-  m_subfile_stack.push_back (m_current_subfile->name.c_str ());
-}
-
-const char *
-buildsym_compunit::pop_subfile ()
-{
-  gdb_assert (!m_subfile_stack.empty ());
-  const char *name = m_subfile_stack.back ();
-  m_subfile_stack.pop_back ();
-  return name;
-}
 
 /* Add a linetable entry for line number LINE and address PC to the
    line vector for SUBFILE.  */

@@ -198,17 +198,6 @@ struct buildsym_compunit
      existing subfiles).  It can be equal to NAME if NAME follows that rule.  */
   void start_subfile (const char *name, const char *name_for_id);
 
-  /* Same as above, but passes NAME for NAME_FOR_ID.  */
-
-  void start_subfile (const char *name)
-  {
-    return start_subfile (name, name);
-  }
-
-  void push_subfile ();
-
-  const char *pop_subfile ();
-
   void record_line (struct subfile *subfile, int line, unrelocated_addr pc,
 		    linetable_entry_flags flags);
 
