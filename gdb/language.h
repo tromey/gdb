@@ -346,14 +346,6 @@ struct language_defn
   virtual void language_arch_info (struct gdbarch *,
 				   struct language_arch_info *) const = 0;
 
-  /* Find the definition of the type with the given name.  */
-
-  virtual struct type *lookup_transparent_type (const char *name,
-						domain_search_flags flags) const
-  {
-    return basic_lookup_transparent_type (name, flags);
-  }
-
   /* Find all symbols in the current program space matching NAME in
      DOMAIN, according to this language's rules.
 
