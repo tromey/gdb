@@ -98,10 +98,6 @@ buildsym_compunit::get_macro_table ()
 void
 add_symbol_to_list (symbol *symbol, std::vector<struct symbol *> &list)
 {
-  /* If this is an alias for another symbol, don't add it.  */
-  if (symbol->linkage_name () && symbol->linkage_name ()[0] == '#')
-    return;
-
   list.push_back (symbol);
 }
 
