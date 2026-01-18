@@ -165,14 +165,6 @@ struct buildsym_compunit
 
   struct macro_table *get_macro_table ();
 
-  /* This function is called to discard any pending blocks.  */
-
-  void free_pending_blocks ()
-  {
-    m_pending_block_obstack.clear ();
-    m_pending_blocks = nullptr;
-  }
-
   struct block *finish_block (struct symbol *symbol,
 			      struct pending_block *old_blocks,
 			      const struct dynamic_prop *static_link,

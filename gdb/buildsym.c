@@ -373,7 +373,9 @@ buildsym_compunit::make_blockvector ()
   for (next = m_pending_blocks; next; next = next->next)
     blockvector->set_block (--i, next->block);
 
-  free_pending_blocks ();
+  /* Finished with the pending blocks now.  */
+  m_pending_block_obstack.clear ();
+  m_pending_blocks = nullptr;
 
   /* If we needed an address map for this symtab, record it in the
      blockvector.  */
