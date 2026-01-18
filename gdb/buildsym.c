@@ -91,16 +91,6 @@ buildsym_compunit::get_macro_table ()
   return m_pending_macros;
 }
 
-/* Maintain the lists of symbols and blocks.  */
-
-/* Add a symbol to one of the lists of symbols.  */
-
-void
-add_symbol_to_list (symbol *symbol, std::vector<struct symbol *> &list)
-{
-  list.push_back (symbol);
-}
-
 /* Record BLOCK on the list of all blocks in the file.  Put it after
    OPBLOCK, or at the beginning if opblock is NULL.  This puts the
    block in the list after all its subblocks.  */

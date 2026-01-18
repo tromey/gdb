@@ -371,7 +371,10 @@ private:
 
 using buildsym_compunit_up = std::unique_ptr<buildsym_compunit>;
 
-extern void add_symbol_to_list (symbol *symbol,
-				std::vector<struct symbol *> &list);
+static inline
+void add_symbol_to_list (symbol *symbol, std::vector<struct symbol *> &list)
+{
+  list.push_back (symbol);
+}
 
 #endif /* GDB_BUILDSYM_H */
