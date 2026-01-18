@@ -920,14 +920,6 @@ public:
   }
 
   /* See language.h.  */
-  struct type *lookup_transparent_type (const char *name,
-					domain_search_flags flags)
-    const override
-  {
-    return cp_lookup_transparent_type (name, flags);
-  }
-
-  /* See language.h.  */
   unsigned int search_name_hash (const char *name) const override
   {
     return cp_search_name_hash (name);
