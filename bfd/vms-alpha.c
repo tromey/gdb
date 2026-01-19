@@ -1911,7 +1911,7 @@ _bfd_vms_slurp_etir (bfd *abfd, struct bfd_link_info *info)
 
   while (ptr < maxptr)
     {
-      int cmd, cmd_length;
+      unsigned int cmd, cmd_length;
 
       if (ptr + 4 > maxptr)
 	goto corrupt_etir;
@@ -1920,7 +1920,7 @@ _bfd_vms_slurp_etir (bfd *abfd, struct bfd_link_info *info)
       cmd_length = bfd_getl16 (ptr + 2);
 
       /* PR 21589 and 21579: Check for a corrupt ETIR record.  */
-      if (cmd_length < 4 || ptr + cmd_length > maxptr)
+      if (cmd_length < 4 || cmd_length > (size_t) (maxptr - ptr))
 	{
 	corrupt_etir:
 	  _bfd_error_handler (_("corrupt ETIR record encountered"));
@@ -2081,7 +2081,7 @@ _bfd_vms_slurp_etir (bfd *abfd, struct bfd_link_info *info)
 	     da	data.  */
 	case ETIR__C_STO_IMMR:
 	  {
-	    int size;
+	    unsigned int size;
 
 	    if (cmd_length < 4)
 	      goto corrupt_etir;
@@ -2184,6 +2184,8 @@ _bfd_vms_slurp_etir (bfd *abfd, struct bfd_link_info *info)
 	    if (cmd_length < 4)
 	      goto corrupt_etir;
 	    size = bfd_getl32 (ptr);
+	    if (size > cmd_length - 4)
+	      goto corrupt_etir;
 	    if (!image_write (abfd, ptr + 4, size))
 	      return false;
 	  }
