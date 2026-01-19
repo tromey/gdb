@@ -741,11 +741,14 @@ if [gas_32_check] then {
 	run_dump_test "intel-cmps16"
 	run_list_test "inval-equ-1" "-al"
 	run_list_test "inval-equ-2" "-al"
-	run_dump_test "ifunc"
-	run_list_test "ifunc-2"
-	run_dump_test "ifunc-3"
 	run_dump_test "localpic"
 	run_dump_test "debug1"
+
+	if {[supports_gnu_osabi]} then {
+	    run_dump_test "ifunc"
+	    run_list_test "ifunc-2"
+	    run_dump_test "ifunc-3"
+	}
 
 	run_dump_test "dwarf2-line-1"
 	run_dump_test "dwarf2-line-2"
