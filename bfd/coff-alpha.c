@@ -861,7 +861,7 @@ alpha_ecoff_get_relocated_section_contents (bfd *abfd,
     {
       arelent *rel;
       bfd_reloc_status_type r;
-      char *err;
+      char *err = NULL;
       unsigned int r_type;
 
       rel = *relp;
