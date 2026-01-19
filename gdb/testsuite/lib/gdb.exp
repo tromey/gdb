@@ -6138,9 +6138,9 @@ proc escape_for_host { str } {
 proc quote_for_host { args } {
     set str [join $args]
     if { [is_remote host] } {
-	set str [join [list {\"} $str {\"}] ""]
+	set str [join [list {\"} [regsub -all {"} $str {\\\"}] {\"}] ""]
     } else {
-	set str [join [list {"} $str {"}] ""]
+	set str [join [list {"} [regsub -all {"} $str {\"}] {"}] ""]
     }
     return $str
 }
