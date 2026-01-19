@@ -657,35 +657,44 @@ sframe_decode_fde_attr_v3 (const char *buf, size_t buf_size,
   *fre_type = SFRAME_V3_FDE_FRE_TYPE (fdap->sfda_func_info);
   return 0;
 }
+
 static int
-flip_fre (char *fp, uint32_t fre_type, size_t *fre_size)
+flip_fre (char *fp, size_t fp_size, uint32_t fre_type, size_t *fre_size)
 {
   uint8_t fre_info;
   uint8_t offset_size, offset_cnt;
-  size_t addr_size, fre_info_size = 0;
+  size_t addr_size, fre_info_size, offset_bytes_size;
   int err = 0;
 
   if (fre_size == NULL)
     return sframe_set_errno (&err, SFRAME_ERR_INVAL);
 
+  addr_size = sframe_fre_start_addr_size (fre_type);
+  if (addr_size > fp_size)
+    return SFRAME_ERR;
   flip_fre_start_address (fp, fre_type);
 
   /* Advance the buffer pointer to where the FRE info is.  */
-  addr_size = sframe_fre_start_addr_size (fre_type);
   fp += addr_size;
+  fp_size -= addr_size;
 
   /* FRE info is uint8_t.  No need to flip.  */
+  fre_info_size = sizeof (uint8_t);
+  if (fre_info_size > fp_size)
+    return SFRAME_ERR;
   fre_info = *(uint8_t*)fp;
   offset_size = sframe_fre_get_offset_size (fre_info);
   offset_cnt = sframe_fre_get_offset_count (fre_info);
 
   /* Advance the buffer pointer to where the stack offsets are.  */
-  fre_info_size = sizeof (uint8_t);
   fp += fre_info_size;
+  fp_size -= fre_info_size;
+  offset_bytes_size = sframe_fre_offset_bytes_size (fre_info);
+  if (offset_bytes_size > fp_size)
+    return SFRAME_ERR;
   flip_fre_stack_offsets (fp, offset_size, offset_cnt);
 
-  *fre_size
-    = addr_size + fre_info_size + sframe_fre_offset_bytes_size (fre_info);
+  *fre_size = addr_size + fre_info_size + offset_bytes_size;
 
   return 0;
 }
@@ -758,12 +767,9 @@ flip_sframe_fdes_with_fres_v2 (char *frame_buf, size_t buf_size,
       fp = fres + fre_offset;
       for (; j < prev_frep_index + num_fres; j++)
 	{
-	  if (flip_fre (fp, fre_type, &esz))
+	  if (flip_fre (fp, buf_end - fp, fre_type, &esz))
 	    goto bad;
 	  fre_bytes_flipped += esz;
-
-	  if (esz == 0 || esz > buf_size)
-	    goto bad;
 	  fp += esz;
 	}
       prev_frep_index = j;
@@ -870,12 +876,9 @@ flip_sframe_fdes_with_fres_v3 (char *frame_buf, size_t buf_size,
       fp += sizeof (sframe_func_desc_attr_v3);
       for (; j < prev_frep_index + num_fres; j++)
 	{
-	  if (flip_fre (fp, fre_type, &esz))
+	  if (flip_fre (fp, buf_end - fp, fre_type, &esz))
 	    goto bad;
 	  fre_bytes_flipped += esz;
-
-	  if (esz == 0 || esz > buf_size)
-	    goto bad;
 	  fp += esz;
 	}
       prev_frep_index = j;
