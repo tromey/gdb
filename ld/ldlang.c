@@ -8713,6 +8713,9 @@ lang_process (void)
 
   ldemul_finish ();
 
+  /* We should not need the wildcard information any more.  */
+  reset_resolved_wilds ();
+
   /* Convert absolute symbols to section relative.  */
   ldexp_finalize_syms ();
 
