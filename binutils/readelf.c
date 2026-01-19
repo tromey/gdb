@@ -18284,9 +18284,9 @@ process_mips_fpe_exception (int mask)
 
    Reads at or beyond END will not be made.  */
 
-static unsigned char *
+static const unsigned char *
 display_tag_value (signed int tag,
-		   unsigned char * p,
+		   const unsigned char * p,
 		   const unsigned char * const end)
 {
   uint64_t val;
@@ -18308,7 +18308,7 @@ display_tag_value (signed int tag,
 	{
 	  maxlen -= 1; /* Remove \0 from the character count.  */
 	  print_symbol_name ((int) maxlen, (const char *) p);
-	  size_t len = strnlen ((char *) p, maxlen);
+	  size_t len = strnlen ((const char *) p, maxlen);
 	  if (len == maxlen && p[maxlen] != '\0')
 	    printf (_("<corrupt string tag>"));
 	  p += len + 1;
@@ -18316,7 +18316,7 @@ display_tag_value (signed int tag,
       else
 	{
 	  printf (_("<corrupt string tag>"));
-	  p = (unsigned char *) end;
+	  p = end;
 	}
       printf ("\"\n");
     }
@@ -18332,8 +18332,8 @@ display_tag_value (signed int tag,
 
 /* ARC ABI attributes section.  */
 
-static unsigned char *
-display_arc_attribute (unsigned char * p,
+static const unsigned char *
+display_arc_attribute (const unsigned char * p,
 		       const unsigned char * const end)
 {
   unsigned int tag;
@@ -18649,8 +18649,8 @@ static arm_attr_public_tag arm_attr_public_tags[] =
 };
 #undef LOOKUP
 
-static unsigned char *
-display_arm_attribute (unsigned char * p,
+static const unsigned char *
+display_arm_attribute (const unsigned char * p,
 		       const unsigned char * const end)
 {
   unsigned int tag;
@@ -18796,10 +18796,10 @@ display_arm_attribute (unsigned char * p,
   return display_tag_value (tag, p, end);
 }
 
-static unsigned char *
-display_gnu_attribute (unsigned char * p,
-		       unsigned char * (* display_proc_gnu_attribute)
-		       (unsigned char *, unsigned int, const unsigned char * const),
+static const unsigned char *
+display_gnu_attribute (const unsigned char * p,
+		       const unsigned char * (* display_proc_gnu_attribute)
+		       (const unsigned char *, unsigned int, const unsigned char * const),
 		       const unsigned char * const end)
 {
   unsigned int tag;
@@ -18844,8 +18844,8 @@ display_gnu_attribute (unsigned char * p,
   return display_tag_value (tag, p, end);
 }
 
-static unsigned char *
-display_m68k_gnu_attribute (unsigned char * p,
+static const unsigned char *
+display_m68k_gnu_attribute (const unsigned char * p,
 			    unsigned int tag,
 			    const unsigned char * const end)
 {
@@ -18882,8 +18882,8 @@ display_m68k_gnu_attribute (unsigned char * p,
   return display_tag_value (tag & 1, p, end);
 }
 
-static unsigned char *
-display_power_gnu_attribute (unsigned char * p,
+static const unsigned char *
+display_power_gnu_attribute (const unsigned char * p,
 			     unsigned int tag,
 			     const unsigned char * const end)
 {
@@ -19001,8 +19001,8 @@ display_power_gnu_attribute (unsigned char * p,
   return display_tag_value (tag & 1, p, end);
 }
 
-static unsigned char *
-display_s390_gnu_attribute (unsigned char * p,
+static const unsigned char *
+display_s390_gnu_attribute (const unsigned char * p,
 			    unsigned int tag,
 			    const unsigned char * const end)
 {
@@ -19114,8 +19114,8 @@ display_sparc_hwcaps2 (unsigned int mask)
   fputc ('\n', stdout);
 }
 
-static unsigned char *
-display_sparc_gnu_attribute (unsigned char * p,
+static const unsigned char *
+display_sparc_gnu_attribute (const unsigned char * p,
 			     unsigned int tag,
 			     const unsigned char * const end)
 {
@@ -19177,8 +19177,8 @@ print_mips_fp_abi_value (unsigned int val)
     }
 }
 
-static unsigned char *
-display_mips_gnu_attribute (unsigned char * p,
+static const unsigned char *
+display_mips_gnu_attribute (const unsigned char * p,
 			    unsigned int tag,
 			    const unsigned char * const end)
 {
@@ -19217,8 +19217,8 @@ display_mips_gnu_attribute (unsigned char * p,
   return display_tag_value (tag & 1, p, end);
 }
 
-static unsigned char *
-display_tic6x_attribute (unsigned char * p,
+static const unsigned char *
+display_tic6x_attribute (const unsigned char * p,
 			 const unsigned char * const end)
 {
   unsigned int tag;
@@ -19454,7 +19454,7 @@ display_tic6x_attribute (unsigned char * p,
 }
 
 static void
-display_raw_attribute (unsigned char * p, unsigned char const * const end)
+display_raw_attribute (const unsigned char * p, unsigned char const * const end)
 {
   uint64_t addr = 0;
   size_t bytes = end - p;
@@ -19498,8 +19498,8 @@ display_raw_attribute (unsigned char * p, unsigned char const * const end)
   putchar ('\n');
 }
 
-static unsigned char *
-display_msp430_attribute (unsigned char * p,
+static const unsigned char *
+display_msp430_attribute (const unsigned char * p,
 			  const unsigned char * const end)
 {
   uint64_t val;
@@ -19578,8 +19578,8 @@ display_msp430_attribute (unsigned char * p,
   return p;
 }
 
-static unsigned char *
-display_msp430_gnu_attribute (unsigned char * p,
+static const unsigned char *
+display_msp430_gnu_attribute (const unsigned char * p,
 			      unsigned int tag,
 			      const unsigned char * const end)
 {
@@ -19623,8 +19623,8 @@ static struct riscv_attr_tag_t riscv_attr_tag[] =
 #undef T
 };
 
-static unsigned char *
-display_riscv_attribute (unsigned char *p,
+static const unsigned char *
+display_riscv_attribute (const unsigned char *p,
 			 const unsigned char * const end)
 {
   uint64_t val;
@@ -19683,8 +19683,8 @@ display_riscv_attribute (unsigned char *p,
   return p;
 }
 
-static unsigned char *
-display_csky_attribute (unsigned char * p,
+static const unsigned char *
+display_csky_attribute (const unsigned char * p,
 			const unsigned char * const end)
 {
   uint64_t tag;
@@ -19794,8 +19794,8 @@ static bool
 process_attributes (Filedata * filedata,
 		    const char * public_name,
 		    unsigned int proc_type,
-		    unsigned char * (* display_pub_attribute) (unsigned char *, const unsigned char * const),
-		    unsigned char * (* display_proc_gnu_attribute) (unsigned char *, unsigned int, const unsigned char * const))
+		    const unsigned char * (* display_pub_attribute) (const unsigned char *, const unsigned char * const),
+		    const unsigned char * (* display_proc_gnu_attribute) (const unsigned char *, unsigned int, const unsigned char * const))
 {
   /* Find the section header so that we get the size.  */
   Elf_Internal_Shdr * sect = find_section_by_type (filedata, proc_type);
@@ -19812,7 +19812,7 @@ process_attributes (Filedata * filedata,
     return false;
 
   bool res = true;
-  unsigned char * p = contents;
+  const unsigned char * p = contents;
   /* The first character is the version of the attributes.
      Currently only version 1, (aka 'A') is recognised here.  */
   if (*p != 'A')
@@ -19889,7 +19889,7 @@ process_attributes (Filedata * filedata,
 	  int tag;
 	  unsigned int val;
 	  uint64_t size;
-	  unsigned char * end;
+	  const unsigned char * end;
 
 	  /* PR binutils/17531: Safe handling of corrupt files.  */
 	  if (attr_len < 6)
@@ -24203,8 +24203,8 @@ process_notes (Filedata * filedata)
   return true;
 }
 
-static unsigned char *
-display_public_gnu_attributes (unsigned char * start,
+static const unsigned char *
+display_public_gnu_attributes (const unsigned char * start,
 			       const unsigned char * const end)
 {
   printf (_("  Unknown GNU attribute: %s\n"), start);
@@ -24215,13 +24215,13 @@ display_public_gnu_attributes (unsigned char * start,
   return (unsigned char *) end;
 }
 
-static unsigned char *
-display_generic_attribute (unsigned char * start,
+static const unsigned char *
+display_generic_attribute (const unsigned char * start,
 			   unsigned int tag,
 			   const unsigned char * const end)
 {
   if (tag == 0)
-    return (unsigned char *) end;
+    return end;
 
   return display_tag_value (tag, start, end);
 }
