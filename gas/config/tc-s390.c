@@ -2879,7 +2879,17 @@ tc_s390_regname_to_dw2regnum (char *regname)
     {
       regnum = reg_name_search (regname);
       if (regname[0] == 'f' && regnum != -1)
-        regnum += 16;
+	{
+	  /* Convert from floating-point register number (0..15)
+	   * to DWARF floating point register number (15..31):
+	   * Right rotate the least significant three bits and add 16.  */
+	  int dw2_regnum;
+	  dw2_regnum = (regnum & 0b110) >> 1;
+	  dw2_regnum |= (regnum & 0b1) << 2;
+	  dw2_regnum |= (regnum & 0b1000);
+	  dw2_regnum += 16;
+	  regnum = dw2_regnum;
+	}
     }
   else if (strcmp (regname, "ap") == 0)
     regnum = 32;
