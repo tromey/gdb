@@ -1956,6 +1956,8 @@ dwarf2_base_index_functions::print_stats (struct objfile *objfile,
     }
   gdb_printf (_("  Number of read units: %d\n"), total - count);
   gdb_printf (_("  Number of unread units: %d\n"), count);
+  gdb_printf (_("  Number of read top-level DIEs: %d\n"),
+	      per_objfile->per_bfd->nr_toplevel_dies_read.load ());
 }
 
 void
@@ -14068,6 +14070,7 @@ cutu_reader::read_full_die (int num_extra_attrs, bool allow_reprocess)
 die_info *
 cutu_reader::read_toplevel_die (gdb::array_view<attribute *> extra_attrs)
 {
+  m_new_cu.get ()->per_objfile->per_bfd->nr_toplevel_dies_read++;
   const gdb_byte *begin_info_ptr = m_info_ptr;
   die_info *die = this->read_full_die (extra_attrs.size (), false);
 
