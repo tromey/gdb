@@ -628,19 +628,17 @@ extern void init_thread_list (void);
 /* Add a thread to the thread list, print a message
    that a new thread is found, and return the pointer to
    the new thread.  Caller my use this pointer to
-   initialize the private thread data.  */
+   initialize the private thread data; or the private thread data may
+   be passed as the third argument.  */
 extern struct thread_info *add_thread (process_stratum_target *targ,
-				       ptid_t ptid);
+				       ptid_t ptid,
+				       private_thread_info_up info = {});
 
 /* Same as add_thread, but does not print a message about new
    thread.  */
-extern struct thread_info *add_thread_silent (process_stratum_target *targ,
-					      ptid_t ptid);
-
-/* Same as add_thread, and sets the private info.  */
-extern struct thread_info *add_thread_with_info (process_stratum_target *targ,
-						 ptid_t ptid,
-						 private_thread_info_up);
+extern struct thread_info *add_thread_silent
+     (process_stratum_target *targ, ptid_t ptid,
+      private_thread_info_up info = {});
 
 /* Delete thread THREAD and notify of thread exit.  If the thread is
    currently not deletable, don't actually delete it but still tag it

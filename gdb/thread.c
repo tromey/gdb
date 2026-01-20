@@ -298,7 +298,8 @@ notify_new_thread (thread_info *t)
 }
 
 struct thread_info *
-add_thread_silent (process_stratum_target *targ, ptid_t ptid)
+add_thread_silent (process_stratum_target *targ, ptid_t ptid,
+		   private_thread_info_up priv)
 {
   gdb_assert (targ != nullptr);
 
@@ -317,18 +318,17 @@ add_thread_silent (process_stratum_target *targ, ptid_t ptid)
     delete_thread (tp);
 
   tp = new_thread (inf, ptid);
+  tp->priv = std::move (priv);
   notify_new_thread (tp);
 
   return tp;
 }
 
 struct thread_info *
-add_thread_with_info (process_stratum_target *targ, ptid_t ptid,
-		      private_thread_info_up priv)
+add_thread (process_stratum_target *targ, ptid_t ptid,
+	    private_thread_info_up priv)
 {
-  thread_info *result = add_thread_silent (targ, ptid);
-
-  result->priv = std::move (priv);
+  thread_info *result = add_thread_silent (targ, ptid, std::move (priv));
 
   if (print_thread_events)
     gdb_printf (_("[New %s (id %s)]\n"), target_pid_to_str (ptid).c_str (),
@@ -336,12 +336,6 @@ add_thread_with_info (process_stratum_target *targ, ptid_t ptid,
 
   annotate_new_thread ();
   return result;
-}
-
-struct thread_info *
-add_thread (process_stratum_target *targ, ptid_t ptid)
-{
-  return add_thread_with_info (targ, ptid, NULL);
 }
 
 private_thread_info::~private_thread_info () = default;

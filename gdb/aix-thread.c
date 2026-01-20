@@ -832,8 +832,7 @@ sync_threadlists (pid_t pid)
 	      tp->priv.reset (priv);
 	    }
 	  else
-	    add_thread_with_info (proc_target, ptid,
-		private_thread_info_up (priv));
+	    add_thread (proc_target, ptid, private_thread_info_up (priv));
 	}
 
       /* The thread is terminated. Remove it.  */
