@@ -893,6 +893,8 @@ output_sframe_func_desc_attr (const struct sframe_func_entry *sframe_fde)
     finfo2 = SFRAME_V3_SET_FDE_TYPE (finfo2, SFRAME_FDE_TYPE_FLEX);
   out_one (finfo2);
 
+  /* Currently, GAS only emits SFrame FDE with PC Type
+     SFRAME_V3_FDE_PCTYPE_INC.  Emit repetitive block size of 0.  */
   out_one (0);
 }
 
