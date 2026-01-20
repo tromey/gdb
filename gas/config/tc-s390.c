@@ -2897,10 +2897,6 @@ tc_s390_regname_to_dw2regnum (char *regname)
 	  regnum += 48;
 	}
     }
-  else if (strcmp (regname, "ap") == 0)
-    regnum = 32;
-  else if (strcmp (regname, "cc") == 0)
-    regnum = 33;
   return regnum;
 }
 
