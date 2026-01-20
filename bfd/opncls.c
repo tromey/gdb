@@ -1032,15 +1032,12 @@ bfd_make_readable (bfd *abfd)
   abfd->origin = 0;
   abfd->opened_once = false;
   abfd->output_has_begun = false;
-  abfd->usrdata = NULL;
   abfd->cacheable = false;
   abfd->mtime_set = false;
 
   abfd->target_defaulted = true;
   abfd->direction = read_direction;
   abfd->symcount = 0;
-  abfd->outsymbols = 0;
-  abfd->tdata.any = 0;
   abfd->size = 0;
 
   bfd_check_format (abfd, bfd_object);
