@@ -95,7 +95,7 @@ if { [check_compiler_available] } {
     run_cc_link_tests [list \
 	[list \
 	    "Build pr32789-1a.o pr32789-1b.o" \
-	    "-r" \
+	    "-r -nostdlib" \
 	    "-Wa,--gsframe" \
 	    { pr32789-1a.c pr32789-1b.c } \
 	    {{readelf --sframe pr32789-1.sd}
