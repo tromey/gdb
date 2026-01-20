@@ -9,4 +9,7 @@
 # Invalid vector register names
 	.cfi_register v0, v32
 	.cfi_register %v0, %v32
+# Invalid access register names
+	.cfi_register a0, a16
+	.cfi_register %a0, %a16
 	.cfi_endproc

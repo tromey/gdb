@@ -55,3 +55,19 @@ vr:
 	.word 0
 	.cfi_endproc
 	.size vr, .-vr
+# Access register (AR) names a0..a15
+	.type ar, @function
+ar:
+	.cfi_startproc
+	.word 0
+	.cfi_register a0, a1
+	.cfi_register a2, a3
+	.cfi_register a4, a5
+	.cfi_register a6, a7
+	.cfi_register a8, a9
+	.cfi_register a10, a11
+	.cfi_register a12, a13
+	.cfi_register a14, a15
+	.word 0
+	.cfi_endproc
+	.size ar, .-ar

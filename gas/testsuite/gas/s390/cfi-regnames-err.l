@@ -9,3 +9,6 @@
 # Invalid vector register names
 .*:10: Error: bad register expression
 .*:11: Error: bad register expression
+# Invalid access register names
+.*:13: Error: bad register expression
+.*:14: Error: bad register expression

@@ -2875,7 +2875,7 @@ tc_s390_regname_to_dw2regnum (char *regname)
 {
   int regnum = -1;
 
-  if (regname[0] != 'c' && regname[0] != 'a')
+  if (regname[0] != 'c')
     {
       regnum = reg_name_search (regname);
       if ((regname[0] == 'f' || regname[0] == 'v') && regnum != -1)
@@ -2891,6 +2891,10 @@ tc_s390_regname_to_dw2regnum (char *regname)
 	  dw2_regnum |= (regnum & 0b1000);
 	  dw2_regnum += (regnum < 16) ? 16 : 68;
 	  regnum = dw2_regnum;
+	}
+      else if (regname[0] == 'a' && regnum != -1)
+	{
+	  regnum += 48;
 	}
     }
   else if (strcmp (regname, "ap") == 0)

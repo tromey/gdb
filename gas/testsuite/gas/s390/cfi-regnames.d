@@ -36,7 +36,7 @@ Contents of the .eh_frame section:
   DW_CFA_nop
 
 # Vector register (VR) names v0..v31
-00000070 0000000000000044 00000074 FDE cie=00000000 pc=0000000000000008..000000000000000c
+00000070 0000000000000040 00000074 FDE cie=00000000 pc=0000000000000008..000000000000000c
   DW_CFA_advance_loc: 2 to 000000000000000a
   DW_CFA_register: r16 \(f0\) in r20 \(f1\)
   DW_CFA_register: r17 \(f2\) in r21 \(f3\)
@@ -56,7 +56,17 @@ Contents of the .eh_frame section:
   DW_CFA_register: r79 \(v30\) in r83 \(v31\)
   DW_CFA_nop
   DW_CFA_nop
-  DW_CFA_nop
-  DW_CFA_nop
+
+# Access register (AR) names a0..a15
+000000b4 0000000000000028 000000b8 FDE cie=00000000 pc=000000000000000c..0000000000000010
+  DW_CFA_advance_loc: 2 to 000000000000000e
+  DW_CFA_register: r48 \(a0\) in r49 \(a1\)
+  DW_CFA_register: r50 \(a2\) in r51 \(a3\)
+  DW_CFA_register: r52 \(a4\) in r53 \(a5\)
+  DW_CFA_register: r54 \(a6\) in r55 \(a7\)
+  DW_CFA_register: r56 \(a8\) in r57 \(a9\)
+  DW_CFA_register: r58 \(a10\) in r59 \(a11\)
+  DW_CFA_register: r60 \(a12\) in r61 \(a13\)
+  DW_CFA_register: r62 \(a14\) in r63 \(a15\)
   DW_CFA_nop
   DW_CFA_nop
