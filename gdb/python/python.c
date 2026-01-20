@@ -3197,6 +3197,11 @@ Output async record to MI channels if any." },
     "warning (text) -> None\n\
 Print a warning." },
 
+  { "create_green_thread", (PyCFunction) gdbpy_create_green_thread,
+    METH_VARARGS | METH_KEYWORDS,
+    "create_green_thread (CALLBACK) -> GreenThread.\n\
+Create a new green thread." },
+
   {NULL, NULL, 0, NULL}
 };
 

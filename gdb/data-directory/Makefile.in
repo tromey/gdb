@@ -84,6 +84,7 @@ PYTHON_FILE_LIST = \
 	gdb/prompt.py \
 	gdb/ptwrite.py \
 	gdb/styling.py \
+	gdb/threads.py \
 	gdb/types.py \
 	gdb/unwinder.py \
 	gdb/xmethod.py \
@@ -93,6 +94,7 @@ PYTHON_FILE_LIST = \
 	gdb/command/missing_files.py \
 	gdb/command/pretty_printers.py \
 	gdb/command/prompt.py \
+	gdb/command/threads.py \
 	gdb/command/type_printers.py \
 	gdb/command/unwinders.py \
 	gdb/command/xmethods.py \

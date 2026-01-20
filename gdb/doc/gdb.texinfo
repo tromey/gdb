@@ -3815,6 +3815,15 @@ the user specify which @code{libthread_db} to use if the default choice
 isn't compatible with the program.
 @end itemize
 
+@menu
+* Thread Concepts::             Thread Concepts
+* Green Threads::               Green Threads
+* Thread Commands::             Thread Commands
+@end menu
+
+@node Thread Concepts
+@subsection Thread Concepts
+
 @cindex focus of debugging
 @cindex current thread
 The @value{GDBN} thread debugging facility allows you to observe all
@@ -3950,6 +3959,49 @@ Likewise when the program receives a signal:
 @smallexample
 Thread 1 "main" received signal SIGINT, Interrupt.
 @end smallexample
+
+@node Green Threads
+@subsection Green Threads
+
+@value{GDBN} has some support for threads implemented as a user-space
+library---so-called @dfn{green} threads (also known as @dfn{m:n}
+threads).  Green threads are commonly implemented using the
+@code{setcontext} family of functions.  @xref{System V contexts, , ,
+libc, GNU C Library Reference Manual}.
+@c FIXME link to the python docs here
+
+Green threads have a few differences and limitations as compared to
+system threads.
+
+The @var{systag} thread identifier may vary between green thread
+implementations.
+FIXME - mention different implementations earlier
+FIXME - show an exmaple
+
+Because green threads are multiplexed onto system threads, a given
+green thread may be active or inactive.  You can switch to a thread
+(using the @code{thread} command) no matter which state it is in, but
+only active threads can be run.  So, commands like @code{step} or
+@code{next} will fail when the current thread is not active.
+
+FIXME example
+
+Green threads are normally controlled by some user-space code that
+decides which one should be active.  Stepping through this
+thread-switching code can yield strange results.  In particular, you
+will notice an otherwise unexpected thread switch in this case.
+
+When unwinding the stack, @value{GDBN} will normally print a warning
+if it appears that an older frame is ``inner'' to a newer frame---that
+is, if the stack frames appear to be in the wrong order in memory.
+This warning is suppressed for green threads, because this scenario is
+more common with these.
+
+@node Thread Commands
+@subsection Thread Commands
+
+@value{GDBN} provides several commands for examining and manipulating
+threads:
 
 @table @code
 @anchor{info_threads}

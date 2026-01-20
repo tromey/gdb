@@ -208,6 +208,7 @@ optional arguments while skipping others.  Example:
 * Inferiors In Python::         Python representation of inferiors (processes)
 * Events In Python::            Listening for events from @value{GDBN}.
 * Threads In Python::           Accessing inferior threads from Python.
+* Green Threads In Python::     Adding user-space threads
 * Recordings In Python::        Accessing recordings from Python.
 * CLI Commands In Python::      Implementing new CLI commands in Python.
 * GDB/MI Commands In Python::   Implementing new @sc{gdb/mi} commands in Python.
@@ -4304,6 +4305,151 @@ Temporary breakpoint 1, main () at /tmp/hello.c:18
 2024-01-04 14:48:41.347036
 @end group
 @end smallexample
+
+@node Green Threads In Python
+@subsubsection Green Threads In Python
+
+You can implement new green threads (@pxref{Green Threads}) in Python.
+
+The idea here is that your code must hook into the underlying
+implementation of green (aka user-space) threads.  Normally a green
+thread implementation will work by installing breakpoints to track
+when a thread is started, exited, or unscheduled.  @value{GDBN} will
+call into your code to find various attributes of these threads.  Your
+code will be responsible for tracking the life cycle of each green
+thread.
+
+@cindex green thread provider
+You'll have to supply two kinds of objects.  The first such is a green
+thread provider, which must supply certain attributes and methods,
+shown below.
+
+@defivar green_provider enabled
+A boolean which is @samp{True} if the provider is enabled, and
+@samp{False} otherwise.  This is examined by the @code{enable
+green-thread-providers} and @code{disable green-thread-providers}
+commands.
+@end defivar
+
+@defivar green_provider name
+A string which is the name of the provider.  This is used as an
+argument to some commands, so should be ``identifier-like''.
+@end defivar
+
+@defmethod green_provider enabled ()
+This is called when the provider is enabled.  This method must set the
+@code{enabled} attribute to @samp{True}, and should also arrange to
+install whatever breakpoints are needed in order to track the creation
+and destruction of green threads.  It should also find all
+currently-existing green threads and register them.
+@end defmethod
+
+@defmethod green_provider disabled ()
+This is called when the provider is disabled.  This method must set
+the @code{enabled} attribute to @samp{False}, and should also arrange
+to remove whatever breakpoints are needed in order to track the
+creation and destruction of green threads.  Note that, when a provider
+is disabled, @value{GDBN} will automatically destroy all the threads
+that were added by this provider.
+@end defmethod
+
+@defmethod green_provider current_green_thread ()
+This method is called by @value{GDBN} to find which green thread is
+currently scheduled on the selected thread, which will be a system
+thread.
+
+This should return the currently scheduled green thread.  If this
+provider does not have a green thread currently scheduled on the
+system thread, @code{None} should be returned.
+
+Note that it is important that this work by examining only the
+selected thread.  This will avoid races if other threads are not
+stopped, which can happen non-stop mode (@pxref{Non-Stop Mode}).  For
+example, maybe the underlying green thread system will have a
+thread-local variable that indicates which green thread is scheduled.
+@end defmethod
+
+Once created, a green thread provider is registered using:
+
+@defun gdb.threads.add_green_thread_provider (provider)
+Register a new green thread provider with @value{GDBN}.  The
+provider's name must be unique among all providers.
+@end defun
+
+When a new thread is created, your implementation should create a
+callback object implementing the green thread protocol:
+
+@defmethod green_thread fetch (register)
+@value{GDBN} will call this to fetch one or more registers from the
+green thread.  @var{register} is either the name of a register
+(@pxref{Registers In Python}), or @code{None} meaning that all
+available registers should be fetched.
+
+When a register is fetched, it should be written to the associated
+green thread; see the @code{GreenThread.write_register} method, below.
+@end defmethod
+
+@defmethod green_thread store (register)
+@value{GDBN} will call this to store one or more registers to a green
+thread.  @var{register} is either the name of a register
+(@pxref{Registers In Python}), or @code{None} meaning that all
+available registers should be stored.
+
+When a register is stored, the value should first be read from the
+associated green thread; see the @code{GreenThread.read_register}
+method, below.
+@end defmethod
+
+@defmethod green_thread underlying_thread ()
+This method should return the underlying thread of the associated
+green thread.  If the green thread is not currently scheduled, this
+should return @code{None}.
+@end defmethod
+
+@defmethod green_thread name
+This should return the @var{systag} identifier (@pxref{Thread
+Concepts}) for the associated green thread.  Normally this should hold
+the name of the provider and some sort of unique identifier, for
+example a thread number or the address of some sort of thread
+descriptor.
+@end defmethod
+
+@defmethod green_thread store
+If the associated green thread is currently scheduled on some system
+thread, then this method should return that system thread.  Otherwise,
+this should return @code{None}.
+@end defmethod
+
+Once created, a new thread should be registered with gdb using:
+
+@defun gdb.threads.new_green_thread (provider, callback)
+Tell @value{GDBN} about the existence of a new green thread.
+@var{provider} is the corresponding provider object, and
+@var{callback} must implement the green thread protocol.
+
+This returns the new thread, an instance of @code{gdb.GreenThread}.
+@end defun
+
+When examining threads (@pxref{Threads In Python}), a thread that was
+created by a green thread provider will be an instance of
+@code{gdb.GreenThread}, a subclass of @code{gdb.InferiorThread}.  This
+subclass provides some additional methods:
+
+@defmethod GreenThread read_register (register)
+Read a register from this green thread's register cache.
+@xref{Registers In Python}.  Returns a @code{gdb.Value} (@pxref{Values
+From Inferior}) holding the register's value.
+@end defmethod
+
+@defmethod GreenThread store_register (register, value)
+Write a register to this green thread's register cache.
+@xref{Registers In Python}.  @var{value} is a @code{gdb.Value}
+(@pxref{Values From Inferior}) holding the register's value.
+@end defmethod
+
+@defmethod GreenThread set_exited
+Notify @value{GDBN} that this thread has exited.
+@end defmethod
 
 @node Recordings In Python
 @subsubsection Recordings In Python

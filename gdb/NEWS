@@ -166,6 +166,9 @@ qExecAndArgs
      contains the gdb.Corefile object if a core file is loaded into
      the inferior, otherwise, this contains None.
 
+  ** New function gdb.create_green_thread().  This can be used to
+     register user-space "green" threads with GDB.
+
 * Guile API
 
   ** Procedures 'memory-port-read-buffer-size',

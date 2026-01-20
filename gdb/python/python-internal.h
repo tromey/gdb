@@ -136,6 +136,12 @@ struct gdbpy_method_format<unsigned>
   static constexpr char format = 'I';
 };
 
+template<>
+struct gdbpy_method_format<PyObject *>
+{
+  static constexpr char format = 'O';
+};
+
 /* A helper function to compute the PyObject_CallMethod /
    Py_BuildValue format given the argument types.  */
 
@@ -328,6 +334,7 @@ extern PyTypeObject event_object_type;
 extern PyTypeObject breakpoint_object_type;
 extern PyTypeObject frame_object_type;
 extern PyTypeObject thread_object_type;
+extern PyTypeObject green_thread_object_type;
 
 /* Ensure that breakpoint_object_type is initialized and return true.  If
    breakpoint_object_type can't be initialized then set a suitable Python
@@ -398,6 +405,17 @@ struct thread_object
      attribute of the object.  */
   PyObject *dict;
 };
+
+/* Require that Thread be a valid thread object.  */
+#define THPY_REQUIRE_VALID(Thread)				\
+  do {								\
+    if (!Thread->thread)					\
+      {								\
+	PyErr_SetString (PyExc_RuntimeError,			\
+			 _("Thread no longer exists."));	\
+	return NULL;						\
+      }								\
+  } while (0)
 
 struct inferior_object;
 
@@ -1086,6 +1104,30 @@ extern gdb::unique_xmalloc_ptr<char> gdbpy_fix_doc_string_indentation
 extern std::optional<int> gdbpy_print_insn (struct gdbarch *gdbarch,
 					    CORE_ADDR address,
 					    disassemble_info *info);
+/* Return a gdb.RegisterDescriptor object for REGNUM from GDBARCH.  For
+   each REGNUM (in GDBARCH) only one descriptor is ever created, which is
+   then cached on the GDBARCH.  */
+
+extern gdbpy_ref<> gdbpy_get_register_descriptor (struct gdbarch *gdbarch,
+						  int regnum);
+
+/* Implement "gdb.create_green_thread".  */
+
+extern PyObject *gdbpy_create_green_thread (PyObject *self, PyObject *args,
+					    PyObject *kw);
+
+/* See if THR is a Python-created green thread.  */
+
+extern bool py_green_thread_p (thread_info *thr);
+
+/* Deallocation function for a gdb.InferiorThread.  */
+
+extern void thpy_dealloc (PyObject *self);
+
+/* Given a gdb.InferiorThread, return the underlying thread_info.  On
+   error, throws a gdb exception.  */
+
+extern thread_info *thread_object_to_thread (PyObject *obj);
 
 /* Return the gdb.Corefile object representing the core file loaded into
    the program space of INF, or None if there is no core file loaded.  INF

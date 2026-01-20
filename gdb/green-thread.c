@@ -410,6 +410,6 @@ add_green_thread (green_thread_up gth, green_provider *provider)
     current_inferior ()->push_target (target_ops_up (new green_thread_target));
 
   ptid_t ptid = gth->get_ptid ();
-  return add_thread_with_info (current_inferior ()->process_target (),
-			       ptid, std::move (gth));
+  return add_thread (current_inferior ()->process_target (), ptid,
+		     std::move (gth));
 }

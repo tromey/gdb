@@ -23,17 +23,6 @@
 
 extern PyTypeObject thread_object_type;
 
-/* Require that INFERIOR be a valid inferior ID.  */
-#define THPY_REQUIRE_VALID(Thread)				\
-  do {								\
-    if (!Thread->thread)					\
-      {								\
-	PyErr_SetString (PyExc_RuntimeError,			\
-			 _("Thread no longer exists."));	\
-	return NULL;						\
-      }								\
-  } while (0)
-
 gdbpy_ref<thread_object>
 create_thread_object (struct thread_info *tp)
 {
@@ -43,7 +32,10 @@ create_thread_object (struct thread_info *tp)
   if (inf_obj == NULL)
     return NULL;
 
-  thread_obj.reset (PyObject_New (thread_object, &thread_object_type));
+  thread_obj.reset (PyObject_New (thread_object,
+				  py_green_thread_p (tp)
+				  ? &green_thread_object_type
+				  : &thread_object_type));
   if (thread_obj == NULL)
     return NULL;
 
@@ -56,7 +48,7 @@ create_thread_object (struct thread_info *tp)
   return thread_obj;
 }
 
-static void
+void
 thpy_dealloc (PyObject *self)
 {
   thread_object *thr_obj = (thread_object *) self;
@@ -401,6 +393,19 @@ gdbpy_selected_thread (PyObject *self, PyObject *args)
     return thread_to_thread_object (inferior_thread ()).release ();
 
   Py_RETURN_NONE;
+}
+
+/* See python-internal.h.  */
+
+thread_info *
+thread_object_to_thread (PyObject *obj)
+{
+  if (!PyObject_IsInstance (obj, (PyObject *) &thread_object_type))
+    error (_("object is not a gdb.InferiorThread"));
+  thread_object *to = (thread_object *) obj;
+  if (to->thread == nullptr)
+    error (_("object refers to invalid thread"));
+  return to->thread;
 }
 
 static int
