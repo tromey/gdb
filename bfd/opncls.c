@@ -151,8 +151,7 @@ _bfd_delete_bfd (bfd *abfd)
     bfd_free_cached_info (abfd);
 
   /* The target _bfd_free_cached_info may not have done anything..  */
-  if (abfd->section_htab.memory)
-    bfd_hash_table_free (&abfd->section_htab);
+  bfd_hash_table_free (&abfd->section_htab);
   if (abfd->memory)
     objalloc_free (abfd->memory);
 
@@ -186,8 +185,7 @@ DESCRIPTION
 bool
 _bfd_free_cached_info (bfd *abfd)
 {
-  if (abfd->section_htab.memory)
-    bfd_hash_table_free (&abfd->section_htab);
+  bfd_hash_table_free (&abfd->section_htab);
 
   abfd->sections = NULL;
   abfd->section_last = NULL;
