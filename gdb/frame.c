@@ -931,6 +931,13 @@ frame_id_inner (struct gdbarch *gdbarch, struct frame_id l, struct frame_id r)
 	   block with the greater depth.  */
 	inner = rb->contains (lb);
     }
+  else if (inferior_thread ()->is_green_thread ())
+    {
+      /* In a green thread setup, it's relatively normal for the
+	 scheduler frame to appear to be "inner" to the user-space
+	 thread frames.  */
+      inner = false;
+    }
   else
     /* Only return non-zero when strictly inner than.  Note that, per
        comment in "frame.h", there is some fuzz here.  Frameless

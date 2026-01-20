@@ -1125,6 +1125,7 @@ COMMON_SFILES = \
 	go-lang.c \
 	go-typeprint.c \
 	go-valprint.c \
+	green-thread.c \
 	inf-child.c \
 	inf-loop.c \
 	infcall.c \
@@ -1477,6 +1478,7 @@ HFILES_NO_SRCDIR = \
 	gnu-nat.h \
 	gnu-nat-mig.h \
 	go-lang.h \
+	green-thread.h \
 	gregset.h \
 	guile/guile.h \
 	guile/guile-internal.h \

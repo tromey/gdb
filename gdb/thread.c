@@ -50,6 +50,7 @@
 #include "stack.h"
 #include "interps.h"
 #include "record-full.h"
+#include "green-thread.h"
 
 /* Print notices when new threads are attached and detached.  */
 static bool print_thread_events = true;
@@ -357,6 +358,14 @@ thread_info::thread_info (struct inferior *inf_, ptid_t ptid_)
 thread_info::~thread_info ()
 {
   threads_debug_printf ("thread %s", this->ptid.to_string ().c_str ());
+}
+
+/* See gdbthread.h.  */
+
+bool
+thread_info::is_green_thread () const
+{
+  return dynamic_cast<green_thread *> (priv.get ()) != nullptr;
 }
 
 /* See gdbthread.h.  */
@@ -670,7 +679,11 @@ any_thread_of_inferior (inferior *inf)
 
   /* Prefer the current thread, if there's one.  */
   if (inf == current_inferior () && inferior_ptid != null_ptid)
-    return inferior_thread ();
+    {
+      thread_info *result = inferior_thread ();
+      if (!result->is_green_thread ())
+	return result;
+    }
 
   for (thread_info &tp : inf->non_exited_threads ())
     return &tp;
@@ -693,7 +706,7 @@ any_live_thread_of_inferior (inferior *inf)
 	 executing, use it.  Otherwise, still choose it (below), but
 	 only if no other non-executing thread is found.  */
       curr_tp = inferior_thread ();
-      if (curr_tp->state == THREAD_EXITED)
+      if (curr_tp->state == THREAD_EXITED || curr_tp->is_green_thread ())
 	curr_tp = NULL;
       else if (!curr_tp->executing ())
 	return curr_tp;
@@ -701,6 +714,9 @@ any_live_thread_of_inferior (inferior *inf)
 
   for (thread_info &tp : inf->non_exited_threads ())
     {
+      if (tp.is_green_thread ())
+	continue;
+
       if (!tp.executing ())
 	return &tp;
 
