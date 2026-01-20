@@ -6,3 +6,6 @@
 # Invalid floating-point register names
 .*:7: Error: bad register expression
 .*:8: Error: bad register expression
+# Invalid vector register names
+.*:10: Error: bad register expression
+.*:11: Error: bad register expression

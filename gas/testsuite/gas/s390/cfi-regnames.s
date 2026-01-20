@@ -31,3 +31,27 @@ fpr:
 	.word 0
 	.cfi_endproc
 	.size fpr, .-fpr
+# Vector register (VR) names v0..v31
+	.type vr, @function
+vr:
+	.cfi_startproc
+	.word 0
+	.cfi_register v0, v1
+	.cfi_register v2, v3
+	.cfi_register v4, v5
+	.cfi_register v6, v7
+	.cfi_register v8, v9
+	.cfi_register v10, v11
+	.cfi_register v12, v13
+	.cfi_register v14, v15
+	.cfi_register v16, v17
+	.cfi_register v18, v19
+	.cfi_register v20, v21
+	.cfi_register v22, v23
+	.cfi_register v24, v25
+	.cfi_register v26, v27
+	.cfi_register v28, v29
+	.cfi_register v30, v31
+	.word 0
+	.cfi_endproc
+	.size vr, .-vr

@@ -6,4 +6,7 @@
 # Invalid floating-point register names
 	.cfi_register f0, f16
 	.cfi_register %f0, %f16
+# Invalid vector register names
+	.cfi_register v0, v32
+	.cfi_register %v0, %v32
 	.cfi_endproc
