@@ -108,14 +108,15 @@ private:
   }
 
   /* Like switch_to_thread, but uses the underlying ptid for the
-     thread.  If PTID is not a green thread, or if the green thread is
-     not active, does nothing and returns false.  Otherwise, sets the
-     thread to the underlying thread and returns true.  */
+     thread.  If PTID is not a green thread does nothing and returns
+     true.  The green thread is not active, does nothing and returns
+     false.  Otherwise, sets the thread to the underlying thread and
+     returns true.  */
   bool set_thread_from_green_thread (ptid_t ptid)
   {
     const green_thread *gth = find_green_thread (ptid);
     if (gth == nullptr)
-      return false;
+      return true;
 
     ptid_t underlying = gth->underlying_thread ();
     if (underlying == null_ptid)
@@ -292,7 +293,8 @@ bool
 green_thread_target::stopped_by_sw_breakpoint ()
 {
   scoped_restore_current_thread saver;
-  set_thread_from_green_thread (inferior_ptid);
+  if (!set_thread_from_green_thread (inferior_ptid))
+    return false;
   return beneath ()->stopped_by_sw_breakpoint ();
 }
 
@@ -302,7 +304,8 @@ bool
 green_thread_target::stopped_by_hw_breakpoint ()
 {
   scoped_restore_current_thread saver;
-  set_thread_from_green_thread (inferior_ptid);
+  if (!set_thread_from_green_thread (inferior_ptid))
+    return false;
   return beneath ()->stopped_by_hw_breakpoint ();
 }
 
@@ -312,7 +315,8 @@ bool
 green_thread_target::stopped_by_watchpoint ()
 {
   scoped_restore_current_thread saver;
-  set_thread_from_green_thread (inferior_ptid);
+  if (!set_thread_from_green_thread (inferior_ptid))
+    return false;
   return beneath ()->stopped_by_watchpoint ();
 }
 
@@ -322,7 +326,8 @@ std::vector<CORE_ADDR>
 green_thread_target::stopped_data_addresses ()
 {
   scoped_restore_current_thread saver;
-  set_thread_from_green_thread (inferior_ptid);
+  if (!set_thread_from_green_thread (inferior_ptid))
+    return {};
   return beneath ()->stopped_data_addresses ();
 }
 
