@@ -2127,10 +2127,16 @@ elf64_hppa_finish_dynamic_symbol (bfd *output_bfd,
 	 if we are creating a shared library and the symbol is
 	 still undefined, we create a dynamic relocation to fill
 	 in the correct value.  */
-      if (bfd_link_pic (info) && eh->root.type == bfd_link_hash_undefined)
+      if (eh->root.type == bfd_link_hash_undefined
+	  || eh->root.type == bfd_link_hash_undefweak)
 	value = 0;
       else
-	value = (eh->root.u.def.value + eh->root.u.def.section->vma);
+	{
+	  BFD_ASSERT (eh->root.type == bfd_link_hash_defined
+		      || eh->root.type == bfd_link_hash_defweak);
+
+	  value = eh->root.u.def.value + eh->root.u.def.section->vma;
+	}
 
       /* Fill in the entry in the procedure linkage table.
 
@@ -2262,6 +2268,9 @@ elf64_hppa_finalize_opd (struct elf_link_hash_entry *eh, void *data)
     {
       bfd_vma value;
 
+      BFD_ASSERT (eh->root.type == bfd_link_hash_defined
+		  || eh->root.type == bfd_link_hash_defweak);
+
       value = (eh->root.u.def.value
 	       + eh->root.u.def.section->output_section->vma
 	       + eh->root.u.def.section->output_offset);
@@ -2392,27 +2401,27 @@ elf64_hppa_finalize_dlt (struct elf_link_hash_entry *eh, void *data)
       Elf_Internal_Rela rel;
       bfd_byte *loc;
       long dynindx;
+      struct elf_link_hash_entry *baseh;
       asection *sec;
       bfd_vma value, value2;
 
       if (eh->dynindx == -1)
 	{
+	  BFD_ASSERT (eh->root.type == bfd_link_hash_defined
+		      || eh->root.type == bfd_link_hash_defweak);
+
 	  value = (eh->root.u.def.value
 		   + eh->root.u.def.section->output_section->vma
 		   + eh->root.u.def.section->output_offset);
 
 	  if (eh->root.u.def.section->flags & SEC_READONLY)
-	    {
-	      sec = hppa_info->text_hash_entry->root.u.def.section;
-	      value2 = sec->output_offset + sec->output_section->vma;
-	      dynindx = hppa_info->text_hash_entry->dynindx;
-	    }
+	    baseh = hppa_info->text_hash_entry;
 	  else
-	    {
-	      sec = hppa_info->data_hash_entry->root.u.def.section;
-	      value2 = sec->output_offset + sec->output_section->vma;
-	      dynindx = hppa_info->data_hash_entry->dynindx;
-	    }
+	    baseh = hppa_info->data_hash_entry;
+
+	  sec = baseh->root.u.def.section;
+	  value2 = sec->output_offset + sec->output_section->vma;
+	  dynindx = baseh->dynindx;
 	  rel.r_addend = value - value2;
 	}
       else
@@ -2501,6 +2510,7 @@ elf64_hppa_finalize_dynreloc (struct elf_link_hash_entry *eh,
 
 	  if (eh->dynindx == -1)
 	    {
+	      struct elf_link_hash_entry *baseh;
 	      asection *sec, *sopd;
 	      bfd_vma value, value2;
 
@@ -2520,22 +2530,22 @@ elf64_hppa_finalize_dynreloc (struct elf_link_hash_entry *eh,
 		{
 		  if (discarded_section (eh->root.u.def.section))
 		    continue;
+
+		  BFD_ASSERT (eh->root.type == bfd_link_hash_defined
+			      || eh->root.type == bfd_link_hash_defweak);
+
 		  value = (eh->root.u.def.value
 			   + eh->root.u.def.section->output_section->vma
 			   + eh->root.u.def.section->output_offset);
 
 		  if (eh->root.u.def.section->flags & SEC_READONLY)
-		    {
-		      sec = hppa_info->text_hash_entry->root.u.def.section;
-		      value2 = sec->output_offset + sec->output_section->vma;
-		      dynindx = hppa_info->text_hash_entry->dynindx;
-		    }
+		    baseh = hppa_info->text_hash_entry;
 		  else
-		    {
-		      sec = hppa_info->data_hash_entry->root.u.def.section;
-		      value2 = sec->output_offset + sec->output_section->vma;
-		      dynindx = hppa_info->data_hash_entry->dynindx;
-		    }
+		    baseh = hppa_info->data_hash_entry;
+
+		  sec = baseh->root.u.def.section;
+		  value2 = sec->output_offset + sec->output_section->vma;
+		  dynindx = baseh->dynindx;
 		}
 	      rel.r_addend = value - value2;
 	    }
@@ -3302,6 +3312,7 @@ elf_hppa_dlt_dynrel_reloc (Elf_Internal_Rela *rel,
   Elf_Internal_Rela rela;
   bfd_byte *loc;
   long dynindx;
+  struct elf_link_hash_entry *baseh;
   asection *sec;
   asection *sdlt, *sdltrel;
   bfd_signed_vma addend = rel->r_addend;
@@ -3315,15 +3326,12 @@ elf_hppa_dlt_dynrel_reloc (Elf_Internal_Rela *rel,
   rela.r_offset = dlt_offset + sdlt->output_offset + sdlt->output_section->vma;
 
   if (sym_sec->flags & SEC_READONLY)
-    {
-      sec = hppa_info->text_hash_entry->root.u.def.section;
-      dynindx = hppa_info->text_hash_entry->dynindx;
-    }
+    baseh = hppa_info->text_hash_entry;
   else
-    {
-      sec = hppa_info->data_hash_entry->root.u.def.section;
-      dynindx = hppa_info->data_hash_entry->dynindx;
-    }
+    baseh = hppa_info->data_hash_entry;
+
+  sec = baseh->root.u.def.section;
+  dynindx = baseh->dynindx;
 
   /* Adjust addend using the difference of the symbol's
      location and the section symbol's address.  */
@@ -4034,6 +4042,7 @@ elf_hppa_final_link_relocate (Elf_Internal_Rela *rel,
 						     r_symndx) != -1)
 	    {
 	      bfd_vma out_off;
+	      struct elf_link_hash_entry *baseh;
 
 	      out_off = _bfd_elf_section_offset (output_bfd, info,
 						 input_section,
@@ -4048,15 +4057,12 @@ elf_hppa_final_link_relocate (Elf_Internal_Rela *rel,
 
 	      /* Select base segment.  */
 	      if (sym_sec->flags & SEC_READONLY)
-		{
-		  sec = hppa_info->text_hash_entry->root.u.def.section;
-		  dynindx = hppa_info->text_hash_entry->dynindx;
-		}
+		baseh = hppa_info->text_hash_entry;
 	      else
-		{
-		  sec = hppa_info->data_hash_entry->root.u.def.section;
-		  dynindx = hppa_info->data_hash_entry->dynindx;
-		}
+		baseh = hppa_info->data_hash_entry;
+
+	      sec = baseh->root.u.def.section;
+	      dynindx = baseh->dynindx;
 
 	      /* Adjust addend using the difference of the symbol's
 		 location and the section symbol's address.  */
