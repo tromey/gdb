@@ -1818,6 +1818,8 @@ elf64_hppa_late_size_sections (bfd *output_bfd, struct bfd_link_info *info)
       asection *s;
 
       s = bfd_get_section_by_name (info->output_bfd, ".dynamic");
+      if (s == NULL)
+	s = bfd_get_section_by_name (info->output_bfd, ".text");
       if (s != NULL)
 	{
 	  struct elf_link_hash_entry *nh;
