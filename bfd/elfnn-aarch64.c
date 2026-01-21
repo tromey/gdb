@@ -5096,6 +5096,10 @@ bfd_elfNN_aarch64_set_options (struct bfd *output_bfd,
       else
 	gcs_report_dynamic = sw_protections->gcs_report_dynamic;
       break;
+
+    default:
+      /* Unknown GCS type.  */
+      abort ();
     }
 
   elf_aarch64_tdata (output_bfd)->gnu_property_aarch64_feature_1_and
