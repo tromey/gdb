@@ -23885,8 +23885,8 @@ process_notes_at (Filedata *           filedata,
   char *end;
   bool res = true;
 
-  if (length <= 0)
-    return false;
+  if (length == 0)
+    return true;
 
   if (section)
     {
