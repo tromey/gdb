@@ -1693,13 +1693,14 @@ sframe_xlate_do_gnu_window_save (struct sframe_xlate_ctx *xlate_ctx,
   return SFRAME_XLATE_ERR_NOTREPRESENTED;  /* Not represented.  */
 }
 
-/* Translate a DWARF sleb128 offset in the CFI escape data E to an offsetT.  */
+/* Translate a DWARF sleb128 offset in the CFI escape data E to an offsetT.
+   Update the value in OFFSET if success (and return SFRAME_XLATE_OK).
+   Return SFRAME_XLATE_ERR_INVAL if error.  */
 
-static offsetT
-sframe_xlate_escape_sleb128_to_offsetT (const struct cfi_escape_data *e)
+static int
+sframe_xlate_escape_sleb128_to_offsetT (const struct cfi_escape_data *e,
+					offsetT *offset)
 {
-  offsetT offset;
-
   gas_assert (e->type == CFI_ESC_byte || e->type == CFI_ESC_sleb128);
   /* Read the offset.  */
   if (e->type == CFI_ESC_byte)
@@ -1713,14 +1714,17 @@ sframe_xlate_escape_sleb128_to_offsetT (const struct cfi_escape_data *e)
       const unsigned char *buf_end = buf_start + 1;
       int64_t value = 0;
       size_t read = read_sleb128_to_int64 (buf_start, buf_end, &value);
-      gas_assert (read);
-      offset = (offsetT) value;
+      /* In case of bogus input (highest bit erroneously set, e.g., 0x80),
+	 gracefully exit.  */
+      if (!read)
+	return SFRAME_XLATE_ERR_INVAL;
+      *offset = (offsetT) value;
     }
   else
     /* offset must be CFI_ESC_sleb128.  */
-    offset = e->exp.X_add_number;
+    *offset = e->exp.X_add_number;
 
-  return offset;
+  return SFRAME_XLATE_OK;
 }
 
 /* Handle DW_CFA_def_cfa_expression in .cfi_escape.
@@ -1742,7 +1746,7 @@ sframe_xlate_do_escape_cfa_expr (struct sframe_xlate_ctx *xlate_ctx,
   const struct cfi_escape_data *e_offset = NULL;
   int err = SFRAME_XLATE_OK;
   unsigned int opcode1, opcode2;
-  offsetT offset;
+  offsetT offset = 0;
   unsigned int reg = SFRAME_FRE_REG_INVALID;
   unsigned int i = 0;
   bool x86_cfa_deref_p = false;
@@ -1781,6 +1785,10 @@ sframe_xlate_do_escape_cfa_expr (struct sframe_xlate_ctx *xlate_ctx,
     goto warn_and_exit;
 #undef CFI_ESC_NUM_EXP
 
+  err = sframe_xlate_escape_sleb128_to_offsetT (e_offset, &offset);
+  if (err == SFRAME_XLATE_ERR_INVAL)
+    goto warn_and_exit;
+
   opcode1 = items[1];
   opcode2 = items[3];
   /* DW_OP_breg6 is rbp.  FIXME - this stub can be enhanced to handle more
@@ -1792,8 +1800,6 @@ sframe_xlate_do_escape_cfa_expr (struct sframe_xlate_ctx *xlate_ctx,
       x86_cfa_deref_p = true;
       reg = SFRAME_CFA_FP_REG;
     }
-
-  offset = sframe_xlate_escape_sleb128_to_offsetT (e_offset);
 
   struct sframe_row_entry *cur_fre = xlate_ctx->cur_fre;
   gas_assert (cur_fre);
@@ -1839,7 +1845,7 @@ sframe_xlate_do_escape_expr (struct sframe_xlate_ctx *xlate_ctx,
   const struct cfi_escape_data *e = cfi_insn->u.esc;
   const struct cfi_escape_data *e_offset = NULL;
   int err = SFRAME_XLATE_OK;
-  offsetT offset;
+  offsetT offset = 0;
   unsigned int i = 0;
 
   /* Check roughly for an expression
@@ -1876,6 +1882,10 @@ sframe_xlate_do_escape_expr (struct sframe_xlate_ctx *xlate_ctx,
     goto warn_and_exit;
 #undef CFI_ESC_NUM_EXP
 
+  err = sframe_xlate_escape_sleb128_to_offsetT (e_offset, &offset);
+  if (err == SFRAME_XLATE_ERR_INVAL)
+    goto warn_and_exit;
+
   /* reg operand to DW_CFA_expression is ULEB128.  For the purpose at hand,
      however, the register value will be less than 128 (CFI_ESC_NUM_EXP set
      to 4).  See an extended comment in sframe_xlate_do_escape_expr for why
@@ -1893,8 +1903,6 @@ sframe_xlate_do_escape_expr (struct sframe_xlate_ctx *xlate_ctx,
       x86_fp_deref_p = true;
       fp_base_reg = SFRAME_CFA_FP_REG;
     }
-
-  offset = sframe_xlate_escape_sleb128_to_offsetT (e_offset);
 
   struct sframe_row_entry *cur_fre = xlate_ctx->cur_fre;
   gas_assert (cur_fre);
