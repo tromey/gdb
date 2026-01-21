@@ -50,6 +50,8 @@ called_names = set()
 for c in filter(not_info, components):
     if c.implement:
         defined_names.add(c.name)
+    if c.unused:
+        set_names.add(c.name)
     if c.predicate:
         # Predicates are always "set".
         pname = c.name + "_p"
@@ -91,7 +93,13 @@ for filename in tqdm.tqdm(files, desc="Scanning", leave=False):
                     called_names.add(m[2])
 
 
+printed = False
 for elt in sorted(defined_names - set_names):
+    printed = True
     print(f"never set: {elt}")
 for elt in sorted(defined_names - called_names):
+    printed = True
     print(f"never called: {elt}")
+
+if not printed:
+    print("Everything ok!")

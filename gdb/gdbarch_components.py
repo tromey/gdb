@@ -48,6 +48,10 @@
 # *'.  This is used for dumping.  The string must live long enough to
 # be passed to printf.
 #
+# * "unused" - a boolean.  If true, the hook is known to be unused, we
+# but agreed to keep it around nevertheless.  check-gdbarch.py uses
+# this.  This should be used sparingly, if at all.
+#
 # Value, Function, and Method share some more parameters.  Some of
 # these work in conjunction in a somewhat complicated way, so they are
 # described in a separate sub-section below.
@@ -195,6 +199,8 @@ useful).
     name="bfloat16_bit",
     predefault="2*TARGET_CHAR_BIT",
     invalid=False,
+    # Currently unused but we wanted to keep this hook around.
+    unused=True,
 )
 
 Value(
@@ -210,6 +216,8 @@ Value(
     name="half_bit",
     predefault="2*TARGET_CHAR_BIT",
     invalid=False,
+    # Currently unused but we wanted to keep this hook around.
+    unused=True,
 )
 
 Value(
@@ -2122,6 +2130,8 @@ on the architecture's assembly.
     name="stap_integer_suffixes",
     invalid=False,
     printer="pstring_list (gdbarch->stap_integer_suffixes)",
+    # Currently unused but we wanted to keep this hook around.
+    unused=True,
 )
 
 Value(
@@ -2149,6 +2159,8 @@ the architecture's assembly.
     name="stap_register_suffixes",
     invalid=False,
     printer="pstring_list (gdbarch->stap_register_suffixes)",
+    # Currently unused but we wanted to keep this hook around.
+    unused=True,
 )
 
 Value(
@@ -2202,6 +2214,8 @@ register would be represented as `r10' internally.
     name="stap_gdb_register_prefix",
     invalid=False,
     printer="pstring (gdbarch->stap_gdb_register_prefix)",
+    # Currently unused but we wanted to keep this hook around.
+    unused=True,
 )
 
 Value(
@@ -2212,6 +2226,8 @@ Suffix used to name a register using GDB's nomenclature.
     name="stap_gdb_register_suffix",
     invalid=False,
     printer="pstring (gdbarch->stap_gdb_register_suffix)",
+    # Currently unused but we wanted to keep this hook around.
+    unused=True,
 )
 
 Method(
@@ -2640,6 +2656,8 @@ each address in memory.
     params=[],
     predefault="default_addressable_memory_unit_size",
     invalid=False,
+    # Currently unused but we wanted to keep this hook around.
+    unused=True,
 )
 
 Value(
