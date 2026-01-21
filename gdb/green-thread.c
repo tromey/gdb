@@ -109,20 +109,21 @@ private:
 
   /* Like switch_to_thread, but uses the underlying ptid for the
      thread.  If PTID is not a green thread, or if the green thread is
-     not active, does nothing.  Otherwise, sets the thread to the
-     underlying thread.  */
-  void set_thread_from_green_thread (ptid_t ptid)
+     not active, does nothing and returns false.  Otherwise, sets the
+     thread to the underlying thread and returns true.  */
+  bool set_thread_from_green_thread (ptid_t ptid)
   {
     const green_thread *gth = find_green_thread (ptid);
     if (gth == nullptr)
-      return;
+      return false;
 
     ptid_t underlying = gth->underlying_thread ();
     if (underlying == null_ptid)
-      return;
+      return false;
 
     thread_info *thr = current_inferior ()->find_thread (underlying);
     switch_to_thread (thr);
+    return true;
   }
 };
 
