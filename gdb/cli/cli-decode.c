@@ -2258,7 +2258,6 @@ lookup_cmd_1 (const char **text, struct cmd_list_element *clist,
 	      struct cmd_list_element **result_list, std::string *default_args,
 	      int ignore_help_classes, bool lookup_for_completion_p)
 {
-  char *command;
   int len, nfound;
   struct cmd_list_element *found, *c;
   bool found_alias = false;
@@ -2273,18 +2272,11 @@ lookup_cmd_1 (const char **text, struct cmd_list_element *clist,
   if (len == 0)
     return 0;
 
-  /* *text and p now bracket the first command word to lookup (and
-     it's length is len).  We copy this into a local temporary.  */
-
-
-  command = (char *) alloca (len + 1);
-  memcpy (command, *text, len);
-  command[len] = '\0';
-
-  /* Look it up.  */
+  /* *TEXT is the first command word to lookup (and its length is
+     LEN).  Look it up.  */
   found = 0;
   nfound = 0;
-  found = find_cmd (std::string_view (command, len),
+  found = find_cmd (std::string_view (*text, len),
 		    clist, ignore_help_classes, &nfound);
 
   /* If nothing matches, we have a simple failure.  */
@@ -2666,8 +2658,8 @@ lookup_cmd_composition_1 (const char *text,
 	return 0;
 
       /* TEXT is the start of the first command word to lookup (and
-	 it's length is LEN).  We copy this into a local temporary.  */
-      std::string command (text, len);
+	 its length is LEN).  */
+      std::string_view command (text, len);
 
       /* Look it up.  */
       int nfound = 0;
