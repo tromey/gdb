@@ -27,8 +27,6 @@
 
 /* Prototypes for local functions.  */
 
-static void undef_cmd_error (const char *, const char *);
-
 static cmd_list_element::aliases_list_type delete_cmd
   (const char *name, cmd_list_element **list, cmd_list_element **prehook,
    cmd_list_element **prehookee, cmd_list_element **posthook,
@@ -2369,11 +2367,11 @@ lookup_cmd_1 (const char **text, struct cmd_list_element *clist,
 /* All this hair to move the space to the front of cmdtype */
 
 static void
-undef_cmd_error (const char *cmdtype, const char *q)
+undef_cmd_error (const char *cmdtype, std::string_view q)
 {
-  error (_("Undefined %scommand: \"%s\".  Try \"help%s%.*s\"."),
+  error (_("Undefined %scommand: \"%.*s\".  Try \"help%s%.*s\"."),
 	 cmdtype,
-	 q,
+	 (int) q.size (), q.data (),
 	 *cmdtype ? " " : "",
 	 (int) strlen (cmdtype) - 1,
 	 cmdtype);
@@ -2419,13 +2417,8 @@ lookup_cmd (const char **line, struct cmd_list_element *list,
     {
       if (!allow_unknown)
 	{
-	  char *q;
 	  int len = find_command_name_length (*line);
-
-	  q = (char *) alloca (len + 1);
-	  strncpy (q, *line, len);
-	  q[len] = '\0';
-	  undef_cmd_error (cmdtype, q);
+	  undef_cmd_error (cmdtype, std::string_view (*line, len));
 	}
       else
 	return 0;
@@ -2491,7 +2484,7 @@ lookup_cmd (const char **line, struct cmd_list_element *list,
       *line = skip_spaces (*line);
 
       if (c->is_prefix () && **line && !c->allow_unknown)
-	undef_cmd_error (c->prefixname ().c_str (), *line);
+	undef_cmd_error (c->prefixname ().c_str (), std::string_view (*line));
 
       /* Seems to be what he wants.  Return it.  */
       return c;
