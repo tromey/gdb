@@ -1,5 +1,5 @@
 /* A POSIX-like <sys/wait.h>.
-   Copyright (C) 2001-2003, 2005-2022 Free Software Foundation, Inc.
+   Copyright (C) 2001-2003, 2005-2026 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -29,6 +29,11 @@
 
 #ifndef _@GUARD_PREFIX@_SYS_WAIT_H
 #define _@GUARD_PREFIX@_SYS_WAIT_H
+
+/* This file uses GNULIB_POSIXCHECK, HAVE_RAW_DECL_*.  */
+#if !_GL_CONFIG_H_INCLUDED
+ #error "Please include config.h first."
+#endif
 
 /* Get pid_t.  */
 #include <sys/types.h>
@@ -75,7 +80,7 @@
 #  define WSTOPSIG(x) (((x) >> 8) & 0x7f)
 # endif
 
-/* True if the process dumped core.  Not standardized by POSIX.  */
+/* True if the process dumped core.  */
 # ifndef WCOREDUMP
 #  define WCOREDUMP(x) ((x) & 0x80)
 # endif
@@ -112,14 +117,13 @@
 
 #if @GNULIB_WAITPID@
 # if defined _WIN32 && ! defined __CYGWIN__
-_GL_FUNCDECL_SYS (waitpid, pid_t, (pid_t pid, int *statusp, int options));
+_GL_FUNCDECL_SYS (waitpid, pid_t, (pid_t pid, int *statusp, int options), );
 # endif
 /* Need to cast, because on Cygwin, the second parameter is
                                                 __wait_status_ptr_t statusp.  */
 _GL_CXXALIAS_SYS_CAST (waitpid, pid_t, (pid_t pid, int *statusp, int options));
 _GL_CXXALIASWARN (waitpid);
 #elif defined GNULIB_POSIXCHECK
-# undef waitpid
 # if HAVE_RAW_DECL_WAITPID
 _GL_WARN_ON_USE (waitpid, "waitpid is unportable - "
                  "use gnulib module sys_wait for portability");
