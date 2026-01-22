@@ -2749,8 +2749,9 @@ oav2_parse_subsection (bfd *abfd,
   cursor += F_SUBSECTION_LEN;
   if (subsection_len > max_read)
     {
-      _bfd_error_handler (_("%pB: error: bad subsection length (%u > max=%lu)"),
-			  abfd, subsection_len, max_read);
+      _bfd_error_handler
+	(_("%pB: error: bad subsection length (%u > max=%" PRIu64 ")"),
+	 abfd, subsection_len, max_read);
       goto error;
     }
   else if (subsection_len < F_MIN_SUBSECTION_DATA_LEN)
@@ -2907,8 +2908,8 @@ _bfd_elf_parse_attributes (bfd *abfd, Elf_Internal_Shdr * hdr)
   if (filesize != 0 && hdr->sh_size > filesize)
     {
       _bfd_error_handler
-	(_("%pB: error: attribute section '%pA' too big: %" PRId64),
-	 abfd, hdr->bfd_section, hdr->sh_size);
+	(_("%pB: error: attribute section '%pA' too big: %" PRIu64),
+	 abfd, hdr->bfd_section, (uint64_t) hdr->sh_size);
       bfd_set_error (bfd_error_invalid_operation);
       return;
     }
