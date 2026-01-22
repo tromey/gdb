@@ -39,10 +39,7 @@ if { $status == 0 } {
 	    "" \
 	    "--32 -mx86-used-note=no --generate-missing-build-notes=no" \
 	    {got-1.s} \
-	    {{readelf -rW libgot-1a.rd} \
-	     {readelf -aW libgot-1b.rd} \
-	     {readelf --got-contents libgot-1c.rd} \
-	     {readelf {--got-contents -W} libgot-1d.rd}} \
+	    {{readelf {-rW --got-contents} libgot-1.rd}} \
 	    "libgot-1-i386.so" \
 	] \
     ]
