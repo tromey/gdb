@@ -4940,6 +4940,7 @@ common/version.c-stamp: $(srcroot)/gdb/version.in $(srcroot)/bfd/version.h $(src
 	( \
 	echo '/* Do not modify this file.  */'; \
 	echo '/* It is created automatically by the Makefile.  */'; \
+	echo '#include <config.h>'; \
 	echo '#include "libiberty.h"'; \
 	echo '#include "sim-module.h"'; \
 	sed -e 's:\(.*\):extern MODULE_INIT_FN \1;:' $@.l-tmp; \

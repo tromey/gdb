@@ -146,6 +146,7 @@ GEN_MODULES_C_SRCS = \
 	( \
 	echo '/* Do not modify this file.  */'; \
 	echo '/* It is created automatically by the Makefile.  */'; \
+	echo '#include <config.h>'; \
 	echo '#include "libiberty.h"'; \
 	echo '#include "sim-module.h"'; \
 	sed -e 's:\(.*\):extern MODULE_INIT_FN \1;:' $@.l-tmp; \
