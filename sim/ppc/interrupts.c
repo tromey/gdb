@@ -21,6 +21,8 @@
 #ifndef _INTERRUPTS_C_
 #define _INTERRUPTS_C_
 
+#include "basics.h"
+
 #include <signal.h>
 
 #include "cpu.h"

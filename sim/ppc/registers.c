@@ -21,9 +21,10 @@
 #ifndef _REGISTERS_C_
 #define _REGISTERS_C_
 
+#include "basics.h"
+
 #include <ctype.h>
 
-#include "basics.h"
 #include "registers.h"
 
 #include <stdlib.h>

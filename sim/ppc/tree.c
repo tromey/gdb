@@ -21,10 +21,10 @@
 #ifndef _PARSE_C_
 #define _PARSE_C_
 
+#include "basics.h"
+
 #include <stdio.h>
 #include <stdarg.h>
-
-#include "basics.h"
 
 #include "device.h"
 #include "tree.h"

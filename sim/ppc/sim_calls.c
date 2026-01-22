@@ -18,6 +18,8 @@
     */
 
 
+#include "basics.h"
+
 #include <signal.h> /* FIXME - should be machine dependant version */
 #include <stdarg.h>
 #include <ctype.h>
