@@ -56,7 +56,7 @@ proc check_show_args { packet } {
 # is converted to a regexp by this function.
 #
 # The AUTO_FILENAME should only be set when PACKET is on and FILENAME
-# is the empty sting.  If AUTO_FILENAME is set, then this is the
+# is the empty string.  If AUTO_FILENAME is set, then this is the
 # filename that GDB is using for the remote executable based on the
 # current executable's filename.  For example, if the sysroot is empty
 # then GDB can use the current executable as the remote executable.
