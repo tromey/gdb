@@ -688,7 +688,7 @@ _bfd_obj_attr_v2_tag_to_string (const struct elf_backend_data *bed,
     = _bfd_obj_attr_v2_find_known_by_tag (bed, subsec_name, tag);
   if (attr_info != NULL)
     return xstrdup (attr_info->tag.name);
-  return xasprintf ("Tag_unknown_%lu", tag);
+  return xasprintf ("Tag_unknown_%"PRIu64, tag);
 }
 
 /* To-string function for the subsection parameter "comprehension".  */
