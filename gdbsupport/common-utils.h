@@ -115,14 +115,6 @@ startswith (const char *str, const std::string_view &prefix)
   return strncmp (str, prefix.data (), prefix.length ()) == 0;
 }
 
-/* Return true if the strings are equal.  */
-
-static inline bool
-streq (const char *lhs, const char *rhs)
-{
-  return strcmp (lhs, rhs) == 0;
-}
-
 /* Compare C strings for std::sort.  */
 
 static inline bool
