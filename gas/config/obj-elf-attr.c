@@ -1063,7 +1063,7 @@ obj_attr_v2_record (obj_attr_tag_t key, arg_t *arg_val)
   /* Go over the list of already recorded attributes and check for
      redefinitions (which are forbidden).  */
   bool skip_recording = false;
-  obj_attr_v2_t *recorded_attr = _bfd_obj_attr_v2_find_by_tag
+  obj_attr_v2_t *recorded_attr = bfd_obj_attr_v2_find_by_tag
     (elf_obj_attr_subsections (stdoutput).last, obj_attr->tag, false);
   if (recorded_attr != NULL)
     {
@@ -1084,7 +1084,7 @@ obj_attr_v2_record (obj_attr_tag_t key, arg_t *arg_val)
       return;
     }
 
-  LINKED_LIST_APPEND (obj_attr_v2_t)
+  bfd_obj_attr_subsection_v2_append
     (elf_obj_attr_subsections (stdoutput).last, obj_attr);
 }
 
@@ -1133,9 +1133,9 @@ obj_attr_v2_subsection_record (const char *name,
 	}
 
       /* Move the existing subsection to the last position.  */
-      LINKED_LIST_REMOVE (obj_attr_subsection_v2_t)
+      bfd_obj_attr_subsection_v2_list_remove
 	(&elf_obj_attr_subsections (stdoutput), already_recorded_subsec);
-      LINKED_LIST_APPEND (obj_attr_subsection_v2_t)
+      bfd_obj_attr_subsection_v2_list_append
 	(&elf_obj_attr_subsections (stdoutput), already_recorded_subsec);
       /* Note: 'name' was unused, and will be freed on exit.  */
     }
@@ -1158,7 +1158,7 @@ obj_attr_v2_subsection_record (const char *name,
 	= bfd_elf_obj_attr_subsection_v2_init (name, scope,
 					       comprehension_optional,
 					       encoding);
-      LINKED_LIST_APPEND (obj_attr_subsection_v2_t)
+      bfd_obj_attr_subsection_v2_list_append
 	(&elf_obj_attr_subsections (stdoutput), new_subsection);
       return;
     }

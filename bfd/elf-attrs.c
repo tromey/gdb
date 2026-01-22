@@ -3192,7 +3192,7 @@ _bfd_elf_obj_attr_v2_cmp (const obj_attr_v2_t *a1, const obj_attr_v2_t *a2)
    This allows an early return if we find a higher numbered tag.  */
 
 obj_attr_v2_t *
-_bfd_obj_attr_v2_find_by_tag (const obj_attr_subsection_v2_t *subsec,
+bfd_obj_attr_v2_find_by_tag (const obj_attr_subsection_v2_t *subsec,
 			      obj_attr_tag_t tag,
 			      bool sorted)
 {
@@ -3217,6 +3217,14 @@ LINKED_LIST_MUTATIVE_OPS_DECL (obj_attr_subsection_v2_t,
 			       obj_attr_v2_t, /* extern */)
 LINKED_LIST_MERGE_SORT_DECL (obj_attr_subsection_v2_t,
 			     obj_attr_v2_t, /* extern */)
+
+/* Public API wrapper for LINKED_LIST_APPEND (obj_attr_v2_t).  */
+
+void bfd_obj_attr_subsection_v2_append (obj_attr_subsection_v2_t *subsec,
+					obj_attr_v2_t *attr)
+{
+  LINKED_LIST_APPEND (obj_attr_v2_t) (subsec, attr);
+}
 
 /* Create a new object attribute subsection with the following properties:
    - NAME: the name of the subsection.  Note: this parameter never holds a
@@ -3363,6 +3371,24 @@ LINKED_LIST_MUTATIVE_OPS_DECL (obj_attr_subsection_list_t,
 			       obj_attr_subsection_v2_t, /* extern */)
 LINKED_LIST_MERGE_SORT_DECL (obj_attr_subsection_list_t,
 			     obj_attr_subsection_v2_t, /* extern */)
+
+/* Public API wrapper for LINKED_LIST_APPEND (obj_attr_subsection_v2_t).  */
+
+void
+bfd_obj_attr_subsection_v2_list_append (obj_attr_subsection_list_t *l,
+					obj_attr_subsection_v2_t *subsec)
+{
+  LINKED_LIST_APPEND (obj_attr_subsection_v2_t) (l, subsec);
+}
+
+/* Public API wrapper for LINKED_LIST_REMOVE (obj_attr_subsection_v2_t).  */
+
+obj_attr_subsection_v2_t *
+bfd_obj_attr_subsection_v2_list_remove (obj_attr_subsection_list_t *l,
+					obj_attr_subsection_v2_t *subsec)
+{
+  return LINKED_LIST_REMOVE (obj_attr_subsection_v2_t) (l, subsec);
+}
 
 /* Serialize the object attributes in ABFD into the vendor section of
    OUTPUT_BFD.  */

@@ -10632,7 +10632,7 @@ elfNN_aarch64_link_setup_object_attributes (struct bfd_link_info *info)
   if (aeabi_feature_and_bits_subsec != NULL)
     {
       const obj_attr_v2_t *attr_bti
-	= _bfd_obj_attr_v2_find_by_tag (aeabi_feature_and_bits_subsec,
+	= bfd_obj_attr_v2_find_by_tag (aeabi_feature_and_bits_subsec,
 					Tag_Feature_BTI, true);
       if (attr_bti && attr_bti->val.uint == 1)
 	tdata->sw_protections.plt_type |= PLT_BTI;

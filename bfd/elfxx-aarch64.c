@@ -956,7 +956,7 @@ obj_attr_v2_record_tag_value (obj_attr_subsection_v2_t *subsec,
 			      bool value)
 {
   obj_attr_v2_t *attr;
-  attr = _bfd_obj_attr_v2_find_by_tag (subsec, tag, false);
+  attr = bfd_obj_attr_v2_find_by_tag (subsec, tag, false);
   if (attr != NULL)
     {
       if (attr->val.uint != value)
@@ -1175,11 +1175,11 @@ aarch64_check_pauthabi_attributes (const struct bfd_link_info *info)
   int version_id = 0;
 
   const obj_attr_v2_t *attr
-    = _bfd_obj_attr_v2_find_by_tag (subsec, Tag_PAuth_Platform, true);
+    = bfd_obj_attr_v2_find_by_tag (subsec, Tag_PAuth_Platform, true);
   if (attr != NULL)
     platform_id = attr->val.uint;
 
-  attr = _bfd_obj_attr_v2_find_by_tag (subsec, Tag_PAuth_Schema, true);
+  attr = bfd_obj_attr_v2_find_by_tag (subsec, Tag_PAuth_Schema, true);
   if (attr != NULL)
     version_id = attr->val.uint;
 

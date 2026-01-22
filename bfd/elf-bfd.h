@@ -3216,15 +3216,17 @@ extern bool _bfd_elf_read_notes
   (bfd *, file_ptr, bfd_size_type, size_t) ATTRIBUTE_HIDDEN;
 
 extern obj_attr_v2_t *bfd_elf_obj_attr_v2_init (obj_attr_tag_t,
-  union obj_attr_value_v2) ATTRIBUTE_HIDDEN;
+  union obj_attr_value_v2);
 extern void _bfd_elf_obj_attr_v2_free (obj_attr_v2_t *, obj_attr_encoding_v2_t)
   ATTRIBUTE_HIDDEN;
 extern obj_attr_v2_t *_bfd_elf_obj_attr_v2_copy (const obj_attr_v2_t *,
   obj_attr_encoding_v2_t) ATTRIBUTE_HIDDEN;
 extern int _bfd_elf_obj_attr_v2_cmp (const obj_attr_v2_t *,
   const obj_attr_v2_t *) ATTRIBUTE_HIDDEN;
-extern obj_attr_v2_t * _bfd_obj_attr_v2_find_by_tag
-  (const obj_attr_subsection_v2_t *, obj_attr_tag_t, bool) ATTRIBUTE_HIDDEN;
+extern obj_attr_v2_t *bfd_obj_attr_v2_find_by_tag
+  (const obj_attr_subsection_v2_t *, obj_attr_tag_t, bool);
+extern void bfd_obj_attr_subsection_v2_append
+  (obj_attr_subsection_v2_t *, obj_attr_v2_t *);
 LINKED_LIST_MUTATIVE_OPS_PROTOTYPE (obj_attr_subsection_v2_t,
 				    obj_attr_v2_t, ATTRIBUTE_HIDDEN);
 LINKED_LIST_MERGE_SORT_PROTOTYPE_ (obj_attr_v2_t, ATTRIBUTE_HIDDEN);
@@ -3241,6 +3243,10 @@ extern obj_attr_subsection_v2_t *bfd_obj_attr_subsection_v2_find_by_name
   (obj_attr_subsection_v2_t *, const char *, bool);
 extern obj_attr_subsection_scope_v2_t bfd_elf_obj_attr_subsection_v2_scope
   (const bfd *, const char *);
+extern void bfd_obj_attr_subsection_v2_list_append
+  (obj_attr_subsection_list_t *, obj_attr_subsection_v2_t *);
+extern obj_attr_subsection_v2_t *bfd_obj_attr_subsection_v2_list_remove
+  (obj_attr_subsection_list_t *, obj_attr_subsection_v2_t *);
 LINKED_LIST_MUTATIVE_OPS_PROTOTYPE (obj_attr_subsection_list_t,
 				    obj_attr_subsection_v2_t,
 				    ATTRIBUTE_HIDDEN);
