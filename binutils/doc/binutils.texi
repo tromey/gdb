@@ -2086,14 +2086,20 @@ needed if debugging abilities are required.  The suggested procedure
 to create these files is as follows:
 
 @enumerate
-@item Link the executable as normal.  Assuming that it is called
-@code{foo} then...
-@item Run @code{objcopy --only-keep-debug foo foo.dbg} to
-create a file containing the debugging info.
-@item Run @code{objcopy --strip-debug foo} to create a
-stripped executable.
-@item Run @code{objcopy --add-gnu-debuglink=foo.dbg foo}
-to add a link to the debugging info into the stripped executable.
+@item
+Link the executable as normal.  Assuming that it is called @code{foo}
+then...
+
+@item
+Run @code{objcopy --only-keep-debug foo foo.dbg} to create a file
+containing the debugging info.
+
+@item
+Run @code{objcopy --strip-debug foo} to create a stripped executable.
+
+@item
+Run @code{objcopy --add-gnu-debuglink=foo.dbg foo} to add a link to the
+debugging info into the stripped executable.
 @end enumerate
 
 Note---the choice of @code{.dbg} as an extension for the debug info
@@ -2101,10 +2107,17 @@ file is arbitrary.  Also the @code{--only-keep-debug} step is
 optional.  You could instead do this:
 
 @enumerate
-@item Link the executable as normal.
-@item Copy @code{foo} to  @code{foo.full}
-@item Run @code{objcopy --strip-debug foo}
-@item Run @code{objcopy --add-gnu-debuglink=foo.full foo}
+@item
+Link the executable as normal.
+
+@item
+Copy @code{foo} to @code{foo.full}.
+
+@item
+Run @code{objcopy --strip-debug foo}.
+
+@item
+Run @code{objcopy --add-gnu-debuglink=foo.full foo}.
 @end enumerate
 
 i.e., the file pointed to by the @option{--add-gnu-debuglink} can be the
@@ -3809,14 +3822,20 @@ needed if debugging abilities are required.  The suggested procedure
 to create these files is as follows:
 
 @enumerate
-@item Link the executable as normal.  Assuming that it is called
-@code{foo} then...
-@item Run @code{objcopy --only-keep-debug foo foo.dbg} to
-create a file containing the debugging info.
-@item Run @code{objcopy --strip-debug foo} to create a
-stripped executable.
-@item Run @code{objcopy --add-gnu-debuglink=foo.dbg foo}
-to add a link to the debugging info into the stripped executable.
+@item
+Link the executable as normal.  Assuming that it is called @code{foo}
+then...
+
+@item
+Run @code{objcopy --only-keep-debug foo foo.dbg} to create a file
+containing the debugging info.
+
+@item
+Run @code{strip --strip-debug foo} to create a stripped executable.
+
+@item
+Run @code{objcopy --add-gnu-debuglink=foo.dbg foo} to add a link to the
+debugging info into the stripped executable.
 @end enumerate
 
 Note---the choice of @code{.dbg} as an extension for the debug info
@@ -3824,10 +3843,17 @@ file is arbitrary.  Also the @code{--only-keep-debug} step is
 optional.  You could instead do this:
 
 @enumerate
-@item Link the executable as normal.
-@item Copy @code{foo} to @code{foo.full}
-@item Run @code{strip --strip-debug foo}
-@item Run @code{objcopy --add-gnu-debuglink=foo.full foo}
+@item
+Link the executable as normal.
+
+@item
+Copy @code{foo} to @code{foo.full}.
+
+@item
+Run @code{strip --strip-debug foo}.
+
+@item
+Run @code{objcopy --add-gnu-debuglink=foo.full foo}.
 @end enumerate
 
 i.e., the file pointed to by the @option{--add-gnu-debuglink} can be the
