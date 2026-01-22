@@ -34,12 +34,6 @@ static cmd_list_element::aliases_list_type delete_cmd
    cmd_list_element **prehookee, cmd_list_element **posthook,
    cmd_list_element **posthookee);
 
-static struct cmd_list_element *find_cmd (const char *command,
-					  int len,
-					  struct cmd_list_element *clist,
-					  int ignore_help_classes,
-					  int *nfound);
-
 static void help_cmd_list (struct cmd_list_element *list,
 			   command_classes theclass,
 			   bool recurse,
@@ -2174,7 +2168,7 @@ help_cmd_list (struct cmd_list_element *list, command_classes theclass,
    found in nfound.  */
 
 static struct cmd_list_element *
-find_cmd (const char *command, int len, struct cmd_list_element *clist,
+find_cmd (std::string_view command, struct cmd_list_element *clist,
 	  int ignore_help_classes, int *nfound)
 {
   struct cmd_list_element *found, *c;
@@ -2182,12 +2176,12 @@ find_cmd (const char *command, int len, struct cmd_list_element *clist,
   found = NULL;
   *nfound = 0;
   for (c = clist; c; c = c->next)
-    if (!strncmp (command, c->name, len)
+    if (startswith (c->name, command)
 	&& (!ignore_help_classes || !c->is_command_class_help ()))
       {
 	found = c;
 	(*nfound)++;
-	if (c->name[len] == '\0')
+	if (c->name[command.size ()] == '\0')
 	  {
 	    *nfound = 1;
 	    break;
@@ -2290,7 +2284,8 @@ lookup_cmd_1 (const char **text, struct cmd_list_element *clist,
   /* Look it up.  */
   found = 0;
   nfound = 0;
-  found = find_cmd (command, len, clist, ignore_help_classes, &nfound);
+  found = find_cmd (std::string_view (command, len),
+		    clist, ignore_help_classes, &nfound);
 
   /* If nothing matches, we have a simple failure.  */
   if (nfound == 0)
@@ -2676,7 +2671,7 @@ lookup_cmd_composition_1 (const char *text,
 
       /* Look it up.  */
       int nfound = 0;
-      *cmd = find_cmd (command.c_str (), len, cur_list, 1, &nfound);
+      *cmd = find_cmd (command, cur_list, 1, &nfound);
 
       /* We only handle the case where a single command was found.  */
       if (nfound > 1)
