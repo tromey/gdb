@@ -5,7 +5,7 @@
 # source: ba-aarch64-1-bti-2.s
 # as: -defsym __property_bti__=1
 # ld: -shared -T bti-plt.ld
-#warning: \A[^\n]*ba-aarch64-1-unknown-tag\.o: warning: cannot merge unknown tag 'Tag_unknown_4' \(=0x1\) in subsection 'aeabi_feature_and_bits'\.
+#warning: \A[^\n]*ba-aarch64-1-unknown-tag\.o: warning: cannot merge unknown tag 'Tag_unknown_4' \(=0x1\) in subsection 'aeabi_feature_and_bits'
 # readelf: --arch-specific
 
 Subsections:

@@ -1100,8 +1100,8 @@ _bfd_aarch64_oav2_attr_merge (const struct bfd_link_info *info,
       if (attr_info == NULL)
 	{
 	  info->callbacks->einfo
-	    (_("%pB: warning: cannot merge unknown tag 'Tag_unknown_%u' "
-	       "(=0x%x) in subsection '%s'.\n"),
+	    (_("%pB: warning: cannot merge unknown tag 'Tag_unknown_%" PRIu64 "'"
+	       " (=0x%" PRIx32 ") in subsection '%s'\n"),
 	     abfd, rhs->tag, rhs->val.uint, subsec->name);
 	  res.reason = OAv2_MERGE_UNSUPPORTED;
 	  return res;

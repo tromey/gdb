@@ -1004,17 +1004,19 @@ vendor_subsection_parse_args (unsigned int nargs, ...)
 	  if (high_ttype == SUBSECTION_OPTION_1
 	      && ! is_valid_comprehension (arg_out->val.u64))
 	    {
-	      as_bad (
-		_("invalid value '%lu', expected values for <comprehension> "
-		  "are 0 (=`required') or 1 (=`optional')"), arg_out->val.u64);
+	      as_bad
+		(_("invalid value '%" PRIu64 "', expected values for "
+		   "<comprehension> are 0 (=`required') or 1 (=`optional')"),
+		 arg_out->val.u64);
 	      goto bad;
 	    }
 	  else if (high_ttype == SUBSECTION_OPTION_2
 		&& ! is_valid_encoding (arg_out->val.u64))
 	    {
-	      as_bad (
-		_("invalid value '%lu', expected values for <encoding> are 0"
-		  " (=`ULEB128') or 1 (=`NTBS')"), arg_out->val.u64);
+	      as_bad
+		(_("invalid value '%" PRIu64 "', expected values for <encoding>"
+		   " are 0 (=`ULEB128') or 1 (=`NTBS')"),
+		 arg_out->val.u64);
 	      goto bad;
 	    }
 	}
@@ -1069,7 +1071,8 @@ obj_attr_v2_record (obj_attr_tag_t key, arg_t *arg_val)
 	   && recorded_attr->val.uint != obj_attr->val.uint)
 	  || (arg_val->vtype == VALUE_STRING
 	      && strcmp (recorded_attr->val.string, obj_attr->val.string) != 0))
-	as_bad (_("attribute '%lu' cannot be redefined"), recorded_attr->tag);
+	as_bad (_("attribute '%" PRIu64 "' cannot be redefined"),
+		recorded_attr->tag);
       skip_recording = true;
     }
 

@@ -2743,7 +2743,7 @@ oav2_parse_subsection (bfd *abfd,
       goto error;
     }
 
-  const uint32_t subsection_len = bfd_get_32 (abfd, cursor);
+  const unsigned int subsection_len = bfd_get_32 (abfd, cursor);
   const bfd_byte *const end = cursor + subsection_len;
   total_read += F_SUBSECTION_LEN;
   cursor += F_SUBSECTION_LEN;
