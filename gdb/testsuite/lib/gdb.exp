@@ -9771,8 +9771,23 @@ proc core_find {binfile {deletefiles {}} {arg ""} {output_file "/dev/null"}} {
     set found 0
     set coredir [standard_output_file coredir.[getpid]]
     file mkdir $coredir
+
+    set coredump_filter_cmd true
+    if {[istarget "*-linux*-*"]} {
+	# Bit 4, corresponding to "Dump ELF headers".  We need those to get
+	# the Build-ID of the exec from the core file.
+	set elf_headers_bit 0x10
+
+	set res 0x[exec cat /proc/self/coredump_filter]
+	if {($res & $elf_headers_bit) == 0} {
+	    set res [expr {$res | $elf_headers_bit}]
+	    set res 0x[format %x $res]
+	    set coredump_filter_cmd "echo $res > /proc/self/coredump_filter"
+	}
+    }
+
     # tclint-disable command-args
-    catch "system \"(cd ${coredir}; ulimit -c unlimited; ${binfile} ${arg}; true) >${output_file} 2>&1\""
+    catch "system \"(cd ${coredir}; ulimit -c unlimited; $coredump_filter_cmd; ${binfile} ${arg}; true) >${output_file} 2>&1\""
     #      remote_exec host "${binfile}"
     set binfile_basename [file tail $binfile]
     foreach i [list \
