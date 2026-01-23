@@ -930,6 +930,14 @@ windows_solib_ops::iterate_over_objfiles_in_search_order
       }
 }
 
+/* Implement the "auto_wide_charset" gdbarch method.  */
+
+static const char *
+windows_auto_wide_charset ()
+{
+  return "UTF-16";
+}
+
 /* Common parts for gdbarch initialization for the Windows and Cygwin OS
    ABIs.  */
 
@@ -938,6 +946,7 @@ windows_init_abi_common (struct gdbarch_info info, struct gdbarch *gdbarch)
 {
   set_gdbarch_wchar_bit (gdbarch, 16);
   set_gdbarch_wchar_signed (gdbarch, 0);
+  set_gdbarch_auto_wide_charset (gdbarch, windows_auto_wide_charset);
 
   /* Canonical paths on this target look like
      `c:\Program Files\Foo App\mydll.dll', for example.  */
