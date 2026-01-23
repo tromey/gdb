@@ -1,4 +1,4 @@
-# name: EABI build attributes: some files missing Tag_Feature_BTI, but -z force-bti means that the output has Tag_Feature_BTI=0x1
+# name: EABI build attributes: unknown tag in one of the input files triggers a warning, and is discarded without impacting Tag_Feature_BTI marking
 # source: ba-aarch64-1-bti-1.s
 # source: ba-aarch64-1-unknown-tag.s
 # source: ba-aarch64-1-bti-via-gnu-props.s
