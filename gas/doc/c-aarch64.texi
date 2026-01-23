@@ -388,6 +388,8 @@ automatically cause those extensions to be disabled.
  @tab Enable SVE2.3.
 @item @code{the} @tab
  @tab Enable the Translation Hardening Extension.
+@item @code{tlbid} @tab
+ @tab Enable the TLBI Domains Extension.
 @item @code{tme} @tab
  @tab Enable the Transactional Memory Extension.
 @item @code{tev} @tab

@@ -5075,6 +5075,7 @@ parse_sys_ins_reg (char **str, htab_t sys_ins_regs, bool sysreg128_p)
   char *p, *q;
   char buf[AARCH64_MAX_SYSREG_NAME_LEN];
   const aarch64_sys_ins_reg *o;
+  aarch64_feature_set set;
 
   p = buf;
   for (q = *str; ISALNUM (*q) || *q == '_'; q++)
@@ -5092,9 +5093,17 @@ parse_sys_ins_reg (char **str, htab_t sys_ins_regs, bool sysreg128_p)
   if (!o || (sysreg128_p && !aarch64_sys_reg_128bit_p (o->flags)))
     return NULL;
 
-  if (!aarch64_sys_ins_reg_supported_p (cpu_variant, o->name, &o->features))
+  set = o->features;
+  if (*q == '\0' && aarch64_sys_ins_reg_tlbid_xt (o))
+    {
+      aarch64_feature_set feat = AARCH64_FEATURE (TLBID);
+      AARCH64_CLEAR_FEATURES (set, set, feat);
+    }
+
+  if (!aarch64_sys_ins_reg_supported_p (cpu_variant, o->name, &set))
     as_bad (_("selected processor does not support system register "
 	      "name '%s'"), buf);
+
   if (aarch64_sys_reg_deprecated_p (o->flags))
     as_warn (_("system register name '%s' is deprecated and may be "
           "removed in a future release"), buf);
@@ -11029,6 +11038,7 @@ static const struct aarch64_option_cpu_value_table aarch64_features[] = {
   {"sve-b16mm",		AARCH64_FEATURE (SVE_B16MM), AARCH64_FEATURE (SVE)},
   {"mpamv2",		AARCH64_FEATURE (MPAMv2), AARCH64_NO_FEATURES},
   {"mtetc",		AARCH64_FEATURE (MTETC), AARCH64_FEATURE (MEMTAG)},
+  {"tlbid",		AARCH64_FEATURE (TLBID), AARCH64_NO_FEATURES},
   {NULL,		AARCH64_NO_FEATURES, AARCH64_NO_FEATURES},
 };
 

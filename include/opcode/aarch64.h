@@ -287,6 +287,8 @@ enum aarch64_feature_bit {
   AARCH64_FEATURE_MPAMv2,
   /* MTETC.  */
   AARCH64_FEATURE_MTETC,
+  /* TLBI Domains.  */
+  AARCH64_FEATURE_TLBID,
 
   /* Virtual features.  These are used to gate instructions that are enabled
      by either of two (or more) sets of command line flags.  */
@@ -1670,6 +1672,7 @@ typedef struct
 } aarch64_sys_ins_reg;
 
 extern bool aarch64_sys_ins_reg_has_xt (const aarch64_sys_ins_reg *);
+extern bool aarch64_sys_ins_reg_tlbid_xt (const aarch64_sys_ins_reg *);
 extern bool
 aarch64_sys_ins_reg_supported_p (const aarch64_feature_set,
 				 const char *reg_name,
