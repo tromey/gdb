@@ -671,7 +671,7 @@ if { [lindex $got 0] != 0 || ![string match "" [lindex $got 1]] } then {
     run_ld_link_tests [list \
 	[list \
 	    "X32 DSO from x86-64 sframe.o" \
-	    "-shared --hash-style=both --no-rosegment -melf32_x86_64" \
+	    "-shared --hash-style=both --no-rosegment -z separate-code -melf32_x86_64" \
 	    "tmpdir/sframe-x32.o" \
 	    "--x32 -mx86-used-note=yes" \
 	    {dummy.s} \
