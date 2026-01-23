@@ -65,6 +65,8 @@ struct x86_windows_nat_target final : public x86_nat_target<windows_nat_target>
 			   windows_thread_info *th, int r) override;
   void store_one_register (const struct regcache *regcache,
 			   windows_thread_info *th, int r) override;
+
+  bool is_sw_breakpoint (const EXCEPTION_RECORD *er) const override;
 };
 
 /* The current process.  */
@@ -278,6 +280,15 @@ x86_windows_nat_target::store_one_register (const struct regcache *regcache,
     }
   else
     regcache->raw_collect (r, context_ptr + x86_windows_process.mappings[r]);
+}
+
+/* See windows-nat.h.  */
+
+bool
+x86_windows_nat_target::is_sw_breakpoint (const EXCEPTION_RECORD *er) const
+{
+  return (er->ExceptionCode == EXCEPTION_BREAKPOINT
+	  || er->ExceptionCode == STATUS_WX86_BREAKPOINT);
 }
 
 /* Hardware watchpoint support, adapted from go32-nat.c code.  */

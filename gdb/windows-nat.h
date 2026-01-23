@@ -215,6 +215,9 @@ protected:
   virtual void store_one_register (const struct regcache *regcache,
 				   windows_thread_info *th, int r) = 0;
 
+  /* Determine if ER contains a software-breakpoint.  */
+  virtual bool is_sw_breakpoint (const EXCEPTION_RECORD *er) const = 0;
+
 private:
 
   windows_thread_info *add_thread (ptid_t ptid, HANDLE h, void *tlb,
