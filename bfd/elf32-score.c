@@ -136,8 +136,8 @@ struct _score_elf_section_data
   {
     struct score_got_info *got_info;
     bfd_byte *tdata;
-  }
-  u;
+  } u;
+  bfd_byte *hi16_rel_addr;
 };
 
 #define score_elf_section_data(sec) \
@@ -189,8 +189,6 @@ struct _score_elf_section_data
 /* The default alignment for sections, as a power of two.  */
 #define SCORE_ELF_LOG_FILE_ALIGN(abfd)\
   (get_elf_backend_data (abfd)->s->log_file_align)
-
-static bfd_byte *hi16_rel_addr;
 
 /* This will be used when we sort the dynamic relocation records.  */
 static bfd *reldyn_sorting_bfd;
@@ -309,12 +307,13 @@ static bfd_reloc_status_type
 score_elf_hi16_reloc (bfd *abfd ATTRIBUTE_UNUSED,
 		      arelent *reloc_entry,
 		      asymbol *symbol ATTRIBUTE_UNUSED,
-		      void * data,
-		      asection *input_section ATTRIBUTE_UNUSED,
+		      void *data,
+		      asection *input_section,
 		      bfd *output_bfd ATTRIBUTE_UNUSED,
 		      char **error_message ATTRIBUTE_UNUSED)
 {
-  hi16_rel_addr = (bfd_byte *) data + reloc_entry->address;
+  score_elf_section_data (input_section)->hi16_rel_addr
+    = (bfd_byte *) data + reloc_entry->address;
   return bfd_reloc_ok;
 }
 
@@ -330,8 +329,10 @@ score_elf_lo16_reloc (bfd *abfd,
   bfd_vma addend = 0, offset = 0;
   unsigned long val;
   unsigned long hi16_offset, hi16_value, uvalue;
+  bfd_byte *hi16_rel_addr;
 
-  hi16_value = score_bfd_get_32 (abfd, hi16_rel_addr);
+  hi16_rel_addr = score_elf_section_data (input_section)->hi16_rel_addr;
+  hi16_value = hi16_rel_addr ? score_bfd_get_32 (abfd, hi16_rel_addr) : 0;
   hi16_offset = ((((hi16_value >> 16) & 0x3) << 15) | (hi16_value & 0x7fff)) >> 1;
   addend = score_bfd_get_32 (abfd, (bfd_byte *) data + reloc_entry->address);
   offset = ((((addend >> 16) & 0x3) << 15) | (addend & 0x7fff)) >> 1;
@@ -339,9 +340,13 @@ score_elf_lo16_reloc (bfd *abfd,
   if (reloc_entry->address > input_section->size)
     return bfd_reloc_outofrange;
   uvalue = ((hi16_offset << 16) | (offset & 0xffff)) + val;
-  hi16_offset = (uvalue >> 16) << 1;
-  hi16_value = (hi16_value & ~0x37fff) | (hi16_offset & 0x7fff) | ((hi16_offset << 1) & 0x30000);
-  score_bfd_put_32 (abfd, hi16_value, hi16_rel_addr);
+  if (hi16_rel_addr)
+    {
+      hi16_offset = (uvalue >> 16) << 1;
+      hi16_value = ((hi16_value & ~0x37fff)
+		    | (hi16_offset & 0x7fff) | ((hi16_offset << 1) & 0x30000));
+      score_bfd_put_32 (abfd, hi16_value, hi16_rel_addr);
+    }
   offset = (uvalue & 0xffff) << 1;
   addend = (addend & ~0x37fff) | (offset & 0x7fff) | ((offset << 1) & 0x30000);
   score_bfd_put_32 (abfd, addend, (bfd_byte *) data + reloc_entry->address);
@@ -613,8 +618,10 @@ score_elf_got_lo16_reloc (bfd *abfd,
   bfd_vma addend = 0, offset = 0;
   signed long val;
   signed long hi16_offset, hi16_value, uvalue;
+  bfd_byte *hi16_rel_addr;
 
-  hi16_value = score_bfd_get_32 (abfd, hi16_rel_addr);
+  hi16_rel_addr = score_elf_section_data (input_section)->hi16_rel_addr;
+  hi16_value = hi16_rel_addr ? score_bfd_get_32 (abfd, hi16_rel_addr) : 0;
   hi16_offset = ((((hi16_value >> 16) & 0x3) << 15) | (hi16_value & 0x7fff)) >> 1;
   addend = score_bfd_get_32 (abfd, (bfd_byte *) data + reloc_entry->address);
   offset = ((((addend >> 16) & 0x3) << 15) | (addend & 0x7fff)) >> 1;
@@ -622,12 +629,16 @@ score_elf_got_lo16_reloc (bfd *abfd,
   if (reloc_entry->address > input_section->size)
     return bfd_reloc_outofrange;
   uvalue = ((hi16_offset << 16) | (offset & 0xffff)) + val;
-  if ((uvalue > -0x8000) && (uvalue < 0x7fff))
-    hi16_offset = 0;
-  else
-    hi16_offset = (uvalue >> 16) & 0x7fff;
-  hi16_value = (hi16_value & ~0x37fff) | (hi16_offset & 0x7fff) | ((hi16_offset << 1) & 0x30000);
-  score_bfd_put_32 (abfd, hi16_value, hi16_rel_addr);
+  if (hi16_rel_addr)
+    {
+      if ((uvalue > -0x8000) && (uvalue < 0x7fff))
+	hi16_offset = 0;
+      else
+	hi16_offset = (uvalue >> 16) & 0x7fff;
+      hi16_value = ((hi16_value & ~0x37fff)
+		    | (hi16_offset & 0x7fff) | ((hi16_offset << 1) & 0x30000));
+      score_bfd_put_32 (abfd, hi16_value, hi16_rel_addr);
+    }
   offset = (uvalue & 0xffff) << 1;
   addend = (addend & ~0x37fff) | (offset & 0x7fff) | ((offset << 1) & 0x30000);
   score_bfd_put_32 (abfd, addend, (bfd_byte *) data + reloc_entry->address);
