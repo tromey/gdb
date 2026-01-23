@@ -402,20 +402,21 @@ flip_fre_start_address (void *addr, uint32_t fre_type)
 }
 
 static void
-flip_fre_stack_offsets (void *offsets, uint8_t offset_size, uint8_t offset_cnt)
+flip_fre_datawords (void *datawords, uint8_t dataword_size,
+		    uint8_t dataword_cnt)
 {
   int j;
 
-  if (offset_size == SFRAME_FRE_OFFSET_2B)
+  if (dataword_size == SFRAME_FRE_DATAWORD_2B)
     {
-      struct { uint16_t x; } ATTRIBUTE_PACKED *p = offsets;
-      for (j = offset_cnt; j > 0; p++, j--)
+      struct { uint16_t x; } ATTRIBUTE_PACKED *p = datawords;
+      for (j = dataword_cnt; j > 0; p++, j--)
 	swap_thing (p->x);
     }
-  else if (offset_size == SFRAME_FRE_OFFSET_4B)
+  else if (dataword_size == SFRAME_FRE_DATAWORD_4B)
     {
-      struct { uint32_t x; } ATTRIBUTE_PACKED *p = offsets;
-      for (j = offset_cnt; j > 0; p++, j--)
+      struct { uint32_t x; } ATTRIBUTE_PACKED *p = datawords;
+      for (j = dataword_cnt; j > 0; p++, j--)
 	swap_thing (p->x);
     }
 }
@@ -692,7 +693,7 @@ flip_fre (char *fp, size_t fp_size, uint32_t fre_type, size_t *fre_size)
   offset_bytes_size = sframe_fre_offset_bytes_size (fre_info);
   if (offset_bytes_size > fp_size)
     return SFRAME_ERR;
-  flip_fre_stack_offsets (fp, offset_size, offset_cnt);
+  flip_fre_datawords (fp, offset_size, offset_cnt);
 
   *fre_size = addr_size + fre_info_size + offset_bytes_size;
 
