@@ -70,6 +70,8 @@
 
 GNU/Linux/MicroBlaze (gdbserver) microblazeel-*linux*
 
+AArch64 MinGW                   aarch64-*-mingw*
+
 * New commands
 
 set local-environment
