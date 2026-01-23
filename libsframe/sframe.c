@@ -465,7 +465,7 @@ sframe_fre_sanity_check_p (const sframe_frame_row_entry *frep)
     return false;
 
   offset_cnt = sframe_fre_get_offset_count (fre_info);
-  if (offset_cnt > MAX_NUM_STACK_OFFSETS)
+  if (offset_cnt > MAX_NUM_DATAWORDS)
     return false;
 
   return true;
@@ -1030,54 +1030,54 @@ sframe_get_fre_offset (const sframe_frame_row_entry *fre, int idx, int *errp)
 
   if (offset_size == SFRAME_FRE_OFFSET_1B)
     {
-      int8_t *sp = (int8_t *)fre->fre_offsets;
-      return sp[idx];
+      int8_t *offsets = (int8_t *)fre->fre_datawords;
+      return offsets[idx];
     }
   else if (offset_size == SFRAME_FRE_OFFSET_2B)
     {
-      int16_t *sp = (int16_t *)fre->fre_offsets;
-      return sp[idx];
+      int16_t *offsets = (int16_t *)fre->fre_datawords;
+      return offsets[idx];
     }
   else
     {
-      int32_t *ip = (int32_t *)fre->fre_offsets;
-      return ip[idx];
+      int32_t *offsets = (int32_t *)fre->fre_datawords;
+      return offsets[idx];
     }
 }
 
-/* Get IDX'th offset as unsigned data from FRE.  Set errp as applicable.  */
+/* Get IDX'th data word as unsigned data from FRE.  Set errp as applicable.  */
 
 uint32_t
 sframe_get_fre_udata (const sframe_frame_row_entry *fre, int idx, int *errp)
 {
-  uint8_t offset_cnt, offset_size;
+  uint8_t dataword_cnt, dataword_size;
 
   if (fre == NULL || !sframe_fre_sanity_check_p (fre))
     return sframe_set_errno (errp, SFRAME_ERR_FRE_INVAL);
 
-  offset_cnt = sframe_fre_get_offset_count (fre->fre_info);
-  offset_size = sframe_fre_get_offset_size (fre->fre_info);
+  dataword_cnt = sframe_fre_get_offset_count (fre->fre_info);
+  dataword_size = sframe_fre_get_offset_size (fre->fre_info);
 
-  if (offset_cnt < idx + 1)
+  if (dataword_cnt < idx + 1)
     return sframe_set_errno (errp, SFRAME_ERR_FREOFFSET_NOPRESENT);
 
   if (errp)
     *errp = 0; /* Offset Valid.  */
 
-  if (offset_size == SFRAME_FRE_OFFSET_1B)
+  if (dataword_size == SFRAME_FRE_DATAWORD_1B)
     {
-      uint8_t *offsets = (uint8_t *)fre->fre_offsets;
-      return offsets[idx];
+      uint8_t *datawords = (uint8_t *)fre->fre_datawords;
+      return datawords[idx];
     }
-  else if (offset_size == SFRAME_FRE_OFFSET_2B)
+  else if (dataword_size == SFRAME_FRE_DATAWORD_2B)
     {
-      uint16_t *offsets = (uint16_t *)fre->fre_offsets;
-      return offsets[idx];
+      uint16_t *datawords = (uint16_t *)fre->fre_datawords;
+      return datawords[idx];
     }
   else
     {
-      uint32_t *offsets = (uint32_t *)fre->fre_offsets;
-      return offsets[idx];
+      uint32_t *datawords = (uint32_t *)fre->fre_datawords;
+      return datawords[idx];
     }
 }
 
@@ -1375,13 +1375,13 @@ sframe_decode_fre (const char *fre_buf, sframe_frame_row_entry *fre,
   /* Sanity check as the API works closely with the binary format.  */
   sframe_assert (sizeof (fre->fre_info) == sizeof (uint8_t));
 
-  /* Cleanup the space for fre_offsets first, then copy over the valid
+  /* Cleanup the space for fre_datawords first, then copy over the valid
      bytes.  */
-  memset (fre->fre_offsets, 0, MAX_OFFSET_BYTES);
+  memset (fre->fre_datawords, 0, MAX_DATAWORD_BYTES);
   /* Get offsets size.  */
   stack_offsets_sz = sframe_fre_offset_bytes_size (fre->fre_info);
   stack_offsets = fre_buf + addr_size + sizeof (fre->fre_info);
-  memcpy (fre->fre_offsets, stack_offsets, stack_offsets_sz);
+  memcpy (fre->fre_datawords, stack_offsets, stack_offsets_sz);
 
   /* The FRE has been decoded.  Use it to perform one last sanity check.  */
   fre_size = sframe_fre_entry_size (fre, fre_type);
@@ -2160,7 +2160,7 @@ sframe_encoder_add_fre (sframe_encoder_ctx *ectx,
 
   /* frep has already been sanity check'd.  Get offsets size.  */
   offsets_sz = sframe_fre_offset_bytes_size (frep->fre_info);
-  memcpy (&ectx_frep->fre_offsets, &frep->fre_offsets, offsets_sz);
+  memcpy (&ectx_frep->fre_datawords, &frep->fre_datawords, offsets_sz);
 
   esz = sframe_fre_entry_size (frep, fre_type);
   fre_tbl->count++;
@@ -2524,7 +2524,7 @@ sframe_encoder_write_fre (char *contents, sframe_frame_row_entry *frep,
   memcpy (contents, &frep->fre_info, sizeof (frep->fre_info));
   contents += sizeof (frep->fre_info);
 
-  memcpy (contents, frep->fre_offsets, fre_stack_offsets_sz);
+  memcpy (contents, frep->fre_datawords, fre_stack_offsets_sz);
   contents+= fre_stack_offsets_sz;
 
   fre_sz = sframe_fre_entry_size (frep, fre_type);
