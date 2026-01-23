@@ -206,13 +206,13 @@ sframe_get_hdr_size (const sframe_header *sfh)
 /* Access functions for frame row entry data.  */
 
 static uint8_t
-sframe_fre_get_offset_count (uint8_t fre_info)
+sframe_fre_get_dataword_count (uint8_t fre_info)
 {
   return SFRAME_V1_FRE_OFFSET_COUNT (fre_info);
 }
 
 static uint8_t
-sframe_fre_get_offset_size (uint8_t fre_info)
+sframe_fre_get_dataword_size (uint8_t fre_info)
 {
   return SFRAME_V1_FRE_OFFSET_SIZE (fre_info);
 }
@@ -451,45 +451,45 @@ sframe_fre_start_addr_size (uint32_t fre_type)
 static bool
 sframe_fre_sanity_check_p (const sframe_frame_row_entry *frep)
 {
-  uint8_t offset_size, offset_cnt;
+  uint8_t dataword_size, dataword_cnt;
   uint8_t fre_info;
 
   if (frep == NULL)
     return false;
 
   fre_info = frep->fre_info;
-  offset_size = sframe_fre_get_offset_size (fre_info);
+  dataword_size = sframe_fre_get_dataword_size (fre_info);
 
-  if (offset_size != SFRAME_FRE_OFFSET_1B
-      && offset_size != SFRAME_FRE_OFFSET_2B
-      && offset_size != SFRAME_FRE_OFFSET_4B)
+  if (dataword_size != SFRAME_FRE_DATAWORD_1B
+      && dataword_size != SFRAME_FRE_DATAWORD_2B
+      && dataword_size != SFRAME_FRE_DATAWORD_4B)
     return false;
 
-  offset_cnt = sframe_fre_get_offset_count (fre_info);
-  if (offset_cnt > MAX_NUM_DATAWORDS)
+  dataword_cnt = sframe_fre_get_dataword_count (fre_info);
+  if (dataword_cnt > MAX_NUM_DATAWORDS)
     return false;
 
   return true;
 }
 
-/* Get FRE_INFO's offset size in bytes.  */
+/* Get FRE_INFO's data words' size in bytes.  */
 
 static size_t
-sframe_fre_offset_bytes_size (uint8_t fre_info)
+sframe_fre_datawords_bytes_size (uint8_t fre_info)
 {
-  uint8_t offset_size, offset_cnt;
+  uint8_t dataword_size, dataword_cnt;
 
-  offset_size = sframe_fre_get_offset_size (fre_info);
+  dataword_size = sframe_fre_get_dataword_size (fre_info);
 
-  debug_printf ("offset_size =  %u\n", offset_size);
+  debug_printf ("dataword_size =  %u\n", dataword_size);
 
-  offset_cnt = sframe_fre_get_offset_count (fre_info);
+  dataword_cnt = sframe_fre_get_dataword_count (fre_info);
 
-  if (offset_size == SFRAME_FRE_OFFSET_2B
-      || offset_size == SFRAME_FRE_OFFSET_4B)	/* 2 or 4 bytes.  */
-    return (offset_cnt * (offset_size * 2));
+  if (dataword_size == SFRAME_FRE_DATAWORD_2B
+      || dataword_size == SFRAME_FRE_DATAWORD_4B)	/* 2 or 4 bytes.  */
+    return (dataword_cnt * (dataword_size * 2));
 
-  return (offset_cnt);
+  return dataword_cnt;
 }
 
 /* Get total size in bytes to represent FREP in the binary format.  This
@@ -505,7 +505,7 @@ sframe_fre_entry_size (sframe_frame_row_entry *frep, uint32_t fre_type)
   size_t addr_size = sframe_fre_start_addr_size (fre_type);
 
   return (addr_size + sizeof (frep->fre_info)
-	  + sframe_fre_offset_bytes_size (fre_info));
+	  + sframe_fre_datawords_bytes_size (fre_info));
 }
 
 /* Get total size in bytes in the SFrame FRE at FRE_BUF location, given the
@@ -521,7 +521,7 @@ sframe_buf_fre_entry_size (const char *fre_buf, uint32_t fre_type)
   uint8_t fre_info = *(uint8_t *)(fre_buf + addr_size);
 
   return (addr_size + sizeof (fre_info)
-	  + sframe_fre_offset_bytes_size (fre_info));
+	  + sframe_fre_datawords_bytes_size (fre_info));
 }
 /* Get the function descriptor entry at index FUNC_IDX in the decoder
    context CTX.  */
@@ -663,8 +663,8 @@ static int
 flip_fre (char *fp, size_t fp_size, uint32_t fre_type, size_t *fre_size)
 {
   uint8_t fre_info;
-  uint8_t offset_size, offset_cnt;
-  size_t addr_size, fre_info_size, offset_bytes_size;
+  uint8_t dataword_size, dataword_cnt;
+  size_t addr_size, fre_info_size, datawords_bytes_size;
   int err = 0;
 
   if (fre_size == NULL)
@@ -684,18 +684,18 @@ flip_fre (char *fp, size_t fp_size, uint32_t fre_type, size_t *fre_size)
   if (fre_info_size > fp_size)
     return SFRAME_ERR;
   fre_info = *(uint8_t*)fp;
-  offset_size = sframe_fre_get_offset_size (fre_info);
-  offset_cnt = sframe_fre_get_offset_count (fre_info);
+  dataword_size = sframe_fre_get_dataword_size (fre_info);
+  dataword_cnt = sframe_fre_get_dataword_count (fre_info);
 
   /* Advance the buffer pointer to where the stack offsets are.  */
   fp += fre_info_size;
   fp_size -= fre_info_size;
-  offset_bytes_size = sframe_fre_offset_bytes_size (fre_info);
-  if (offset_bytes_size > fp_size)
+  datawords_bytes_size = sframe_fre_datawords_bytes_size (fre_info);
+  if (datawords_bytes_size > fp_size)
     return SFRAME_ERR;
-  flip_fre_datawords (fp, offset_size, offset_cnt);
+  flip_fre_datawords (fp, dataword_size, dataword_cnt);
 
-  *fre_size = addr_size + fre_info_size + offset_bytes_size;
+  *fre_size = addr_size + fre_info_size + datawords_bytes_size;
 
   return 0;
 }
@@ -1015,26 +1015,26 @@ fde_func (const void *p1, const void *p2)
 static int32_t
 sframe_get_fre_offset (const sframe_frame_row_entry *fre, int idx, int *errp)
 {
-  uint8_t offset_cnt, offset_size;
+  uint8_t dataword_cnt, dataword_size;
 
   if (fre == NULL || !sframe_fre_sanity_check_p (fre))
     return sframe_set_errno (errp, SFRAME_ERR_FRE_INVAL);
 
-  offset_cnt = sframe_fre_get_offset_count (fre->fre_info);
-  offset_size = sframe_fre_get_offset_size (fre->fre_info);
+  dataword_cnt = sframe_fre_get_dataword_count (fre->fre_info);
+  dataword_size = sframe_fre_get_dataword_size (fre->fre_info);
 
-  if (offset_cnt < idx + 1)
+  if (dataword_cnt < idx + 1)
     return sframe_set_errno (errp, SFRAME_ERR_FREOFFSET_NOPRESENT);
 
   if (errp)
     *errp = 0; /* Offset Valid.  */
 
-  if (offset_size == SFRAME_FRE_OFFSET_1B)
+  if (dataword_size == SFRAME_FRE_DATAWORD_1B)
     {
       int8_t *offsets = (int8_t *)fre->fre_datawords;
       return offsets[idx];
     }
-  else if (offset_size == SFRAME_FRE_OFFSET_2B)
+  else if (dataword_size == SFRAME_FRE_DATAWORD_2B)
     {
       int16_t *offsets = (int16_t *)fre->fre_datawords;
       return offsets[idx];
@@ -1056,8 +1056,8 @@ sframe_get_fre_udata (const sframe_frame_row_entry *fre, int idx, int *errp)
   if (fre == NULL || !sframe_fre_sanity_check_p (fre))
     return sframe_set_errno (errp, SFRAME_ERR_FRE_INVAL);
 
-  dataword_cnt = sframe_fre_get_offset_count (fre->fre_info);
-  dataword_size = sframe_fre_get_offset_size (fre->fre_info);
+  dataword_cnt = sframe_fre_get_dataword_count (fre->fre_info);
+  dataword_size = sframe_fre_get_dataword_size (fre->fre_info);
 
   if (dataword_cnt < idx + 1)
     return sframe_set_errno (errp, SFRAME_ERR_FREOFFSET_NOPRESENT);
@@ -1360,8 +1360,8 @@ sframe_decode_fre (const char *fre_buf, sframe_frame_row_entry *fre,
 		   uint32_t fre_type, size_t *esz)
 {
   int err = 0;
-  const char *stack_offsets = NULL;
-  size_t stack_offsets_sz;
+  const char *datawords = NULL;
+  size_t datawords_sz;
   size_t addr_size;
   size_t fre_size;
 
@@ -1380,14 +1380,14 @@ sframe_decode_fre (const char *fre_buf, sframe_frame_row_entry *fre,
      bytes.  */
   memset (fre->fre_datawords, 0, MAX_DATAWORD_BYTES);
   /* Get offsets size.  */
-  stack_offsets_sz = sframe_fre_offset_bytes_size (fre->fre_info);
-  stack_offsets = fre_buf + addr_size + sizeof (fre->fre_info);
-  memcpy (fre->fre_datawords, stack_offsets, stack_offsets_sz);
+  datawords_sz = sframe_fre_datawords_bytes_size (fre->fre_info);
+  datawords = fre_buf + addr_size + sizeof (fre->fre_info);
+  memcpy (fre->fre_datawords, datawords, datawords_sz);
 
   /* The FRE has been decoded.  Use it to perform one last sanity check.  */
   fre_size = sframe_fre_entry_size (fre, fre_type);
   sframe_assert (fre_size == (addr_size + sizeof (fre->fre_info)
-			      + stack_offsets_sz));
+			      + datawords_sz));
   *esz = fre_size;
 
   return 0;
@@ -2118,7 +2118,7 @@ sframe_encoder_add_fre (sframe_encoder_ctx *ectx,
   sframe_header *ehp;
   sframe_func_desc_entry_int *fdep;
   sframe_frame_row_entry *ectx_frep;
-  size_t offsets_sz, esz;
+  size_t datawords_sz, esz;
   uint32_t fre_type;
   int err = 0;
 
@@ -2160,8 +2160,8 @@ sframe_encoder_add_fre (sframe_encoder_ctx *ectx,
   sframe_assert (frep->fre_start_addr <= fdep->func_size);
 
   /* frep has already been sanity check'd.  Get offsets size.  */
-  offsets_sz = sframe_fre_offset_bytes_size (frep->fre_info);
-  memcpy (&ectx_frep->fre_datawords, &frep->fre_datawords, offsets_sz);
+  datawords_sz = sframe_fre_datawords_bytes_size (frep->fre_info);
+  memcpy (&ectx_frep->fre_datawords, &frep->fre_datawords, datawords_sz);
 
   esz = sframe_fre_entry_size (frep, fre_type);
   fre_tbl->count++;
@@ -2504,14 +2504,14 @@ sframe_encoder_write_fre (char *contents, sframe_frame_row_entry *frep,
 {
   size_t fre_sz;
   size_t fre_start_addr_sz;
-  size_t fre_stack_offsets_sz;
+  size_t fre_datawords_sz;
   int err = 0;
 
   if (!sframe_fre_sanity_check_p (frep))
     return sframe_set_errno (&err, SFRAME_ERR_FRE_INVAL);
 
   fre_start_addr_sz = sframe_fre_start_addr_size (fre_type);
-  fre_stack_offsets_sz = sframe_fre_offset_bytes_size (frep->fre_info);
+  fre_datawords_sz = sframe_fre_datawords_bytes_size (frep->fre_info);
 
   /* The FRE start address must be encodable in the available number of
      bytes.  */
@@ -2525,14 +2525,14 @@ sframe_encoder_write_fre (char *contents, sframe_frame_row_entry *frep,
   memcpy (contents, &frep->fre_info, sizeof (frep->fre_info));
   contents += sizeof (frep->fre_info);
 
-  memcpy (contents, frep->fre_datawords, fre_stack_offsets_sz);
-  contents+= fre_stack_offsets_sz;
+  memcpy (contents, frep->fre_datawords, fre_datawords_sz);
+  contents+= fre_datawords_sz;
 
   fre_sz = sframe_fre_entry_size (frep, fre_type);
   /* Sanity checking.  */
   sframe_assert ((fre_start_addr_sz
 		  + sizeof (frep->fre_info)
-		  + fre_stack_offsets_sz) == fre_sz);
+		  + fre_datawords_sz) == fre_sz);
 
   *esz = fre_sz;
 
