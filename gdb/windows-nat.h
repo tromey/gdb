@@ -54,8 +54,6 @@ struct windows_per_inferior : public windows_nat::windows_process_info
   void handle_unload_dll () override;
   bool handle_access_violation (const EXCEPTION_RECORD *rec) override;
 
-  uintptr_t dr[8] {};
-
   int windows_initialization_done = 0;
 
   std::vector<std::unique_ptr<windows_thread_info>> thread_list;
@@ -183,6 +181,23 @@ struct windows_nat_target : public inf_child_target
     return serial_event_fd (m_wait_event);
   }
 
+protected:
+
+  /* Initialize arch-specific data for a new inferior (debug registers,
+     register mappings).  */
+  virtual void initialize_windows_arch () = 0;
+  /* Cleanup arch-specific data after inferior exit.  */
+  virtual void cleanup_windows_arch () = 0;
+
+  /* Reload the thread context.  */
+  virtual void fill_thread_context (windows_thread_info *th) = 0;
+
+  /* Prepare the thread context for continuing.  */
+  virtual void thread_context_continue (windows_thread_info *th,
+					int killed) = 0;
+  /* Set the stepping bit in the thread context.  */
+  virtual void thread_context_step (windows_thread_info *th) = 0;
+
 private:
 
   windows_thread_info *add_thread (ptid_t ptid, HANDLE h, void *tlb,
@@ -248,6 +263,11 @@ private:
      again to restart the inferior.  */
   bool m_continued = false;
 };
+
+/* Check if Windows API call succeeds, and otherwise print error code
+   and description.  */
+void check (BOOL ok, const char *file, int line);
+#define CHECK(x)	check (x, __FILE__,__LINE__)
 
 /* The current process.  */
 extern windows_per_inferior *windows_process;
