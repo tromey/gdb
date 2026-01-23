@@ -318,6 +318,8 @@ enum aarch64_feature_bit {
   AARCH64_FEATURE_SVE2p2_SME2p2,
   /* +sve2p3 or +sme2p3 */
   AARCH64_FEATURE_SVE2p3_SME2p3,
+  /* +d128 or +tlbid */
+  AARCH64_FEATURE_D128_TLBID,
   AARCH64_NUM_FEATURES
 };
 

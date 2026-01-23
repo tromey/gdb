@@ -5099,11 +5099,15 @@ parse_sys_ins_reg (char **str, htab_t sys_ins_regs, bool sysreg128_p)
       aarch64_feature_set feat = AARCH64_FEATURE (TLBID);
       AARCH64_CLEAR_FEATURES (set, set, feat);
     }
+  if (!sysreg128_p && aarch64_sys_ins_reg_has_xt (o))
+    {
+      aarch64_feature_set feat = AARCH64_FEATURES (2, D128_TLBID, D128);
+      AARCH64_CLEAR_FEATURES (set, set, feat);
+    }
 
   if (!aarch64_sys_ins_reg_supported_p (cpu_variant, o->name, &set))
     as_bad (_("selected processor does not support system register "
 	      "name '%s'"), buf);
-
   if (aarch64_sys_reg_deprecated_p (o->flags))
     as_warn (_("system register name '%s' is deprecated and may be "
           "removed in a future release"), buf);
@@ -11074,6 +11078,8 @@ static const struct aarch64_virtual_dependency_table aarch64_dependencies[] = {
   {AARCH64_FEATURE (SME2p2), AARCH64_FEATURES (2, SVE_SME2p2, SVE2p2_SME2p2)},
   {AARCH64_FEATURE (SVE2p3), AARCH64_FEATURE (SVE2p3_SME2p3)},
   {AARCH64_FEATURE (SME2p3), AARCH64_FEATURE (SVE2p3_SME2p3)},
+  {AARCH64_FEATURE (D128), AARCH64_FEATURE (D128_TLBID)},
+  {AARCH64_FEATURE (TLBID), AARCH64_FEATURE (D128_TLBID)},
 };
 
 static aarch64_feature_set
