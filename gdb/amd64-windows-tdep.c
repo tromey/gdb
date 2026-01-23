@@ -1321,9 +1321,6 @@ amd64_windows_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 {
   amd64_windows_init_abi_common (info, gdbarch);
   windows_init_abi (info, gdbarch);
-
-  /* On Windows, "long"s are only 32bit.  */
-  set_gdbarch_long_bit (gdbarch, 32);
 }
 
 /* Sigwrapper unwinder instruction patterns for AMD64.  */

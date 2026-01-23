@@ -963,6 +963,9 @@ windows_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 {
   windows_init_abi_common (info, gdbarch);
   set_gdbarch_gdb_signal_to_target (gdbarch, windows_gdb_signal_to_target);
+
+  /* On Windows, "long"s are only 32bit.  */
+  set_gdbarch_long_bit (gdbarch, 32);
 }
 
 /* See windows-tdep.h.  */
