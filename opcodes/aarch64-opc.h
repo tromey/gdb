@@ -395,11 +395,6 @@ verify_constraints (const struct aarch64_inst *, const aarch64_insn, bfd_vma,
 #define F_REG_MAX_VALUE(X) ((X) << 15)
 #define F_GET_REG_MAX_VALUE(X) (((X) >> 15) & 0x0f)
 
-/* Encode 7-bit HINT #imm in the lower 8 bits.  Use higher bits for flags.  */
-#define HINT_ENCODE(flag, val) ((flag << 8) | val)
-#define HINT_FLAG(val) (val >> 8)
-#define HINT_VAL(val) (val & 0xff)
-
 static inline bool
 operand_has_inserter (const aarch64_operand *operand)
 {
