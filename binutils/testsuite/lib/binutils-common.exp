@@ -509,7 +509,8 @@ proc gas_sframe_check {} {
 
 # Whether a target supports Object Attributes v1
 proc supports_oa_v1 {} {
-    if { ! [is_elf_format] } {
+    if { ![is_elf_format]
+	 && ![istarget *-*-vxworks*] && ![istarget *-*-windiss*] } {
 	return 0
     }
     if { [istarget arc-*-*]
@@ -531,7 +532,8 @@ proc supports_oa_v1 {} {
 
 # Whether a target supports Object Attributes v2
 proc supports_oa_v2 {} {
-    if { ! [is_elf_format] } {
+    if { ![is_elf_format]
+	 && ![istarget *-*-vxworks*] && ![istarget *-*-windiss*] } {
 	return 0
     }
     if { [istarget aarch64*-*-*] } {
