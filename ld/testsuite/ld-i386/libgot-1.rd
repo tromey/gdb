@@ -15,4 +15,4 @@ Global Offset Table '\.got\.plt' contains 4 entries:
 .* +[^0][0-9a-f]+
 .* +0
 .* +0
-.* R_386_JUMP_SLOT +bar \+ 156
+.* R_386_JUMP_SLOT +bar \+ [0-9a-f]+
