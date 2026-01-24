@@ -22,7 +22,6 @@ License''.
 @title The SFrame Format
 @subtitle Version 3
 @sp 15
-@center @strong{*** DRAFT - NOT FOR DISTRIBUTION ***}
 @center @today{}
 @author Indu Bhagat
 
@@ -36,7 +35,6 @@ License''.
 @node Top
 @top The SFrame format
 
-@center @strong{*** DRAFT - NOT FOR DISTRIBUTION ***}
 @center @today{}
 
 This manual describes Version 3 of the SFrame file format.  SFrame stands for
