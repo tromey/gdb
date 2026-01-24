@@ -2016,9 +2016,9 @@ is_breakpoint (const struct breakpoint *bpt)
 	  || bpt->type == bp_dprintf);
 }
 
-/* Return true if BPT is of any hardware watchpoint kind.  */
+/* See breakpoint.h.  */
 
-static bool
+bool
 is_hardware_watchpoint (const struct breakpoint *bpt)
 {
   return (bpt->type == bp_hardware_watchpoint

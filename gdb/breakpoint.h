@@ -1085,6 +1085,10 @@ struct watchpoint : public breakpoint
 
 extern bool is_breakpoint (const struct breakpoint *bpt);
 
+/* Return true if BPT is of any hardware watchpoint kind.  */
+
+extern bool is_hardware_watchpoint (const struct breakpoint *bpt);
+
 /* Return true if BPT is of any watchpoint kind, hardware or
    software.  */
 

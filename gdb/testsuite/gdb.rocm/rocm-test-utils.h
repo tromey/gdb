@@ -37,4 +37,16 @@
     }									\
   while (0)
 
+/* Ensure that all memory operations are completed before continuing,
+   even when "precise-memory" is off.  */
+
+#define WAIT_MEM							\
+  asm volatile (".if .amdgcn.gfx_generation_number < 10\n"		\
+		"  s_waitcnt 0\n"					\
+		".elseif .amdgcn.gfx_generation_number < 11\n"		\
+		"  s_waitcnt_vscnt null, 0\n"				\
+		".else\n"						\
+		"  s_wait_idle\n"					\
+		".endif")
+
 #endif /* ROCM_TEST_UTILS_H */
