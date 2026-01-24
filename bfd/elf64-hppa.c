@@ -4426,12 +4426,6 @@ elf64_hppa_relocate_section (bfd *output_bfd,
 	    }
 	}
 
-      /* Ensure symbol isn't undefined.  */
-      BFD_ASSERT (r_symndx != STN_UNDEF);
-
-      /* Ensure input section hasn't been discarded.  */
-      BFD_ASSERT (!discarded_section (input_section));
-
       if (sym_sec != NULL && discarded_section (sym_sec))
 	RELOC_AGAINST_DISCARDED_SECTION (info, input_bfd, input_section,
 					 rel, 1, relend, R_PARISC_NONE,
