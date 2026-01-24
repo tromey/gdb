@@ -1,6 +1,6 @@
-/* Copyright 2021-2026 Free Software Foundation, Inc.
+/* This testcase is part of GDB, the GNU debugger.
 
-   This file is part of GDB.
+   Copyright 2021-2026 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -15,21 +15,26 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
-#include <hip/hip_runtime.h>
+#ifndef ROCM_TEST_UTILS_H
+#define ROCM_TEST_UTILS_H
 
-#include "rocm-test-utils.h"
+#include <stdio.h>
+#include <stdlib.h>
 
-__global__ void
-kernel ()
-{
-  int *p = nullptr;
-  *p = 1;
-}
+/* Check the return value of a HIP call, exit on error.  */
 
-int
-main (int argc, char* argv[])
-{
-  kernel<<<1, 1>>> ();
-  CHECK (hipDeviceSynchronize ());
-  return 0;
-}
+#define CHECK(cmd)							\
+  do									\
+    {									\
+      hipError_t error = cmd;						\
+      if (error != hipSuccess)						\
+	{								\
+	  fprintf (stderr, "error: '%s'(%d) at %s:%d\n",		\
+		   hipGetErrorString (error), error, __FILE__,		\
+		  __LINE__);						\
+	  exit (EXIT_FAILURE);						\
+	}								\
+    }									\
+  while (0)
+
+#endif /* ROCM_TEST_UTILS_H */
