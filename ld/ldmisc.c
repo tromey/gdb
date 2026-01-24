@@ -183,17 +183,19 @@ vfinfo (FILE *fp, const char *fmt, va_list ap, bool is_warning)
 	      break;
 
 	    case 'l':
-	      bool ll_type = false;
-	      if (*scan == 'l')
-		{
-		  ll_type = true;
-		  ++scan;
-		}
-	      if (*scan == 'd' || *scan == 'u' || *scan == 'x')
-		{
-		  ++scan;
-		  arg_type = (ll_type ? LongLong : Long);
-		}
+	      {
+		bool ll_type = false;
+		if (*scan == 'l')
+		  {
+		    ll_type = true;
+		    ++scan;
+		  }
+		if (*scan == 'd' || *scan == 'u' || *scan == 'x')
+		  {
+		    ++scan;
+		    arg_type = (ll_type ? LongLong : Long);
+		  }
+	      }
 	      break;
 
 	    default:
@@ -578,25 +580,27 @@ vfinfo (FILE *fp, const char *fmt, va_list ap, bool is_warning)
 	      break;
 
 	    case 'l': /* (Unsigned) (long) long integer, like printf().  */
-	      bool ll_type = false;
-	      if (*fmt == 'l')
-		{
-		  fmt++;
-		  ll_type = true;
-		}
-	      if (*fmt == 'd' || *fmt == 'u' || *fmt == 'x')
-		{
-		  unsigned int mods_len = (ll_type ? 2 : 1);
-		  cfmt = make_cfmt (fmt - mods_len - mods, mods + mods_len + 1);
-		  if (ll_type)
-		    fprintf (fp, cfmt, args[arg_no].ll);
-		  else
-		    fprintf (fp, cfmt, args[arg_no].l);
-		  free (cfmt);
-		  ++arg_count;
-		  ++fmt;
-		  break;
-		}
+	      {
+		bool ll_type = false;
+		if (*fmt == 'l')
+		  {
+		    fmt++;
+		    ll_type = true;
+		  }
+		if (*fmt == 'd' || *fmt == 'u' || *fmt == 'x')
+		  {
+		    unsigned int mods_len = (ll_type ? 2 : 1);
+		    cfmt = make_cfmt (fmt - mods_len - mods, mods + mods_len + 1);
+		    if (ll_type)
+		      fprintf (fp, cfmt, args[arg_no].ll);
+		    else
+		      fprintf (fp, cfmt, args[arg_no].l);
+		    free (cfmt);
+		    ++arg_count;
+		    ++fmt;
+		    break;
+		  }
+	      }
 	      /* Fallthru */
 
 	    default:
