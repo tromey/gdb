@@ -9313,14 +9313,6 @@ aarch64_support_sframe_p (void)
   return (aarch64_abi == AARCH64_ABI_LP64);
 }
 
-/* Whether SFrame return address tracking is needed.  */
-
-bool
-aarch64_sframe_ra_tracking_p (void)
-{
-  return true;
-}
-
 /* The fixed offset from CFA for SFrame to recover the return address.
    (useful only when SFrame RA tracking is not needed).  */
 

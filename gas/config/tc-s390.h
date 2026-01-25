@@ -119,8 +119,7 @@ extern const unsigned int s390_sframe_cfa_ra_reg;
 #define SFRAME_CFA_RA_REG s390_sframe_cfa_ra_reg
 
 /* Whether SFrame return address tracking is needed.  */
-extern bool s390_sframe_ra_tracking_p (void);
-#define sframe_ra_tracking_p s390_sframe_ra_tracking_p
+#define sframe_ra_tracking_p() true
 
 /* The fixed offset from CFA for SFrame to recover the return address.
    (useful only when SFrame RA tracking is not needed).  */
