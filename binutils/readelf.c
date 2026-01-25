@@ -21589,12 +21589,12 @@ process_got_section_contents (Filedata * filedata)
 	  }
 
 	entries = section->sh_size / entsz;
-	if (entries == 1)
-	  printf (_("\nGlobal Offset Table '%s' contains 1 entry:\n"),
-		  name);
-	else
-	  printf (_("\nGlobal Offset Table '%s' contains %" PRIu64
-		    " entries:\n"), name, entries);
+	printf (ngettext ("\nGlobal Offset Table '%s' contains %" PRIu64
+			  " entry:\n",
+			  "\nGlobal Offset Table '%s' contains %" PRIu64
+			  " entries:\n",
+			  entries),
+		name, entries);
 
 	uint64_t g;
 
