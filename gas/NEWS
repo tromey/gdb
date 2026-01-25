@@ -1,5 +1,7 @@
 -*- text -*-
 
+Changes in 2.46:
+
 * Add support for AMD Zen6 processor.
 
 * Emit an SFrame FRE with zero offsets to convey an undefined return address
