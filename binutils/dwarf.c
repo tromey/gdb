@@ -3745,7 +3745,7 @@ skip_attribute (unsigned long    form,
 			     dwarf_version);
 
     case DW_FORM_string:
-      inc = strnlen ((char *) data, end - data);
+      inc = strnlen ((char *) data, end - data) + 1;
       break;
     case DW_FORM_block:
     case DW_FORM_exprloc:
