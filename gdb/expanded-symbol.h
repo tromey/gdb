@@ -71,7 +71,7 @@ struct expanded_symbols_functions : public quick_symbol_functions
 
   compunit_symtab *find_pc_sect_compunit_symtab
     (objfile *objfile, bound_minimal_symbol msymbol, CORE_ADDR pc,
-     obj_section *section, int warn_if_readin) override;
+     obj_section *section) override;
 
   symbol *find_symbol_by_address (objfile *objfile, CORE_ADDR address)
     override;

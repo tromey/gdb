@@ -120,7 +120,7 @@ expanded_symbols_functions::find_symbol_by_address (objfile *objfile,
 compunit_symtab *
 expanded_symbols_functions::find_pc_sect_compunit_symtab
     (objfile *objfile, bound_minimal_symbol msymbol, CORE_ADDR pc,
-     obj_section *section, int warn_if_readin)
+     obj_section *section)
 {
   for (compunit_symtab &symtab : objfile->compunits ())
     {

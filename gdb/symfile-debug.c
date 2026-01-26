@@ -423,24 +423,21 @@ objfile::search (search_symtabs_file_matcher file_matcher,
 struct compunit_symtab *
 objfile::find_pc_sect_compunit_symtab (bound_minimal_symbol msymbol,
 				       CORE_ADDR pc,
-				       struct obj_section *section,
-				       int warn_if_readin)
+				       struct obj_section *section)
 {
   struct compunit_symtab *retval = nullptr;
 
   if (debug_symfile)
     gdb_printf (gdb_stdlog,
-		"qf->find_pc_sect_compunit_symtab (%s, %s, %s, %s, %d)\n",
+		"qf->find_pc_sect_compunit_symtab (%s, %s, %s, %s)\n",
 		objfile_debug_name (this),
 		host_address_to_string (msymbol.minsym),
 		hex_string (pc),
-		host_address_to_string (section),
-		warn_if_readin);
+		host_address_to_string (section));
 
   for (const auto &iter : qf)
     {
-      retval = iter->find_pc_sect_compunit_symtab (this, msymbol, pc, section,
-						   warn_if_readin);
+      retval = iter->find_pc_sect_compunit_symtab (this, msymbol, pc, section);
       if (retval != nullptr)
 	break;
     }

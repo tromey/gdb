@@ -249,11 +249,11 @@ struct cooked_index_functions : public dwarf2_base_index_functions
 
   struct compunit_symtab *find_pc_sect_compunit_symtab
     (struct objfile *objfile, bound_minimal_symbol msymbol,
-     CORE_ADDR pc, struct obj_section *section, int warn_if_readin) override
+     CORE_ADDR pc, struct obj_section *section) override
   {
     wait (objfile, true);
     return (dwarf2_base_index_functions::find_pc_sect_compunit_symtab
-	    (objfile, msymbol, pc, section, warn_if_readin));
+	    (objfile, msymbol, pc, section));
   }
 
   void map_symbol_filenames (objfile *objfile, symbol_filename_listener fun,

@@ -2727,7 +2727,7 @@ find_compunit_symtab_for_pc_sect (CORE_ADDR pc, struct obj_section *section)
   for (objfile &objf : current_program_space->objfiles ())
     {
       struct compunit_symtab *result
-	= objf.find_pc_sect_compunit_symtab (msymbol, pc, section, 1);
+	= objf.find_pc_sect_compunit_symtab (msymbol, pc, section);
       if (result != NULL)
 	return result;
     }

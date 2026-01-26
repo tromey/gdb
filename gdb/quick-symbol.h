@@ -174,7 +174,7 @@ struct quick_symbol_functions
      PC.  */
   virtual struct compunit_symtab *find_pc_sect_compunit_symtab
     (struct objfile *objfile, bound_minimal_symbol msymbol, CORE_ADDR pc,
-     struct obj_section *section, int warn_if_readin) = 0;
+     struct obj_section *section) = 0;
 
   /* Return the symbol from OBJFILE at ADDRESS.  Return NULL if there is
      no such symbol.  Any sort of symbol (not just text symbols) can be

@@ -2102,8 +2102,7 @@ dwarf2_base_index_functions::find_pc_sect_compunit_symtab
      (struct objfile *objfile,
       bound_minimal_symbol msymbol,
       CORE_ADDR pc,
-      struct obj_section *section,
-      int warn_if_readin)
+      struct obj_section *section)
 {
   dwarf2_per_objfile *per_objfile = get_dwarf2_per_objfile (objfile);
   dwarf2_per_bfd *per_bfd = per_objfile->per_bfd;

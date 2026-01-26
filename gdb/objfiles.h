@@ -630,8 +630,7 @@ public:
   /* See quick_symbol_functions.  */
   struct compunit_symtab *
   find_pc_sect_compunit_symtab (bound_minimal_symbol msymbol, CORE_ADDR pc,
-				struct obj_section *section,
-				int warn_if_readin);
+				struct obj_section *section);
 
   /* See quick_symbol_functions.  */
   void map_symbol_filenames (symbol_filename_listener fun, bool need_fullname);

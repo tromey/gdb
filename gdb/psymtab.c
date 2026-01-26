@@ -183,8 +183,7 @@ struct compunit_symtab *
 psymbol_functions::find_pc_sect_compunit_symtab (struct objfile *objfile,
 						 bound_minimal_symbol msymbol,
 						 CORE_ADDR pc,
-						 struct obj_section *section,
-						 int warn_if_readin)
+						 struct obj_section *section)
 {
   struct partial_symtab *ps = find_pc_sect_psymtab (objfile,
 						    pc, section,
