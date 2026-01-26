@@ -62,11 +62,6 @@ gdbserver_windows_process windows_process;
 
 int using_threads = 1;
 
-const_target_desc_up win32_tdesc;
-#ifdef __x86_64__
-const_target_desc_up wow64_win32_tdesc;
-#endif
-
 #define NUM_REGS (the_low_target.num_regs ())
 
 /* The current debug event from WaitForDebugEvent.  */
@@ -324,17 +319,11 @@ do_initial_child_stuff (HANDLE proch, DWORD pid, int attached)
 #endif
 
   proc = add_process (pid, attached);
-#ifdef __x86_64__
-  if (windows_process.wow64_process)
-    proc->tdesc = wow64_win32_tdesc.get ();
-  else
-#endif
-    proc->tdesc = win32_tdesc.get ();
   child_init_thread_list ();
   windows_process.child_initialization_done = 0;
 
   if (the_low_target.initial_stuff != NULL)
-    (*the_low_target.initial_stuff) ();
+    (*the_low_target.initial_stuff) (proc);
 
   windows_process.cached_status.set_ignore ();
 

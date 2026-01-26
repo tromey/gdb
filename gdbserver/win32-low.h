@@ -26,13 +26,6 @@
 
 struct target_desc;
 
-/* The inferior's target description.  This is a global because the
-   Windows ports support neither bi-arch nor multi-process.  */
-extern const_target_desc_up win32_tdesc;
-#ifdef __x86_64__
-extern const_target_desc_up wow64_win32_tdesc;
-#endif
-
 #ifdef __CYGWIN__
 constexpr enum gdb_osabi WINDOWS_OSABI = GDB_OSABI_CYGWIN;
 #else
@@ -48,7 +41,7 @@ struct win32_target_ops
   int (*num_regs) (void);
 
   /* Perform initializations on startup.  */
-  void (*initial_stuff) (void);
+  void (*initial_stuff) (process_info *proc);
 
   /* Fetch the context from the inferior.  */
   void (*get_thread_context) (windows_nat::windows_thread_info *th);

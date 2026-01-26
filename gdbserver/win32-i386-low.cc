@@ -47,6 +47,13 @@ using namespace windows_nat;
 
 static struct x86_debug_reg_state debug_reg_state;
 
+/* The inferior's target description.  This is a global because the
+   Windows ports support neither bi-arch nor multi-process.  */
+static const_target_desc_up win32_tdesc;
+#ifdef __x86_64__
+static const_target_desc_up wow64_win32_tdesc;
+#endif
+
 static void
 update_debug_registers (thread_info *thread)
 {
@@ -219,8 +226,15 @@ x86_stopped_data_addresses ()
 }
 
 static void
-i386_initial_stuff (void)
+i386_initial_stuff (process_info *proc)
 {
+#ifdef __x86_64__
+  if (windows_process.wow64_process)
+    proc->tdesc = wow64_win32_tdesc.get ();
+  else
+#endif
+    proc->tdesc = win32_tdesc.get ();
+
   x86_low_init_dregs (&debug_reg_state);
 }
 
