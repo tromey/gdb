@@ -937,10 +937,8 @@ maybe_adjust_pc ()
   th->stopped_at_software_breakpoint = false;
 
   if (windows_process.current_event.dwDebugEventCode == EXCEPTION_DEBUG_EVENT
-      && ((windows_process.current_event.u.Exception.ExceptionRecord.ExceptionCode
-	   == EXCEPTION_BREAKPOINT)
-	  || (windows_process.current_event.u.Exception.ExceptionRecord.ExceptionCode
-	      == STATUS_WX86_BREAKPOINT))
+      && (*the_low_target.is_sw_breakpoint) (&windows_process.current_event
+					     .u.Exception.ExceptionRecord)
       && windows_process.child_initialization_done)
     {
       th->stopped_at_software_breakpoint = true;

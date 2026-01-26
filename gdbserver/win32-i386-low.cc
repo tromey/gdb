@@ -632,6 +632,15 @@ i386_win32_set_pc (struct regcache *regcache, CORE_ADDR pc)
     }
 }
 
+/* Implement win32_target_ops "is_sw_breakpoint" method.  */
+
+static bool
+i386_is_sw_breakpoint (const EXCEPTION_RECORD *er)
+{
+  return (er->ExceptionCode == EXCEPTION_BREAKPOINT
+	  || er->ExceptionCode == STATUS_WX86_BREAKPOINT);
+}
+
 struct win32_target_ops the_low_target = {
   i386_arch_setup,
   i386_win32_num_regs,
@@ -652,4 +661,5 @@ struct win32_target_ops the_low_target = {
   i386_remove_point,
   x86_stopped_by_watchpoint,
   x86_stopped_data_addresses,
+  i386_is_sw_breakpoint,
 };

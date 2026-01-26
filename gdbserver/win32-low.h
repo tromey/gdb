@@ -84,6 +84,9 @@ struct win32_target_ops
 		       int size, struct raw_breakpoint *bp);
   int (*stopped_by_watchpoint) (void);
   std::vector<CORE_ADDR> (*stopped_data_addresses) ();
+
+  /* Determine if ER contains a software-breakpoint.  */
+  bool (*is_sw_breakpoint) (const EXCEPTION_RECORD *er);
 };
 
 extern struct win32_target_ops the_low_target;
