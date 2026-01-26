@@ -909,6 +909,13 @@ fake_breakpoint_event (void)
   windows_process.current_event.u.Exception.ExceptionRecord.ExceptionCode
     = EXCEPTION_BREAKPOINT;
 
+  /* On aarch64, hardware breakpoints also get EXCEPTION_BREAKPOINT,
+     but they can be recognized with ExceptionInformation.  */
+  windows_process.current_event.u.Exception.ExceptionRecord.NumberParameters
+    = 1;
+  windows_process.current_event.u.Exception.ExceptionRecord
+    .ExceptionInformation[0] = 0;
+
   for_each_thread (suspend_one_thread);
 }
 
