@@ -2714,9 +2714,6 @@ iterate_over_symbols (const struct block *block,
 struct compunit_symtab *
 find_compunit_symtab_for_pc_sect (CORE_ADDR pc, struct obj_section *section)
 {
-  struct compunit_symtab *best_cust = NULL;
-  CORE_ADDR best_cust_range = 0;
-
   /* If we know that this is not a text address, return failure.  This is
      necessary because we loop based on the block's high and low code
      addresses, which do not include the data ranges, and because
@@ -2726,94 +2723,6 @@ find_compunit_symtab_for_pc_sect (CORE_ADDR pc, struct obj_section *section)
     = lookup_minimal_symbol_by_pc_section (pc, section);
   if (msymbol.minsym && msymbol.minsym->data_p ())
     return NULL;
-
-  /* Search all symtabs for the one whose file contains our address, and which
-     is the smallest of all the ones containing the address.  This is designed
-     to deal with a case like symtab a is at 0x1000-0x2000 and 0x3000-0x4000
-     and symtab b is at 0x2000-0x3000.  So the GLOBAL_BLOCK for a is from
-     0x1000-0x4000, but for address 0x2345 we want to return symtab b.
-
-     This happens for native ecoff format, where code from included files
-     gets its own symtab.  The symtab for the included file should have
-     been read in already via the dependency mechanism.
-     It might be swifter to create several symtabs with the same name
-     like xcoff does (I'm not sure).
-
-     It also happens for objfiles that have their functions reordered.
-     For these, the symtab we are looking for is not necessarily read in.  */
-
-  for (objfile &obj_file : current_program_space->objfiles ())
-    {
-      for (compunit_symtab &cust : obj_file.compunits ())
-	{
-	  const struct blockvector *bv = cust.blockvector ();
-	  const struct block *global_block = bv->global_block ();
-	  CORE_ADDR start = global_block->start ();
-	  CORE_ADDR end = global_block->end ();
-	  bool in_range_p = start <= pc && pc < end;
-	  if (!in_range_p)
-	    continue;
-
-	  if (bv->map () != nullptr)
-	    {
-	      if (bv->map ()->find (pc) == nullptr)
-		continue;
-
-	      return &cust;
-	    }
-
-	  CORE_ADDR range = end - start;
-	  if (best_cust != nullptr
-	      && range >= best_cust_range)
-	    /* Cust doesn't have a smaller range than best_cust, skip it.  */
-	    continue;
-
-	  /* For an objfile that has its functions reordered,
-	     find_pc_psymtab will find the proper partial symbol table
-	     and we simply return its corresponding symtab.  */
-	  /* In order to better support objfiles that contain both
-	     stabs and coff debugging info, we continue on if a psymtab
-	     can't be found.  */
-	  struct compunit_symtab *result
-	    = obj_file.find_pc_sect_compunit_symtab (msymbol, pc,
-						     section, 0);
-	  if (result != nullptr)
-	    return result;
-
-	  if (section != 0)
-	    {
-	      struct symbol *found_sym = nullptr;
-
-	      for (int b_index = GLOBAL_BLOCK;
-		   b_index <= STATIC_BLOCK && found_sym == nullptr;
-		   ++b_index)
-		{
-		  const struct block *b = bv->block (b_index);
-		  for (struct symbol *sym : block_iterator_range (b))
-		    {
-		      if (matching_obj_sections (sym->obj_section (&obj_file),
-						 section))
-			{
-			  found_sym = sym;
-			  break;
-			}
-		    }
-		}
-	      if (found_sym == nullptr)
-		continue;		/* No symbol in this symtab matches
-					   section.  */
-	    }
-
-	  /* Cust is best found so far, save it.  */
-	  best_cust = &cust;
-	  best_cust_range = range;
-	}
-    }
-
-  if (best_cust != NULL)
-    return best_cust;
-
-  /* Not found in symtabs, search the "quick" symtabs (e.g. psymtabs).  */
 
   for (objfile &objf : current_program_space->objfiles ())
     {

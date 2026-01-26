@@ -18,6 +18,7 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
+#include "block.h"
 #include "objfiles.h"
 #include "symtab.h"
 #include "source.h"
@@ -109,6 +110,23 @@ expanded_symbols_functions::find_symbol_by_address (objfile *objfile,
       symbol *sym = symtab.symbol_at_address (address);
       if (sym != nullptr)
 	return sym;
+    }
+
+  return nullptr;
+}
+
+/* See expanded-symbol.h.  */
+
+compunit_symtab *
+expanded_symbols_functions::find_pc_sect_compunit_symtab
+    (objfile *objfile, bound_minimal_symbol msymbol, CORE_ADDR pc,
+     obj_section *section, int warn_if_readin)
+{
+  for (compunit_symtab &symtab : objfile->compunits ())
+    {
+      const blockvector *bv = symtab.blockvector ();
+      if (bv != nullptr && bv->contains (pc))
+	return &symtab;
     }
 
   return nullptr;

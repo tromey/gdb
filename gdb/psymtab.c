@@ -191,13 +191,6 @@ psymbol_functions::find_pc_sect_compunit_symtab (struct objfile *objfile,
 						    msymbol);
   if (ps != NULL)
     {
-      if (warn_if_readin && ps->readin_p (objfile))
-	/* Might want to error() here (in case symtab is corrupt and
-	   will cause a core dump), but maybe we can successfully
-	   continue, so let's not.  */
-	warning (_("\
-(Internal error: pc %s in read in psymtab, but not in symtab.)\n"),
-		 paddress (objfile->arch (), pc));
       psymtab_to_symtab (objfile, ps);
       return ps->get_compunit_symtab (objfile);
     }
