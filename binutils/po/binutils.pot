@@ -8,10 +8,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://sourceware.org/bugzilla/\n"
-"POT-Creation-Date: 2026-01-25 09:48+0000\n"
+"POT-Creation-Date: 2026-01-26 15:18+1030\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -1431,8 +1432,8 @@ msgstr ""
 #: dlltool.c:3746
 #, c-format
 msgid ""
-"      --use-nul-prefixed-import-tables Use zero prefixed idata$4 and idata"
-"$5.\n"
+"      --use-nul-prefixed-import-tables Use zero prefixed idata$4 and "
+"idata$5.\n"
 msgstr ""
 
 #: dlltool.c:3747
@@ -2285,8 +2286,8 @@ msgstr ""
 #: dwarf.c:2949
 #, c-format
 msgid ""
-"CU @ %#<PRIx64> has multiple loclists_base values (%#<PRIx64> and %"
-"#<PRIx64>)\n"
+"CU @ %#<PRIx64> has multiple loclists_base values (%#<PRIx64> and "
+"%#<PRIx64>)\n"
 msgstr ""
 
 #: dwarf.c:2956
@@ -2299,8 +2300,8 @@ msgstr ""
 #: dwarf.c:2970
 #, c-format
 msgid ""
-"CU @ %#<PRIx64> has multiple str_offsets_base values %#<PRIx64> and %"
-"#<PRIx64>)\n"
+"CU @ %#<PRIx64> has multiple str_offsets_base values %#<PRIx64> and "
+"%#<PRIx64>)\n"
 msgstr ""
 
 #: dwarf.c:2977
@@ -2466,8 +2467,8 @@ msgstr ""
 #: dwarf.c:3532
 #, c-format
 msgid ""
-"Offset %#<PRIx64> used as value for DW_AT_import attribute of DIE at offset %"
-"#tx is too big.\n"
+"Offset %#<PRIx64> used as value for DW_AT_import attribute of DIE at offset "
+"%#tx is too big.\n"
 msgstr ""
 
 #: dwarf.c:3538
@@ -4070,8 +4071,8 @@ msgstr ""
 #: dwarf.c:10750
 #, c-format
 msgid ""
-"Augmentation string length %u must be rounded up to a multiple of 4 in ."
-"debug_names.\n"
+"Augmentation string length %u must be rounded up to a multiple of 4 "
+"in .debug_names.\n"
 msgstr ""
 
 #: dwarf.c:10758
@@ -4417,22 +4418,22 @@ msgstr ""
 #: dwarf.c:11846
 #, c-format
 msgid ""
-"Attempt to allocate an array with an excessive number of elements: %"
-"#<PRIx64>\n"
+"Attempt to allocate an array with an excessive number of elements: "
+"%#<PRIx64>\n"
 msgstr ""
 
 #: dwarf.c:11864
 #, c-format
 msgid ""
-"Attempt to re-allocate an array with an excessive number of elements: %"
-"#<PRIx64>\n"
+"Attempt to re-allocate an array with an excessive number of elements: "
+"%#<PRIx64>\n"
 msgstr ""
 
 #: dwarf.c:11880
 #, c-format
 msgid ""
-"Attempt to allocate a zero'ed array with an excessive number of elements: %"
-"#<PRIx64>\n"
+"Attempt to allocate a zero'ed array with an excessive number of elements: "
+"%#<PRIx64>\n"
 msgstr ""
 
 #: dwarf.c:11978
@@ -5466,7 +5467,25 @@ msgid ""
 "                                   <commit>\n"
 "     --subsystem <name>[:<version>]\n"
 "                                   Set PE subsystem to <name> [& <version>]\n"
-"     --compress-debug-sections[={none|zlib|zlib-gnu|zlib-gabi"
+"     --compress-debug-sections[={none|zlib|zlib-gnu|zlib-gabi%s}]\n"
+"                                   Compress DWARF debug sections\n"
+"     --decompress-debug-sections   Decompress DWARF debug sections using "
+"zlib\n"
+"     --elf-stt-common=[yes|no]     Generate ELF common symbols with "
+"STT_COMMON\n"
+"                                     type\n"
+"     --verilog-data-width <number> Specifies data width, in bytes, for "
+"verilog output\n"
+"  -M  --merge-notes                Remove redundant entries in note "
+"sections\n"
+"      --no-merge-notes             Do not attempt to remove redundant notes "
+"(default)\n"
+"  -v --verbose                     List all object files modified\n"
+"  @<file>                          Read options from <file>\n"
+"  -V --version                     Display this program's version number\n"
+"  -h --help                        Display this output\n"
+"     --info                        List object formats & architectures "
+"supported\n"
 msgstr ""
 
 #: objcopy.c:734
@@ -5725,8 +5744,8 @@ msgstr ""
 #: objcopy.c:2742
 #, c-format
 msgid ""
-"--compress-debug-sections=[zlib|zlib-gnu|zlib-gabi|zstd] is unsupported on `%"
-"s'"
+"--compress-debug-sections=[zlib|zlib-gnu|zlib-gabi|zstd] is unsupported on "
+"`%s'"
 msgstr ""
 
 #: objcopy.c:2750
@@ -6307,8 +6326,8 @@ msgstr ""
 #: objdump.c:337
 #, c-format
 msgid ""
-"      --sframe[=SECTION]   Display SFrame info from SECTION, (default '."
-"sframe')\n"
+"      --sframe[=SECTION]   Display SFrame info from SECTION, (default "
+"'.sframe')\n"
 msgstr ""
 
 #: objdump.c:339
@@ -6404,8 +6423,8 @@ msgstr ""
 #: objdump.c:373
 #, c-format
 msgid ""
-"      --file-start-context       Include context from start of file (with -"
-"S)\n"
+"      --file-start-context       Include context from start of file (with "
+"-S)\n"
 msgstr ""
 
 #: objdump.c:375
@@ -6508,8 +6527,8 @@ msgstr ""
 #: objdump.c:407
 #, c-format
 msgid ""
-"      --insn-width=WIDTH         Display WIDTH bytes on a single line for -"
-"d\n"
+"      --insn-width=WIDTH         Display WIDTH bytes on a single line for "
+"-d\n"
 msgstr ""
 
 #: objdump.c:409
@@ -6535,8 +6554,8 @@ msgstr ""
 #: objdump.c:415
 #, c-format
 msgid ""
-"      --inlines                  Print all inlines for source line (with -"
-"l)\n"
+"      --inlines                  Print all inlines for source line (with "
+"-l)\n"
 msgstr ""
 
 #: objdump.c:417
@@ -7358,7 +7377,7 @@ msgstr ""
 
 #: od-pe.c:394
 #, c-format
-msgid "Number of sections:\t\t\\%d\n"
+msgid "Number of sections:\t\t%d\n"
 msgstr ""
 
 #: od-pe.c:397
@@ -7378,7 +7397,7 @@ msgstr ""
 
 #: od-pe.c:409
 #, c-format
-msgid "Number of symbols:\t\t\\%ld\n"
+msgid "Number of symbols:\t\t%ld\n"
 msgstr ""
 
 #: od-pe.c:413
@@ -8513,9 +8532,9 @@ msgstr ""
 msgid "Bare-metal C6000"
 msgstr ""
 
-#: readelf.c:5685 readelf.c:7138 readelf.c:7154 readelf.c:22128
-#: readelf.c:22228 readelf.c:22275 readelf.c:22312 readelf.c:22373
-#: readelf.c:22404 readelf.c:22431 readelf.c:22453
+#: readelf.c:5685 readelf.c:7138 readelf.c:7154 readelf.c:22128 readelf.c:22228
+#: readelf.c:22275 readelf.c:22312 readelf.c:22373 readelf.c:22404
+#: readelf.c:22431 readelf.c:22453
 #, c-format
 msgid "<unknown: %x>"
 msgstr ""
@@ -8871,8 +8890,8 @@ msgstr ""
 #: readelf.c:6696
 #, c-format
 msgid ""
-"  --sframe[=NAME]        Display SFrame info from section NAME, (default '."
-"sframe')\n"
+"  --sframe[=NAME]        Display SFrame info from section NAME, (default "
+"'.sframe')\n"
 msgstr ""
 
 #: readelf.c:6700
@@ -9294,8 +9313,8 @@ msgstr ""
 #: readelf.c:8022 readelf.c:8139
 #, c-format
 msgid ""
-"Size (%#<PRIx64>) of section %s is not a multiple of its sh_entsize (%"
-"#<PRIx64>)\n"
+"Size (%#<PRIx64>) of section %s is not a multiple of its sh_entsize "
+"(%#<PRIx64>)\n"
 msgstr ""
 
 #: readelf.c:8031 readelf.c:8148 readelf.c:17584
@@ -9360,8 +9379,7 @@ msgid_plural "There are %d section headers, starting at offset %#<PRIx64>:\n"
 msgstr[0] ""
 msgstr[1] ""
 
-#: readelf.c:8622 readelf.c:9338 readelf.c:9540 readelf.c:15280
-#: readelf.c:17955
+#: readelf.c:8622 readelf.c:9338 readelf.c:9540 readelf.c:15280 readelf.c:17955
 msgid "string table"
 msgstr ""
 
@@ -9634,8 +9652,8 @@ msgstr ""
 #: readelf.c:9550
 #, c-format
 msgid ""
-"Section %s has sh_entsize (%#<PRIx64>) which is larger than its size (%"
-"#<PRIx64>)\n"
+"Section %s has sh_entsize (%#<PRIx64>) which is larger than its size "
+"(%#<PRIx64>)\n"
 msgstr ""
 
 #: readelf.c:9560
@@ -10246,12 +10264,12 @@ msgstr ""
 #, c-format
 msgid ""
 "\n"
-"In linked file '%s' the dynamic section at offset %#<PRIx64> contains %"
-"<PRIu64> entry:\n"
+"In linked file '%s' the dynamic section at offset %#<PRIx64> contains "
+"%<PRIu64> entry:\n"
 msgid_plural ""
 "\n"
-"In linked file '%s' the dynamic section at offset %#<PRIx64> contains %"
-"<PRIu64> entries:\n"
+"In linked file '%s' the dynamic section at offset %#<PRIx64> contains "
+"%<PRIu64> entries:\n"
 msgstr[0] ""
 msgstr[1] ""
 
@@ -10878,12 +10896,12 @@ msgstr ""
 #, c-format
 msgid ""
 "\n"
-"In linked file '%s: the dynamic info segment at offset %#<PRIx64> contains %"
-"d entry:\n"
+"In linked file '%s: the dynamic info segment at offset %#<PRIx64> contains "
+"%d entry:\n"
 msgid_plural ""
 "\n"
-"In linked file '%s: the dynamic info segment at offset %#<PRIx64> contains %"
-"d entries:\n"
+"In linked file '%s: the dynamic info segment at offset %#<PRIx64> contains "
+"%d entries:\n"
 msgstr[0] ""
 msgstr[1] ""
 
@@ -11867,8 +11885,8 @@ msgstr ""
 #: readelf.c:21191
 #, c-format
 msgid ""
-"The GOT symbol offset (%<PRIu64>) is greater than the symbol table size (%"
-"<PRIu64>)\n"
+"The GOT symbol offset (%<PRIu64>) is greater than the symbol table size "
+"(%<PRIu64>)\n"
 msgstr ""
 
 #: readelf.c:21201
@@ -11964,19 +11982,16 @@ msgstr ""
 msgid "NDS32 elf flags section"
 msgstr ""
 
-#: readelf.c:21593
+#: readelf.c:21592
 #, c-format
 msgid ""
 "\n"
-"Global Offset Table '%s' contains 1 entry:\n"
-msgstr ""
-
-#: readelf.c:21596
-#, c-format
-msgid ""
+"Global Offset Table '%s' contains %<PRIu64> entry:\n"
+msgid_plural ""
 "\n"
 "Global Offset Table '%s' contains %<PRIu64> entries:\n"
-msgstr ""
+msgstr[0] ""
+msgstr[1] ""
 
 #: readelf.c:21611
 #, c-format
@@ -13080,8 +13095,8 @@ msgstr ""
 #: readelf.c:24263
 #, c-format
 msgid ""
-"Displaying notes found at file offset 0x%08<PRIx64> with length 0x%"
-"08<PRIx64>:\n"
+"Displaying notes found at file offset 0x%08<PRIx64> with length "
+"0x%08<PRIx64>:\n"
 msgstr ""
 
 #: readelf.c:24276
@@ -13677,8 +13692,8 @@ msgstr ""
 #, c-format
 msgid ""
 " The options are:\n"
-"  -A|-B|-G  --format={sysv|berkeley|gnu}  Select output style (default is %"
-"s)\n"
+"  -A|-B|-G  --format={sysv|berkeley|gnu}  Select output style (default is "
+"%s)\n"
 "  -o|-d|-x  --radix={8|10|16}         Display numbers in octal, decimal or "
 "hex\n"
 "  -t        --totals                  Display the total sizes (Berkeley "

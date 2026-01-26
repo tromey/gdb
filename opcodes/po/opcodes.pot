@@ -8,10 +8,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://sourceware.org/bugzilla/\n"
-"POT-Creation-Date: 2026-01-25 09:47+0000\n"
+"POT-Creation-Date: 2026-01-26 14:44+1030\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -878,12 +879,11 @@ msgstr ""
 #: ip2k-asm.c:792 ip2k-asm.c:899 iq2000-asm.c:647 iq2000-asm.c:651
 #: iq2000-asm.c:740 iq2000-asm.c:847 lm32-asm.c:537 lm32-asm.c:541
 #: lm32-asm.c:630 lm32-asm.c:737 m32c-asm.c:1772 m32c-asm.c:1776
-#: m32c-asm.c:1865 m32c-asm.c:1972 m32r-asm.c:516 m32r-asm.c:520
-#: m32r-asm.c:609 m32r-asm.c:716 mep-asm.c:1475 mep-asm.c:1479 mep-asm.c:1568
-#: mep-asm.c:1675 mt-asm.c:783 mt-asm.c:787 mt-asm.c:876 mt-asm.c:983
-#: or1k-asm.c:763 or1k-asm.c:767 or1k-asm.c:856 or1k-asm.c:963
-#: xstormy16-asm.c:464 xstormy16-asm.c:468 xstormy16-asm.c:557
-#: xstormy16-asm.c:664
+#: m32c-asm.c:1865 m32c-asm.c:1972 m32r-asm.c:516 m32r-asm.c:520 m32r-asm.c:609
+#: m32r-asm.c:716 mep-asm.c:1475 mep-asm.c:1479 mep-asm.c:1568 mep-asm.c:1675
+#: mt-asm.c:783 mt-asm.c:787 mt-asm.c:876 mt-asm.c:983 or1k-asm.c:763
+#: or1k-asm.c:767 or1k-asm.c:856 or1k-asm.c:963 xstormy16-asm.c:464
+#: xstormy16-asm.c:468 xstormy16-asm.c:557 xstormy16-asm.c:664
 msgid "unrecognized instruction"
 msgstr ""
 
@@ -952,8 +952,8 @@ msgid "*unknown*"
 msgstr ""
 
 #: epiphany-dis.c:279 fr30-dis.c:300 frv-dis.c:397 ip2k-dis.c:289
-#: iq2000-dis.c:190 lm32-dis.c:148 m32c-dis.c:892 m32r-dis.c:280
-#: mep-dis.c:1202 mt-dis.c:288 or1k-dis.c:175 xstormy16-dis.c:169
+#: iq2000-dis.c:190 lm32-dis.c:148 m32c-dis.c:892 m32r-dis.c:280 mep-dis.c:1202
+#: mt-dis.c:288 or1k-dis.c:175 xstormy16-dis.c:169
 #, c-format
 msgid "internal error: unrecognized field %d while printing insn"
 msgstr ""

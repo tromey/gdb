@@ -8,10 +8,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://sourceware.org/bugzilla/\n"
-"POT-Creation-Date: 2026-01-25 09:48+0000\n"
+"POT-Creation-Date: 2026-01-26 14:44+1030\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -358,8 +359,8 @@ msgstr ""
 #: as.c:379
 #, c-format
 msgid ""
-"  -o OBJFILE              name the object-file output OBJFILE (default a."
-"out)\n"
+"  -o OBJFILE              name the object-file output OBJFILE (default "
+"a.out)\n"
 msgstr ""
 
 #: as.c:381
@@ -3117,8 +3118,8 @@ msgid ""
 "-F\t\t\tlack floating point instructions support\n"
 "-mev4 | -mev45 | -mev5 | -mev56 | -mpca56 | -mev6 | -mev67 | -mev68 | -mall\n"
 "\t\t\tspecify variant of Alpha architecture\n"
-"-m21064 | -m21066 | -m21164 | -m21164a | -m21164pc | -m21264 | -m21264a | -"
-"m21264b\n"
+"-m21064 | -m21066 | -m21164 | -m21164a | -m21164pc | -m21264 | -m21264a | "
+"-m21264b\n"
 "\t\t\tthese variants include PALcode opcodes\n"
 msgstr ""
 
@@ -3446,8 +3447,8 @@ msgstr ""
 #: config/tc-arc.c:4314
 #, c-format
 msgid ""
-"A jump instruction with long immediate detected at the end of the ZOL label @"
-"%s"
+"A jump instruction with long immediate detected at the end of the ZOL label "
+"@%s"
 msgstr ""
 
 #: config/tc-arc.c:4320
@@ -9084,8 +9085,8 @@ msgstr ""
 #: config/tc-i386.c:10415
 #, c-format
 msgid ""
-"no instruction mnemonic suffix given and no register operands; can't size `%"
-"s'"
+"no instruction mnemonic suffix given and no register operands; can't size "
+"`%s'"
 msgstr ""
 
 #: config/tc-i386.c:10420
@@ -12184,11 +12185,10 @@ msgstr ""
 msgid "base register expected"
 msgstr ""
 
-#: config/tc-mcore.c:888 config/tc-microblaze.c:922
-#: config/tc-microblaze.c:1054 config/tc-microblaze.c:1086
-#: config/tc-microblaze.c:1620 config/tc-microblaze.c:1686
-#: config/tc-microblaze.c:1759 config/tc-microblaze.c:2179
-#: config/tc-microblaze.c:2227
+#: config/tc-mcore.c:888 config/tc-microblaze.c:922 config/tc-microblaze.c:1054
+#: config/tc-microblaze.c:1086 config/tc-microblaze.c:1620
+#: config/tc-microblaze.c:1686 config/tc-microblaze.c:1759
+#: config/tc-microblaze.c:2179 config/tc-microblaze.c:2227
 #, c-format
 msgid "unknown opcode \"%s\""
 msgstr ""
@@ -14375,8 +14375,8 @@ msgstr ""
 #: config/tc-msp430.c:1655
 #, c-format
 msgid ""
-"unknown MSPABI build attribute value '%d' for OFBA_MSPABI_Tag_ISA(%d) in ."
-"mspabi_attribute directive"
+"unknown MSPABI build attribute value '%d' for OFBA_MSPABI_Tag_ISA(%d) "
+"in .mspabi_attribute directive"
 msgstr ""
 
 #: config/tc-msp430.c:1670
@@ -17184,8 +17184,8 @@ msgstr ""
 #: config/tc-s390.c:694
 #, c-format
 msgid ""
-"operand %d: operand out of range (%<PRId64> is not between %<PRId64> and %"
-"<PRId64>)"
+"operand %d: operand out of range (%<PRId64> is not between %<PRId64> and "
+"%<PRId64>)"
 msgstr ""
 
 #. xgettext:c-format.
@@ -21289,8 +21289,8 @@ msgstr ""
 
 #: config/tc-xtensa.c:11553
 msgid ""
-"literal pool location required for text-section-literals; specify with ."
-"literal_position"
+"literal pool location required for text-section-literals; specify "
+"with .literal_position"
 msgstr ""
 
 #: config/tc-xtensa.c:12413
@@ -22694,15 +22694,15 @@ msgstr ""
 #: read.c:768
 #, c-format
 msgid ""
-".bundle_lock sequence at %<PRIu64> bytes, but .bundle_align_mode limit is %"
-"<PRIu64> bytes"
+".bundle_lock sequence at %<PRIu64> bytes, but .bundle_align_mode limit is "
+"%<PRIu64> bytes"
 msgstr ""
 
 #: read.c:777
 #, c-format
 msgid ""
-"single instruction is %<PRIu64> bytes long, but .bundle_align_mode limit is %"
-"<PRIu64> bytes"
+"single instruction is %<PRIu64> bytes long, but .bundle_align_mode limit is "
+"%<PRIu64> bytes"
 msgstr ""
 
 #: read.c:818 read.c:2955 read.c:3583
