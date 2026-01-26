@@ -779,8 +779,8 @@ blockvector::lookup (CORE_ADDR addr) const
 
   /* If we have an addrmap mapping code addresses to blocks, then use
      that.  */
-  if (map () != nullptr)
-    return (const struct block *) map ()->find (addr);
+  if (m_map != nullptr)
+    return (const struct block *) m_map->find (addr);
 
   /* Otherwise, use binary search to find the last block that starts
      before PC.

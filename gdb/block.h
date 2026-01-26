@@ -488,10 +488,6 @@ struct blockvector
   const struct block *static_block () const
   { return this->block (STATIC_BLOCK); }
 
-  /* Const version of the above.  */
-  const addrmap_fixed *map () const
-  { return m_map; }
-
   /* Set this blockvector's address -> block map.  */
   void set_map (addrmap_fixed *map)
   { m_map = map; }
