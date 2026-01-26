@@ -243,8 +243,8 @@ win32_process_target::stopped_by_watchpoint ()
 std::vector<CORE_ADDR>
 win32_process_target::stopped_data_addresses ()
 {
-  if (the_low_target.stopped_data_address != NULL)
-    return { the_low_target.stopped_data_address () };
+  if (the_low_target.stopped_data_addresses != nullptr)
+    return the_low_target.stopped_data_addresses ();
   else
     return {};
 }

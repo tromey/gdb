@@ -209,13 +209,13 @@ x86_stopped_by_watchpoint (void)
   return x86_dr_stopped_by_watchpoint (&debug_reg_state);
 }
 
-static CORE_ADDR
-x86_stopped_data_address (void)
+static std::vector<CORE_ADDR>
+x86_stopped_data_addresses ()
 {
   CORE_ADDR addr;
   if (x86_dr_stopped_data_address (&debug_reg_state, &addr))
-    return addr;
-  return 0;
+    return { addr };
+  return {};
 }
 
 static void
@@ -637,5 +637,5 @@ struct win32_target_ops the_low_target = {
   i386_insert_point,
   i386_remove_point,
   x86_stopped_by_watchpoint,
-  x86_stopped_data_address
+  x86_stopped_data_addresses,
 };

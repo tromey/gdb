@@ -90,7 +90,7 @@ struct win32_target_ops
   int (*remove_point) (enum raw_bkpt_type type, CORE_ADDR addr,
 		       int size, struct raw_breakpoint *bp);
   int (*stopped_by_watchpoint) (void);
-  CORE_ADDR (*stopped_data_address) (void);
+  std::vector<CORE_ADDR> (*stopped_data_addresses) ();
 };
 
 extern struct win32_target_ops the_low_target;
