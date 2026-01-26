@@ -97,6 +97,7 @@
 #include "dwarf2/error.h"
 #include "gdbsupport/unordered_set.h"
 #include "extract-store-integer.h"
+#include "expanded-symbol.h"
 
 /* When == 1, print basic high level tracing messages.
    When > 1, be more verbose.
@@ -936,13 +937,6 @@ static void queue_comp_unit (dwarf2_per_cu *per_cu,
 
 static void process_queue (dwarf2_per_objfile *per_objfile);
 
-static bool dw2_search_one (dwarf2_per_cu *per_cu,
-			    dwarf2_per_objfile *per_objfile,
-			    auto_bool_vector &cus_to_skip,
-			    search_symtabs_file_matcher file_matcher,
-			    search_symtabs_expansion_listener listener,
-			    search_symtabs_lang_matcher lang_matcher);
-
 /* Class, the destructor of which frees all allocated queue entries.  This
    will only have work to do if an error was thrown while processing the
    dwarf.  If no error was thrown then the queue entries should have all
@@ -1477,62 +1471,24 @@ struct quick_file_names
   const char **real_names;
 };
 
+static void print_stats (objfile *objfile, bool print_bcache);
+static void expand_all_symtabs (objfile *objfile);
+
 /* With OBJF_READNOW, the DWARF reader expands all CUs immediately.
    It's handy in this case to have an empty implementation of the
    quick symbol functions, to avoid special cases in the rest of the
    code.  */
 
-struct readnow_functions : public dwarf2_base_index_functions
+struct readnow_functions : public expanded_symbols_functions
 {
-  void dump (struct objfile *objfile) override
+  void print_stats (objfile *objfile, bool print_bcache) override
   {
+    ::print_stats (objfile, print_bcache);
   }
 
-  bool search (struct objfile *objfile,
-	       search_symtabs_file_matcher file_matcher,
-	       const lookup_name_info *lookup_name,
-	       search_symtabs_symbol_matcher symbol_matcher,
-	       search_symtabs_expansion_listener listener,
-	       block_search_flags search_flags,
-	       domain_search_flags domain,
-	       search_symtabs_lang_matcher lang_matcher) override
+  void expand_all_symtabs (objfile *objfile) override
   {
-    dwarf2_per_objfile *per_objfile = get_dwarf2_per_objfile (objfile);
-    auto_bool_vector cus_to_skip;
-    dw_search_file_matcher (per_objfile, cus_to_skip, file_matcher);
-
-    for (const auto &per_cu : per_objfile->per_bfd->all_units)
-      {
-	QUIT;
-
-	/* Skip various types of unit that should not be searched
-	   directly: partial units and dummy units.  */
-	if (/* Note that we request the non-strict unit type here.  If
-	       there was an error while reading, like in
-	       dw-form-strx-out-of-bounds.exp, then the unit type may
-	       not be set.  */
-	    per_cu->unit_type (false) == DW_UT_partial
-	    || per_cu->unit_type (false) == 0
-	    || per_objfile->get_symtab (per_cu.get ()) == nullptr)
-	  continue;
-	if (!dw2_search_one (per_cu.get (), per_objfile, cus_to_skip,
-			     file_matcher, listener, lang_matcher))
-	  return false;
-      }
-    return true;
-  }
-
-  struct symbol *find_symbol_by_address (struct objfile *objfile,
-					 CORE_ADDR address) override
-  {
-    for (compunit_symtab &symtab : objfile->compunits ())
-      {
-	struct symbol *sym = symtab.symbol_at_address (address);
-	if (sym != nullptr)
-	  return sym;
-      }
-
-    return nullptr;
+    ::expand_all_symtabs (objfile);
   }
 };
 
@@ -1933,9 +1889,8 @@ dwarf2_base_index_functions::forget_cached_source_info
     per_cu->free_cached_file_names ();
 }
 
-void
-dwarf2_base_index_functions::print_stats (struct objfile *objfile,
-					  bool print_bcache)
+static void
+print_stats (objfile *objfile, bool print_bcache)
 {
   if (print_bcache)
     return;
@@ -1958,7 +1913,14 @@ dwarf2_base_index_functions::print_stats (struct objfile *objfile,
 }
 
 void
-dwarf2_base_index_functions::expand_all_symtabs (struct objfile *objfile)
+dwarf2_base_index_functions::print_stats (struct objfile *objfile,
+					  bool print_bcache)
+{
+  ::print_stats (objfile, print_bcache);
+}
+
+static void
+expand_all_symtabs (objfile *objfile)
 {
   dwarf2_per_objfile *per_objfile = get_dwarf2_per_objfile (objfile);
 
@@ -1971,6 +1933,12 @@ dwarf2_base_index_functions::expand_all_symtabs (struct objfile *objfile)
 	 partial CU will be read via DW_TAG_imported_unit anyway.  */
       dw2_instantiate_symtab (per_cu, per_objfile, true);
     }
+}
+
+void
+dwarf2_base_index_functions::expand_all_symtabs (struct objfile *objfile)
+{
+  ::expand_all_symtabs (objfile);
 }
 
 /* If FILE_MATCHER is NULL and if CUS_TO_SKIP does not include the
