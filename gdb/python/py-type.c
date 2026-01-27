@@ -42,8 +42,8 @@ struct field_object : public gdbpy_dict_wrapper
 extern PyTypeObject field_object_type;
 
 /* A type iterator object.  */
-struct typy_iterator_object {
-  PyObject_HEAD
+struct typy_iterator_object : public PyObject
+{
   /* The current field index.  */
   int field;
   /* What to return.  */

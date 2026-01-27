@@ -54,8 +54,8 @@
 #define builtin_type_pybool \
   language_bool_type (current_language, gdbpy_enter::get_gdbarch ())
 
-struct value_object {
-  PyObject_HEAD
+struct value_object : public PyObject
+{
   struct value_object *next;
   struct value_object *prev;
   struct value *value;

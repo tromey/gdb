@@ -57,10 +57,8 @@ extern PyTypeObject disasm_info_object_type;
    that is an address that should be printed using a call to GDB's
    internal print_address function.  */
 
-struct disasm_addr_part_object
+struct disasm_addr_part_object : public PyObject
 {
-  PyObject_HEAD
-
   /* The address to be formatted.  */
   bfd_vma address;
 
@@ -77,10 +75,8 @@ extern PyTypeObject disasm_addr_part_object_type;
    this type represents a small part of a disassembled instruction; a part
    that is a piece of test along with an associated style.  */
 
-struct disasm_text_part_object
+struct disasm_text_part_object : public PyObject
 {
-  PyObject_HEAD
-
   /* The string that is this part.  */
   std::string *string;
 
