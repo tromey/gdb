@@ -3481,11 +3481,7 @@ loongarch_resolve_pcrel_lo_relocs (loongarch_pcrel_relocs *p)
       loongarch_pcrel_hi_reloc search = {r->address, 0, 0, NULL};
       loongarch_pcrel_hi_reloc *entry = htab_find (p->hi_relocs, &search);
 
-      char *string = NULL;
       if (entry == NULL)
-	string = _("%pcrel_lo missing matching %pcrel_hi");
-
-      if (string != NULL)
 	{
 	  ((*r->info->callbacks->reloc_overflow)
 	   (r->info, NULL, NULL, r->howto->name, (bfd_vma) 0,
