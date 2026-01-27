@@ -21,6 +21,7 @@
 #include "dwarf2/aranges.h"
 #include "dwarf2/cooked-index.h"
 
+#include "cli/cli-style.h"
 #include "complaints.h"
 #include "cp-support.h"
 #include "dwz.h"
@@ -833,9 +834,18 @@ dwarf2_read_debug_names (dwarf2_per_objfile *per_objfile)
      into place later.  */
   cooked_index_worker_result first;
   deferred_warnings warnings;
-  read_addrmap_from_aranges (per_objfile, &per_bfd->debug_aranges,
-			     first.get_addrmap (), &warnings);
+  bool ok = read_addrmap_from_aranges (per_objfile, &per_bfd->debug_aranges,
+				       first.get_addrmap (), &warnings);
   warnings.emit ();
+  if (!ok)
+    {
+      /* read_addrmap_from_aranges must have emitted a warning in this
+	 case.  */
+      warning (_("... not using '.debug_names' for %ps"),
+	       styled_string (file_name_style.style (),
+			      objfile_name (objfile)));
+      return false;
+    }
 
   const auto n_workers
     = std::max<std::size_t> (gdb::thread_pool::g_thread_pool->thread_count (),

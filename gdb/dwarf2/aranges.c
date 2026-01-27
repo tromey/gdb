@@ -20,6 +20,7 @@
 #include "dwarf2/aranges.h"
 #include "dwarf2/read.h"
 #include "extract-store-integer.h"
+#include "cli/cli-style.h"
 
 /* See aranges.h.  */
 
@@ -29,12 +30,18 @@ read_addrmap_from_aranges (dwarf2_per_objfile *per_objfile,
 			   addrmap_mutable *mutable_map,
 			   deferred_warnings *warn)
 {
+  struct objfile *objfile = per_objfile->objfile;
+
   /* Caller must ensure that the section has already been read.  */
   gdb_assert (section->read_in);
   if (section->empty ())
-    return false;
+    {
+      warn->warn (_(".debug_aranges section is empty or missing from %ps"),
+		  styled_string (file_name_style.style (),
+				 objfile_name (objfile)));
+      return false;
+    }
 
-  struct objfile *objfile = per_objfile->objfile;
   bfd *abfd = objfile->obfd.get ();
   struct gdbarch *gdbarch = objfile->arch ();
   dwarf2_per_bfd *per_bfd = per_objfile->per_bfd;
