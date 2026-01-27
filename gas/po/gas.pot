@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: https://sourceware.org/bugzilla/\n"
-"POT-Creation-Date: 2026-01-26 14:44+1030\n"
+"POT-Creation-Date: 2026-01-28 09:57+1030\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1064,33 +1064,33 @@ msgid ""
 "or 1 (=`NTBS')"
 msgstr ""
 
-#: config/obj-elf-attr.c:1074
+#: config/obj-elf-attr.c:1073
 #, c-format
 msgid "attribute '%<PRIu64>' cannot be redefined"
 msgstr ""
 
-#: config/obj-elf-attr.c:1128
+#: config/obj-elf-attr.c:1123
 #, c-format
 msgid "incompatible redeclaration of subsection %s"
 msgstr ""
 
-#: config/obj-elf-attr.c:1129
+#: config/obj-elf-attr.c:1124
 #, c-format
 msgid "previous declaration had properties: %s=%s, %s=%s"
 msgstr ""
 
-#: config/obj-elf-attr.c:1147
+#: config/obj-elf-attr.c:1142
 msgid ""
 "comprehension and encoding of a subsection cannot be omitted on the first "
 "declaration"
 msgstr ""
 
-#: config/obj-elf-attr.c:1184
+#: config/obj-elf-attr.c:1179
 msgid ""
 "declaration of an attribute outside the scope of an attribute subsection"
 msgstr ""
 
-#: config/obj-elf-attr.c:1283
+#: config/obj-elf-attr.c:1278
 msgid ".gnu_subsection is only available with object attributes v2"
 msgstr ""
 
