@@ -312,6 +312,10 @@ score_elf_hi16_reloc (bfd *abfd ATTRIBUTE_UNUSED,
 		      bfd *output_bfd ATTRIBUTE_UNUSED,
 		      char **error_message ATTRIBUTE_UNUSED)
 {
+  if (!bfd_reloc_offset_in_range (reloc_entry->howto, abfd, input_section,
+				  reloc_entry->address))
+    return bfd_reloc_outofrange;
+
   score_elf_section_data (input_section)->hi16_rel_addr
     = (bfd_byte *) data + reloc_entry->address;
   return bfd_reloc_ok;
@@ -331,14 +335,16 @@ score_elf_lo16_reloc (bfd *abfd,
   unsigned long hi16_offset, hi16_value, uvalue;
   bfd_byte *hi16_rel_addr;
 
+  if (!bfd_reloc_offset_in_range (reloc_entry->howto, abfd, input_section,
+				  reloc_entry->address))
+    return bfd_reloc_outofrange;
+
   hi16_rel_addr = score_elf_section_data (input_section)->hi16_rel_addr;
   hi16_value = hi16_rel_addr ? score_bfd_get_32 (abfd, hi16_rel_addr) : 0;
   hi16_offset = ((((hi16_value >> 16) & 0x3) << 15) | (hi16_value & 0x7fff)) >> 1;
   addend = score_bfd_get_32 (abfd, (bfd_byte *) data + reloc_entry->address);
   offset = ((((addend >> 16) & 0x3) << 15) | (addend & 0x7fff)) >> 1;
   val = reloc_entry->addend;
-  if (reloc_entry->address > input_section->size)
-    return bfd_reloc_outofrange;
   uvalue = ((hi16_offset << 16) | (offset & 0xffff)) + val;
   if (hi16_rel_addr)
     {
@@ -411,7 +417,7 @@ static bfd_reloc_status_type
 score_elf_final_gp (bfd *output_bfd,
 		    asymbol *symbol,
 		    bool relocatable,
-		     char **error_message,
+		    char **error_message,
 		    bfd_vma *pgp)
 {
   if (bfd_is_und_section (symbol->section)
@@ -448,12 +454,13 @@ score_elf_gprel15_with_gp (bfd *abfd,
 			   arelent *reloc_entry,
 			   asection *input_section,
 			   bool relocateable,
-			   void * data,
+			   void *data,
 			   bfd_vma gp ATTRIBUTE_UNUSED)
 {
   unsigned long insn;
 
-  if (reloc_entry->address > input_section->size)
+  if (!bfd_reloc_offset_in_range (reloc_entry->howto, abfd, input_section,
+				  reloc_entry->address))
     return bfd_reloc_outofrange;
 
   insn = score_bfd_get_32 (abfd, (bfd_byte *) data + reloc_entry->address);
@@ -477,6 +484,10 @@ gprel32_with_gp (bfd *abfd, asymbol *symbol, arelent *reloc_entry,
   bfd_vma relocation;
   bfd_vma val;
 
+  if (!bfd_reloc_offset_in_range (reloc_entry->howto, abfd, input_section,
+				  reloc_entry->address))
+    return bfd_reloc_outofrange;
+
   if (bfd_is_com_section (symbol->section))
     relocation = 0;
   else
@@ -484,9 +495,6 @@ gprel32_with_gp (bfd *abfd, asymbol *symbol, arelent *reloc_entry,
 
   relocation += symbol->section->output_section->vma;
   relocation += symbol->section->output_offset;
-
-  if (reloc_entry->address > bfd_get_section_limit (abfd, input_section))
-    return bfd_reloc_outofrange;
 
   /* Set val to the offset into the section or symbol.  */
   val = reloc_entry->addend;
@@ -516,7 +524,7 @@ static bfd_reloc_status_type
 score_elf_gprel15_reloc (bfd *abfd,
 			 arelent *reloc_entry,
 			 asymbol *symbol,
-			 void * data,
+			 void *data,
 			 asection *input_section,
 			 bfd *output_bfd,
 			 char **error_message)
@@ -610,7 +618,7 @@ static bfd_reloc_status_type
 score_elf_got_lo16_reloc (bfd *abfd,
 			  arelent *reloc_entry,
 			  asymbol *symbol ATTRIBUTE_UNUSED,
-			  void * data,
+			  void *data,
 			  asection *input_section,
 			  bfd *output_bfd ATTRIBUTE_UNUSED,
 			  char **error_message ATTRIBUTE_UNUSED)
@@ -620,14 +628,16 @@ score_elf_got_lo16_reloc (bfd *abfd,
   signed long hi16_offset, hi16_value, uvalue;
   bfd_byte *hi16_rel_addr;
 
+  if (!bfd_reloc_offset_in_range (reloc_entry->howto, abfd, input_section,
+				  reloc_entry->address))
+    return bfd_reloc_outofrange;
+
   hi16_rel_addr = score_elf_section_data (input_section)->hi16_rel_addr;
   hi16_value = hi16_rel_addr ? score_bfd_get_32 (abfd, hi16_rel_addr) : 0;
   hi16_offset = ((((hi16_value >> 16) & 0x3) << 15) | (hi16_value & 0x7fff)) >> 1;
   addend = score_bfd_get_32 (abfd, (bfd_byte *) data + reloc_entry->address);
   offset = ((((addend >> 16) & 0x3) << 15) | (addend & 0x7fff)) >> 1;
   val = reloc_entry->addend;
-  if (reloc_entry->address > input_section->size)
-    return bfd_reloc_outofrange;
   uvalue = ((hi16_offset << 16) | (offset & 0xffff)) + val;
   if (hi16_rel_addr)
     {
