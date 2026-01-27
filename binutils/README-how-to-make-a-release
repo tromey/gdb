@@ -154,12 +154,13 @@ Approx time to complete from here: 2 hours ...
 
      d. Upload the pre-release snapshot to the sourceware FTP site:
 
-          scp binutils-2.46.90.tar.xz sourceware.org:/var/ftp/pub/binutils/snapshots
-	  
      For EVEN numbered releases:
-          ssh sourceware.org sha256sum ~ftp/pub/binutils/snapshots/binutils-with-gold-2.46.90.tar.xz
+          scp binutils-with-gold-2.[N].90.tar.xz sourceware.org:/var/ftp/pub/binutils/snapshots
+	  ssh sourceware.org sha256sum ~ftp/pub/binutils/snapshots/binutils-with-gold-2.[N].90.tar.xz
+	  
      For ODD numbered releases:
-          ssh sourceware.org sha256sum ~ftp/pub/binutils/snapshots/binutils-2.46.90.tar.xz
+          scp binutils-2.[N].90.tar.xz sourceware.org:/var/ftp/pub/binutils/snapshots
+          ssh sourceware.org sha256sum ~ftp/pub/binutils/snapshots/binutils-2.[N].90.tar.xz
 
         Paranoia: Compare the checksum with the local version.
 
