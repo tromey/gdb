@@ -27,9 +27,7 @@ if { ![istarget "x86_64-*-*"] } {
     return
 }
 
-# Tests here need -melf_x86_64 support.
-set status [catch "exec $LD -V -melf_x86_64" got]
-if { $status == 0 } {
+if [ld_supports_emul "elf_x86_64"] {
     run_ld_link_tests [list \
 	[list \
 	    "Build libgot-1-x64.so" \
@@ -46,9 +44,7 @@ if { $status == 0 } {
     ]
 }
 
-# Tests here need -melf32_x86_64 support.
-set status [catch "exec $LD -V -melf32_x86_64" got]
-if { $status == 0 } {
+if [ld_supports_emul "elf32_x86_64"] {
     run_ld_link_tests [list \
 	[list \
 	    "Build libgot-1-x32.so" \
