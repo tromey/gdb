@@ -910,7 +910,7 @@ loongarch_find_pcrel_hi_reloc (loongarch_pcrel_relocs *p, bfd_vma address)
   loongarch_pcrel_hi_reloc *entry = htab_find (p->hi_relocs, &search);
 
   if (entry == NULL)
-    _bfd_error_handler (_("pcrel_lo missing marching pcrel_hi"));
+    _bfd_error_handler (_("pcrel_lo missing matching pcrel_hi"));
 
   return entry;
 }
@@ -3483,7 +3483,7 @@ loongarch_resolve_pcrel_lo_relocs (loongarch_pcrel_relocs *p)
 
       char *string = NULL;
       if (entry == NULL)
-	string = _("%pcrel_lo missing marching %pcrel_hi");
+	string = _("%pcrel_lo missing matching %pcrel_hi");
 
       if (string != NULL)
 	{
