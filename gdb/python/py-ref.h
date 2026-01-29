@@ -55,7 +55,7 @@ template<typename T = PyObject> using gdbpy_ref
      gdb_PyGetSetDef my_object_getset[] =
      {
        { "__dict__", gdb_py_generic_dict_getter, nullptr,
-         "The __dict__ for this object.", nullptr },
+	 "The __dict__ for this object.", nullptr },
        ...
        { nullptr }
      };
