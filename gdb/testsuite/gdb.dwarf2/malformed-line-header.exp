@@ -22,6 +22,10 @@ load_lib dwarf.exp
 # assembler.
 require dwarf2_support
 
+# When this test is run with -readnow, the warning is issued a bit
+# earlier.  Rather than adapt the test, we just skip this case.
+require !readnow
+
 standard_testfile main.c -dw.S
 
 set asm_file [standard_output_file $srcfile2]
