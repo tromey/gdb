@@ -426,7 +426,7 @@ initialize_block_iterator (const struct block *block,
      functions.  If there are no included symtabs, we only need to
      search a single block, so we might as well just do that
      directly.  */
-  if (cu->includes == NULL)
+  if (cu->includes.empty ())
     {
       iter->d.block = block;
       /* A signal value meaning that we're iterating over a single
@@ -447,7 +447,14 @@ block_iterator::compunit_symtab () const
 {
   if (this->idx == -1)
     return this->d.compunit_symtab;
-  return this->d.compunit_symtab->includes[this->idx];
+
+  auto &includes = this->d.compunit_symtab->includes;
+
+  if (this->idx < includes.size ())
+    return includes[this->idx];
+
+  /* Iteration is complete.  */
+  return nullptr;
 }
 
 /* Perform a single step for a plain block iterator, iterating across
