@@ -553,6 +553,10 @@ extern const struct block *block_for_pc_sect (CORE_ADDR, struct obj_section *);
 
 struct block_iterator
 {
+/* Return the compunit over whose static or global block the iterator currently
+   iterates.  Return nullptr if the iteration is finished.  */
+  struct compunit_symtab *compunit_symtab () const;
+
   /* If we're iterating over a single block, this holds the block.
      Otherwise, it holds the canonical compunit.  */
 

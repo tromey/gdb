@@ -440,15 +440,14 @@ initialize_block_iterator (const struct block *block,
     }
 }
 
-/* A helper function that finds the current compunit over whose static
-   or global block we should iterate.  */
+/* See block.h.  */
 
-static struct compunit_symtab *
-find_iterator_compunit_symtab (struct block_iterator *iterator)
+compunit_symtab *
+block_iterator::compunit_symtab () const
 {
-  if (iterator->idx == -1)
-    return iterator->d.compunit_symtab;
-  return iterator->d.compunit_symtab->includes[iterator->idx];
+  if (this->idx == -1)
+    return this->d.compunit_symtab;
+  return this->d.compunit_symtab->includes[this->idx];
 }
 
 /* Perform a single step for a plain block iterator, iterating across
@@ -466,8 +465,7 @@ block_iterator_step (struct block_iterator *iterator, int first)
     {
       if (first)
 	{
-	  struct compunit_symtab *cust
-	    = find_iterator_compunit_symtab (iterator);
+	  compunit_symtab *cust = iterator->compunit_symtab ();
 	  const struct block *block;
 
 	  /* Iteration is complete.  */
@@ -508,8 +506,7 @@ block_iter_match_step (struct block_iterator *iterator,
     {
       if (first)
 	{
-	  struct compunit_symtab *cust
-	    = find_iterator_compunit_symtab (iterator);
+	  compunit_symtab *cust = iterator->compunit_symtab ();
 	  const struct block *block;
 
 	  /* Iteration is complete.  */
