@@ -461,17 +461,17 @@ sframe_get_fre_dataword_size (const struct sframe_row_entry *sframe_fre,
     {
       bool reg_p = (sframe_fre->cfa_base_reg != SFRAME_FRE_REG_INVALID);
       unsigned int data
-	= SFRAME_V3_FLEX_FDE_REG_ENCODE (sframe_fre->cfa_base_reg,
-					 sframe_fre->cfa_deref_p, reg_p);
+	= SFRAME_V3_FLEX_FDE_CTRLWORD_ENCODE (sframe_fre->cfa_base_reg,
+					      sframe_fre->cfa_deref_p, reg_p);
       unsigned int cfa_control_word_size = get_udata_size_in_bytes (data);
       if (cfa_control_word_size > max_dataword_size)
 	max_dataword_size = cfa_control_word_size;
 
       if (sframe_fre->ra_loc == SFRAME_FRE_ELEM_LOC_REG)
 	{
-	  data = SFRAME_V3_FLEX_FDE_REG_ENCODE (sframe_fre->ra_reg,
-						sframe_fre->ra_deref_p,
-						1 /* reg_p.  */);
+	  data = SFRAME_V3_FLEX_FDE_CTRLWORD_ENCODE (sframe_fre->ra_reg,
+						     sframe_fre->ra_deref_p,
+						     1 /* reg_p.  */);
 	  unsigned ra_control_word_size = get_udata_size_in_bytes (data);
 	  if (ra_control_word_size > max_dataword_size)
 	    max_dataword_size = ra_control_word_size;
@@ -479,9 +479,9 @@ sframe_get_fre_dataword_size (const struct sframe_row_entry *sframe_fre,
 
       if (sframe_fre->fp_loc == SFRAME_FRE_ELEM_LOC_REG)
 	{
-	  data = SFRAME_V3_FLEX_FDE_REG_ENCODE (sframe_fre->fp_reg,
-						sframe_fre->fp_deref_p,
-						1 /* reg_p.  */);
+	  data = SFRAME_V3_FLEX_FDE_CTRLWORD_ENCODE (sframe_fre->fp_reg,
+						     sframe_fre->fp_deref_p,
+						     1 /* reg_p.  */);
 	  unsigned fp_control_word_size = get_udata_size_in_bytes (data);
 	  if (fp_control_word_size > max_dataword_size)
 	    max_dataword_size = fp_control_word_size;
@@ -660,9 +660,9 @@ output_sframe_row_entry_datawords (const struct sframe_func_entry *sframe_fde,
       /* SFrame FDE of type SFRAME_FDE_TYPE_FLEX.  */
       /* Output CFA related FRE data words.  */
       uint32_t reg = sframe_fre->cfa_base_reg;
+      bool deref_p = sframe_fre->cfa_deref_p;
       uint32_t reg_data
-	= SFRAME_V3_FLEX_FDE_REG_ENCODE (reg, sframe_fre->cfa_deref_p,
-					 1 /* reg_p.  */);
+	= SFRAME_V3_FLEX_FDE_CTRLWORD_ENCODE (reg, deref_p, 1 /* reg_p.  */);
       offsetT offset_data = sframe_fre->cfa_offset;
       dataword_func_map[idx].out_func (reg_data);
       dataword_func_map[idx].out_func (offset_data);
@@ -674,9 +674,9 @@ output_sframe_row_entry_datawords (const struct sframe_func_entry *sframe_fde,
 	  /* Output RA related FRE data words.  */
 	  reg_p = sframe_fre->ra_loc == SFRAME_FRE_ELEM_LOC_REG;
 	  reg = reg_p ? sframe_fre->ra_reg : 0;
-	  reg_data = SFRAME_V3_FLEX_FDE_REG_ENCODE (reg,
-						    sframe_fre->ra_deref_p,
-						    reg_p);
+	  deref_p = sframe_fre->ra_deref_p;
+	  reg_data = SFRAME_V3_FLEX_FDE_CTRLWORD_ENCODE (reg, deref_p, reg_p);
+
 	  offset_data = sframe_fre->ra_offset;
 	  dataword_func_map[idx].out_func (reg_data);
 	  dataword_func_map[idx].out_func (offset_data);
@@ -687,7 +687,7 @@ output_sframe_row_entry_datawords (const struct sframe_func_entry *sframe_fde,
 	  /* If RA is not in REG/STACK, emit RA padding if there are more
 	     data words to follow.  Note that, emitting
 	     SFRAME_FRE_RA_OFFSET_INVALID is equivalent to emitting
-	     SFRAME_V3_FLEX_FDE_REG_ENCODE (0, 0, 0).  */
+	     SFRAME_V3_FLEX_FDE_CTRLWORD_ENCODE (0, 0, 0).  */
 	  dataword_func_map[idx].out_func (SFRAME_FRE_RA_OFFSET_INVALID);
 	  fre_write_datawords += 1;
 	}
@@ -697,9 +697,9 @@ output_sframe_row_entry_datawords (const struct sframe_func_entry *sframe_fde,
 	  /* Output FP related FRE data words.  */
 	  reg_p = sframe_fre->fp_loc == SFRAME_FRE_ELEM_LOC_REG;
 	  reg = reg_p ? sframe_fre->fp_reg : 0;
-	  reg_data = SFRAME_V3_FLEX_FDE_REG_ENCODE (reg,
-						    sframe_fre->fp_deref_p,
-						    reg_p);
+	  deref_p = sframe_fre->fp_deref_p;
+	  reg_data = SFRAME_V3_FLEX_FDE_CTRLWORD_ENCODE (reg, deref_p, reg_p);
+
 	  offset_data = sframe_fre->fp_offset;
 	  dataword_func_map[idx].out_func (reg_data);
 	  dataword_func_map[idx].out_func (offset_data);

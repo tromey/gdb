@@ -342,12 +342,15 @@ typedef struct sframe_func_desc_attr_v3
 #define SFRAME_V3_FDE_UPDATE_SIGNAL_P(signal_p, info)  \
   ((((signal_p) & 0x1) << 7) | ((info) & 0x7f))
 
-#define SFRAME_V3_FLEX_FDE_REG_ENCODE(reg, deref_p, reg_p)  \
+#define SFRAME_V3_FLEX_FDE_CTRLWORD_ENCODE(reg, deref_p, reg_p) \
   ((((reg) << 0x3) | (0 << 0x2) | (((deref_p) & 0x1) << 0x1) | ((reg_p) & 0x1)))
 
-#define SFRAME_V3_FLEX_FDE_OFFSET_REG_NUM(data)       ((data) >> 3)
-#define SFRAME_V3_FLEX_FDE_OFFSET_REG_DEREF_P(data)   (((data) >> 1) & 0x1)
-#define SFRAME_V3_FLEX_FDE_OFFSET_REG_P(data)         ((data) & 0x1)
+#define SFRAME_V3_FLEX_FDE_CTRLWORD_REGNUM(data)    ((data) >> 3)
+#define SFRAME_V3_FLEX_FDE_CTRLWORD_DEREF_P(data)   (((data) >> 1) & 0x1)
+#define SFRAME_V3_FLEX_FDE_CTRLWORD_REG_P(data)     ((data) & 0x1)
+
+#define SFRAME_V3_FRE_RA_UNDEFINED_P(fre_info) \
+  (SFRAME_V2_FRE_RA_UNDEFINED_P (fre_info))
 
 /* Size of stack frame offsets in an SFrame Frame Row Entry.  A single
    SFrame FRE has all offsets of the same size.  Offset size may vary
