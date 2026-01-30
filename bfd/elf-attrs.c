@@ -2194,10 +2194,11 @@ _bfd_elf_link_setup_object_attributes (struct bfd_link_info *info)
     return NULL;
   BFD_ASSERT (elf_obj_attr_subsections (res.pbfd).size > 0);
 
-
-  /* Shallow-copy the object attributes into output_bfd.  */
-  elf_obj_attr_subsections (info->output_bfd)
-    = elf_obj_attr_subsections (res.pbfd);
+  /* Swap the old object attributes stored in output_bfd (i.e. the frozen
+     config) with the final merge result.  */
+  LINKED_LIST_SWAP_LISTS (obj_attr_subsection_list_t)
+    (&elf_obj_attr_subsections (info->output_bfd),
+     &elf_obj_attr_subsections (res.pbfd));
 
   /* Note: the object attributes section in the output object is copied from
      the input object which was used for the merge (res.pbfd).  No need to
@@ -2951,6 +2952,16 @@ _bfd_elf_parse_attributes (bfd *abfd, Elf_Internal_Shdr * hdr)
 
  free_data:
   free (data);
+}
+
+/* Clean-up all the object attributes in a file.  */
+void
+_bfd_elf_cleanup_object_attributes (bfd *abfd)
+{
+  obj_attr_subsection_list_t *plist = &elf_obj_attr_subsections (abfd);
+  obj_attr_subsection_v2_t *subsec = plist->first;
+  while (subsec != NULL)
+    subsec = oav2_subsec_delete (plist, subsec);
 }
 
 /* Merge common object attributes from IBFD into OBFD.  Raise an error
