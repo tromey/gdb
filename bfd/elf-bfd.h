@@ -2212,6 +2212,9 @@ struct elf_obj_tdata
   /* A pointer to the .eh_frame section.  */
   asection *eh_frame_section;
 
+  /* A pointer to the .sframe section.  */
+  asection *sframe_section;
+
   /* Symbol buffer.  */
   void *symbuf;
 
@@ -2303,6 +2306,8 @@ struct elf_obj_tdata
 #define elf_dynverref(bfd)	(elf_tdata(bfd) -> dynverref_section)
 #define elf_eh_frame_section(bfd) \
 				(elf_tdata(bfd) -> eh_frame_section)
+#define elf_sframe_section(bfd) \
+				(elf_tdata(bfd) -> sframe_section)
 #define elf_section_syms(bfd)	(elf_tdata(bfd) -> o->section_syms)
 #define elf_num_section_syms(bfd) (elf_tdata(bfd) -> o->num_section_syms)
 #define core_prpsinfo(bfd)	(elf_tdata(bfd) -> prpsinfo)

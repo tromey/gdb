@@ -245,12 +245,15 @@ _bfd_elf_parse_sframe (bfd *abfd,
     }
 
   if (sec->size == 0
-      || (sec->flags & SEC_HAS_CONTENTS) == 0
-      || sec->sec_info_type != SEC_INFO_TYPE_NONE)
+      || (sec->flags & SEC_HAS_CONTENTS) == 0)
     {
       /* This file does not contain .sframe information.  */
       return false;
     }
+
+  /* Check if this section was already parsed.  */
+  if (sec->sec_info_type == SEC_INFO_TYPE_SFRAME)
+    return true;
 
   if (bfd_is_abs_section (sec->output_section))
     {
