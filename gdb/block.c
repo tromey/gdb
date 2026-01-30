@@ -462,7 +462,7 @@ block_iterator::compunit_symtab () const
    iteration is complete.  */
 
 static struct symbol *
-block_iterator_step (struct block_iterator *iterator, int first)
+block_iterator_step (struct block_iterator *iterator, bool first)
 {
   struct symbol *sym;
 
@@ -503,7 +503,7 @@ block_iterator_step (struct block_iterator *iterator, int first)
 
 static struct symbol *
 block_iter_match_step (struct block_iterator *iterator,
-		       int first)
+		       bool first)
 {
   struct symbol *sym;
 
@@ -553,14 +553,14 @@ block_iterator_first (const struct block *block,
 	return mdict_iterator_first (block->multidict (),
 				     &iterator->mdict_iter);
 
-      return block_iterator_step (iterator, 1);
+      return block_iterator_step (iterator, true);
     }
 
   if (iterator->which == FIRST_LOCAL_BLOCK)
     return mdict_iter_match_first (block->multidict (), *name,
 				   &iterator->mdict_iter);
 
-  return block_iter_match_step (iterator, 1);
+  return block_iter_match_step (iterator, true);
 }
 
 /* See block.h.  */
@@ -573,13 +573,13 @@ block_iterator_next (struct block_iterator *iterator)
       if (iterator->which == FIRST_LOCAL_BLOCK)
 	return mdict_iterator_next (&iterator->mdict_iter);
 
-      return block_iterator_step (iterator, 0);
+      return block_iterator_step (iterator, false);
     }
 
   if (iterator->which == FIRST_LOCAL_BLOCK)
     return mdict_iter_match_next (*iterator->name, &iterator->mdict_iter);
 
-  return block_iter_match_step (iterator, 0);
+  return block_iter_match_step (iterator, false);
 }
 
 /* See block.h.  */
