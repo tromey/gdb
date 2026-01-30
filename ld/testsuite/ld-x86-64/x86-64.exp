@@ -593,6 +593,9 @@ if { ![skip_sframe_tests] } {
     # Test --no-ld-generated-unwind-info
     run_dump_test "sframe-command-line-2"
     run_dump_test "sframe-reloc-1"
+    run_dump_test "sframe-gc-sections-1"
+    run_dump_test "sframe-gc-sections-2a"
+    run_dump_test "sframe-gc-sections-2b"
     run_dump_test "sframe-plt-1"
     run_dump_test "sframe-ibt-plt-1"
     run_dump_test "sframe-pltgot-1"
