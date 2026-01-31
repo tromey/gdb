@@ -2006,7 +2006,6 @@ TAGFILES_WITH_SRCDIR = $(HFILES_WITH_SRCDIR)
 # Files that are used to support certain debuginfo formats
 DWARF2_SRCS = \
 	dwarf2/abbrev.c \
-	dwarf2/abbrev-table-cache.c \
 	dwarf2/ada-imported.c \
 	dwarf2/aranges.c \
 	dwarf2/attribute.c \

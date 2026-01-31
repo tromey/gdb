@@ -704,9 +704,6 @@ static unsigned int peek_abbrev_code (bfd *, const gdb_byte *);
 static unrelocated_addr read_addr_index (struct dwarf2_cu *cu,
 					 unsigned int addr_index);
 
-static sect_offset read_abbrev_offset (dwarf2_per_objfile *per_objfile,
-				       dwarf2_section_info *, sect_offset);
-
 static const char *read_indirect_string (dwarf2_per_objfile *per_objfile, bfd *,
 					 const gdb_byte *, const unit_head *,
 					 unsigned int *);
@@ -1850,9 +1847,9 @@ dw2_get_file_names (dwarf2_per_cu *this_cu, dwarf2_per_objfile *per_objfile)
   if (this_cu->files_read)
     return this_cu->file_names;
 
-  cutu_reader reader (*this_cu, *per_objfile, nullptr,
-		      per_objfile->get_cu (this_cu), true, std::nullopt,
-		      nullptr);
+  abbrev_table_cache abbrev_table_cache;
+  cutu_reader reader (*this_cu, *per_objfile, per_objfile->get_cu (this_cu),
+		      true, std::nullopt, abbrev_table_cache);
   if (reader.is_dummy ())
     {
       /* Make sure we don't re-read the dummy CU.  */
@@ -2444,35 +2441,6 @@ all_units_less_than (const dwarf2_per_cu &lhs, const section_and_offset &rhs)
   return lhs.sect_off () < rhs.offset;
 }
 
-/* Fetch the abbreviation table offset from a comp or type unit header.  */
-
-static sect_offset
-read_abbrev_offset (dwarf2_per_objfile *per_objfile,
-		    struct dwarf2_section_info *section,
-		    sect_offset sect_off)
-{
-  bfd *abfd = section->get_bfd_owner ();
-  const gdb_byte *info_ptr;
-  unsigned int initial_length_size, offset_size;
-  uint16_t version;
-
-  section->read (per_objfile->objfile);
-  info_ptr = section->buffer + to_underlying (sect_off);
-  read_initial_length (abfd, info_ptr, &initial_length_size);
-  offset_size = initial_length_size == 4 ? 4 : 8;
-  info_ptr += initial_length_size;
-
-  version = read_2_bytes (abfd, info_ptr);
-  info_ptr += 2;
-  if (version >= 5)
-    {
-      /* Skip unit type and address size.  */
-      info_ptr += 2;
-    }
-
-  return (sect_offset) read_offset (abfd, info_ptr, offset_size);
-}
-
 /* Add an entry for signature SIG to per_bfd->signatured_types.
 
    This functions leaves PER_BFD::ALL_UNITS unsorted.  The caller must call
@@ -2667,7 +2635,7 @@ lookup_signatured_type (struct dwarf2_cu *cu, ULONGEST sig)
 void
 cutu_reader::init_cu_die_reader (dwarf2_cu *cu, dwarf2_section_info *section,
 				 struct dwo_file *dwo_file,
-				 const struct abbrev_table *abbrev_table)
+				 const abbrev_table &abbrev_table)
 {
   gdb_assert (section->read_in && section->buffer != NULL);
   m_abfd = section->get_bfd_owner ();
@@ -2676,7 +2644,7 @@ cutu_reader::init_cu_die_reader (dwarf2_cu *cu, dwarf2_section_info *section,
   m_die_section = section;
   m_buffer = section->buffer;
   m_buffer_end = section->buffer + section->size;
-  m_abbrev_table = abbrev_table;
+  m_abbrev_table = &abbrev_table;
 }
 
 /* Subroutine of cutu_reader to simplify it.
@@ -2702,7 +2670,8 @@ cutu_reader::init_cu_die_reader (dwarf2_cu *cu, dwarf2_section_info *section,
 void
 cutu_reader::read_cutu_die_from_dwo (dwarf2_cu *cu, dwo_unit *dwo_unit,
 				     die_info *stub_comp_unit_die,
-				     const char *stub_comp_dir)
+				     const char *stub_comp_dir,
+				     abbrev_table_cache &abbrev_table_cache)
 {
   dwarf2_per_cu *per_cu = cu->per_cu;
   struct objfile *objfile = cu->per_objfile->objfile;
@@ -2826,11 +2795,9 @@ cutu_reader::read_cutu_die_from_dwo (dwarf2_cu *cu, dwo_unit *dwo_unit,
 			     ? cu->header.addr_size
 			     : cu->header.offset_size);
 
-  dwo_abbrev_section->read (objfile);
-  m_dwo_abbrev_table
-    = abbrev_table::read (dwo_abbrev_section, cu->header.abbrev_sect_off);
-  this->init_cu_die_reader (cu, section, dwo_unit->dwo_file,
-			    m_dwo_abbrev_table.get ());
+  const abbrev_table &abbrev_table
+    = abbrev_table_cache.get (dwo_abbrev_section, cu->header.abbrev_sect_off);
+  this->init_cu_die_reader (cu, section, dwo_unit->dwo_file, abbrev_table);
 
   /* Skip dummy compilation units.  */
   if (m_info_ptr >= begin_info_ptr + dwo_unit->length
@@ -2910,7 +2877,8 @@ void
 cutu_reader::init_tu_and_read_dwo_dies (dwarf2_per_cu *this_cu,
 					dwarf2_per_objfile *per_objfile,
 					dwarf2_cu *existing_cu,
-					std::optional<language> pretend_language)
+					std::optional<language> pretend_language,
+					abbrev_table_cache &abbrev_table_cache)
 {
   signatured_type *sig_type = this_cu->as_signatured_type ();
 
@@ -2941,7 +2909,8 @@ cutu_reader::init_tu_and_read_dwo_dies (dwarf2_per_cu *this_cu,
      could share abbrev tables.  */
 
   read_cutu_die_from_dwo (cu, sig_type->dwo_unit, NULL /* stub_comp_unit_die */,
-			  sig_type->dwo_unit->dwo_file->comp_dir);
+			  sig_type->dwo_unit->dwo_file->comp_dir,
+			  abbrev_table_cache);
   prepare_one_comp_unit (cu, pretend_language);
 }
 
@@ -2957,11 +2926,10 @@ cutu_reader::init_tu_and_read_dwo_dies (dwarf2_per_cu *this_cu,
 
 cutu_reader::cutu_reader (dwarf2_per_cu &this_cu,
 			  dwarf2_per_objfile &per_objfile,
-			  const struct abbrev_table *abbrev_table,
 			  dwarf2_cu *existing_cu,
 			  bool skip_partial,
 			  std::optional<language> pretend_language,
-			  const abbrev_table_cache *abbrev_cache)
+			  abbrev_table_cache &abbrev_table_cache)
 {
   struct objfile *objfile = per_objfile.objfile;
   struct dwarf2_section_info *section = this_cu.section ();
@@ -2984,9 +2952,8 @@ cutu_reader::cutu_reader (dwarf2_per_cu &this_cu,
     {
       /* Narrow down the scope of possibilities to have to understand.  */
       gdb_assert (this_cu.is_debug_types ());
-      gdb_assert (abbrev_table == NULL);
       init_tu_and_read_dwo_dies (&this_cu, &per_objfile, existing_cu,
-				 pretend_language);
+				 pretend_language, abbrev_table_cache);
       return;
     }
 
@@ -3014,14 +2981,6 @@ cutu_reader::cutu_reader (dwarf2_per_cu &this_cu,
     }
   else
     {
-      /* If an existing_cu is provided, a dwarf2_cu must not exist for
-	 this_cu in per_objfile yet.  Here, CACHE doubles as a flag to
-	 let us know that the CU is being scanned using the parallel
-	 indexer.  This assert is avoided in this case because (1) it
-	 is irrelevant, and (2) the get_cu method is not
-	 thread-safe.  */
-      gdb_assert (abbrev_cache != nullptr
-		  || per_objfile.get_cu (&this_cu) == nullptr);
       m_new_cu = std::make_unique<dwarf2_cu> (&this_cu, &per_objfile);
       cu = m_new_cu.get ();
     }
@@ -3081,25 +3040,9 @@ cutu_reader::cutu_reader (dwarf2_per_cu &this_cu,
     m_dummy_p = true;
   else
     {
-      /* If we don't have them yet, read the abbrevs for this
-	 compilation unit.  And if we need to read them now, make sure
-	 they're freed when we're done.  */
-      if (abbrev_table != NULL)
-	gdb_assert (cu->header.abbrev_sect_off == abbrev_table->sect_off);
-      else
-	{
-	  if (abbrev_cache != nullptr)
-	    abbrev_table = abbrev_cache->find (abbrev_section,
-					       cu->header.abbrev_sect_off);
-	  if (abbrev_table == nullptr)
-	    {
-	      abbrev_section->read (objfile);
-	      m_abbrev_table_holder
-		= abbrev_table::read (abbrev_section,
-				      cu->header.abbrev_sect_off);
-	      abbrev_table = m_abbrev_table_holder.get ();
-	    }
-	}
+      abbrev_section->read (objfile);
+      const abbrev_table &abbrev_table
+	= abbrev_table_cache.get (abbrev_section, cu->header.abbrev_sect_off);
 
       /* Read the top level CU/TU die.  */
       this->init_cu_die_reader (cu, section, NULL, abbrev_table);
@@ -3134,7 +3077,8 @@ cutu_reader::cutu_reader (dwarf2_per_cu &this_cu,
 
 	      dwo_unit = lookup_dwo_unit (cu, m_top_level_die, dwo_name);
 	      if (dwo_unit != NULL)
-		read_cutu_die_from_dwo (cu, dwo_unit, m_top_level_die, nullptr);
+		read_cutu_die_from_dwo (cu, dwo_unit, m_top_level_die, nullptr,
+					abbrev_table_cache);
 	      else
 		{
 		  /* Yikes, we couldn't find the rest of the DIE, we only have
@@ -3179,7 +3123,8 @@ cutu_reader::cutu_reader (dwarf2_per_cu &this_cu,
 			  dwarf2_per_objfile &per_objfile,
 			  std::optional<language> pretend_language,
 			  dwarf2_cu &parent_cu,
-			  dwo_file &dwo_file)
+			  dwo_file &dwo_file,
+			  abbrev_table_cache &abbrev_table_cache)
 {
   struct objfile *objfile = per_objfile.objfile;
   struct dwarf2_section_info *section = this_cu.section ();
@@ -3218,13 +3163,12 @@ cutu_reader::cutu_reader (dwarf2_per_cu &this_cu,
     m_dummy_p = true;
   else
     {
-      abbrev_section->read (objfile);
-      m_abbrev_table_holder
-	= abbrev_table::read (abbrev_section,
-			      m_new_cu->header.abbrev_sect_off);
+      const abbrev_table &abbrev_table
+	= abbrev_table_cache.get (abbrev_section,
+				  m_new_cu->header.abbrev_sect_off);
 
       this->init_cu_die_reader (m_new_cu.get (), section, &dwo_file,
-				m_abbrev_table_holder.get ());
+				abbrev_table);
       m_top_level_die = this->read_toplevel_die ();
     }
 
@@ -3364,8 +3308,6 @@ private:
 
     dwarf_read_debug_printf ("Type unit statistics:");
     dwarf_read_debug_printf ("  %d TUs", per_bfd->num_type_units);
-    dwarf_read_debug_printf ("  %d uniq abbrev tables",
-			     tu_stats->nr_uniq_abbrev_tables);
     dwarf_read_debug_printf ("  %d symtabs from stmt_list entries",
 			     tu_stats->nr_symtabs);
     dwarf_read_debug_printf ("  %d symtab sharers",
@@ -3433,12 +3375,10 @@ cooked_index_worker_debug_info::process_unit
   cutu_reader *reader = storage->get_reader (this_cu);
   if (reader == nullptr)
     {
-      const abbrev_table_cache &abbrev_table_cache
-	= storage->get_abbrev_table_cache ();
-      auto new_reader = std::make_unique<cutu_reader> (*this_cu, *per_objfile,
-						       nullptr, nullptr, false,
-						       std::nullopt,
-						       &abbrev_table_cache);
+      auto new_reader
+	= std::make_unique<cutu_reader> (*this_cu, *per_objfile, nullptr,
+					 false, std::nullopt,
+					 storage->get_abbrev_table_cache ());
 
       if (new_reader->is_dummy ())
 	return;
@@ -3503,74 +3443,23 @@ void
 cooked_index_worker_debug_info::process_type_units
   (dwarf2_per_objfile *per_objfile, cooked_index_worker_result *storage)
 {
-  struct tu_stats *tu_stats = &per_objfile->per_bfd->tu_stats;
-  abbrev_table_up abbrev_table;
-
   if (per_objfile->per_bfd->num_type_units == 0)
     return;
-
-  /* TUs typically share abbrev tables, and there can be way more TUs than
-     abbrev tables.  Sort by abbrev table to reduce the number of times we
-     read each abbrev table in.
-     Alternatives are to punt or to maintain a cache of abbrev tables.
-     This is simpler and efficient enough for now.
-
-     Later we group TUs by their DW_AT_stmt_list value (as this defines the
-     symtab to use).  Typically TUs with the same abbrev offset have the same
-     stmt_list value too so in practice this should work well.
-
-     The basic algorithm here is:
-
-      sort TUs by abbrev table
-      for each TU with same abbrev table:
-	read abbrev table if first user
-	read TU top level DIE
-	  [IWBN if DWO skeletons had DW_AT_stmt_list]
-	call FUNC  */
-
-  dwarf_read_debug_printf ("Building type unit groups ...");
-
-  /* Sort in a separate table to maintain the order of all_units
-     for .gdb_index: TU indices directly index all_type_units.  */
-  std::vector<tu_abbrev_offset> sorted_by_abbrev;
-  sorted_by_abbrev.reserve (per_objfile->per_bfd->num_type_units);
 
   for (const auto &cu : per_objfile->per_bfd->all_units)
     if (signatured_type *sig_type = cu->as_signatured_type ();
 	sig_type != nullptr)
       {
-	sect_offset abbrev_offset
-	  = read_abbrev_offset (per_objfile, sig_type->section (),
-				sig_type->sect_off ());
-	sorted_by_abbrev.emplace_back (sig_type, abbrev_offset);
+	cutu_reader reader (*sig_type, *per_objfile, nullptr, false,
+			    std::nullopt,
+			    storage->get_abbrev_table_cache ());
+
+	if (!reader.is_dummy ())
+	  storage->catch_error ([&] ()
+	    {
+	      process_type_unit (&reader, storage);
+	    });
       }
-
-  std::sort (sorted_by_abbrev.begin (), sorted_by_abbrev.end ());
-
-  sect_offset abbrev_offset = (sect_offset) ~(unsigned) 0;
-
-  for (const tu_abbrev_offset &tu : sorted_by_abbrev)
-    {
-      /* Switch to the next abbrev table if necessary.  */
-      if (abbrev_table == NULL
-	  || tu.abbrev_offset != abbrev_offset)
-	{
-	  abbrev_offset = tu.abbrev_offset;
-	  per_objfile->per_bfd->abbrev.read (per_objfile->objfile);
-	  abbrev_table =
-	    abbrev_table::read (&per_objfile->per_bfd->abbrev, abbrev_offset);
-	  ++tu_stats->nr_uniq_abbrev_tables;
-	}
-
-      cutu_reader reader (*tu.sig_type, *per_objfile,
-			  abbrev_table.get (), nullptr, false,
-			  std::nullopt);
-      if (!reader.is_dummy ())
-	storage->catch_error ([&] ()
-	  {
-	    process_type_unit (&reader, storage);
-	  });
-    }
 }
 
 void
@@ -3597,8 +3486,8 @@ cooked_index_worker_debug_info::process_skeletonless_type_unit
   fill_in_sig_entry_from_dwo_entry (per_objfile, *sig_type_it, dwo_unit);
 
   /* This does the job that build_type_psymtabs would have done.  */
-  cutu_reader reader (**sig_type_it, *per_objfile, nullptr, nullptr, false,
-		      std::nullopt);
+  cutu_reader reader (**sig_type_it, *per_objfile, nullptr, false,
+		      std::nullopt, storage->get_abbrev_table_cache ());
   if (!reader.is_dummy ())
     process_type_unit (&reader, storage);
 }
@@ -4182,8 +4071,9 @@ load_full_comp_unit (dwarf2_per_cu *this_cu, dwarf2_per_objfile *per_objfile,
   gdb_assert (!this_cu->is_debug_types ());
   gdb_assert (per_objfile->get_cu (this_cu) == nullptr);
 
-  cutu_reader reader (*this_cu, *per_objfile, nullptr, nullptr, skip_partial,
-		      pretend_language);
+  abbrev_table_cache abbrev_table_cache;
+  cutu_reader reader (*this_cu, *per_objfile, nullptr, skip_partial,
+		      pretend_language, abbrev_table_cache);
   if (reader.is_dummy ())
     return;
 
@@ -6322,6 +6212,7 @@ cutu_reader::create_dwo_unit_hash_tables (dwo_file &dwo_file,
 			   section.get_file_name ());
 
   const gdb_byte *end_ptr = info_ptr + section.size;
+  abbrev_table_cache abbrev_table_cache;
 
   while (info_ptr < end_ptr)
     {
@@ -6362,7 +6253,7 @@ cutu_reader::create_dwo_unit_hash_tables (dwo_file &dwo_file,
 	  dwarf2_per_cu per_cu (&per_bfd, &section, sect_off, length,
 				false /* is_dwz */);
 	  cutu_reader reader (per_cu, per_objfile, std::nullopt,
-			      skeleton_cu, dwo_file);
+			      skeleton_cu, dwo_file, abbrev_table_cache);
 
 	  std::optional<ULONGEST> opt_signature
 	    = lookup_dwo_id (reader.cu (), reader.top_level_die ());
@@ -14975,8 +14866,9 @@ dwarf2_read_addr_index (dwarf2_per_cu *per_cu, dwarf2_per_objfile *per_objfile,
     }
   else
     {
-      cutu_reader reader (*per_cu, *per_objfile, nullptr, nullptr, false,
-			  std::nullopt);
+      abbrev_table_cache abbrev_table_cache;
+      cutu_reader reader (*per_cu, *per_objfile, nullptr, false,
+			  std::nullopt, abbrev_table_cache);
       addr_base = reader.cu ()->addr_base;
       addr_size = reader.cu ()->header.addr_size;
     }
@@ -17576,8 +17468,9 @@ read_signatured_type (signatured_type *sig_type,
   gdb_assert (sig_type->is_debug_types ());
   gdb_assert (per_objfile->get_cu (sig_type) == nullptr);
 
-  cutu_reader reader (*sig_type, *per_objfile, nullptr, nullptr, false,
-		      std::nullopt);
+  abbrev_table_cache abbrev_table_cache;
+  cutu_reader reader (*sig_type, *per_objfile, nullptr, false,
+		      std::nullopt, abbrev_table_cache);
 
   if (!reader.is_dummy ())
     {
@@ -18045,8 +17938,9 @@ dwarf2_per_cu::ensure_lang (dwarf2_per_objfile *per_objfile)
 
   /* Constructing this object will set the language as a side
      effect.  */
-  cutu_reader reader (*this, *per_objfile, nullptr, per_objfile->get_cu (this),
-		      true, std::nullopt, nullptr);
+  abbrev_table_cache abbrev_table_cache;
+  cutu_reader reader (*this, *per_objfile, per_objfile->get_cu (this),
+		      true, std::nullopt, abbrev_table_cache);
 }
 
 /* Return the unit from ALL_UNITS that potentially contains TARGET.
@@ -18126,8 +18020,11 @@ dwarf2_find_containing_unit (const section_and_offset &target,
      Even though it should happen too often, it could be replaced with
      something more lightweight that has the same effect.  */
   if (!per_cu->length_is_set ())
-    cutu_reader (*per_cu, *per_objfile, nullptr, nullptr, false,
-		 std::nullopt);
+    {
+      abbrev_table_cache abbrev_table_cache;
+      cutu_reader (*per_cu, *per_objfile, nullptr, false, std::nullopt,
+		   abbrev_table_cache);
+    }
 
   /* Now we can check if the target section offset is within PER_CU's range.  */
   if (target.offset < per_cu->sect_off ()
