@@ -28,7 +28,8 @@ standard_testfile .c -dw.S
 set asm_file [standard_output_file $srcfile2]
 Dwarf::assemble $asm_file {
     global srcdir subdir srcfile srcfile2
-    declare_labels ranges_label
+    declare_labels ranges_label ranges_main_label
+    declare_labels ranges_frame2_label ranges_frame3_label
     declare_labels L
 
     # Find start address and length for our functions.
@@ -53,14 +54,17 @@ Dwarf::assemble $asm_file {
 	    subprogram {
 		DW_AT_external 1 flag
 		DW_AT_name main
+		DW_AT_ranges $ranges_main_label DW_FORM_sec_offset
 	    }
 	    subprogram {
 		DW_AT_external 1 flag
 		DW_AT_name frame2
+		DW_AT_ranges $ranges_frame2_label DW_FORM_sec_offset
 	    }
 	    subprogram {
 		DW_AT_external 1 flag
 		DW_AT_name frame3
+		DW_AT_ranges $ranges_frame3_label DW_FORM_sec_offset
 	    }
 	}
     }
@@ -104,6 +108,18 @@ Dwarf::assemble $asm_file {
 	    range 0 [lindex $main_func 1]
 	    base [lindex $frame2_func 0]
 	    range 0 [lindex $frame2_func 1]
+	    base [lindex $frame3_func 0]
+	    range 0 [lindex $frame3_func 1]
+	}
+	ranges_main_label: sequence {
+	    base [lindex $main_func 0]
+	    range 0 [lindex $main_func 1]
+	}
+	ranges_frame2_label: sequence {
+	    base [lindex $frame2_func 0]
+	    range 0 [lindex $frame2_func 1]
+	}
+	ranges_frame3_label: sequence {
 	    base [lindex $frame3_func 0]
 	    range 0 [lindex $frame3_func 1]
 	}
