@@ -1083,33 +1083,30 @@ oav2_attr_overwrite_with_default (const struct bfd_link_info *info,
 {
   const struct elf_backend_data *bed = get_elf_backend_data (info->output_bfd);
 
+  union obj_attr_value_v2 default_value;
+  memset (&default_value, 0, sizeof (default_value));
+
   const obj_attr_info_t *attr_info
     = _bfd_obj_attr_v2_find_known_by_tag (bed, subsec->name, attr->tag);
   if (attr_info == NULL)
     {
       attr->status = obj_attr_v2_unknown;
-      if (subsec->encoding == OA_ENC_ULEB128)
-	attr->val.uint = 0;
-      else
-	attr->val.string = NULL;
+      oav2_assign_value (subsec->encoding, attr, default_value);
       return;
     }
 
   if (bed->obj_attr_v2_default_value != NULL
       && bed->obj_attr_v2_default_value (info, attr_info, subsec, attr))
-    {}
-  else if (subsec->encoding == OA_ENC_NTBS)
+    return;
+
+  if (subsec->encoding == OA_ENC_NTBS)
     {
-      if (attr->val.string != NULL)
-	{
-	  free ((void *) attr->val.string);
-	  attr->val.string = NULL;
-	}
       if (attr_info->default_value.string != NULL)
-	attr->val.string = xstrdup (attr_info->default_value.string);
+	default_value.string = xstrdup (attr_info->default_value.string);
     }
   else
-    attr->val.uint = attr_info->default_value.uint;
+    default_value.uint = attr_info->default_value.uint;
+  oav2_assign_value (subsec->encoding, attr, default_value);
 }
 
 /* Create a new attribute with the same key (=tag) as ATTR, and initialized with
