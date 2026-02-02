@@ -1061,6 +1061,19 @@ oav2_subsections_mark_unknown (const bfd *abfd)
     }
 }
 
+/* Assign the merge result to REF.
+   The only reason to exist for this helper is when the manipulated value is a
+   string.  In this case, the value in REF must be freed before assigning.  */
+static void
+oav2_assign_value (obj_attr_encoding_v2_t encoding,
+		   obj_attr_v2_t *a_ref,
+		   union obj_attr_value_v2 res)
+{
+  if (encoding == OA_ENC_NTBS)
+    free ((void *) a_ref->val.string);
+  a_ref->val = res;
+}
+
 /* Initialize the given ATTR with its default value coming from the known tag
    registry.  */
 static void
@@ -1505,7 +1518,7 @@ handle_optional_subsection_merge (const struct bfd_link_info *info,
 			       frozen_is_abfd);
 	  _bfd_elf_obj_attr_v2_free (a_default, s_ref->encoding);
 	  if (res.merge)
-	    a_ref->val = res.val;
+	    oav2_assign_value (s_ref->encoding, a_ref, res.val);
 	  else if (res.reason == OAv2_MERGE_UNSUPPORTED)
 	    a_ref->status = obj_attr_v2_unknown;
 	  a_ref = a_ref->next;
@@ -1518,7 +1531,7 @@ handle_optional_subsection_merge (const struct bfd_link_info *info,
 			       frozen_is_abfd);
 	  if (res.merge || res.reason == OAv2_MERGE_SAME_VALUE_AS_REF)
 	    {
-	      a_default->val = res.val;
+	      oav2_assign_value (s_ref->encoding, a_default, res.val);
 	      LINKED_LIST_INSERT_BEFORE (obj_attr_v2_t)
 		(s_ref, a_default, a_ref);
 	    }
@@ -1532,7 +1545,7 @@ handle_optional_subsection_merge (const struct bfd_link_info *info,
 	    = oav2_attr_merge (info, abfd, s_ref, a_ref, a_abfd, a_frozen,
 			       frozen_is_abfd);
 	  if (res.merge)
-	    a_ref->val = res.val;
+	    oav2_assign_value (s_ref->encoding, a_ref, res.val);
 	  else if (res.reason == OAv2_MERGE_UNSUPPORTED)
 	    a_ref->status = obj_attr_v2_unknown;
 	  a_ref = a_ref->next;
@@ -1547,7 +1560,7 @@ handle_optional_subsection_merge (const struct bfd_link_info *info,
 	= oav2_attr_merge (info, abfd, s_ref, a_default, a_abfd, NULL, false);
       if (res.merge || res.reason == OAv2_MERGE_SAME_VALUE_AS_REF)
 	{
-	  a_default->val = res.val;
+	  oav2_assign_value (s_ref->encoding, a_default, res.val);
 	  LINKED_LIST_APPEND (obj_attr_v2_t) (s_ref, a_default);
 	}
       else
@@ -1566,7 +1579,7 @@ handle_optional_subsection_merge (const struct bfd_link_info *info,
 			   frozen_is_abfd);
       _bfd_elf_obj_attr_v2_free (a_default, s_ref->encoding);
       if (res.merge)
-	a_ref->val = res.val;
+	oav2_assign_value (s_ref->encoding, a_ref, res.val);
       else if (res.reason == OAv2_MERGE_UNSUPPORTED)
 	a_ref->status = obj_attr_v2_unknown;
     }
