@@ -9419,7 +9419,7 @@ proc get_valueof { fmt exp default {test ""} } {
 
     set val ${default}
     gdb_test_multiple "print${fmt} ${exp}" "$test" {
-	-re -wrap "^\\$\[0-9\]* = (\[^\r\n\]*)" {
+	-re -wrap "^${::valnum_re} = (\[^\r\n\]*)" {
 	    set val $expect_out(1,string)
 	    pass "$test"
 	}
@@ -9468,7 +9468,7 @@ proc get_integer_valueof { exp default {test ""} } {
 
     set val ${default}
     gdb_test_multiple "print /d ${exp}" "$test" {
-	-re -wrap "^\\$\[0-9\]* = (\[-\]*\[0-9\]*).*" {
+	-re -wrap "^${::valnum_re} = (\[-\]*\[0-9\]*).*" {
 	    set val $expect_out(1,string)
 	    pass "$test"
 	}
@@ -9493,7 +9493,7 @@ proc get_hexadecimal_valueof { exp default {test ""} } {
 
     set val ${default}
     gdb_test_multiple "print /x ${exp}" $test {
-	-re "\\$\[0-9\]* = (0x\[0-9a-zA-Z\]+).*$gdb_prompt $" {
+	-re "${::valnum_re} = (0x\[0-9a-zA-Z\]+).*$gdb_prompt $" {
 	    set val $expect_out(1,string)
 	    pass "$test"
 	}

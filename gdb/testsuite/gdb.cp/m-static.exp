@@ -56,16 +56,16 @@ gdb_continue_to_breakpoint "end of constructors"
 # One.
 
 # simple object, static const bool
-gdb_test "print test1.test" "\\$\[0-9\]* = true" "simple object, static const bool"
+gdb_test "print test1.test" "${::valnum_re} = true" "simple object, static const bool"
 
 # simple object, static const int
-gdb_test "print test1.key1" "\\$\[0-9\]* = 5" "simple object, static const int"
+gdb_test "print test1.key1" "${::valnum_re} = 5" "simple object, static const int"
 
 # simple object, static long
-gdb_test "print test1.key2" "\\$\[0-9\]* = 77" "simple object, static long"
+gdb_test "print test1.key2" "${::valnum_re} = 77" "simple object, static long"
 
 # simple object, static enum
-gdb_test "print test1.value" "\\$\[0-9\]* = oriental" "simple object, static enum"
+gdb_test "print test1.value" "${::valnum_re} = oriental" "simple object, static enum"
 
 if { [is_aarch32_target] } {
     gdb_test "print test5.single_constructor" \
@@ -130,13 +130,13 @@ if { [is_aarch32_target] } {
 # Two.
 
 # derived template object, base static const bool
-gdb_test "print test2.test" "\\$\[0-9\]* = true" "derived template object, base static const bool"
+gdb_test "print test2.test" "${::valnum_re} = true" "derived template object, base static const bool"
 
 # derived template object, base static const int
-gdb_test "print test2.key1" "\\$\[0-9\]* = 5" "derived template object, base static const int"
+gdb_test "print test2.key1" "${::valnum_re} = 5" "derived template object, base static const int"
 
 # derived template object, base static long
-gdb_test "print test2.key2" "\\$\[0-9\]* = 77" "derived template object, base static long"
+gdb_test "print test2.key2" "${::valnum_re} = 77" "derived template object, base static long"
 
 # derived template object, base static enum
 gdb_test "print test2.value" "\\$\[0-9\].* = oriental" "derived template object, base static enum"

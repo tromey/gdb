@@ -65,10 +65,10 @@ gdb_test "up" ".*main.*" "up from marker1"
 # shouldn't work with quotes, I'm only including one version.
 
 gdb_test "print 'AAA::c'" \
-    "\\$\[0-9\]* = 0 '\\\\(0|000)'"
+    "${::valnum_re} = 0 '\\\\(0|000)'"
 
 gdb_test "print AAA::c" \
-    "\\$\[0-9\]* = 0 '\\\\(0|000)'"
+    "${::valnum_re} = 0 '\\\\(0|000)'"
 
 # An object declared using "using".
 
@@ -98,10 +98,10 @@ gdb_test_multiple "info func xyzq" "info func xyzq" {
 # Call a function in a namespace
 
 gdb_test "print 'AAA::xyzq'('x')" \
-    "\\$\[0-9\]* = 97 'a'"
+    "${::valnum_re} = 97 'a'"
 
 gdb_test "print AAA::xyzq('x')" \
-    "\\$\[0-9\]* = 97 'a'"
+    "${::valnum_re} = 97 'a'"
 
 # Break on a function in a namespace
 
@@ -116,10 +116,10 @@ gdb_test "break -qualified ::ensureOtherRefs" \
 # Call a function in a nested namespace
 
 gdb_test "print 'BBB::CCC::xyzq'('x')" \
-    "\\$\[0-9\]* = 122 'z'"
+    "${::valnum_re} = 122 'z'"
 
 gdb_test "print BBB::CCC::xyzq('x')" \
-    "\\$\[0-9\]* = 122 'z'"
+    "${::valnum_re} = 122 'z'"
 
 # Break on a function in a nested namespace
 
@@ -134,10 +134,10 @@ gdb_test "break ::BBB::CCC::xyzq" \
 # Print address of a function in a class in a namespace
 
 gdb_test "print 'BBB::Class::xyzq'" \
-    "\\$\[0-9\]* = \{char \\((BBB::|)Class \\*( const|), (char|int)\\)\} $hex <BBB::Class::xyzq\\(char\\)>"
+    "${::valnum_re} = \{char \\((BBB::|)Class \\*( const|), (char|int)\\)\} $hex <BBB::Class::xyzq\\(char\\)>"
 
 gdb_test "print BBB::Class::xyzq" \
-    "\\$\[0-9\]* = \{char \\((BBB::|)Class \\*( const|), (char|int)\\)\} $hex <BBB::Class::xyzq\\(char\\)>"
+    "${::valnum_re} = \{char \\((BBB::|)Class \\*( const|), (char|int)\\)\} $hex <BBB::Class::xyzq\\(char\\)>"
 
 # Break on a function in a class in a namespace
 
