@@ -85,14 +85,14 @@ gdb_test "print test3.data.key2" "${::valnum_re} = 7" "template object, long"
 gdb_test "print test3.data.value" "${::valnum_re} = oriental" "template object, base enum"
 
 # template object, derived template data member's enum
-gdb_test "print test3.data.value_derived" "\\$\[0-9]\* = etruscan" "template object, derived enum"
+gdb_test "print test3.data.value_derived" "${::valnum_re} = etruscan" "template object, derived enum"
 
 # Now some tests for shadowing (see PR gdb/804):
 
 gdb_breakpoint "C::marker"
 gdb_continue_to_breakpoint "continue to shadow breakpoint"
 
-gdb_test "print shadow" "\\$\[0-9]\* = 1" "shadowing member"
-gdb_test "print ::shadow" "\\$\[0-9]\* = 0" "shadowed global variable"
+gdb_test "print shadow" "${::valnum_re} = 1" "shadowing member"
+gdb_test "print ::shadow" "${::valnum_re} = 0" "shadowed global variable"
 
 gdb_exit
