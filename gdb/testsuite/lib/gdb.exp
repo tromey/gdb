@@ -339,7 +339,7 @@ set tdlabel_re "(process|Thread|LWP)"
 
 # A regular expression that matches a value history number.
 # E.g., $1, $2, etc.
-set valnum_re "\\\$$decimal"
+set valnum_re [subst_vars {\$$decimal}]
 
 # A regular expression that matches a breakpoint hit with a breakpoint
 # having several code locations.
