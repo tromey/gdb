@@ -1623,7 +1623,7 @@ info_frame_command_core (const frame_info_ptr &fi, bool selected_frame_p)
 	  }
 
 	print_frame_args (user_frame_print_options,
-			  func, fi, numargs, gdb_stdout);
+			  func.symbol, fi, numargs, gdb_stdout);
 	gdb_puts ("\n");
       }
   }
