@@ -1605,7 +1605,7 @@ enum class var_shadowing
    printing.  SHADOW_STATUS specifies the variable shadowing
    information.  */
 
-extern void print_variable_value (symbol *var,
+extern void print_variable_value (block_symbol var,
 				  const frame_info_ptr &frame,
 				  ui_file *stream, int indent,
 				  const language_defn *language,
