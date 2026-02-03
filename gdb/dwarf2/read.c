@@ -2110,18 +2110,21 @@ dw_search_file_matcher
 /* A helper for dw2_find_pc_sect_compunit_symtab which finds the most specific
    symtab.  */
 
-static struct compunit_symtab *
-recursively_find_pc_sect_compunit_symtab (struct compunit_symtab *cust,
-					  CORE_ADDR pc)
+static compunit_symtab *
+find_pc_sect_compunit_symtab_includes (compunit_symtab *cust, CORE_ADDR pc)
 {
-  if (cust->blockvector () != nullptr && cust->blockvector ()->contains (pc))
+  auto is_the_one = [pc] (compunit_symtab *one_cust)
+    {
+      return (one_cust->blockvector () != nullptr
+	      && one_cust->blockvector ()->contains (pc));
+    };
+
+  if (is_the_one (cust))
     return cust;
 
   for (compunit_symtab *include : cust->includes)
-    if (compunit_symtab *found
-	  = recursively_find_pc_sect_compunit_symtab (include, pc);
-	found != nullptr)
-      return found;
+    if (is_the_one (include))
+      return include;
 
   return nullptr;
 }
@@ -2134,8 +2137,6 @@ dwarf2_base_index_functions::find_pc_sect_compunit_symtab
       struct obj_section *section,
       int warn_if_readin)
 {
-  struct compunit_symtab *result;
-
   dwarf2_per_objfile *per_objfile = get_dwarf2_per_objfile (objfile);
   dwarf2_per_bfd *per_bfd = per_objfile->per_bfd;
 
@@ -2152,7 +2153,7 @@ dwarf2_base_index_functions::find_pc_sect_compunit_symtab
     warning (_("(Internal error: pc %s in read in CU, but not in symtab.)"),
 	     paddress (objfile->arch (), pc));
 
-  result = recursively_find_pc_sect_compunit_symtab
+  compunit_symtab *result = find_pc_sect_compunit_symtab_includes
     (dw2_instantiate_symtab (data, per_objfile, false), pc);
 
   if (warn_if_readin && result == nullptr)
