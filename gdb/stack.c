@@ -785,7 +785,7 @@ print_frame_args (const frame_print_options &fp_opts,
 
   if (func.has_value ())
     {
-      const struct block *b = func->value_block ();
+      const struct block *b = func.symbol->value_block ();
 
       for (struct symbol *sym : block_iterator_range (b))
 	{
