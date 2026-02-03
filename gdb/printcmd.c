@@ -2422,13 +2422,13 @@ print_variable_value (block_symbol bvar, const frame_info_ptr &frame,
 /* See value.h.  */
 
 void
-print_variable_and_value (const char *name, symbol *var,
+print_variable_and_value (const char *name, block_symbol var,
 			  const frame_info_ptr &frame,
 			  ui_file *stream, int indent,
 			  var_shadowing shadow_status)
 {
   if (name == nullptr)
-    name = var->print_name ();
+    name = var.symbol->print_name ();
 
   gdb_printf (stream, "%*s%ps = ", 2 * indent, "",
 	      styled_string (variable_name_style.style (), name));
