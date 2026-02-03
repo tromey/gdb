@@ -1476,7 +1476,7 @@ info_frame_command_core (const frame_info_ptr &fi, bool selected_frame_p)
   /* FUNC and FUNLANG are always initialized by the call to
      find_frame_funname, even if it is just to NULL and language_unknown
      respectively.  */
-  struct symbol *func;
+  block_symbol func;
   enum language funlang;
   gdb::unique_xmalloc_ptr<char> funname
     = find_frame_funname (fi, &funlang, &func);
