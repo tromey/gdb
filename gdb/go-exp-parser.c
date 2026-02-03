@@ -822,15 +822,13 @@ classify_name (struct parser_state *par_state, const struct block *block)
 				  go_yylval.sval.length, 0, &newlval);
       if (hextype == INT)
 	{
-	  go_yylval.ssym.sym.symbol = NULL;
-	  go_yylval.ssym.sym.block = NULL;
+	  go_yylval.ssym.sym = {};
 	  go_yylval.ssym.is_a_field_of_this = 0;
 	  return NAME_OR_INT;
 	}
     }
 
-  go_yylval.ssym.sym.symbol = NULL;
-  go_yylval.ssym.sym.block = NULL;
+  go_yylval.ssym.sym = {};
   go_yylval.ssym.is_a_field_of_this = 0;
   return NAME;
 }
