@@ -763,7 +763,7 @@ read_frame_arg (const frame_print_options &fp_opts,
 
 static void
 print_frame_args (const frame_print_options &fp_opts,
-		  struct symbol *func, const frame_info_ptr &frame,
+		  block_symbol func, const frame_info_ptr &frame,
 		  int num, struct ui_file *stream)
 {
   struct ui_out *uiout = current_uiout;
@@ -783,7 +783,7 @@ print_frame_args (const frame_print_options &fp_opts,
     = (print_names
        && fp_opts.print_frame_arguments != print_frame_arguments_none);
 
-  if (func)
+  if (func.has_value ())
     {
       const struct block *b = func->value_block ();
 
@@ -1312,7 +1312,6 @@ print_frame (struct ui_out *uiout,
   block_symbol bfunc;
   gdb::unique_xmalloc_ptr<char> funname
     = find_frame_funname (frame, &funlang, &bfunc);
-  struct symbol *func = bfunc.symbol;
 
   annotate_frame_begin (print_level ? frame_relative_level (frame) : 0,
 			gdbarch, pc.value_or (0));
@@ -1366,7 +1365,7 @@ print_frame (struct ui_out *uiout,
 	  ui_out_emit_list list_emitter (uiout, "args");
 	  try
 	    {
-	      print_frame_args (fp_opts, func, frame, numargs, gdb_stdout);
+	      print_frame_args (fp_opts, bfunc, frame, numargs, gdb_stdout);
 	    }
 	  catch (const gdb_exception_error &e)
 	    {
@@ -1623,7 +1622,7 @@ info_frame_command_core (const frame_info_ptr &fi, bool selected_frame_p)
 	  }
 
 	print_frame_args (user_frame_print_options,
-			  func.symbol, fi, numargs, gdb_stdout);
+			  func, fi, numargs, gdb_stdout);
 	gdb_puts ("\n");
       }
   }
