@@ -20,6 +20,7 @@
 
 #include "arch-utils.h"
 #include "python-internal.h"
+#include "safety.h"
 #include "gdbsupport/intrusive_list.h"
 
 #ifdef TUI
@@ -456,27 +457,23 @@ gdbpy_register_tui_window (PyObject *self, PyObject *args, PyObject *kw)
 
 /* Python function which checks the validity of a TUI window
    object.  */
-static PyObject *
-gdbpy_tui_is_valid (PyObject *self, PyObject *args)
+static bool
+gdbpy_tui_is_valid (PyObject *self)
 {
   gdbpy_tui_window *win = (gdbpy_tui_window *) self;
 
-  if (win->is_valid ())
-    Py_RETURN_TRUE;
-  Py_RETURN_FALSE;
+  return win->is_valid ();
 }
 
 /* Python function that erases the TUI window.  */
-static PyObject *
-gdbpy_tui_erase (PyObject *self, PyObject *args)
+static void
+gdbpy_tui_erase (PyObject *self)
 {
   gdbpy_tui_window *win = (gdbpy_tui_window *) self;
 
   REQUIRE_WINDOW (win);
 
   win->window->erase ();
-
-  Py_RETURN_NONE;
 }
 
 /* Python function that writes some text to a TUI window.  */
@@ -565,11 +562,10 @@ static gdb_PyGetSetDef tui_object_getset[] =
 
 static PyMethodDef tui_object_methods[] =
 {
-  { "is_valid", gdbpy_tui_is_valid, METH_NOARGS,
+  wrap_noargs<gdbpy_tui_is_valid> ("is_valid",
     "is_valid () -> Boolean\n\
-Return true if this TUI window is valid, false if not." },
-  { "erase", gdbpy_tui_erase, METH_NOARGS,
-    "Erase the TUI window." },
+Return true if this TUI window is valid, false if not."),
+  wrap_noargs<gdbpy_tui_erase> ("erase", "Erase the TUI window."),
   { "write", (PyCFunction) gdbpy_tui_write, METH_VARARGS | METH_KEYWORDS,
     "Append a string to the TUI window." },
   { NULL } /* Sentinel.  */
