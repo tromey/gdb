@@ -138,6 +138,7 @@ static bool color_output = false;	/* --visualize-jumps=color.  */
 static bool extended_color_output = false; /* --visualize-jumps=extended-color.  */
 static int process_links = false;       /* --process-links.  */
 static int show_all_symbols;            /* --show-all-symbols.  */
+static bool dump_global_vars;              /* --map-global-vars.  */
 static bool decompressed_dumps = false; /* -Z, --decompress.  */
 
 static struct symbol_entry
@@ -328,6 +329,8 @@ usage (FILE *stream, int status)
                            When following links, do not query debuginfod servers\n"));
 #endif
   fprintf (stream, _("\
+      --map-global-vars    Display memory mapping of global variables\n"));
+  fprintf (stream, _("\
   -L, --process-links      Display the contents of non-debug sections in\n\
                             separate debuginfo files.  (Implies -WK)\n"));
 #ifdef ENABLE_LIBCTF
@@ -496,7 +499,8 @@ enum option_values
 #endif
     OPTION_SFRAME,
     OPTION_VISUALIZE_JUMPS,
-    OPTION_DISASSEMBLER_COLOR
+    OPTION_DISASSEMBLER_COLOR,
+    OPTION_MAP_GLOBAL_VARS
   };
 
 static struct option long_options[]=
@@ -567,6 +571,7 @@ static struct option long_options[]=
   {"visualize-jumps", optional_argument, 0, OPTION_VISUALIZE_JUMPS},
   {"wide", no_argument, NULL, 'w'},
   {"disassembler-color", required_argument, NULL, OPTION_DISASSEMBLER_COLOR},
+  {"map-global-vars", no_argument, NULL, OPTION_MAP_GLOBAL_VARS},
   {NULL, no_argument, NULL, 0}
 };
 
@@ -4521,10 +4526,49 @@ dump_dwarf_section (bfd *abfd, asection *section,
       }
 }
 
-/* Dump the dwarf debugging information.  */
-
 static void
-dump_dwarf (bfd *abfd, bool is_mainfile)
+dump_global_variable_info (bfd *abfd, asection *section,
+		    void *arg)
+{
+  const char *name = bfd_section_name (section);
+  const char *match;
+  bool is_mainfile = *(bool *) arg;
+
+  if (*name == 0)
+    return;
+
+  if (!is_mainfile && !process_links
+      && (section->flags & SEC_DEBUGGING) == 0)
+    return;
+
+  if (startswith (name, ".gnu.linkonce.wi."))
+    match = ".debug_info";
+  else
+    match = name;
+
+  if (((strcmp (debug_displays [info].section.uncompressed_name,match) == 0
+  || strcmp (debug_displays [info].section.compressed_name, match) == 0
+  || strcmp (debug_displays [info].section.xcoff_name, match) == 0))
+  && debug_displays [info].enabled != NULL
+  && *debug_displays [info].enabled)
+    {
+      struct dwarf_section *sec = &debug_displays [info].section;
+
+      if (load_specific_debug_section (info, section, abfd))
+	{
+	  debug_displays [debug_variable_info].display (sec, abfd);
+	  resolve_and_display_variable_info ();
+	  free_mapping_info_struct ();
+	  free_debug_section (info);
+	}
+    }
+}
+
+/* Dump the dwarf debugging information helper.  */
+static void
+dump_dwarf_info (bfd *abfd,
+		 void (*operation) (bfd *, asection *, void *),
+		 bool is_mainfile)
 {
   /* The byte_get pointer should have been set at the start of dump_bfd().  */
   if (byte_get == NULL)
@@ -4550,7 +4594,23 @@ dump_dwarf (bfd *abfd, bool is_mainfile)
   init_dwarf_by_bfd_arch_and_mach (bfd_get_arch (abfd),
 				   bfd_get_mach (abfd));
 
-  bfd_map_over_sections (abfd, dump_dwarf_section, (void *) &is_mainfile);
+  bfd_map_over_sections (abfd, operation, (void *) &is_mainfile);
+}
+
+/* Dump the dwarf debugging information.  */
+
+static void
+dump_dwarf (bfd *abfd, bool is_mainfile)
+{
+  dump_dwarf_info (abfd, dump_dwarf_section, is_mainfile);
+}
+
+/* Dump all global variable information in memory.  */
+
+static void
+dump_global_vars_info (bfd *abfd, bool is_mainfile)
+{
+  dump_dwarf_info (abfd, dump_global_variable_info, is_mainfile);
 }
 
 /* Read ABFD's section SECT_NAME into *CONTENTS, and return a pointer to
@@ -5823,6 +5883,8 @@ dump_bfd (bfd *abfd, bool is_mainfile)
       if (dump_dynamic_symtab)
 	dump_symbols (abfd, true);
     }
+  if (dump_global_vars)
+    dump_global_vars_info (abfd, is_mainfile);
   if (dump_dwarf_section_info)
     dump_dwarf (abfd, is_mainfile);
   if (is_mainfile || process_links)
@@ -6278,6 +6340,11 @@ main (int argc, char **argv)
 	  process_links = true;
 	  do_follow_links = true;
 	  break;
+	case OPTION_MAP_GLOBAL_VARS:
+	  dump_global_vars = true;
+	  dwarf_select_sections_all ();
+	  seenflag = true;
+	  break;
 	case 'W':
 	  seenflag = true;
 	  if (optarg)
@@ -6417,6 +6484,7 @@ main (int argc, char **argv)
 
   dump_any_debugging = (dump_debugging
 			|| dump_dwarf_section_info
+			|| dump_global_vars
 			|| process_links
 			|| with_source_code);
 
