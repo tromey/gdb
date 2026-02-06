@@ -557,14 +557,13 @@ struct block_iterator
    iterates.  Return nullptr if the iteration is finished.  */
   struct compunit_symtab *compunit_symtab () const;
 
-  /* If we're iterating over a single block, this holds the block.
-     Otherwise, it holds the canonical compunit.  */
+  /* If iterating on a global or static blocks, iteration starts from the
+     top-level CU and then continues with the global or static blocks of all
+     the included CUs.  This field holds the compunit of the current block.
 
-  union
-  {
-    struct compunit_symtab *compunit_symtab;
-    const struct block *block;
-  } d;
+     This field is not private because block_iterator must remain trivial,
+     but treat it as private.  */
+  struct compunit_symtab *compunit_symtab_;
 
   /* If we're trying to match a name, this will be non-NULL.  */
   const lookup_name_info *name;
