@@ -4495,10 +4495,6 @@ dump_dwarf_section (bfd *abfd, asection *section,
   else
     match = name;
 
-  if (bfd_get_flavour (abfd) == bfd_target_elf_flavour
-      && elf_section_type (section) == SHT_GNU_SFRAME)
-    match = ".sframe";
-
   for (i = 0; i < max; i++)
     if ((strcmp (debug_displays [i].section.uncompressed_name, match) == 0
 	 || strcmp (debug_displays [i].section.compressed_name, match) == 0
@@ -5043,33 +5039,36 @@ dump_ctf (bfd *abfd ATTRIBUTE_UNUSED, const char *sect_name ATTRIBUTE_UNUSED,
 #endif
 
 static void
-dump_sframe_section (bfd *abfd, const char *sect_name, bool is_mainfile)
+dump_sframe_section (bfd *abfd, const char *sect_name)
 
 {
   /* Error checking for user provided SFrame section name, if any.  */
-  if (sect_name)
+  asection *sec = bfd_get_section_by_name (abfd, sect_name);
+  if (sec == NULL)
     {
-      asection *sec = bfd_get_section_by_name (abfd, sect_name);
-      if (sec == NULL)
-	{
-	  printf (_("No %s section present\n\n"), sanitize_string (sect_name));
-	  return;
-	}
-      /* Starting with Binutils 2.45, SFrame sections have section type
-	 SHT_GNU_SFRAME.  For SFrame sections from Binutils 2.44 or earlier,
-	 check explcitly for SFrame sections of type SHT_PROGBITS and name
-	 ".sframe" to allow them.  */
-      else if (bfd_get_flavour (abfd) != bfd_target_elf_flavour
-	       || (elf_section_type (sec) != SHT_GNU_SFRAME
-		   && !(elf_section_type (sec) == SHT_PROGBITS
-			&& strcmp (sect_name, ".sframe") == 0)))
-	{
-	  printf (_("Section %s does not contain SFrame data\n\n"),
-		  sanitize_string (sect_name));
-	  return;
-	}
+      printf (_("No %s section present\n\n"), sanitize_string (sect_name));
+      return;
     }
-  dump_dwarf (abfd, is_mainfile);
+  /* Starting with Binutils 2.45, SFrame sections have section type
+     SHT_GNU_SFRAME.  For SFrame sections from Binutils 2.44 or earlier,
+     check explcitly for SFrame sections of type SHT_PROGBITS and name
+     ".sframe" to allow them.  */
+  else if (bfd_get_flavour (abfd) != bfd_target_elf_flavour
+	   || (elf_section_type (sec) != SHT_GNU_SFRAME
+	       && !(elf_section_type (sec) == SHT_PROGBITS
+		    && strcmp (sect_name, ".sframe") == 0)))
+    {
+      printf (_("Section %s does not contain SFrame data\n\n"),
+	      sanitize_string (sect_name));
+      return;
+    }
+
+  if (!load_specific_debug_section (sframe, sec, (void *) abfd))
+    return;
+
+  struct dwarf_section *section = &debug_displays[sframe].section;
+  section->name = sect_name;
+  debug_displays[sframe].display (section, abfd);
 }
 
 
@@ -5893,7 +5892,7 @@ dump_bfd (bfd *abfd, bool is_mainfile)
 	dump_ctf (abfd, dump_ctf_section_name, dump_ctf_parent_name,
 		  dump_ctf_parent_section_name);
       if (dump_sframe_section_info)
-	dump_sframe_section (abfd, dump_sframe_section_name, is_mainfile);
+	dump_sframe_section (abfd, dump_sframe_section_name);
       if (dump_stab_section_info)
 	dump_stabs (abfd);
       if (dump_reloc_info && ! disassemble)
@@ -6362,9 +6361,7 @@ main (int argc, char **argv)
 	  seenflag = true;
 	  if (optarg)
 	    {
-	      if (strcmp (optarg, "sframe-internal-only") == 0)
-		warn (_("Unrecognized debug option 'sframe-internal-only'\n"));
-	      else if (dwarf_select_sections_by_names (optarg))
+	      if (dwarf_select_sections_by_names (optarg))
 		dump_dwarf_section_info = true;
 	    }
 	  else
@@ -6409,12 +6406,7 @@ main (int argc, char **argv)
 	  if (optarg)
 	    dump_sframe_section_name = xstrdup (optarg);
 	  else
-	    dump_sframe_section_name = ".sframe";
-
-	  /* Error checking for dump_sframe_section_name is done in
-	     dump_sframe_section ().  Initialize for now with the default
-	     internal name: "sframe-internal-only".  */
-	  dwarf_select_sections_by_names ("sframe-internal-only");
+	    dump_sframe_section_name = xstrdup (".sframe");
 
 	  seenflag = true;
 	  break;
@@ -6507,6 +6499,7 @@ main (int argc, char **argv)
   free (dump_ctf_parent_name);
   free ((void *) source_comment);
   free (dump_ctf_parent_section_name);
+  free (dump_sframe_section_name);
 
   return exit_status;
 }
