@@ -442,6 +442,10 @@ initialize_block_iterator (const struct block *block,
 compunit_symtab *
 block_iterator::compunit_symtab () const
 {
+  /* The compunit field is only used when iterating over global or static
+     blocks.  */
+  gdb_assert (this->which != FIRST_LOCAL_BLOCK);
+
   if (this->idx == -1)
     return this->compunit_symtab_;
 
