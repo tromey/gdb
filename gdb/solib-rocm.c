@@ -235,7 +235,7 @@ get_solib_info (inferior *inf)
   solib_info *info = rocm_solib_data.get (inf);
 
   if (info == nullptr)
-    info = rocm_solib_data.emplace (inf, inf);
+    info = &rocm_solib_data.emplace (inf, inf);
 
   return info;
 }

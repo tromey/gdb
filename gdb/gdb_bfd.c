@@ -1258,7 +1258,7 @@ get_bfd_inferior_data (struct inferior *inf)
 
   data = bfd_inferior_data_key.get (inf);
   if (data == nullptr)
-    data = bfd_inferior_data_key.emplace (inf);
+    data = &bfd_inferior_data_key.emplace (inf);
 
   return data;
 }

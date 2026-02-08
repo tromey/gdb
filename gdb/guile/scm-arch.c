@@ -124,7 +124,7 @@ arscm_scm_from_arch (struct gdbarch *gdbarch)
 	 is no call to scm_gc_unprotect_object for it.  */
       scm_gc_protect_object (arch_scm);
 
-      data = arch_object_data.emplace (gdbarch);
+      data = &arch_object_data.emplace (gdbarch);
       data->arch_scm = arch_scm;
     }
 

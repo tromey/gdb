@@ -44,7 +44,7 @@ get_svr4_tls_gdbarch_data (struct gdbarch *gdbarch)
 {
   struct svr4_tls_gdbarch_data *result = svr4_tls_gdbarch_data_handle.get (gdbarch);
   if (result == nullptr)
-    result = svr4_tls_gdbarch_data_handle.emplace (gdbarch);
+    result = &svr4_tls_gdbarch_data_handle.emplace (gdbarch);
   return result;
 }
 

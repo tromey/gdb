@@ -124,7 +124,7 @@ public:
        available.  It emplaces a new instance of the associated data
        type and attaches it to OBJ using this key.  The arguments, if
        any, are forwarded to the constructor.  */
-    template<typename Dummy = DATA *, typename... Args>
+    template<typename Dummy = DATA &, typename... Args>
     typename std::enable_if<std::is_same<Deleter,
 					 std::default_delete<DATA>>::value,
 			    Dummy>::type
@@ -132,7 +132,7 @@ public:
     {
       DATA *result = new DATA (std::forward<Args> (args)...);
       set (obj, result);
-      return result;
+      return *result;
     }
 
     /* Clear the data attached to OBJ that is associated with this KEY.

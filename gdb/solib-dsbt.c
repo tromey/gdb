@@ -202,7 +202,7 @@ get_dsbt_info (program_space *pspace)
   if (info != nullptr)
     return info;
 
-  return solib_dsbt_pspace_data.emplace (pspace);
+  return &solib_dsbt_pspace_data.emplace (pspace);
 }
 
 

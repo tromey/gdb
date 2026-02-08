@@ -643,7 +643,7 @@ get_inflow_inferior_data (struct inferior *inf)
 
   info = inflow_inferior_data.get (inf);
   if (info == NULL)
-    info = inflow_inferior_data.emplace (inf);
+    info = &inflow_inferior_data.emplace (inf);
 
   return info;
 }

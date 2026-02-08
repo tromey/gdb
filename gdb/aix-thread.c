@@ -209,7 +209,7 @@ get_aix_thread_variables_data (struct inferior *inf)
 
   data = aix_thread_variables_handle.get (inf);
   if (data == NULL)
-    data = aix_thread_variables_handle.emplace (inf);
+    data = &aix_thread_variables_handle.emplace (inf);
 
   return data;
 }

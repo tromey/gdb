@@ -128,7 +128,7 @@ libunwind_descr (struct gdbarch *gdbarch)
 {
   struct libunwind_descr *result = libunwind_descr_handle.get (gdbarch);
   if (result == nullptr)
-    result = libunwind_descr_handle.emplace (gdbarch);
+    result = &libunwind_descr_handle.emplace (gdbarch);
   return result;
 }
 

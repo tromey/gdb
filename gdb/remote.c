@@ -1729,7 +1729,7 @@ get_remote_progspace_info (program_space *pspace)
 {
   remote_per_progspace *info = remote_pspace_data.get (pspace);
   if (info == nullptr)
-    info = remote_pspace_data.emplace (pspace);
+    info = &remote_pspace_data.emplace (pspace);
   gdb_assert (info != nullptr);
   return *info;
 }
@@ -13101,7 +13101,7 @@ get_g_packet_data (struct gdbarch *gdbarch)
   struct remote_g_packet_data *data
     = remote_g_packet_data_handle.get (gdbarch);
   if (data == nullptr)
-    data = remote_g_packet_data_handle.emplace (gdbarch);
+    data = &remote_g_packet_data_handle.emplace (gdbarch);
   return data;
 }
 

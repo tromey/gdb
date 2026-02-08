@@ -86,7 +86,7 @@ get_catch_syscall_inferior_data (struct inferior *inf)
 
   inf_data = catch_syscall_inferior_data.get (inf);
   if (inf_data == NULL)
-    inf_data = catch_syscall_inferior_data.emplace (inf);
+    inf_data = &catch_syscall_inferior_data.emplace (inf);
 
   return inf_data;
 }

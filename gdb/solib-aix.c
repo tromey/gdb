@@ -100,7 +100,7 @@ get_solib_aix_inferior_data (struct inferior *inf)
 
   data = solib_aix_inferior_data_handle.get (inf);
   if (data == NULL)
-    data = solib_aix_inferior_data_handle.emplace (inf);
+    data = &solib_aix_inferior_data_handle.emplace (inf);
 
   return data;
 }

@@ -498,7 +498,7 @@ get_fbsd_gdbarch_data (struct gdbarch *gdbarch)
 {
   struct fbsd_gdbarch_data *result = fbsd_gdbarch_data_handle.get (gdbarch);
   if (result == nullptr)
-    result = fbsd_gdbarch_data_handle.emplace (gdbarch);
+    result = &fbsd_gdbarch_data_handle.emplace (gdbarch);
   return result;
 }
 
@@ -528,7 +528,7 @@ get_fbsd_pspace_data (struct program_space *pspace)
 
   data = fbsd_pspace_data_handle.get (pspace);
   if (data == NULL)
-    data = fbsd_pspace_data_handle.emplace (pspace);
+    data = &fbsd_pspace_data_handle.emplace (pspace);
 
   return data;
 }

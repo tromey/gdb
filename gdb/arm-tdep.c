@@ -2571,7 +2571,7 @@ arm_exidx_new_objfile (struct objfile *objfile)
     }
 
   /* Allocate exception table data structure.  */
-  data = arm_exidx_data_key.emplace (objfile->obfd.get ());
+  data = &arm_exidx_data_key.emplace (objfile->obfd.get ());
   data->section_maps.resize (objfile->obfd->section_count);
 
   /* Fill in exception table.  */
@@ -9745,8 +9745,8 @@ arm_record_special_symbol (struct gdbarch *gdbarch, struct objfile *objfile,
 
   data = arm_bfd_data_key.get (objfile->obfd.get ());
   if (data == NULL)
-    data = arm_bfd_data_key.emplace (objfile->obfd.get (),
-				     objfile->obfd->section_count);
+    data = &arm_bfd_data_key.emplace (objfile->obfd.get (),
+				      objfile->obfd->section_count);
   arm_mapping_symbol_vec &map
     = data->section_maps[bfd_asymbol_section (sym)->index];
 

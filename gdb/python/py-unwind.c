@@ -996,7 +996,7 @@ pyuw_on_new_gdbarch (gdbarch *newarch)
 {
   struct pyuw_gdbarch_data_type *data = pyuw_gdbarch_data.get (newarch);
   if (data == nullptr)
-    data= pyuw_gdbarch_data.emplace (newarch);
+    data = &pyuw_gdbarch_data.emplace (newarch);
 
   if (!data->unwinder_registered)
     {

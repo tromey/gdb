@@ -610,7 +610,7 @@ get_frame_ops (struct gdbarch *gdbarch)
 {
   dwarf2_frame_ops *result = dwarf2_frame_data.get (gdbarch);
   if (result == nullptr)
-    result = dwarf2_frame_data.emplace (gdbarch);
+    result = &dwarf2_frame_data.emplace (gdbarch);
   return result;
 }
 

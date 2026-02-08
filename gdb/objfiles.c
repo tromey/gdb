@@ -92,7 +92,7 @@ get_objfile_pspace_data (struct program_space *pspace)
 
   info = objfiles_pspace_data.get (pspace);
   if (info == NULL)
-    info = objfiles_pspace_data.emplace (pspace);
+    info = &objfiles_pspace_data.emplace (pspace);
 
   return info;
 }

@@ -165,7 +165,7 @@ get_ppc_per_inferior (inferior *inf)
   ppc_inferior_data *per_inf = ppc_inferior_data_key.get (inf);
 
   if (per_inf == nullptr)
-    per_inf = ppc_inferior_data_key.emplace (inf);
+    per_inf = &ppc_inferior_data_key.emplace (inf);
 
   return per_inf;
 }

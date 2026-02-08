@@ -1318,7 +1318,7 @@ get_symbol_cache (struct program_space *pspace)
 
   if (cache == NULL)
     {
-      cache = symbol_cache_key.emplace (pspace);
+      cache = &symbol_cache_key.emplace (pspace);
       resize_symbol_cache (cache, symbol_cache_size);
     }
 
@@ -6290,7 +6290,7 @@ get_main_info (program_space *pspace)
 	 gdb returned "main" as the name even if no function named
 	 "main" was defined the program; and this approach lets us
 	 keep compatibility.  */
-      info = main_progspace_key.emplace (pspace);
+      info = &main_progspace_key.emplace (pspace);
     }
 
   return info;

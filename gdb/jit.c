@@ -1153,7 +1153,7 @@ jit_prepend_unwinder (struct gdbarch *gdbarch)
 {
   struct jit_gdbarch_data_type *data = jit_gdbarch_data.get (gdbarch);
   if (data == nullptr)
-    data = jit_gdbarch_data.emplace (gdbarch);
+    data = &jit_gdbarch_data.emplace (gdbarch);
 
   if (!data->unwinder_registered)
     {

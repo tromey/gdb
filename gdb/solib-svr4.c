@@ -471,7 +471,7 @@ get_svr4_info (program_space *pspace)
   struct svr4_info *info = solib_svr4_pspace_data.get (pspace);
 
   if (info == NULL)
-    info = solib_svr4_pspace_data.emplace (pspace);
+    info = &solib_svr4_pspace_data.emplace (pspace);
 
   return info;
 }

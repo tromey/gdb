@@ -113,7 +113,7 @@ get_reggroups (struct gdbarch *gdbarch)
 {
   struct reggroups *groups = reggroups_data.get (gdbarch);
   if (groups == nullptr)
-    groups = reggroups_data.emplace (gdbarch);
+    groups = &reggroups_data.emplace (gdbarch);
   return groups;
 }
 

@@ -711,7 +711,7 @@ dwarf_expr_context::address_type () const
   gdbarch *arch = this->m_per_objfile->objfile->arch ();
   dwarf_gdbarch_types *types = dwarf_arch_cookie.get (arch);
   if (types == nullptr)
-    types = dwarf_arch_cookie.emplace (arch);
+    types = &dwarf_arch_cookie.emplace (arch);
   int ndx;
 
   if (this->m_addr_size == 2)

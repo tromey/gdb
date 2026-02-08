@@ -72,7 +72,7 @@ get_frame_base_table (struct gdbarch *gdbarch)
 {
   struct frame_base_table *table = frame_base_data.get (gdbarch);
   if (table == nullptr)
-    table = frame_base_data.emplace (gdbarch);
+    table = &frame_base_data.emplace (gdbarch);
   return table;
 }
 

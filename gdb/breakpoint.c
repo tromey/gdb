@@ -3657,7 +3657,7 @@ get_breakpoint_objfile_data (struct objfile *objfile)
 
   bp_objfile_data = breakpoint_objfile_key.get (objfile);
   if (bp_objfile_data == NULL)
-    bp_objfile_data = breakpoint_objfile_key.emplace (objfile);
+    bp_objfile_data = &breakpoint_objfile_key.emplace (objfile);
   return bp_objfile_data;
 }
 

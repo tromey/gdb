@@ -612,7 +612,7 @@ get_auto_load_pspace_data (struct program_space *pspace)
 
   info = auto_load_pspace_data.get (pspace);
   if (info == NULL)
-    info = auto_load_pspace_data.emplace (pspace);
+    info = &auto_load_pspace_data.emplace (pspace);
 
   return info;
 }

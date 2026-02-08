@@ -226,7 +226,7 @@ get_source_location (program_space *pspace)
   current_source_location *loc
     = current_source_key.get (pspace);
   if (loc == nullptr)
-    loc = current_source_key.emplace (pspace);
+    loc = &current_source_key.emplace (pspace);
   return loc;
 }
 

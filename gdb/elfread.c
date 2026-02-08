@@ -1295,7 +1295,7 @@ elf_get_probes (struct objfile *objfile)
 
   if (probes_per_bfd == NULL)
     {
-      probes_per_bfd = probe_key.emplace (objfile->obfd.get ());
+      probes_per_bfd = &probe_key.emplace (objfile->obfd.get ());
 
       /* Here we try to gather information about all types of probes from the
 	 objfile.  */

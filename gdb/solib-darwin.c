@@ -106,7 +106,7 @@ get_darwin_info (program_space *pspace)
   if (info != nullptr)
     return info;
 
-  return solib_darwin_pspace_data.emplace (pspace);
+  return &solib_darwin_pspace_data.emplace (pspace);
 }
 
 /* Return non-zero if the version in dyld_all_image is known.  */

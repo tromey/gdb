@@ -445,7 +445,7 @@ get_arch_data (struct gdbarch *gdbarch)
 {
   tdesc_arch_data *result = tdesc_data.get (gdbarch);
   if (result == nullptr)
-    result = tdesc_data.emplace (gdbarch);
+    result = &tdesc_data.emplace (gdbarch);
   return result;
 }
 

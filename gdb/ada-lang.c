@@ -311,7 +311,7 @@ get_ada_inferior_data (struct inferior *inf)
 
   data = ada_inferior_data.get (inf);
   if (data == NULL)
-    data = ada_inferior_data.emplace (inf);
+    data = &ada_inferior_data.emplace (inf);
 
   return data;
 }
@@ -399,7 +399,7 @@ get_ada_pspace_data (struct program_space *pspace)
 {
   cache_entry_set *data = ada_pspace_data_handle.get (pspace);
   if (data == nullptr)
-    data = ada_pspace_data_handle.emplace (pspace);
+    data = &ada_pspace_data_handle.emplace (pspace);
 
   return *data;
 }

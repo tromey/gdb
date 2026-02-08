@@ -1213,7 +1213,8 @@ dwarf2_has_info (struct objfile *objfile,
 	  just_created = true;
 	}
 
-      per_objfile = dwarf2_objfile_data_key.emplace (objfile, objfile, per_bfd);
+      per_objfile
+	= &dwarf2_objfile_data_key.emplace (objfile, objfile, per_bfd);
     }
 
   /* Virtual sections are created from DWP files.  It's not clear those

@@ -300,7 +300,7 @@ get_ada_tasks_pspace_data (struct program_space *pspace)
 
   data = ada_tasks_pspace_data_handle.get (pspace);
   if (data == NULL)
-    data = ada_tasks_pspace_data_handle.emplace (pspace);
+    data = &ada_tasks_pspace_data_handle.emplace (pspace);
 
   return data;
 }
@@ -324,7 +324,7 @@ get_ada_tasks_inferior_data (struct inferior *inf)
 
   data = ada_tasks_inferior_data_handle.get (inf);
   if (data == NULL)
-    data = ada_tasks_inferior_data_handle.emplace (inf);
+    data = &ada_tasks_inferior_data_handle.emplace (inf);
 
   return data;
 }

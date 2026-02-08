@@ -117,7 +117,7 @@ get_checkpoint_inferior_data (struct inferior *inf)
 
   data = checkpoint_inferior_data_key.get (inf);
   if (data == nullptr)
-    data = checkpoint_inferior_data_key.emplace (inf);
+    data = &checkpoint_inferior_data_key.emplace (inf);
 
   return data;
 }

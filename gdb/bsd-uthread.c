@@ -86,7 +86,7 @@ get_bsd_uthread (struct gdbarch *gdbarch)
 {
   struct bsd_uthread_ops *ops = bsd_uthread_data.get (gdbarch);
   if (ops == nullptr)
-    ops = bsd_uthread_data.emplace (gdbarch);
+    ops = &bsd_uthread_data.emplace (gdbarch);
   return ops;
 }
 

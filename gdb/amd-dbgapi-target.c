@@ -372,7 +372,7 @@ get_amd_dbgapi_inferior_info (inferior *inferior)
   amd_dbgapi_inferior_info *info = amd_dbgapi_inferior_data.get (inferior);
 
   if (info == nullptr)
-    info = amd_dbgapi_inferior_data.emplace (inferior, inferior);
+    info = &amd_dbgapi_inferior_data.emplace (inferior, inferior);
 
   return *info;
 }

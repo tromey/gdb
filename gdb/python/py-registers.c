@@ -143,7 +143,7 @@ gdbpy_get_register_descriptor (struct gdbarch *gdbarch,
 {
   gdbpy_register_type *vecp = gdbpy_register_object_data.get (gdbarch);
   if (vecp == nullptr)
-    vecp = gdbpy_register_object_data.emplace (gdbarch);
+    vecp = &gdbpy_register_object_data.emplace (gdbarch);
   gdbpy_register_type &vec = *vecp;
 
   /* Ensure that we have enough entries in the vector.  */

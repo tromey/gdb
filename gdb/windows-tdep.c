@@ -192,7 +192,7 @@ get_windows_gdbarch_data (struct gdbarch *gdbarch)
 {
   windows_gdbarch_data *result = windows_gdbarch_data_handle.get (gdbarch);
   if (result == nullptr)
-    result = windows_gdbarch_data_handle.emplace (gdbarch);
+    result = &windows_gdbarch_data_handle.emplace (gdbarch);
   return result;
 }
 
