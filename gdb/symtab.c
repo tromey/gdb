@@ -6280,20 +6280,13 @@ make_source_files_completion_list (const char *text)
 static main_info *
 get_main_info (program_space *pspace)
 {
-  main_info *info = main_progspace_key.get (pspace);
-
-  if (info == NULL)
-    {
-      /* It may seem strange to store the main name in the progspace
-	 and also in whatever objfile happens to see a main name in
-	 its debug info.  The reason for this is mainly historical:
-	 gdb returned "main" as the name even if no function named
-	 "main" was defined the program; and this approach lets us
-	 keep compatibility.  */
-      info = &main_progspace_key.emplace (pspace);
-    }
-
-  return info;
+  /* It may seem strange to store the main name in the progspace
+     and also in whatever objfile happens to see a main name in
+     its debug info.  The reason for this is mainly historical:
+     gdb returned "main" as the name even if no function named
+     "main" was defined the program; and this approach lets us
+     keep compatibility.  */
+  return &main_progspace_key.try_emplace (pspace);
 }
 
 static void

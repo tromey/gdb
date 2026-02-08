@@ -468,12 +468,7 @@ svr4_solib_ops::free_probes_table (svr4_info *info) const
 static struct svr4_info *
 get_svr4_info (program_space *pspace)
 {
-  struct svr4_info *info = solib_svr4_pspace_data.get (pspace);
-
-  if (info == NULL)
-    info = &solib_svr4_pspace_data.emplace (pspace);
-
-  return info;
+  return &solib_svr4_pspace_data.try_emplace (pspace);
 }
 
 /* Local function prototypes */

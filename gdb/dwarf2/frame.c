@@ -608,10 +608,7 @@ static const registry<gdbarch>::key<dwarf2_frame_ops> dwarf2_frame_data;
 static dwarf2_frame_ops *
 get_frame_ops (struct gdbarch *gdbarch)
 {
-  dwarf2_frame_ops *result = dwarf2_frame_data.get (gdbarch);
-  if (result == nullptr)
-    result = &dwarf2_frame_data.emplace (gdbarch);
-  return result;
+  return &dwarf2_frame_data.try_emplace (gdbarch);
 }
 
 /* Default architecture-specific register state initialization

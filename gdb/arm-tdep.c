@@ -9743,10 +9743,8 @@ arm_record_special_symbol (struct gdbarch *gdbarch, struct objfile *objfile,
   if (name[1] != 'a' && name[1] != 't' && name[1] != 'd')
     return;
 
-  data = arm_bfd_data_key.get (objfile->obfd.get ());
-  if (data == NULL)
-    data = &arm_bfd_data_key.emplace (objfile->obfd.get (),
-				      objfile->obfd->section_count);
+  data = &arm_bfd_data_key.try_emplace (objfile->obfd.get (),
+					objfile->obfd->section_count);
   arm_mapping_symbol_vec &map
     = data->section_maps[bfd_asymbol_section (sym)->index];
 

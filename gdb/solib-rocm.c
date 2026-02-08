@@ -232,12 +232,7 @@ private:
 static struct solib_info *
 get_solib_info (inferior *inf)
 {
-  solib_info *info = rocm_solib_data.get (inf);
-
-  if (info == nullptr)
-    info = &rocm_solib_data.emplace (inf, inf);
-
-  return info;
+  return &rocm_solib_data.try_emplace (inf, inf);
 }
 
 /* Relocate section addresses.  */

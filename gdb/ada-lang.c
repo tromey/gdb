@@ -307,13 +307,7 @@ static const registry<inferior>::key<ada_inferior_data> ada_inferior_data;
 static struct ada_inferior_data *
 get_ada_inferior_data (struct inferior *inf)
 {
-  struct ada_inferior_data *data;
-
-  data = ada_inferior_data.get (inf);
-  if (data == NULL)
-    data = &ada_inferior_data.emplace (inf);
-
-  return data;
+  return &ada_inferior_data.try_emplace (inf);
 }
 
 /* Perform all necessary cleanups regarding our module's inferior data
@@ -397,11 +391,7 @@ static const registry<program_space>::key<cache_entry_set>
 static cache_entry_set &
 get_ada_pspace_data (struct program_space *pspace)
 {
-  cache_entry_set *data = ada_pspace_data_handle.get (pspace);
-  if (data == nullptr)
-    data = &ada_pspace_data_handle.emplace (pspace);
-
-  return *data;
+  return ada_pspace_data_handle.try_emplace (pspace);
 }
 
 			/* Utilities */

@@ -135,6 +135,20 @@ public:
       return *result;
     }
 
+    /* If this key uses the default deleter, then this method is
+       available.  It returns the data associated with OBJ and this
+       key.  If no such data has been attached, a new instance is
+       constructed using ARGS and attached to OBJ.  */
+    template<typename... Args>
+    DATA &
+    try_emplace (T *obj, Args &&...args) const
+    {
+      DATA *result = get (obj);
+      if (result == nullptr)
+	result = &emplace (obj, std::forward<Args> (args)...);
+      return *result;
+    }
+
     /* Clear the data attached to OBJ that is associated with this KEY.
        Any existing data is destroyed using the deleter, and the data is
        reset to nullptr.  */

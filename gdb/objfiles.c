@@ -88,13 +88,7 @@ objfile_pspace_info::~objfile_pspace_info ()
 static struct objfile_pspace_info *
 get_objfile_pspace_data (struct program_space *pspace)
 {
-  struct objfile_pspace_info *info;
-
-  info = objfiles_pspace_data.get (pspace);
-  if (info == NULL)
-    info = &objfiles_pspace_data.emplace (pspace);
-
-  return info;
+  return &objfiles_pspace_data.try_emplace (pspace);
 }
 
 

@@ -1254,13 +1254,7 @@ static const registry<inferior>::key<bfd_inferior_data> bfd_inferior_data_key;
 static struct bfd_inferior_data *
 get_bfd_inferior_data (struct inferior *inf)
 {
-  struct bfd_inferior_data *data;
-
-  data = bfd_inferior_data_key.get (inf);
-  if (data == nullptr)
-    data = &bfd_inferior_data_key.emplace (inf);
-
-  return data;
+  return &bfd_inferior_data_key.try_emplace (inf);
 }
 
 /* Increment the BFD error count for STR and return the updated

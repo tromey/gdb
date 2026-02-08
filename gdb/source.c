@@ -223,11 +223,7 @@ get_lines_to_list (void)
 static current_source_location *
 get_source_location (program_space *pspace)
 {
-  current_source_location *loc
-    = current_source_key.get (pspace);
-  if (loc == nullptr)
-    loc = &current_source_key.emplace (pspace);
-  return loc;
+  return &current_source_key.try_emplace (pspace);
 }
 
 /* See source.h.  */
