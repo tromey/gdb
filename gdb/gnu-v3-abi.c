@@ -544,7 +544,6 @@ gnuv3_find_method_in (struct type *domain, CORE_ADDR voffset,
 	  f = TYPE_FN_FIELDLIST1 (domain, i);
 	  len2 = TYPE_FN_FIELDLIST_LENGTH (domain, i);
 
-	  check_stub_method_group (domain, i);
 	  for (j = 0; j < len2; j++)
 	    if (TYPE_FN_FIELD_VOFFSET (f, j) == voffset)
 	      return TYPE_FN_FIELD_PHYSNAME (f, j);
