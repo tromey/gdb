@@ -1288,13 +1288,6 @@ struct symbol : public general_symbol_info, public allocate_on_obstack<symbol>
     return this->impl ().loc_class;
   }
 
-  /* Return true if the symbol is not LOC_UNRESOLVED -- that is, if it
-     is a definition and not just a declaration.  */
-  bool is_definition () const
-  {
-    return loc_class () != LOC_UNRESOLVED;
-  }
-
   /* Return true if this symbol's domain matches FLAGS.  */
   bool matches (domain_search_flags flags) const;
 

@@ -659,6 +659,16 @@ block_iterator_range (const block *block,
   return iterator_range<block_iterator_wrapper> (std::move (begin));
 }
 
+/* Return true if symbol A is the best match possible for DOMAIN.  */
+
+extern bool best_symbol (struct symbol *a, const domain_search_flags domain);
+
+/* Return symbol B if it is a better match than symbol A for DOMAIN.
+   Otherwise return A.  */
+
+extern struct symbol *better_symbol (struct symbol *a, struct symbol *b,
+				     const domain_search_flags domain);
+
 /* Search BLOCK for symbol NAME in DOMAIN.  */
 
 extern struct symbol *block_lookup_symbol (const struct block *block,
@@ -666,8 +676,8 @@ extern struct symbol *block_lookup_symbol (const struct block *block,
 					   const domain_search_flags domain);
 
 /* When searching for a symbol, the "best" symbol is preferred over
-   one that is merely acceptable.  This class keeps track of this
-   distinction while searching.  */
+   one that is merely acceptable.  See 'best_symbol'.  This class
+   keeps track of this distinction while searching.  */
 
 struct best_symbol_tracker
 {

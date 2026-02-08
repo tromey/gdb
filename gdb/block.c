@@ -583,6 +583,46 @@ block_iterator_next (struct block_iterator *iterator)
   return block_iter_match_step (iterator, false);
 }
 
+/* See block.h.  */
+
+bool
+best_symbol (struct symbol *a, const domain_search_flags domain)
+{
+  if (a->loc_class () == LOC_UNRESOLVED)
+    return false;
+
+  if ((domain & SEARCH_VAR_DOMAIN) != 0)
+    return a->domain () == VAR_DOMAIN;
+
+  return a->matches (domain);
+}
+
+/* See block.h.  */
+
+struct symbol *
+better_symbol (struct symbol *a, struct symbol *b,
+	       const domain_search_flags domain)
+{
+  if (a == NULL)
+    return b;
+  if (b == NULL)
+    return a;
+
+  if (a->matches (domain) && !b->matches (domain))
+    return a;
+
+  if (b->matches (domain) && !a->matches (domain))
+    return b;
+
+  if (a->loc_class () != LOC_UNRESOLVED && b->loc_class () == LOC_UNRESOLVED)
+    return a;
+
+  if (b->loc_class () != LOC_UNRESOLVED && a->loc_class () == LOC_UNRESOLVED)
+    return b;
+
+  return a;
+}
+
 /* See block.h.
 
    Note that if NAME is the demangled form of a C++ symbol, we will fail
@@ -642,9 +682,6 @@ best_symbol_tracker::search (compunit_symtab *symtab,
 {
   for (symbol *sym : block_iterator_range (block, &name))
     {
-      if (!sym->matches (domain))
-	continue;
-
       /* With the fix for PR gcc/debug/91507, we get for:
 	 ...
 	 extern char *zzz[];
@@ -666,22 +703,31 @@ best_symbol_tracker::search (compunit_symtab *symtab,
 	 doesn't work either because the type of the decl does not specify a
 	 size.
 
-	 To fix this, we prefer definitions over declarations.
+	 To fix this, we prefer def over decl in best_symbol and
+	 better_symbol.
 
 	 In absence of the gcc fix, both def and decl have type char *[], so
 	 the only option to make this work is improve the fallback to use the
 	 size of the minimal symbol.  Filed as PR exp/24989.  */
-      if (sym->is_definition ())
+      if (best_symbol (sym, domain))
 	{
 	  best_symtab = symtab;
 	  currently_best = { sym, block };
 	  return true;
 	}
 
-      if (currently_best.symbol == nullptr)
+      /* This is a bit of a hack, but 'matches' might ignore
+	 STRUCT vs VAR domain symbols.  So if a matching symbol is found,
+	 make sure there is no "better" matching symbol, i.e., one with
+	 exactly the same domain.  PR 16253.  */
+      if (sym->matches (domain))
 	{
-	  best_symtab = symtab;
-	  currently_best = { sym, block };
+	  symbol *better = better_symbol (sym, currently_best.symbol, domain);
+	  if (better != currently_best.symbol)
+	    {
+	      best_symtab = symtab;
+	      currently_best = { better, block };
+	    }
 	}
     }
 

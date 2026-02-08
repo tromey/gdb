@@ -3130,14 +3130,8 @@ classify_name (struct parser_state *par_state, const struct block *block,
 
   std::string copy = copy_name (yylval.sval);
 
-  /* Prefer variables over functions or types.  This preserves some
-     historical parser behavior.  */
-  bsym = lookup_symbol (copy.c_str (), block, SEARCH_VAR_DOMAIN,
+  bsym = lookup_symbol (copy.c_str (), block, SEARCH_VFT,
 			&is_a_field_of_this);
-  if (bsym.symbol == nullptr)
-    bsym = lookup_symbol (copy.c_str (), block,
-			  SEARCH_FUNCTION_DOMAIN | SEARCH_TYPE_DOMAIN,
-			  &is_a_field_of_this);
 
   if (bsym.symbol && bsym.symbol->loc_class () == LOC_BLOCK)
     {
