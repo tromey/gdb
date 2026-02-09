@@ -19,7 +19,7 @@ require allow_ada_tests gnat_runtime_has_debug_info
 
 standard_ada_testfile foo
 
-if {[gdb_compile_ada "${srcfile}" "${binfile}" executable [list debug additional_flags=-bargs additional_flags=-static additional_flags=-margs ]] != "" } {
+if {[gdb_compile_ada "${srcfile}" "${binfile}" executable [list debug]] != "" } {
     return
 }
 
