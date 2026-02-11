@@ -6991,8 +6991,7 @@ parse_args (struct dump_data *dumpdata, int argc, char ** argv)
 	  else
 	    {
 	      do_dump = true;
-	      const char *sframe_sec_name = strdup (".sframe");
-	      request_dump_byname (sframe_sec_name, SFRAME_DUMP);
+	      request_dump_byname (".sframe", SFRAME_DUMP);
 	    }
 	  break;
 	case OPTION_DYN_SYMS:
