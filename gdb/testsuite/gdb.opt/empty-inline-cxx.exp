@@ -67,7 +67,7 @@ proc run_test { opt_level } {
 	return
     }
 
-    gdb_test "bt" "#0\\s+main \\(\\) at [remote_file_re $::srcfile]:$::decimal" \
+    gdb_test "bt" "#0\\s+(?:$::hex in )?main \\(\\) at [remote_file_re $::srcfile]:$::decimal" \
 	"backtrace in main"
 
     # Break at the empty inline function ptr::get_myclass.
