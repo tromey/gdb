@@ -730,7 +730,7 @@ _bfd_elf_write_section_sframe (bfd *abfd, struct bfd_link_info *info)
       hdr->sh_size = sec->size;
     }
 
-  sframe_encoder_free (&sfe_ctx);
+  sframe_encoder_free (&sfe_info->sfe_ctx);
 
   return retval;
 }

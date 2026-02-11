@@ -1990,7 +1990,10 @@ sframe_encode (uint8_t ver, uint8_t flags, uint8_t abi_arch,
      sframe_encoder_write_sframe assume flag SFRAME_F_FDE_FUNC_START_PCREL
      set.  */
   if (!(flags & SFRAME_F_FDE_FUNC_START_PCREL))
-   return sframe_ret_set_errno (errp, SFRAME_ERR_ECTX_INVAL);
+    {
+      free (ectx);
+      return sframe_ret_set_errno (errp, SFRAME_ERR_ECTX_INVAL);
+    }
 
   hp->sfh_abi_arch = abi_arch;
   hp->sfh_cfa_fixed_fp_offset = fixed_fp_offset;
