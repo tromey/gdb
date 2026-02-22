@@ -1333,5 +1333,6 @@ extern int eval_python_command (const char *command, int start_symbol,
 				const char *filename = nullptr);
 
 #include "py-wrappers.h"
+#include "py-safety.h"
 
 #endif /* GDB_PYTHON_PYTHON_INTERNAL_H */
