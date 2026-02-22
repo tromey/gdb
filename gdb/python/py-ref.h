@@ -41,6 +41,86 @@ struct gdbpy_ref_policy
 template<typename T = PyObject> using gdbpy_ref
   = gdb::ref_ptr<T, gdbpy_ref_policy>;
 
+/* A class representing an optional borrowed reference.  It is
+   "optional" because NULL is a valid value.
+
+   This is a simple wrapper for a PyObject*.  Aside from documenting
+   what the code does, the main advantage of using this is that
+   conversion to a gdbpy_ref<> is prevented.
+
+   An optional borrowed reference is only used in situations where
+   Python says NULL is valid.  For example, it is used as the type of
+   the "keywords" argument to a varargs method.  Most code should
+   prefer an ordinary gdbpy_borrowed_ref, see below.  */
+class gdbpy_opt_borrowed_ref
+{
+public:
+
+  gdbpy_opt_borrowed_ref (PyObject *obj)
+    : m_obj (obj)
+  {
+  }
+
+  template<typename T>
+  gdbpy_opt_borrowed_ref (const gdbpy_ref<T> &ref)
+    : m_obj (ref.get ())
+  {
+  }
+
+  operator PyObject * ()
+  {
+    return m_obj;
+  }
+
+  operator gdbpy_ref<> () = delete;
+
+protected:
+  PyObject *m_obj;
+};
+
+/* A borrowed reference that is guaranteed not to be NULL.
+
+   Like gdbpy_opt_borrowed_ref, this mostly serves a documentary
+   purpose.  However, it also allows a checked cast to any subclass of
+   PyObject, and conversion to a gdbpy_ref<> will automatically
+   acquire a new reference -- a safety improvement over plain
+   PyObject*.  */
+class gdbpy_borrowed_ref : public gdbpy_opt_borrowed_ref
+{
+public:
+
+  gdbpy_borrowed_ref (PyObject *obj)
+    : gdbpy_opt_borrowed_ref (obj)
+  {
+    gdb_assert (m_obj != nullptr);
+  }
+
+  template<typename T>
+  gdbpy_borrowed_ref (const gdbpy_ref<T> &ref)
+    : gdbpy_opt_borrowed_ref (ref)
+  {
+    gdb_assert (m_obj != nullptr);
+  }
+
+  gdbpy_borrowed_ref (std::nullptr_t) = delete;
+
+  /* Allow a (checked) conversion to any subclass of PyObject.  */
+  template<typename T,
+	   typename = std::is_convertible<T *, PyObject *>>
+  operator T * ()
+  {
+    gdb_assert (PyObject_TypeCheck (m_obj, T::corresponding_object_type));
+    return static_cast<T *> (m_obj);
+  }
+
+  /* When converting a borrowed reference to a gdbpy_ref<>, a new
+     reference is acquired.  */
+  operator gdbpy_ref<> ()
+  {
+    return gdbpy_ref<>::new_reference (m_obj);
+  }
+};
+
 /* A wrapper class for Python extension objects that have a __dict__ attribute.
 
    Any Python C object extension needing __dict__ should inherit from this
