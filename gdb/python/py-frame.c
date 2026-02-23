@@ -229,13 +229,7 @@ frame_object::read_register (gdbpy_borrowed_ref<> args,
   scoped_value_mark free_values;
   frame_info_ptr frame = require_frame ();
 
-  int regnum;
-  if (!gdbpy_parse_register_id (get_frame_arch (frame), pyo_reg_id, &regnum))
-    {
-      /* FIXME: Python safety.  gdbpy_parse_register_id should throw
-	 on error.  */
-      throw gdb_python_exception ();
-    }
+  int regnum = gdbpy_parse_register_id (get_frame_arch (frame), pyo_reg_id);
 
   gdb_assert (regnum >= 0);
   value *val
