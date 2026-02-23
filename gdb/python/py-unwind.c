@@ -322,8 +322,7 @@ unwind_infopy_add_saved_register (gdbpy_borrowed_ref self,
 				      &pyo_reg_id, &value_object_type,
 				      &pyo_reg_value);
 
-  if (!gdbpy_parse_register_id (pending_frame->gdbarch, pyo_reg_id, &regnum))
-    throw gdb_python_exception (); /* FIXME */
+  regnum = gdbpy_parse_register_id (pending_frame->gdbarch, pyo_reg_id);
 
   /* If REGNUM identifies a user register then *maybe* we can convert this
      to a real (i.e. non-user) register.  The maybe qualifier is because we
@@ -465,9 +464,7 @@ pending_framepy_read_register (gdbpy_borrowed_ref self,
   static const char *keywords[] = { "register", nullptr };
   gdbpy_arg_parse_tuple_and_keywords (args, kw, "O", keywords, &pyo_reg_id);
 
-  int regnum;
-  if (!gdbpy_parse_register_id (pending_frame->gdbarch, pyo_reg_id, &regnum))
-    throw gdb_python_exception (); /* FIXME */
+  int regnum = gdbpy_parse_register_id (pending_frame->gdbarch, pyo_reg_id);
 
   scoped_value_mark free_values;
 

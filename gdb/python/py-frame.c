@@ -188,12 +188,7 @@ frapy_read_register (gdbpy_borrowed_ref self, gdbpy_borrowed_ref args,
   scoped_value_mark free_values;
   frame_info_ptr frame = require_frame (self);
 
-  int regnum;
-  if (!gdbpy_parse_register_id (get_frame_arch (frame), pyo_reg_id, &regnum))
-    {
-      // FIXME future conversion
-      throw gdb_python_exception ();
-    }
+  int regnum = gdbpy_parse_register_id (get_frame_arch (frame), pyo_reg_id);
 
   gdb_assert (regnum >= 0);
   value *val

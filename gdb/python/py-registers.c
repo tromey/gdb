@@ -349,61 +349,48 @@ register_descriptor_iter_find (PyObject *self, PyObject *args, PyObject *kw)
 
 /* See python-internal.h.  */
 
-bool
-gdbpy_parse_register_id (struct gdbarch *gdbarch, PyObject *pyo_reg_id,
-			 int *reg_num)
+int
+gdbpy_parse_register_id (struct gdbarch *gdbarch,
+			 gdbpy_borrowed_ref pyo_reg_id)
 {
   gdb_assert (pyo_reg_id != NULL);
 
   /* The register could be a string, its name.  */
   if (gdbpy_is_string (pyo_reg_id))
     {
-      gdb::unique_xmalloc_ptr<char> reg_name (gdbpy_obj_to_string (pyo_reg_id));
+      gdb::unique_xmalloc_ptr<char> reg_name
+	= gdbpy_obj_to_string (pyo_reg_id);
 
-      if (reg_name != NULL)
-	{
-	  *reg_num = user_reg_map_name_to_regnum (gdbarch, reg_name.get ());
-	  if (*reg_num >= 0)
-	    return true;
-	  PyErr_SetString (PyExc_ValueError, "Bad register");
-	}
+      if (reg_name == nullptr)
+	throw gdb_python_exception (); /* FIXME */
+
+      int reg_num = user_reg_map_name_to_regnum (gdbarch, reg_name.get ());
+      if (reg_num >= 0)
+	return reg_num;
+      gdbpy_err_set_string (PyExc_ValueError, "Bad register");
     }
   /* The register could be its internal GDB register number.  */
   else if (PyLong_Check (pyo_reg_id))
     {
-      long value;
-      if (gdb_py_int_as_long (pyo_reg_id, &value) == 0)
-	{
-	  /* Nothing -- error.  */
-	}
-      else if ((int) value == value
-	       && user_reg_map_regnum_to_name (gdbarch, value) != NULL)
-	{
-	  *reg_num = (int) value;
-	  return true;
-	}
+      long value = gdbpy_long_as_long (pyo_reg_id);
+      if ((int) value == value
+	  && user_reg_map_regnum_to_name (gdbarch, value) != nullptr)
+	return (int) value;
       else
-	PyErr_SetString (PyExc_ValueError, "Bad register");
+	gdbpy_err_set_string (PyExc_ValueError, "Bad register");
     }
   /* The register could be a gdb.RegisterDescriptor object.  */
   else if (PyObject_TypeCheck (pyo_reg_id, &register_descriptor_object_type))
     {
-      register_descriptor_object *reg
-	= (register_descriptor_object *) pyo_reg_id;
+      register_descriptor_object *reg = pyo_reg_id;
       if (reg->gdbarch == gdbarch)
-	{
-	  *reg_num = reg->regnum;
-	  return true;
-	}
+	return reg->regnum;
       else
-	PyErr_SetString (PyExc_ValueError,
-			 _("Invalid Architecture in RegisterDescriptor"));
+	gdbpy_err_set_string (PyExc_ValueError,
+			      _("Invalid Architecture in RegisterDescriptor"));
     }
   else
-    PyErr_SetString (PyExc_TypeError, _("Invalid type for register"));
-
-  gdb_assert (PyErr_Occurred ());
-  return false;
+    gdbpy_err_set_string (PyExc_TypeError, _("Invalid type for register"));
 }
 
 /* Initializes the new Python classes from this file in the gdb module.  */
