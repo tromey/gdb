@@ -414,4 +414,14 @@ gdbpy_safe_invalid_object_repr (gdbpy_borrowed_ref<> self)
   return result;
 }
 
+/* A wrapper for gdbpy_obj_to_string that throws on error.  */
+static inline gdb::unique_xmalloc_ptr<char>
+gdbpy_safe_obj_to_string (gdbpy_borrowed_ref<> obj)
+{
+  gdb::unique_xmalloc_ptr<char> result = gdbpy_obj_to_string (obj);
+  if (result == nullptr)
+    throw gdb_python_exception ();
+  return result;
+}
+
 #endif /* GDB_PYTHON_PY_WRAPPERS_H */
