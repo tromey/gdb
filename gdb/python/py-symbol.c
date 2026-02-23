@@ -47,213 +47,146 @@ struct symbol_object : public PyObject
 static const gdbpy_registry<gdbpy_memoizing_registry_storage<symbol_object,
   symbol, &symbol_object::symbol>> sympy_registry;
 
-static PyObject *
-sympy_str (PyObject *self)
+/* Require a valid symbol.  If it is valid, return the underlying
+   symbol.  Otherwise, throw an exception.  */
+static symbol *
+require_valid (gdbpy_borrowed_ref obj)
 {
-  PyObject *result;
-  struct symbol *symbol = NULL;
-
-  SYMPY_REQUIRE_VALID (self, symbol);
-
-  result = PyUnicode_FromString (symbol->print_name ());
-
+  symbol *result = symbol_object_to_symbol (obj);
+  if (result == nullptr)
+    gdbpy_err_set_string (PyExc_RuntimeError, _("Symbol is invalid."));
   return result;
 }
 
-static PyObject *
-sympy_get_type (PyObject *self, void *closure)
+static gdbpy_ref<>
+sympy_str (gdbpy_borrowed_ref self)
 {
-  struct symbol *symbol = NULL;
+  struct symbol *symbol = require_valid (self);
+  return gdbpy_unicode_from_string (symbol->print_name ());
+}
 
-  SYMPY_REQUIRE_VALID (self, symbol);
+static gdbpy_ref<>
+sympy_get_type (gdbpy_borrowed_ref self)
+{
+  struct symbol *symbol = require_valid (self);
 
   if (symbol->type () == NULL)
-    {
-      Py_INCREF (Py_None);
-      return Py_None;
-    }
+    return gdbpy_ref<>::new_reference (Py_None);
 
-  return type_to_type_object (symbol->type ()).release ();
+  return type_to_type_object (symbol->type ());
 }
 
-static PyObject *
-sympy_get_symtab (PyObject *self, void *closure)
+static gdbpy_ref<>
+sympy_get_symtab (gdbpy_borrowed_ref self)
 {
-  struct symbol *symbol = NULL;
-
-  SYMPY_REQUIRE_VALID (self, symbol);
+  struct symbol *symbol = require_valid (self);
 
   if (!symbol->is_objfile_owned ())
-    Py_RETURN_NONE;
+    return gdbpy_ref<>::new_reference (Py_None);
 
-  return symtab_to_symtab_object (symbol->symtab ()).release ();
+  return symtab_to_symtab_object (symbol->symtab ());
 }
 
-static PyObject *
-sympy_get_name (PyObject *self, void *closure)
+static gdbpy_ref<>
+sympy_get_name (gdbpy_borrowed_ref self)
 {
-  struct symbol *symbol = NULL;
-
-  SYMPY_REQUIRE_VALID (self, symbol);
-
-  return PyUnicode_FromString (symbol->natural_name ());
+  struct symbol *symbol = require_valid (self);
+  return gdbpy_unicode_from_string (symbol->natural_name ());
 }
 
-static PyObject *
-sympy_get_linkage_name (PyObject *self, void *closure)
+static gdbpy_ref<>
+sympy_get_linkage_name (gdbpy_borrowed_ref self)
 {
-  struct symbol *symbol = NULL;
-
-  SYMPY_REQUIRE_VALID (self, symbol);
-
-  return PyUnicode_FromString (symbol->linkage_name ());
+  struct symbol *symbol = require_valid (self);
+  return gdbpy_unicode_from_string (symbol->linkage_name ());
 }
 
-static PyObject *
-sympy_get_print_name (PyObject *self, void *closure)
+static int
+sympy_get_addr_class (gdbpy_borrowed_ref self)
 {
-  struct symbol *symbol = NULL;
-
-  SYMPY_REQUIRE_VALID (self, symbol);
-
-  return sympy_str (self);
-}
-
-static PyObject *
-sympy_get_addr_class (PyObject *self, void *closure)
-{
-  struct symbol *symbol = NULL;
-
-  SYMPY_REQUIRE_VALID (self, symbol);
-
-  return gdb_py_object_from_longest (symbol->loc_class ()).release ();
+  struct symbol *symbol = require_valid (self);
+  return symbol->loc_class ();
 }
 
 /* Implement gdb.Symbol.domain attribute.  Return the domain as an
    integer.  */
 
-static PyObject *
-sympy_get_domain (PyObject *self, void *closure)
+static int
+sympy_get_domain (gdbpy_borrowed_ref self)
 {
-  struct symbol *symbol = nullptr;
-
-  SYMPY_REQUIRE_VALID (self, symbol);
-
-  return gdb_py_object_from_longest (symbol->domain ()).release ();
+  struct symbol *symbol = require_valid (self);
+  return symbol->domain ();
 }
 
-static PyObject *
-sympy_is_argument (PyObject *self, void *closure)
+static bool
+sympy_is_argument (gdbpy_borrowed_ref self)
 {
-  struct symbol *symbol = NULL;
-
-  SYMPY_REQUIRE_VALID (self, symbol);
-
-  return PyBool_FromLong (symbol->is_argument ());
+  struct symbol *symbol = require_valid (self);
+  return symbol->is_argument ();
 }
 
-static PyObject *
-sympy_is_constant (PyObject *self, void *closure)
+static bool
+sympy_is_constant (gdbpy_borrowed_ref self)
 {
-  struct symbol *symbol = NULL;
-
-  SYMPY_REQUIRE_VALID (self, symbol);
-
+  struct symbol *symbol = require_valid (self);
   location_class loc_class = symbol->loc_class ();
-
-  return PyBool_FromLong (loc_class == LOC_CONST || loc_class == LOC_CONST_BYTES);
+  return loc_class == LOC_CONST || loc_class == LOC_CONST_BYTES;
 }
 
-static PyObject *
-sympy_is_function (PyObject *self, void *closure)
+static bool
+sympy_is_function (gdbpy_borrowed_ref self)
 {
-  struct symbol *symbol = NULL;
-
-  SYMPY_REQUIRE_VALID (self, symbol);
-
-  location_class loc_class = symbol->loc_class ();
-
-  return PyBool_FromLong (loc_class == LOC_BLOCK);
+  struct symbol *symbol = require_valid (self);
+  return symbol->loc_class () == LOC_BLOCK;
 }
 
-static PyObject *
-sympy_is_variable (PyObject *self, void *closure)
+static bool
+sympy_is_variable (gdbpy_borrowed_ref self)
 {
-  struct symbol *symbol = NULL;
-
-  SYMPY_REQUIRE_VALID (self, symbol);
-
+  struct symbol *symbol = require_valid (self);
   location_class loc_class = symbol->loc_class ();
-
-  return PyBool_FromLong (!symbol->is_argument ()
-			  && (loc_class == LOC_LOCAL || loc_class == LOC_REGISTER
-			      || loc_class == LOC_STATIC || loc_class == LOC_COMPUTED
-			      || loc_class == LOC_OPTIMIZED_OUT));
+  return (!symbol->is_argument ()
+	  && (loc_class == LOC_LOCAL || loc_class == LOC_REGISTER
+	      || loc_class == LOC_STATIC || loc_class == LOC_COMPUTED
+	      || loc_class == LOC_OPTIMIZED_OUT));
 }
 
 /* Implementation of Symbol.is_artificial.  */
 
-static PyObject *
-sympy_is_artificial (PyObject *self, void *closure)
+static bool
+sympy_is_artificial (gdbpy_borrowed_ref self)
 {
-  struct symbol *symbol = nullptr;
-
-  SYMPY_REQUIRE_VALID (self, symbol);
-
-  return PyBool_FromLong (symbol->is_artificial ());
+  struct symbol *symbol = require_valid (self);
+  return symbol->is_artificial ();
 }
 
 /* Implementation of gdb.Symbol.needs_frame -> Boolean.
    Returns true iff the symbol needs a frame for evaluation.  */
 
-static PyObject *
-sympy_needs_frame (PyObject *self, void *closure)
+static bool
+sympy_needs_frame (gdbpy_borrowed_ref self)
 {
-  struct symbol *symbol = NULL;
-  int result = 0;
-
-  SYMPY_REQUIRE_VALID (self, symbol);
-
-  try
-    {
-      result = symbol_read_needs_frame (symbol);
-    }
-  catch (const gdb_exception &except)
-    {
-      return gdbpy_handle_gdb_exception (nullptr, except);
-    }
-
-  if (result)
-    Py_RETURN_TRUE;
-  Py_RETURN_FALSE;
+  struct symbol *symbol = require_valid (self);
+  return symbol_read_needs_frame (symbol);
 }
 
 /* Implementation of gdb.Symbol.line -> int.
    Returns the line number at which the symbol was defined.  */
 
-static PyObject *
-sympy_line (PyObject *self, void *closure)
+static ULONGEST
+sympy_line (gdbpy_borrowed_ref self)
 {
-  struct symbol *symbol = NULL;
-
-  SYMPY_REQUIRE_VALID (self, symbol);
-
-  return gdb_py_object_from_longest (symbol->line ()).release ();
+  struct symbol *symbol = require_valid (self);
+  return symbol->line ();
 }
 
 /* Implementation of gdb.Symbol.is_valid (self) -> Boolean.
-   Returns True if this Symbol still exists in GDB.  */
+   Returns true if this Symbol still exists in GDB.  */
 
-static PyObject *
-sympy_is_valid (PyObject *self, PyObject *args)
+static bool
+sympy_is_valid (gdbpy_borrowed_ref self)
 {
-  struct symbol *symbol = NULL;
-
-  symbol = symbol_object_to_symbol (self);
-  if (symbol == NULL)
-    Py_RETURN_FALSE;
-
-  Py_RETURN_TRUE;
+  return symbol_object_to_symbol (self) != nullptr;
 }
 
 /* Implementation of gdb.Symbol.value (self[, frame]) -> gdb.Value.  Returns
@@ -383,15 +316,17 @@ sympy_dealloc (PyObject *obj)
 
 /* __repr__ implementation for gdb.Symbol.  */
 
-static PyObject *
-sympy_repr (PyObject *self)
+static gdbpy_ref<>
+sympy_repr (gdbpy_borrowed_ref self)
 {
   const auto symbol = symbol_object_to_symbol (self);
   if (symbol == nullptr)
-    return gdb_py_invalid_object_repr (self);
+    // FIXME
+    return gdbpy_ref<> (gdb_py_invalid_object_repr (self));
 
-  return PyUnicode_FromFormat ("<%s print_name=%s>", Py_TYPE (self)->tp_name,
-			       symbol->print_name ());
+  return gdbpy_unicode_from_format ("<%s print_name=%s>",
+				    Py_TYPE (self)->tp_name,
+				    symbol->print_name ());
 }
 
 /* Implementation of
@@ -693,42 +628,44 @@ GDBPY_INITIALIZE_FILE (gdbpy_initialize_symbols);
 
 
 static gdb_PyGetSetDef symbol_object_getset[] = {
-  { "type", sympy_get_type, NULL,
+  { "type", wrap_getter<sympy_get_type>, NULL,
     "Type of the symbol.", NULL },
-  { "symtab", sympy_get_symtab, NULL,
+  { "symtab", wrap_getter<sympy_get_symtab>, NULL,
     "Symbol table in which the symbol appears.", NULL },
-  { "name", sympy_get_name, NULL,
+  { "name", wrap_getter<sympy_get_name>, NULL,
     "Name of the symbol, as it appears in the source code.", NULL },
-  { "linkage_name", sympy_get_linkage_name, NULL,
+  { "linkage_name", wrap_getter<sympy_get_linkage_name>, NULL,
     "Name of the symbol, as used by the linker (i.e., may be mangled).",
     NULL },
-  { "print_name", sympy_get_print_name, NULL,
+  { "print_name", wrap_getter<sympy_str>, NULL,
     "Name of the symbol in a form suitable for output.\n\
 This is either name or linkage_name, depending on whether the user asked GDB\n\
 to display demangled or mangled names.", NULL },
-  { "addr_class", sympy_get_addr_class, NULL, "Address class of the symbol." },
-  { "domain", sympy_get_domain, nullptr, "Domain of the symbol." },
-  { "is_argument", sympy_is_argument, NULL,
+  { "addr_class", wrap_getter<sympy_get_addr_class>, NULL,
+    "Address class of the symbol." },
+  { "domain", wrap_getter<sympy_get_domain>, nullptr,
+    "Domain of the symbol." },
+  { "is_argument", wrap_getter<sympy_is_argument>, NULL,
     "True if the symbol is an argument of a function." },
-  { "is_artificial", sympy_is_artificial, nullptr,
+  { "is_artificial", wrap_getter<sympy_is_artificial>, nullptr,
     "True if the symbol is marked artificial." },
-  { "is_constant", sympy_is_constant, NULL,
+  { "is_constant", wrap_getter<sympy_is_constant>, NULL,
     "True if the symbol is a constant." },
-  { "is_function", sympy_is_function, NULL,
+  { "is_function", wrap_getter<sympy_is_function>, NULL,
     "True if the symbol is a function or method." },
-  { "is_variable", sympy_is_variable, NULL,
+  { "is_variable", wrap_getter<sympy_is_variable>, NULL,
     "True if the symbol is a variable." },
-  { "needs_frame", sympy_needs_frame, NULL,
+  { "needs_frame", wrap_getter<sympy_needs_frame>, NULL,
     "True if the symbol requires a frame for evaluation." },
-  { "line", sympy_line, NULL,
+  { "line", wrap_getter<sympy_line>, NULL,
     "The source line number at which the symbol was defined." },
   { NULL }  /* Sentinel */
 };
 
 static PyMethodDef symbol_object_methods[] = {
-  { "is_valid", sympy_is_valid, METH_NOARGS,
+  wrap_noargs<sympy_is_valid> ("is_valid",
     "is_valid () -> Boolean.\n\
-Return true if this symbol is valid, false if not." },
+Return true if this symbol is valid, false if not."),
   { "value", sympy_value, METH_VARARGS,
     "value ([frame]) -> gdb.Value\n\
 Return the value of the symbol." },
@@ -745,13 +682,13 @@ PyTypeObject symbol_object_type = {
   0,				  /*tp_getattr*/
   0,				  /*tp_setattr*/
   0,				  /*tp_compare*/
-  sympy_repr,                    /*tp_repr*/
+  wrap_repr<sympy_repr>,          /*tp_repr*/
   0,				  /*tp_as_number*/
   0,				  /*tp_as_sequence*/
   0,				  /*tp_as_mapping*/
   0,				  /*tp_hash */
   0,				  /*tp_call*/
-  sympy_str,			  /*tp_str*/
+  wrap_repr<sympy_str>,		  /*tp_str*/
   0,				  /*tp_getattro*/
   0,				  /*tp_setattro*/
   0,				  /*tp_as_buffer*/
