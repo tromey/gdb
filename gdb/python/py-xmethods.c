@@ -151,8 +151,7 @@ gdbpy_get_matching_xmethod_workers
 	  return EXT_LANG_RC_ERROR;
 	}
 
-      gdbpy_ref<> objfile_matchers (objfpy_get_xmethods (py_objfile.get (),
-							 NULL));
+      gdbpy_ref<> objfile_matchers = objfpy_get_xmethods (py_objfile);
       gdbpy_ref<> temp (PySequence_Concat (py_xmethod_matcher_list.get (),
 					   objfile_matchers.get ()));
       if (temp == NULL)

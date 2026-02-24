@@ -246,13 +246,11 @@ objfpy_new (PyTypeObject *type, PyObject *args, PyObject *keywords)
   return (PyObject *) self.release ();
 }
 
-PyObject *
-objfpy_get_printers (PyObject *o, void *ignore)
+gdbpy_ref<>
+objfpy_get_printers (gdbpy_borrowed_ref o)
 {
-  objfile_object *self = (objfile_object *) o;
-
-  Py_INCREF (self->printers);
-  return self->printers;
+  objfile_object *self = o;
+  return gdbpy_ref<>::new_reference (self->printers);
 }
 
 static int
@@ -284,13 +282,11 @@ objfpy_set_printers (PyObject *o, PyObject *value, void *ignore)
 
 /* Return the Python dictionary attribute containing frame filters for
    this object file.  */
-PyObject *
-objfpy_get_frame_filters (PyObject *o, void *ignore)
+static gdbpy_ref<>
+objfpy_get_frame_filters (gdbpy_borrowed_ref o)
 {
-  objfile_object *self = (objfile_object *) o;
-
-  Py_INCREF (self->frame_filters);
-  return self->frame_filters;
+  objfile_object *self = o;
+  return gdbpy_ref<>::new_reference (self->frame_filters);
 }
 
 /* Set this object file's frame filters dictionary to FILTERS.  */
@@ -323,13 +319,11 @@ objfpy_set_frame_filters (PyObject *o, PyObject *filters, void *ignore)
 
 /* Return the frame unwinders attribute for this object file.  */
 
-PyObject *
-objfpy_get_frame_unwinders (PyObject *o, void *ignore)
+static gdbpy_ref<>
+objfpy_get_frame_unwinders (gdbpy_borrowed_ref o)
 {
-  objfile_object *self = (objfile_object *) o;
-
-  Py_INCREF (self->frame_unwinders);
-  return self->frame_unwinders;
+  objfile_object *self = o;
+  return gdbpy_ref<>::new_reference (self->frame_unwinders);
 }
 
 /* Set this object file's frame unwinders list to UNWINDERS.  */
@@ -363,24 +357,20 @@ objfpy_set_frame_unwinders (PyObject *o, PyObject *unwinders, void *ignore)
 
 /* Get the 'type_printers' attribute.  */
 
-static PyObject *
-objfpy_get_type_printers (PyObject *o, void *ignore)
+static gdbpy_ref<>
+objfpy_get_type_printers (gdbpy_borrowed_ref o)
 {
-  objfile_object *self = (objfile_object *) o;
-
-  Py_INCREF (self->type_printers);
-  return self->type_printers;
+  objfile_object *self = o;
+  return gdbpy_ref<>::new_reference (self->type_printers);
 }
 
 /* Get the 'xmethods' attribute.  */
 
-PyObject *
-objfpy_get_xmethods (PyObject *o, void *ignore)
+gdbpy_ref<>
+objfpy_get_xmethods (gdbpy_borrowed_ref o)
 {
-  objfile_object *self = (objfile_object *) o;
-
-  Py_INCREF (self->xmethods);
-  return self->xmethods;
+  objfile_object *self = o;
+  return gdbpy_ref<>::new_reference (self->xmethods);
 }
 
 /* Set the 'type_printers' attribute.  */
@@ -744,15 +734,15 @@ static gdb_PyGetSetDef objfile_getset[] =
     "The objfile's build id, or None.", NULL },
   { "progspace", objfpy_get_progspace, NULL,
     "The objfile's progspace, or None.", NULL },
-  { "pretty_printers", objfpy_get_printers, objfpy_set_printers,
+  { "pretty_printers", wrap_getter<objfpy_get_printers>, objfpy_set_printers,
     "Pretty printers.", NULL },
-  { "frame_filters", objfpy_get_frame_filters,
+  { "frame_filters", wrap_getter<objfpy_get_frame_filters>,
     objfpy_set_frame_filters, "Frame Filters.", NULL },
-  { "frame_unwinders", objfpy_get_frame_unwinders,
+  { "frame_unwinders", wrap_getter<objfpy_get_frame_unwinders>,
     objfpy_set_frame_unwinders, "Frame Unwinders", NULL },
-  { "type_printers", objfpy_get_type_printers, objfpy_set_type_printers,
-    "Type printers.", NULL },
-  { "xmethods", objfpy_get_xmethods, NULL,
+  { "type_printers", wrap_getter<objfpy_get_type_printers>,
+    objfpy_set_type_printers, "Type printers.", NULL },
+  { "xmethods", wrap_getter<objfpy_get_xmethods>, NULL,
     "Debug methods.", NULL },
   { "is_file", objfpy_get_is_file, nullptr,
     "Whether this objfile came from a file.", nullptr },

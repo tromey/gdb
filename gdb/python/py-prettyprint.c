@@ -108,7 +108,7 @@ find_pretty_printer_from_objfiles (PyObject *value)
 	  continue;
 	}
 
-      gdbpy_ref<> pp_list (objfpy_get_printers (objf.get (), NULL));
+      gdbpy_ref<> pp_list = objfpy_get_printers (objf);
       gdbpy_ref<> function (search_pp_list (pp_list.get (), value));
 
       /* If there is an error in any objfile list, abort the search and exit.  */

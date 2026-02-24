@@ -511,10 +511,8 @@ PyObject *pspy_get_frame_unwinders (PyObject *, void *);
 PyObject *pspy_get_xmethods (PyObject *, void *);
 
 gdbpy_ref<> objfile_to_objfile_object (struct objfile *);
-PyObject *objfpy_get_printers (PyObject *, void *);
-PyObject *objfpy_get_frame_filters (PyObject *, void *);
-PyObject *objfpy_get_frame_unwinders (PyObject *, void *);
-PyObject *objfpy_get_xmethods (PyObject *, void *);
+gdbpy_ref<> objfpy_get_printers (gdbpy_borrowed_ref);
+gdbpy_ref<> objfpy_get_xmethods (gdbpy_borrowed_ref);
 PyObject *gdbpy_lookup_objfile (PyObject *self, PyObject *args, PyObject *kw);
 
 gdbpy_ref<> gdbarch_to_arch_object (struct gdbarch *gdbarch);
