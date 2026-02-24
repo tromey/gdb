@@ -141,6 +141,16 @@ to_python (symbol *sym)
   return symbol_to_symbol_object (sym).release ();
 }
 
+static inline PyObject *
+to_python (objfile *objf)
+{
+  if (objf == nullptr)
+    return py_none ().release ();
+  /* Note that currently this might return NULL on error; but that is
+     fine in this context.  */
+  return objfile_to_objfile_object (objf).release ();
+}
+
 /* An instantiation of this function is used when calling a gdb method
    from Python.  It accepts some number of arguments (normally
    gdbpy_borrowed_ref or gdbpy_opt_borrowed_ref), and then calls the

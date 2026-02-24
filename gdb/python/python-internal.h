@@ -587,11 +587,10 @@ PyObject *pspy_get_frame_unwinders (PyObject *, void *);
 PyObject *pspy_get_xmethods (PyObject *, void *);
 
 gdbpy_ref<> objfile_to_objfile_object (struct objfile *);
-PyObject *objfpy_get_printers (PyObject *, void *);
-PyObject *objfpy_get_frame_filters (PyObject *, void *);
-PyObject *objfpy_get_frame_unwinders (PyObject *, void *);
-PyObject *objfpy_get_xmethods (PyObject *, void *);
-PyObject *gdbpy_lookup_objfile (PyObject *self, PyObject *args, PyObject *kw);
+gdbpy_ref<> objfpy_get_printers (gdbpy_borrowed_ref<>);
+gdbpy_ref<> objfpy_get_xmethods (gdbpy_borrowed_ref<>);
+objfile *gdbpy_lookup_objfile (gdbpy_borrowed_ref<> args,
+			       gdbpy_opt_borrowed_ref<> kw);
 
 gdbpy_ref<> gdbarch_to_arch_object (struct gdbarch *gdbarch);
 gdbpy_ref<> gdbpy_all_architecture_names ();
@@ -1028,6 +1027,7 @@ gdb::unique_xmalloc_ptr<char> safe_python_string_to_host_string
 /* Convert a host string STR to a python string.  */
 
 extern gdbpy_ref<> host_string_to_python_string (std::string_view str);
+extern gdbpy_ref<> safe_host_string_to_python_string (std::string_view str);
 
 int gdbpy_is_string (PyObject *obj);
 gdb::unique_xmalloc_ptr<char> gdbpy_obj_to_string (PyObject *obj);

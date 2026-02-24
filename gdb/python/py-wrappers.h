@@ -373,6 +373,16 @@ gdbpy_sequence_concat (gdbpy_borrowed_ref<> first, gdbpy_borrowed_ref<> second)
   return result;
 }
 
+/* Wrapper for PyObject_IsTrue.  */
+static inline bool
+gdbpy_object_is_true (gdbpy_borrowed_ref<> obj)
+{
+  int cmp = PyObject_IsTrue (obj);
+  if (cmp < 0)
+    throw gdb_python_exception ();
+  return cmp;
+}
+
 /* A wrapper for get_addr_from_python that returns the address or
    throws an exception.  */
 static inline CORE_ADDR

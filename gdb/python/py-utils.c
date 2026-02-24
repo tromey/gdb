@@ -176,6 +176,15 @@ host_string_to_python_string (std::string_view str)
 					host_charset (), nullptr));
 }
 
+gdbpy_ref<>
+safe_host_string_to_python_string (std::string_view str)
+{
+  gdbpy_ref<> result = host_string_to_python_string (str);
+  if (result == nullptr)
+    throw gdb_python_exception ();
+  return result;
+}
+
 /* Return true if OBJ is a Python string or unicode object, false
    otherwise.  */
 
