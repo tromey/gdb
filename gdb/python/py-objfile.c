@@ -45,6 +45,8 @@ struct objfile_object : public gdbpy_dict_wrapper
 
   /* The debug method matcher list.  */
   PyObject *xmethods;
+
+  static PyTypeObject *corresponding_object_type;
 };
 
 extern PyTypeObject objfile_object_type;
@@ -798,3 +800,6 @@ PyTypeObject objfile_object_type =
   0,				  /* tp_alloc */
   objfpy_new,			  /* tp_new */
 };
+
+PyTypeObject *objfile_object::corresponding_object_type
+  = &objfile_object_type;
