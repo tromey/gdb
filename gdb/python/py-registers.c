@@ -228,20 +228,17 @@ gdbpy_reggroup_iter_next (PyObject *self)
 /* Return a new gdb.RegisterGroupsIterator over all the register groups in
    GDBARCH.  */
 
-PyObject *
+gdbpy_ref<>
 gdbpy_new_reggroup_iterator (struct gdbarch *gdbarch)
 {
   gdb_assert (gdbarch != nullptr);
 
   /* Create a new object and fill in its internal state.  */
-  reggroup_iterator_object *iter
-    = PyObject_New (reggroup_iterator_object,
-		    &reggroup_iterator_object_type);
-  if (iter == NULL)
-    return NULL;
+  gdbpy_ref<reggroup_iterator_object> iter
+    = gdbpy_new<reggroup_iterator_object> ();
   iter->index = 0;
   iter->gdbarch = gdbarch;
-  return (PyObject *) iter;
+  return iter;
 }
 
 /* Create and return a new gdb.RegisterDescriptorIterator object which
@@ -252,7 +249,7 @@ gdbpy_new_reggroup_iterator (struct gdbarch *gdbarch)
 
    This function can return NULL if GROUP_NAME isn't found.  */
 
-PyObject *
+gdbpy_ref<>
 gdbpy_new_register_descriptor_iterator (struct gdbarch *gdbarch,
 					const char *group_name)
 {
@@ -265,25 +262,19 @@ gdbpy_new_register_descriptor_iterator (struct gdbarch *gdbarch,
     {
       grp = reggroup_find (gdbarch, group_name);
       if (grp == NULL)
-	{
-	  PyErr_SetString (PyExc_ValueError,
-			   _("Unknown register group name."));
-	  return NULL;
-	}
+	gdbpy_err_set_string (PyExc_ValueError,
+			      _("Unknown register group name."));
     }
   /* Create a new iterator object initialised for this architecture and
      fill in all of the details.  */
-  register_descriptor_iterator_object *iter
-    = PyObject_New (register_descriptor_iterator_object,
-		    &register_descriptor_iterator_object_type);
-  if (iter == NULL)
-    return NULL;
+  gdbpy_ref<register_descriptor_iterator_object> iter
+    = gdbpy_new<register_descriptor_iterator_object> ();
   iter->regnum = 0;
   iter->gdbarch = gdbarch;
   gdb_assert (grp != NULL);
   iter->reggroup = grp;
 
-  return (PyObject *) iter;
+  return iter;
 }
 
 /* Return a reference to the gdb.RegisterDescriptorIterator object.  */
