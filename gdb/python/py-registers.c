@@ -43,6 +43,8 @@ struct register_descriptor_iterator_object : public PyObject
 
   /* Pointer back to the architecture we're finding registers for.  */
   struct gdbarch *gdbarch;
+
+  static PyTypeObject *corresponding_object_type;
 };
 
 extern PyTypeObject register_descriptor_iterator_object_type;
@@ -55,6 +57,8 @@ struct register_descriptor_object : public PyObject
 
   /* The architecture this is a register for.  */
   struct gdbarch *gdbarch;
+
+  static PyTypeObject *corresponding_object_type;
 };
 
 extern PyTypeObject register_descriptor_object_type;
@@ -67,6 +71,8 @@ struct reggroup_iterator_object : public PyObject
 
   /* Pointer back to the architecture we're finding registers for.  */
   struct gdbarch *gdbarch;
+
+  static PyTypeObject *corresponding_object_type;
 };
 
 extern PyTypeObject reggroup_iterator_object_type;
@@ -477,6 +483,9 @@ PyTypeObject register_descriptor_iterator_object_type = {
   register_descriptor_iterator_object_methods		/*tp_methods */
 };
 
+PyTypeObject *register_descriptor_iterator_object::corresponding_object_type
+  = &register_descriptor_iterator_object_type;
+
 static gdb_PyGetSetDef gdbpy_register_descriptor_getset[] = {
   { "name", gdbpy_register_descriptor_name, NULL,
     "The name of this register.", NULL },
@@ -516,6 +525,9 @@ PyTypeObject register_descriptor_object_type = {
   gdbpy_register_descriptor_getset			/*tp_getset */
 };
 
+PyTypeObject *register_descriptor_object::corresponding_object_type
+  = &register_descriptor_object_type;
+
 PyTypeObject reggroup_iterator_object_type = {
   PyVarObject_HEAD_INIT (NULL, 0)
   "gdb.RegisterGroupsIterator",	  /*tp_name*/
@@ -546,6 +558,9 @@ PyTypeObject reggroup_iterator_object_type = {
   gdbpy_reggroup_iter_next,	  /*tp_iternext */
   0				  /*tp_methods */
 };
+
+PyTypeObject *reggroup_iterator_object::corresponding_object_type
+  = &reggroup_iterator_object_type;
 
 static gdb_PyGetSetDef gdbpy_reggroup_getset[] = {
   { "name", gdbpy_reggroup_name, NULL,

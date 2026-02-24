@@ -42,6 +42,8 @@ struct frame_object : public PyObject
      ID as the  previous frame).  Whenever get_prev_frame returns NULL, we
      record the frame_id of the next frame and set FRAME_ID_IS_NEXT to 1.  */
   int frame_id_is_next;
+
+  static PyTypeObject *corresponding_object_type;
 };
 
 /* Require a valid frame.  This must be called inside a TRY_CATCH, or
@@ -871,3 +873,6 @@ PyTypeObject frame_object_type = {
   0,				  /* tp_init */
   0,				  /* tp_alloc */
 };
+
+PyTypeObject *frame_object::corresponding_object_type
+    = &frame_object_type;

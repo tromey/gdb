@@ -73,6 +73,8 @@ struct pending_frame_object : public PyObject
 
   /* Its architecture, passed by the sniffer caller.  */
   struct gdbarch *gdbarch;
+
+  static PyTypeObject *corresponding_object_type;
 };
 
 /* Saved registers array item.  */
@@ -102,6 +104,8 @@ struct unwind_info_object : public PyObject
 
   /* Saved registers array.  */
   std::vector<saved_reg> *saved_regs;
+
+  static PyTypeObject *corresponding_object_type;
 };
 
 /* The data we keep for a frame we can unwind: frame ID and an array of
@@ -1118,6 +1122,9 @@ PyTypeObject pending_frame_object_type =
   0,                              /* tp_alloc */
 };
 
+PyTypeObject *pending_frame_object::corresponding_object_type
+  = &pending_frame_object_type;
+
 static PyMethodDef unwind_info_object_methods[] =
 {
   { "add_saved_register",
@@ -1168,3 +1175,6 @@ PyTypeObject unwind_info_object_type =
   0,                              /* tp_init */
   0,                              /* tp_alloc */
 };
+
+PyTypeObject *unwind_info_object::corresponding_object_type
+  = &unwind_info_object_type;

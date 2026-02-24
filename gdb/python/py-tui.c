@@ -51,6 +51,8 @@ struct gdbpy_tui_window: public PyObject
 
   /* Return true if this object is valid.  */
   bool is_valid () const;
+
+  static PyTypeObject *corresponding_object_type;
 };
 
 extern PyTypeObject gdbpy_tui_window_object_type;
@@ -615,6 +617,9 @@ PyTypeObject gdbpy_tui_window_object_type =
   0,				  /* tp_init */
   0,				  /* tp_alloc */
 };
+
+PyTypeObject *gdbpy_tui_window::corresponding_object_type
+    = &gdbpy_tui_window_object_type;
 
 /* Called when TUI is enabled or disabled.  */
 
