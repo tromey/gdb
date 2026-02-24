@@ -151,6 +151,16 @@ gdbpy_arg_parse_tuple_and_keywords (gdbpy_borrowed_ref args,
     throw gdb_python_exception ();
 }
 
+void
+gdbpy_arg_parse_tuple (gdbpy_borrowed_ref param, const char *format, ...)
+{
+  va_list args;
+  va_start (args, format);
+  if (!PyArg_VaParse (param, format, args))
+    throw gdb_python_exception ();
+  va_end (args);
+}
+
 static inline long
 gdbpy_long_as_long (gdbpy_borrowed_ref arg)
 {
