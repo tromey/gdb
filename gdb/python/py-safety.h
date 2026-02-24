@@ -238,6 +238,26 @@ wrap_varargs_no_keywords (std::string_view name, std::string_view doc)
   };
 }
 
+/* A Python method taking a single argument.  The implementation
+   function should accept two gdbpy_borrowed_ref arguments: 'self' and
+   the argument to the method.  */
+template<auto F>
+constexpr PyMethodDef
+wrap_one_arg (std::string_view name, std::string_view doc)
+{
+  using namespace safety_details;
+  return {
+    name.data (),
+    [] (PyObject *self, PyObject *args) -> PyObject *
+    {
+      return wrapped_function<F> (gdbpy_borrowed_ref (self),
+				  gdbpy_borrowed_ref (args));
+    },
+    METH_O,
+    doc.data (),
+  };
+}
+
 /* A function that wraps a "repr" or "str" method.  */
 template<auto F>
 PyObject *
