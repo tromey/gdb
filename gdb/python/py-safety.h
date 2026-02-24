@@ -25,10 +25,27 @@
 #include "py-wrappers.h"
 #include "charset.h"
 
-/* Implementation details of the method-wrapping safety code are put
-   into this namespace, just to emphasize that these shouldn't be used
-   elsewhere.  */
+/* This file holds wrapper templates for the various ways that gdb
+   code might be exposed to Python.  These wrappers are part of gdb's
+   "Python safety" approach -- utilities designed to try to prevent
+   refcount problems, missing error checks, and that also remove the
+   need to wrap calls into gdb in an explicit try/catch.
 
+   See py-wrappers.h for some more discussion of this.
+
+   Implementation methods -- the stuff you write to expose some part
+   of gdb to Python -- are written in a certain style.  They will
+   accept gdbpy_borrowed_ref arguments (or in some more limited
+   situations, a gdbpy_opt_borrowed_ref) and return any relevant type,
+   which will be automatically converted (see the 'result_converter'
+   overloads below) to the correct Python type.
+
+   Implementation methods are expected to use the wrappers in
+   py-wrappers.h and not generally call into Python directly.
+
+   Implementation details of the method-wrapping safety code are put
+   into this namespace, just to emphasize that these shouldn't be used
+   elsewhere.  Skip past the namespace to find the public APIs.  */
 namespace safety_details
 {
 /* Overloads of "result_converter" are used by the safety wrappers to
