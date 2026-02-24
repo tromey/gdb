@@ -192,50 +192,36 @@ sympy_is_valid (gdbpy_borrowed_ref self)
 /* Implementation of gdb.Symbol.value (self[, frame]) -> gdb.Value.  Returns
    the value of the symbol, or an error in various circumstances.  */
 
-static PyObject *
-sympy_value (PyObject *self, PyObject *args)
+static gdbpy_ref<>
+sympy_value (gdbpy_borrowed_ref self, gdbpy_borrowed_ref args)
 {
-  struct symbol *symbol = NULL;
   frame_info_ptr frame_info = NULL;
   PyObject *frame_obj = NULL;
 
-  if (!PyArg_ParseTuple (args, "|O!", &frame_object_type, &frame_obj))
-    return NULL;
+  gdbpy_arg_parse_tuple (args, "|O!", &frame_object_type, &frame_obj);
 
-  SYMPY_REQUIRE_VALID (self, symbol);
+  struct symbol *symbol = require_valid (self);
   if (symbol->loc_class () == LOC_TYPEDEF)
-    {
-      PyErr_SetString (PyExc_TypeError, "cannot get the value of a typedef");
-      return NULL;
-    }
+    gdbpy_err_set_string (PyExc_TypeError, "cannot get the value of a typedef");
 
   gdbpy_ref<> result;
-  try
+  if (frame_obj != nullptr)
     {
-      if (frame_obj != NULL)
-	{
-	  frame_info = frame_object_to_frame_info (frame_obj);
-	  if (frame_info == NULL)
-	    error (_("invalid frame"));
-	}
-
-      if (symbol_read_needs_frame (symbol) && frame_info == NULL)
-	error (_("symbol requires a frame to compute its value"));
-
-      /* TODO: currently, we have no way to recover the block in which SYMBOL
-	 was found, so we have no block to pass to read_var_value.  This will
-	 yield an incorrect value when symbol is not local to FRAME_INFO (this
-	 can happen with nested functions).  */
-      scoped_value_mark free_values;
-      struct value *value = read_var_value (symbol, NULL, frame_info);
-      result = value_to_value_object (value);
-    }
-  catch (const gdb_exception &except)
-    {
-      return gdbpy_handle_gdb_exception (nullptr, except);
+      frame_info = frame_object_to_frame_info (frame_obj);
+      if (frame_info == nullptr)
+	error (_("invalid frame"));
     }
 
-  return result.release ();
+  if (symbol_read_needs_frame (symbol) && frame_info == nullptr)
+    error (_("symbol requires a frame to compute its value"));
+
+  /* TODO: currently, we have no way to recover the block in which SYMBOL
+     was found, so we have no block to pass to read_var_value.  This will
+     yield an incorrect value when symbol is not local to FRAME_INFO (this
+     can happen with nested functions).  */
+  scoped_value_mark free_values;
+  struct value *value = read_var_value (symbol, nullptr, frame_info);
+  return value_to_value_object (value);
 }
 
 /* Given a symbol, and a symbol_object that has previously been
@@ -660,9 +646,9 @@ static PyMethodDef symbol_object_methods[] = {
   wrap_noargs<sympy_is_valid> ("is_valid",
     "is_valid () -> Boolean.\n\
 Return true if this symbol is valid, false if not."),
-  { "value", sympy_value, METH_VARARGS,
+  wrap_varargs_no_keywords<sympy_value> ("value",
     "value ([frame]) -> gdb.Value\n\
-Return the value of the symbol." },
+Return the value of the symbol."),
   {NULL}  /* Sentinel */
 };
 
