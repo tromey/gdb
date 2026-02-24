@@ -679,15 +679,12 @@ gdbpy_default_visualizer (PyObject *self, PyObject *args)
   PyObject *val_obj;
   struct value *value;
 
-  if (! PyArg_ParseTuple (args, "O", &val_obj))
+  if (! PyArg_ParseTuple (args, "O!", &value_object_type, &val_obj))
     return NULL;
   value = value_object_to_value (val_obj);
-  if (! value)
-    {
-      PyErr_SetString (PyExc_TypeError,
-		       _("Argument must be a gdb.Value."));
-      return NULL;
-    }
+  /* This was ensured by the type-checking during argument
+     parsing.  */
+  gdb_assert (value != nullptr);
 
   return find_pretty_printer (val_obj).release ();
 }

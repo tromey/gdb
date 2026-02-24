@@ -199,14 +199,8 @@ sympy_value (PyObject *self, PyObject *args)
   frame_info_ptr frame_info = NULL;
   PyObject *frame_obj = NULL;
 
-  if (!PyArg_ParseTuple (args, "|O", &frame_obj))
+  if (!PyArg_ParseTuple (args, "|O!", &frame_object_type, &frame_obj))
     return NULL;
-
-  if (frame_obj != NULL && !PyObject_TypeCheck (frame_obj, &frame_object_type))
-    {
-      PyErr_SetString (PyExc_TypeError, "argument is not a frame");
-      return NULL;
-    }
 
   SYMPY_REQUIRE_VALID (self, symbol);
   if (symbol->loc_class () == LOC_TYPEDEF)
