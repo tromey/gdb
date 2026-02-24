@@ -233,6 +233,32 @@ varargs_wrapper (PyObject *self, PyObject *args, PyObject *kw)
 
 } /* namespace safety_details */
 
+/* Create a PyMethodDef for a no-argument function.  It takes the
+   takes the underlying implementation function as a template
+   argument, and also arguments for the method name and documentation
+   string.
+
+   The underlying function should take no arguments.
+
+   The function can return any type (see the to_python overloads); and
+   should throw an exception on error.  If gdb_python_exception is
+   thrown, the Python exception must already have been set.  */
+template<auto F>
+constexpr PyMethodDef
+noargs_function (const char *name, const char *doc)
+{
+  using namespace safety_details;
+  return {
+    name,
+    [] (PyObject *self, PyObject *args) -> PyObject *
+    {
+      return wrapped_function<F> ();
+    },
+    METH_NOARGS,
+    doc,
+  };
+}
+
 /* Create a PyMethodDef for a no-argument method.  It takes the
    underlying class C and a pointer-to-method M as template
    parameters, and the name and documentation as arguments.  The
