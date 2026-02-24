@@ -31,19 +31,6 @@ struct symbol_object : public PyObject
   struct symbol *symbol;
 };
 
-/* Require a valid symbol.  All access to symbol_object->symbol should be
-   gated by this call.  */
-#define SYMPY_REQUIRE_VALID(symbol_obj, symbol)		\
-  do {							\
-    symbol = symbol_object_to_symbol (symbol_obj);	\
-    if (symbol == NULL)					\
-      {							\
-	PyErr_SetString (PyExc_RuntimeError,		\
-			 _("Symbol is invalid."));	\
-	return NULL;					\
-      }							\
-  } while (0)
-
 static const gdbpy_registry<gdbpy_memoizing_registry_storage<symbol_object,
   symbol, &symbol_object::symbol>> sympy_registry;
 
