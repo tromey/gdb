@@ -3189,12 +3189,11 @@ Return the static-linkage symbol corresponding to the given name (or None)."),
     "lookup_static_symbols (name [, domain]) -> symbol\n\
 Return a list of all static-linkage symbols corresponding to the given name."),
 
-  { "lookup_objfile", (PyCFunction) gdbpy_lookup_objfile,
-    METH_VARARGS | METH_KEYWORDS,
+  varargs_function<gdbpy_lookup_objfile> ("lookup_objfile",
     "lookup_objfile (name, [by_build_id]) -> objfile\n\
 Look up the specified objfile.\n\
 If by_build_id is True, the objfile is looked up by using name\n\
-as its build id." },
+as its build id."),
 
   { "decode_line", gdbpy_decode_line, METH_VARARGS,
     "decode_line (String) -> Tuple.  Decode a string argument the way\n\
