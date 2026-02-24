@@ -81,33 +81,25 @@ static const registry<objfile>::key<objfile_object, objfpy_deleter>
 
 /* An Objfile method which returns the objfile's file name, or None.  */
 
-static PyObject *
-objfpy_get_filename (PyObject *self, void *closure)
+static const char *
+objfpy_get_filename (gdbpy_borrowed_ref self)
 {
-  objfile_object *obj = (objfile_object *) self;
-
+  objfile_object *obj = self;
   if (obj->objfile)
-    return (host_string_to_python_string (objfile_name (obj->objfile))
-	    .release ());
-  Py_RETURN_NONE;
+    return objfile_name (obj->objfile);
+  return nullptr;
 }
 
 /* An Objfile method which returns the objfile's file name, as specified
    by the user, or None.  */
 
-static PyObject *
-objfpy_get_username (PyObject *self, void *closure)
+static const char *
+objfpy_get_username (gdbpy_borrowed_ref self)
 {
-  objfile_object *obj = (objfile_object *) self;
-
+  objfile_object *obj = self;
   if (obj->objfile)
-    {
-      const char *username = obj->objfile->original_name;
-
-      return host_string_to_python_string (username).release ();
-    }
-
-  Py_RETURN_NONE;
+    return obj->objfile->original_name;
+  return nullptr;
 }
 
 /* Get the 'is_file' attribute.  */
@@ -172,15 +164,13 @@ objfpy_get_build_id (PyObject *self, void *closure)
 
 /* An Objfile method which returns the objfile's progspace, or None.  */
 
-static PyObject *
-objfpy_get_progspace (PyObject *self, void *closure)
+static gdbpy_ref<>
+objfpy_get_progspace (gdbpy_borrowed_ref self)
 {
-  objfile_object *obj = (objfile_object *) self;
-
+  objfile_object *obj = self;
   if (obj->objfile)
-    return pspace_to_pspace_object (obj->objfile->pspace ()).release ();
-
-  Py_RETURN_NONE;
+    return pspace_to_pspace_object (obj->objfile->pspace ());
+  return gdbpy_ref<>::new_reference (Py_None);
 }
 
 static void
@@ -723,16 +713,16 @@ static gdb_PyGetSetDef objfile_getset[] =
 {
   { "__dict__", gdb_py_generic_dict_getter, NULL,
     "The __dict__ for this objfile.", NULL },
-  { "filename", objfpy_get_filename, NULL,
+  { "filename", wrap_getter<objfpy_get_filename>, NULL,
     "The objfile's filename, or None.", NULL },
-  { "username", objfpy_get_username, NULL,
+  { "username", wrap_getter<objfpy_get_username>, NULL,
     "The name of the objfile as provided by the user, or None.", NULL },
   { "owner", objfpy_get_owner, NULL,
     "The objfile owner of separate debug info objfiles, or None.",
     NULL },
   { "build_id", objfpy_get_build_id, NULL,
     "The objfile's build id, or None.", NULL },
-  { "progspace", objfpy_get_progspace, NULL,
+  { "progspace", wrap_getter<objfpy_get_progspace>, NULL,
     "The objfile's progspace, or None.", NULL },
   { "pretty_printers", wrap_getter<objfpy_get_printers>, objfpy_set_printers,
     "Pretty printers.", NULL },
