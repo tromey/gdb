@@ -151,7 +151,7 @@ gdbpy_arg_parse_tuple_and_keywords (gdbpy_borrowed_ref args,
     throw gdb_python_exception ();
 }
 
-void
+static inline void
 gdbpy_arg_parse_tuple (gdbpy_borrowed_ref param, const char *format, ...)
 {
   va_list args;
