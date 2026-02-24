@@ -472,10 +472,7 @@ static void
 require_window (gdbpy_tui_window *win)
 {
   if (!win->is_valid ())
-    {
-      PyErr_Format (PyExc_RuntimeError, _("TUI window is invalid."));
-      throw gdb_python_exception ();
-    }
+    gdbpy_err_format (PyExc_RuntimeError, _("TUI window is invalid."));
 }
 
 /* Python function that erases the TUI window.  */
@@ -507,34 +504,30 @@ gdbpy_tui_write (gdbpy_borrowed_ref self, gdbpy_borrowed_ref args,
 }
 
 /* Return the width of the TUI window.  */
-static PyObject *
-gdbpy_tui_width (PyObject *self, void *closure)
+static int
+gdbpy_tui_width (gdbpy_borrowed_ref self)
 {
-  gdbpy_tui_window *win = (gdbpy_tui_window *) self;
-  REQUIRE_WINDOW (win);
-  gdbpy_ref<> result
-    = gdb_py_object_from_longest (win->window->viewport_width ());
-  return result.release ();
+  gdbpy_tui_window *win = self;
+  require_window (win);
+  return win->window->viewport_width ();
 }
 
 /* Return the height of the TUI window.  */
-static PyObject *
-gdbpy_tui_height (PyObject *self, void *closure)
+static int
+gdbpy_tui_height (gdbpy_borrowed_ref self)
 {
-  gdbpy_tui_window *win = (gdbpy_tui_window *) self;
-  REQUIRE_WINDOW (win);
-  gdbpy_ref<> result
-    = gdb_py_object_from_longest (win->window->viewport_height ());
-  return result.release ();
+  gdbpy_tui_window *win = self;
+  require_window (win);
+  return win->window->viewport_height ();
 }
 
 /* Return the title of the TUI window.  */
-static PyObject *
-gdbpy_tui_title (PyObject *self, void *closure)
+static const char *
+gdbpy_tui_title (gdbpy_borrowed_ref self)
 {
-  gdbpy_tui_window *win = (gdbpy_tui_window *) self;
-  REQUIRE_WINDOW (win);
-  return host_string_to_python_string (win->window->title ().c_str ()).release ();
+  gdbpy_tui_window *win = self;
+  require_window (win);
+  return win->window->title ().c_str ();
 }
 
 /* Set the title of the TUI window.  */
@@ -562,10 +555,12 @@ gdbpy_tui_set_title (PyObject *self, PyObject *newvalue, void *closure)
 
 static gdb_PyGetSetDef tui_object_getset[] =
 {
-  { "width", gdbpy_tui_width, NULL, "Width of the window.", NULL },
-  { "height", gdbpy_tui_height, NULL, "Height of the window.", NULL },
-  { "title", gdbpy_tui_title, gdbpy_tui_set_title, "Title of the window.",
-    NULL },
+  { "width", wrap_getter<gdbpy_tui_width>, NULL,
+    "Width of the window.", NULL },
+  { "height", wrap_getter<gdbpy_tui_height>, NULL,
+    "Height of the window.", NULL },
+  { "title", wrap_getter<gdbpy_tui_title>, gdbpy_tui_set_title,
+    "Title of the window.", NULL },
   { NULL }  /* Sentinel */
 };
 
