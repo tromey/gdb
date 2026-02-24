@@ -81,7 +81,8 @@ result_converter (ULONGEST value)
 static inline PyObject *
 result_converter (const char *value)
 {
-  // FIXME value==nullptr?
+  if (value == nullptr)
+    Py_RETURN_NONE;
   return PyUnicode_Decode (value, strlen (value), host_charset (), nullptr);
 }
 
