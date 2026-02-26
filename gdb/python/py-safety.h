@@ -141,6 +141,37 @@ wrapped_function (Args... args)
     }
 }
 
+/* An instantiation of this function is used when calling a gdb method
+   from Python.  It accepts some number of arguments (normally
+   gdbpy_borrowed_ref or gdbpy_opt_borrowed_ref), and then then calls
+   the underlying function F.  Any exceptions are caught and
+   converted, and the return value of F is converted to a Python
+   object as appropriate.  */
+template<typename Class, typename Ret, typename... Args>
+PyObject *
+wrapped_method (Ret (Class::*meth) (Args...), Class *self, Args... args)
+{
+  try
+    {
+      if constexpr (std::is_void_v<Ret>)
+	{
+	  (self->*meth) (args...);
+	  Py_RETURN_NONE;
+	}
+      else
+	return result_converter ((self->*meth) (args...));
+    }
+  catch (const gdb_python_exception &pye)
+    {
+      gdb_assert (PyErr_Occurred () != nullptr);
+      return nullptr;
+    }
+  catch (const gdb_exception &exc)
+    {
+      return gdbpy_handle_gdb_exception (nullptr, exc);
+    }
+}
+
 /* This is needed by wrap_varargs because the compiler will complain
    about casting a lambda to PyCFunction.  */
 template<auto F>
@@ -150,6 +181,15 @@ varargs_wrapper (PyObject *self, PyObject *args, PyObject *kw)
   return wrapped_function<F> (gdbpy_borrowed_ref (self),
 			      gdbpy_borrowed_ref (args),
 			      gdbpy_opt_borrowed_ref (kw));
+}
+
+template<typename C, auto M>
+PyObject *
+varargs_wrapper (PyObject *self, PyObject *args, PyObject *kw)
+{
+  return wrapped_method (M, static_cast<C *> (self),
+			 gdbpy_borrowed_ref (args),
+			 gdbpy_opt_borrowed_ref (kw));
 }
 
 } /* namespace safety_details */
@@ -181,6 +221,22 @@ wrap_noargs (std::string_view name, std::string_view doc)
   };
 }
 
+template<typename C, auto M>
+constexpr PyMethodDef
+noargs_method (std::string_view name, std::string_view doc)
+{
+  using namespace safety_details;
+  return {
+    name.data (),
+    [] (PyObject *self, PyObject *args) -> PyObject *
+    {
+      return wrapped_method (M, static_cast<C *> (self));
+    },
+    METH_NOARGS,
+    doc.data (),
+  };
+}
+
 /* This is used to create the PyMethodDef for a varargs method.  It
    takes the underlying implementation function as a template
    argument, and also arguments for the method name and documentation
@@ -204,6 +260,20 @@ wrap_varargs (std::string_view name, std::string_view doc)
   return {
     name.data (),
     (PyCFunction) varargs_wrapper<F>,
+    /* gdb's rule is that varargs should also use keywords.  */
+    METH_VARARGS | METH_KEYWORDS,
+    doc.data (),
+  };
+}
+
+template<typename C, auto M>
+constexpr PyMethodDef
+varargs_method (std::string_view name, std::string_view doc)
+{
+  using namespace safety_details;
+  return {
+    name.data (),
+    (PyCFunction) varargs_wrapper<C, M>,
     /* gdb's rule is that varargs should also use keywords.  */
     METH_VARARGS | METH_KEYWORDS,
     doc.data (),
