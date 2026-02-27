@@ -731,6 +731,12 @@ private:
      support multi-process.  */
   gdb::unordered_map<struct gdbarch *, remote_arch_state>
     m_arch_states;
+
+  /* The most recently used remote state is cached here.  This
+     duplicates some information from m_arch_states, but allows an
+     important performance optimization.  */
+  struct gdbarch *m_last_arch = nullptr;
+  remote_arch_state *m_last_state = nullptr;
 };
 
 static const target_info remote_target_info = {
@@ -2024,6 +2030,9 @@ remote_state::get_remote_arch_state (struct gdbarch *gdbarch)
 {
   remote_arch_state *rsa;
 
+  if (gdbarch == m_last_arch)
+    return m_last_state;
+
   auto it = this->m_arch_states.find (gdbarch);
   if (it == this->m_arch_states.end ())
     {
@@ -2040,6 +2049,8 @@ remote_state::get_remote_arch_state (struct gdbarch *gdbarch)
   else
     rsa = &it->second;
 
+  m_last_arch = gdbarch;
+  m_last_state = rsa;
   return rsa;
 }
 
