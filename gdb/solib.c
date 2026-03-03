@@ -386,7 +386,23 @@ solib_find (const char *in_pathname, int *fd)
 gdb_bfd_ref_ptr
 solib_bfd_fopen (const char *pathname, int fd)
 {
-  gdb_bfd_ref_ptr abfd (gdb_bfd_open (pathname, gnutarget, fd));
+  gdb_bfd_ref_ptr abfd = gdb_bfd_open (pathname, gnutarget, fd);
+  if (abfd != nullptr)
+    return abfd;
+
+  if (fd == -1)
+    {
+      if (is_target_filename (pathname))
+	pathname += strlen (TARGET_SYSROOT_PREFIX);
+
+      ext_lang_missing_file_result ext_result
+	= ext_lang_find_objfile_from_buildid (current_program_space, nullptr,
+					      pathname);
+      if (ext_result.bfd () != nullptr)
+	abfd = ext_result.bfd ();
+      else if (!ext_result.filename ().empty ())
+	abfd = gdb_bfd_open (ext_result.filename ().c_str (), gnutarget);
+    }
 
   if (abfd == NULL)
     error (_("Could not open `%ps' as an executable file: %s"),
