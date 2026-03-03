@@ -403,6 +403,7 @@ SUBDIR_PYTHON_SRCS = \
 	python/py-evtregistry.c \
 	python/py-evts.c \
 	python/py-exitedevent.c \
+	python/py-file.c \
 	python/py-finishbreakpoint.c \
 	python/py-frame.c \
 	python/py-framefilter.c \
