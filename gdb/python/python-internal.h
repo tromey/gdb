@@ -1416,6 +1416,8 @@ protected:
 extern gdbpy_ref<> eval_python_command
   (const char *command, int start_symbol, const char *filename = nullptr);
 
+extern gdb_bfd_ref_ptr open_bfd_from_python (gdbpy_ref<> &&file_obj);
+
 /* The following four functions are refcount-safe wrappers around
    Py_RETURN_{NONE,TRUE,FALSE,NOTIMPLEMENTED}.  */
 
