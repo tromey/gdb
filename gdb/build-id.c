@@ -403,7 +403,9 @@ find_objfile_by_build_id (program_space *pspace,
       ext_lang_missing_file_result ext_result
 	= ext_lang_find_objfile_from_buildid (pspace, build_id,
 					      expected_filename);
-      if (!ext_result.filename ().empty ())
+      if (ext_result.bfd () != nullptr)
+	return ext_result.bfd ();
+      else if (!ext_result.filename ().empty ())
 	{
 	  /* The extension identified the file for us.  */
 	  abfd = gdb_bfd_open (ext_result.filename ().c_str (), gnutarget);

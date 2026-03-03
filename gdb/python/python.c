@@ -2022,24 +2022,32 @@ gdbpy_find_objfile_from_buildid (const struct extension_language_defn *extlang,
       return ext_lang_missing_file_result (try_again);
     }
 
-  if (!gdbpy_is_string (pyo_execute_ret.get ()))
+  if (gdbpy_is_string (pyo_execute_ret.get ()))
     {
-      PyErr_SetString (PyExc_ValueError,
-		       "return value from _find_objfile_by_buildid should "
-		       "be None, a bool, or a str");
+      gdb::unique_xmalloc_ptr<char> filename
+	= python_string_to_host_string (pyo_execute_ret.get ());
+      if (filename == nullptr)
+	{
+	  gdbpy_print_stack ();
+	  return {};
+	}
+
+      return ext_lang_missing_file_result (std::string (filename.get ()));
+    }
+
+  gdb_bfd_ref_ptr the_bfd = open_bfd_from_python (std::move (pyo_execute_ret));
+  if (the_bfd == nullptr)
+    {
+      if (!PyErr_Occurred ())
+	PyErr_SetString (PyExc_ValueError,
+			 "return value from _find_objfile_by_buildid should "
+			 "be None, a bool, a str, or a "
+			 "gdb.missing_objfile.BFDFile-like object");
       gdbpy_print_stack ();
       return {};
     }
 
-  gdb::unique_xmalloc_ptr<char> filename
-    = python_string_to_host_string (pyo_execute_ret.get ());
-  if (filename == nullptr)
-    {
-      gdbpy_print_stack ();
-      return {};
-    }
-
-  return ext_lang_missing_file_result (std::string (filename.get ()));
+  return ext_lang_missing_file_result (std::move (the_bfd));
 }
 
 /* Compute the list of active python type printers and store them in

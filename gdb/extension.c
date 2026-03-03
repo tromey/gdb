@@ -1103,7 +1103,7 @@ ext_lang_find_objfile_from_buildid (program_space *pspace,
       ext_lang_missing_file_result result
 	= extlang->ops->find_objfile_from_buildid (extlang, pspace, build_id,
 						   filename);
-      if (!result.filename ().empty () || result.try_again ())
+      if (result.valid ())
 	return result;
     }
 

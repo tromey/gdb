@@ -402,6 +402,8 @@ def _handle_missing_objfile(pspace, buildid, filename):
               installed there then GDB will not find it.
         A string: This is the filename of a file containing the
                   missing objfile.
+        A BFD: A wrapper for a file implementing the BFD protocol.
+               See gdb.missing_objfile.BFDFile.
     """
 
     # Delay this as long as possible.

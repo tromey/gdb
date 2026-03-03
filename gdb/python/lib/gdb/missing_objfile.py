@@ -17,6 +17,8 @@
 MissingObjfileHandler base class, and register_handler function.
 """
 
+import os
+
 import gdb
 from gdb.missing_files import MissingFileHandler
 
@@ -64,6 +66,28 @@ class MissingObjfileHandler(MissingFileHandler):
 
         """
         raise NotImplementedError("MissingObjfileHandler.__call__()")
+
+
+class BFDFile:
+    def __init__(self, fd, filename):
+        assert fd.seekable()
+        self._fd = fd
+        self._filename = filename
+        fd.seek(0, os.SEEK_END)
+        self._size = fd.tell()
+
+    def filename(self):
+        return self._filename
+
+    def size(self):
+        return self._size
+
+    def read(self, offset, size):
+        self._fd.seek(offset)
+        return self._fd.read(size)
+
+    def close(self):
+        self._fd.close()
 
 
 def register_handler(locus, handler, replace=False):

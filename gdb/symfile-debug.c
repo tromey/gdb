@@ -659,24 +659,26 @@ objfile::find_and_add_separate_symbol_file (symfile_add_flags symfile_flags)
 
 	  ext_lang_missing_file_result ext_result
 	    = ext_lang_handle_missing_debuginfo (this);
-	  if (!ext_result.filename ().empty ())
+	  if (ext_result.bfd () != nullptr)
+	    debug_bfd = ext_result.bfd ();
+	  else if (!ext_result.filename ().empty ())
 	    {
 	      /* Extension found a suitable debug file for us.  */
 	      debug_bfd
 		= symfile_bfd_open_no_error (ext_result.filename ().c_str ());
-
-	      if (debug_bfd != nullptr)
-		{
-		  symbol_file_add_separate (debug_bfd,
-					    ext_result.filename ().c_str (),
-					    symfile_flags, this);
-		  has_dwarf2 = true;
-		}
 	    }
 	  else if (ext_result.try_again ())
 	    {
 	      max_attempts = 2;
 	      continue;
+	    }
+
+	  if (debug_bfd != nullptr)
+	    {
+	      symbol_file_add_separate (debug_bfd,
+					bfd_get_filename (debug_bfd.get ()),
+					symfile_flags, this);
+	      has_dwarf2 = true;
 	    }
 	}
 

@@ -24,6 +24,7 @@
 #include "gdbsupport/array-view.h"
 #include <optional>
 #include "gdbtypes.h"
+#include "gdb_bfd.h"
 
 struct breakpoint;
 struct command_line;
@@ -385,12 +386,24 @@ struct ext_lang_missing_file_result
     : m_filename (std::move (filename))
   { /* Nothing.  */ }
 
+  /* Use BFD for the missing debug info.  */
+  ext_lang_missing_file_result (gdb_bfd_ref_ptr &&abfd)
+    : m_bfd (std::move (abfd))
+  { /* Nothing.  */ }
+
   /* The filename where GDB can find the missing debuginfo.  This is empty
      if the extension didn't suggest a file that can be used.  */
   const std::string &
   filename () const
   {
     return m_filename;
+  }
+
+  /* The BFD where GDB can find the missing debuginfo.  This is empty
+     if the extension didn't open a file that can be used.  */
+  const gdb_bfd_ref_ptr &bfd () const
+  {
+    return m_bfd;
   }
 
   /* Returns true if GDB should look again for the debug information.  */
@@ -400,9 +413,17 @@ struct ext_lang_missing_file_result
     return m_try_again;
   }
 
+  bool valid () const
+  {
+    return m_try_again || !m_filename.empty () || m_bfd != nullptr;
+  }
+
 private:
   /* The filename where the missing debuginfo can now be found.  */
   std::string m_filename;
+
+  /* The BFD where the missing debuginfo can now be found.  */
+  gdb_bfd_ref_ptr m_bfd;
 
   /* When true GDB will search again for the debuginfo using its standard
      techniques.  When false GDB will not search again.  */
