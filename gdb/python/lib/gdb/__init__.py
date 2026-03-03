@@ -382,7 +382,8 @@ def _handle_missing_objfile(pspace, buildid, filename):
         pspace: A gdb.Progspace for which the missing objfile handlers
                 should be run.  This is the program space in which an
                 objfile was found to be missing.
-        buildid: A string containing the build-id we're looking for.
+        buildid: A string containing the build-id we're looking for,
+                 or None if the buildid is not known.
         filename: The filename of the file GDB tried to find but
                   couldn't.  This is not where the file should be
                   placed if found, in fact, this file might already
@@ -403,9 +404,17 @@ def _handle_missing_objfile(pspace, buildid, filename):
                   missing objfile.
     """
 
-    return _handle_missing_files(
-        pspace, "objfile", lambda h: h(pspace, buildid, filename)
-    )
+    # Delay this as long as possible.
+    from gdb.missing_objfile import MissingObjfileHandler
+
+    def maybe_call_handler(handler):
+        if buildid is not None or (
+            isinstance(handler, MissingObjfileHandler) and not handler.buildid_required
+        ):
+            return handler(pspace, buildid, filename)
+        return None
+
+    return _handle_missing_files(pspace, "objfile", maybe_call_handler)
 
 
 class ParameterPrefix:

@@ -30,7 +30,11 @@ class MissingObjfileHandler(MissingFileHandler):
     Attributes:
         name: Read-only attribute, the name of this handler.
         enabled: When true this handler is enabled.
+        buildid_required: When False, this handler can accept a
+              request with buildid=None.
     """
+
+    buildid_required = True
 
     def __call__(self, buildid, filename):
         """Handle a missing objfile when GDB can knows the build-id.

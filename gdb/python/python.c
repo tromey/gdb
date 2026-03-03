@@ -1950,7 +1950,6 @@ gdbpy_find_objfile_from_buildid (const struct extension_language_defn *extlang,
 				 const char *missing_filename)
 {
   gdb_assert (pspace != nullptr);
-  gdb_assert (build_id != nullptr);
   gdb_assert (missing_filename != nullptr);
 
   /* Early exit if Python is not initialised.  */
@@ -1960,12 +1959,18 @@ gdbpy_find_objfile_from_buildid (const struct extension_language_defn *extlang,
   gdbpy_enter enter_py;
 
   /* Convert BUILD_ID into a Python object.  */
-  std::string hex_form = bin2hex (build_id->data, build_id->size);
-  gdbpy_ref<> pyo_buildid = host_string_to_python_string (hex_form.c_str ());
-  if (pyo_buildid == nullptr)
+  gdbpy_ref<> pyo_buildid;
+  if (build_id == nullptr)
+    pyo_buildid = gdbpy_ref<>::new_reference (Py_None);
+  else
     {
-      gdbpy_print_stack ();
-      return {};
+      std::string hex_form = bin2hex (build_id->data, build_id->size);
+      pyo_buildid = host_string_to_python_string (hex_form.c_str ());
+      if (pyo_buildid == nullptr)
+	{
+	  gdbpy_print_stack ();
+	  return {};
+	}
     }
 
   /* Convert MISSING_FILENAME to a Python object.  */
