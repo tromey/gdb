@@ -124,6 +124,8 @@ PYTHON_FILE_LIST = \
 	gdb/function/as_string.py \
 	gdb/function/caller_is.py \
 	gdb/function/strfns.py \
+	gdb/handler/__init__.py \
+	gdb/handler/android.py \
 	gdb/printer/__init__.py
 
 @HAVE_PYTHON_TRUE@PYTHON_FILES = $(PYTHON_FILE_LIST)

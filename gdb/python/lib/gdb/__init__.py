@@ -152,7 +152,7 @@ PYTHONDIR = os.path.dirname(os.path.dirname(__file__))
 
 # Packages to auto-load.
 
-packages = ["function", "command", "printer"]
+packages = ["function", "command", "printer", "handler"]
 
 # pkgutil.iter_modules is not available prior to Python 2.6.  Instead,
 # manually iterate the list, collating the Python files in each module
