@@ -576,7 +576,7 @@ solib::clear ()
   this->sections.clear ();
   this->abfd = nullptr;
 
-  /* Our caller closed the objfile, possibly via objfile_purge_solibs.  */
+  /* Our caller closed the objfile, possibly via purge_solibs.  */
   this->symbols_loaded = false;
   this->objfile = nullptr;
 
@@ -1324,7 +1324,7 @@ no_shared_libraries (program_space *pspace)
      solibs' objfiles before clear_solib has been called.  */
 
   clear_solib (pspace);
-  objfile_purge_solibs (pspace);
+  pspace->purge_solibs ();
 }
 
 /* Implements the command "nosharedlibrary", which discards symbols

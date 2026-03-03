@@ -291,6 +291,11 @@ struct program_space
     ebfd = std::move (abfd);
   }
 
+  /* Delete all objfile entries in this program space that represent
+     solibs that weren't explicitly loaded by the user, via e.g., the
+     add-symbol-file command.  */
+  void purge_solibs ();
+
   /* Reset saved solib data at the start of an solib event.  This lets
      us properly collect the data when calling solib_add, so it can then
      later be printed.  */

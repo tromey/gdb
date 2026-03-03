@@ -482,6 +482,20 @@ update_address_spaces (process_stratum_target *target,
 /* See progspace.h.  */
 
 void
+program_space::purge_solibs ()
+{
+  for (objfile &objf : objfiles_safe ())
+    {
+      /* We assume that the solib package has been purged already, or will
+	 be soon.  */
+      if (!(objf.flags & OBJF_USERLOADED) && (objf.flags & OBJF_SHARED))
+	remove_objfile (&objf);
+    }
+}
+
+/* See progspace.h.  */
+
+void
 program_space::clear_solib_cache ()
 {
   added_solibs.clear ();

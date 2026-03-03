@@ -450,7 +450,7 @@ objfile::~objfile ()
      is unknown, but we play it safe for now and keep each action until
      it is shown to be no longer needed.  */
 
-  /* Not all our callers call clear_symtab_users (objfile_purge_solibs,
+  /* Not all our callers call clear_symtab_users (purge_solibs,
      for example), so we need to call this here.  */
   clear_pc_function_cache ();
 
@@ -609,21 +609,6 @@ objfile::has_symbols ()
       return true;
 
   return false;
-}
-
-/* See objfiles.h.  */
-
-void
-objfile_purge_solibs (program_space *pspace)
-{
-  for (objfile &objf : pspace->objfiles_safe ())
-    {
-      /* We assume that the solib package has been purged already, or will
-	 be soon.  */
-
-      if (!(objf.flags & OBJF_USERLOADED) && (objf.flags & OBJF_SHARED))
-	objf.unlink ();
-    }
 }
 
 /* Qsort comparison function.  */
