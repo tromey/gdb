@@ -287,6 +287,7 @@ struct program_space
   /* Set the exec BFD for this program space to ABFD.  */
   void set_exec_bfd (gdb_bfd_ref_ptr &&abfd)
   {
+    gdb_assert (abfd != nullptr);
     ebfd = std::move (abfd);
   }
 

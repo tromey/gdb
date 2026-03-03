@@ -460,12 +460,11 @@ exec_file_attach (const char *filename, int from_tty)
 			      FOPEN_RUB, scratch_chan);
       else
 	temp = gdb_bfd_open (canonical_pathname, gnutarget, scratch_chan);
-      current_program_space->set_exec_bfd (std::move (temp));
+      if (temp == nullptr)
+	error (_("\"%s\": could not open as an executable file: %s."),
+	       scratch_pathname, bfd_errmsg (bfd_get_error ()));
 
-      if (!current_program_space->exec_bfd ())
-	error (_("\"%ps\": could not open as an executable file: %s."),
-	       styled_string (file_name_style.style (), scratch_pathname),
-	       bfd_errmsg (bfd_get_error ()));
+      current_program_space->set_exec_bfd (std::move (temp));
 
       /* gdb_realpath_keepfile resolves symlinks on the local
 	 filesystem and so cannot be used for "target:" files.  */
