@@ -90,7 +90,7 @@ program_space::~program_space ()
 
   breakpoint_program_space_exit (this);
   no_shared_libraries (this);
-  free_all_objfiles ();
+  reinit_frame_cache ();
   /* Defer breakpoint re-set because we don't want to create new
      locations for this pspace which we're tearing down.  */
   clear_symtab_users (SYMFILE_DEFER_BP_RESET);
