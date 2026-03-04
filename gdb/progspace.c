@@ -211,6 +211,9 @@ program_space::exec_close ()
       remove_target_sections (saved_ebfd.get ());
 
       m_exec_filename.reset ();
+      /* If the exec file is cleared, then it seems less likely that
+	 the preserved BFDs will be reused.  */
+      m_reusable_bfds.clear ();
     }
 }
 
@@ -484,12 +487,19 @@ update_address_spaces (process_stratum_target *target,
 void
 program_space::purge_solibs ()
 {
+  m_reusable_bfds.clear ();
+
   for (objfile &objf : objfiles_safe ())
     {
       /* We assume that the solib package has been purged already, or will
 	 be soon.  */
       if (!(objf.flags & OBJF_USERLOADED) && (objf.flags & OBJF_SHARED))
-	remove_objfile (&objf);
+	{
+	  if (gdb_bfd_ref_ptr &abfd = objf.obfd;
+	      abfd != nullptr && gdb_bfd_is_reusable (abfd))
+	    m_reusable_bfds.push_back (abfd);
+	  remove_objfile (&objf);
+	}
     }
 }
 

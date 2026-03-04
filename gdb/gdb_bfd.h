@@ -289,4 +289,10 @@ extern void gdb_bfd_init ();
 extern gdb::array_view<asymbol *> gdb_bfd_canonicalize_symtab
      (bfd *abfd, bool should_throw = true);
 
+/* Return true if ABFD could be reused in the future.  This is true if
+   the BFD is from a local file, and if the BFD's underlying file
+   hasn't changed since the time ABFD was opened.  */
+
+extern bool gdb_bfd_is_reusable (const gdb_bfd_ref_ptr &abfd);
+
 #endif /* GDB_GDB_BFD_H */

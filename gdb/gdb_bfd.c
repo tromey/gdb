@@ -720,6 +720,25 @@ gdb_bfd_unref (struct bfd *abfd)
   gdb_bfd_unref (archive_bfd);
 }
 
+/* See gdb_bfd.h.  */
+
+bool
+gdb_bfd_is_reusable (const gdb_bfd_ref_ptr &abfd)
+{
+  gdb::lock_guard<gdb::recursive_mutex> guard (gdb_bfd_mutex);
+
+  /* If the BFD isn't already in the cache, it's not ever going to
+     be.  */
+  if (gdb_bfd_cache.find (abfd.get ()) == gdb_bfd_cache.end ())
+    return false;
+
+  /* If the BFD's time has changed, then it won't be reused, so it
+     isn't "cacheable".  We're already holding the lock so we can call
+     bfd_get_mtime directly.  */
+  auto gdata = (struct gdb_bfd_data *) bfd_usrdata (abfd);
+  return bfd_get_mtime (abfd) == gdata->mtime;
+}
+
 /* A helper function that returns the section data descriptor
    associated with SECTION.  If no such descriptor exists, a new one
    is allocated and cleared.  */

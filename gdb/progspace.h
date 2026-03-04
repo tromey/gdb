@@ -420,6 +420,15 @@ private:
 
   /* See `exec_filename`.  */
   gdb::unique_xmalloc_ptr<char> m_exec_filename;
+
+  /* When restarting an inferior, we keep a reference to any reusable
+     BFDs from the previous run.  This is an optimization for the
+     typical scenario where re-running maps the same shared libraries;
+     in this case the BFD cache will cause these to be reused without
+     re-reading the symbols.  Note that no special work is done here,
+     this code merely holds a reference to lengthen the life of
+     reusable BFDs.  */
+  std::vector<gdb_bfd_ref_ptr> m_reusable_bfds;
 };
 
 /* The list of all program spaces.  There's always at least one.  */
