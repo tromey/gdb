@@ -301,6 +301,10 @@ struct program_space
      later be printed.  */
   void clear_solib_cache ();
 
+  /* Discard symbols that were auto-loaded from shared libraries in
+     this program space.  */
+  void no_shared_libraries ();
+
   /* Returns true iff there's no inferior bound to this program
      space.  */
   bool empty ();

@@ -89,7 +89,7 @@ program_space::~program_space ()
   set_current_program_space (this);
 
   breakpoint_program_space_exit (this);
-  no_shared_libraries (this);
+  no_shared_libraries ();
   reinit_frame_cache ();
   /* Defer breakpoint re-set because we don't want to create new
      locations for this pspace which we're tearing down.  */
@@ -501,6 +501,20 @@ program_space::purge_solibs ()
 	  remove_objfile (&objf);
 	}
     }
+}
+
+/* See progspace.h.  */
+
+void
+program_space::no_shared_libraries ()
+{
+  /* The order of the two routines below is important: clear_solib notifies
+     the solib_unloaded observers, and some of these observers might need
+     access to their associated objfiles.  Therefore, we can not purge the
+     solibs' objfiles before clear_solib has been called.  */
+
+  clear_solib (this);
+  purge_solibs ();
 }
 
 /* See progspace.h.  */

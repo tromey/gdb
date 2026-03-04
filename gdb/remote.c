@@ -6734,7 +6734,7 @@ remote_target::open_1 (const char *name, int from_tty, int extended_p)
     }
 
   /* First delete any symbols previously loaded from shared libraries.  */
-  no_shared_libraries (current_program_space);
+  current_program_space->no_shared_libraries ();
 
   /* Start the remote connection.  If error() or QUIT, discard this
      target (we'd otherwise be in an inconsistent state) and then

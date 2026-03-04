@@ -1313,20 +1313,6 @@ sharedlibrary_command (const char *args, int from_tty)
   solib_add (args, from_tty, 1);
 }
 
-/* See solib.h.  */
-
-void
-no_shared_libraries (program_space *pspace)
-{
-  /* The order of the two routines below is important: clear_solib notifies
-     the solib_unloaded observers, and some of these observers might need
-     access to their associated objfiles.  Therefore, we can not purge the
-     solibs' objfiles before clear_solib has been called.  */
-
-  clear_solib (pspace);
-  pspace->purge_solibs ();
-}
-
 /* Implements the command "nosharedlibrary", which discards symbols
    that have been auto-loaded from shared libraries.  Symbols from
    shared libraries that were added by explicit request of the user
@@ -1335,7 +1321,7 @@ no_shared_libraries (program_space *pspace)
 static void
 no_shared_libraries_command (const char *ignored, int from_tty)
 {
-  no_shared_libraries (current_program_space);
+  current_program_space->no_shared_libraries ();
 }
 
 /* See solib.h.  */
