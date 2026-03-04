@@ -89,7 +89,8 @@ program_space::~program_space ()
   set_current_program_space (this);
 
   breakpoint_program_space_exit (this);
-  no_shared_libraries ();
+  /* FIXME? */
+  clear_solib (this);
   reinit_frame_cache ();
   /* Defer breakpoint re-set because we don't want to create new
      locations for this pspace which we're tearing down.  */
@@ -485,9 +486,10 @@ update_address_spaces (process_stratum_target *target,
 /* See progspace.h.  */
 
 void
-program_space::purge_solibs ()
+program_space::purge_solibs (bool for_detach)
 {
-  m_reusable_bfds.clear ();
+  if (!for_detach)
+    m_reusable_bfds.clear ();
 
   for (objfile &objf : objfiles_safe ())
     {
@@ -506,7 +508,7 @@ program_space::purge_solibs ()
 /* See progspace.h.  */
 
 void
-program_space::no_shared_libraries ()
+program_space::no_shared_libraries (bool for_detach)
 {
   /* The order of the two routines below is important: clear_solib notifies
      the solib_unloaded observers, and some of these observers might need
@@ -514,7 +516,7 @@ program_space::no_shared_libraries ()
      solibs' objfiles before clear_solib has been called.  */
 
   clear_solib (this);
-  purge_solibs ();
+  purge_solibs (for_detach);
 }
 
 /* See progspace.h.  */

@@ -294,7 +294,7 @@ struct program_space
   /* Delete all objfile entries in this program space that represent
      solibs that weren't explicitly loaded by the user, via e.g., the
      add-symbol-file command.  */
-  void purge_solibs ();
+  void purge_solibs (bool for_detach = false);
 
   /* Reset saved solib data at the start of an solib event.  This lets
      us properly collect the data when calling solib_add, so it can then
@@ -303,7 +303,7 @@ struct program_space
 
   /* Discard symbols that were auto-loaded from shared libraries in
      this program space.  */
-  void no_shared_libraries ();
+  void no_shared_libraries (bool for_detach = false);
 
   /* Returns true iff there's no inferior bound to this program
      space.  */

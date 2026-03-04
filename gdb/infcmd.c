@@ -3063,7 +3063,7 @@ detach_command (const char *args, int from_tty)
   /* If the solist is global across inferiors, don't clear it when we
      detach from a single inferior.  */
   if (!gdbarch_has_global_solist (inf->arch ()))
-    inf->pspace->no_shared_libraries ();
+    inf->pspace->no_shared_libraries (true);
 
   if (deprecated_detach_hook)
     deprecated_detach_hook ();
