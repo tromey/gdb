@@ -735,8 +735,8 @@ gdb_bfd_is_reusable (const gdb_bfd_ref_ptr &abfd)
   /* If the BFD's time has changed, then it won't be reused, so it
      isn't "cacheable".  We're already holding the lock so we can call
      bfd_get_mtime directly.  */
-  auto gdata = (struct gdb_bfd_data *) bfd_usrdata (abfd);
-  return bfd_get_mtime (abfd) == gdata->mtime;
+  auto gdata = (struct gdb_bfd_data *) bfd_usrdata (abfd.get ());
+  return bfd_get_mtime (abfd.get ()) == gdata->mtime;
 }
 
 /* A helper function that returns the section data descriptor
