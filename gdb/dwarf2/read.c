@@ -9519,6 +9519,9 @@ dwarf2_add_field (struct field_info *fip, struct die_info *die,
 
   fp = &new_field->field;
 
+  if (dwarf2_flag_true_p (die, DW_AT_artificial, cu))
+    fp->set_is_artificial (true);
+
   if ((die->tag == DW_TAG_member || die->tag == DW_TAG_namelist_item)
       && !die_is_declaration (die, cu))
     {
@@ -9546,14 +9549,6 @@ dwarf2_add_field (struct field_info *fip, struct die_info *die,
       /* The name is already allocated along with this objfile, so we don't
 	 need to duplicate it for the type.  */
       fp->set_name (fieldname);
-
-      /* Change accessibility for artificial fields (e.g. virtual table
-	 pointer or virtual base class pointer) to private.  */
-      if (dwarf2_attr (die, DW_AT_artificial, cu))
-	{
-	  fp->set_is_artificial (true);
-	  fp->set_accessibility (accessibility::PRIVATE);
-	}
     }
   else if (die->tag == DW_TAG_member || die->tag == DW_TAG_variable)
     {
