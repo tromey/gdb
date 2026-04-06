@@ -3183,49 +3183,6 @@ ada_value_slice_from_ptr (struct value *array_ptr, struct type *type,
 }
 
 
-static struct value *
-ada_value_slice (struct value *array, LONGEST low, LONGEST high)
-{
-  struct type *type = ada_check_typedef (array->type ());
-  struct type *base_index_type = type->index_type ()->target_type ();
-  type_allocator alloc (type->index_type ());
-  struct type *index_type
-    = create_static_range_type (alloc, type->index_type (), low, high);
-
-  dynamic_prop prop_storage;
-  dynamic_prop *prop = type->dyn_prop (DYN_PROP_BYTE_STRIDE);
-  bool is_byte_stride = true;
-  if (prop == nullptr)
-    {
-      prop = type->dyn_prop (DYN_PROP_BIT_STRIDE);
-      is_byte_stride = false;
-      if (prop == nullptr)
-	{
-	  prop = &prop_storage;
-	  prop->set_const_val (type->field (0).bitsize ());
-	}
-    }
-
-  struct type *slice_type = create_array_type_with_stride
-			      (alloc, type->target_type (), index_type,
-			       prop, is_byte_stride);
-  std::optional<LONGEST> low_pos, high_pos;
-
-
-  low_pos = discrete_position (base_index_type, low);
-  high_pos = discrete_position (base_index_type, high);
-
-  if (!low_pos.has_value () || !high_pos.has_value ())
-    {
-      warning (_("unable to get positions in slice, use bounds instead"));
-      low_pos = low;
-      high_pos = high;
-    }
-
-  return value_cast (slice_type,
-		     value_slice (array, low, *high_pos - *low_pos + 1));
-}
-
 /* If type is a record type in the form of a standard GNAT array
    descriptor, returns the number of dimensions for type.  If arr is a
    simple array, returns the number of "array of"s that prefix its
@@ -10306,7 +10263,8 @@ ada_ternop_slice_operation::evaluate (struct type *expect_type,
   else if (high_bound < low_bound)
     return empty_array (array->type (), low_bound, high_bound);
   else
-    return ada_value_slice (array, low_bound, high_bound);
+    return ada_value_slice_from_ptr (array, array->type (),
+				     low_bound, high_bound);
 }
 
 /* Implement BINOP_IN_BOUNDS.  */
