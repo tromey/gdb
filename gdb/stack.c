@@ -2482,10 +2482,7 @@ print_frame_arg_vars (const frame_info_ptr &frame,
 		      struct ui_file *stream)
 {
   struct print_variable_and_value_data cb_data;
-  struct symbol *func;
   std::optional<CORE_ADDR> pc;
-  std::optional<compiled_regex> preg;
-  std::optional<compiled_regex> treg;
 
   if (!(pc = get_frame_pc_if_available (frame)))
     {
@@ -2495,7 +2492,7 @@ print_frame_arg_vars (const frame_info_ptr &frame,
       return;
     }
 
-  func = get_frame_function (frame);
+  symbol *func = get_frame_function (frame);
   if (func == NULL)
     {
       if (!quiet)
