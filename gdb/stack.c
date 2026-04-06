@@ -2249,14 +2249,31 @@ iterate_over_block_local_vars (const struct block *block,
 
 struct print_variable_and_value_data
 {
+  print_variable_and_value_data (const char *regexp,
+				 const char *t_regexp,
+				 const frame_info_ptr &frame,
+				 int num_tabs,
+				 ui_file *stream)
+    : preg (prepare_reg (regexp)),
+      treg (prepare_reg (t_regexp)),
+      frame (frame),
+      num_tabs (num_tabs),
+      stream (stream)
+  {
+  }
+
   std::optional<compiled_regex> preg;
   std::optional<compiled_regex> treg;
-  struct frame_id frame_id;
+  frame_info_ptr frame;
   int num_tabs;
-  struct ui_file *stream;
-  int values_printed;
+  ui_file *stream;
+  bool values_printed = false;
 
   void operator() (const char *print_name, struct symbol *sym);
+
+private:
+
+  std::optional<compiled_regex> prepare_reg (const char *regexp);
 };
 
 /* The callback for the locals and args iterators.  */
@@ -2265,8 +2282,6 @@ void
 print_variable_and_value_data::operator() (const char *print_name,
 					   struct symbol *sym)
 {
-  frame_info_ptr frame;
-
   if (preg.has_value ()
       && preg->exec (sym->natural_name (), 0, NULL, 0) != 0)
     return;
@@ -2276,32 +2291,25 @@ print_variable_and_value_data::operator() (const char *print_name,
   if (language_def (sym->language ())->symbol_printing_suppressed (sym))
     return;
 
-  frame = frame_find_by_id (frame_id);
-  if (frame == NULL)
-    {
-      warning (_("Unable to restore previously selected frame."));
-      return;
-    }
-
   print_variable_and_value (print_name, sym, frame, stream, num_tabs);
 
-  values_printed = 1;
+  values_printed = true;
 }
 
-/* Prepares the regular expression REG from REGEXP.
-   If REGEXP is NULL, it results in an empty regular expression.  */
+/* Prepares a regular expression from REGEXP.  If REGEXP is NULL, it
+   results in an empty object.  */
 
-static void
-prepare_reg (const char *regexp, std::optional<compiled_regex> *reg)
+std::optional<compiled_regex>
+print_variable_and_value_data::prepare_reg (const char *regexp)
 {
-  if (regexp != NULL)
+  std::optional<compiled_regex> result;
+  if (regexp != nullptr)
     {
       int cflags = REG_NOSUB | (case_sensitivity == case_sensitive_off
 				? REG_ICASE : 0);
-      reg->emplace (regexp, cflags, _("Invalid regexp"));
+      result.emplace (regexp, cflags, _("Invalid regexp"));
     }
-  else
-    reg->reset ();
+  return result;
 }
 
 /* Print all variables from the innermost up to the function block of FRAME.
@@ -2319,7 +2327,6 @@ print_frame_local_vars (const frame_info_ptr &frame,
 			const char *regexp, const char *t_regexp,
 			int num_tabs, struct ui_file *stream)
 {
-  struct print_variable_and_value_data cb_data;
   const struct block *block;
   std::optional<CORE_ADDR> pc;
 
@@ -2339,12 +2346,8 @@ print_frame_local_vars (const frame_info_ptr &frame,
       return;
     }
 
-  prepare_reg (regexp, &cb_data.preg);
-  prepare_reg (t_regexp, &cb_data.treg);
-  cb_data.frame_id = get_frame_id (frame);
-  cb_data.num_tabs = 4 * num_tabs;
-  cb_data.stream = stream;
-  cb_data.values_printed = 0;
+  print_variable_and_value_data cb_data (regexp, t_regexp, frame,
+					 4 * num_tabs, stream);
 
   /* Temporarily change the selected frame to the given FRAME.
      This allows routines that rely on the selected frame instead
@@ -2481,8 +2484,6 @@ print_frame_arg_vars (const frame_info_ptr &frame,
 		      const char *regexp, const char *t_regexp,
 		      struct ui_file *stream)
 {
-  struct print_variable_and_value_data cb_data;
-  struct symbol *func;
   std::optional<CORE_ADDR> pc;
 
   if (!(pc = get_frame_pc_if_available (frame)))
@@ -2493,7 +2494,7 @@ print_frame_arg_vars (const frame_info_ptr &frame,
       return;
     }
 
-  func = get_frame_function (frame);
+  symbol *func = get_frame_function (frame);
   if (func == NULL)
     {
       if (!quiet)
@@ -2501,12 +2502,7 @@ print_frame_arg_vars (const frame_info_ptr &frame,
       return;
     }
 
-  prepare_reg (regexp, &cb_data.preg);
-  prepare_reg (t_regexp, &cb_data.treg);
-  cb_data.frame_id = get_frame_id (frame);
-  cb_data.num_tabs = 0;
-  cb_data.stream = stream;
-  cb_data.values_printed = 0;
+  print_variable_and_value_data cb_data (regexp, t_regexp, frame, 0, stream);
 
   iterate_over_block_arg_vars (func->value_block (), cb_data);
 
