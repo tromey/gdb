@@ -39,6 +39,23 @@ public:
 
   DISABLE_COPY_AND_ASSIGN (compiled_regex);
 
+  compiled_regex (compiled_regex &&other)
+    : m_pattern (other.m_pattern)
+  {
+    memset (&other.m_pattern, 0, sizeof (other.m_pattern));
+  }
+
+  compiled_regex &operator= (compiled_regex &&other)
+  {
+    if (&other != this)
+      {
+	regfree (&m_pattern);
+	m_pattern = other.m_pattern;
+	memset (&other.m_pattern, 0, sizeof (other.m_pattern));
+      }
+    return *this;
+  }
+
   /* Wrapper around ::regexec.  */
   int exec (const char *string,
 	    size_t nmatch, regmatch_t pmatch[],
