@@ -219,7 +219,7 @@ static const gdb::option::option_def backtrace_command_option_defs[] = {
 /* Prototypes for local functions.  */
 
 static void print_frame_local_vars (const frame_info_ptr &frame,
-				    bool quiet,
+				    bool quiet, bool all,
 				    const char *regexp, const char *t_regexp,
 				    int num_tabs, struct ui_file *stream);
 
@@ -2048,7 +2048,8 @@ backtrace_command_1 (const frame_print_options &fp_opts,
 
 	  print_frame_info (fp_opts, fi, 1, LOCATION, 1, 0);
 	  if ((flags & PRINT_LOCALS) != 0)
-	    print_frame_local_vars (fi, false, NULL, NULL, 1, gdb_stdout);
+	    print_frame_local_vars (fi, false, false, NULL, NULL, 1,
+				    gdb_stdout);
 
 	  /* Save the last frame to check for error conditions.  */
 	  trailing = fi;
@@ -2253,12 +2254,14 @@ struct print_variable_and_value_data
 				 const char *t_regexp,
 				 const frame_info_ptr &frame,
 				 int num_tabs,
-				 ui_file *stream)
+				 ui_file *stream,
+				 bool all)
     : preg (prepare_reg (regexp)),
       treg (prepare_reg (t_regexp)),
       frame (frame),
       num_tabs (num_tabs),
-      stream (stream)
+      stream (stream),
+      all (all)
   {
   }
 
@@ -2267,6 +2270,7 @@ struct print_variable_and_value_data
   frame_info_ptr frame;
   int num_tabs;
   ui_file *stream;
+  bool all;
   bool values_printed = false;
 
   void operator() (const char *print_name, struct symbol *sym);
@@ -2288,7 +2292,8 @@ print_variable_and_value_data::operator() (const char *print_name,
   if (treg.has_value ()
       && !treg_matches_sym_type_name (*treg, sym))
     return;
-  if (language_def (sym->language ())->symbol_printing_suppressed (sym))
+
+  if (!all && sym->is_artificial ())
     return;
 
   print_variable_and_value (print_name, sym, frame, stream, num_tabs);
@@ -2319,11 +2324,13 @@ print_variable_and_value_data::prepare_reg (const char *regexp)
    If T_REGEXP is not NULL, only print local variables whose type
    matches T_REGEXP.
    If no local variables have been printed and !QUIET, prints a message
-   explaining why no local variables could be printed.  */
+   explaining why no local variables could be printed.
+   If ALL is true, then all variables are displayed; otherwise
+   artificial variables are omitted.  */
 
 static void
 print_frame_local_vars (const frame_info_ptr &frame,
-			bool quiet,
+			bool quiet, bool all,
 			const char *regexp, const char *t_regexp,
 			int num_tabs, struct ui_file *stream)
 {
@@ -2347,7 +2354,7 @@ print_frame_local_vars (const frame_info_ptr &frame,
     }
 
   print_variable_and_value_data cb_data (regexp, t_regexp, frame,
-					 4 * num_tabs, stream);
+					 4 * num_tabs, stream, all);
 
   /* Temporarily change the selected frame to the given FRAME.
      This allows routines that rely on the selected frame instead
@@ -2368,11 +2375,12 @@ print_frame_local_vars (const frame_info_ptr &frame,
 
 /* Structure to hold the values of the options used by the 'info
    variables' command and other similar commands.  These correspond to the
-   -q and -t options.  */
+   -q, -a, and -t options.  */
 
 struct info_print_options
 {
   bool quiet = false;
+  bool all = false;
   std::string type_regexp;
 };
 
@@ -2382,6 +2390,13 @@ static const gdb::option::option_def info_print_options_defs[] = {
   gdb::option::boolean_option_def<info_print_options> {
     "q",
     [] (info_print_options *opt) { return &opt->quiet; },
+    nullptr, /* show_cmd_cb */
+    nullptr /* set_doc */
+  },
+
+  gdb::option::boolean_option_def<info_print_options> {
+    "a",
+    [] (info_print_options *opt) { return &opt->all; },
     nullptr, /* show_cmd_cb */
     nullptr /* set_doc */
   },
@@ -2434,7 +2449,7 @@ info_locals_command (const char *args, int from_tty)
 
   print_frame_local_vars
     (get_selected_frame (_("No frame selected.")),
-     opts.quiet, args,
+     opts.quiet, opts.all, args,
      opts.type_regexp.empty () ? nullptr : opts.type_regexp.c_str (),
      0, gdb_stdout);
 }
@@ -2480,7 +2495,7 @@ iterate_over_block_arg_vars (const struct block *b,
 
 static void
 print_frame_arg_vars (const frame_info_ptr &frame,
-		      bool quiet,
+		      bool quiet, bool all,
 		      const char *regexp, const char *t_regexp,
 		      struct ui_file *stream)
 {
@@ -2503,7 +2518,7 @@ print_frame_arg_vars (const frame_info_ptr &frame,
     }
 
   struct print_variable_and_value_data cb_data (regexp, t_regexp,
-						frame, 0, stream);
+						frame, 0, stream, all);
 
   iterate_over_block_arg_vars (func->value_block (), cb_data);
 
@@ -2530,7 +2545,7 @@ info_args_command (const char *args, int from_tty)
 
   print_frame_arg_vars
     (get_selected_frame (_("No frame selected.")),
-     opts.quiet, args,
+     opts.quiet, opts.all, args,
      opts.type_regexp.empty () ? nullptr : opts.type_regexp.c_str (),
      gdb_stdout);
 }

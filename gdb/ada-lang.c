@@ -13624,12 +13624,6 @@ public:
   }
 
   /* See language.h.  */
-  bool symbol_printing_suppressed (struct symbol *symbol) const override
-  {
-    return symbol->is_artificial ();
-  }
-
-  /* See language.h.  */
   struct value *value_string (struct gdbarch *gdbarch,
 			      const char *ptr, ssize_t len) const override
   {
