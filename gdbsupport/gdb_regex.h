@@ -35,9 +35,31 @@ public:
 		  const char *message)
     ATTRIBUTE_NONNULL (2) ATTRIBUTE_NONNULL (4);
 
-  ~compiled_regex ();
+  ~compiled_regex ()
+  {
+    clear ();
+  }
 
   DISABLE_COPY_AND_ASSIGN (compiled_regex);
+
+  compiled_regex (compiled_regex &&other)
+    : m_valid (other.m_valid),
+      m_pattern (other.m_pattern)
+  {
+    other.m_valid = false;
+  }
+
+  compiled_regex &operator= (compiled_regex &&other)
+  {
+    if (&other != this)
+      {
+	clear ();
+	m_valid = other.m_valid;
+	m_pattern = other.m_pattern;
+	other.m_valid = false;
+      }
+    return *this;
+  }
 
   /* Wrapper around ::regexec.  */
   int exec (const char *string,
@@ -50,6 +72,12 @@ public:
 	      int range, struct re_registers *regs);
 
 private:
+  /* Free the compiled pattern, if necessary.  */
+  void clear ();
+
+  /* True if the compiled pattern is valid.  */
+  bool m_valid = false;
+
   /* The compiled pattern.  */
   regex_t m_pattern;
 };

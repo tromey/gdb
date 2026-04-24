@@ -33,17 +33,25 @@ compiled_regex::compiled_regex (const char *regex, int cflags,
       regerror (code, &m_pattern, err.data (), length);
       error (("%s: %s"), message, err.data ());
     }
+
+  m_valid = true;
 }
 
-compiled_regex::~compiled_regex ()
+void
+compiled_regex::clear ()
 {
-  regfree (&m_pattern);
+  if (m_valid)
+    {
+      regfree (&m_pattern);
+      m_valid = false;
+    }
 }
 
 int
 compiled_regex::exec (const char *string, size_t nmatch,
 		      regmatch_t pmatch[], int eflags) const
 {
+  gdb_assert (m_valid);
   return regexec (&m_pattern, string, nmatch, pmatch, eflags);
 }
 
@@ -52,5 +60,6 @@ compiled_regex::search (const char *string,
 			int length, int start, int range,
 			struct re_registers *regs)
 {
+  gdb_assert (m_valid);
   return re_search (&m_pattern, string, length, start, range, regs);
 }
