@@ -116,15 +116,16 @@ include $(srcdir)/silent-rules.mk
 # place if the compile succeeds.  We need this because gcc does not
 # atomically write the dependency output file.
 COMPILE.pre = $(CXX) -x c++ $(CXX_DIALECT)
-COMPILE.post = -c -o $@ \
-	-MT $@ -MMD -MP -MF $(@D)/$(DEPDIR)/$(basename $(@F)).Tpo
+COMPILE.post = -MT $@ -MMD -MP -MF $(@D)/$(DEPDIR)/$(basename $(@F)).Tpo
 POSTCOMPILE = @mv $(@D)/$(DEPDIR)/$(basename $(@F)).Tpo \
 	$(@D)/$(DEPDIR)/$(basename $(@F)).Po
 
 # CXXFLAGS is at the very end on purpose, so that user-supplied flags can
 # override internal flags.
 COMPILE = $(ECHO_CXX) $(COMPILE.pre) $(INTERNAL_CFLAGS) $(CXXFLAGS) \
-	$(COMPILE.post)
+	-c -o $@ $(COMPILE.post)
+COMPILE_GCH = $(ECHO_GEN) $(CXX) $(CXX_DIALECT) $(INTERNAL_CFLAGS) \
+	$(CXXFLAGS) $(COMPILE.post)
 
 YACC = @YACC@
 
@@ -145,6 +146,8 @@ MAKEHTML = $(MAKEINFO_CMD) --html
 MAKEHTMLFLAGS =
 
 LIBTOOL = @LIBTOOL@
+
+PCH_FILE = @PCH_FILE@
 
 # Set this up with gcc if you have gnu ld and the loader will print out
 # line numbers for undefined references.
@@ -653,7 +656,7 @@ CONFIG_SRC_SUBDIR = arch cli dwarf2 mi compile tui unittests guile python \
 # your system doesn't have fcntl.h in /usr/include (which is where it
 # should be according to Posix).
 DEFS = @DEFS@
-GDB_INCLUDED_HEADER = -include $(srcdir)/defs.h
+GDB_INCLUDED_HEADER = -include defs.h
 GDB_CFLAGS = \
 	-I. \
 	-I$(srcdir) \
@@ -2160,6 +2163,7 @@ DISTSTUFF = $(YYFILES) $(YYHFILES)
 
 # All generated files which can be included by another file.
 generated_files = \
+	$(PCH_FILE) \
 	ada-lex-gen.c \
 	config.h \
 	jit-reader.h \
@@ -2196,7 +2200,12 @@ check-stale-generated-files:
 		fi; \
 	fi
 
-# Rule for compiling .c files.
+defs.h.gch: GDB_INCLUDED_HEADER :=
+
+defs.h.gch: defs.h $(filter %.h,$(generated_files))
+	$(COMPILE_GCH) -o defs.h.gch $<
+	$(POSTCOMPILE)
+
 %.o: %.c
 	$(COMPILE) $<
 	$(POSTCOMPILE)
@@ -2510,7 +2519,7 @@ clean mostlyclean: $(CONFIG_CLEAN)
 	@$(MAKE) $(FLAGS_TO_PASS) DO=clean "DODIRS=$(CLEANDIRS)" subdir_do
 	rm -f *.o *.a *~ init.c-tmp init.l-tmp version.c-tmp
 	rm -f init.c stamp-init version.c stamp-version
-	rm -f gdb$(EXEEXT) core make.log
+	rm -f gdb$(EXEEXT) core make.log defs.h.gch
 	rm -f gdb[0-9]$(EXEEXT)
 	rm -f xml-builtin.c stamp-xml
 	rm -f gcore gstack gdb-add-index

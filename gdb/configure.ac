@@ -176,6 +176,13 @@ AC_MSG_RESULT([$with_auto_load_safe_path])
 
 AC_CONFIG_SUBDIRS(testsuite)
 
+AC_ARG_ENABLE([pch], AS_HELP_STRING([--enable-pch], [Build with a PCH file]))
+PCH_FILE=
+if test x$enable_pch = xyes; then
+  PCH_FILE=defs.h.gch
+fi
+AC_SUBST([PCH_FILE])
+
 # Check whether to support alternative target configurations
 AC_ARG_ENABLE(targets,
 AS_HELP_STRING([--enable-targets=TARGETS], [alternative target configurations]),
