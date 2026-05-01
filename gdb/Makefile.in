@@ -118,12 +118,15 @@ include $(srcdir)/silent-rules.mk
 # GNU make is used.  The overrides implement dependency tracking.
 COMPILE.pre = $(CXX) -x c++ $(CXX_DIALECT)
 COMPILE.post = -c -o $@
+COMPILE_GCH.post = -MT $@ -MMD -MP -MF $(@D)/$(DEPDIR)/$(basename $(@F)).Tpo
 POSTCOMPILE = @true
 
 # CXXFLAGS is at the very end on purpose, so that user-supplied flags can
 # override internal flags.
 COMPILE = $(ECHO_CXX) $(COMPILE.pre) $(INTERNAL_CFLAGS) $(CXXFLAGS) \
 	$(COMPILE.post)
+COMPILE_GCH = $(ECHO_GEN) $(CXX) $(CXX_DIALECT) $(INTERNAL_CFLAGS) \
+	$(CXXFLAGS) $(COMPILE_GCH.post)
 
 YACC = @YACC@
 
@@ -2078,6 +2081,7 @@ DISTSTUFF = $(YYFILES)
 
 # All generated files which can be included by another file.
 generated_files = \
+	defs.h.gch \
 	ada-lex.c \
 	config.h \
 	jit-reader.h \
@@ -2089,6 +2093,12 @@ PYTHON_CFLAGS = @PYTHON_CFLAGS@
 
 all: gdb$(EXEEXT) $(CONFIG_ALL) gdb-gdb.py gdb-gdb.gdb gcore gstack gdb-add-index
 	@$(MAKE) $(FLAGS_TO_PASS) DO=all "DODIRS=$(SUBDIRS)" subdir_do
+
+defs.h.gch: GDB_INCLUDED_HEADER :=
+
+defs.h.gch: defs.h $(filter %.h,$(generated_files))
+	$(COMPILE_GCH) -o defs.h.gch $<
+	$(POSTCOMPILE)
 
 # Rule for compiling .c files in the top-level gdb directory.
 # The order-only dependencies ensure that we create the build subdirectories.
@@ -2408,7 +2418,7 @@ clean mostlyclean: $(CONFIG_CLEAN)
 	@$(MAKE) $(FLAGS_TO_PASS) DO=clean "DODIRS=$(CLEANDIRS)" subdir_do
 	rm -f *.o *.a *~ init.c-tmp init.l-tmp version.c-tmp
 	rm -f init.c stamp-init version.c stamp-version
-	rm -f gdb$(EXEEXT) core make.log
+	rm -f gdb$(EXEEXT) core make.log defs.h.gch
 	rm -f gdb[0-9]$(EXEEXT)
 	rm -f xml-builtin.c stamp-xml
 	rm -f $(DEPDIR)/*
