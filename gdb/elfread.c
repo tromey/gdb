@@ -757,7 +757,7 @@ static int
 elf_gnu_ifunc_resolve_by_cache (const char *name, CORE_ADDR *addr_p)
 {
   gnu_ifunc_debug_printf ("resolving \"%s\" by cache", name);
-  int found = 0;
+  bool found = false;
   const char *func = __func__;
 
   /* FIXME: we only search the initial namespace.
@@ -770,11 +770,11 @@ elf_gnu_ifunc_resolve_by_cache (const char *name, CORE_ADDR *addr_p)
 	 elf_gnu_ifunc_cache *cache
 	   = elf_objfile_gnu_ifunc_cache_data.get (objfile);
 	 if (cache == nullptr)
-	   return false;
+	   return iteration_status::keep_going;
 
 	 auto it = cache->find (name);
 	 if (it == cache->end ())
-	   return false;
+	   return iteration_status::keep_going;
 
 	 if (addr_p != nullptr)
 	   *addr_p = it->second;
@@ -782,8 +782,8 @@ elf_gnu_ifunc_resolve_by_cache (const char *name, CORE_ADDR *addr_p)
 	 gnu_ifunc_debug_printf_func
 	   (func, "cache hit for \"%s\" -> %s in objfile %s", name,
 	    paddress (objfile->arch (), it->second), objfile_name (objfile));
-	 found = 1;
-	 return true;
+	 found = true;
+	 return iteration_status::stop;
        }, nullptr);
 
   if (!found)
@@ -806,7 +806,7 @@ elf_gnu_ifunc_resolve_by_got (const char *name, CORE_ADDR *addr_p)
   gnu_ifunc_debug_printf ("resolving \"%s\" by GOT", name);
   char *name_got_plt;
   const size_t got_suffix_len = strlen (SYMBOL_GOT_PLT_SUFFIX);
-  int found = 0;
+  bool found = false;
   const char *func = __func__;
 
   name_got_plt = (char *) alloca (strlen (name) + got_suffix_len + 1);
@@ -831,19 +831,19 @@ elf_gnu_ifunc_resolve_by_got (const char *name, CORE_ADDR *addr_p)
 	   = lookup_minimal_symbol (current_program_space, name_got_plt,
 				    objfile);
 	 if (msym.minsym == NULL)
-	   return 0;
+	   return iteration_status::keep_going;
 	 if (msym.minsym->type () != mst_slot_got_plt)
-	   return 0;
+	   return iteration_status::keep_going;
 	 pointer_address = msym.value_address ();
 
 	 plt = bfd_get_section_by_name (obfd, ".plt");
 	 if (plt == NULL)
-	   return 0;
+	   return iteration_status::keep_going;
 
 	 if (msym.minsym->size () != ptr_size)
-	   return 0;
+	   return iteration_status::keep_going;
 	 if (target_read_memory (pointer_address, buf, ptr_size) != 0)
-	   return 0;
+	   return iteration_status::keep_going;
 	 addr = extract_typed_address (buf, ptr_type);
 	 addr = gdbarch_convert_from_func_ptr_addr
 	   (gdbarch, addr, current_inferior ()->top_target ());
@@ -860,11 +860,11 @@ elf_gnu_ifunc_resolve_by_got (const char *name, CORE_ADDR *addr_p)
 	     gnu_ifunc_debug_printf_func (func,
 					  "resolved \"%s\" via GOT to %s",
 					  name, paddress (gdbarch, addr));
-	     found = 1;
-	     return 1;
+	     found = true;
+	     return iteration_status::stop;
 	   }
 
-	 return 0;
+	 return iteration_status::keep_going;
        }, nullptr);
 
   if (!found)

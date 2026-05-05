@@ -1500,7 +1500,7 @@ add_symbol_overload_list_qualified (const char *func_name,
 		      SEARCH_GLOBAL_BLOCK | SEARCH_STATIC_BLOCK,
 		      SEARCH_FUNCTION_DOMAIN);
 
-	 return false;
+	 return iteration_status::keep_going;
        }, current_objfile);
 }
 

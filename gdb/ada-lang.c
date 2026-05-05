@@ -4991,11 +4991,11 @@ ada_lookup_simple_minsym (const char *name, struct objfile *objfile)
 	       {
 		 result.minsym = msymbol;
 		 result.objfile = obj;
-		 return true;
+		 return iteration_status::stop;
 	       }
 	   }
 
-	 return false;
+	 return iteration_status::keep_going;
        }, objfile);
 
   return result;

@@ -609,21 +609,21 @@ gdbpy_lookup_objfile (PyObject *self, PyObject *args, PyObject *kw)
 	 {
 	   /* Don't return separate debug files.  */
 	   if (obj->separate_debug_objfile_backlink != nullptr)
-	     return false;
+	     return iteration_status::keep_going;
 
 	   bfd *obfd = obj->obfd.get ();
 	   if (obfd == nullptr)
-	     return false;
+	     return iteration_status::keep_going;
 
 	   const bfd_build_id *obfd_build_id = build_id_bfd_get (obfd);
 	   if (obfd_build_id == nullptr)
-	     return false;
+	     return iteration_status::keep_going;
 
 	   if (!objfpy_build_id_matches (obfd_build_id, name))
-	     return false;
+	     return iteration_status::keep_going;
 
 	   objfile = obj;
-	   return true;
+	   return iteration_status::stop;
 	 }, gdbpy_current_objfile);
   else
     current_program_space->iterate_over_objfiles_in_search_order
@@ -631,26 +631,26 @@ gdbpy_lookup_objfile (PyObject *self, PyObject *args, PyObject *kw)
 	 {
 	   /* Don't return separate debug files.  */
 	   if (obj->separate_debug_objfile_backlink != nullptr)
-	     return false;
+	     return iteration_status::keep_going;
 
 	   if ((obj->flags & OBJF_NOT_FILENAME) != 0)
-	     return false;
+	     return iteration_status::keep_going;
 
 	   const char *filename = objfile_filename (obj);
 	   if (filename != NULL
 	       && compare_filenames_for_search (filename, name))
 	     {
 	       objfile = obj;
-	       return true;
+	       return iteration_status::keep_going;
 	     }
 
 	   if (compare_filenames_for_search (obj->original_name, name))
 	     {
 	       objfile = obj;
-	       return true;
+	       return iteration_status::keep_going;
 	     }
 
-	   return false;
+	   return iteration_status::keep_going;
 	 }, gdbpy_current_objfile);
 
   if (objfile != NULL)

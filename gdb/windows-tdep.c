@@ -915,14 +915,14 @@ windows_solib_ops::iterate_over_objfiles_in_search_order
 {
   if (current_objfile)
     {
-      if (cb (current_objfile))
+      if (cb (current_objfile) == iteration_status::stop)
 	return;
     }
 
   for (objfile &objfile : m_pspace->objfiles ())
     if (&objfile != current_objfile)
       {
-	if (cb (&objfile))
+	if (cb (&objfile) == iteration_status::stop)
 	  return;
       }
 }

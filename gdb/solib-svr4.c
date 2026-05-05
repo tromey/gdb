@@ -3664,7 +3664,7 @@ svr4_solib_ops::iterate_over_objfiles_in_search_order
 	  && gdb_bfd_scan_elf_dyntag (DT_SYMBOLIC, abfd, nullptr, nullptr) == 1)
 	{
 	  checked_current_objfile = true;
-	  if (cb (current_objfile))
+	  if (cb (current_objfile) == iteration_status::stop)
 	    return;
 	}
     }
@@ -3700,7 +3700,7 @@ svr4_solib_ops::iterate_over_objfiles_in_search_order
       if (solib_base != debug_base)
 	continue;
 
-      if (cb (&objfile))
+      if (cb (&objfile) == iteration_status::stop)
 	return;
     }
 }

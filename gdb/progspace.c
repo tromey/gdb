@@ -129,7 +129,7 @@ program_space::iterate_over_objfiles_in_search_order
       (cb, current_objfile);
 
   for (auto &objfile : this->objfiles ())
-    if (cb (&objfile))
+    if (cb (&objfile) == iteration_status::stop)
       return;
 }
 

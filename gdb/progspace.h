@@ -207,8 +207,9 @@ struct program_space
   /* Iterate over all objfiles of the program space in the order that makes the
      most sense to make global symbol searches.
 
-     CB is a callback function passed an objfile to be searched.  The iteration stops
-     if this function returns true.
+     CB is a callback function passed an objfile to be searched.  It
+     returns an iteration_status to indicate whether the search should
+     continue.
 
      If not nullptr, CURRENT_OBJFILE corresponds to the objfile being
      inspected when the symbol search was requested.  */

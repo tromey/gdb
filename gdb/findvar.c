@@ -455,7 +455,9 @@ language_defn::read_var_value (struct symbol *var,
 					       var->linkage_name (), objfile);
 
 		/* Stop if a match is found.  */
-		return bmsym.minsym != nullptr;
+		if (bmsym.minsym != nullptr)
+		  return iteration_status::stop;
+		return iteration_status::keep_going;
 	     },
 	   var->objfile ());
 

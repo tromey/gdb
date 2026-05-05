@@ -23,6 +23,7 @@
 #include "gdb_bfd.h"
 #include "gdbsupport/function-view.h"
 #include "gdbsupport/intrusive_list.h"
+#include "gdbsupport/iteration-status.h"
 #include "gdbsupport/owning_intrusive_list.h"
 #include "symfile-add-flags.h"
 #include "target-section.h"
@@ -141,7 +142,7 @@ using solib_up = std::unique_ptr<solib>;
    methods.  */
 
 using iterate_over_objfiles_in_search_order_cb_ftype
-  = gdb::function_view<bool (objfile *)>;
+  = gdb::function_view<iteration_status (objfile *)>;
 
 struct solib_ops
 {

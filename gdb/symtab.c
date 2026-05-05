@@ -2564,7 +2564,9 @@ lookup_global_or_static_symbol (const char *name,
 	 {
 	   result = lookup_symbol_in_objfile (objfile_iter, block_index,
 					      name, domain);
-	   return result.symbol != nullptr;
+	   if (result.symbol != nullptr)
+	     return iteration_status::stop;
+	   return iteration_status::keep_going;
 	 },
        objfile);
 
@@ -6407,10 +6409,10 @@ find_main_name (void)
 	 if (symbol_found_p)
 	   {
 	     set_main_name (pspace, "main", lang);
-	     return true;
+	     return iteration_status::stop;
 	   }
 
-	 return false;
+	 return iteration_status::keep_going;
        }, nullptr);
 
   if (symbol_found_p)

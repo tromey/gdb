@@ -451,7 +451,7 @@ solib_ops::iterate_over_objfiles_in_search_order
    objfile *current_objfile) const
 {
   for (objfile &objfile : m_pspace->objfiles ())
-    if (cb (&objfile))
+    if (cb (&objfile) == iteration_status::stop)
       return;
 }
 
