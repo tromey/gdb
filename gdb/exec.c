@@ -461,8 +461,9 @@ exec_file_attach (const char *filename, int from_tty)
       else
 	temp = gdb_bfd_open (canonical_pathname, gnutarget, scratch_chan);
       if (temp == nullptr)
-	error (_("\"%s\": could not open as an executable file: %s."),
-	       scratch_pathname, bfd_errmsg (bfd_get_error ()));
+	error (_("\"%ps\": could not open as an executable file: %s."),
+	       styled_string (file_name_style.style (), scratch_pathname),
+	       bfd_errmsg (bfd_get_error ()));
 
       current_program_space->set_exec_bfd (std::move (temp));
 
