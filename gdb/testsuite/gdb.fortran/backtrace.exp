@@ -33,6 +33,6 @@ gdb_continue_to_breakpoint "continue to bar"
 
 gdb_test "bt" \
     [multi_line \
-	 "#0\[ \t\]*bar \\(\\) at \[^\r\n\]+" \
-	 "#1\[ \t\]*$hex in foo \\(\\) at \[^\r\n\]+" \
-	 "#2\[ \t\]*$hex in \(?:MAIN__\|main\) \\(\\) at \[^\r\n\]+" ]
+	 "\\* #0\[ \t\]*bar \\(\\) at \[^\r\n\]+" \
+	 "  #1\[ \t\]*$hex in foo \\(\\) at \[^\r\n\]+" \
+	 "  #2\[ \t\]*$hex in \(?:MAIN__\|main\) \\(\\) at \[^\r\n\]+" ]

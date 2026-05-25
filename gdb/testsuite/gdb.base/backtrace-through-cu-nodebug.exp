@@ -79,7 +79,7 @@ proc_with_prefix no-cfi {} {
 	     "Required frame unwinder may have been disabled," \
 	     " see 'maint info frame-unwinders'"]
     set hs {[^\r\n]}
-    set re_bt_line "#0\\s+[string_to_regexp {callback ()}] $hs+"
+    set re_bt_line "\\* #0\\s+[string_to_regexp {callback ()}] $hs+"
     set re_bt_no_filters \
 	[multi_line \
 	     $re_bt_line \
@@ -117,9 +117,9 @@ proc_with_prefix cfi {} {
     # #2  0x00000000004004cd in main () at ...
     gdb_test "bt" \
 	[multi_line \
-	     "#0 +callback $text" \
-	     "#1 $text in caller $text" \
-	     "#2 $text in main $text"] \
+	     "\\* #0 +callback $text" \
+	     "  #1 $text in caller $text" \
+	     "  #2 $text in main $text"] \
 	"Verify unwinding works"
 }
 

@@ -205,14 +205,14 @@ gdb_breakpoint "*foobar"
 # Now hit the entry_point break point and check their call-stack.
 gdb_continue_to_breakpoint "foo"
 gdb_test "bt" [multi_line \
-		   "#0.*${hex} in foo \\(J=1, K=0\\).*" \
-		   "#1.*${hex} in prog \\(\\).*" \
+		   "\\* #0.*${hex} in foo \\(J=1, K=0\\).*" \
+		   "  #1.*${hex} in prog \\(\\).*" \
     ] "bt foo"
 
 gdb_continue_to_breakpoint "foobar"
 gdb_test "bt" [multi_line \
-		   "#0.*${hex} in foobar \\(J=2\\).*" \
-		   "#1.*${hex} in prog \\(\\).*" \
+		   "\\* #0.*${hex} in foobar \\(J=2\\).*" \
+		   "  #1.*${hex} in prog \\(\\).*" \
     ] "bt foobar"
 
 # Now try whether we can also set breakpoints on entry_points from other CUs.
@@ -230,6 +230,6 @@ gdb_continue_to_breakpoint "foo_so"
 # symbol, exactly which symbol is shown in the stack trace depends on
 # which symbol gdb happens to find first in the lookup.
 gdb_test "bt" [multi_line \
-		    "#0.*${hex} in (foo|fooso) \\(J=1, K=0\\).*" \
-		    "#1.*${hex} in prog \\(\\).*" \
+		    "\\* #0.*${hex} in (foo|fooso) \\(J=1, K=0\\).*" \
+		    "  #1.*${hex} in prog \\(\\).*" \
 ] "bt fooso"

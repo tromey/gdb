@@ -99,7 +99,7 @@ proc do_test { function step_cmd } {
 		"check frame-id matches"
 
 	    # Check that the previous frame is 'main'.
-	    gdb_test "bt 2" "\r\n#1\\s+\[^\r\n\]+ in main \\(\\)( .*)?"
+	    gdb_test "bt 2" "\r\n  #1\\s+\[^\r\n\]+ in main \\(\\)( .*)?"
 
 	    # Move up the stack (to main).
 	    gdb_test "up" \

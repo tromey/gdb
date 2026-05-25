@@ -47,9 +47,9 @@ proc run_test { opt_level } {
     gdb_continue_to_breakpoint "blah"
 
     gdb_test "backtrace" [multi_line \
-			      "#0  blah \[^\n\r\]+" \
-			      "#1  $hex in func \[^\n\r\]+" \
-			      "#2  $hex in main \[^\n\r\]+"]
+			      "\\* #0  blah \[^\n\r\]+" \
+			      "  #1  $hex in func \[^\n\r\]+" \
+			      "  #2  $hex in main \[^\n\r\]+"]
 }
 
 foreach opt { O0 O1 O2 } {

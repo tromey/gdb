@@ -111,6 +111,6 @@ gdb_test "backtrace -frame-info source-and-location 2" \
     [multi_line \
 	 ".*" \
 	 ".*" \
-	 "#1  call_me \\(\\.\\.\\.\\) at .*frame-args\\.c:.*" \
+	 "\\* #1  call_me \\(\\.\\.\\.\\) at .*frame-args\\.c:.*" \
 	 "$positive\[ \t\]*break_me \\(\\);.*"] \
     "backtrace -frame-info source-and-location 2 overriding print frame-info set to source-line"

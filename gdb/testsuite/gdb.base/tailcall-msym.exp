@@ -140,9 +140,9 @@ if {![runto callee]} {
 # frame.
 gdb_test "bt" \
     [multi_line \
-	 "#0\[^\r\n\]+callee \\(\\)" \
-	 "#1\[^\r\n\]+caller \\(\\)" \
-	 "#2\[^\r\n\]+main \\(\\)"] \
+	 "\\* #0\[^\r\n\]+callee \\(\\)" \
+	 "  #1\[^\r\n\]+caller \\(\\)" \
+	 "  #2\[^\r\n\]+main \\(\\)"] \
     "backtrace shows correct caller, not dummy_func"
 
 # Test that 'info frame' displays the correct function name.  Also

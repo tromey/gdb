@@ -106,9 +106,9 @@ gdb_test "record goto 27" ".*fun3 \\(\\) at ${optional_filepath}record_goto.c:35
 
 # check the back trace at that location
 gdb_test "backtrace" [multi_line \
-  "#0.*fun3.*at ${optional_filepath}record_goto.c:35.*" \
-  "#1.*fun4.*at ${optional_filepath}record_goto.c:43.*" \
-  "#2.*main.*at ${optional_filepath}record_goto.c:49.*" \
+  "\\* #0.*fun3.*at ${optional_filepath}record_goto.c:35.*" \
+  "  #1.*fun4.*at ${optional_filepath}record_goto.c:43.*" \
+  "  #2.*main.*at ${optional_filepath}record_goto.c:49.*" \
   "Backtrace stopped: not enough registers or memory available to unwind further" \
   ]
 

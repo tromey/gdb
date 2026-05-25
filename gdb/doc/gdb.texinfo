@@ -707,15 +707,15 @@ stack frame for each active subroutine.
 
 @smallexample
 (@value{GDBP}) @b{bt}
-#0  set_quotes (lq=0x34c78 "<QUOTE>", rq=0x34c88 "<UNQUOTE>")
+* #0  set_quotes (lq=0x34c78 "<QUOTE>", rq=0x34c88 "<UNQUOTE>")
     at input.c:530
-#1  0x6344 in m4_changequote (argc=3, argv=0x33c70)
+  #1  0x6344 in m4_changequote (argc=3, argv=0x33c70)
     at builtin.c:882
-#2  0x8174 in expand_macro (sym=0x33320) at macro.c:242
-#3  0x7a88 in expand_token (obs=0x0, t=209696, td=0xf7fffa30)
+  #2  0x8174 in expand_macro (sym=0x33320) at macro.c:242
+  #3  0x7a88 in expand_token (obs=0x0, t=209696, td=0xf7fffa30)
     at macro.c:71
-#4  0x79dc in expand_input () at macro.c:40
-#5  0x2930 in main (argc=0, argv=0xf7fffb20) at m4.c:195
+  #4  0x79dc in expand_input () at macro.c:40
+  #5  0x2930 in main (argc=0, argv=0xf7fffb20) at m4.c:195
 @end smallexample
 
 @noindent
@@ -13589,13 +13589,13 @@ Example:
 
 @smallexample
 (@value{GDBP}) backtrace
-#0  bottom_func ()
+* #0  bottom_func ()
     at testsuite/gdb.python/py-caller-is.c:21
-#1  0x00000000004005a0 in middle_func ()
+  #1  0x00000000004005a0 in middle_func ()
     at testsuite/gdb.python/py-caller-is.c:27
-#2  0x00000000004005ab in top_func ()
+  #2  0x00000000004005ab in top_func ()
     at testsuite/gdb.python/py-caller-is.c:33
-#3  0x00000000004005b6 in main ()
+  #3  0x00000000004005b6 in main ()
     at testsuite/gdb.python/py-caller-is.c:39
 (@value{GDBP}) print $_caller_is ("middle_func")
 $1 = 1
@@ -14961,8 +14961,8 @@ DW_TAG_call_site 0x40039a in main
 a () at t.c:3
 3	static void __attribute__((noinline, noclone)) a (void) @{ x++; @}
 (@value{GDBP}) bt
-#0  a () at t.c:3
-#1  0x000000000040039a in main () at t.c:5
+* #0  a () at t.c:3
+  #1  0x000000000040039a in main () at t.c:5
 @end smallexample
 
 Another possibility is an ambiguous virtual tail call frames resolution:
@@ -14982,9 +14982,9 @@ tailcall: initial: 0x4004d2(a) 0x4004ce(b) 0x4004b2(c) 0x4004a2(d)
 tailcall: compare: 0x4004d2(a) 0x4004cc(b) 0x400492(e)
 tailcall: reduced: 0x4004d2(a) |
 (@value{GDBP}) bt
-#0  f () at t.c:2
-#1  0x00000000004004d2 in a () at t.c:8
-#2  0x0000000000400395 in main () at t.c:9
+* #0  f () at t.c:2
+  #1  0x00000000004004d2 in a () at t.c:8
+  #2  0x0000000000400395 in main () at t.c:9
 @end smallexample
 
 @set CALLSEQ1A @code{main@value{ARROW}a@value{ARROW}b@value{ARROW}c@value{ARROW}d@value{ARROW}f}
@@ -15032,11 +15032,11 @@ static void __attribute__((noinline, noclone)) a (int i)
 int main (void) @{ a (5); return 0; @}
 
 (@value{GDBP}) bt
-#0  c (i=i@@entry=0) at t.c:2
-#1  0x0000000000400428 in a (DW_OP_entry_value resolving has found
-function "a" at 0x400420 can call itself via tail calls
-i=<optimized out>) at t.c:6
-#2  0x000000000040036e in main () at t.c:7
+* #0  c (i=i@@entry=0) at t.c:2
+  #1  0x0000000000400428 in a (DW_OP_entry_value resolving has found
+    function "a" at 0x400420 can call itself via tail calls
+    i=<optimized out>) at t.c:6
+  #2  0x000000000040036e in main () at t.c:7
 @end smallexample
 
 @value{GDBN} cannot find out from the inferior state if and how many times did
@@ -19672,11 +19672,11 @@ from the current task to the given task.
 [Switching to task 1 "main_task"]
 #0  0x8067726 in pthread_cond_wait ()
 (@value{GDBP}) bt
-#0  0x8067726 in pthread_cond_wait ()
-#1  0x8056714 in system.os_interface.pthread_cond_wait ()
-#2  0x805cb63 in system.task_primitives.operations.sleep ()
-#3  0x806153e in system.tasking.stages.activate_tasks ()
-#4  0x804aacc in un () at un.adb:5
+* #0  0x8067726 in pthread_cond_wait ()
+  #1  0x8056714 in system.os_interface.pthread_cond_wait ()
+  #2  0x805cb63 in system.task_primitives.operations.sleep ()
+  #3  0x806153e in system.tasking.stages.activate_tasks ()
+  #4  0x804aacc in un () at un.adb:5
 @end smallexample
 
 @item task apply [@var{task-id-list} | all] [@var{flag}]@dots{} @var{command}
@@ -21394,12 +21394,12 @@ backtrace, for example frame @code{#3} in the following backtrace:
 
 @smallexample
 (@value{GDBP}) backtrace
-#0  0x00007ffff7b3d1e7 in nanosleep () from /lib64/libc.so.6
-#1  0x00007ffff7b3d11e in sleep () from /lib64/libc.so.6
-#2  0x000000000040113f in deadlock () at test.cc:13
-#3  <function called from gdb>
-#4  breakpt () at test.cc:20
-#5  0x0000000000401151 in main () at test.cc:25
+* #0  0x00007ffff7b3d1e7 in nanosleep () from /lib64/libc.so.6
+  #1  0x00007ffff7b3d11e in sleep () from /lib64/libc.so.6
+  #2  0x000000000040113f in deadlock () at test.cc:13
+  #3  <function called from gdb>
+  #4  breakpt () at test.cc:20
+  #5  0x0000000000401151 in main () at test.cc:25
 @end smallexample
 
 At this point it is possible to examine the state of the inferior just

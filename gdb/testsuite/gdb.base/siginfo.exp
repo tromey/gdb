@@ -48,9 +48,9 @@ if {![runto_main]} {
 gdb_test "break handler"
 gdb_test "continue" ".* handler .*" "continue to stepi handler"
 gdb_test_sequence "bt" "backtrace for nexti" {
-    "\[\r\n\]+.0 \[^\r\n\]* handler "
-    "\[\r\n\]+.1  .signal handler called."
-    "\[\r\n\]+.2 \[^\r\n\]* main "
+    "\[\r\n\]+\\* #0 \[^\r\n\]* handler "
+    "\[\r\n\]+  #1  .signal handler called."
+    "\[\r\n\]+  #2 \[^\r\n\]* main "
 }
 
 # Check that GDB can step the inferior back to main

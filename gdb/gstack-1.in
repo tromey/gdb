@@ -109,7 +109,7 @@ BEGIN {
   attach_okay=1
 }
 
-/^#/ {
+/^..#/ {
   if (attach_okay) {
     print \$0
   }

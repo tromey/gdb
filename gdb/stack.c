@@ -227,7 +227,8 @@ static void print_frame (struct ui_out *uiout,
 			 const frame_print_options &opts,
 			 const frame_info_ptr &frame, int print_level,
 			 enum print_what print_what,  int print_args,
-			 struct symtab_and_line sal);
+			 struct symtab_and_line sal,
+			 const frame_info_ptr &selected_frame);
 
 static frame_info_ptr find_frame_for_function (const char *);
 static frame_info_ptr find_frame_for_address (CORE_ADDR);
@@ -362,7 +363,7 @@ print_stack_frame (const frame_info_ptr &frame, int print_level,
     {
       print_frame_info (user_frame_print_options,
 			frame, print_level, print_what, 1 /* print_args */,
-			set_current_sal);
+			set_current_sal, {});
       if (set_current_sal)
 	set_current_sal_from_frame (frame);
     }
@@ -961,7 +962,7 @@ static void
 do_print_frame_info (struct ui_out *uiout, const frame_print_options &fp_opts,
 		     const frame_info_ptr &frame, int print_level,
 		     enum print_what print_what, int print_args,
-		     int set_current_sal)
+		     int set_current_sal, const frame_info_ptr &selected_frame)
 {
   struct gdbarch *gdbarch = get_frame_arch (frame);
   int source_print;
@@ -982,6 +983,14 @@ do_print_frame_info (struct ui_out *uiout, const frame_print_options &fp_opts,
 
       annotate_frame_begin (print_level ? frame_relative_level (frame) : 0,
 			    gdbarch, get_frame_pc (frame));
+
+      if (!selected_frame.is_null ())
+	{
+	  if (frame == selected_frame)
+	    uiout->text ("* ");
+	  else
+	    uiout->text ("  ");
+	}
 
       /* Do this regardless of SOURCE because we don't have any source
 	 to list for this frame.  */
@@ -1042,7 +1051,7 @@ do_print_frame_info (struct ui_out *uiout, const frame_print_options &fp_opts,
 		    || print_what == SHORT_LOCATION);
   if (location_print || !sal.symtab)
     print_frame (uiout, fp_opts, frame, print_level,
-		 print_what, print_args, sal);
+		 print_what, print_args, sal, selected_frame);
 
   source_print = (print_what == SRC_LINE || print_what == SRC_AND_LOC);
 
@@ -1129,11 +1138,11 @@ void
 print_frame_info (const frame_print_options &fp_opts,
 		  const frame_info_ptr &frame, int print_level,
 		  enum print_what print_what, int print_args,
-		  int set_current_sal)
+		  int set_current_sal, const frame_info_ptr &selected_frame)
 {
   do_with_buffered_output (do_print_frame_info, current_uiout,
 			   fp_opts, frame, print_level, print_what,
-			   print_args, set_current_sal);
+			   print_args, set_current_sal, selected_frame);
 }
 
 /* See stack.h.  */
@@ -1263,7 +1272,8 @@ print_frame (struct ui_out *uiout,
 	     const frame_print_options &fp_opts,
 	     const frame_info_ptr &frame, int print_level,
 	     enum print_what print_what, int print_args,
-	     struct symtab_and_line sal)
+	     struct symtab_and_line sal,
+	     const frame_info_ptr &selected_frame)
 {
   struct gdbarch *gdbarch = get_frame_arch (frame);
   enum language funlang = language_unknown;
@@ -1281,6 +1291,14 @@ print_frame (struct ui_out *uiout,
 
   {
     ui_out_emit_tuple tuple_emitter (uiout, "frame");
+
+    if (!selected_frame.is_null ())
+      {
+	if (frame == selected_frame)
+	  uiout->text ("* ");
+	else
+	  uiout->text ("  ");
+      }
 
     if (print_level)
       {
@@ -1930,6 +1948,8 @@ backtrace_command_1 (const frame_print_options &fp_opts,
   if (fp_opts.print_raw_frame_arguments)
     flags |= PRINT_RAW_FRAME_ARGUMENTS;
 
+  frame_info_ptr selected_frame = get_selected_frame ();
+
   if (!bt_opts.no_filters)
     {
       enum ext_lang_frame_args arg_type;
@@ -1951,7 +1971,8 @@ backtrace_command_1 (const frame_print_options &fp_opts,
 
       result = apply_ext_lang_frame_filter (get_current_frame (), flags,
 					    arg_type, current_uiout,
-					    py_start, py_end);
+					    py_start, py_end,
+					    selected_frame);
     }
 
   /* Run the inbuilt backtrace if there are no filters registered, or
@@ -1982,7 +2003,7 @@ backtrace_command_1 (const frame_print_options &fp_opts,
 	     hand, perhaps the code does or could be fixed to make sure
 	     the frame->prev field gets set to NULL in that case).  */
 
-	  print_frame_info (fp_opts, fi, 1, LOCATION, 1, 0);
+	  print_frame_info (fp_opts, fi, 1, LOCATION, 1, 0, selected_frame);
 	  if ((flags & PRINT_LOCALS) != 0)
 	    print_frame_local_vars (fi, false, NULL, NULL, 1, gdb_stdout);
 

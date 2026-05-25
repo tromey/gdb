@@ -42,6 +42,6 @@ gdb_test "source ${pyfile}" "Python script imported" \
 gdb_continue_to_breakpoint "foo"
 
 gdb_test_sequence "backtrace"  "backtrace with dummy unwinder" {
-    "\\r\\n#0  foo \\(\\)"
-    "\\r\\n#1  main \\(\\)"
+    "\\r\\n\\* #0  foo \\(\\)"
+    "\\r\\n  #1  main \\(\\)"
 }

@@ -36,11 +36,11 @@ gdb_continue_to_breakpoint "stop at test breakpoint"
 
 # An initial look at the stack to ensure it is correct.
 gdb_test_sequence "bt"  "Initial backtrace" {
-    "\\r\\n#0 \[^\r\n\]* f0 \\(\\) at "
-    "\\r\\n#1 \[^\r\n\]* f1 \\(\\) at "
-    "\\r\\n#2 \[^\r\n\]* f2 \\(\\) at "
-    "\\r\\n#3 \[^\r\n\]* f3 \\(\\) at "
-    "\\r\\n#4 \[^\r\n\]* main \\(\\) at "
+    "\\r\\n\\* #0 \[^\r\n\]* f0 \\(\\) at "
+    "\\r\\n  #1 \[^\r\n\]* f1 \\(\\) at "
+    "\\r\\n  #2 \[^\r\n\]* f2 \\(\\) at "
+    "\\r\\n  #3 \[^\r\n\]* f3 \\(\\) at "
+    "\\r\\n  #4 \[^\r\n\]* main \\(\\) at "
 }
 
 # Load the script containing the unwinder.
@@ -52,12 +52,12 @@ gdb_test_no_output "source ${pyfile}"\
 gdb_test_sequence "bt"  "Backtrace with extra Python output" {
     "Func f0, Level 0"
     "Func f1, Level 1"
-    "\\r\\n#0 \[^\r\n\]* f0 \\(\\) at "
-    "\\r\\n#1 \[^\r\n\]* f1 \\(\\) at "
+    "\\r\\n\\* #0 \[^\r\n\]* f0 \\(\\) at "
+    "\\r\\n  #1 \[^\r\n\]* f1 \\(\\) at "
     "Func f2, Level 2"
-    "\\r\\n#2 \[^\r\n\]* f2 \\(\\) at "
+    "\\r\\n  #2 \[^\r\n\]* f2 \\(\\) at "
     "Func f3, Level 3"
-    "\\r\\n#3 \[^\r\n\]* f3 \\(\\) at "
+    "\\r\\n  #3 \[^\r\n\]* f3 \\(\\) at "
     "Func main, Level 4"
-    "\\r\\n#4 \[^\r\n\]* main \\(\\) at "
+    "\\r\\n  #4 \[^\r\n\]* main \\(\\) at "
 }

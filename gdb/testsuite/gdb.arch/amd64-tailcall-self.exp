@@ -25,4 +25,4 @@ if {![runto b]} {
     return
 }
 
-gdb_test "bt" "#0 +b \\(\\) at \[^\r\n\]*\r\n#1 +${::hex} in a \\(q=<optimized out>\\) at \[^\r\n\]*\r\n#2 +${::hex} in main \\(\[^\r\n\]*\\) at .*"
+gdb_test "bt" "\\* #0 +b \\(\\) at \[^\r\n\]*\r\n  #1 +${::hex} in a \\(q=<optimized out>\\) at \[^\r\n\]*\r\n  #2 +${::hex} in main \\(\[^\r\n\]*\\) at .*"

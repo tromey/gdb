@@ -262,7 +262,7 @@ proc test_core {file displacement} {
 	}
 	gdb_test_no_output "set verbose off"
 
-	gdb_test "bt" "#${::decimal} +\[^\r\n\]*\\mlibfunc\\M\[^\r\n\]*\r\n#${::decimal} +\[^\r\n\]*\\mmain\\M.*" "core main bt"
+	gdb_test "bt" "  #${::decimal} +\[^\r\n\]*\\mlibfunc\\M\[^\r\n\]*\r\n  #${::decimal} +\[^\r\n\]*\\mmain\\M.*" "core main bt"
     }
 }
 
@@ -313,7 +313,7 @@ proc test_attach_gdb {file pid displacement prefix} {
 	}
 	gdb_test_no_output "set verbose off"
 
-	gdb_test "bt" "#${::decimal} +\[^\r\n\]*\\mlibfunc\\M\[^\r\n\]*\r\n#${::decimal} +\[^\r\n\]*\\mmain\\M.*" "attach main bt"
+	gdb_test "bt" "  #${::decimal} +\[^\r\n\]*\\mlibfunc\\M\[^\r\n\]*\r\n  #${::decimal} +\[^\r\n\]*\\mmain\\M.*" "attach main bt"
 	gdb_exit
     }
 }
@@ -457,7 +457,7 @@ proc test_ld {file ifmain trynosym displacement} {
 
 	with_test_prefix "second backtrace" {
 	    gdb_test_no_output "set verbose off"
-	    gdb_test "bt" "#0 +\[^\r\n\]*\\mlibfunc\\M\[^\r\n\]*\r\n#1 +\[^\r\n\]*\\mmain\\M.*" "main bt"
+	    gdb_test "bt" "\\* #0 +\[^\r\n\]*\\mlibfunc\\M\[^\r\n\]*\r\n  #1 +\[^\r\n\]*\\mmain\\M.*" "main bt"
 	    gdb_test_no_output "set verbose on"
 	}
     }

@@ -30,7 +30,7 @@ gdb_test "continue" \
 	 "Breakpoint .* foo \\(n=3\\) at .*$srcfile:$decimal.*"
 
 gdb_test "backtrace" \
-	 "#0 +foo \\(n=3\\).*\r\n#1.* foo \\(n=4\\).*\r\n#2.* foo \\(n=5\\).*#3.* main \\(\\).*"
+	 "\\* #0 +foo \\(n=3\\).*\r\n  #1.* foo \\(n=4\\).*\r\n  #2.* foo \\(n=5\\).*  #3.* main \\(\\).*"
 
 gdb_test "frame 2" \
 	 "#2 .* foo \\(n=5\\) .*"

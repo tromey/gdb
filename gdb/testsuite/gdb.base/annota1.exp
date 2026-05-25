@@ -281,7 +281,7 @@ set pat_begin \
     [list \
 	 "\r\n\032\032post-prompt\r\n" \
 	 "\r\n\032\032frame-begin 0 $hex\r\n" \
-	 ".0  \r\n" \
+	 "\\* #0  \r\n" \
 	 "(" \
 	 "\032\032frame-address\r\n" \
 	 "${hex}( $pac)?" \
@@ -293,7 +293,7 @@ set pat_begin \
 	 "\r\n\032\032frame-args\r\n" \
 	 " \\(.*frame-end\r\n" \
 	 "\r\n\032\032frame-begin 1 $hex\r\n" \
-	 ".1  " \
+	 "  #1  " \
 	 "\r\n\032\032frame-address\r\n" \
 	 "${hex}( $pac)?" \
 	 "\r\n\032\032frame-address-end\r\n" \
@@ -362,7 +362,7 @@ if {[target_info exists gdb,nosignals]} {
     # annotate-signal-handler-caller
     #
     gdb_test_multiple "backtrace" "backtrace @ signal handler" {
-	-re "frame-begin 0 $hex\r\n#0.*frame-end.*frame-begin 1 $hex\r\n#1.*(\032\032signal-handler-caller\r\n.signal handler called.\r\n\r\n)+\032\032frame-end\r\n\r\n\032\032frame-begin 2 $hex\r\n#2.*(frame-begin 3 $hex\r\n#3.*)*frame-end.*$gdb_prompt$" {
+	-re "frame-begin 0 $hex\r\n\\* #0.*frame-end.*frame-begin 1 $hex\r\n  #1.*(\032\032signal-handler-caller\r\n.signal handler called.\r\n\r\n)+\032\032frame-end\r\n\r\n\032\032frame-begin 2 $hex\r\n  #2.*(frame-begin 3 $hex\r\n#3.*)*frame-end.*$gdb_prompt$" {
 	    pass $gdb_test_name
 	}
     }

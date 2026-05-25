@@ -73,18 +73,18 @@ with_test_prefix "run to frame" {
 with_test_prefix "frame print" {
     if { [start_test "TAG: final frame"] == 0 } {
 	gdb_test "backtrace -frame-arguments all" [multi_line \
-	"#0 .*g \\(mt=mytype is .*\\, depth=0\\).*"\
-	"#1 .*g \\(mt=mytype is .*\\, depth=1\\).*"\
-	"#2 .*g \\(mt=mytype is .*\\, depth=2\\).*"\
-	"#3 .*g \\(mt=mytype is .*\\, depth=3\\).*"\
-	"#4 .*g \\(mt=mytype is .*\\, depth=4\\).*"\
-	"#5 .*g \\(mt=mytype is .*\\, depth=5\\).*"\
-	"#6 .*g \\(mt=mytype is .*\\, depth=6\\).*"\
-	"#7 .*g \\(mt=mytype is .*\\, depth=7\\).*"\
-	"#8 .*g \\(mt=mytype is .*\\, depth=8\\).*"\
-	"#9 .*g \\(mt=mytype is .*\\, depth=9\\).*"\
-	"#10 .*g \\(mt=mytype is .*\\, depth=10\\).*"\
-	"#11 .*main \\(\\).*"] \
+	"\\* #0 .*g \\(mt=mytype is .*\\, depth=0\\).*"\
+	"  #1 .*g \\(mt=mytype is .*\\, depth=1\\).*"\
+	"  #2 .*g \\(mt=mytype is .*\\, depth=2\\).*"\
+	"  #3 .*g \\(mt=mytype is .*\\, depth=3\\).*"\
+	"  #4 .*g \\(mt=mytype is .*\\, depth=4\\).*"\
+	"  #5 .*g \\(mt=mytype is .*\\, depth=5\\).*"\
+	"  #6 .*g \\(mt=mytype is .*\\, depth=6\\).*"\
+	"  #7 .*g \\(mt=mytype is .*\\, depth=7\\).*"\
+	"  #8 .*g \\(mt=mytype is .*\\, depth=8\\).*"\
+	"  #9 .*g \\(mt=mytype is .*\\, depth=9\\).*"\
+	"  #10 .*g \\(mt=mytype is .*\\, depth=10\\).*"\
+	"  #11 .*main \\(\\).*"] \
 	"backtrace test"
     }
 }

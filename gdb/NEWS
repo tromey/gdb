@@ -3,6 +3,9 @@
 
 *** Changes since GDB 17
 
+* GDB now shows a "*" marker next to the currently selected frame in a
+  backtrace.
+
 * Support for the Common Trace Format (CTF) has been removed.  GDB now
   saves trace information exclusively in its own "tfile" format.
 

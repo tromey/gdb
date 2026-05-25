@@ -67,5 +67,5 @@ gdb_test_sequence "info unwinder" "Show with global unwinder disabled" {
 }
 
 gdb_test_sequence "where" "Global unwinder disabled" {
-    "py_unwind_maint_ps_unwinder called\r\n#0  main"
+    "py_unwind_maint_ps_unwinder called\r\n\\* #0  main"
 }

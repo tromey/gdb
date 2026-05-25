@@ -302,7 +302,8 @@ extern int apply_ext_lang_val_pretty_printer
 extern enum ext_lang_bt_status apply_ext_lang_frame_filter
   (const frame_info_ptr &frame, frame_filter_flags flags,
    enum ext_lang_frame_args args_type,
-   struct ui_out *out, int frame_low, int frame_high);
+   struct ui_out *out, int frame_low, int frame_high,
+   const frame_info_ptr &selected_frame);
 
 extern void apply_ext_lang_ptwrite_filter
   (struct btrace_thread_info *btinfo);

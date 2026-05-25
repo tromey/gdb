@@ -43,8 +43,8 @@ if {![runto_main]} {
 # Check for the corrupt backtrace.
 proc check_for_broken_backtrace {testname} {
     gdb_test_sequence "where" $testname {
-	"\\r\\n#0 .* corrupt_frame_inner \\(\\) at "
-	"\\r\\n#1 .* corrupt_frame_outer \\(\\) at "
+	"\\r\\n\\* #0 .* corrupt_frame_inner \\(\\) at "
+	"\\r\\n  #1 .* corrupt_frame_outer \\(\\) at "
 	"Backtrace stopped: frame did not save the PC"
     }
 }
@@ -52,9 +52,9 @@ proc check_for_broken_backtrace {testname} {
 # Check for the correct backtrace.
 proc check_for_fixed_backtrace {testname} {
     gdb_test_sequence "where" $testname {
-	"\\r\\n#0 .* corrupt_frame_inner \\(\\) at "
-	"\\r\\n#1 .* corrupt_frame_outer \\(\\) at "
-	"\\r\\n#2 .* main \\(.*\\) at"
+	"\\r\\n\\* #0 .* corrupt_frame_inner \\(\\) at "
+	"\\r\\n  #1 .* corrupt_frame_outer \\(\\) at "
+	"\\r\\n  #2 .* main \\(.*\\) at"
     }
 }
 

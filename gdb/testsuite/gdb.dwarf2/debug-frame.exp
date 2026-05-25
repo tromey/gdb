@@ -111,7 +111,7 @@ foreach_with_prefix is_64 { false true } {
     gdb_continue_to_breakpoint "callee_body"
 
     # Verify backtrace shows the full call chain.
-    gdb_test "bt" "#0.*callee.*\r\n#1.*caller.*\r\n#2.*main.*"
+    gdb_test "bt" "\\* #0.*callee.*\r\n  #1.*caller.*\r\n  #2.*main.*"
 
     # Select caller's frame and check saved registers.
     gdb_test "frame 1" "#1.*caller.*"

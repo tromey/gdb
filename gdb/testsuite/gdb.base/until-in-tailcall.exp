@@ -62,9 +62,9 @@ proc run_test { use_parent_frame_p } {
     # Check the stack looks correct.
     gdb_test "bt" \
 	[multi_line \
-	     "#0\\s+normal_function\[^\r\n\]+" \
-	     "#1\\s+(?:$::hex in )?tailcall_function\[^\r\n\]+" \
-	     "#2\\s+(?:$::hex in )?main\[^\r\n\]+"] \
+	     "\\* #0\\s+normal_function\[^\r\n\]+" \
+	     "  #1\\s+(?:$::hex in )?tailcall_function\[^\r\n\]+" \
+	     "  #2\\s+(?:$::hex in )?main\[^\r\n\]+"] \
 	"check call stack"
 
     # Move up to tailcall_function if needed.

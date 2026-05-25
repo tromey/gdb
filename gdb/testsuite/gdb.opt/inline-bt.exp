@@ -102,12 +102,12 @@ proc run_test { opt_level } {
 	".*b/p in not_inline_func.*"
     gdb_test "bt" \
 	[multi_line \
-	     "^#0\\s+not_inline_func \\(\[^)\]+\\) at \[^\r\n\]+$::srcfile:$line2" \
-	     "#1\\s+$::hex in main \\(\\) at \[^\r\n\]+$::srcfile:$line3"] \
+	     "\\* #0\\s+not_inline_func \\(\[^)\]+\\) at \[^\r\n\]+$::srcfile:$line2" \
+	     "  #1\\s+$::hex in main \\(\\) at \[^\r\n\]+$::srcfile:$line3"] \
 	"bt from not_inline_func to main"
     gdb_test "frame 1" \
 	[multi_line \
-	     "^#1\\s+$::hex in main \\(\\) at \[^\r\n\]+$::srcfile:$line3" \
+	     "#1\\s+$::hex in main \\(\\) at \[^\r\n\]+$::srcfile:$line3" \
 	     "$line3\\s+not_inline_func \\(return_one \\(\\)\\);\[^\r\n\]+"] \
 	"select frame for main from not_inline_func"
 }

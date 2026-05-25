@@ -212,8 +212,8 @@ proc do_test { } {
     set foo_body_2 [expr {$::foo_prologue + 2}]
     gdb_test "bt" \
 	[multi_line \
-	     "^#0\\s+foo \\(\\) at \[^\r\n\]+$::srcfile:(?:$::foo_prologue|$foo_body_1|$foo_body_2)" \
-	     "#1\\s+$::hex in main \\(\\) at \[^\r\n\]+$::srcfile:$::call_line"] \
+	     "^\\* #0\\s+foo \\(\\) at \[^\r\n\]+$::srcfile:(?:$::foo_prologue|$foo_body_1|$foo_body_2)" \
+	     "  #1\\s+$::hex in main \\(\\) at \[^\r\n\]+$::srcfile:$::call_line"] \
 	"backtrace show correct line number in main"
 
     gdb_test "frame 1" \

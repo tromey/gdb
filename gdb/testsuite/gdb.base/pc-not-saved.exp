@@ -76,7 +76,7 @@ if { ![runto "break_bt_here"] } {
 # backtrace is that the previous $pc is not available.
 gdb_test "bt" \
     [multi_line \
-	 "^#0  break_bt_here \\(\\) at \[^\r\n\]+" \
+	 "^\\* #0  break_bt_here \\(\\) at \[^\r\n\]+" \
 	 "Backtrace stopped: frame did not save the PC"] \
     "backtrace from break_bt_here function"
 
@@ -108,7 +108,7 @@ gdb_continue_to_breakpoint "continue to other_func"
 # backtrace is that the previous $pc is not available.
 gdb_test "bt" \
     [multi_line \
-	 "#0  other_func \\(\\) at \[^\r\n\]+" \
-	 "#1  (:?$hex in )?break_bt_here \\(\\) at \[^\r\n\]+" \
+	 "\\* #0  other_func \\(\\) at \[^\r\n\]+" \
+	 "  #1  (:?$hex in )?break_bt_here \\(\\) at \[^\r\n\]+" \
 	 "Backtrace stopped: frame did not save the PC"] \
     "backtrace from other_func function"

@@ -66,8 +66,8 @@ gdb_test "disable unwinder global \"break unwinding using strings\"" \
 # At this point we are using the unwinder that passes a
 # gdb.RegisterDescriptor to add_saved_register.
 gdb_test_sequence "bt"  "Backtrace corrupted by descriptor based unwinder" {
-    "\\r\\n#0 \[^\r\n\]* foo \\(\\) at "
-    "\\r\\n#1 \[^\r\n\]* bar \\(\\) at "
+    "\\r\\n\\* #0 \[^\r\n\]* foo \\(\\) at "
+    "\\r\\n  #1 \[^\r\n\]* bar \\(\\) at "
     "Backtrace stopped: previous frame inner to this frame \\(corrupt stack\\?\\)"
 }
 
@@ -79,8 +79,8 @@ gdb_test "disable unwinder global \"break unwinding using descriptors\"" \
 gdb_test "enable unwinder global \"break unwinding using strings\"" \
     "1 unwinder enabled" "enable the unwinder that uses strings"
 gdb_test_sequence "bt"  "Backtrace corrupted by string based unwinder" {
-    "\\r\\n#0 \[^\r\n\]* foo \\(\\) at "
-    "\\r\\n#1 \[^\r\n\]* bar \\(\\) at "
+    "\\r\\n\\* #0 \[^\r\n\]* foo \\(\\) at "
+    "\\r\\n  #1 \[^\r\n\]* bar \\(\\) at "
     "Backtrace stopped: previous frame inner to this frame \\(corrupt stack\\?\\)"
 }
 
@@ -90,7 +90,7 @@ gdb_test_sequence "bt"  "Backtrace corrupted by string based unwinder" {
 gdb_test "disable unwinder global \"break unwinding using strings\"" \
     "1 unwinder disabled" "disable the unwinder that uses strings again"
 gdb_test_sequence "bt"  "Backtrace not corrupted when using no unwinder" {
-    "\\r\\n#0 \[^\r\n\]* foo \\(\\) at "
-    "\\r\\n#1 \[^\r\n\]* bar \\(\\) at "
-    "\\r\\n#2 \[^\r\n\]* main \\(\\) at "
+    "\\r\\n\\* #0 \[^\r\n\]* foo \\(\\) at "
+    "\\r\\n  #1 \[^\r\n\]* bar \\(\\) at "
+    "\\r\\n  #2 \[^\r\n\]* main \\(\\) at "
 }

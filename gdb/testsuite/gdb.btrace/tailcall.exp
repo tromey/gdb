@@ -82,9 +82,9 @@ gdb_test "record goto 4" ".*bar \\(\\) at ${optional_filepath}tailcall.c:24\r\n.
 
 # check the backtrace
 gdb_test "backtrace" [multi_line \
-  "#0.*bar \\(\\) at ${optional_filepath}tailcall.c:24" \
-  "#1.*foo \\(\\) at ${optional_filepath}tailcall.c:29" \
-  "#2.*main \\(\\) at ${optional_filepath}tailcall.c:37" \
+  "\\* #0.*bar \\(\\) at ${optional_filepath}tailcall.c:24" \
+  "  #1.*foo \\(\\) at ${optional_filepath}tailcall.c:29" \
+  "  #2.*main \\(\\) at ${optional_filepath}tailcall.c:37" \
   "Backtrace stopped: not enough registers or memory available to unwind further" \
   ]
 

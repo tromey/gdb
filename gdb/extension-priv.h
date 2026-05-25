@@ -186,7 +186,8 @@ struct extension_language_ops
     (const struct extension_language_defn *,
      const frame_info_ptr &frame, frame_filter_flags flags,
      enum ext_lang_frame_args args_type,
-     struct ui_out *out, int frame_low, int frame_high);
+     struct ui_out *out, int frame_low, int frame_high,
+     const frame_info_ptr &selected_frame);
 
   /* Used for registering the ptwrite filter to the current thread.  */
   void (*apply_ptwrite_filter)

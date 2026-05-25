@@ -197,9 +197,9 @@ with_test_prefix "stack with tail call" {
 
     gdb_test "bt" \
 	[multi_line \
-	     "#0  func_that_never_returns \\(\\) at \[^\r\n\]+" \
-	     "#1  $hex in func_that_tail_calls \\(\\) at \[^\r\n\]+" \
-	     "#2  $hex in main \\(\\) at \[^\r\n\]+"] \
+	     "\\* #0  func_that_never_returns \\(\\) at \[^\r\n\]+" \
+	     "  #1  $hex in func_that_tail_calls \\(\\) at \[^\r\n\]+" \
+	     "  #2  $hex in main \\(\\) at \[^\r\n\]+"] \
 	"bt from func_that_never_returns"
 
     # Reset the frame addresses based on the new stack.

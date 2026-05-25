@@ -326,18 +326,18 @@ set line_in_jjj [gdb_get_line_number "jjj return"]
 set line_in_kkk [gdb_get_line_number "kkk return"]
 
 gdb_test "bt" [multi_line \
-		   "#0  kkk \\(\\) at \[^\r\n\]+${srcfile}:${line_in_kkk}" \
-		   "#1  $hex in jjj \\(\\) at \[^\r\n\]+${srcfile}:${line_in_jjj}" \
-		   "#2  $hex in iii \\(\\) at \[^\r\n\]+${srcfile}:${line_in_iii}" \
-		   "#3  hhh \\(\\) at \[^\r\n\]+${srcfile}:${line_in_hhh}" \
-		   "#4  ggg \\(\\) at \[^\r\n\]+${srcfile}:${line_in_ggg}" \
-		   "#5  fff \\(\\) at \[^\r\n\]+${srcfile}:${line_in_fff}" \
-		   "#6  $hex in eee \\(\\) at \[^\r\n\]+${srcfile}:${line_in_eee}" \
-		   "#7  $hex in ddd \\(\\) at \[^\r\n\]+${srcfile}:${line_in_ddd}" \
-		   "#8  $hex in ccc \\(\\) at \[^\r\n\]+${srcfile}:${line_in_ccc}" \
-		   "#9  bbb \\(\\) at \[^\r\n\]+${srcfile}:${line_in_bbb}" \
-		   "#10 aaa \\(\\) at \[^\r\n\]+${srcfile}:${line_in_aaa}" \
-		   "#11 main \\(\\) at \[^\r\n\]+${srcfile}:${line_in_main}" ]
+		   "\\* #0  kkk \\(\\) at \[^\r\n\]+${srcfile}:${line_in_kkk}" \
+		   "  #1  $hex in jjj \\(\\) at \[^\r\n\]+${srcfile}:${line_in_jjj}" \
+		   "  #2  $hex in iii \\(\\) at \[^\r\n\]+${srcfile}:${line_in_iii}" \
+		   "  #3  hhh \\(\\) at \[^\r\n\]+${srcfile}:${line_in_hhh}" \
+		   "  #4  ggg \\(\\) at \[^\r\n\]+${srcfile}:${line_in_ggg}" \
+		   "  #5  fff \\(\\) at \[^\r\n\]+${srcfile}:${line_in_fff}" \
+		   "  #6  $hex in eee \\(\\) at \[^\r\n\]+${srcfile}:${line_in_eee}" \
+		   "  #7  $hex in ddd \\(\\) at \[^\r\n\]+${srcfile}:${line_in_ddd}" \
+		   "  #8  $hex in ccc \\(\\) at \[^\r\n\]+${srcfile}:${line_in_ccc}" \
+		   "  #9  bbb \\(\\) at \[^\r\n\]+${srcfile}:${line_in_bbb}" \
+		   "  #10 aaa \\(\\) at \[^\r\n\]+${srcfile}:${line_in_aaa}" \
+		   "  #11 main \\(\\) at \[^\r\n\]+${srcfile}:${line_in_main}" ]
 
 # Now check we can use 'up' to inspect each frame correctly.
 set patterns [list  \

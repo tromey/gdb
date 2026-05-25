@@ -70,10 +70,10 @@ proc cont_and_backtrace { tst } {
 	# Python-based unwinder.
 
 	gdb_test_sequence "bt"  "backtrace" {
-	    "\\r\\n#0 .* ccc \\(arg=789\\) at "
-	    "\\r\\n#1 .* bbb \\(arg=456\\) at "
-	    "\\r\\n#2 .* aaa \\(arg=123\\) at "
-	    "\\r\\n#3 .* main \\(.*\\) at"
+	    "\\r\\n\\* #0 .* ccc \\(arg=789\\) at "
+	    "\\r\\n  #1 .* bbb \\(arg=456\\) at "
+	    "\\r\\n  #2 .* aaa \\(arg=123\\) at "
+	    "\\r\\n  #3 .* main \\(.*\\) at"
 	}
 
 	# Test that the python-based unwinder / sniffer was actually called

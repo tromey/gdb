@@ -81,7 +81,7 @@ if { ![runto_main] } {
 #
 # Make sure to match a single line, so that the test fails if an error
 # about stack unwind is printed after frame 0.
-gdb_test "backtrace" "^#0 \[^\r\n\]* main \[^\r\n\]*"
+gdb_test "backtrace" "^\\* #0 \[^\r\n\]* main \[^\r\n\]*"
 
 # Translating the location of "x" to an agent expression requires
 # evaluating its frame base, which uses DW_OP_call_frame_cfa.  This would

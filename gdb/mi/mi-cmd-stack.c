@@ -67,7 +67,7 @@ mi_apply_ext_lang_frame_filter (const frame_info_ptr &frame,
   return apply_ext_lang_frame_filter (frame, flags,
 				      (enum ext_lang_frame_args) print_values,
 				      out,
-				      frame_low, frame_high);
+				      frame_low, frame_high, {});
 }
 
 /* Print a list of the stack frames.  Args can be none, in which case
@@ -158,7 +158,7 @@ mi_cmd_stack_list_frames (const char *command, const char *const *argv,
 
       result = apply_ext_lang_frame_filter (get_current_frame (), flags,
 					    NO_VALUES,  current_uiout,
-					    py_frame_low, frame_high);
+					    py_frame_low, frame_high, {});
     }
 
   /* Run the inbuilt backtrace if there are no filters registered, or
@@ -175,7 +175,7 @@ mi_cmd_stack_list_frames (const char *command, const char *const *argv,
 	  /* Print the location and the address always, even for level 0.
 	     If args is 0, don't print the arguments.  */
 	  print_frame_info (user_frame_print_options,
-			    fi, 1, LOC_AND_ADDRESS, 0 /* args */, 0);
+			    fi, 1, LOC_AND_ADDRESS, 0 /* args */, 0, {});
 	}
     }
 }
@@ -762,5 +762,5 @@ mi_cmd_stack_info_frame (const char *command, const char *const *argv,
     error (_("-stack-info-frame: No arguments allowed"));
 
   print_frame_info (user_frame_print_options,
-		    get_selected_frame (), 1, LOC_AND_ADDRESS, 0, 1);
+		    get_selected_frame (), 1, LOC_AND_ADDRESS, 0, 1, {});
 }

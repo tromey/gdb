@@ -66,5 +66,5 @@ gdb_continue_to_breakpoint "func_demangled_test"
 
 gdb_test "backtrace" \
     [multi_line \
-	"#0.*in func_demangled_test ()\[^\r\n\]+" \
-	"#1.*in main ()\[^\r\n\]+" ]
+	"\\* #0.*in func_demangled_test ()\[^\r\n\]+" \
+	"  #1.*in main ()\[^\r\n\]+" ]

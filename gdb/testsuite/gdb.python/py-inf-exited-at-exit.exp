@@ -78,8 +78,8 @@ proc clean_restart_and_runto_foo {} {
 proc check_backtrace { testname } {
     gdb_test "bt" \
 	[multi_line \
-	     "#0  (?:$::hex in )?foo \\(\\) at \[^\r\n\]+" \
-	     "#1  (?:$::hex in )?main \\(\\) at \[^\r\n\]+"] \
+	     "\\* #0  (?:$::hex in )?foo \\(\\) at \[^\r\n\]+" \
+	     "  #1  (?:$::hex in )?main \\(\\) at \[^\r\n\]+"] \
 	$testname
 }
 

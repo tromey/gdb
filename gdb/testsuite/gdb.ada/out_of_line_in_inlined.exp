@@ -37,7 +37,7 @@ foreach_gnat_encoding scenario flags {all minimal} {
 
     set opt_addr_in "($hex in)?"
     gdb_test "bt" \
-	[multi_line "#0 +$opt_addr_in +foo_o224_021\\.child1\\.child2 \\(s=\\.\\.\\.\\).*" \
-	     "#1 +$opt_addr_in +foo_o224_021\\.child1 \\(\\).*" \
-	     "#2 +$opt_addr_in +foo_o224_021 \\(\\).*" ]
+	[multi_line "\\* #0 +$opt_addr_in +foo_o224_021\\.child1\\.child2 \\(s=\\.\\.\\.\\).*" \
+	     "  #1 +$opt_addr_in +foo_o224_021\\.child1 \\(\\).*" \
+	     "  #2 +$opt_addr_in +foo_o224_021 \\(\\).*" ]
 }

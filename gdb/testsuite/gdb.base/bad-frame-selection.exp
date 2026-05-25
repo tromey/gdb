@@ -96,11 +96,11 @@ proc run_test { with_pretty_printer pop_selected } {
     # Validate the stack is as expected.
     gdb_test "bt" \
 	[multi_line \
-	     "#0 \[^\r\n\]*func_d \\(\\) \[^\r\n\]*" \
-	     "#1 \[^\r\n\]*func_c \\(\\) \[^\r\n\]*" \
-	     "#2 \[^\r\n\]*func_b \\(\\) \[^\r\n\]*" \
-	     "#3 \[^\r\n\]*func_a \\(obj=${obj_re}\\) \[^\r\n\]*" \
-	     "#4 \[^\r\n\]*main \[^\r\n\]*"] \
+	     "\\* #0 \[^\r\n\]*func_d \\(\\) \[^\r\n\]*" \
+	     "  #1 \[^\r\n\]*func_c \\(\\) \[^\r\n\]*" \
+	     "  #2 \[^\r\n\]*func_b \\(\\) \[^\r\n\]*" \
+	     "  #3 \[^\r\n\]*func_a \\(obj=${obj_re}\\) \[^\r\n\]*" \
+	     "  #4 \[^\r\n\]*main \[^\r\n\]*"] \
 	"backtrace at func_d"
 
     # Select a frame other than frame #0.  The frame we select here
@@ -172,9 +172,9 @@ proc run_test { with_pretty_printer pop_selected } {
 
 	gdb_test "bt" \
 	    [multi_line \
-		 "#0 \[^\r\n\]*func_b \\(\\) \[^\r\n\]*" \
-		 "#1 \[^\r\n\]*func_a \\(obj=${obj_re}\\) \[^\r\n\]*" \
-		 "#2 \[^\r\n\]*main \[^\r\n\]*"] \
+		 "\\* #0 \[^\r\n\]*func_b \\(\\) \[^\r\n\]*" \
+		 "  #1 \[^\r\n\]*func_a \\(obj=${obj_re}\\) \[^\r\n\]*" \
+		 "  #2 \[^\r\n\]*main \[^\r\n\]*"] \
 	    "backtrace at func_b after popping frames"
     }
 }

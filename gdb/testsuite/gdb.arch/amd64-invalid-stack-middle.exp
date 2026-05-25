@@ -39,10 +39,10 @@ if {![runto breakpt]} {
     return
 }
 
-gdb_test "bt" "^#0 +breakpt *\\(\\) \[^\r\n\]*\r\n#1 +${::hex} in func5\[^\r\n\]*\r\n#2 +${::hex} in func4\[^\r\n\]*\r\n#3 +${::hex} in func3\[^\r\n\]*\r\nBacktrace stopped: Cannot access memory at address ${::hex}" \
+gdb_test "bt" "^\\* #0 +breakpt *\\(\\) \[^\r\n\]*\r\n  #1 +${::hex} in func5\[^\r\n\]*\r\n  #2 +${::hex} in func4\[^\r\n\]*\r\n  #3 +${::hex} in func3\[^\r\n\]*\r\nBacktrace stopped: Cannot access memory at address ${::hex}" \
 	 "first backtrace, with error message"
 
-gdb_test "bt" "^#0 +breakpt *\\(\\) \[^\r\n\]*\r\n#1 +${::hex} in func5\[^\r\n\]*\r\n#2 +${::hex} in func4\[^\r\n\]*\r\n#3 +${::hex} in func3\[^\r\n\]*\r\nBacktrace stopped: Cannot access memory at address ${::hex}" \
+gdb_test "bt" "^\\* #0 +breakpt *\\(\\) \[^\r\n\]*\r\n  #1 +${::hex} in func5\[^\r\n\]*\r\n  #2 +${::hex} in func4\[^\r\n\]*\r\n  #3 +${::hex} in func3\[^\r\n\]*\r\nBacktrace stopped: Cannot access memory at address ${::hex}" \
 	 "second backtrace, with error message"
 
 clean_restart ${::testfile}

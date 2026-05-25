@@ -521,7 +521,8 @@ apply_ext_lang_frame_filter (const frame_info_ptr &frame,
 			     frame_filter_flags flags,
 			     enum ext_lang_frame_args args_type,
 			     struct ui_out *out,
-			     int frame_low, int frame_high)
+			     int frame_low, int frame_high,
+			     const frame_info_ptr &selected_frame)
 {
   for (const struct extension_language_defn *extlang : extension_languages)
     {
@@ -531,8 +532,9 @@ apply_ext_lang_frame_filter (const frame_info_ptr &frame,
 	  || extlang->ops->apply_frame_filter == NULL)
 	continue;
       status = extlang->ops->apply_frame_filter (extlang, frame, flags,
-					       args_type, out,
-					       frame_low, frame_high);
+						 args_type, out,
+						 frame_low, frame_high,
+						 selected_frame);
       /* We use the filters from the first extension language that has
 	 applicable filters.  Also, an error is reported immediately
 	 rather than continue trying.  */

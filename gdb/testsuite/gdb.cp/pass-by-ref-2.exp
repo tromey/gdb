@@ -110,7 +110,7 @@ gdb_test "print cbvArrayContainerByRef (arrayContainerByRef)" \
     ".*The program being debugged stopped.*" \
     "call cbvArrayContainerByRef with BP"
 gdb_test "backtrace" [multi_line \
-    "#0  ByRef\:\:ByRef .* at .*$srcfile:$bp_location" \
-    "#1  .* ArrayContainerByRef::ArrayContainerByRef .*" \
-    "#2  <function called from gdb>" \
-    "#3  main.*"]
+    "\\* #0  ByRef\:\:ByRef .* at .*$srcfile:$bp_location" \
+    "  #1  .* ArrayContainerByRef::ArrayContainerByRef .*" \
+    "  #2  <function called from gdb>" \
+    "  #3  main.*"]

@@ -59,9 +59,9 @@ proc validate_backtrace {} {
 	gdb_test "break handler"
 	gdb_test "continue" ".* handler .*" "continue to stepi handler"
 	gdb_test_sequence "bt" "backtrace for nexti" {
-	    "\[\r\n\]+.0 \[^\r\n\]* handler "
-	    "\[\r\n\]+.1  .signal handler called."
-	    "\[\r\n\]+.2 \[^\r\n\]* main "
+	    "\[\r\n\]+\\* #0 \[^\r\n\]* handler "
+	    "\[\r\n\]+  #1  .signal handler called."
+	    "\[\r\n\]+  #2 \[^\r\n\]* main "
 	}
     }
 }
@@ -448,9 +448,9 @@ proc breakpoint_to_handler { displaced cmd } {
 	# Make sure we the displaced stepping scratch pad isn't in the
 	# backtrace.
 	gdb_test_sequence "bt" "backtrace" {
-	    "\[\r\n\]+.0 \[^\r\n\]* handler "
-	    "\[\r\n\]+.1  .signal handler called."
-	    "\[\r\n\]+.2 \[^\r\n\]* main "
+	    "\[\r\n\]+\\* #0 \[^\r\n\]* handler "
+	    "\[\r\n\]+  #1  .signal handler called."
+	    "\[\r\n\]+  #2 \[^\r\n\]* main "
 	}
     }
 }
@@ -502,9 +502,9 @@ proc breakpoint_to_handler_entry { displaced cmd } {
 	# Make sure we the displaced stepping scratch pad isn't in the
 	# backtrace.
 	gdb_test_sequence "bt" "backtrace" {
-	    "\[\r\n\]+.0 \[^\r\n\]* handler "
-	    "\[\r\n\]+.1  .signal handler called."
-	    "\[\r\n\]+.2 \[^\r\n\]* main "
+	    "\[\r\n\]+\\* #0 \[^\r\n\]* handler "
+	    "\[\r\n\]+  #1  .signal handler called."
+	    "\[\r\n\]+  #2 \[^\r\n\]* main "
 	}
     }
 }

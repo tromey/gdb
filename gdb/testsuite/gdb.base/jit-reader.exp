@@ -124,8 +124,8 @@ proc jit_reader_test {} {
 	with_test_prefix "before mangling" {
 	    gdb_test "bt" \
 		[multi_line \
-		     "#0 ${any} in jit_function_stack_mangle ${any}" \
-		     "#1 ${any} in main ${any}" \
+		     "\\* #0 ${any} in jit_function_stack_mangle ${any}" \
+		     "  #1 ${any} in main ${any}" \
 		    ] \
 		"bt works"
 
@@ -156,8 +156,8 @@ proc jit_reader_test {} {
 	    # the mangled stack pointer.
 	    gdb_test "bt" \
 		[multi_line \
-		     "#0 ${any} in jit_function_stack_mangle ${any}" \
-		     "#1 ${any} in main ${any}" \
+		     "\\* #0 ${any} in jit_function_stack_mangle ${any}" \
+		     "  #1 ${any} in main ${any}" \
 		    ] \
 		"bt works"
 
@@ -284,8 +284,8 @@ proc jit_reader_test {} {
 	# the mangled stack pointer.
 	gdb_test "bt" \
 	    [multi_line \
-		 "#0 ${any} in jit_function_stack_mangle ${any}" \
-		 "#1 ${any} in main ${any}" \
+		 "\\* #0 ${any} in jit_function_stack_mangle ${any}" \
+		 "  #1 ${any} in main ${any}" \
 		]
     }
 
@@ -306,8 +306,8 @@ proc jit_reader_test {} {
 	gdb_test "cont" ".*Temporary breakpoint ${any} in jit_function_add .*"
 	gdb_test "bt" \
 	    [multi_line \
-		 "#0 ${any} in jit_function_add ${any}" \
-		 "#1 ${any} in main ${any}" \
+		 "\\* #0 ${any} in jit_function_add ${any}" \
+		 "  #1 ${any} in main ${any}" \
 		]
     }
 }

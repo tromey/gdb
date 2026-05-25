@@ -55,15 +55,15 @@ proc check_selected_frame_after_bt { bt_cmd stack_pattern } {
 
 check_selected_frame_after_bt "bt" \
     [multi_line          \
-	 "#0 \[^\n\r\]+" \
-	 "#1 \[^\n\r\]+" \
-	 "#2 \[^\n\r\]+"]
+	 ". #0 \[^\n\r\]+" \
+	 ". #1 \[^\n\r\]+" \
+	 ". #2 \[^\n\r\]+"]
 
 check_selected_frame_after_bt "bt full" \
     [multi_line          \
-	 "#0 \[^\n\r\]+" \
+	 ". #0 \[^\n\r\]+" \
 	 "No locals\."   \
-	 "#1 \[^\n\r\]+" \
+	 ". #1 \[^\n\r\]+" \
 	 "No locals\."   \
-	 "#2 \[^\n\r\]+" \
+	 ". #2 \[^\n\r\]+" \
 	 "No locals\."]

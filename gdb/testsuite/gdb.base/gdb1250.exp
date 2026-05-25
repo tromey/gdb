@@ -50,10 +50,10 @@ if {![runto abort -allow-pending]} {
 # breakpoints should work.
 
 gdb_test_multiple "backtrace" "backtrace from abort" {
-    -re "#0.*abort.*\r\n#1.*beta.*\r\n#2.*alpha.*\r\n#3.*main.*\r\n$gdb_prompt $" {
+    -re "\\* #0.*abort.*\r\n  #1.*beta.*\r\n  #2.*alpha.*\r\n  #3.*main.*\r\n$gdb_prompt $" {
 	pass "backtrace from abort"
     }
-    -re "#0.*abort.*\r\n#1.*beta.*\r\n$gdb_prompt $" {
+    -re "\\* #0.*abort.*\r\n  #1.*beta.*\r\n$gdb_prompt $" {
 	# This happens with gdb HEAD as of 2003-07-13, with gcc 3.3,
 	# binutils 2.14, either -gdwarf-2 or -gstabs+, on native
 	# i686-pc-linux-gnu.

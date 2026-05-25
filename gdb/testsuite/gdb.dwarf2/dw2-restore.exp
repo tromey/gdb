@@ -35,4 +35,4 @@ if {![runto foo]} {
     return
 }
 gdb_test "continue" "$hex in foo \\(\\)"
-gdb_test "where" "#0 +$hex in foo \\(\\)\r\n#1 +$hex in _start \\(\\)"
+gdb_test "where" "\\* #0 +$hex in foo \\(\\)\r\n  #1 +$hex in _start \\(\\)"

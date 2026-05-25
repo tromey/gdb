@@ -37,10 +37,10 @@ gdb_continue_to_breakpoint "run to test breakpoint"
 
 gdb_test "bt" \
     [multi_line \
-	 "#0  func3 \\(\\) at \[^\r\n\]+/py-framefilter-addr.c:21" \
-	 "#1  $hex in func2 \\(\\) at \[^\r\n\]+/py-framefilter-addr.c:27" \
-	 "#2  $hex in func1 \\(\\) at \[^\r\n\]+/py-framefilter-addr.c:33" \
-	 "#3  $hex in main \\(\\) at \[^\r\n\]+/py-framefilter-addr.c:39" ] \
+	 "\\* #0  func3 \\(\\) at \[^\r\n\]+/py-framefilter-addr.c:21" \
+	 "  #1  $hex in func2 \\(\\) at \[^\r\n\]+/py-framefilter-addr.c:27" \
+	 "  #2  $hex in func1 \\(\\) at \[^\r\n\]+/py-framefilter-addr.c:33" \
+	 "  #3  $hex in main \\(\\) at \[^\r\n\]+/py-framefilter-addr.c:39" ] \
     "backtrace without frame filters"
 
 # Make the frame filters Python script available.
@@ -53,8 +53,8 @@ gdb_test_no_output "source ${remote_python_file}" "load python file"
 
 gdb_test "bt" \
     [multi_line \
-	 "#0  func3 \\(\\) at \[^\r\n\]+/py-framefilter-addr.c:21" \
-	 "#1  $hex in func2 \\(\\) at \[^\r\n\]+/py-framefilter-addr.c:27" \
-	 "#2  $hex in func1 \\(\\) at \[^\r\n\]+/py-framefilter-addr.c:33" \
-	 "#3  $hex in main \\(\\) at \[^\r\n\]+/py-framefilter-addr.c:39" ] \
+	 "\\* #0  func3 \\(\\) at \[^\r\n\]+/py-framefilter-addr.c:21" \
+	 "  #1  $hex in func2 \\(\\) at \[^\r\n\]+/py-framefilter-addr.c:27" \
+	 "  #2  $hex in func1 \\(\\) at \[^\r\n\]+/py-framefilter-addr.c:33" \
+	 "  #3  $hex in main \\(\\) at \[^\r\n\]+/py-framefilter-addr.c:39" ] \
     "backtrace with frame filters"

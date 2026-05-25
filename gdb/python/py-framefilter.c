@@ -761,7 +761,8 @@ static enum ext_lang_bt_status
 py_print_frame (PyObject *filter, frame_filter_flags flags,
 		enum ext_lang_frame_args args_type,
 		struct ui_out *out, int indent,
-		levels_printed_hash &levels_printed)
+		levels_printed_hash &levels_printed,
+		const frame_info_ptr &selected_frame)
 {
   int has_addr = 0;
   CORE_ADDR address = 0;
@@ -864,6 +865,14 @@ py_print_frame (PyObject *filter, frame_filter_flags flags,
 			     || print_what == SRC_AND_LOC
 			     || print_what == LOC_AND_ADDRESS
 			     || print_what == SHORT_LOCATION));
+
+  if (!selected_frame.is_null ())
+    {
+      if (frame == selected_frame)
+	out->text ("* ");
+      else
+	out->text ("  ");
+    }
 
   /* Print frame level.  MI does not require the level if
      locals/variables only are being printed.  */
@@ -1068,7 +1077,7 @@ py_print_frame (PyObject *filter, frame_filter_flags flags,
 
 	      enum ext_lang_bt_status success
 		= py_print_frame (item, flags, args_type, out, indent,
-				  levels_printed);
+				  levels_printed, selected_frame);
 
 	      if (success == EXT_LANG_BT_ERROR)
 		return EXT_LANG_BT_ERROR;
@@ -1142,7 +1151,8 @@ enum ext_lang_bt_status
 gdbpy_apply_frame_filter (const struct extension_language_defn *extlang,
 			  const frame_info_ptr &frame, frame_filter_flags flags,
 			  enum ext_lang_frame_args args_type,
-			  struct ui_out *out, int frame_low, int frame_high)
+			  struct ui_out *out, int frame_low, int frame_high,
+			  const frame_info_ptr &selected_frame)
 {
   struct gdbarch *gdbarch = NULL;
   enum ext_lang_bt_status success = EXT_LANG_BT_ERROR;
@@ -1234,7 +1244,7 @@ gdbpy_apply_frame_filter (const struct extension_language_defn *extlang,
       try
 	{
 	  success = py_print_frame (item.get (), flags, args_type, out, 0,
-				    levels_printed);
+				    levels_printed, selected_frame);
 	}
       catch (const gdb_exception_error &except)
 	{

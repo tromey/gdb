@@ -904,7 +904,8 @@ extern void print_stack_frame (const frame_info_ptr &, int print_level,
 extern void print_frame_info (const frame_print_options &fp_opts,
 			      const frame_info_ptr &, int print_level,
 			      enum print_what print_what, int args,
-			      int set_current_sal);
+			      int set_current_sal,
+			      const frame_info_ptr &selected_frame);
 
 extern frame_info_ptr block_innermost_frame (const struct block *);
 

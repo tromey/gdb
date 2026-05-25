@@ -336,10 +336,10 @@ proc do_test {suffix} {
 	# see foo for frames #1 and #2.  It is incorrect to see
 	# foo_cold at frame #1.
 	gdb_test_sequence "bt" "backtrace from baz" {
-	    "\[\r\n\]#0 .*? baz \\(\\) "
-	    "\[\r\n\]#1 .*? foo \\(\\) "
-	    "\[\r\n\]#2 .*? foo \\(\\) "
-	    "\[\r\n\]#3 .*? main \\(\\) "
+	    "\[\r\n\]\\* #0 .*? baz \\(\\) "
+	    "\[\r\n\]  #1 .*? foo \\(\\) "
+	    "\[\r\n\]  #2 .*? foo \\(\\) "
+	    "\[\r\n\]  #3 .*? main \\(\\) "
 	}
 
 	# Doing x/2i foo_cold should show foo_cold as the first symbolic

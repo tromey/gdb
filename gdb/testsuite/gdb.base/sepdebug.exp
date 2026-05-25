@@ -431,7 +431,7 @@ gdb_test "print marker2(99)" \
 # verify that we can successfully backtrace & such from here.
 
 gdb_test "bt" \
-    "#0\[ \t\]*($hex in )?marker2.*:$bp_location8\r\n#1\[ \t\]*<function called from gdb>.*" \
+    "\\* #0\[ \t\]*($hex in )?marker2.*:$bp_location8\r\n  #1\[ \t\]*<function called from gdb>.*" \
     "backtrace while in called function"
 
 # Return from the called function.  For remote targets, it's important to do
@@ -502,7 +502,7 @@ proc test_next_with_recursion {} {
     # Do a backtrace just to confirm how many levels deep we are.
 
     gdb_test "backtrace" \
-	"#0\[ \t\]+ factorial .value=5..*" \
+	"\\* #0\[ \t\]+ factorial .value=5..*" \
 	"backtrace from factorial(5)"
 
     # Now a "next" should position us at the recursive call, which
@@ -543,7 +543,7 @@ proc test_next_with_recursion {} {
     # Do a backtrace just to confirm.
 
     gdb_test "backtrace" \
-	    "#0\[ \t\]+ factorial .value=120.*\r\n#1\[ \t\]+ \[0-9a-fx\]+ in factorial .value=6..*" \
+	    "\\* #0\[ \t\]+ factorial .value=120.*\r\n  #1\[ \t\]+ \[0-9a-fx\]+ in factorial .value=6..*" \
 	    "backtrace from factorial(5.1)"
 
     if { ![target_info exists gdb,noresults] } {
