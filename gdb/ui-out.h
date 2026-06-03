@@ -341,8 +341,14 @@ protected:
 
   virtual void do_table_begin (int nbrofcols, int nr_rows, const char *tblid)
     = 0;
+
+  /* This is only used for phony tables.  */
+  virtual void do_table_begin ()
+  {
+  }
+
   virtual void do_table_body () = 0;
-  virtual void do_table_end () = 0;
+  virtual void do_table_end (bool phony) = 0;
   virtual void do_table_header (int width, ui_align align,
 				const std::string &col_name,
 				const std::string &col_hdr) = 0;
@@ -396,6 +402,8 @@ protected:
   /* A table can only be started or ended by ui_out_emit_table.  */
   friend class ui_out_emit_table;
   void table_begin (int nr_cols, int nr_rows, const std::string &tblid);
+  /* This overload is only used for phony tables.  */
+  void table_begin ();
   void table_end ();
 
   /* A helper for vmessage that wraps a call to do_message.  This will
@@ -458,6 +466,14 @@ public:
     : m_uiout (uiout)
   {
     m_uiout->table_begin (nr_cols, nr_rows, tblid);
+  }
+
+  /* This constructor creates a "phony" table -- this is a hack
+     intended for use just by the stack-generation code.  */
+  explicit ui_out_emit_table (ui_out *uiout)
+    : m_uiout (uiout)
+  {
+    m_uiout->table_begin ();
   }
 
   ~ui_out_emit_table ()

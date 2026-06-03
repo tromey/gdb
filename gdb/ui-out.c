@@ -184,6 +184,12 @@ class ui_out_table
 
   int entry_level () const;
 
+  /* True if this is a "phony" table.  */
+  bool phony () const
+  {
+    return m_nr_cols == 0;
+  }
+
  private:
 
   state m_state;
@@ -356,7 +362,18 @@ previous table_end."));
 
   m_table_up = std::make_unique<ui_out_table> (level () + 1, nr_cols, tblid);
 
+  gdb_assert (!m_table_up->phony ());
   do_table_begin (nr_cols, nr_rows, tblid.c_str ());
+}
+
+/* See ui-out.h.  */
+
+void
+ui_out::table_begin ()
+{
+  gdb_assert (m_table_up == nullptr);
+  m_table_up = std::make_unique<ui_out_table> (level () + 1, 0, "");
+  do_table_begin ();
 }
 
 void
@@ -369,7 +386,8 @@ after a table_begin and before a table_body."));
 
   m_table_up->append_header (width, alignment, col_name, col_hdr);
 
-  do_table_header (width, alignment, col_name, col_hdr);
+  if (!m_table_up->phony ())
+    do_table_header (width, alignment, col_name, col_hdr);
 }
 
 void
@@ -381,7 +399,8 @@ ui_out::table_body ()
 
   m_table_up->start_body ();
 
-  do_table_body ();
+  if (!m_table_up->phony ())
+    do_table_body ();
 }
 
 void
@@ -390,7 +409,7 @@ ui_out::table_end ()
   if (m_table_up == nullptr)
     internal_error (_("misplaced table_end or missing table_begin."));
 
-  do_table_end ();
+  do_table_end (m_table_up->phony ());
 
   m_table_up = nullptr;
 }

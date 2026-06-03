@@ -57,7 +57,7 @@ protected:
   virtual void do_table_header (int width, ui_align align,
 			     const std::string &col_name,
 			     const std::string &col_hdr) override;
-  virtual void do_table_end () override;
+  virtual void do_table_end (bool phony) override;
 
   virtual void do_begin (ui_out_type type, const char *id) override;
   virtual void do_end (ui_out_type type) override;

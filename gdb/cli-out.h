@@ -44,8 +44,14 @@ protected:
 
   virtual void do_table_begin (int nbrofcols, int nr_rows,
 			       const char *tblid) override;
+
+  /* This overload is used for "phony" tables.  */
+  void do_table_begin () override
+  {
+  }
+
   virtual void do_table_body () override;
-  virtual void do_table_end () override;
+  virtual void do_table_end (bool phony) override;
   virtual void do_table_header (int width, ui_align align,
 				const std::string &col_name,
 				const std::string &col_hdr) override;

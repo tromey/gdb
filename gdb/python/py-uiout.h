@@ -73,9 +73,10 @@ protected:
   }
   void do_table_body () override
   { }
-  void do_table_end () override
+  void do_table_end (bool phony) override
   {
-    do_end (ui_out_type_list);
+    if (!phony)
+      do_end (ui_out_type_list);
   }
   void do_table_header (int width, ui_align align,
 			const std::string &col_name,

@@ -53,10 +53,13 @@ mi_ui_out::do_table_body ()
 /* Mark end of a table.  */
 
 void
-mi_ui_out::do_table_end ()
+mi_ui_out::do_table_end (bool phony)
 {
-  close (ui_out_type_list); /* body */
-  close (ui_out_type_tuple);
+  if (!phony)
+    {
+      close (ui_out_type_list); /* body */
+      close (ui_out_type_tuple);
+    }
 }
 
 /* Specify table header.  */

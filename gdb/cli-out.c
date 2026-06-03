@@ -59,7 +59,7 @@ cli_ui_out::do_table_body ()
 /* Mark end of a table */
 
 void
-cli_ui_out::do_table_end ()
+cli_ui_out::do_table_end (bool phony)
 {
   m_suppress_output = false;
 }
