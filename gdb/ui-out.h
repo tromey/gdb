@@ -30,6 +30,7 @@
 
 class ui_out_level;
 class ui_out_table;
+class ui_out_emit_table;
 struct ui_file;
 
 /* the current ui_out */
@@ -173,11 +174,9 @@ class ui_out
      field, ... }, ... ] }''.  If NR_ROWS is negative then there is at
      least one row.  */
 
-  void table_begin (int nr_cols, int nr_rows, const std::string &tblid);
   void table_header (int width, ui_align align, const std::string &col_name,
 		     const std::string &col_hdr);
   void table_body ();
-  void table_end ();
 
   void begin (ui_out_type type, const char *id);
   void end (ui_out_type type);
@@ -393,6 +392,12 @@ protected:
   { return false; }
 
  private:
+
+  /* A table can only be started or ended by ui_out_emit_table.  */
+  friend class ui_out_emit_table;
+  void table_begin (int nr_cols, int nr_rows, const std::string &tblid);
+  void table_end ();
+
   /* A helper for vmessage that wraps a call to do_message.  This will
      update CURRENT_STYLE when needed.  */
   void call_do_message (ui_file_style &current_style,
