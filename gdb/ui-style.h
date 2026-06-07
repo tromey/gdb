@@ -51,6 +51,9 @@ extern const char * color_space_name (color_space c);
 /* Cast C to RESULT and return true if it's value is valid; false otherwise.  */
 extern bool color_space_safe_cast (color_space *result, long c);
 
+/* Basic implementation of gdb_get_ncolors that checks tgetent.  */
+extern int basic_gdb_get_ncolors ();
+
 /* Get the number of colors supported by the terminal where GDB is running.  */
 extern int gdb_get_ncolors ();
 

@@ -46,11 +46,7 @@ gdb_console_fputs (const char *buf, FILE *f)
 int
 gdb_get_ncolors ()
 {
-  /* ncurses versions prior to 6.1 (and other curses
-     implementations) declare the tgetnum argument to be
-     'char *', so we need the const_cast, since C++ will not
-     implicitly convert.  */
-  return tgetnum (const_cast<char*> ("Co"));
+  return basic_gdb_get_ncolors ();
 }
 
 /* See inferior.h.  */

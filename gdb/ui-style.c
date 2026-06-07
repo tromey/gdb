@@ -578,6 +578,36 @@ examine_ansi_escape (const char *buf, int *n_read)
 
 /* See ui-style.h.  */
 
+int
+basic_gdb_get_ncolors ()
+{
+  static std::optional<int> result;
+
+  if (!result.has_value ())
+    {
+      const char *term_name = getenv ("TERM");
+      if (term_name == nullptr)
+	result = -1;
+      else
+	{
+	  char desc[4096];
+	  /* Ignore the result here.  Some versions of termcap are
+	     confused about this.  */
+	  tgetent (desc, term_name);
+
+	  /* ncurses versions prior to 6.1 (and other curses
+	     implementations) declare the tgetnum argument to be
+	     'char *', so we need the const_cast, since C++ will not
+	     implicitly convert.  */
+	  result = tgetnum (const_cast<char*> ("Co"));
+	}
+    }
+
+  return *result;
+}
+
+/* See ui-style.h.  */
+
 const std::vector<color_space> &
 colorsupport ()
 {

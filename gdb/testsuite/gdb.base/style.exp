@@ -1086,6 +1086,18 @@ proc test_logging_styling {} {
 	"No symbol table is loaded\\.  Use the \"[style file command]\" command\\."
 }
 
+# Test that colors "round trip" in ANSI mode.
+proc test_ansi_round_trip {} {
+    with_test_prefix "round-trip" {
+	with_ansi_styling_terminal {
+	    clean_restart
+	    gdb_test_no_output "set style address background red"
+	    gdb_test "show style address background" \
+		"The .*address.* background color is: red"
+	}
+    }
+}
+
 # Check to see if the Python styling of disassembler output is
 # expected or not, this styling requires Python support in GDB, and
 # the Python pygments module to be available.
@@ -1133,3 +1145,5 @@ test_pagination_prompt_styling
 test_pagination_continue_styling
 test_finish_styling
 test_logging_styling
+
+test_ansi_round_trip
