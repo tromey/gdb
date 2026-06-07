@@ -119,6 +119,14 @@ run_tests ()
   SELF_CHECK (!style.is_underline ());
   SELF_CHECK (style.is_reverse ());
   SELF_CHECK (style.to_ansi () == "\033[38;2;83;84;85;48;2;0;1;254;2;23;24;7m");
+
+  const ui_file_style redblack_style (ui_file_style::RED, ui_file_style::BLACK);
+  const ui_file_style rednone_style (ui_file_style::RED, ui_file_style::NONE);
+  const ui_file_style noneblack_style (ui_file_style::NONE, ui_file_style::BLACK);
+  SELF_CHECK (ui_file_style ().merge (redblack_style) == redblack_style);
+  SELF_CHECK (redblack_style.merge ({}) == redblack_style);
+  SELF_CHECK (rednone_style.merge (noneblack_style) == redblack_style);
+  SELF_CHECK (noneblack_style.merge (rednone_style) == redblack_style);
 }
 
 } /* namespace style */
