@@ -632,7 +632,7 @@ struct target_ops
       TARGET_DEFAULT_FUNC (default_terminal_info);
     virtual void kill ()
       TARGET_DEFAULT_NORETURN (noprocess ());
-    virtual void load (const char *, int)
+    virtual void load (const char *, int, std::optional<CORE_ADDR>)
       TARGET_DEFAULT_NORETURN (tcomplain ());
     /* Start an inferior process and set inferior_ptid to its pid.
        EXEC_FILE is the file to run.
@@ -1756,16 +1756,10 @@ extern void target_kill (void);
 
 /* Load an executable file into the target process.  This is expected
    to not only bring new code into the target process, but also to
-   update GDB's symbol tables to match.
+   update GDB's symbol tables to match.  */
 
-   ARG contains command-line arguments, to be broken down with
-   buildargv ().  The first non-switch argument is the filename to
-   load, FILE; the second is a number (as parsed by strtoul (..., ...,
-   0)), which is an offset to apply to the load addresses of FILE's
-   sections.  The target may define switches, or other non-switch
-   arguments, as it pleases.  */
-
-extern void target_load (const char *arg, int from_tty);
+extern void target_load (const char *arg, int from_tty,
+			 std::optional<CORE_ADDR> offset);
 
 /* On some targets, we can catch an inferior fork or vfork event when
    it occurs.  These functions insert/remove an already-created

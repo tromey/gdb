@@ -902,10 +902,10 @@ target_kill (void)
 }
 
 void
-target_load (const char *arg, int from_tty)
+target_load (const char *arg, int from_tty, std::optional<CORE_ADDR> offset)
 {
   target_dcache_invalidate (current_program_space->aspace);
-  current_inferior ()->top_target ()->load (arg, from_tty);
+  current_inferior ()->top_target ()->load (arg, from_tty, offset);
 }
 
 /* Define it.  */

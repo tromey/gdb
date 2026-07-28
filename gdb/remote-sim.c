@@ -571,20 +571,13 @@ gdbsim_target::kill ()
    GDB's symbol tables to match.  */
 
 void
-gdbsim_target::load (const char *args, int fromtty)
+gdbsim_target::load (const char *prog, int fromtty,
+		     std::optional<CORE_ADDR> offset)
 {
-  const char *prog;
   struct sim_inferior_data *sim_data
     = get_sim_inferior_data (current_inferior (), SIM_INSTANCE_NEEDED);
 
-  if (args == NULL)
-      error_no_arg (_("program to load"));
-
-  gdb_argv argv (args);
-
-  prog = tilde_expand (argv[0]);
-
-  if (argv[1] != NULL)
+  if (offset.has_value ())
     error (_("GDB sim does not yet support a load offset."));
 
   if (remote_debug)

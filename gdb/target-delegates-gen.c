@@ -70,7 +70,7 @@ struct dummy_target : public target_ops
   void terminal_ours () override;
   void terminal_info (const char *arg0, int arg1) override;
   void kill () override;
-  void load (const char *arg0, int arg1) override;
+  void load (const char *arg0, int arg1, std::optional<CORE_ADDR> arg2) override;
   int insert_fork_catchpoint (int arg0) override;
   int remove_fork_catchpoint (int arg0) override;
   int insert_vfork_catchpoint (int arg0) override;
@@ -251,7 +251,7 @@ struct debug_target : public target_ops
   void terminal_ours () override;
   void terminal_info (const char *arg0, int arg1) override;
   void kill () override;
-  void load (const char *arg0, int arg1) override;
+  void load (const char *arg0, int arg1, std::optional<CORE_ADDR> arg2) override;
   int insert_fork_catchpoint (int arg0) override;
   int remove_fork_catchpoint (int arg0) override;
   int insert_vfork_catchpoint (int arg0) override;
@@ -1344,26 +1344,27 @@ debug_target::kill ()
 }
 
 void
-target_ops::load (const char *arg0, int arg1)
+target_ops::load (const char *arg0, int arg1, std::optional<CORE_ADDR> arg2)
 {
-  this->beneath ()->load (arg0, arg1);
+  this->beneath ()->load (arg0, arg1, arg2);
 }
 
 void
-dummy_target::load (const char *arg0, int arg1)
+dummy_target::load (const char *arg0, int arg1, std::optional<CORE_ADDR> arg2)
 {
   tcomplain ();
 }
 
 void
-debug_target::load (const char *arg0, int arg1)
+debug_target::load (const char *arg0, int arg1, std::optional<CORE_ADDR> arg2)
 {
   target_debug_printf_nofunc ("-> %s->load (...)", this->beneath ()->shortname ());
-  this->beneath ()->load (arg0, arg1);
-  target_debug_printf_nofunc ("<- %s->load (%s, %s)",
+  this->beneath ()->load (arg0, arg1, arg2);
+  target_debug_printf_nofunc ("<- %s->load (%s, %s, %s)",
 	      this->beneath ()->shortname (),
 	      target_debug_print_const_char_p (arg0).c_str (),
-	      target_debug_print_int (arg1).c_str ());
+	      target_debug_print_int (arg1).c_str (),
+	      target_debug_print_std_optional_CORE_ADDR (arg2).c_str ());
 }
 
 int

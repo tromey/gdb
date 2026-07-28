@@ -1790,34 +1790,35 @@ load_command (const char *arg, int from_tty)
   reopen_exec_file ();
   reread_symbols (from_tty);
 
-  std::string temp;
+  std::optional<gdb_argv> argv_holder;
+  gdb::unique_xmalloc_ptr<char> filename_holder;
+  std::optional<CORE_ADDR> offset;
+
   if (arg == NULL)
     {
-      const char *parg, *prev;
-
       arg = current_program_space->exec_filename ();
       if (arg == nullptr)
 	no_executable_specified_error ();
+    }
+  else
+    {
+      argv_holder.emplace (arg);
+      gdb_argv &argv = *argv_holder;
 
-      /* We may need to quote this string so buildargv can pull it
-	 apart.  */
-      prev = parg = arg;
-      while ((parg = strpbrk (parg, "\\\"'\t ")))
+      filename_holder = gdb_rl_tilde_expand (argv[0]);
+      arg = filename_holder.get ();
+
+      if (argv[1] != nullptr)
 	{
-	  temp.append (prev, parg - prev);
-	  prev = parg++;
-	  temp.push_back ('\\');
+	  const char *endptr;
+	  offset = strtoulst (argv[1], &endptr, 0);
 	}
-      /* If we have not copied anything yet, then we didn't see a
-	 character to quote, and we can just leave ARG unchanged.  */
-      if (!temp.empty ())
-	{
-	  temp.append (prev);
-	  arg = temp.c_str ();
-	}
+
+      if (argv[2] != nullptr)
+	error (_("Too many parameters."));
     }
 
-  target_load (arg, from_tty);
+  target_load (arg, from_tty, offset);
 
   /* After re-loading the executable, we don't really know which
      overlays are mapped any more.  */
@@ -1985,34 +1986,15 @@ static void print_transfer_performance (struct ui_file *stream,
 /* See symfile.h.  */
 
 void
-generic_load (const char *args, int from_tty)
+generic_load (const char *filename, int from_tty,
+	      std::optional<CORE_ADDR> offset)
 {
   struct load_progress_data total_progress;
   struct load_section_data cbdata (&total_progress);
   struct ui_out *uiout = current_uiout;
 
-  if (args == NULL)
-    error_no_arg (_("file to load"));
-
-  gdb_argv argv (args);
-
-  gdb::unique_xmalloc_ptr<char> filename
-    = gdb_rl_tilde_expand (argv[0]);
-
-  if (argv[1] != NULL)
-    {
-      const char *endptr;
-
-      cbdata.load_offset = strtoulst (argv[1], &endptr, 0);
-
-      /* If the last word was not a valid number then
-	 treat it as a file name with spaces in.  */
-      if (argv[1] == endptr)
-	error (_("Invalid download offset:%s."), argv[1]);
-
-      if (argv[2] != NULL)
-	error (_("Too many parameters."));
-    }
+  if (offset.has_value ())
+    cbdata.load_offset = *offset;
 
   /* Open the file for loading.  */
   gdb_bfd_ref_ptr loadfile_bfd (gdb_bfd_open (filename.get (), gnutarget));
