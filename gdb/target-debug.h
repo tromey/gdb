@@ -314,6 +314,14 @@ static std::string
 target_debug_print_const_target_waitstatus_r (const target_waitstatus &status)
 { return status.to_string (); }
 
+static std::string
+target_debug_print_std_optional_CORE_ADDR (std::optional<CORE_ADDR> value)
+{
+  if (value.has_value ())
+    return target_debug_print_CORE_ADDR (*value);
+  return "(empty)";
+}
+
 /* Functions that are used via TARGET_DEBUG_PRINTER.  */
 
 static std::string

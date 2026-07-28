@@ -1997,13 +1997,13 @@ generic_load (const char *filename, int from_tty,
     cbdata.load_offset = *offset;
 
   /* Open the file for loading.  */
-  gdb_bfd_ref_ptr loadfile_bfd (gdb_bfd_open (filename.get (), gnutarget));
+  gdb_bfd_ref_ptr loadfile_bfd (gdb_bfd_open (filename, gnutarget));
   if (loadfile_bfd == NULL)
-    perror_with_name (filename.get ());
+    perror_with_name (filename);
 
   if (!gdb_bfd_check_format (loadfile_bfd.get (), bfd_object))
     error (_("\"%ps\" is not an object file: %s"),
-	   styled_string (file_name_style.style (), filename.get ()),
+	   styled_string (file_name_style.style (), filename),
 	   bfd_errmsg (bfd_get_error ()));
 
   for (asection *asec : gdb_bfd_sections (loadfile_bfd))
