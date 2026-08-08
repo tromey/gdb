@@ -37,7 +37,7 @@ py_get_event_thread (ptid_t ptid)
 }
 
 gdbpy_ref<>
-create_thread_event_object (PyTypeObject *py_type, PyObject *thread)
+create_thread_event_object (PyTypeObject *py_type, gdbpy_borrowed_ref<> thread)
 {
   gdb_assert (thread != NULL);
 
@@ -65,7 +65,7 @@ emit_thread_exit_event (thread_info * thread)
     return -1;
 
   auto inf_thr = create_thread_event_object (&thread_exited_event_object_type,
-				     py_thr.get ());
+					     py_thr);
   if (inf_thr == nullptr)
     return -1;
 
