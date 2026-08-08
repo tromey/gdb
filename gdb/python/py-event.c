@@ -62,7 +62,7 @@ gdbpy_initialize_event ()
    returns 0 if emit is successful -1 otherwise.  */
 
 int
-evpy_emit_event (PyObject *event,
+evpy_emit_event (gdbpy_opt_borrowed_ref<> event,
 		 eventregistry_object *registry)
 {
   Py_ssize_t i;
