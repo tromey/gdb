@@ -343,12 +343,11 @@ static void
 bpfinishpy_out_of_scope (struct finish_breakpoint_object *bpfinish_obj)
 {
   gdbpy_breakpoint_object *bp_obj = (gdbpy_breakpoint_object *) bpfinish_obj;
-  PyObject *py_obj = (PyObject *) bp_obj;
 
   if (bpfinish_obj->py_bp.bp->enable_state == bp_enabled
-      && PyObject_HasAttrString (py_obj, outofscope_func))
+      && PyObject_HasAttrString (bp_obj, outofscope_func))
     {
-      gdbpy_ref<> meth_result = gdbpy_call_method (py_obj, outofscope_func);
+      gdbpy_ref<> meth_result = gdbpy_call_method (bp_obj, outofscope_func);
       if (meth_result == NULL)
 	gdbpy_print_stack ();
     }
@@ -366,7 +365,7 @@ bpfinishpy_detect_out_scope_cb (struct breakpoint *b,
 				struct breakpoint *bp_stopped,
 				bool delete_bp)
 {
-  PyObject *py_bp = (PyObject *) b->py_bp_object;
+  PyObject *py_bp = b->py_bp_object;
 
   /* Trigger out_of_scope if this is a FinishBreakpoint and its frame is
      not anymore in the current callstack.  */
