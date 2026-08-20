@@ -1120,7 +1120,7 @@ qualified_name:	TYPENAME COLONCOLON name
 			  struct type *type = $1.type;
 			  type = check_typedef (type);
 			  if (!type_aggregate_p (type))
-			    error (_("`%s' is not defined as an aggregate type."),
+			    error (_("\"%s\" is not defined as an aggregate type."),
 				   type->safe_name ());
 
 			  pstate->push_new<scope_operation> (type,
@@ -1132,7 +1132,7 @@ qualified_name:	TYPENAME COLONCOLON name
 
 			  type = check_typedef (type);
 			  if (!type_aggregate_p (type))
-			    error (_("`%s' is not defined as an aggregate type."),
+			    error (_("\"%s\" is not defined as an aggregate type."),
 				   type->safe_name ());
 			  std::string name = "~" + std::string ($4.ptr,
 								$4.length);
@@ -3344,7 +3344,7 @@ handle_qualified_field_name (qualified_name_token token)
 
   type = check_typedef (type);
   if (!type_aggregate_p (type))
-    error (_("`%s' is not defined as an aggregate type."),
+    error (_("\"%s\" is not defined as an aggregate type."),
 	   type->safe_name ());
   if (token.name[0] == '~')
     destructor_name_p (token.name, type);

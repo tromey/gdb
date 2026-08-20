@@ -646,7 +646,7 @@ validate_actionline (const char *line, tracepoint *t)
 
   c = lookup_cmd (&p, cmdlist, "", NULL, -1, 1);
   if (c == 0)
-    error (_("`%s' is not a tracepoint action, or is ambiguous."), p);
+    error (_("\"%s\" is not a tracepoint action, or is ambiguous."), p);
 
   if (cmd_simple_func_eq (c, collect_pseudocommand))
     {
@@ -691,14 +691,14 @@ validate_actionline (const char *line, tracepoint *t)
 
 		  if (sym->loc_class () == LOC_CONST)
 		    {
-		      error (_("constant `%s' (value %s) "
+		      error (_("constant \"%s\" (value %s) "
 			       "will not be collected."),
 			     sym->print_name (),
 			     plongest (sym->value_longest ()));
 		    }
 		  else if (sym->loc_class () == LOC_OPTIMIZED_OUT)
 		    {
-		      error (_("`%s' is optimized away "
+		      error (_("\"%s\" is optimized away "
 			       "and cannot be collected."),
 			     sym->print_name ());
 		    }
@@ -752,7 +752,7 @@ validate_actionline (const char *line, tracepoint *t)
       p = skip_spaces (p);
       t->step_count = strtol (p, &endp, 0);
       if (endp == p || t->step_count == 0)
-	error (_("while-stepping step count `%s' is malformed."), line);
+	error (_("while-stepping step count \"%s\" is malformed."), line);
       p = endp;
     }
 
@@ -760,7 +760,7 @@ validate_actionline (const char *line, tracepoint *t)
     ;
 
   else
-    error (_("`%s' is not a supported tracepoint action."), line);
+    error (_("\"%s\" is not a supported tracepoint action."), line);
 }
 
 enum {

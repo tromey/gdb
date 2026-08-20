@@ -564,7 +564,7 @@ variable:	name_not_typename
 			    {
 			      /* TODO(dje): Can we get here?
 				 E.g., via a mix of c++ and go?  */
-			      gdb_assert_not_reached ("go with `this' field");
+			      gdb_assert_not_reached ("go with \"this\" field");
 			    }
 			  else
 			    {
@@ -1308,7 +1308,7 @@ classify_unsafe_function (struct stoken function_name)
       return SIZEOF_KEYWORD;
     }
 
-  error (_("Unknown function in `unsafe' package: %s"), copy.c_str ());
+  error (_("Unknown function in \"unsafe\" package: %s"), copy.c_str ());
 }
 
 /* Classify token(s) "name1.name2" where name1 is known to be a package.

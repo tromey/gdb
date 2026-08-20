@@ -7885,7 +7885,7 @@ ada_template_to_fixed_record_type_1 (struct type *type,
   if (type->length () <= 0)
     {
       if (rtype->name ())
-	warning (_("Invalid type size for `%s' detected: %s."),
+	warning (_("Invalid type size for \"%s\" detected: %s."),
 		 rtype->name (), pulongest (type->length ()));
       else
 	warning (_("Invalid type size for <unnamed> detected: %s."),
@@ -11233,7 +11233,7 @@ ada_funcall_operation::evaluate (struct type *expect_type,
 	  type = ada_check_typedef (type->target_type ());
 	  break;
 	default:
-	  error (_("cannot subscript or call something of type `%s'"),
+	  error (_("cannot subscript or call something of type \"%s\"'"),
 		 ada_type_name (callee->type ()));
 	  break;
 	}
@@ -12427,7 +12427,7 @@ ada_catchpoint::print_one (const bp_location **last_loc) const
       case ada_catch_exception:
 	if (!m_excep_string.empty ())
 	  {
-	    std::string msg = string_printf (_("`%s' Ada exception"),
+	    std::string msg = string_printf (_("\"%s\" Ada exception"),
 					     m_excep_string.c_str ());
 
 	    uiout->field_string ("what", msg);
@@ -12445,7 +12445,7 @@ ada_catchpoint::print_one (const bp_location **last_loc) const
 	if (!m_excep_string.empty ())
 	  {
 	    uiout->field_fmt ("what",
-			      _("`%s' Ada exception handlers"),
+			      _("\"%s\" Ada exception handlers"),
 			      m_excep_string.c_str ());
 	  }
 	else
@@ -12482,7 +12482,7 @@ ada_catchpoint::print_mention () const
       case ada_catch_exception:
 	if (!m_excep_string.empty ())
 	  {
-	    std::string info = string_printf (_("`%s' Ada exception"),
+	    std::string info = string_printf (_("\"%s\" Ada exception"),
 					      m_excep_string.c_str ());
 	    uiout->text (info);
 	  }
@@ -12498,7 +12498,7 @@ ada_catchpoint::print_mention () const
 	if (!m_excep_string.empty ())
 	  {
 	    std::string info
-	      = string_printf (_("`%s' Ada exception handlers"),
+	      = string_printf (_("\"%s\" Ada exception handlers"),
 			       m_excep_string.c_str ());
 	    uiout->text (info);
 	  }
@@ -12595,7 +12595,7 @@ catch_ada_exception_command_split (const char *args,
       args = skip_spaces (args);
 
       if (args[0] == '\0')
-	error (_("Condition missing after `if' keyword"));
+	error (_("Condition missing after \"if\" keyword"));
       *cond_string = args;
 
       args += strlen (args);
@@ -12871,7 +12871,7 @@ catch_ada_assert_command_split (const char *args, std::string &cond_string)
       args += 2;
       args = skip_spaces (args);
       if (args[0] == '\0')
-	error (_("condition missing after `if' keyword"));
+	error (_("condition missing after \"if\" keyword"));
       cond_string.assign (args);
     }
 

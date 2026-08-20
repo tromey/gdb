@@ -831,7 +831,7 @@ value_dynamic_cast (struct type *type, struct value *arg)
     error (_("Argument to dynamic_cast must be a pointer or reference type"));
   if (resolved_type->target_type ()->code () != TYPE_CODE_VOID
       && resolved_type->target_type ()->code () != TYPE_CODE_STRUCT)
-    error (_("Argument to dynamic_cast must be pointer to class or `void *'"));
+    error (_("Argument to dynamic_cast must be pointer to class or \"void *\""));
 
   class_type = check_typedef (resolved_type->target_type ());
   if (resolved_type->code () == TYPE_CODE_PTR)
@@ -2214,7 +2214,7 @@ search_struct_method (const char *name, struct value **arg1p,
 	  name_matched = 1;
 	  if (j > 0 && !args.has_value ())
 	    error (_("cannot resolve overloaded method "
-		     "`%s': no arguments supplied"), name);
+		     "\"%s\": no arguments supplied"), name);
 	  else if (j == 0 && !args.has_value ())
 	    {
 	      v = value_fn_field (arg1p, f, j, type, offset);
@@ -3693,7 +3693,7 @@ value_struct_elt_for_reference (struct type *domain, int offset,
 		  /* Desired method is ambiguous if more than one
 		     method is defined.  */
 		  if (j != -1 && !TYPE_FN_FIELD_ARTIFICIAL (f, j))
-		    error (_("non-unique member `%s' requires "
+		    error (_("non-unique member \"%s\" requires "
 			     "type instantiation"), name);
 
 		  j = ii;
@@ -3983,7 +3983,7 @@ value_of_this (const struct language_defn *lang)
   frame_info_ptr frame;
 
   if (lang->name_of_this () == NULL)
-    error (_("no `this' in current language"));
+    error (_("no \"this\" in current language"));
 
   frame = get_selected_frame (_("no frame selected"));
 
@@ -3991,7 +3991,7 @@ value_of_this (const struct language_defn *lang)
 
   sym = lookup_language_this (lang, b);
   if (sym.symbol == NULL)
-    error (_("current stack frame does not contain a variable named `%ps'"),
+    error (_("current stack frame does not contain a variable named \"%ps\""),
 	   styled_string (variable_name_style.style (),
 			  lang->name_of_this ()));
 
