@@ -127,7 +127,7 @@ gdbpy_bytes_size (gdbpy_borrowed_ref<> ref)
 
 /* Wrapper for PyList_New.  */
 static inline gdbpy_ref<>
-gdbpy_new_list (Py_ssize_t len)
+gdbpy_list_new (Py_ssize_t len)
 {
   gdbpy_ref<> result (PyList_New (len));
   if (result == nullptr)
