@@ -1,6 +1,6 @@
 ;;; dwarf-mode.el --- Browser for DWARF information. -*-lexical-binding:t-*-
 
-;; Version: 1.9
+;; Version: 1.10
 
 ;; Copyright (C) 2012-2026 Free Software Foundation, Inc.
 
@@ -23,6 +23,9 @@
 ;;; Code:
 
 (defvar dwarf-objdump-program "objdump")
+
+(defvar dwarf-objdump-arguments '("-w")
+  "Extra arguments that will be passed to objdump.")
 
 (defconst dwarf-font-lock-keywords
   '(
@@ -68,7 +71,7 @@
       (setq mode-line-process nil)
       (setq dwarf--process nil))))
 
-(defun dwarf--invoke (start end &rest command)
+(defun dwarf--invoke (start end command)
   "Invoke a command and arrange to insert output into the current buffer."
   (setq mode-line-process "[Running]")
   (setq dwarf--deletion-region (list start end))
@@ -81,21 +84,30 @@
 				     :sentinel #'dwarf--sentinel))
   (set-marker (process-mark dwarf--process) (point)))
 
+(defun dwarf--make-command (&rest extra-args)
+  "Form the objdump command in the usual way, with a list of extra arguments."
+  (append (list dwarf-objdump-program)
+	  dwarf-objdump-arguments
+	  extra-args
+	  (list "-Wi" (expand-file-name dwarf-file))))
+
 ;; Expand a "..." to show all the child DIES.  NEW-DEPTH controls how
 ;; deep to display the new dies; `nil' means display all of them.
 (defun dwarf-do-insert-substructure (new-depth die)
   (dwarf--check-running)
   (let ((inhibit-read-only t))
     (beginning-of-line)
-    (apply #'dwarf--invoke
-	   (point) (save-excursion
-		     (end-of-line)
-		     (forward-char)
-		     (point))
-	   dwarf-objdump-program "-Wi" (concat "--dwarf-start=0x" die)
-	   (expand-file-name dwarf-file)
-	   (if new-depth (list (concat "--dwarf-depth="
-				       (int-to-string new-depth)))))
+    (let ((cmd (apply #'dwarf--make-command
+		       (concat "--dwarf-start=0x" die)
+		       (if new-depth
+			   (list (concat "--dwarf-depth="
+					 (int-to-string new-depth)))))))
+      (dwarf--invoke (point)
+		     (save-excursion
+		       (end-of-line)
+		       (forward-char)
+		       (point))
+		     cmd))
     (set-buffer-modified-p nil)))
 
 (defun dwarf-insert-substructure-button (die)
@@ -181,8 +193,7 @@ A prefix argument means expand all children."
   (dwarf--check-running)
   (let ((inhibit-read-only t))
     (dwarf--invoke (point-min) (point-max)
-		   dwarf-objdump-program "-Wi" "--dwarf-depth=1"
-		   (expand-file-name dwarf-file))
+		   (dwarf--make-command "--dwarf-depth=1"))
     (set-buffer-modified-p nil)))
 
 (defun dwarf-refresh-all ()
@@ -192,8 +203,7 @@ Note that this can result in very voluminous output."
   (dwarf--check-running)
   (let ((inhibit-read-only t))
     (dwarf--invoke (point-min) (point-max)
-		   dwarf-objdump-program "-Wi"
-		   (expand-file-name dwarf-file))
+		   (dwarf--make-command))
     (set-buffer-modified-p nil)))
 
 (defvar dwarf-mode-syntax-table
