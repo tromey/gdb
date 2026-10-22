@@ -667,9 +667,7 @@ info_common_command_for_block (const struct block *block, const char *comname,
 
 	    catch (const gdb_exception_error &except)
 	      {
-		fprintf_styled (gdb_stdout, metadata_style.style (),
-				"<error reading variable: %s>",
-				except.what ());
+		val_print_exception (gdb_stdout, except);
 	      }
 
 	    gdb_putc ('\n');

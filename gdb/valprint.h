@@ -224,6 +224,11 @@ extern void val_print_unavailable (struct ui_file *stream);
 
 extern void val_print_invalid_address (struct ui_file *stream);
 
+/* A helper function that prints the text of EXC to STREAM, in a
+   format that is appropriate when printing a value.  */
+extern void val_print_exception (ui_file *stream,
+				 const gdb_exception_error &exc);
+
 /* An instance of this is passed to generic_val_print and describes
    some language-specific ways to print things.  */
 

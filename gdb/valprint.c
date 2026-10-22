@@ -399,6 +399,15 @@ val_print_invalid_address (struct ui_file *stream)
   fprintf_styled (stream, metadata_style.style (), _("<invalid address>"));
 }
 
+/* See valprint.h.  */
+
+void
+val_print_exception (ui_file *stream, const gdb_exception_error &exc)
+{
+  fprintf_styled (stream, metadata_style.style (),
+		  _("<error reading variable: %s>"), exc.what ());
+}
+
 /* Print a pointer based on the type of its target.
 
    Arguments to this functions are roughly the same as those in
@@ -1115,8 +1124,7 @@ common_val_print (struct value *value, struct ui_file *stream, int recurse,
     }
   catch (const gdb_exception_error &except)
     {
-      fprintf_styled (stream, metadata_style.style (),
-		      _("<error reading variable: %s>"), except.what ());
+      val_print_exception (stream, except);
     }
 }
 

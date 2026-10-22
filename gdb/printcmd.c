@@ -2416,9 +2416,7 @@ print_variable_value (symbol *var, const frame_info_ptr &frame,
     }
   catch (const gdb_exception_error &except)
     {
-      fprintf_styled (stream, metadata_style.style (),
-		      "<error reading variable: %s>",
-		      except.what ());
+      val_print_exception (stream, except);
     }
 }
 

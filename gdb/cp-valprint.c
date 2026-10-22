@@ -310,9 +310,7 @@ cp_print_value_fields (struct value *val, struct ui_file *stream,
 		    }
 		  catch (const gdb_exception_error &ex)
 		    {
-		      fprintf_styled (stream, metadata_style.style (),
-				      _("<error reading variable: %s>"),
-				      ex.what ());
+		      val_print_exception (stream, ex);
 		    }
 		}
 	      else if (i == vptr_fieldno && type == vptr_basetype)
