@@ -499,14 +499,14 @@ list_arg_or_local (const struct frame_arg *arg, enum what_to_list what,
   struct ui_out *uiout = current_uiout;
 
   gdb_assert (!arg->val || !arg->error);
-  gdb_assert ((values == PRINT_NO_VALUES && arg->val == NULL
-	       && arg->error == NULL)
+  gdb_assert ((values == PRINT_NO_VALUES && arg->val == nullptr
+	       && !arg->error.has_value ())
 	      || values == PRINT_SIMPLE_VALUES
 	      || (values == PRINT_ALL_VALUES
-		  && (arg->val != NULL || arg->error != NULL)));
+		  && (arg->val != nullptr || arg->error.has_value ())));
   gdb_assert (arg->entry_kind == print_entry_values_no
 	      || (arg->entry_kind == print_entry_values_only
-		  && (arg->val || arg->error)));
+		  && (arg->val != nullptr || arg->error.has_value ())));
 
   if (skip_unavailable && arg->val != NULL
       && (arg->val->entirely_unavailable ()
@@ -555,7 +555,7 @@ list_arg_or_local (const struct frame_arg *arg, enum what_to_list what,
   if (arg->val || arg->error)
     {
       if (arg->error)
-	stb.printf (_("<error reading variable: %s>"), arg->error.get ());
+	val_print_exception (&stb, *arg->error);
       else
 	{
 	  try
@@ -569,8 +569,7 @@ list_arg_or_local (const struct frame_arg *arg, enum what_to_list what,
 	    }
 	  catch (const gdb_exception_error &except)
 	    {
-	      stb.printf (_("<error reading variable: %s>"),
-			  except.what ());
+	      val_print_exception (&stb, except);
 	    }
 	}
       uiout->field_stream ("value", stb);

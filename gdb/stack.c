@@ -486,7 +486,7 @@ print_frame_arg (const frame_print_options &fp_opts,
     {
       if (arg->error)
 	{
-	  stb.printf (_("<error reading variable: %s>"), arg->error.get ());
+	  val_print_exception (&stb, *arg->error);
 	  style = metadata_style.style ();
 	}
       else
@@ -523,8 +523,7 @@ print_frame_arg (const frame_print_options &fp_opts,
 	    }
 	  catch (const gdb_exception_error &except)
 	    {
-	      stb.printf (_("<error reading variable: %s>"),
-			  except.what ());
+	      val_print_exception (&stb, except);
 	      style = metadata_style.style ();
 	    }
 	}
@@ -543,15 +542,15 @@ read_frame_local (struct symbol *sym, const frame_info_ptr &frame,
 {
   argp->sym = sym;
   argp->val = NULL;
-  argp->error = NULL;
+  argp->error = {};
 
   try
     {
       argp->val = read_var_value (sym, NULL, frame);
     }
-  catch (const gdb_exception_error &except)
+  catch (gdb_exception_error &except)
     {
-      argp->error = make_unique_xstrdup (except.what ());
+      argp->error = std::move (except);
     }
 }
 
@@ -564,7 +563,8 @@ read_frame_arg (const frame_print_options &fp_opts,
 		struct frame_arg *argp, struct frame_arg *entryargp)
 {
   struct value *val = NULL, *entryval = NULL;
-  char *val_error = NULL, *entryval_error = NULL;
+  std::optional<gdb_exception_error> val_error;
+  std::optional<gdb_exception_error> entryval_error;
   int val_equal = 0;
 
   if (fp_opts.print_entry_values != print_entry_values_only
@@ -574,10 +574,9 @@ read_frame_arg (const frame_print_options &fp_opts,
 	{
 	  val = read_var_value (sym, NULL, frame);
 	}
-      catch (const gdb_exception_error &except)
+      catch (gdb_exception_error &except)
 	{
-	  val_error = (char *) alloca (except.message->size () + 1);
-	  strcpy (val_error, except.what ());
+	  val_error = std::move (except);
 	}
     }
 
@@ -592,13 +591,10 @@ read_frame_arg (const frame_print_options &fp_opts,
 	{
 	  entryval = computed_ops->read_variable_at_entry (sym, frame);
 	}
-      catch (const gdb_exception_error &except)
+      catch (gdb_exception_error &except)
 	{
 	  if (except.error != NO_ENTRY_VALUE_ERROR)
-	    {
-	      entryval_error = (char *) alloca (except.message->size () + 1);
-	      strcpy (entryval_error, except.what ());
-	    }
+	    entryval_error = std::move (except);
 	}
 
       if (entryval != NULL && entryval->optimized_out ())
@@ -648,18 +644,14 @@ read_frame_arg (const frame_print_options &fp_opts,
 						     type_deref->length ()))
 			val_equal = 1;
 		    }
-		  catch (const gdb_exception_error &except)
+		  catch (gdb_exception_error &except)
 		    {
 		      /* If the dereferenced content could not be
 			 fetched do not display anything.  */
 		      if (except.error == NO_ENTRY_VALUE_ERROR)
 			val_equal = 1;
 		      else if (except.message != NULL)
-			{
-			  entryval_error
-			    = (char *) alloca (except.message->size () + 1);
-			  strcpy (entryval_error, except.what ());
-			}
+			entryval_error = std::move (except);
 		    }
 
 		  /* Value was not a reference; and its content matches.  */
@@ -674,11 +666,11 @@ read_frame_arg (const frame_print_options &fp_opts,
 	  /* Try to remove possibly duplicate error message for ENTRYARGP even
 	     in MI mode.  */
 
-	  if (val_error != nullptr
-	      && entryval_error != nullptr
-	      && streq (val_error, entryval_error))
+	  if (val_error.has_value ()
+	      && entryval_error.has_value ()
+	      && val_error == entryval_error)
 	    {
-	      entryval_error = NULL;
+	      entryval_error.reset ();
 
 	      /* Do not se VAL_EQUAL as the same error message may be shown for
 		 the entry value even if no entry values are present in the
@@ -697,10 +689,9 @@ read_frame_arg (const frame_print_options &fp_opts,
 	    {
 	      val = read_var_value (sym, NULL, frame);
 	    }
-	  catch (const gdb_exception_error &except)
+	  catch (gdb_exception_error &except)
 	    {
-	      val_error = (char *) alloca (except.message->size () + 1);
-	      strcpy (val_error, except.what ());
+	      val_error = std::move (except);
 	    }
 	}
       if (fp_opts.print_entry_values == print_entry_values_only
@@ -709,7 +700,7 @@ read_frame_arg (const frame_print_options &fp_opts,
 	      && (!val || val->optimized_out ())))
 	{
 	  entryval = value::allocate_optimized_out (sym->type ());
-	  entryval_error = NULL;
+	  entryval_error.reset ();
 	}
     }
   if ((fp_opts.print_entry_values == print_entry_values_compact
@@ -718,16 +709,13 @@ read_frame_arg (const frame_print_options &fp_opts,
       && (!val || val->optimized_out ()) && entryval != NULL)
     {
       val = NULL;
-      val_error = NULL;
+      val_error.reset ();
     }
 
   argp->sym = sym;
   argp->val = val;
-  if (val_error == nullptr)
-    argp->error = nullptr;
-  else
-    argp->error = make_unique_xstrdup (val_error);
-  if (!val && !val_error)
+  argp->error = val_error;
+  if (val == nullptr && !val_error.has_value ())
     argp->entry_kind = print_entry_values_only;
   else if ((fp_opts.print_entry_values == print_entry_values_compact
 	   || fp_opts.print_entry_values == print_entry_values_default)
@@ -741,11 +729,8 @@ read_frame_arg (const frame_print_options &fp_opts,
 
   entryargp->sym = sym;
   entryargp->val = entryval;
-  if (entryval_error == nullptr)
-    entryargp->error = nullptr;
-  else
-    entryargp->error = make_unique_xstrdup (entryval_error);
-  if (!entryval && !entryval_error)
+  entryargp->error = entryval_error;
+  if (entryval == nullptr && !entryval_error.has_value ())
     entryargp->entry_kind = print_entry_values_no;
   else
     entryargp->entry_kind = print_entry_values_only;

@@ -313,7 +313,7 @@ py_print_single_arg (struct ui_out *out,
 
   if (fa != NULL)
     {
-      if (fa->val == NULL && fa->error == NULL)
+      if (fa->val == NULL && !fa->error.has_value ())
 	return;
       language = language_def (fa->sym->language ());
       val = fa->val;
@@ -385,10 +385,10 @@ py_print_single_arg (struct ui_out *out,
 	{
 	  if (val == NULL)
 	    {
-	      gdb_assert (fa != NULL && fa->error != NULL);
+	      gdb_assert (fa != NULL && !fa->error.has_value ());
 	      out->field_fmt ("value", metadata_style.style (),
 			      _("<error reading variable: %s>"),
-			      fa->error.get ());
+			      fa->error->what ());
 	    }
 	  else
 	    py_print_value (out, val, opts, 0, args_type, language);
