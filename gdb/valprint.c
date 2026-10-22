@@ -404,8 +404,13 @@ val_print_invalid_address (struct ui_file *stream)
 void
 val_print_exception (ui_file *stream, const gdb_exception_error &exc)
 {
-  fprintf_styled (stream, metadata_style.style (),
-		  _("<error reading variable: %s>"), exc.what ());
+  if (exc.error == NOT_AVAILABLE_ERROR)
+    val_print_unavailable (stream);
+  else if (exc.error == OPTIMIZED_OUT_ERROR)
+    val_print_optimized_out (nullptr, stream);
+  else
+    fprintf_styled (stream, metadata_style.style (),
+		    _("<error reading variable: %s>"), exc.what ());
 }
 
 /* Print a pointer based on the type of its target.

@@ -385,7 +385,7 @@ py_print_single_arg (struct ui_out *out,
 	{
 	  if (val == NULL)
 	    {
-	      gdb_assert (fa != NULL && !fa->error.has_value ());
+	      gdb_assert (fa != NULL && fa->error.has_value ());
 	      out->field_fmt ("value", metadata_style.style (),
 			      _("<error reading variable: %s>"),
 			      fa->error->what ());
