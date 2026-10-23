@@ -1711,10 +1711,7 @@ gdbpy_ref<>
 gdbpy_breakpoint_location_object::repr ()
 {
   if (owner == nullptr || owner->bp == nullptr || owner->bp != bp_loc->owner)
-    /* FIXME: Python safety.  gdb_py_invalid_object_repr ought to
-       throw on error, and return gdbpy_ref<>, but currently does
-       not.  */
-    return gdbpy_ref<> (gdb_py_invalid_object_repr (this));
+    return gdbpy_safe_invalid_object_repr (this);
 
   /* For most things we just defer to bp_location::to_string, but that
      doesn't include the enabled/disabled information, which is kind
@@ -1728,7 +1725,7 @@ gdbpy_breakpoint_location_object::repr ()
     }
   catch (const gdb_exception_error &ignore)
     {
-      return gdbpy_ref<> (gdb_py_invalid_object_repr (this));
+      return gdbpy_safe_invalid_object_repr (this);
     }
 
   return gdbpy_unicode_from_format ("<%s %s>",
