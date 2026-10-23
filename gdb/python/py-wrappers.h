@@ -384,4 +384,23 @@ gdbpy_get_address (gdbpy_borrowed_ref<> obj)
   return result;
 }
 
+/* A wrapper for gdb_py_object_from_longest that throws on error.  */
+static inline gdbpy_ref<>
+gdbpy_safe_from_longest (LONGEST l)
+{
+  gdbpy_ref<> result = gdb_py_object_from_longest (l);
+  if (result == nullptr)
+    throw gdb_python_exception ();
+  return result;
+}
+
+/* A wrapper for gdb_py_object_from_ulongest that throws on error.  */
+static inline gdbpy_ref<>
+gdbpy_safe_from_ulongest (ULONGEST l)
+{
+  gdbpy_ref<> result = gdb_py_object_from_ulongest (l);
+  if (result == nullptr)
+    throw gdb_python_exception ();
+  return result;
+}
 #endif /* GDB_PYTHON_PY_WRAPPERS_H */
