@@ -383,12 +383,12 @@ py_print_single_arg (struct ui_out *out,
 	 for the case of MI_PRINT_NO_VALUES.  */
       if (args_type != NO_VALUES)
 	{
-	  if (val == NULL)
+	  if (val == nullptr)
 	    {
-	      gdb_assert (fa != NULL && fa->error.has_value ());
-	      out->field_fmt ("value", metadata_style.style (),
-			      _("<error reading variable: %s>"),
-			      fa->error->what ());
+	      gdb_assert (fa != nullptr && fa->error.has_value ());
+	      string_file str;
+	      val_print_exception (&str, *fa->error);
+	      out->field_stream ("value", str, metadata_style.style ());
 	    }
 	  else
 	    py_print_value (out, val, opts, 0, args_type, language);
