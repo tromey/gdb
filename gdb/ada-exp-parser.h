@@ -23,9 +23,6 @@
 #include "ada-exp.h"
 #include "parser-defs.h"
 
-/* The character we use to represent the completion point.  */
-constexpr char COMPLETE_CHAR = '\001';
-
 namespace ada_exp_parser
 {
 
@@ -64,17 +61,68 @@ struct ada_parse_state
 
   auto_obstack temp_space;
 
-  /* Depth of parentheses, used by the lexer.  */
-  int paren_depth = 0;
-
-  /* When completing, we'll return a special character at the end of the
-     input, to signal the completion position to the lexer.  This is
-     done because flex does not have a generally useful way to detect
-     EOF in a pattern.  This variable records whether the special
-     character has been emitted.  */
-  bool returned_complete = false;
+  /* Lex a single token.  ada_yylval is updated if needed.  The token
+     value is returned.  The lexer state in this object or in the
+     parser_state object will be updated as appropriate.  */
+  int lex ();
 
 private:
+
+  /* A lexer helper function to lex a number.  */
+  int lex_number ();
+
+  /* A lexer helper function to lex a dollar variable like $x or
+     $$.  */
+  int lex_dollar ();
+
+  /* A lexer helper that is called when a '.' is seen.  */
+  int lex_dot ();
+
+  /* A lexer helper that is called when a single quote is seen.  */
+  int lex_single_quote ();
+
+  /* A lexer helper for lexing a string.  */
+  int lex_double_quote ();
+
+  /* A helper function that examines TEXT.  If TEXT looks like a
+     simple identifier, a pointer to the character past the end of the
+     identifier is returned.  Otherwise, nullptr is returned.  */
+  const char *lex_simple_identifier (const char *text);
+
+  /* A helper that does some extra checking for the "thread"
+     pseudo-keyword.  It returns true if this instance of "thread"
+     should be reported as an EOF rather than an identifier.  TEXT
+     points to just past the end of the "thread" keyword.  */
+  bool check_thread_keyword (const char *text);
+
+  /* Check whether the current token, held at pstate->lexptr with
+     length LEN, is a keyword.  Returns the token value if so; returns
+     nullopt if not.  */
+  std::optional<int> check_keyword (size_t len);
+
+  /* Check whether BRACKET holds text matching a hex character as
+     would be seen in an Ada string or character literal.  If so,
+     returns a pointer to the character just past the end of the form;
+     otherwise returns nullptr.  */
+  const char *recognize_encoded_char (const char *bracket);
+
+  /* A lexer helper for lexing an identifier.  */
+  int lex_identifier (const char *id_end);
+
+  /* A helper that examines START.  If this is a quoted operator name
+     (like "mod" or "+"), returns a pointer to just after the final
+     quote.  Otherwise, returns nullptr.  */
+  const char *lex_operator (const char *start);
+
+  /* Return the syntactic code corresponding to the attribute name or
+     abbreviation STR.  COMPLETING should be true if the name was
+     lexed at the end of the input and completion is enabled for this
+     parse.  */
+  int process_attribute (const std::string &str, bool completing);
+
+  /* Throw an exception when lexing, indicating that an invalid
+     character was seen.  */
+  [[noreturn]] void invalid_char ();
 
   /* We don't have a good way to manage non-POD data in Yacc, so store
      values here.  The storage here is only valid for the duration of
@@ -83,6 +131,15 @@ private:
 
   /* The original expression string.  */
   const char *m_original_expr;
+
+  /* Depth of parentheses, used by the lexer.  */
+  int m_paren_depth = 0;
+
+  /* This holds some state needed when lexing a single quote.
+     Normally, a single quote will introduce a character literal.
+     However, after an identifier, it will not, to support cases like
+     Char_Enum_Type'('B'); see char_enum.exp for examples.  */
+  bool m_before_qual_quote = false;
 };
 
 /* Expression completer for attributes.  */
@@ -109,17 +166,6 @@ extern struct parser_state *pstate;
 /* The current Ada parser object.  */
 
 extern struct ada_parse_state *ada_parser;
-
-/* Initialize the lexer for processing new expression.
-
-   This function is implemented in ada-lex.l, because it needs to see some
-   macros in ada-lex-gen.c.  */
-
-void lexer_init (FILE *inp);
-
-/* Copy S2 to S1, removing all underscores, and downcasing all letters.  */
-
-void canonicalizeNumeral (char *s1, const char *s2);
 
 /* Return TEXT[0..LEN-1], a string literal without surrounding quotes,
    with special hex character notations replaced with characters.
@@ -159,30 +205,6 @@ int processReal (struct parser_state *par_state, const char *num0);
  */
 
 stoken processId (const char *name0, int len);
-
-/* Return the syntactic code corresponding to the attribute name or
-   abbreviation STR.  */
-
-int processAttribute (const char *str);
-
-/* Returns the position within STR of the '.' in a
-   '.{WHITE}*all' component of a dotted name, or -1 if there is none.
-   Note: we actually don't need this routine, since 'all' can never be an
-   Ada identifier.  Thus, looking up foo.all or foo.all.x as a name
-   must fail, and will eventually be interpreted as (foo).all or
-   (foo).all.x.  However, this does avoid an extraneous lookup. */
-
-int find_dot_all (const char *str);
-
-/* Back up lexptr by yyleng and then to the rightmost occurrence of
-   character CH, case-folded (there must be one).  WARNING: since
-   lexptr points to the next input character that Flex has not yet
-   transferred to its internal buffer, the use of this function
-   depends on the assumption that Flex calls YY_INPUT only when it is
-   logically necessary to do so (thus, there is no reading ahead
-   farther than needed to identify the next token.)  */
-
-void rewind_to_char (int ch);
 
 /* Like parser_state::pop, but handles Ada type resolution.
    DEPROCEDURE_P and CONTEXT_TYPE are passed to the resolve method, if
