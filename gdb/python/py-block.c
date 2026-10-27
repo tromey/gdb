@@ -76,9 +76,41 @@ static_assert (gdb::is_python_allocatable_v<block_syms_iterator_object>);
       }									\
   } while (0)
 
+struct block_object_hash
+{
+  using is_transparent = void;
+
+  std::size_t operator() (const block *bl) const noexcept
+  {
+    return std::hash<const block *> () (bl);
+  }
+
+  std::size_t operator() (const block_object *obj) const noexcept
+  {
+    return (*this) (obj->block);
+  }
+};
+
+struct block_object_eq
+{
+  using is_transparent = void;
+
+  bool operator() (const block_object *a, const block_object *b) const noexcept
+  {
+    return (*this) (a->block, b);
+  }
+
+  bool operator() (const block *a, const block_object *b) const noexcept
+  {
+    return a == b->block;
+  }
+};
+
+using block_set = gdb::unordered_set<block_object *,
+				     block_object_hash, block_object_eq>;
+
 extern PyTypeObject block_syms_iterator_object_type;
-static const registry<objfile>::key<htab, htab_deleter>
-     blpy_objfile_data_key;
+static const registry<objfile>::key<block_set> blpy_objfile_data_key;
 
 static PyObject *
 blpy_iter (PyObject *self)
@@ -320,36 +352,6 @@ blpy_getitem (PyObject *self, PyObject *key)
   return nullptr;
 }
 
-/* Deleter function for the hash table.  */
-
-static void
-block_object_del (void *obj)
-{
-  block_object *block = (block_object *) obj;
-  block->block = nullptr;
-  block->objfile = nullptr;
-}
-
-/* Hash function for the hash table.  */
-
-static hashval_t
-block_object_hash (const void *obj)
-{
-  const block_object *block = (const block_object *) obj;
-  return htab_hash_pointer (block->block);
-}
-
-/* Equality function for the hash table.  Note that searches must be
-   done with a plain block.  */
-
-static int
-block_object_eq (const void *a, const void *b)
-{
-  const block_object *blocka = (const block_object *) a;
-  const block *blockb = (const block *) b;
-  return blocka->block == blockb;
-}
-
 /* Called when a gdb.Block is destroyed.  This removes it from the
    hash.  */
 
@@ -360,11 +362,11 @@ blpy_dealloc (PyObject *obj)
 
   if (block->objfile != nullptr)
     {
-      htab_t table = blpy_objfile_data_key.get (block->objfile);
-      hashval_t hash = block_object_hash (block);
-      /* This will clear the contents of the block as a side
-	 effect.  */
-      htab_remove_elt_with_hash (table, block->block, hash);
+      block_set *table = blpy_objfile_data_key.get (block->objfile);
+      table->erase (block);
+      /* Clear the contents of the block.  */
+      block->block = nullptr;
+      block->objfile = nullptr;
     }
 
   Py_TYPE (obj)->tp_free (obj);
@@ -375,29 +377,21 @@ blpy_dealloc (PyObject *obj)
 gdbpy_ref<>
 block_to_block_object (const struct block *block, struct objfile *objfile)
 {
-  htab_t table = blpy_objfile_data_key.get (objfile);
+  block_set *table = blpy_objfile_data_key.get (objfile);
   if (table == nullptr)
-    {
-      table = htab_create_alloc (10, block_object_hash, block_object_eq,
-				 block_object_del, xcalloc, xfree);
-      blpy_objfile_data_key.set (objfile, table);
-    }
+    blpy_objfile_data_key.emplace (objfile);
 
-  hashval_t hash = htab_hash_pointer (block);
-  block_object *result = (block_object *) htab_find_with_hash (table, block,
-							       hash);
-  if (result != nullptr)
-    return gdbpy_ref<>::new_reference (result);
+  auto iter = table->find (block);
+  if (iter != table->end ())
+    return gdbpy_ref<>::new_reference (*iter);
 
-  result = PyObject_New (block_object, &block_object_type);
+  block_object *result = PyObject_New (block_object, &block_object_type);
   if (result == nullptr)
     return nullptr;
 
   result->block = block;
   result->objfile = objfile;
-
-  void **slot = htab_find_slot_with_hash (table, block, hash, INSERT);
-  *slot = result;
+  table->insert (result);
 
   return gdbpy_ref<> (result);
 }
