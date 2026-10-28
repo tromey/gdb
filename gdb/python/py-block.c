@@ -76,6 +76,40 @@ static_assert (gdb::is_python_allocatable_v<block_syms_iterator_object>);
       }									\
   } while (0)
 
+struct block_object_wrapper
+{
+  explicit block_object_wrapper (block_object *obj)
+    : obj (obj)
+  {
+  }
+
+  ~block_object_wrapper ()
+  {
+    if (obj != nullptr)
+      {
+	obj->block = nullptr;
+	obj->objfile = nullptr;
+      }
+  }
+
+  DISABLE_COPY_AND_ASSIGN (block_object_wrapper);
+
+  block_object_wrapper (block_object_wrapper &&other)
+  {
+    obj = other.obj;
+    other.obj = nullptr;
+  }
+
+  block_object_wrapper &operator= (block_object_wrapper &&other)
+  {
+    obj = other.obj;
+    other.obj = nullptr;
+    return *this;
+  }
+
+  block_object *obj = nullptr;
+};
+
 struct block_object_hash
 {
   using is_transparent = void;
@@ -85,9 +119,14 @@ struct block_object_hash
     return std::hash<const block *> () (bl);
   }
 
-  std::size_t operator() (const block_object *obj) const noexcept
+  std::size_t operator() (const block_object *bl) const noexcept
   {
-    return (*this) (obj->block);
+    return (*this) (bl->block);
+  }
+
+  std::size_t operator() (const block_object_wrapper &obj) const noexcept
+  {
+    return (*this) (obj.obj->block);
   }
 };
 
@@ -95,18 +134,27 @@ struct block_object_eq
 {
   using is_transparent = void;
 
-  bool operator() (const block_object *a, const block_object *b) const noexcept
+  bool operator() (const block_object_wrapper &a,
+		   const block_object_wrapper &b)
+    const noexcept
+  {
+    return (*this) (a.obj->block, b);
+  }
+
+  bool operator() (const block *a, const block_object_wrapper &b)
+    const noexcept
+  {
+    return a == b.obj->block;
+  }
+
+  bool operator() (const block_object *a, const block_object_wrapper &b)
+    const noexcept
   {
     return (*this) (a->block, b);
   }
-
-  bool operator() (const block *a, const block_object *b) const noexcept
-  {
-    return a == b->block;
-  }
 };
 
-using block_set = gdb::unordered_set<block_object *,
+using block_set = gdb::unordered_set<block_object_wrapper,
 				     block_object_hash, block_object_eq>;
 
 extern PyTypeObject block_syms_iterator_object_type;
@@ -364,9 +412,6 @@ blpy_dealloc (PyObject *obj)
     {
       block_set *table = blpy_objfile_data_key.get (block->objfile);
       table->erase (block);
-      /* Clear the contents of the block.  */
-      block->block = nullptr;
-      block->objfile = nullptr;
     }
 
   Py_TYPE (obj)->tp_free (obj);
@@ -379,11 +424,11 @@ block_to_block_object (const struct block *block, struct objfile *objfile)
 {
   block_set *table = blpy_objfile_data_key.get (objfile);
   if (table == nullptr)
-    blpy_objfile_data_key.emplace (objfile);
+    table = &blpy_objfile_data_key.emplace (objfile);
 
   auto iter = table->find (block);
   if (iter != table->end ())
-    return gdbpy_ref<>::new_reference (*iter);
+    return gdbpy_ref<>::new_reference (iter->obj);
 
   block_object *result = PyObject_New (block_object, &block_object_type);
   if (result == nullptr)
