@@ -32,9 +32,10 @@ with_ansi_styling_terminal {
 	return
     }
 
+    set typename [style .*Two type]
     set vfield [style value variable]
     set v2field [style value2 variable]
     gdb_test "print v" \
-	"Two\{$vfield: 23, $v2field: 97\}"
+	" = $typename\{$vfield: 23, $v2field: 97\}"
 
 }
