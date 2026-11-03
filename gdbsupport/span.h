@@ -229,9 +229,12 @@ void copy (gdb::span<U> src, gdb::span<T> dest)
    RHS have the same sizes, and whether each pair of elements of LHS
    and RHS at the same position compares equal.  */
 
+namespace ranges
+{
+
 template <typename T>
 bool
-operator== (const gdb::span<T> &lhs, const gdb::span<T> &rhs)
+equal (const gdb::span<T> &lhs, const gdb::span<T> &rhs)
 {
   if (lhs.size () != rhs.size ())
     return false;
@@ -243,14 +246,7 @@ operator== (const gdb::span<T> &lhs, const gdb::span<T> &rhs)
   return true;
 }
 
-/* Compare two spans for inequality.  */
-
-template <typename T>
-bool
-operator!= (const gdb::span<T> &lhs, const gdb::span<T> &rhs)
-{
-  return !(lhs == rhs);
-}
+} /* namespace ranges */
 
 /* Create a span from a pointer to an array and an element
    count.
