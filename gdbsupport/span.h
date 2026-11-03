@@ -299,6 +299,14 @@ make_span (U (&array)[Size])
   return {array};
 }
 
+/* An overload that makes a 1-element span from a single object.  */
+template<typename U>
+constexpr inline span<U>
+make_span (U &elem) noexcept
+{
+  return {&elem, 1};
+}
+
 } /* namespace gdb */
 
 #endif /* GDBSUPPORT_SPAN_H */

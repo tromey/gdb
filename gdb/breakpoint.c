@@ -11360,7 +11360,7 @@ clear_command (const char *arg, int from_tty)
 	error (_("No source file specified."));
 
       default_match = 1;
-      sals = last_sal;
+      sals = gdb::make_span (last_sal);
     }
 
   /* We don't call resolve_sal_pc here.  That's not as bad as it
@@ -12833,7 +12833,7 @@ strace_marker_create_breakpoints_sal (struct gdbarch *gdbarch,
       std::unique_ptr<tracepoint> tp
 	(new tracepoint (gdbarch,
 			 type_wanted,
-			 lsal.sals[i],
+			 gdb::make_span (lsal.sals[i]),
 			 std::move (locspec),
 			 NULL,
 			 std::move (cond_string),
