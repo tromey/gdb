@@ -670,7 +670,7 @@ rust_language::print_enum (struct value *val, struct ui_file *stream,
 
   bool is_tuple = rust_tuple_struct_type_p (variant_type);
 
-  gdb_printf (stream, "%s", variant_type->name ());
+  fputs_styled (variant_type->name (), type_style.style (), stream);
   if (nfields == 0)
     {
       /* In case of a nullary variant like 'None', just output
@@ -860,7 +860,7 @@ rust_print_struct_def (struct type *type, const char *varstring,
   /* Print a tuple type simply.  */
   if (rust_tuple_type_p (type))
     {
-      gdb_puts (type->name (), stream);
+      fputs_styled (type->name (), type_style.style (), stream);
       return;
     }
 
@@ -901,8 +901,8 @@ rust_print_struct_def (struct type *type, const char *varstring,
       else
 	gdb_puts ("union ", stream);
 
-      if (tagname != NULL)
-	gdb_puts (tagname, stream);
+      if (tagname != nullptr)
+	fputs_styled (tagname, type_style.style (), stream);
     }
 
   if (type->num_fields () == 0 && !is_tuple)
@@ -1002,7 +1002,7 @@ rust_internal_print_type (struct type *type, const char *varstring,
       if (type->code () == TYPE_CODE_VOID)
 	gdb_puts ("()", stream);
       else
-	gdb_puts (type->name (), stream);
+	fputs_styled (type->name (), type_style.style (), stream);
       return;
     }
 
@@ -1074,9 +1074,9 @@ rust_internal_print_type (struct type *type, const char *varstring,
 	int len = 0;
 
 	gdb_puts ("enum ", stream);
-	if (type->name () != NULL)
+	if (type->name () != nullptr)
 	  {
-	    gdb_puts (type->name (), stream);
+	    fputs_styled (type->name (), type_style.style (), stream);
 	    gdb_puts (" ", stream);
 	    len = strlen (type->name ());
 	  }
@@ -1106,7 +1106,7 @@ rust_internal_print_type (struct type *type, const char *varstring,
     case TYPE_CODE_PTR:
       {
 	if (type->name () != nullptr)
-	  gdb_puts (type->name (), stream);
+	  fputs_styled (type->name (), type_style.style (), stream);
 	else
 	  {
 	    /* We currently can't distinguish between pointers and
