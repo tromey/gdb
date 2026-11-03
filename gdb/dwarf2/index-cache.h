@@ -89,7 +89,7 @@ public:
      as RESOURCE is not destroyed.
 
      If no matching index file is found, return an empty array view.  */
-  gdb::array_view<const gdb_byte>
+  gdb::span<const gdb_byte>
   lookup_gdb_index (const bfd_build_id *build_id,
 		    index_cache_resource_up *resource);
 
