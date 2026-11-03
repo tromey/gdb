@@ -58,20 +58,10 @@ check_convertible ()
 	  /* immutable span */
 	  &&  is_convertible<const T (&) [1],	span<const T>> ()
 	  &&  is_convertible<T (&) [1], 	span<const T>> ()
-	  &&  is_convertible<const T, 		span<const T>> ()
-	  &&  is_convertible<T, 		span<const T>> ()
 
 	  /* mutable span */
 	  &&  is_convertible<T (&) [1], 	span<T>> ()
-	  && !is_convertible<const T (&) [1],	span<T>> ()
-	  &&  is_convertible<T, 		span<T>> ()
-	  && !is_convertible<const T,		span<T>> ()
-
-	  /* While float is implicitly convertible to gdb_byte, we
-	     don't want implicit float->span<gdb_byte>
-	     conversion.  */
-	  && !is_convertible<float, 		span<const T>> ()
-	  && !is_convertible<float, 		span<T>> ());
+	  && !is_convertible<const T (&) [1],	span<T>> ());
 }
 
 static_assert (check_convertible (), "");
@@ -99,17 +89,8 @@ check ()
 
 	  && !is_convertible <A (&)[1], span<B>> ()
 	  &&  is_convertible <B (&)[1], span<B>> ()
-	  && !is_convertible <C (&)[1], span<B>> ()
-
-	  /* elem->view  */
-
-	  &&  is_convertible <A, span<A>> ()
-	  && !is_convertible <B, span<A>> ()
-	  && !is_convertible <C, span<A>> ()
-
-	  && !is_convertible <A, span<B>> ()
-	  &&  is_convertible <B, span<B>> ()
-	  && !is_convertible <C, span<B>> ());
+	  && !is_convertible <C (&)[1], span<B>> ());
+;
 }
 
 /* Check that there's no container->view conversion for containers of derived
@@ -121,13 +102,13 @@ check_ctor_from_container ()
 {
   using gdb::span;
 
-  return (    is_convertible <Container<A>, span<A>> ()
-	  && !is_convertible <Container<B>, span<A>> ()
-	  && !is_convertible <Container<C>, span<A>> ()
+  return (is_convertible <Container<A> &, span<A>> ()
+	  && !is_convertible <Container<B> &, span<A>> ()
+	  && !is_convertible <Container<C> &, span<A>> ()
 
-	  && !is_convertible <Container<A>, span<B>> ()
-	  &&  is_convertible <Container<B>, span<B>> ()
-	  && !is_convertible <Container<C>, span<B>> ());
+	  && !is_convertible <Container<A> &, span<B>> ()
+	  &&  is_convertible <Container<B> &, span<B>> ()
+	  && !is_convertible <Container<C> &, span<B>> ());
 }
 
 } /* namespace no_slicing */
@@ -152,8 +133,8 @@ check_convertible_from_std_vector ()
   /* Note there's no such thing as std::vector<const T>.  */
 
   return (true
-	  &&  is_convertible <std::vector<T>, span<T>> ()
-	  &&  is_convertible <std::vector<T>, span<const T>> ());
+	  &&  is_convertible <std::vector<T> &, span<T>> ()
+	  &&  is_convertible <std::vector<T> &, span<const T>> ());
 }
 
 static_assert (check_convertible_from_std_vector (), "");
@@ -169,10 +150,10 @@ check_convertible_from_std_array ()
   /* Note: a non-const T view can't refer to a const T array.  */
 
   return (true
-	  &&  is_convertible <std::array<T, 1>,		span<T>> ()
-	  &&  is_convertible <std::array<T, 1>,		span<const T>> ()
-	  && !is_convertible <std::array<const T, 1>,	span<T>> ()
-	  &&  is_convertible <std::array<const T, 1>,	span<const T>> ());
+	  &&  is_convertible <std::array<T, 1> &,	span<T>> ()
+	  &&  is_convertible <std::array<T, 1> &,	span<const T>> ()
+	  && !is_convertible <std::array<const T, 1> &,	span<T>> ()
+	  &&  is_convertible <std::array<const T, 1> &,	span<const T>> ());
 }
 
 static_assert (check_convertible_from_std_array (), "");
@@ -382,21 +363,6 @@ check_iterator ()
   SELF_CHECK (sum == 2 + 4 + 6 + 8);
 }
 
-template<typename T>
-static void
-check_const_iterator ()
-{
-  T data[] = {1, 2, 3, 4};
-  gdb::span<T> view (data);
-
-  typename std::decay<T>::type sum = 0;
-  for (typename gdb::span<T>::const_iterator it = view.cbegin ();
-       it != view.cend (); it++)
-    sum += *it;
-
-  SELF_CHECK (sum == 1 + 2 + 3 + 4);
-}
-
 /* Entry point.  */
 
 static void
@@ -440,18 +406,14 @@ run_tests ()
 
     view = vec;
     SELF_CHECK (check_container_view (view, vec));
-    view = std::move (vec);
-    SELF_CHECK (check_container_view (view, vec));
 
     view = array;
     SELF_CHECK (check_container_view (view, array));
-    view = std::move (array);
-    SELF_CHECK (check_container_view (view, array));
 
     gdb_byte elem = 0;
-    view = elem;
+    view = gdb::make_span (elem);
     SELF_CHECK (check_elem_view (view, elem));
-    view = std::move (elem);
+    view = std::move (gdb::make_span (elem));
     SELF_CHECK (check_elem_view (view, elem));
   }
 
@@ -524,8 +486,6 @@ run_tests ()
   check_range_for<gdb_byte> ();
   check_range_for<const gdb_byte> ();
   check_iterator<gdb_byte> ();
-  check_const_iterator<gdb_byte> ();
-  check_const_iterator<const gdb_byte> ();
 
   /* Check that the right ctor overloads are taken when the element is
      a container.  */
@@ -537,7 +497,7 @@ run_tests ()
     SELF_CHECK (view_array.size () == 3);
 
     Vec elem;
-    gdb::span<Vec> view_elem = elem;
+    gdb::span<Vec> view_elem = gdb::make_span (elem);
     SELF_CHECK (view_elem.size () == 1);
   }
 
