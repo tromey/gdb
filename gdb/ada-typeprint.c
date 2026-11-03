@@ -35,59 +35,48 @@ static int print_record_field_types (struct type *, struct type *,
 
 
 
-static char *name_buffer;
-static int name_buffer_len;
+/* The (decoded) Ada name of TYPE.  Returns an empty optional if the
+   name can't be decoded.  */
 
-/* The (decoded) Ada name of TYPE.  This value persists until the
-   next call.  */
-
-static char *
+static std::optional<std::string>
 decoded_type_name (struct type *type)
 {
-  if (ada_type_name (type) == NULL)
-    return NULL;
-  else
+  const char *raw_name = ada_type_name (type);
+  if (raw_name == nullptr)
+    return {};
+
+  std::string_view view = raw_name;
+
+  /* Terminate at three underscores.  */
+  auto pos = view.find ("___");
+  if (pos != std::string_view::npos)
+    view = view.substr (0, pos);
+
+  /* Find the first "__" from the end.  */
+  pos = view.rfind ("__");
+  if (pos == std::string_view::npos)
+    return std::string (view);
+
+  /* Bail out if we the last "__" is followed by anything except a
+     lower-case letter.  */
+  if (pos + 2 < view.size () && !c_islower (view[pos + 2]))
+    return {};
+
+  std::string result;
+  while (true)
     {
-      const char *raw_name = ada_type_name (type);
-      char *s, *q;
-
-      if (name_buffer == NULL || name_buffer_len <= strlen (raw_name))
+      pos = view.find ("__");
+      if (pos == std::string_view::npos)
 	{
-	  name_buffer_len = 16 + 2 * strlen (raw_name);
-	  name_buffer = (char *) xrealloc (name_buffer, name_buffer_len);
+	  result.append (view);
+	  break;
 	}
-      strcpy (name_buffer, raw_name);
-
-      s = (char *) strstr (name_buffer, "___");
-      if (s != NULL)
-	*s = '\0';
-
-      s = name_buffer + strlen (name_buffer) - 1;
-      while (s > name_buffer && (s[0] != '_' || s[-1] != '_'))
-	s -= 1;
-
-      if (s == name_buffer)
-	return name_buffer;
-
-      if (!c_islower (s[1]))
-	return NULL;
-
-      for (s = q = name_buffer; *s != '\0'; q += 1)
-	{
-	  if (s[0] == '_' && s[1] == '_')
-	    {
-	      *q = '.';
-	      s += 2;
-	    }
-	  else
-	    {
-	      *q = *s;
-	      s += 1;
-	    }
-	}
-      *q = '\0';
-      return name_buffer;
+      result.append (view.substr (0, pos));
+      result.append (".");
+      view = view.substr (pos + 2);
     }
+
+  return result;
 }
 
 /* Return true if TYPE is a subrange type, and its bounds
@@ -809,13 +798,17 @@ print_record_type (struct type *type0, struct ui_file *stream, int show,
   parent_type = ada_parent_type (type);
   if (ada_type_name (parent_type) != NULL)
     {
-      const char *parent_name = decoded_type_name (parent_type);
+      std::optional<std::string> parent_name_holder
+	= decoded_type_name (parent_type);
+      const char *parent_name = (parent_name_holder.has_value ()
+				 ? parent_name_holder->c_str ()
+				 : nullptr);
 
       /* If we fail to decode the parent type name, then use the parent
 	 type name as is.  Not pretty, but should never happen except
 	 when the debugging info is incomplete or incorrect.  This
 	 prevents a crash trying to print a NULL pointer.  */
-      if (parent_name == NULL)
+      if (parent_name == nullptr)
 	parent_name = ada_type_name (parent_type);
       gdb_printf (stream, "new %s with record", parent_name);
     }
@@ -957,10 +950,13 @@ ada_print_type (struct type *type0, const char *varstring,
      of the base type. This does not always work, unfortunately, as
      there are situations where it's the base type which has an
      internally-generated name.  */
-  const char *type_name = decoded_type_name (type0);
-  if (type_name == nullptr)
-    type_name = decoded_type_name (type);
-  int is_var_decl = (varstring != NULL && varstring[0] != '\0');
+  std::optional<std::string> type_name_holder = decoded_type_name (type0);
+  if (!type_name_holder.has_value ())
+    type_name_holder = decoded_type_name (type);
+  const char *type_name = (type_name_holder.has_value ()
+			   ? type_name_holder->c_str ()
+			   : nullptr);
+  bool is_var_decl = (varstring != NULL && varstring[0] != '\0');
 
   if (type == NULL)
     {
