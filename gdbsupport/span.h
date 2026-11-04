@@ -96,24 +96,6 @@ public:
     : m_array (nullptr), m_size (0)
   {}
 
-  /* Create a span over a single object of the type of an
-     span element.  The created view as size==1.  This is
-     templated on U to allow constructing a span<const T> over a
-     (non-const) T.  The "convertible" requirement makes sure that you
-     can't create an span<T> over a const T.  */
-  template<typename U,
-	   typename = Requires<DecayedConvertible<U>>>
-  constexpr span (U &elem) noexcept
-    : m_array (&elem), m_size (1)
-  {}
-
-  /* Same as above, for rvalue references.  */
-  template<typename U,
-	   typename = Requires<DecayedConvertible<U>>>
-  constexpr span (U &&elem) noexcept
-    : m_array (&elem), m_size (1)
-  {}
-
   /* Create a span from a pointer to an array and an element
      count.  */
   template<typename U,
