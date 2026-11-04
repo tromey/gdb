@@ -26,6 +26,7 @@
 #include "gdbtypes.h"
 #include "c-lang.h"
 #include "go-lang.h"
+#include "cli/cli-style.h"
 
 /* Print a description of a type TYPE.
    Output goes to STREAM (via stdio).
@@ -53,7 +54,7 @@ go_language::print_type (struct type *type, const char *varstring,
   if (type->code () == TYPE_CODE_ARRAY
       && type->target_type ()->code () == TYPE_CODE_CHAR)
     {
-      gdb_puts ("string", stream);
+      fputs_styled ("string", type_style.style (), stream);
       return;
     }
 
