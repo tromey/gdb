@@ -23,6 +23,7 @@
 #include "cli/cli-style.h"
 #include "typeprint.h"
 #include "ada-lang.h"
+#include "ui-out.h"
 
 static int print_selected_record_field_types (struct type *, struct type *,
 					      int, int,
@@ -176,9 +177,9 @@ print_range (struct type *type, struct ui_file *stream,
       }
       break;
     default:
-      gdb_printf (stream, "%.*s",
-		  ada_name_prefix_len (type->name ()),
-		  type->name ());
+      fprintf_styled (stream, type_style.style (), "%.*s",
+		      ada_name_prefix_len (type->name ()),
+		      type->name ());
       break;
     }
 }
@@ -592,7 +593,8 @@ print_variant_part (struct type *type, int field_num, struct type *outer_type,
   if (*variant == '\0')
     variant = "?";
 
-  gdb_printf (stream, "\n%*scase %s is", level + 4, "", variant);
+  gdb_printf (stream, "\n%*scase %ps is", level + 4, "",
+	      styled_string (variable_name_style.style (), variant));
   print_variant_clauses (type, field_num, outer_type, stream, show,
 			 level + 4, flags);
   gdb_printf (stream, "\n%*send case;", level + 4, "");
@@ -697,15 +699,21 @@ print_variant_part (const variant_part &part,
 {
   struct type *discr_type = nullptr;
   const char *name;
+  ui_file_style style;
   if (part.discriminant_index == -1)
-    name = "?";
+    {
+      name = "?";
+      style = metadata_style.style ();
+    }
   else
     {
       name = type->field (part.discriminant_index).name ();
+      style = variable_name_style.style ();
       discr_type = type->field (part.discriminant_index).type ();
     }
 
-  gdb_printf (stream, "\n%*scase %s is", level + 4, "", name);
+  gdb_printf (stream, "\n%*scase %ps is", level + 4, "",
+	      styled_string (style, name));
 
   int last_field = -1;
   for (const variant &variant : part.variants)
@@ -817,7 +825,8 @@ print_record_type (struct type *type0, struct ui_file *stream, int show,
 	 prevents a crash trying to print a NULL pointer.  */
       if (parent_name == NULL)
 	parent_name = ada_type_name (parent_type);
-      gdb_printf (stream, "new %s with record", parent_name);
+      gdb_printf (stream, "new %ps with record",
+		  styled_string (type_style.style (), parent_name));
     }
   else if (parent_type == NULL && ada_is_tagged_type (type, false))
     gdb_printf (stream, "tagged record");
@@ -840,7 +849,9 @@ print_record_type (struct type *type0, struct ui_file *stream, int show,
       if (flds > 0)
 	gdb_printf (stream, "\n%*send record", level, "");
       else if (flds < 0)
-	gdb_printf (stream, _(" <incomplete type> end record"));
+	gdb_printf (stream, _(" %ps end record"),
+		    styled_string (metadata_style.style (),
+				   _("<incomplete type>")));
       else
 	gdb_printf (stream, " null; end record");
     }
@@ -911,7 +922,9 @@ print_func_type (struct type *type, struct ui_file *stream, const char *name,
     }
 
   if (type->target_type () == NULL)
-    gdb_printf (stream, " return <unknown return type>");
+    gdb_printf (stream, " return %ps",
+		styled_string (metadata_style.style (),
+			       _("<unknown return type>")));
   else if (type->target_type ()->code () != TYPE_CODE_VOID)
     {
       gdb_printf (stream, " return ");
@@ -965,20 +978,26 @@ ada_print_type (struct type *type0, const char *varstring,
   if (type == NULL)
     {
       if (is_var_decl)
-	gdb_printf (stream, "%.*s: ",
-		    ada_name_prefix_len (varstring), varstring);
+	{
+	  fprintf_styled (stream, variable_name_style.style (), "%.*s",
+			  ada_name_prefix_len (varstring), varstring);
+	  gdb_puts (": ", stream);
+	}
       fprintf_styled (stream, metadata_style.style (), "<null type?>");
       return;
     }
 
   if (is_var_decl && type->code () != TYPE_CODE_FUNC)
-    gdb_printf (stream, "%.*s: ",
-		ada_name_prefix_len (varstring), varstring);
+    {
+      fprintf_styled (stream, variable_name_style.style (), "%.*s",
+		      ada_name_prefix_len (varstring), varstring);
+      gdb_puts (": ", stream);
+    }
 
   if (type_name != NULL && show <= 0 && !ada_is_aligner_type (type))
     {
-      gdb_printf (stream, "%.*s",
-		  ada_name_prefix_len (type_name), type_name);
+      fprintf_styled (stream, type_style.style (), "%.*s",
+		      ada_name_prefix_len (type_name), type_name);
       return;
     }
 
