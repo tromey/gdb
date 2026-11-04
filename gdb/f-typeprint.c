@@ -317,7 +317,9 @@ f_language::f_type_print_derivation_info (struct type *type,
   const int i = 0;
 
   if (TYPE_N_BASECLASSES (type) > 0)
-    gdb_printf (stream, ", extends(%s) ::", TYPE_BASECLASS (type, i)->name ());
+    gdb_printf (stream, ", extends(%ps) ::",
+		styled_string (type_style.style (),
+			       TYPE_BASECLASS (type, i)->name ()));
 }
 
 /* See f-lang.h.  */
@@ -346,7 +348,8 @@ f_language::f_type_print_base (struct type *type, struct ui_file *stream,
       else if (type->code () == TYPE_CODE_STRUCT
 	       || type->code () == TYPE_CODE_NAMELIST)
 	prefix = "Type ";
-      gdb_printf (stream, "%*s%s%s", level, "", prefix, type->name ());
+      gdb_printf (stream, "%*s%s%ps", level, "", prefix,
+		  styled_string (type_style.style (), type->name ()));
       return;
     }
 
@@ -382,21 +385,26 @@ f_language::f_type_print_base (struct type *type, struct ui_file *stream,
     case TYPE_CODE_VOID:
       {
 	struct type *void_type = builtin_f_type (type->arch ())->builtin_void;
-	gdb_printf (stream, "%*s%s", level, "", void_type->name ());
+	gdb_printf (stream, "%*s%ps", level, "",
+		    styled_string (type_style.style (), void_type->name ()));
       }
       break;
 
     case TYPE_CODE_UNDEF:
-      gdb_printf (stream, "%*sstruct <unknown>", level, "");
+      gdb_printf (stream, "%*sstruct %ps", level, "",
+		  styled_string (metadata_style.style (), _("<unknown>")));
       break;
 
     case TYPE_CODE_ERROR:
-      gdb_printf (stream, "%*s%s", level, "", type->error_name ());
+      gdb_printf (stream, "%*s%ps", level, "",
+		  styled_string (metadata_style.style (),
+				 type->error_name ()));
       break;
 
     case TYPE_CODE_RANGE:
       /* This should not occur.  */
-      gdb_printf (stream, "%*s<range type>", level, "");
+      gdb_printf (stream, "%*s%ps", level, "",
+		  styled_string (metadata_style.style (), _("<range type>")));
       break;
 
     case TYPE_CODE_CHAR:
@@ -406,7 +414,8 @@ f_language::f_type_print_base (struct type *type, struct ui_file *stream,
 	 C-oriented, we must change these to "character" from "char".  */
 
       if (streq (type->name (), "char"))
-	gdb_printf (stream, "%*scharacter", level, "");
+	gdb_printf (stream, "%*s%ps", level, "",
+		    styled_string (type_style.style (), "character"));
       else
 	goto default_case;
       break;
@@ -422,10 +431,13 @@ f_language::f_type_print_base (struct type *type, struct ui_file *stream,
 	{
 	  LONGEST upper_bound = f77_get_upperbound (type);
 
-	  gdb_printf (stream, "character*%s", pulongest (upper_bound));
+	  gdb_printf (stream, "%ps*%s",
+		      styled_string (type_style.style (), "character"),
+		      pulongest (upper_bound));
 	}
       else
-	gdb_printf (stream, "%*scharacter*(*)", level, "");
+	gdb_printf (stream, "%*s%ps*(*)", level, "",
+		    styled_string (type_style.style (), "character"));
       break;
 
     case TYPE_CODE_STRUCT:
@@ -442,7 +454,7 @@ f_language::f_type_print_base (struct type *type, struct ui_file *stream,
       if (type->name () != nullptr)
 	{
 	  gdb_puts (" ", stream);
-	  gdb_puts (type->name (), stream);
+	  fputs_styled (type->name (), type_style.style (), stream);
 	}
 
       /* According to the definition,
@@ -462,12 +474,13 @@ f_language::f_type_print_base (struct type *type, struct ui_file *stream,
 	    }
 	  gdb_printf (stream, "%*sEnd Type ", level, "");
 	  if (type->name () != nullptr)
-	    gdb_puts (type->name (), stream);
+	    fputs_styled (type->name (), type_style.style (), stream);
 	}
       break;
 
     case TYPE_CODE_MODULE:
-      gdb_printf (stream, "%*smodule %s", level, "", type->name ());
+      gdb_printf (stream, "%*smodule %ps", level, "",
+		  styled_string (type_style.style (), type->name ()));
       break;
 
     default_case:
@@ -477,7 +490,8 @@ f_language::f_type_print_base (struct type *type, struct ui_file *stream,
 	 the type name is, as recorded in the type itself.  If there
 	 is no type name, then complain.  */
       if (type->name () != NULL)
-	gdb_printf (stream, "%*s%s", level, "", type->name ());
+	gdb_printf (stream, "%*s%ps", level, "",
+		    styled_string (type_style.style (), type->name ()));
       else
 	error (_("Invalid type code (%d) in symbol table."), type->code ());
       break;
