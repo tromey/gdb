@@ -145,6 +145,10 @@ cli_style_option variable_name_style ("variable", ui_file_style::CYAN);
 
 /* See cli-style.h.  */
 
+cli_style_option type_style ("type", ui_file_style::CYAN);
+
+/* See cli-style.h.  */
+
 cli_style_option address_style ("address", ui_file_style::BLUE);
 
 /* See cli-style.h.  */
@@ -598,6 +602,12 @@ Variable name display styling.\n\
 Configure variable name colors and display intensity"),
 					    &style_set_list, &style_show_list,
 					    false);
+
+  type_style.add_setshow_commands (no_class, _("\
+Type display styling.\n\
+Configure type colors and display intensity"),
+				   &style_set_list, &style_show_list,
+				   false);
 
   set_show_commands address_prefix_cmds
     = address_style.add_setshow_commands (no_class, _("\

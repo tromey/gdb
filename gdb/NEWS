@@ -63,6 +63,11 @@ show breakpoint source-tracking enabled
   automatically adjust their location when the source changes between
   recompilations.
 
+set style type foreground COLOR
+set style type background COLOR
+set style type intensity VALUE
+  Control the styling of type names printed by GDB.
+
 maintenance info source-tracking-context BPNUM
   Display the captured source context that GDB uses to track and
   adjust a breakpoint when source changes.

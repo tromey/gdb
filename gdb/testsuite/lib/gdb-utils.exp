@@ -84,6 +84,7 @@ proc style {str style} {
 	function { set fg 33 }
 	highlight { set fg 31 }
 	variable { set fg 36 }
+	type { set fg 36 }
 	address { set fg 34 }
 	metadata { set intensity 2 }
 	version { set fg 35; set intensity 1 }

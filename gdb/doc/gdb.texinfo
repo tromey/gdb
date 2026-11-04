@@ -28678,6 +28678,11 @@ styling options, only the color of the border can be controlled via
 controls to set the border's intensity predated the addition of
 general styling to @value{GDBN}.  @xref{TUI Configuration}.
 
+@item type
+Control the styling of type names.  These are managed with the
+@code{set style type} family of commands.  By default, this style's
+foreground color is cyan.
+
 @item variable
 Control the styling of variable names.  These are managed with the
 @code{set style variable} family of commands.  By default, this style's
