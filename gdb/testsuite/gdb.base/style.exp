@@ -224,11 +224,13 @@ proc run_style_tests { } {
 			 highlight]
 	set p2field [limited_style "$cstart.*$decimal.*-byte.*padding.*$cend" \
 			 highlight]
+	set struct_name [limited_style just_bitfield type]
+	set uintname [limited_style "unsigned int" type]
 
 	gdb_test "ptype/o just_bitfield_value" \
 	    [multi_line \
-		 ".* type = struct just_bitfield {" \
-		 ".* unsigned int $ffield : 3;" \
+		 ".* type = struct $struct_name {" \
+		 ".* $uintname $ffield : 3;" \
 		 "$p1field" \
 		 "$p2field" \
 		 "" \
@@ -1104,7 +1106,7 @@ with_test_prefix "all styles enabled" {
 # Now, for each style in turn.  Disable that style only and run the
 # test again.  Things in that style should NOT now be styled.
 foreach style { command title file function highlight variable \
-		    address metadata } {
+		    address metadata type } {
     set currently_disabled_style $style
     with_test_prefix "disable style $style" {
 	run_style_tests

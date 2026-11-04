@@ -81,7 +81,7 @@ print_name_maybe_canonical (const char *name,
 				     find_typedef_for_canonicalize,
 				     (void *) flags);
 
-  gdb_puts (s != nullptr ? s.get () : name, stream);
+  fputs_styled (s != nullptr ? s.get () : name, type_style.style (), stream);
 }
 
 
@@ -110,7 +110,7 @@ c_print_type_1 (struct type *type,
   if (local_name != NULL)
     {
       c_type_print_modifier (type, stream, 0, 1, language);
-      gdb_puts (local_name, stream);
+      fputs_styled (local_name, type_style.style (), stream);
       if (varstring != NULL && *varstring != '\0')
 	gdb_puts (" ", stream);
     }
@@ -1321,8 +1321,10 @@ c_type_print_base_enum (struct type *type, struct ui_file *stream,
 	{
 	  struct type *underlying = check_typedef (type->target_type ());
 
-	  if (underlying->name () != NULL)
-	    gdb_printf (stream, ": %s ", underlying->name ());
+	  if (underlying->name () != nullptr)
+	    gdb_printf (stream, ": %ps ",
+			styled_string (type_style.style (),
+				       underlying->name ()));
 	}
 
       gdb_printf (stream, "{\n");
@@ -1515,11 +1517,12 @@ c_type_print_base_1 (struct type *type, struct ui_file *stream,
       break;
 
     case TYPE_CODE_UNDEF:
-      gdb_printf (stream, _("struct <unknown>"));
+      gdb_printf (stream, _("struct %ps"),
+		  styled_string (metadata_style.style (), _("<unknown>")));
       break;
 
     case TYPE_CODE_ERROR:
-      gdb_printf (stream, "%s", type->error_name ());
+      fputs_styled (type->error_name (), metadata_style.style (), stream);
       break;
 
     case TYPE_CODE_RANGE:
@@ -1533,7 +1536,7 @@ c_type_print_base_1 (struct type *type, struct ui_file *stream,
 
     case TYPE_CODE_NAMESPACE:
       gdb_puts ("namespace ", stream);
-      gdb_puts (type->name (), stream);
+      fputs_styled (type->name (), type_style.style (), stream);
       break;
 
     default:
