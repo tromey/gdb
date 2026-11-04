@@ -86,8 +86,8 @@ pascal_language::print_typedef (struct type *type, struct symbol *new_symbol,
 				struct ui_file *stream) const
 {
   type = check_typedef (type);
-  gdb_printf (stream, "type ");
-  gdb_printf (stream, "%s = ", new_symbol->print_name ());
+  gdb_printf (stream, "type %ps = ",
+	      styled_string (type_style.style (), new_symbol->print_name ()));
   type_print (type, "", stream, 0);
   gdb_printf (stream, ";");
 }
@@ -108,7 +108,10 @@ pascal_language::type_print_derivation_info (struct ui_file *stream,
 		  BASETYPE_VIA_PUBLIC (type, i) ? "public" : "private",
 		  BASETYPE_VIA_VIRTUAL (type, i) ? " virtual" : "");
       name = TYPE_BASECLASS (type, i)->name ();
-      gdb_printf (stream, "%s", name ? name : "(null)");
+      if (name == nullptr)
+	fputs_styled ("(null)", metadata_style.style (), stream);
+      else
+	fputs_styled (name, type_style.style (), stream);
     }
   if (i > 0)
     {
@@ -383,8 +386,8 @@ pascal_language::type_print_base (struct type *type, struct ui_file *stream, int
   if ((type->code () == TYPE_CODE_PTR)
       && (type->target_type ()->code () == TYPE_CODE_VOID))
     {
-      gdb_puts (type->name () ? type->name () : "pointer",
-		stream);
+      fputs_styled (type->name () ? type->name () : "pointer",
+		    type_style.style (), stream);
       return;
     }
   /* When SHOW is zero or less, and there is a valid type name, then always
@@ -393,7 +396,7 @@ pascal_language::type_print_base (struct type *type, struct ui_file *stream, int
   if (show <= 0
       && type->name () != NULL)
     {
-      gdb_puts (type->name (), stream);
+      fputs_styled (type->name (), type_style.style (), stream);
       return;
     }
 
@@ -418,7 +421,7 @@ pascal_language::type_print_base (struct type *type, struct ui_file *stream, int
     case TYPE_CODE_STRUCT:
       if (type->name () != NULL)
 	{
-	  gdb_puts (type->name (), stream);
+	  fputs_styled (type->name (), type_style.style (), stream);
 	  gdb_puts (" = ", stream);
 	}
       if (HAVE_CPLUS_STRUCT (type))
@@ -434,7 +437,7 @@ pascal_language::type_print_base (struct type *type, struct ui_file *stream, int
     case TYPE_CODE_UNION:
       if (type->name () != NULL)
 	{
-	  gdb_puts (type->name (), stream);
+	  fputs_styled (type->name (), type_style.style (), stream);
 	  gdb_puts (" = ", stream);
 	}
       gdb_printf (stream, "case <?> of ");
@@ -455,11 +458,13 @@ pascal_language::type_print_base (struct type *type, struct ui_file *stream, int
 	  if ((type->num_fields () == 0) && (TYPE_NFN_FIELDS (type) == 0))
 	    {
 	      if (type->is_stub ())
-		gdb_printf (stream, "%*s<incomplete type>\n",
-			    level + 4, "");
+		gdb_printf (stream, "%*s%ps\n", level + 4, "",
+			    styled_string (metadata_style.style (),
+					   _("<incomplete type>")));
 	      else
-		gdb_printf (stream, "%*s<no data fields>\n",
-			    level + 4, "");
+		gdb_printf (stream, "%*s%ps\n", level + 4, "",
+			    styled_string (metadata_style.style (),
+					   _("<no data fields>")));
 	    }
 
 	  /* Start off with no specific section type, so we can print
@@ -641,7 +646,7 @@ pascal_language::type_print_base (struct type *type, struct ui_file *stream, int
     case TYPE_CODE_ENUM:
       if (type->name () != NULL)
 	{
-	  gdb_puts (type->name (), stream);
+	  fputs_styled (type->name (), type_style.style (), stream);
 	  if (show > 0)
 	    gdb_puts (" ", stream);
 	}
@@ -666,7 +671,8 @@ pascal_language::type_print_base (struct type *type, struct ui_file *stream, int
 	      if (i)
 		gdb_printf (stream, ", ");
 	      stream->wrap_here (4);
-	      gdb_puts (type->field (i).name (), stream);
+	      fputs_styled (type->field (i).name (),
+			    variable_name_style.style (), stream);
 	      if (lastval != type->field (i).loc_enumval ())
 		{
 		  gdb_printf (stream,
@@ -681,15 +687,18 @@ pascal_language::type_print_base (struct type *type, struct ui_file *stream, int
       break;
 
     case TYPE_CODE_VOID:
-      gdb_printf (stream, "void");
+      fputs_styled ("void", type_style.style (), stream);
       break;
 
     case TYPE_CODE_UNDEF:
-      gdb_printf (stream, "record <unknown>");
+      gdb_printf (stream, "record %ps",
+		  styled_string (metadata_style.style (), _("<unknown>")));
       break;
 
     case TYPE_CODE_ERROR:
-      gdb_printf (stream, "%s", type->error_name ());
+      gdb_printf (stream, "%ps",
+		  styled_string (metadata_style.style (),
+				 type->error_name ()));
       break;
 
       /* this probably does not work for enums.  */
@@ -710,7 +719,7 @@ pascal_language::type_print_base (struct type *type, struct ui_file *stream, int
       break;
 
     case TYPE_CODE_STRING:
-      gdb_puts ("String", stream);
+      fputs_styled ("String", type_style.style (), stream);
       break;
 
     default:
@@ -718,10 +727,8 @@ pascal_language::type_print_base (struct type *type, struct ui_file *stream, int
 	 such as fundamental types.  For these, just print whatever
 	 the type name is, as recorded in the type itself.  If there
 	 is no type name, then complain.  */
-      if (type->name () != NULL)
-	{
-	  gdb_puts (type->name (), stream);
-	}
+      if (type->name () != nullptr)
+	fputs_styled (type->name (), type_style.style (), stream);
       else
 	{
 	  /* At least for dump_symtab, it is important that this not be
