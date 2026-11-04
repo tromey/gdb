@@ -28593,6 +28593,14 @@ Control the styling of variable names.  These are managed with the
 @code{set style variable} family of commands.  By default, this style's
 foreground color is cyan.
 
+@item type
+Control the styling of type names.  These are managed with the
+@code{set style type} family of commands.  By default, this style's
+foreground color is cyan.  Normally when a type name is styled,
+@value{GDBN} will only style the textual name of a type.  For
+instance, when showing @samp{int *}, just the @samp{int} will be
+styled.
+
 @item address
 Control the styling of addresses.  These are managed with the
 @code{set style address} family of commands.  By default, this style's

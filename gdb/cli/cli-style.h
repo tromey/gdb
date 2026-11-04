@@ -109,6 +109,9 @@ extern cli_style_option function_name_style;
 /* The variable name style.  */
 extern cli_style_option variable_name_style;
 
+/* The type style.  */
+extern cli_style_option type_style;
+
 /* The address style.  */
 extern cli_style_option address_style;
 
