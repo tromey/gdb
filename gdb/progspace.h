@@ -298,9 +298,6 @@ struct program_space
   const char *exec_filename () const
   { return m_exec_filename.get (); }
 
-  void set_exec_filename (gdb::unique_xmalloc_ptr<char> filename)
-  { m_exec_filename = std::move (filename); }
-
   /* Close and clear exec_bfd.  If we end up with no target sections
      to read memory from, this unpushes the exec_ops target.  */
   void exec_close ();
@@ -309,13 +306,10 @@ struct program_space
   bfd *exec_bfd () const
   { return ebfd.get (); }
 
-  /* Set the exec BFD for this program space to ABFD.  */
-  void set_exec_bfd (gdb_bfd_ref_ptr &&abfd)
-  {
-    gdb_assert (ebfd == nullptr);
-    gdb_assert (abfd != nullptr);
-    ebfd = std::move (abfd);
-  }
+  /* Set the exec BFD for this program space to ABFD.  This also
+     updates the ebfd_mtime and set the exec filename.  */
+  void set_exec_bfd (gdb_bfd_ref_ptr &&abfd,
+		     gdb::unique_xmalloc_ptr<char> new_filename);
 
   /* Reset saved solib data at the start of an solib event.  This lets
      us properly collect the data when calling solib_add, so it can then

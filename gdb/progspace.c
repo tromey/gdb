@@ -278,6 +278,20 @@ program_space::objfile_for_address (CORE_ADDR address)
 /* See progspace.h.  */
 
 void
+program_space::set_exec_bfd (gdb_bfd_ref_ptr &&abfd,
+			     gdb::unique_xmalloc_ptr<char> new_filename)
+{
+  gdb_assert (ebfd == nullptr);
+  gdb_assert (abfd != nullptr);
+  ebfd = std::move (abfd);
+  gdb_assert (m_exec_filename = nullptr);
+  m_exec_filename = std::move (new_filename);
+  ebfd_mtime = gdb_bfd_get_mtime (ebfd.get ());
+}
+
+/* See progspace.h.  */
+
+void
 program_space::exec_close ()
 {
   if (ebfd != nullptr)

@@ -477,25 +477,19 @@ exec_file_attach (const char *filename, int from_tty)
 	       styled_string (file_name_style.style (), scratch_pathname),
 	       gdb_bfd_errmsg (bfd_get_error (), matching).c_str ());
 
-      current_program_space->set_exec_bfd (std::move (new_exec_bfd));
-
-      /* gdb_realpath_keepfile resolves symlinks on the local
-	 filesystem and so cannot be used for "target:" files.  */
-      gdb_assert (current_program_space->exec_filename () == nullptr);
+      gdb::unique_xmalloc_ptr<char> new_exec_filename;
       if (load_via_target)
-	current_program_space->set_exec_filename
-	  (make_unique_xstrdup
-	     (bfd_get_filename (current_program_space->exec_bfd ())));
+	new_exec_filename
+	  = make_unique_xstrdup (bfd_get_filename (new_exec_bfd.get ()));
       else
-	current_program_space->set_exec_filename
-	  (make_unique_xstrdup (gdb_realpath_keepfile
+	new_exec_filename
+	  = (make_unique_xstrdup (gdb_realpath_keepfile
 				  (scratch_pathname).c_str ()));
+      current_program_space->set_exec_bfd (std::move (new_exec_bfd),
+					   std::move (new_exec_filename));
 
       std::vector<target_section> sections
 	= build_section_table (current_program_space->exec_bfd ());
-
-      current_program_space->ebfd_mtime
-	= gdb_bfd_get_mtime (current_program_space->exec_bfd ());
 
       validate_files ();
 
