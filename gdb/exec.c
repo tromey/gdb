@@ -459,18 +459,25 @@ exec_file_attach (const char *filename, int from_tty)
 	  canonical_pathname = canonical_storage.get ();
 	}
 
-      gdb_bfd_ref_ptr temp;
+      gdb_bfd_ref_ptr new_exec_bfd;
       if (write_files && !load_via_target)
-	temp = gdb_bfd_fopen (canonical_pathname, gnutarget,
-			      FOPEN_RUB, scratch_chan);
+	new_exec_bfd = gdb_bfd_fopen (canonical_pathname, gnutarget,
+				      FOPEN_RUB, scratch_chan);
       else
-	temp = gdb_bfd_open (canonical_pathname, gnutarget, scratch_chan);
-      if (temp == nullptr)
+	new_exec_bfd = gdb_bfd_open (canonical_pathname, gnutarget,
+				     scratch_chan);
+      if (new_exec_bfd == nullptr)
 	error (_("\"%ps\": could not open as an executable file: %s."),
 	       styled_string (file_name_style.style (), scratch_pathname),
 	       bfd_errmsg (bfd_get_error ()));
 
-      current_program_space->set_exec_bfd (std::move (temp));
+      if (!gdb_bfd_check_format_matches (new_exec_bfd.get (), bfd_object,
+					 &matching))
+	error (_("\"%ps\": not in executable format: %s"),
+	       styled_string (file_name_style.style (), scratch_pathname),
+	       gdb_bfd_errmsg (bfd_get_error (), matching).c_str ());
+
+      current_program_space->set_exec_bfd (std::move (new_exec_bfd));
 
       /* gdb_realpath_keepfile resolves symlinks on the local
 	 filesystem and so cannot be used for "target:" files.  */
@@ -483,17 +490,6 @@ exec_file_attach (const char *filename, int from_tty)
 	current_program_space->set_exec_filename
 	  (make_unique_xstrdup (gdb_realpath_keepfile
 				  (scratch_pathname).c_str ()));
-
-      if (!gdb_bfd_check_format_matches (current_program_space->exec_bfd (),
-				     bfd_object, &matching))
-	{
-	  /* Make sure to close exec_bfd, or else "run" might try to use
-	     it.  */
-	  current_program_space->exec_close ();
-	  error (_("\"%ps\": not in executable format: %s"),
-		 styled_string (file_name_style.style (), scratch_pathname),
-		 gdb_bfd_errmsg (bfd_get_error (), matching).c_str ());
-	}
 
       std::vector<target_section> sections
 	= build_section_table (current_program_space->exec_bfd ());
