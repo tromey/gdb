@@ -281,12 +281,12 @@ void
 program_space::set_exec_bfd (gdb_bfd_ref_ptr &&abfd,
 			     gdb::unique_xmalloc_ptr<char> new_filename)
 {
-  gdb_assert (ebfd == nullptr);
+  gdb_assert (m_ebfd == nullptr);
   gdb_assert (abfd != nullptr);
-  ebfd = std::move (abfd);
-  gdb_assert (m_exec_filename = nullptr);
+  m_ebfd = std::move (abfd);
+  gdb_assert (m_exec_filename == nullptr);
   m_exec_filename = std::move (new_filename);
-  ebfd_mtime = gdb_bfd_get_mtime (ebfd.get ());
+  m_ebfd_mtime = gdb_bfd_get_mtime (m_ebfd.get ());
 }
 
 /* See progspace.h.  */
@@ -294,15 +294,15 @@ program_space::set_exec_bfd (gdb_bfd_ref_ptr &&abfd,
 void
 program_space::exec_close ()
 {
-  if (ebfd != nullptr)
+  if (m_ebfd != nullptr)
     {
       /* Removing target sections may close the exec_ops target.
-	 Clear ebfd before doing so to prevent recursion.  We
+	 Clear m_ebfd before doing so to prevent recursion.  We
 	 move it to another ref_ptr instead of saving it to a raw
 	 pointer to avoid it looking like possible use-after-free.  */
-      gdb_bfd_ref_ptr saved_ebfd = std::move (ebfd);
-      ebfd.reset (nullptr);
-      ebfd_mtime = 0;
+      gdb_bfd_ref_ptr saved_ebfd = std::move (m_ebfd);
+      m_ebfd.reset (nullptr);
+      m_ebfd_mtime = 0;
 
       remove_target_sections (saved_ebfd.get ());
 
@@ -599,7 +599,7 @@ initialize_progspace ()
      _initialize_foo routines may need to install their per-pspace
      data keys.  We can only allocate a progspace when all those
      modules have done that.  Do this before
-     initialize_current_architecture, because that accesses the ebfd
+     initialize_current_architecture, because that accesses the m_ebfd
      of current_program_space.  */
   current_program_space = new program_space (new_address_space ());
 }

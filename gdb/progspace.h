@@ -304,12 +304,18 @@ struct program_space
 
   /* Return the exec BFD for this program space.  */
   bfd *exec_bfd () const
-  { return ebfd.get (); }
+  { return m_ebfd.get (); }
 
   /* Set the exec BFD for this program space to ABFD.  This also
      updates the ebfd_mtime and set the exec filename.  */
   void set_exec_bfd (gdb_bfd_ref_ptr &&abfd,
 		     gdb::unique_xmalloc_ptr<char> new_filename);
+
+  /* Return the saved mtime of the exec BFD.  */
+  long exec_bfd_mtime () const
+  {
+    return m_ebfd_mtime;
+  }
 
   /* Reset saved solib data at the start of an solib event.  This lets
      us properly collect the data when calling solib_add, so it can then
@@ -367,14 +373,6 @@ struct program_space
   /* Unique ID number.  */
   int num = 0;
 
-  /* The main executable loaded into this program space.  This is
-     managed by the exec target.  */
-
-  /* The BFD handle for the main executable.  */
-  gdb_bfd_ref_ptr ebfd;
-  /* The last-modified time, from when the exec was brought in.  */
-  long ebfd_mtime = 0;
-
   /* The address space attached to this program space.  More than one
      program space may be bound to the same address space.  In the
      traditional unix-like debugging scenario, this will usually
@@ -419,6 +417,13 @@ struct program_space
   registry<program_space> registry_fields;
 
 private:
+  /* The main executable loaded into this program space.  This is
+     managed by the exec target.  */
+  /* The BFD handle for the main executable.  */
+  gdb_bfd_ref_ptr m_ebfd;
+  /* The last-modified time, from when the exec was brought in.  */
+  long m_ebfd_mtime = 0;
+
   /* All known objfiles are kept in a linked list.  */
   owning_intrusive_list<objfile> m_objfiles_list;
 

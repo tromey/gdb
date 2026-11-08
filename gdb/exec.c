@@ -499,7 +499,7 @@ exec_file_attach (const char *filename, int from_tty)
 	 list of sections.  This possibly pushes the exec_ops
 	 target.  */
       current_program_space->add_target_sections
-	(current_program_space->ebfd.get (), sections);
+	(current_program_space->exec_bfd (), sections);
     }
 
   /* Are are loading the same executable?  */

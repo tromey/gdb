@@ -55,8 +55,8 @@ reopen_exec_file (void)
   int res = gdb_bfd_stat (exec_bfd, &st);
 
   if (res == 0
-      && current_program_space->ebfd_mtime != 0
-      && current_program_space->ebfd_mtime != st.st_mtime)
+      && current_program_space->exec_bfd_mtime () != 0
+      && current_program_space->exec_bfd_mtime () != st.st_mtime)
     exec_file_attach (bfd_get_filename (exec_bfd), 0);
 }
 
