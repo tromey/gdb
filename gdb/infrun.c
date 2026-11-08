@@ -1235,7 +1235,7 @@ handle_vfork_done (thread_info *event_thread)
   gdb_assert (event_thread->inf->thread_waiting_for_vfork_done == event_thread);
 
   event_thread->inf->thread_waiting_for_vfork_done = nullptr;
-  event_thread->inf->pspace->breakpoints_not_allowed = 0;
+  event_thread->inf->pspace->breakpoints_not_allowed = false;
 
   /* On non-stop targets, we stopped all the inferior's threads in follow_fork,
      resume them now.  On all-stop targets, everything that needs to be resumed

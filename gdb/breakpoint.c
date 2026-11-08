@@ -8693,14 +8693,14 @@ enable_watchpoints_after_interactive_call_stop (void)
 void
 disable_breakpoints_before_startup (void)
 {
-  current_program_space->executing_startup = 1;
+  current_program_space->executing_startup = true;
   update_global_location_list (UGLL_DONT_INSERT);
 }
 
 void
 enable_breakpoints_after_startup (void)
 {
-  current_program_space->executing_startup = 0;
+  current_program_space->executing_startup = false;
   breakpoint_re_set ();
 }
 

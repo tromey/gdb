@@ -392,11 +392,11 @@ struct program_space
      targets, or for PIE executables, until we connect and ask the
      target for the final relocation offsets, the symbols we've used
      to set breakpoints point at the wrong addresses.  */
-  int executing_startup = 0;
+  bool executing_startup = false;
 
   /* True if no breakpoints should be inserted in this program
      space.  */
-  int breakpoints_not_allowed = 0;
+  bool breakpoints_not_allowed = false;
 
   /* The object file that the main symbol table was loaded from
      (e.g. the argument to the "symbol-file" or "file" command).  */

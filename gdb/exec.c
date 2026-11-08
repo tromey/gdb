@@ -400,7 +400,7 @@ exec_file_attach (const char *filename, int from_tty)
     }
   else
     {
-      int load_via_target = 0;
+      bool load_via_target = false;
       const char *scratch_pathname, *canonical_pathname;
       int scratch_chan;
       char **matching;
@@ -410,7 +410,7 @@ exec_file_attach (const char *filename, int from_tty)
 	  if (target_filesystem_is_local ())
 	    filename += strlen (TARGET_SYSROOT_PREFIX);
 	  else
-	    load_via_target = 1;
+	    load_via_target = true;
 	}
 
       gdb::unique_xmalloc_ptr<char> canonical_storage, scratch_storage;
