@@ -602,33 +602,33 @@ ravenscar_arch_ops::store_register (struct regcache *regcache,
 			stack_address);
 }
 
-/* Temporarily set the ptid of a regcache to some other value.  When
-   this object is destroyed, the regcache's original ptid is
-   restored.  */
+/* A wrapper for various target methods that temporarily sets the ptid
+   of a regcache to some other value.  If the target does not exit,
+   the regcache ptid is then reset.  */
 
-class temporarily_change_regcache_ptid
+static void
+temporarily_change_regcache_ptid (struct regcache *regcache, ptid_t new_ptid,
+				  gdb::function_view<void ()> callback)
 {
-public:
+  ptid_t save = regcache->ptid ();
+  regcache->set_ptid (new_ptid);
 
-  temporarily_change_regcache_ptid (struct regcache *regcache, ptid_t new_ptid)
-    : m_regcache (regcache),
-      m_save_ptid (regcache->ptid ())
-  {
-    m_regcache->set_ptid (new_ptid);
-  }
+  try
+    {
+      callback ();
+    }
+  catch (const gdb_exception &ex)
+    {
+      /* Note here we want to catch QUIT as well, just in case.  If
+	 the target has closed, then the regcache is destroyed and we
+	 don't want to update it.  */
+      if (ex.error != TARGET_CLOSE_ERROR)
+	regcache->set_ptid (save);
+      throw;
+    }
 
-  ~temporarily_change_regcache_ptid ()
-  {
-    m_regcache->set_ptid (m_save_ptid);
-  }
-
-private:
-
-  /* The regcache.  */
-  struct regcache *m_regcache;
-  /* The saved ptid.  */
-  ptid_t m_save_ptid;
-};
+  regcache->set_ptid (save);
+}
 
 ravenscar_thread_target::fpu_state
 ravenscar_thread_target::get_fpu_state (struct regcache *regcache,
@@ -709,8 +709,11 @@ ravenscar_thread_target::fetch_registers (struct regcache *regcache,
 
 	  if (use_beneath)
 	    {
-	      temporarily_change_regcache_ptid changer (regcache, base);
-	      beneath ()->fetch_registers (regcache, i);
+	      temporarily_change_regcache_ptid (regcache, base,
+		[=] ()
+		  {
+		    beneath ()->fetch_registers (regcache, i);
+		  });
 	    }
 	  else
 	    arch_ops->fetch_register (regcache, i);
@@ -755,8 +758,11 @@ ravenscar_thread_target::store_registers (struct regcache *regcache,
 
 	  if (use_beneath)
 	    {
-	      temporarily_change_regcache_ptid changer (regcache, base);
-	      beneath ()->store_registers (regcache, i);
+	      temporarily_change_regcache_ptid (regcache, base,
+		[=] ()
+		  {
+		    beneath ()->store_registers (regcache, i);
+		  });
 	    }
 	  else
 	    arch_ops->store_register (regcache, i);
@@ -776,8 +782,11 @@ ravenscar_thread_target::prepare_to_store (struct regcache *regcache)
       if (task_is_currently_active (ptid))
 	{
 	  ptid_t base = get_base_thread_from_ravenscar_task (ptid);
-	  temporarily_change_regcache_ptid changer (regcache, base);
-	  beneath ()->prepare_to_store (regcache);
+	  temporarily_change_regcache_ptid (regcache, base,
+	    [=] ()
+	      {
+		beneath ()->prepare_to_store (regcache);
+	      });
 	}
       else
 	{
