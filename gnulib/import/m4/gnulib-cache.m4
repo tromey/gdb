@@ -64,6 +64,7 @@
 #  limits-h \
 #  listen \
 #  lstat \
+#  mbswidth \
 #  memchr \
 #  memmem \
 #  mkdir \
@@ -121,6 +122,7 @@ gl_MODULES([
   limits-h
   listen
   lstat
+  mbswidth
   memchr
   memmem
   mkdir

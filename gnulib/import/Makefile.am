@@ -59,6 +59,7 @@
 #  limits-h \
 #  listen \
 #  lstat \
+#  mbswidth \
 #  memchr \
 #  memmem \
 #  mkdir \
@@ -1460,6 +1461,12 @@ EXTRA_DIST += mbsrtowcs-impl.h mbsrtowcs-state.c
 EXTRA_libgnu_a_SOURCES += mbsrtowcs-state.c
 
 ## end   gnulib module mbsrtowcs
+
+## begin gnulib module mbswidth
+
+libgnu_a_SOURCES += mbswidth.h mbswidth.c
+
+## end   gnulib module mbswidth
 
 ## begin gnulib module mbtowc
 
@@ -3170,6 +3177,42 @@ EXTRA_DIST += unistd--.h unistd-safer.h
 
 ## end   gnulib module unistd-safer
 
+## begin gnulib module unitypes
+
+BUILT_SOURCES += $(LIBUNISTRING_UNITYPES_H)
+
+unitypes.h: unitypes.in.h
+	$(gl_V_at)$(SED_HEADER_TO_AT_t) $(srcdir)/unitypes.in.h
+	$(AM_V_at)mv $@-t $@
+MOSTLYCLEANFILES += unitypes.h unitypes.h-t
+
+EXTRA_DIST += unitypes.in.h
+
+## end   gnulib module unitypes
+
+## begin gnulib module uniwidth/base
+
+BUILT_SOURCES += $(LIBUNISTRING_UNIWIDTH_H)
+
+uniwidth.h: uniwidth.in.h
+	$(gl_V_at)$(SED_HEADER_TO_AT_t) $(srcdir)/uniwidth.in.h
+	$(AM_V_at)mv $@-t $@
+MOSTLYCLEANFILES += uniwidth.h uniwidth.h-t
+
+EXTRA_DIST += localcharset.h uniwidth.in.h
+
+## end   gnulib module uniwidth/base
+
+## begin gnulib module uniwidth/width
+
+if LIBUNISTRING_COMPILE_UNIWIDTH_WIDTH
+libgnu_a_SOURCES += uniwidth/width.c
+endif
+
+EXTRA_DIST += unictype/bitmap.h uniwidth/cjk.h uniwidth/width0.h uniwidth/width2.h
+
+## end   gnulib module uniwidth/width
+
 ## begin gnulib module unsetenv
 
 if GL_COND_OBJ_UNSETENV
@@ -3367,6 +3410,14 @@ MOSTLYCLEANFILES += wctype.h wctype.h-t
 EXTRA_DIST += wctype.in.h
 
 ## end   gnulib module wctype-h
+
+## begin gnulib module wcwidth
+
+if GL_COND_OBJ_WCWIDTH
+libgnu_a_SOURCES += wcwidth.c
+endif
+
+## end   gnulib module wcwidth
 
 ## begin gnulib module windows-mutex
 

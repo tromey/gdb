@@ -181,6 +181,7 @@ am__aclocal_m4_deps = $(top_srcdir)/../config/depstand.m4 \
 	$(top_srcdir)/import/m4/isnand.m4 \
 	$(top_srcdir)/import/m4/isnanl.m4 \
 	$(top_srcdir)/import/m4/largefile.m4 \
+	$(top_srcdir)/import/m4/libunistring-base.m4 \
 	$(top_srcdir)/import/m4/limits-h.m4 \
 	$(top_srcdir)/import/m4/localcharset.m4 \
 	$(top_srcdir)/import/m4/locale-fr.m4 \
@@ -196,6 +197,7 @@ am__aclocal_m4_deps = $(top_srcdir)/../config/depstand.m4 \
 	$(top_srcdir)/import/m4/mbsinit.m4 \
 	$(top_srcdir)/import/m4/mbsrtowcs.m4 \
 	$(top_srcdir)/import/m4/mbstate_t.m4 \
+	$(top_srcdir)/import/m4/mbswidth.m4 \
 	$(top_srcdir)/import/m4/mbtowc.m4 \
 	$(top_srcdir)/import/m4/memchr.m4 \
 	$(top_srcdir)/import/m4/memmem.m4 \
@@ -278,6 +280,7 @@ am__aclocal_m4_deps = $(top_srcdir)/../config/depstand.m4 \
 	$(top_srcdir)/import/m4/wchar_h.m4 \
 	$(top_srcdir)/import/m4/wchar_t.m4 \
 	$(top_srcdir)/import/m4/wctype_h.m4 \
+	$(top_srcdir)/import/m4/wcwidth.m4 \
 	$(top_srcdir)/import/m4/wint_t.m4 \
 	$(top_srcdir)/import/m4/wmemchr.m4 \
 	$(top_srcdir)/import/m4/wmempcpy.m4 \
@@ -1274,6 +1277,8 @@ LIBS = @LIBS@
 LIBSOCKET = @LIBSOCKET@
 LIBSTDTHREAD = @LIBSTDTHREAD@
 LIBTHREAD = @LIBTHREAD@
+LIBUNISTRING_UNITYPES_H = @LIBUNISTRING_UNITYPES_H@
+LIBUNISTRING_UNIWIDTH_H = @LIBUNISTRING_UNIWIDTH_H@
 LIB_CLOCK_GETTIME = @LIB_CLOCK_GETTIME@
 LIB_GETLOGIN = @LIB_GETLOGIN@
 LIB_GETRANDOM = @LIB_GETRANDOM@

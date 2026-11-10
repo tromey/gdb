@@ -415,6 +415,9 @@
 /* Define to 1 when the gnulib module vprintf should be tested. */
 #undef GNULIB_TEST_VPRINTF
 
+/* Define to 1 when the gnulib module wcwidth should be tested. */
+#undef GNULIB_TEST_WCWIDTH
+
 /* Define to 1 when the gnulib module wmemchr should be tested. */
 #undef GNULIB_TEST_WMEMCHR
 
@@ -552,6 +555,10 @@
    don't. */
 #undef HAVE_DECL_MBSRTOWCS
 
+/* Define to 1 if you have a declaration of mbswidth() in <wchar.h>, and to 0
+   otherwise. */
+#undef HAVE_DECL_MBSWIDTH_IN_WCHAR_H
+
 /* Define to 1 if you have the declaration of `memmem', and to 0 if you don't.
    */
 #undef HAVE_DECL_MEMMEM
@@ -599,6 +606,10 @@
 /* Define to 1 if you have the declaration of `wcsdup', and to 0 if you don't.
    */
 #undef HAVE_DECL_WCSDUP
+
+/* Define to 1 if you have the declaration of `wcwidth', and to 0 if you
+   don't. */
+#undef HAVE_DECL_WCWIDTH
 
 /* Define to 1 if you have the declaration of `__argv', and to 0 if you don't.
    */
@@ -712,6 +723,9 @@
 
 /* Define to 1 if <sys/socket.h> defines AF_INET6. */
 #undef HAVE_IPV6
+
+/* Define to 1 if you have the `isascii' function. */
+#undef HAVE_ISASCII
 
 /* Define to 1 if you have the `isblank' function. */
 #undef HAVE_ISBLANK
@@ -1019,6 +1033,9 @@
 
 /* Define to 1 if you have the <wctype.h> header file. */
 #undef HAVE_WCTYPE_H
+
+/* Define to 1 if you have the `wcwidth' function. */
+#undef HAVE_WCWIDTH
 
 /* Define to 1 if the compiler and linker support weak declarations of
    symbols. */
@@ -2017,3 +2034,19 @@
 
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef uid_t
+
+
+  /* This definition is a duplicate of the one in unitypes.h.
+     It is here so that we can cope with an older version of unitypes.h
+     that does not contain this definition and that is pre-installed among
+     the public header files.  */
+  # if defined __restrict \
+       || 2 < __GNUC__ + (95 <= __GNUC_MINOR__) \
+       || __clang_major__ >= 3
+  #  define _UC_RESTRICT __restrict
+  # elif 199901L <= __STDC_VERSION__ || defined restrict
+  #  define _UC_RESTRICT restrict
+  # else
+  #  define _UC_RESTRICT
+  # endif
+  

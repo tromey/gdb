@@ -655,7 +655,6 @@ am__tar
 AMTAR
 am__leading_dot
 SET_MAKE
-AWK
 mkdir_p
 INSTALL_STRIP_PROGRAM
 STRIP
@@ -689,6 +688,8 @@ GL_COND_OBJ_WINDOWS_ONCE_FALSE
 GL_COND_OBJ_WINDOWS_ONCE_TRUE
 GL_COND_OBJ_WINDOWS_MUTEX_FALSE
 GL_COND_OBJ_WINDOWS_MUTEX_TRUE
+GL_COND_OBJ_WCWIDTH_FALSE
+GL_COND_OBJ_WCWIDTH_TRUE
 GL_GNULIB_TOWCTRANS
 GL_GNULIB_WCTRANS
 GL_GNULIB_ISWCTYPE
@@ -714,6 +715,11 @@ NEXT_AS_FIRST_DIRECTIVE_WCHAR_H
 NEXT_WCHAR_H
 GL_COND_OBJ_UNSETENV_FALSE
 GL_COND_OBJ_UNSETENV_TRUE
+LIBUNISTRING_COMPILE_UNIWIDTH_WIDTH_FALSE
+LIBUNISTRING_COMPILE_UNIWIDTH_WIDTH_TRUE
+LIBUNISTRING_UNIWIDTH_H
+LIBUNISTRING_UNITYPES_H
+AWK
 HAVE_UNISTD_H
 NEXT_AS_FIRST_DIRECTIVE_UNISTD_H
 NEXT_UNISTD_H
@@ -3983,6 +3989,7 @@ as_fn_append ac_header_list " xlocale.h"
 as_fn_append ac_header_list " math.h"
 as_fn_append ac_func_list " mbsinit"
 as_fn_append ac_func_list " mbrtowc"
+as_fn_append ac_func_list " isascii"
 as_fn_append ac_header_list " sys/mman.h"
 as_fn_append ac_func_list " mprotect"
 as_fn_append ac_func_list " mkostemp"
@@ -4004,6 +4011,7 @@ as_fn_append ac_func_list " localtime_r"
 as_fn_append ac_header_list " crtdefs.h"
 as_fn_append ac_func_list " iswcntrl"
 as_fn_append ac_header_list " wctype.h"
+as_fn_append ac_func_list " wcwidth"
 as_fn_append ac_func_list " wmempcpy"
 # Check that the precious variables saved in the cache have kept the same
 # value.
@@ -7123,6 +7131,7 @@ fi
   # Code from module mbrtowc:
   # Code from module mbsinit:
   # Code from module mbsrtowcs:
+  # Code from module mbswidth:
   # Code from module mbtowc:
   # Code from module memchr:
   # Code from module memmem:
@@ -7209,12 +7218,16 @@ fi
   # Code from module time_r:
   # Code from module unistd:
   # Code from module unistd-safer:
+  # Code from module unitypes:
+  # Code from module uniwidth/base:
+  # Code from module uniwidth/width:
   # Code from module unsetenv:
   # Code from module update-copyright:
   # Code from module vararrays:
   # Code from module verify:
   # Code from module wchar:
   # Code from module wctype-h:
+  # Code from module wcwidth:
   # Code from module windows-mutex:
   # Code from module windows-once:
   # Code from module windows-recmutex:
@@ -13811,8 +13824,8 @@ rm -f core conftest.err conftest.$ac_objext \
         LIBS=$save_LIBS
         test $gl_pthread_api = yes && break
       done
-      echo "$as_me:13814: gl_pthread_api=$gl_pthread_api" >&5
-      echo "$as_me:13815: LIBPTHREAD=$LIBPTHREAD" >&5
+      echo "$as_me:13827: gl_pthread_api=$gl_pthread_api" >&5
+      echo "$as_me:13828: LIBPTHREAD=$LIBPTHREAD" >&5
 
       gl_pthread_in_glibc=no
       # On Linux with glibc >= 2.34, libc contains the fully functional
@@ -13837,7 +13850,7 @@ rm -f conftest*
 
           ;;
       esac
-      echo "$as_me:13840: gl_pthread_in_glibc=$gl_pthread_in_glibc" >&5
+      echo "$as_me:13853: gl_pthread_in_glibc=$gl_pthread_in_glibc" >&5
 
       # Test for libpthread by looking for pthread_kill. (Not pthread_self,
       # since it is defined as a macro on OSF/1.)
@@ -13991,7 +14004,7 @@ fi
 
         fi
       fi
-      echo "$as_me:13994: LIBPMULTITHREAD=$LIBPMULTITHREAD" >&5
+      echo "$as_me:14007: LIBPMULTITHREAD=$LIBPMULTITHREAD" >&5
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether POSIX threads API is available" >&5
 $as_echo_n "checking whether POSIX threads API is available... " >&6; }
@@ -17068,8 +17081,8 @@ rm -f core conftest.err conftest.$ac_objext \
         LIBS=$save_LIBS
         test $gl_pthread_api = yes && break
       done
-      echo "$as_me:17071: gl_pthread_api=$gl_pthread_api" >&5
-      echo "$as_me:17072: LIBPTHREAD=$LIBPTHREAD" >&5
+      echo "$as_me:17084: gl_pthread_api=$gl_pthread_api" >&5
+      echo "$as_me:17085: LIBPTHREAD=$LIBPTHREAD" >&5
 
       gl_pthread_in_glibc=no
       # On Linux with glibc >= 2.34, libc contains the fully functional
@@ -17094,7 +17107,7 @@ rm -f conftest*
 
           ;;
       esac
-      echo "$as_me:17097: gl_pthread_in_glibc=$gl_pthread_in_glibc" >&5
+      echo "$as_me:17110: gl_pthread_in_glibc=$gl_pthread_in_glibc" >&5
 
       # Test for libpthread by looking for pthread_kill. (Not pthread_self,
       # since it is defined as a macro on OSF/1.)
@@ -17248,7 +17261,7 @@ fi
 
         fi
       fi
-      echo "$as_me:17251: LIBPMULTITHREAD=$LIBPMULTITHREAD" >&5
+      echo "$as_me:17264: LIBPMULTITHREAD=$LIBPMULTITHREAD" >&5
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether POSIX threads API is available" >&5
 $as_echo_n "checking whether POSIX threads API is available... " >&6; }
@@ -17474,8 +17487,8 @@ rm -f core conftest.err conftest.$ac_objext \
         LIBS=$save_LIBS
         test $gl_pthread_api = yes && break
       done
-      echo "$as_me:17477: gl_pthread_api=$gl_pthread_api" >&5
-      echo "$as_me:17478: LIBPTHREAD=$LIBPTHREAD" >&5
+      echo "$as_me:17490: gl_pthread_api=$gl_pthread_api" >&5
+      echo "$as_me:17491: LIBPTHREAD=$LIBPTHREAD" >&5
 
       gl_pthread_in_glibc=no
       # On Linux with glibc >= 2.34, libc contains the fully functional
@@ -17500,7 +17513,7 @@ rm -f conftest*
 
           ;;
       esac
-      echo "$as_me:17503: gl_pthread_in_glibc=$gl_pthread_in_glibc" >&5
+      echo "$as_me:17516: gl_pthread_in_glibc=$gl_pthread_in_glibc" >&5
 
       # Test for libpthread by looking for pthread_kill. (Not pthread_self,
       # since it is defined as a macro on OSF/1.)
@@ -17654,7 +17667,7 @@ fi
 
         fi
       fi
-      echo "$as_me:17657: LIBPMULTITHREAD=$LIBPMULTITHREAD" >&5
+      echo "$as_me:17670: LIBPMULTITHREAD=$LIBPMULTITHREAD" >&5
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether POSIX threads API is available" >&5
 $as_echo_n "checking whether POSIX threads API is available... " >&6; }
@@ -18651,6 +18664,8 @@ case $ac_cv_c_inline in
 _ACEOF
     ;;
 esac
+
+
 
 
 
@@ -21811,6 +21826,77 @@ $as_echo "$gl_cv_next_unistd_h" >&6; }
     HAVE_DECL_EXECVPE=0
   fi
 
+for ac_prog in gawk mawk nawk awk
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_AWK+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$AWK"; then
+  ac_cv_prog_AWK="$AWK" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_AWK="$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+AWK=$ac_cv_prog_AWK
+if test -n "$AWK"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $AWK" >&5
+$as_echo "$AWK" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$AWK" && break
+done
+
+
+
+
+
+
+
+gl_libunistring_sed_extract_major='/^[0-9]/{s/^\([0-9]*\).*/\1/p;q;}
+i\
+0
+q
+'
+gl_libunistring_sed_extract_minor='/^[0-9][0-9]*[.][0-9]/{s/^[0-9]*[.]\([0-9]*\).*/\1/p;q;}
+i\
+0
+q
+'
+gl_libunistring_sed_extract_subminor='/^[0-9][0-9]*[.][0-9][0-9]*[.][0-9]/{s/^[0-9]*[.][0-9]*[.]\([0-9]*\).*/\1/p;q;}
+i\
+0
+q
+'
+
+
+  if test "$HAVE_LIBUNISTRING" = yes; then
+    LIBUNISTRING_VERSION_MAJOR=`echo "$LIBUNISTRING_VERSION" | sed -n -e "$gl_libunistring_sed_extract_major"`
+    LIBUNISTRING_VERSION_MINOR=`echo "$LIBUNISTRING_VERSION" | sed -n -e "$gl_libunistring_sed_extract_minor"`
+    LIBUNISTRING_VERSION_SUBMINOR=`echo "$LIBUNISTRING_VERSION" | sed -n -e "$gl_libunistring_sed_extract_subminor"`
+  fi
+
 ac_fn_c_check_decl "$LINENO" "unsetenv" "ac_cv_have_decl_unsetenv" "$ac_includes_default"
 if test "x$ac_cv_have_decl_unsetenv" = xyes; then :
   ac_have_decl=1
@@ -22287,6 +22373,8 @@ $as_echo "$gl_cv_type_wctrans_t" >&6; }
 
 
   GL_GNULIB_TOWCTRANS=0
+
+
 
 
 
@@ -30104,6 +30192,88 @@ $as_echo "#define GNULIB_TEST_MBSRTOWCS 1" >>confdefs.h
 
 
 
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether mbswidth is declared in <wchar.h>" >&5
+$as_echo_n "checking whether mbswidth is declared in <wchar.h>... " >&6; }
+if ${ac_cv_have_decl_mbswidth+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <wchar.h>
+
+int
+main ()
+{
+char *p = (char *) mbswidth;
+            return !p;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_have_decl_mbswidth=yes
+else
+  ac_cv_have_decl_mbswidth=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_have_decl_mbswidth" >&5
+$as_echo "$ac_cv_have_decl_mbswidth" >&6; }
+  if test $ac_cv_have_decl_mbswidth = yes; then
+    ac_val=1
+  else
+    ac_val=0
+  fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_MBSWIDTH_IN_WCHAR_H $ac_val
+_ACEOF
+
+
+
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mbstate_t" >&5
+$as_echo_n "checking for mbstate_t... " >&6; }
+if ${ac_cv_type_mbstate_t+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$ac_includes_default
+             #include <wchar.h>
+int
+main ()
+{
+mbstate_t x; return sizeof x;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_type_mbstate_t=yes
+else
+  ac_cv_type_mbstate_t=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_type_mbstate_t" >&5
+$as_echo "$ac_cv_type_mbstate_t" >&6; }
+   if test $ac_cv_type_mbstate_t = yes; then
+
+$as_echo "#define HAVE_MBSTATE_T 1" >>confdefs.h
+
+   else
+
+$as_echo "#define mbstate_t int" >>confdefs.h
+
+   fi
+
+
+
+
+
   for ac_func in mbtowc
 do :
   ac_fn_c_check_func "$LINENO" "mbtowc" "ac_cv_func_mbtowc"
@@ -35153,6 +35323,102 @@ $as_echo "#define GNULIB_TEST_TIME_R 1" >>confdefs.h
 
 
 
+      if  { test "$HAVE_LIBUNISTRING" != yes \
+    || {
+
+
+
+            test $LIBUNISTRING_VERSION_MAJOR -lt 0 \
+            || { test $LIBUNISTRING_VERSION_MAJOR -eq 0 \
+                 && { test $LIBUNISTRING_VERSION_MINOR -lt 9 \
+                      || { test $LIBUNISTRING_VERSION_MINOR -eq 9 \
+                           && test $LIBUNISTRING_VERSION_SUBMINOR -lt 11
+                         }
+                    }
+               }
+
+
+
+
+       }
+  }; then
+            if test -z "$LIBUNISTRING_UNITYPES_H"; then
+      LIBUNISTRING_UNITYPES_H="${gl_source_base_prefix}unitypes.h"
+    fi
+  else
+    LIBUNISTRING_UNITYPES_H=
+  fi
+
+
+
+
+
+
+      if  { test "$HAVE_LIBUNISTRING" != yes \
+    || {
+
+
+
+            test $LIBUNISTRING_VERSION_MAJOR -lt 0 \
+            || { test $LIBUNISTRING_VERSION_MAJOR -eq 0 \
+                 && { test $LIBUNISTRING_VERSION_MINOR -lt 9 \
+                      || { test $LIBUNISTRING_VERSION_MINOR -eq 9 \
+                           && test $LIBUNISTRING_VERSION_SUBMINOR -lt 11
+                         }
+                    }
+               }
+
+
+
+
+       }
+  }; then
+            if test -z "$LIBUNISTRING_UNIWIDTH_H"; then
+      LIBUNISTRING_UNIWIDTH_H="${gl_source_base_prefix}uniwidth.h"
+    fi
+  else
+    LIBUNISTRING_UNIWIDTH_H=
+  fi
+
+
+
+
+
+
+     if  { test "$HAVE_LIBUNISTRING" != yes \
+    || {
+
+
+
+            test $LIBUNISTRING_VERSION_MAJOR -lt 0 \
+            || { test $LIBUNISTRING_VERSION_MAJOR -eq 0 \
+                 && { test $LIBUNISTRING_VERSION_MINOR -lt 9 \
+                      || { test $LIBUNISTRING_VERSION_MINOR -eq 9 \
+                           && test $LIBUNISTRING_VERSION_SUBMINOR -lt 11
+                         }
+                    }
+               }
+
+
+
+
+       }
+  }; then
+  LIBUNISTRING_COMPILE_UNIWIDTH_WIDTH_TRUE=
+  LIBUNISTRING_COMPILE_UNIWIDTH_WIDTH_FALSE='#'
+else
+  LIBUNISTRING_COMPILE_UNIWIDTH_WIDTH_TRUE='#'
+  LIBUNISTRING_COMPILE_UNIWIDTH_WIDTH_FALSE=
+fi
+:
+    if test -z "${LIBUNISTRING_COMPILE_UNIWIDTH_WIDTH_TRUE}" && test -z "${LIBUNISTRING_COMPILE_UNIWIDTH_WIDTH_FALSE}"; then
+    LIBUNISTRING_COMPILE_UNIWIDTH_WIDTH_TRUE='#'
+    LIBUNISTRING_COMPILE_UNIWIDTH_WIDTH_FALSE='#'
+  fi
+
+
+
+
 
   if test $ac_cv_have_decl_unsetenv = no; then
     HAVE_DECL_UNSETENV=0
@@ -35418,6 +35684,182 @@ $as_echo "#define __STDC_NO_VLA__ 1" >>confdefs.h
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ac_fn_c_check_decl "$LINENO" "wcwidth" "ac_cv_have_decl_wcwidth" "
+    #include <wchar.h>
+
+"
+if test "x$ac_cv_have_decl_wcwidth" = xyes; then :
+  ac_have_decl=1
+else
+  ac_have_decl=0
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_WCWIDTH $ac_have_decl
+_ACEOF
+
+  if test $ac_cv_have_decl_wcwidth != yes; then
+    HAVE_DECL_WCWIDTH=0
+  fi
+
+  if test $ac_cv_func_wcwidth != yes; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether wcwidth is a macro" >&5
+$as_echo_n "checking whether wcwidth is a macro... " >&6; }
+if ${gl_cv_func_wcwidth_macro+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <wchar.h>
+#ifdef wcwidth
+ wchar_header_defines_wcwidth
+#endif
+_ACEOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  $EGREP "wchar_header_defines_wcwidth" >/dev/null 2>&1; then :
+  gl_cv_func_wcwidth_macro=yes
+else
+  gl_cv_func_wcwidth_macro=no
+fi
+rm -f conftest*
+
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $gl_cv_func_wcwidth_macro" >&5
+$as_echo "$gl_cv_func_wcwidth_macro" >&6; }
+  fi
+
+  if test $ac_cv_func_wcwidth = yes || test $gl_cv_func_wcwidth_macro = yes; then
+    HAVE_WCWIDTH=1
+                                        { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether wcwidth works reasonably in UTF-8 locales" >&5
+$as_echo_n "checking whether wcwidth works reasonably in UTF-8 locales... " >&6; }
+if ${gl_cv_func_wcwidth_works+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+        if test "$cross_compiling" = yes; then :
+
+           case "$host_os" in
+                            # Guess yes on glibc systems.
+             *-gnu* | gnu*) gl_cv_func_wcwidth_works="guessing yes";;
+                            # Guess yes on musl systems.
+             *-musl*)       gl_cv_func_wcwidth_works="guessing yes";;
+                            # Guess yes on AIX 7 systems.
+             aix[7-9]*)     gl_cv_func_wcwidth_works="guessing yes";;
+             *)             gl_cv_func_wcwidth_works="$gl_cross_guess_normal";;
+           esac
+
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <locale.h>
+#include <wchar.h>
+#if !HAVE_DECL_WCWIDTH
+extern
+# ifdef __cplusplus
+"C"
+# endif
+int wcwidth (int);
+#endif
+int main ()
+{
+  int result = 0;
+  if (setlocale (LC_ALL, "en_US.UTF-8") != NULL)
+    {
+      if (wcwidth (0x0301) > 0)
+        result |= 1;
+      if (wcwidth (0x05B0) > 0)
+        result |= 2;
+      if (wcwidth (0x200B) > 0)
+        result |= 4;
+      if (wcwidth (0xFF1A) == 0)
+        result |= 8;
+      if (wcwidth (0x2202) > 1)
+        result |= 16;
+    }
+  return result;
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  gl_cv_func_wcwidth_works=yes
+else
+  gl_cv_func_wcwidth_works=no
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $gl_cv_func_wcwidth_works" >&5
+$as_echo "$gl_cv_func_wcwidth_works" >&6; }
+    case "$gl_cv_func_wcwidth_works" in
+      *yes) ;;
+      *no) REPLACE_WCWIDTH=1 ;;
+    esac
+  else
+    HAVE_WCWIDTH=0
+  fi
+
+
+     if test $HAVE_WCWIDTH = 0 || test $REPLACE_WCWIDTH = 1; then
+  GL_COND_OBJ_WCWIDTH_TRUE=
+  GL_COND_OBJ_WCWIDTH_FALSE='#'
+else
+  GL_COND_OBJ_WCWIDTH_TRUE='#'
+  GL_COND_OBJ_WCWIDTH_FALSE=
+fi
+:
+    if test -z "${GL_COND_OBJ_WCWIDTH_TRUE}" && test -z "${GL_COND_OBJ_WCWIDTH_FALSE}"; then
+    GL_COND_OBJ_WCWIDTH_TRUE='#'
+    GL_COND_OBJ_WCWIDTH_FALSE='#'
+  fi
+
+  if test -z "$GL_COND_OBJ_WCWIDTH_TRUE"; then :
+
+
+
+  :
+
+
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          GL_GNULIB_WCWIDTH=1
+
+
+
+
+
+$as_echo "#define GNULIB_TEST_WCWIDTH 1" >>confdefs.h
 
 
 
@@ -35953,48 +36395,6 @@ fi
 
 fi
 INSTALL_STRIP_PROGRAM="\$(install_sh) -c -s"
-
-for ac_prog in gawk mawk nawk awk
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_AWK+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$AWK"; then
-  ac_cv_prog_AWK="$AWK" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_AWK="$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-AWK=$ac_cv_prog_AWK
-if test -n "$AWK"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $AWK" >&5
-$as_echo "$AWK" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$AWK" && break
-done
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${MAKE-make} sets \$(MAKE)" >&5
 $as_echo_n "checking whether ${MAKE-make} sets \$(MAKE)... " >&6; }

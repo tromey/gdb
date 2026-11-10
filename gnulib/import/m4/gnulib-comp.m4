@@ -145,6 +145,7 @@ AC_DEFUN([gl_EARLY],
   # Code from module mbrtowc:
   # Code from module mbsinit:
   # Code from module mbsrtowcs:
+  # Code from module mbswidth:
   # Code from module mbtowc:
   # Code from module memchr:
   # Code from module memmem:
@@ -229,12 +230,16 @@ AC_DEFUN([gl_EARLY],
   # Code from module time_r:
   # Code from module unistd:
   # Code from module unistd-safer:
+  # Code from module unitypes:
+  # Code from module uniwidth/base:
+  # Code from module uniwidth/width:
   # Code from module unsetenv:
   # Code from module update-copyright:
   # Code from module vararrays:
   # Code from module verify:
   # Code from module wchar:
   # Code from module wctype-h:
+  # Code from module wcwidth:
   # Code from module windows-mutex:
   # Code from module windows-once:
   # Code from module windows-recmutex:
@@ -591,6 +596,7 @@ AC_DEFUN([gl_INIT],
     gl_PREREQ_MBSRTOWCS
   ])
   gl_WCHAR_MODULE_INDICATOR([mbsrtowcs])
+  gl_MBSWIDTH
   gl_FUNC_MBTOWC
   gl_CONDITIONAL([GL_COND_OBJ_MBTOWC],
                  [test $HAVE_MBTOWC = 0 || test $REPLACE_MBTOWC = 1])
@@ -908,6 +914,26 @@ AC_DEFUN([gl_INIT],
   gl_UNISTD_H_REQUIRE_DEFAULTS
   AC_PROG_MKDIR_P
   gl_UNISTD_SAFER
+  gl_LIBUNISTRING_LIBHEADER([0.9.11], [unitypes.h])
+  AC_PROG_MKDIR_P
+  AH_VERBATIM([unitypes_restrict], [
+  /* This definition is a duplicate of the one in unitypes.h.
+     It is here so that we can cope with an older version of unitypes.h
+     that does not contain this definition and that is pre-installed among
+     the public header files.  */
+  # if defined __restrict \
+       || 2 < __GNUC__ + (95 <= __GNUC_MINOR__) \
+       || __clang_major__ >= 3
+  #  define _UC_RESTRICT __restrict
+  # elif 199901L <= __STDC_VERSION__ || defined restrict
+  #  define _UC_RESTRICT restrict
+  # else
+  #  define _UC_RESTRICT
+  # endif
+  ])
+  gl_LIBUNISTRING_LIBHEADER([0.9.11], [uniwidth.h])
+  AC_PROG_MKDIR_P
+  gl_LIBUNISTRING_MODULE([0.9.11], [uniwidth/width])
   gl_FUNC_UNSETENV
   gl_CONDITIONAL([GL_COND_OBJ_UNSETENV],
                  [test $HAVE_UNSETENV = 0 || test $REPLACE_UNSETENV = 1])
@@ -922,6 +948,13 @@ AC_DEFUN([gl_INIT],
   gl_WCTYPE_H
   gl_WCTYPE_H_REQUIRE_DEFAULTS
   AC_PROG_MKDIR_P
+  gl_FUNC_WCWIDTH
+  gl_CONDITIONAL([GL_COND_OBJ_WCWIDTH],
+                 [test $HAVE_WCWIDTH = 0 || test $REPLACE_WCWIDTH = 1])
+  AM_COND_IF([GL_COND_OBJ_WCWIDTH], [
+    gl_PREREQ_WCWIDTH
+  ])
+  gl_WCHAR_MODULE_INDICATOR([wcwidth])
   AC_REQUIRE([AC_CANONICAL_HOST])
   gl_CONDITIONAL([GL_COND_OBJ_WINDOWS_MUTEX],
                  [case "$host_os" in mingw*) true;; *) false;; esac])
@@ -1246,6 +1279,8 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/mbsrtowcs-impl.h
   lib/mbsrtowcs-state.c
   lib/mbsrtowcs.c
+  lib/mbswidth.c
+  lib/mbswidth.h
   lib/mbtowc-impl.h
   lib/mbtowc-lock.c
   lib/mbtowc-lock.h
@@ -1340,10 +1375,17 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/tempname.h
   lib/time.in.h
   lib/time_r.c
+  lib/unictype/bitmap.h
   lib/unistd--.h
   lib/unistd-safer.h
   lib/unistd.c
   lib/unistd.in.h
+  lib/unitypes.in.h
+  lib/uniwidth.in.h
+  lib/uniwidth/cjk.h
+  lib/uniwidth/width.c
+  lib/uniwidth/width0.h
+  lib/uniwidth/width2.h
   lib/unsetenv.c
   lib/verify.h
   lib/w32sock.h
@@ -1351,6 +1393,7 @@ AC_DEFUN([gl_FILE_LIST], [
   lib/wchar.in.h
   lib/wctype-h.c
   lib/wctype.in.h
+  lib/wcwidth.c
   lib/windows-initguard.h
   lib/windows-mutex.c
   lib/windows-mutex.h
@@ -1433,6 +1476,7 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/isnand.m4
   m4/isnanl.m4
   m4/largefile.m4
+  m4/libunistring-base.m4
   m4/limits-h.m4
   m4/localcharset.m4
   m4/locale-fr.m4
@@ -1448,6 +1492,7 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/mbsinit.m4
   m4/mbsrtowcs.m4
   m4/mbstate_t.m4
+  m4/mbswidth.m4
   m4/mbtowc.m4
   m4/memchr.m4
   m4/memmem.m4
@@ -1530,6 +1575,7 @@ AC_DEFUN([gl_FILE_LIST], [
   m4/wchar_h.m4
   m4/wchar_t.m4
   m4/wctype_h.m4
+  m4/wcwidth.m4
   m4/wint_t.m4
   m4/wmemchr.m4
   m4/wmempcpy.m4
