@@ -56,6 +56,7 @@ IMPORTED_GNULIB_MODULES="\
     lstat \
     limits-h \
     listen \
+    mbswidth \
     memchr \
     memmem \
     mkdir \

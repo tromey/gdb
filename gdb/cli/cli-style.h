@@ -207,4 +207,7 @@ extern void print_error_prefix (ui_file *file);
 /* Return the current current mark string.  */
 extern const char *get_current_mark ();
 
+/* Return the screen width of the current mark string.  */
+extern int current_mark_screen_width ();
+
 #endif /* GDB_CLI_CLI_STYLE_H */

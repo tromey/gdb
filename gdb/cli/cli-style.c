@@ -24,6 +24,7 @@
 #include "source-cache.h"
 #include "observable.h"
 #include "charset.h"
+#include "mbswidth.h"
 
 /* True if styling is enabled.  */
 
@@ -540,6 +541,8 @@ get_current_mark ()
   return "*";
 }
 
+/* See cli-style.h.  */
+
 int
 current_mark_screen_width ()
 {
@@ -548,9 +551,10 @@ current_mark_screen_width ()
   if (current_mark == cached_current_mark)
     return cached_current_mark_width;
 
-
+  cached_current_mark_width = mbswidth (cached_current_mark.c_str (),
+					MB_UNPRINTABLE_AS_1);
   cached_current_mark = current_mark;
-    return cached_current_mark_width;
+  return cached_current_mark_width;
 }
 
 INIT_GDB_FILE (cli_style)
