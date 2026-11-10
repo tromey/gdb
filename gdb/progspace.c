@@ -433,7 +433,8 @@ print_program_space (struct ui_out *uiout, int requested)
   gdb_assert (count > 0);
 
   ui_out_emit_table table_emitter (uiout, 3, count, "pspaces");
-  uiout->table_header (1, ui_left, "current", "");
+  uiout->table_header (uiout->current_mark_screen_width (), ui_left,
+		       "current", "");
   uiout->table_header (4, ui_left, "id", "Id");
   uiout->table_header (longest_exec_name, ui_left, "exec", "Executable");
   uiout->table_body ();

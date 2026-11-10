@@ -395,6 +395,11 @@ protected:
     return "*";
   }
 
+  virtual int current_mark_screen_width ()
+  {
+    return 1;
+  }
+
   /* Set as not MI-like by default.  It is overridden in subclasses if
      necessary.  */
 

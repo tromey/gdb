@@ -1087,7 +1087,8 @@ print_ada_task_info (struct ui_out *uiout,
 
   nb_columns = uiout->is_mi_like_p () ? 8 : 7;
   ui_out_emit_table table_emitter (uiout, nb_columns, nb_tasks, "tasks");
-  uiout->table_header (1, ui_left, "current", "");
+  uiout->table_header (uiout->current_mark_screen_width (), ui_left,
+		       "current", "");
   uiout->table_header (3, ui_right, "id", "ID");
   {
     size_t tid_width = 9;
