@@ -18,6 +18,10 @@
 #ifndef GDBSUPPORT_RANGES_H
 #define GDBSUPPORT_RANGES_H
 
+#if __cplusplus >= 202002L
+#include <ranges>
+#endif
+
 namespace gdb {
 namespace ranges {
 
@@ -30,7 +34,11 @@ namespace ranges {
 template <class Range, typename T>
 void replace (Range &&r, const T &old_value, const T &new_value)
 {
+#if __cplusplus >= 202002L
+  std::ranges::replace (r, old_value, new_value);
+#else
   std::replace (r.begin (), r.end (), old_value, new_value);
+#endif
 }
 
 } /* namespace ranges */
