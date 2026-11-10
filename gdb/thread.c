@@ -1342,8 +1342,7 @@ print_thread_info_1 (struct ui_out *uiout, const char *requested_threads,
 	table_emitter.emplace (uiout, opts.show_global_ids ? 5 : 4,
 			       n_matching_threads, "threads");
 
-	uiout->table_header (uiout->current_mark_screen_width (), ui_left,
-			     "current", "");
+	uiout->table_current_header ("current");
 	uiout->table_header (4, ui_left, "id-in-tg", "Id");
 	if (opts.show_global_ids)
 	  uiout->table_header (4, ui_left, "id", "GId");

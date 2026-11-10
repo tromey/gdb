@@ -816,8 +816,7 @@ print_checkpoints (struct ui_out *uiout, inferior *req_inf, fork_info *req_fi)
   ui_out_emit_table table_emitter (uiout, 5, -1, "checkpoints");
 
   /* Define the columns / headers...  */
-  uiout->table_header (uiout->current_mark_screen_width (), ui_left,
-		       "current", "");
+  uiout->table_current_header ("current");
   uiout->table_header ((print_inf ? (int) inf_width : 0) + (int) num_width,
 		       ui_right, "id", "Id");
   uiout->table_header (6, ui_left, "active", "Active");

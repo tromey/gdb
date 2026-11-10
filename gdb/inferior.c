@@ -570,8 +570,7 @@ print_inferior (struct ui_out *uiout, const char *requested_inferiors)
     }
 
   ui_out_emit_table table_emitter (uiout, 5, inf_count, "inferiors");
-  uiout->table_header (uiout->current_mark_screen_width (), ui_left,
-		       "current", "");
+  uiout->table_current_header ("current");
   uiout->table_header (4, ui_left, "number", "Num");
   uiout->table_header (17, ui_left, "target-id", "Description");
   uiout->table_header (connection_id_len, ui_left,

@@ -176,6 +176,13 @@ class ui_out
   void table_begin (int nr_cols, int nr_rows, const std::string &tblid);
   void table_header (int width, ui_align align, const std::string &col_name,
 		     const std::string &col_hdr);
+
+  /* A table header for the "current" mark.  */
+  void table_current_header (const std::string &col_name)
+  {
+    table_header (current_mark_screen_width (), ui_left, col_name, "");
+  }
+
   void table_body ();
   void table_end ();
 

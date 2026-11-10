@@ -104,8 +104,7 @@ print_connection (struct ui_out *uiout, const char *requested_connections)
   ui_out_emit_table table_emitter (uiout, 4, process_targets.size (),
 				   "connections");
 
-  uiout->table_header (uiout->current_mark_screen_width (), ui_left,
-		       "current", "");
+  uiout->table_current_header ("current");
   uiout->table_header (4, ui_left, "number", "Num");
   /* The text in the "what" column may include spaces.  Add one extra
      space to visually separate the What and Description columns a
