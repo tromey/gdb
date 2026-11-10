@@ -514,6 +514,12 @@ print_error_prefix (ui_file *file)
 /* Emoji current-mark.  */
 static std::string current_mark = "⇒";
 
+/* We stash the computed screen width of the current mark; and we save
+   a copy of the mark that was in use at the time we last computed the
+   width.  */
+static std::string cached_current_mark = "";
+static int cached_current_mark_width = 0;
+
 /* Implement 'show style current-mark'.  */
 
 static void
@@ -532,6 +538,19 @@ get_current_mark ()
   if (emojis_ok ())
     return current_mark.c_str ();
   return "*";
+}
+
+int
+current_mark_screen_width ()
+{
+  if (!emojis_ok ())
+    return 1;
+  if (current_mark == cached_current_mark)
+    return cached_current_mark_width;
+
+
+  cached_current_mark = current_mark;
+    return cached_current_mark_width;
 }
 
 INIT_GDB_FILE (cli_style)

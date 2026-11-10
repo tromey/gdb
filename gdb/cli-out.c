@@ -446,6 +446,14 @@ cli_ui_out::get_current_mark ()
   return ::get_current_mark ();
 }
 
+/* See ui-out.h.  */
+
+int
+cli_ui_out::current_mark_screen_width ()
+{
+  return ::current_mark_screen_width ();
+}
+
 /* local functions */
 
 void

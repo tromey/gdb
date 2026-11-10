@@ -81,6 +81,7 @@ protected:
   virtual void do_progress_end () override;
 
   const char *get_current_mark () override;
+  int current_mark_screen_width () override;
 
   bool suppress_output ()
   { return m_suppress_output; }
