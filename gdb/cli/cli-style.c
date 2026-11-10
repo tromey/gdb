@@ -551,8 +551,7 @@ current_mark_screen_width ()
   if (current_mark == cached_current_mark)
     return cached_current_mark_width;
 
-  cached_current_mark_width = mbswidth (cached_current_mark.c_str (),
-					MB_UNPRINTABLE_AS_1);
+  cached_current_mark_width = mbswidth (cached_current_mark.c_str (), 0);
   cached_current_mark = current_mark;
   return cached_current_mark_width;
 }
