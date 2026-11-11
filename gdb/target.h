@@ -632,9 +632,7 @@ struct target_ops
       TARGET_DEFAULT_FUNC (default_terminal_info);
     virtual void kill ()
       TARGET_DEFAULT_NORETURN (noprocess ());
-    /* Target implementation of the 'load' command.  Load the sections
-       of an executable into memory.  FILE is the file to load.
-       OFFSET, if given, is the offset at which to load it.  */
+    /* Target implementation of the 'load' command.  */
     virtual void load (const char *, int, std::optional<CORE_ADDR>)
       TARGET_DEFAULT_NORETURN (tcomplain ());
     /* Start an inferior process and set inferior_ptid to its pid.
@@ -1761,7 +1759,7 @@ extern void target_kill (void);
    to not only bring new code into the target process, but also to
    update GDB's symbol tables to match.  */
 
-extern void target_load (const char *arg, int from_tty,
+extern void target_load (const char *filename, int from_tty,
 			 std::optional<CORE_ADDR> offset);
 
 /* On some targets, we can catch an inferior fork or vfork event when
