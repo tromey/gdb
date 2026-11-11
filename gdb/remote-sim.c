@@ -571,7 +571,7 @@ gdbsim_target::kill ()
    GDB's symbol tables to match.  */
 
 void
-gdbsim_target::load (const char *file, int fromtty,
+gdbsim_target::load (const char *filename, int fromtty,
 		     std::optional<CORE_ADDR> offset)
 {
   struct sim_inferior_data *sim_data
@@ -581,12 +581,12 @@ gdbsim_target::load (const char *file, int fromtty,
     error (_("GDB sim does not yet support a load offset."));
 
   if (remote_debug)
-    gdb_printf (gdb_stdlog, "gdbsim_load: prog \"%s\"\n", file);
+    gdb_printf (gdb_stdlog, "gdbsim_load: prog \"%s\"\n", filename);
 
   /* FIXME: We will print two messages on error.
      Need error to either not print anything if passed NULL or need
      another routine that doesn't take any arguments.  */
-  if (sim_load (sim_data->gdbsim_desc, file, NULL, fromtty) == SIM_RC_FAIL)
+  if (sim_load (sim_data->gdbsim_desc, filename, NULL, fromtty) == SIM_RC_FAIL)
     error (_("unable to load program"));
 
   /* FIXME: If a load command should reset the targets registers then
