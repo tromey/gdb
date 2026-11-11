@@ -632,6 +632,9 @@ struct target_ops
       TARGET_DEFAULT_FUNC (default_terminal_info);
     virtual void kill ()
       TARGET_DEFAULT_NORETURN (noprocess ());
+    /* Target implementation of the 'load' command.  Load the sections
+       of an executable into memory.  FILE is the file to load.
+       OFFSET, if given, is the offset at which to load it.  */
     virtual void load (const char *, int, std::optional<CORE_ADDR>)
       TARGET_DEFAULT_NORETURN (tcomplain ());
     /* Start an inferior process and set inferior_ptid to its pid.

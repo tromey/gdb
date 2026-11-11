@@ -15777,10 +15777,10 @@ remote_target::augmented_libraries_svr4_read ()
 /* Implementation of to_load.  */
 
 void
-remote_target::load (const char *name, int from_tty,
+remote_target::load (const char *file, int from_tty,
 		     std::optional<CORE_ADDR> offset)
 {
-  generic_load (name, from_tty, offset);
+  generic_load (file, from_tty, offset);
 }
 
 /* Accepts an integer PID; returns a string representing a file that

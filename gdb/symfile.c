@@ -1794,7 +1794,7 @@ load_command (const char *arg, int from_tty)
   gdb::unique_xmalloc_ptr<char> filename_holder;
   std::optional<CORE_ADDR> offset;
 
-  if (arg == NULL)
+  if (arg == nullptr)
     {
       arg = current_program_space->exec_filename ();
       if (arg == nullptr)

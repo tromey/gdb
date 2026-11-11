@@ -325,8 +325,9 @@ symfile_segment_data_up get_symfile_segment_data (bfd *abfd);
 extern scoped_restore_tmpl<int> increment_reading_symtab (void);
 
 /* Target-agnostic function to load the sections of an executable into
-   memory.  */
-extern void generic_load (const char *args, int from_tty,
+   memory.  FILENAME is the file to load.  OFFSET, if given, is the
+   offset at which to load it.  */
+extern void generic_load (const char *filename, int from_tty,
 			  std::optional<CORE_ADDR> offset);
 
 /* From minidebug.c.  */
