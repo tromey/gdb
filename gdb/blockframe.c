@@ -119,9 +119,6 @@ get_frame_function (const frame_info_ptr &frame)
   if (bl == nullptr)
     return {};
 
-  if (bl == NULL)
-    return {};
-
   while (bl->function () == NULL && bl->superblock () != NULL)
     bl = bl->superblock ();
 
