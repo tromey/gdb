@@ -117,7 +117,7 @@ get_frame_function (const frame_info_ptr &frame)
 {
   const struct block *bl = get_frame_block (frame, 0);
   if (bl == nullptr)
-    return nullptr;
+    return {};
 
   if (bl == NULL)
     return {};
