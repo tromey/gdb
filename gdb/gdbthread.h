@@ -157,7 +157,8 @@ struct thread_control_state
   /* Set m_step_start_function according to FRAME.  */
   void set_step_start_function (const frame_info_ptr &frame)
   {
-    m_step_start_function = get_frame_function (frame);
+    // FIXME
+    m_step_start_function = get_frame_function (frame).symbol;
   }
 
   /* Reset m_step_start_function.  */
@@ -170,7 +171,7 @@ struct thread_control_state
      m_step_start_function.  */
   bool in_step_start_function (const frame_info_ptr &frame)
   {
-    return m_step_start_function == get_frame_function (frame);
+    return m_step_start_function == get_frame_function (frame).symbol;
   }
 
   /* Return true if m_step_start_function is set.  */
